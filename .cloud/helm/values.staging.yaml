@@ -1,4 +1,4 @@
-serviceName: search
+serviceName: payments
 env: staging
 awsAccountId: "955332203423"
 

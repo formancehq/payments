@@ -1,4 +1,4 @@
-serviceName: search
+serviceName: payments
 env: prod
 awsAccountId: "288350113309"
 
