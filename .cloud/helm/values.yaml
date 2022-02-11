@@ -8,7 +8,7 @@ hpaMaxReplicas: 20
 
 image:
   repository: dkr.ecr.eu-west-1.amazonaws.com/numary
-  tag: payment-main
+  tag: payments-main
 
 resource:
   ephemeral: true
