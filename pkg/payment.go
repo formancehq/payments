@@ -1,7 +1,8 @@
-package pkg
+package payment
 
 import (
 	"encoding/json"
+	"github.com/pborman/uuid"
 	"time"
 )
 
@@ -43,4 +44,11 @@ type PaymentData struct {
 type Payment struct {
 	PaymentData `bson:",inline"`
 	ID          string `json:"id" bson:"_id"`
+}
+
+func NewPayment(data PaymentData) Payment {
+	return Payment{
+		PaymentData: data,
+		ID:          uuid.New(),
+	}
 }
