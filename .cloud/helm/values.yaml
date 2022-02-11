@@ -19,5 +19,5 @@ ephemeralName: ""
 global:
   exposeUrl: ""
   auth: http://auth
-  mongodbUri: "mongodb://mongodb:27017"
+  mongodbUri: "mongodb://dev-maxence-payments-mongodb:27017"
   mongodbDatabase: "payments"
