@@ -1,17 +1,5 @@
 {{- if eq .Values.env "dev" }}
 ---
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: api.{{ .Values.ephemeralName }}.{{ .Values.env }}.numary.cloud
-spec:
-  secretName: api.{{ .Values.ephemeralName }}.{{ .Values.env }}.numary.cloud
-  dnsNames:
-    - api.{{ .Values.ephemeralName }}.{{ .Values.env }}.numary.cloud
-  issuerRef:
-    name: r53-letsencrypt-prod
-    kind: ClusterIssuer
----
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
@@ -36,18 +24,6 @@ spec:
         - name: {{ .Values.serviceName }}
           port: 80
 {{- else }}
----
-apiVersion: cert-manager.io/v1
-kind: Certificate
-metadata:
-  name: "{{ .Values.global.exposeUrl }}"
-spec:
-  secretName: "{{ .Values.global.exposeUrl }}"
-  dnsNames:
-    - "{{ .Values.global.exposeUrl }}"
-  issuerRef:
-    name: r53-letsencrypt-prod
-    kind: ClusterIssuer
 ---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
