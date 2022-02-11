@@ -6,17 +6,19 @@ import (
 )
 
 type Service interface {
-	CreatePayment(ctx context.Context, data PaymentData) (*Payment, error)
-	UpdatePayment(ctx context.Context, id string, data PaymentData) error
-	ListPayments(ctx context.Context) ([]*Payment, error)
+	CreatePayment(ctx context.Context, organization string, data PaymentData) (*Payment, error)
+	UpdatePayment(ctx context.Context, organization string, id string, data PaymentData) error
+	ListPayments(ctx context.Context, organization string) ([]*Payment, error)
 }
 
 type defaultServiceImpl struct {
 	database *mongo.Database
 }
 
-func (d *defaultServiceImpl) ListPayments(ctx context.Context) ([]*Payment, error) {
-	cursor, err := d.database.Collection("Payment").Find(ctx, map[string]interface{}{})
+func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string) ([]*Payment, error) {
+	cursor, err := d.database.Collection("Payment").Find(ctx, map[string]interface{}{
+		"organization": org,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -30,18 +32,25 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context) ([]*Payment, erro
 	return results, nil
 }
 
-func (d *defaultServiceImpl) CreatePayment(ctx context.Context, data PaymentData) (*Payment, error) {
+func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data PaymentData) (*Payment, error) {
 	payment := NewPayment(data)
-	_, err := d.database.Collection("Payment").InsertOne(ctx, payment)
+	_, err := d.database.Collection("Payment").InsertOne(ctx, struct {
+		Payment      `bson:",inline"`
+		Organization string `bson:"organization"`
+	}{
+		Payment:      payment,
+		Organization: org,
+	})
 	if err != nil {
 		return nil, err
 	}
 	return &payment, nil
 }
 
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, id string, data PaymentData) error {
+func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data PaymentData) error {
 	_, err := d.database.Collection("Payment").UpdateOne(ctx, map[string]interface{}{
-		"_id": id,
+		"_id":          id,
+		"organization": organization,
 	}, map[string]interface{}{
 		"$set": data,
 	})

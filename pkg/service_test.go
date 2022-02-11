@@ -22,7 +22,7 @@ func TestCreatePayment(t *testing.T) {
 		t.AddMockResponses(mtest.CreateSuccessResponse())
 
 		service := NewDefaultService(t.DB)
-		_, err := service.CreatePayment(context.Background(), PaymentData{
+		_, err := service.CreatePayment(context.Background(), "test", PaymentData{
 			Provider:  "stripe",
 			Reference: "ref",
 			Scheme:    SchemeSepa,
@@ -43,7 +43,7 @@ func TestUpdatePayment(t *testing.T) {
 		t.AddMockResponses(mtest.CreateSuccessResponse())
 
 		service := NewDefaultService(t.DB)
-		err := service.UpdatePayment(context.Background(), uuid.New(), PaymentData{
+		err := service.UpdatePayment(context.Background(), "test", uuid.New(), PaymentData{
 			Provider:  "stripe",
 			Reference: "ref",
 			Scheme:    SchemeSepa,
@@ -79,7 +79,7 @@ func TestListPayments(t *testing.T) {
 		}))
 
 		service := NewDefaultService(t.DB)
-		payments, err := service.ListPayments(context.Background())
+		payments, err := service.ListPayments(context.Background(), "test")
 		assert.NoError(t, err)
 		assert.Len(t, payments, 3)
 	})
