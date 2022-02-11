@@ -2,11 +2,11 @@ package payment_test
 
 import (
 	"context"
+	payment "github.com/numary/payment/pkg"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
-	payment "payment/pkg"
 	"testing"
 	"time"
 )

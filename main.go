@@ -1,6 +1,6 @@
 package main
 
-import "payment/cmd"
+import "github.com/numary/payment/cmd"
 
 func main() {
 	cmd.Execute()

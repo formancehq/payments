@@ -81,5 +81,6 @@ func NewMux(service Service) *mux.Router {
 	organizationRouter.Path("/payments").Methods(http.MethodPost).Handler(CreatePaymentHandler(service))
 	paymentsRouter := organizationRouter.PathPrefix("/payments").Subrouter()
 	paymentsRouter.Path("/{paymentId}").Methods(http.MethodPut).Handler(UpdatePaymentHandler(service))
+
 	return router
 }

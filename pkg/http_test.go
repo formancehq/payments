@@ -3,12 +3,12 @@ package payment_test
 import (
 	"bytes"
 	"github.com/gorilla/mux"
+	payment "github.com/numary/payment/pkg"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"net/http"
 	"net/http/httptest"
-	payment "payment/pkg"
 	"testing"
 )
 
