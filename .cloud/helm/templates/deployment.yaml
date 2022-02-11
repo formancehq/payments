@@ -36,6 +36,10 @@ spec:
               value: "true"
             - name: AUTH_URI
               value: {{ .Values.global.auth }}
+            - name: MONGODB_URI
+              value: {{ .Values.global.mongodbUri }}
+            - name: MONGODB_DATABASE
+              value: {{ .Values.global.mongodbDatabase }}
           ports:
             - containerPort: 8080
               name: {{ .Values.serviceName }}

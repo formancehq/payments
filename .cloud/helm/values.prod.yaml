@@ -18,6 +18,6 @@ ephemeralName: ""
 
 global:
   exposeUrl: "api.prod.numary.cloud"
-  elasticSearch: vpc-app-production-search-os-aqjmb7kgx5dl2om2hmw6byqive.eu-west-1.es.amazonaws.com
-  elasticSearchScheme: https
   auth: https://api.numary.cloud/auth
+  mongodbUri: "mongodb://mongodb:27017"
+  mongodbDatabase: "payments"

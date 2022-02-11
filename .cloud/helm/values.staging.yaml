@@ -19,3 +19,5 @@ ephemeralName: ""
 global:
   exposeUrl: "api.int.staging.numary.cloud"
   auth: https://api.staging.numary.cloud/auth
+  mongodbUri: "mongodb://mongodb:27017"
+  mongodbDatabase: "payments"

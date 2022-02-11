@@ -19,3 +19,5 @@ ephemeralName: ""
 global:
   exposeUrl: ""
   auth: http://auth
+  mongodbUri: "mongodb://mongodb:27017"
+  mongodbDatabase: "payments"
