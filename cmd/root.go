@@ -10,6 +10,7 @@ import (
 	payment "payment/pkg"
 	"strings"
 
+	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 )
 
@@ -41,9 +42,15 @@ var rootCmd = &cobra.Command{
 		db := client.Database(mongodbDatabase)
 
 		s := payment.NewDefaultService(db)
-		mux := payment.NewMux(s)
+		var handler http.Handler
+		handler = payment.NewMux(s)
+		handler = cors.New(cors.Options{
+			AllowedOrigins:   []string{"*"},
+			AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
+			AllowCredentials: true,
+		}).Handler(handler)
 
-		return http.ListenAndServe(":8080", mux)
+		return http.ListenAndServe(":8080", handler)
 	},
 }
 
