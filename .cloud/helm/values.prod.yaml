@@ -1,0 +1,23 @@
+serviceName: search
+env: prod
+awsAccountId: "288350113309"
+
+replicaCount: 2
+hpaMinReplicas: 2
+hpaMaxReplicas: 200
+
+image:
+  repository: dkr.ecr.eu-west-1.amazonaws.com/numary
+  tag: payments-main
+
+resource:
+  ephemeral: false
+  hpa: true
+
+ephemeralName: ""
+
+global:
+  exposeUrl: "api.prod.numary.cloud"
+  elasticSearch: vpc-app-production-search-os-aqjmb7kgx5dl2om2hmw6byqive.eu-west-1.es.amazonaws.com
+  elasticSearchScheme: https
+  auth: https://api.numary.cloud/auth

@@ -1,0 +1,21 @@
+serviceName: search
+env: staging
+awsAccountId: "955332203423"
+
+replicaCount: 2
+hpaMinReplicas: 1
+hpaMaxReplicas: 20
+
+image:
+  repository: dkr.ecr.eu-west-1.amazonaws.com/numary
+  tag: payments-main
+
+resource:
+  ephemeral: false
+  hpa: false
+
+ephemeralName: ""
+
+global:
+  exposeUrl: "api.int.staging.numary.cloud"
+  auth: https://api.staging.numary.cloud/auth
