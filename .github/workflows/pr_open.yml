@@ -1,0 +1,60 @@
+name: Pull Request - Open
+on:
+  pull_request:
+    types: [assigned, opened, synchronize, reopened]
+jobs:
+  Guard:
+    name: 'Cloudformation Guard'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run CloudFormation Guard
+        uses: flemzord/cloudformation-guard-action@main
+        with:
+          cfn_directory: copilot/payments/addons
+  Test:
+    name: 'Test'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.17'
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+        run: git config --global url."https://numarybot:${TOKEN}@github.com".insteadOf "https://github.com"
+      - name: Add GoPrivate
+        run: go env -w GOPRIVATE=github.com/numary/go-libs-cloud
+      - name: Download vendors
+        run: go mod vendor # Make vendors available in the working directory
+      - name: run tests
+        run: go test -v -coverpkg=./... -coverprofile=coverage.out ./...
+#  Lint:
+#      name: 'Lint'
+#      runs-on: ubuntu-latest
+#      steps:
+#        - uses: actions/setup-go@v2
+#          with:
+#            go-version: '1.16'
+#        - uses: actions/checkout@v2
+#        - uses: actions/cache@v2
+#          with:
+#            path: |
+#              ~/.cache/go-build
+#              ~/go/pkg/mod
+#            key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+#            restore-keys: |
+#              ${{ runner.os }}-go-
+#        - name: get deps
+#          run: go mod download
+#        - name: run vet
+#          run: go vet .

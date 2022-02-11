@@ -1,0 +1,59 @@
+name: release
+on:
+  release:
+    types: [prereleased, released]
+
+jobs:
+  k8s:
+    name: 'Deploy to Production with K8S'
+    permissions:
+      id-token: write
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.16'
+      - name: Configure git for private modules
+        env:
+          TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+        run: git config --global url."https://numarybot:${TOKEN}@github.com".insteadOf "https://github.com"
+      - name: Add GoPrivate
+        run: go env -w GOPRIVATE=github.com/numary/go-libs-cloud
+      - name: Download vendors
+        run: go mod vendor # Make vendors available in the working directory
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-region: eu-west-1
+          role-to-assume: arn:aws:iam::288350113309:role/github-access
+          role-duration-seconds: 3600
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: 🔥 Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          target: app
+          build-args: |
+            APP_VERSION=${{ github.event.release.tag_name }}
+          tags: |
+            288350113309.dkr.ecr.eu-west-1.amazonaws.com/numary:payments-${{ github.event.release.tag_name }}
+      - name: Install ArgoCD
+        run: |
+          curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+          chmod +x /usr/local/bin/argocd
+      - name: Login to ArgoCD
+        run: argocd login argocd.prod.numary.cloud --insecure --username github_action --password ${{ secrets.ARGOCD_PRODUCTION }}
+      - name: Change image in ArgoCD
+        run: argocd app set production-payments -p image.tag=search-${{ github.event.release.tag_name }}
+      - name: 🚀 Deploy Search
+        run: argocd app sync production-payments --prune
