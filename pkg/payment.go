@@ -25,30 +25,30 @@ const (
 	TypeOther  = "other"
 )
 
-type PaymentValue struct {
+type Value struct {
 	Amount int64  `json:"amount"`
 	Asset  string `json:"asset"`
 }
 
-type PaymentData struct {
+type Data struct {
 	Provider  string          `json:"provider" bson:"provider"`
 	Reference string          `json:"reference" bson:"reference"`
 	Scheme    string          `json:"scheme" bson:"scheme"`
 	Type      string          `json:"type" bson:"type"`
 	Status    string          `json:"status" bson:"status"`
-	Value     PaymentValue    `json:"value" bson:"value"`
+	Value     Value           `json:"value" bson:"value"`
 	Date      time.Time       `json:"data" bson:"date"`
 	Raw       json.RawMessage `json:"raw" bson:"raw"`
 }
 
 type Payment struct {
-	PaymentData `bson:",inline"`
-	ID          string `json:"id" bson:"_id"`
+	Data `bson:",inline"`
+	ID   string `json:"id" bson:"_id"`
 }
 
-func NewPayment(data PaymentData) Payment {
+func NewPayment(data Data) Payment {
 	return Payment{
-		PaymentData: data,
-		ID:          uuid.New(),
+		Data: data,
+		ID:   uuid.New(),
 	}
 }

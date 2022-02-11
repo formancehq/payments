@@ -6,8 +6,8 @@ import (
 )
 
 type Service interface {
-	CreatePayment(ctx context.Context, organization string, data PaymentData) (*Payment, error)
-	UpdatePayment(ctx context.Context, organization string, id string, data PaymentData) error
+	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
+	UpdatePayment(ctx context.Context, organization string, id string, data Data) error
 	ListPayments(ctx context.Context, organization string) ([]*Payment, error)
 }
 
@@ -32,7 +32,7 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string) ([]*P
 	return results, nil
 }
 
-func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data PaymentData) (*Payment, error) {
+func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data Data) (*Payment, error) {
 	payment := NewPayment(data)
 	_, err := d.database.Collection("Payment").InsertOne(ctx, struct {
 		Payment      `bson:",inline"`
@@ -47,7 +47,7 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	return &payment, nil
 }
 
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data PaymentData) error {
+func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data) error {
 	_, err := d.database.Collection("Payment").UpdateOne(ctx, map[string]interface{}{
 		"_id":          id,
 		"organization": organization,
