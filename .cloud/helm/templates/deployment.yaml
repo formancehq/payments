@@ -48,6 +48,8 @@ spec:
               value: {{ .Values.global.mongodbUri }}
             - name: MONGODB_DATABASE
               value: {{ .Values.global.mongodbDatabase }}
+            - name: SERVICE_ENV
+              value: {{.Values.env}}
           ports:
             - containerPort: 8080
               name: {{ .Values.serviceName }}
