@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/gorilla/mux"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/payment/pkg"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -27,7 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
@@ -150,11 +151,20 @@ var rootCmd = &cobra.Command{
 
 		s := payment.NewDefaultService(db)
 
-		mux := payment.NewMux(s)
+		m := payment.NewMux(s)
 		if viper.GetBool(otelTracesFlag) {
-			mux.Use(otelmux.Middleware("Payments"))
+			m.Use(otelmux.Middleware("Payments"))
 		}
-		mux.Use(
+		// TODO: Logging
+		// TODO: Chart health endpoint
+		// TODO: Pagination
+		m.Use(
+			middlewares.AuthMiddleware(authUri),
+			payment.CheckOrganizationAccessMiddleware(),
+		)
+
+		rootMux := mux.NewRouter()
+		rootMux.Use(
 			payment.Recovery(func(ctx context.Context, e interface{}) {
 				if viper.GetBool(otelTracesFlag) {
 					switch err := e.(type) {
@@ -175,11 +185,13 @@ var rootCmd = &cobra.Command{
 				AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
 				AllowCredentials: true,
 			}).Handler,
-			middlewares.AuthMiddleware(authUri),
-			payment.CheckOrganizationAccessMiddleware(),
 		)
+		rootMux.Path("/_health").Handler(payment.HealthHandler(client))
+		rootMux.Path("/_live").Handler(payment.LiveHandler())
+		rootMux.PathPrefix("/").Handler(m)
+
 		logrus.Infoln("Listening on port 8080...")
-		return http.ListenAndServe(":8080", mux)
+		return http.ListenAndServe(":8080", rootMux)
 	},
 }
 

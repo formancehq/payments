@@ -31,6 +31,14 @@ spec:
         - image: "{{ .Values.awsAccountId }}.{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           name: {{ .Values.serviceName }}
           imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /_live
+          readinessProbe:
+            httpGet:
+              path: /_health
+              port: 8080
           env:
             - name: DEBUG
               value: "true"

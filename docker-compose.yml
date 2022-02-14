@@ -53,6 +53,11 @@ services:
       OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
       MONGODB_URI: mongodb://mongodb:27017
       AUTH_URI: http://auth:8080
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
+      interval: 10s
+      timeout: 5s
+      start_period: 3s
   jaeger:
     image: jaegertracing/all-in-one:1.31
     ports:
