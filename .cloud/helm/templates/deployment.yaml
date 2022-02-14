@@ -50,6 +50,20 @@ spec:
               value: {{ .Values.global.mongodbDatabase }}
             - name: SERVICE_ENV
               value: {{.Values.env}}
+            - name: ENDPOINT_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: OTEL_TRACES
+              value: "true"
+            - name: OTEL_TRACES_EXPORTER
+              value: "otlp"
+            - name: OTEL_TRACES_EXPORTER_MODE
+              value: "grpc"
+            - name: OTEL_TRACES_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: OTEL_TRACES_EXPORTER_OTLP_ENDPOINT
+              value: $(ENDPOINT_IP):4317
           ports:
             - containerPort: 8080
               name: {{ .Values.serviceName }}
