@@ -7,12 +7,21 @@ import (
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 const (
@@ -48,6 +57,19 @@ var rootCmd = &cobra.Command{
 
 		db := client.Database(mongodbDatabase)
 
+		exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		tp := sdktrace.NewTracerProvider(
+			sdktrace.WithSampler(sdktrace.AlwaysSample()),
+			sdktrace.WithBatcher(exporter),
+			sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String("Payments"))),
+		)
+		otel.SetTracerProvider(tp)
+		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
 		s := payment.NewDefaultService(db)
 		var handler http.Handler
 		handler = payment.ConfigureAuthMiddleware(
@@ -56,8 +78,10 @@ var rootCmd = &cobra.Command{
 			payment.CheckOrganizationAccessMiddleware(),
 		)
 		handler = payment.Recovery(handler)
+		handler = otelhttp.NewHandler(handler, "Payments")
 		handler = cors.New(cors.Options{
-			AllowedOrigins:   []string{"*"},
+			AllowedOrigins: []string{"*"},
+
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
 			AllowCredentials: true,
 		}).Handler(handler)
