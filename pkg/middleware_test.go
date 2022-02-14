@@ -15,13 +15,12 @@ import (
 )
 
 func TestAuthMiddleware(t *testing.T) {
-	runApiWithMock(t, "AuthMiddleware", func(t *mtest.T, mux *mux.Router) {
+	runApiWithMock(t, func(t *mtest.T, mux *mux.Router) {
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer testServer.Close()
 
-		t.AddMockResponses(mtest.CreateSuccessResponse())
 		mux = payment.ConfigureAuthMiddleware(mux, middlewares.AuthMiddleware(testServer.URL))
 
 		rec := httptest.NewRecorder()
@@ -35,13 +34,12 @@ func TestAuthMiddleware(t *testing.T) {
 }
 
 func TestCheckOrganizationAccessMiddleware(t *testing.T) {
-	runApiWithMock(t, "Check organization middleware", func(t *mtest.T, mux *mux.Router) {
+	runApiWithMock(t, func(t *mtest.T, mux *mux.Router) {
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer testServer.Close()
 
-		t.AddMockResponses(mtest.CreateSuccessResponse())
 		mux = payment.ConfigureAuthMiddleware(mux, payment.CheckOrganizationAccessMiddleware())
 
 		token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, auth.ClaimStruct{

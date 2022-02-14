@@ -7,6 +7,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+const PaymentCollection = "Payment"
+
 type Sort struct {
 	Key  string
 	Desc bool
@@ -20,7 +22,7 @@ type ListQueryParameters struct {
 
 type Service interface {
 	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
-	UpdatePayment(ctx context.Context, organization string, id string, data Data) error
+	UpdatePayment(ctx context.Context, organization string, id string, data Data) (bool, error)
 	ListPayments(ctx context.Context, organization string, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
@@ -36,9 +38,10 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, param
 	if parameters.Limit != 0 {
 		opts = opts.SetLimit(parameters.Limit)
 	}
-	if parameters.Sort != nil {
+	if parameters.Sort != nil && len(parameters.Sort) > 0 {
+		sort := bson.D{}
 		for _, s := range parameters.Sort {
-			opts = opts.SetSort(bson.E{
+			sort = append(sort, bson.E{
 				Key: s.Key,
 				Value: func() int {
 					if s.Desc {
@@ -48,15 +51,16 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, param
 				}(),
 			})
 		}
+		opts = opts.SetSort(sort)
 	}
-	return d.database.Collection("Payment").Find(ctx, map[string]interface{}{
+	return d.database.Collection(PaymentCollection).Find(ctx, map[string]interface{}{
 		"organization": org,
 	}, opts)
 }
 
 func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data Data) (*Payment, error) {
 	payment := NewPayment(data)
-	_, err := d.database.Collection("Payment").InsertOne(ctx, struct {
+	_, err := d.database.Collection(PaymentCollection).InsertOne(ctx, struct {
 		Payment      `bson:",inline"`
 		Organization string `bson:"organization"`
 	}{
@@ -69,14 +73,20 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	return &payment, nil
 }
 
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data) error {
-	_, err := d.database.Collection("Payment").UpdateOne(ctx, map[string]interface{}{
+func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data) (bool, error) {
+	ret, err := d.database.Collection(PaymentCollection).UpdateOne(ctx, map[string]interface{}{
 		"_id":          id,
 		"organization": organization,
 	}, map[string]interface{}{
 		"$set": data,
 	})
-	return err
+	if err != nil {
+		return false, err
+	}
+	if ret.ModifiedCount == 0 {
+		return false, nil
+	}
+	return true, err
 }
 
 var _ Service = &defaultServiceImpl{}

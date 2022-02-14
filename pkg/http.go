@@ -121,9 +121,13 @@ func UpdatePaymentHandler(s Service) http.HandlerFunc {
 			return
 		}
 
-		err = s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data)
+		modified, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data)
 		if err != nil {
 			handleServerError(w, r, err)
+			return
+		}
+		if !modified {
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 

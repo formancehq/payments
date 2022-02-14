@@ -5,16 +5,13 @@ import (
 	payment "github.com/numary/payment/pkg"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"testing"
 	"time"
 )
 
 func TestCreatePayment(t *testing.T) {
-	runWithMock(t, "CreatePayment", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateSuccessResponse())
-
+	runWithMock(t, func(t *mtest.T) {
 		service := payment.NewDefaultService(t.DB)
 		_, err := service.CreatePayment(context.Background(), "test", payment.Data{
 			Provider:  "stripe",
@@ -33,11 +30,15 @@ func TestCreatePayment(t *testing.T) {
 }
 
 func TestUpdatePayment(t *testing.T) {
-	runWithMock(t, "UpdatePayment", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateSuccessResponse())
+	runWithMock(t, func(t *mtest.T) {
+		_, err := t.DB.Collection("Payment").InsertOne(context.Background(), map[string]interface{}{
+			"organization": "foo",
+			"_id":          "1",
+		})
+		assert.NoError(t, err)
 
 		service := payment.NewDefaultService(t.DB)
-		err := service.UpdatePayment(context.Background(), "test", uuid.New(), payment.Data{
+		_, err = service.UpdatePayment(context.Background(), "test", "1", payment.Data{
 			Provider:  "stripe",
 			Reference: "ref",
 			Scheme:    payment.SchemeSepa,
@@ -54,24 +55,21 @@ func TestUpdatePayment(t *testing.T) {
 }
 
 func TestListPayments(t *testing.T) {
-	runWithMock(t, "ListPayments", func(t *mtest.T) {
-		t.AddMockResponses(mtest.CreateCursorResponse(0, t.Name()+".Payment", mtest.FirstBatch, bson.D{
-			{
-				Key:   "_id",
-				Value: uuid.New(),
+	runWithMock(t, func(t *mtest.T) {
+		t.DB.Collection("Payment").InsertMany(context.Background(), []interface{}{
+			map[string]interface{}{
+				"_id":          uuid.New(),
+				"organization": "test",
 			},
-		}, bson.D{
-			{
-				Key:   "_id",
-				Value: uuid.New(),
+			map[string]interface{}{
+				"_id":          uuid.New(),
+				"organization": "test",
 			},
-		}, bson.D{
-			{
-				Key:   "_id",
-				Value: uuid.New(),
+			map[string]interface{}{
+				"_id":          uuid.New(),
+				"organization": "test",
 			},
-		}))
-
+		})
 		service := payment.NewDefaultService(t.DB)
 		cursor, err := service.ListPayments(context.Background(), "test", payment.ListQueryParameters{})
 		assert.NoError(t, err)

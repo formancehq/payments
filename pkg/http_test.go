@@ -2,12 +2,11 @@ package payment_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	payment "github.com/numary/payment/pkg"
-	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"net/http"
 	"net/http/httptest"
@@ -15,28 +14,32 @@ import (
 	"testing"
 )
 
-func runApiWithMock(t *testing.T, name string, fn func(t *mtest.T, mux *mux.Router)) {
-	runWithMock(t, name, func(t *mtest.T) {
+func runApiWithMock(t *testing.T, fn func(t *mtest.T, mux *mux.Router)) {
+	runWithMock(t, func(t *mtest.T) {
 		fn(t, payment.NewMux(payment.NewDefaultService(t.DB)))
 	})
 }
 
 func TestHttpServerCreatePayment(t *testing.T) {
-	runApiWithMock(t, "CreatePayment", func(t *mtest.T, m *mux.Router) {
-		t.AddMockResponses(mtest.CreateSuccessResponse())
-
+	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString(`{}`))
 
 		m.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+
+		// TODO: Check result
 	})
 }
 
 func TestHttpServerUpdatePayment(t *testing.T) {
-	runApiWithMock(t, "UpdatePayment", func(t *mtest.T, m *mux.Router) {
-		t.AddMockResponses(mtest.CreateSuccessResponse())
+	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
+		_, err := t.DB.Collection("Payment").InsertOne(context.Background(), map[string]interface{}{
+			"_id":          "1",
+			"organization": "foo",
+		})
+		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments/1", bytes.NewBufferString(`{}`))
@@ -48,18 +51,22 @@ func TestHttpServerUpdatePayment(t *testing.T) {
 }
 
 func TestHttpServerListPayments(t *testing.T) {
-	runApiWithMock(t, "UpdatePayment", func(t *mtest.T, m *mux.Router) {
-		t.AddMockResponses(mtest.CreateCursorResponse(0, t.Name()+".Payment", mtest.FirstBatch, bson.D{
-			{
-				Key:   "_id",
-				Value: uuid.New(),
+	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
+		_, err := t.DB.Collection("Payment").InsertMany(context.Background(), []interface{}{
+			map[string]interface{}{
+				"_id":          "1",
+				"organization": "foo",
 			},
-		}, bson.D{
-			{
-				Key:   "_id",
-				Value: uuid.New(),
+			map[string]interface{}{
+				"_id":          "2",
+				"organization": "foo",
 			},
-		}))
+			map[string]interface{}{
+				"_id":          "3",
+				"organization": "foo",
+			},
+		})
+		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodGet, "/organizations/foo/payments", nil)
