@@ -5,7 +5,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs-cloud/pkg/auth"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"net/http"
+	"runtime/debug"
 	"strings"
 )
 
@@ -60,4 +62,16 @@ func ConfigureAuthMiddleware(m *mux.Router, middlewares ...mux.MiddlewareFunc) *
 		panic(err)
 	}
 	return m
+}
+
+func Recovery(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if e := recover(); e != nil {
+				logrus.Debugln(e)
+				debug.PrintStack()
+			}
+		}()
+		h.ServeHTTP(w, r)
+	})
 }

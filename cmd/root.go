@@ -55,6 +55,7 @@ var rootCmd = &cobra.Command{
 			middlewares.AuthMiddleware(authUri),
 			payment.CheckOrganizationAccessMiddleware(),
 		)
+		handler = payment.Recovery(handler)
 		handler = cors.New(cors.Options{
 			AllowedOrigins:   []string{"*"},
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
