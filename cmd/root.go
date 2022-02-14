@@ -5,9 +5,11 @@ import (
 	"errors"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/payment/pkg"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -19,6 +21,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -66,6 +69,19 @@ var rootCmd = &cobra.Command{
 		}
 
 		client, err := mongo.NewClient(options.Client().ApplyURI(mongodbUri))
+		if err != nil {
+			return err
+		}
+
+		logrus.Infoln("Connection on database: " + mongodbUri)
+		err = client.Connect(context.Background())
+		if err != nil {
+			return err
+		}
+
+		logrus.Infoln("Ping database...")
+		ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+		err = client.Ping(ctx, readpref.Primary())
 		if err != nil {
 			return err
 		}
@@ -145,6 +161,7 @@ var rootCmd = &cobra.Command{
 			AllowCredentials: true,
 		}).Handler(handler)
 
+		logrus.Infoln("Listening on port 8080...")
 		return http.ListenAndServe(":8080", handler)
 	},
 }

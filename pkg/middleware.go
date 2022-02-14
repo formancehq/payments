@@ -68,7 +68,7 @@ func Recovery(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if e := recover(); e != nil {
-				logrus.Debugln(e)
+				logrus.Errorln(e)
 				debug.PrintStack()
 			}
 		}()
