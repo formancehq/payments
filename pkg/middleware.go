@@ -1,13 +1,12 @@
 package payment
 
 import (
+	"context"
 	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs-cloud/pkg/auth"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"net/http"
-	"runtime/debug"
 	"strings"
 )
 
@@ -64,14 +63,16 @@ func ConfigureAuthMiddleware(m *mux.Router, middlewares ...mux.MiddlewareFunc) *
 	return m
 }
 
-func Recovery(h http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			if e := recover(); e != nil {
-				logrus.Errorln(e)
-				debug.PrintStack()
-			}
-		}()
-		h.ServeHTTP(w, r)
-	})
+func Recovery(reporter func(ctx context.Context, e interface{})) func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			defer func() {
+				if e := recover(); e != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					reporter(r.Context(), e)
+				}
+			}()
+			h.ServeHTTP(w, r)
+		})
+	}
 }

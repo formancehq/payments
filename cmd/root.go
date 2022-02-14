@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/payment/pkg"
 	"github.com/sirupsen/logrus"
@@ -10,16 +11,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"os"
+	"runtime/debug"
 	"strings"
 	"time"
 
@@ -30,6 +34,7 @@ import (
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 
+	_ "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
@@ -144,25 +149,37 @@ var rootCmd = &cobra.Command{
 		}
 
 		s := payment.NewDefaultService(db)
-		var handler http.Handler
-		handler = payment.ConfigureAuthMiddleware(
-			payment.NewMux(s),
+
+		mux := payment.NewMux(s)
+		if viper.GetBool(otelTracesFlag) {
+			mux.Use(otelmux.Middleware("Payments"))
+		}
+		mux.Use(
+			payment.Recovery(func(ctx context.Context, e interface{}) {
+				if viper.GetBool(otelTracesFlag) {
+					switch err := e.(type) {
+					case error:
+						trace.SpanFromContext(ctx).RecordError(err, trace.WithStackTrace(true))
+						trace.SpanFromContext(ctx).SetStatus(codes.Error, err.Error())
+					default:
+						trace.SpanFromContext(ctx).RecordError(fmt.Errorf("%s", e), trace.WithStackTrace(true))
+						trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("%s", e))
+					}
+				} else {
+					logrus.Errorln(e)
+					debug.PrintStack()
+				}
+			}),
+			cors.New(cors.Options{
+				AllowedOrigins:   []string{"*"},
+				AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
+				AllowCredentials: true,
+			}).Handler,
 			middlewares.AuthMiddleware(authUri),
 			payment.CheckOrganizationAccessMiddleware(),
 		)
-		handler = payment.Recovery(handler)
-		if viper.GetBool(otelTracesFlag) {
-			handler = otelhttp.NewHandler(handler, "Payments")
-		}
-		handler = cors.New(cors.Options{
-			AllowedOrigins: []string{"*"},
-
-			AllowedMethods:   []string{http.MethodGet, http.MethodPost, http.MethodPut},
-			AllowCredentials: true,
-		}).Handler(handler)
-
 		logrus.Infoln("Listening on port 8080...")
-		return http.ListenAndServe(":8080", handler)
+		return http.ListenAndServe(":8080", mux)
 	},
 }
 
