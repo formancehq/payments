@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/payment/pkg"
@@ -9,10 +10,12 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -20,14 +23,26 @@ import (
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
 
 const (
-	mongodbUriFlag      = "mongodb-uri"
-	mongodbDatabaseFlag = "mongodb-database"
-	authUriFlag         = "auth-uri"
+	mongodbUriFlag                       = "mongodb-uri"
+	mongodbDatabaseFlag                  = "mongodb-database"
+	authUriFlag                          = "auth-uri"
+	otelTracesFlag                       = "otel-traces"
+	otelTracesExporterFlag               = "otel-traces-exporter"
+	otelTracesExporterJaegerEndpointFlag = "otel-traces-exporter-jaeger-endpoint"
+	otelTracesExporterJaegerUserFlag     = "otel-traces-exporter-jaeger-user"
+	otelTracesExporterJaegerPasswordFlag = "otel-traces-exporter-jaeger-password"
+	otelTracesExporterOTLPModeFlag       = "otel-traces-exporter-otlp-mode"
+	otelTracesExporterOTLPEndpointFlag   = "otel-traces-exporter-otlp-endpoint"
+	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
 )
 
 var rootCmd = &cobra.Command{
@@ -57,18 +72,60 @@ var rootCmd = &cobra.Command{
 
 		db := client.Database(mongodbDatabase)
 
-		exporter, err := stdouttrace.New(stdouttrace.WithPrettyPrint())
-		if err != nil {
-			log.Fatal(err)
-		}
+		if viper.GetBool(otelTracesFlag) {
+			var exporter sdktrace.SpanExporter
+			switch viper.GetString(otelTracesExporterFlag) {
+			case "stdout":
+				exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
+			case "jaeger":
+				options := make([]jaeger.CollectorEndpointOption, 0)
+				if ep := viper.GetString(otelTracesExporterJaegerEndpointFlag); ep != "" {
+					options = append(options, jaeger.WithEndpoint(ep))
+				}
+				if username := viper.GetString(otelTracesExporterJaegerUserFlag); username != "" {
+					options = append(options, jaeger.WithUsername(username))
+				}
+				if password := viper.GetString(otelTracesExporterJaegerPasswordFlag); password != "" {
+					options = append(options, jaeger.WithPassword(password))
+				}
+				exporter, err = jaeger.New(jaeger.WithCollectorEndpoint(options...))
+			case "otlp":
+				var client otlptrace.Client
+				switch viper.GetString(otelTracesExporterOTLPModeFlag) {
+				case "http":
+					options := make([]otlptracehttp.Option, 0)
+					if insecure := viper.GetBool(otelTracesExporterOTLPInsecureFlag); insecure {
+						options = append(options, otlptracehttp.WithInsecure())
+					}
+					if endpoint := viper.GetString(otelTracesExporterOTLPEndpointFlag); endpoint != "" {
+						options = append(options, otlptracehttp.WithEndpoint(endpoint))
+					}
+					client = otlptracehttp.NewClient(options...)
+				case "grpc":
+					options := make([]otlptracegrpc.Option, 0)
+					if insecure := viper.GetBool(otelTracesExporterOTLPInsecureFlag); insecure {
+						options = append(options, otlptracegrpc.WithInsecure())
+					}
+					if endpoint := viper.GetString(otelTracesExporterOTLPEndpointFlag); endpoint != "" {
+						options = append(options, otlptracegrpc.WithEndpoint(endpoint))
+					}
+					client = otlptracegrpc.NewClient()
+				}
+				exporter, err = otlptrace.New(context.Background(), client)
+			}
+			if err != nil {
+				return err
+			}
 
-		tp := sdktrace.NewTracerProvider(
-			sdktrace.WithSampler(sdktrace.AlwaysSample()),
-			sdktrace.WithBatcher(exporter),
-			sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String("Payments"))),
-		)
-		otel.SetTracerProvider(tp)
-		otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+			tp := sdktrace.NewTracerProvider(
+				sdktrace.WithSampler(sdktrace.AlwaysSample()),
+				sdktrace.WithBatcher(exporter),
+				sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String("Payments"))),
+			)
+			otel.SetTracerProvider(tp)
+			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+			defer tp.Shutdown(context.Background())
+		}
 
 		s := payment.NewDefaultService(db)
 		var handler http.Handler
@@ -78,7 +135,9 @@ var rootCmd = &cobra.Command{
 			payment.CheckOrganizationAccessMiddleware(),
 		)
 		handler = payment.Recovery(handler)
-		handler = otelhttp.NewHandler(handler, "Payments")
+		if viper.GetBool(otelTracesFlag) {
+			handler = otelhttp.NewHandler(handler, "Payments")
+		}
 		handler = cors.New(cors.Options{
 			AllowedOrigins: []string{"*"},
 
@@ -102,6 +161,14 @@ func init() {
 	rootCmd.Flags().String(mongodbUriFlag, "mongodb://localhost:27017", "MongoDB address")
 	rootCmd.Flags().String(mongodbDatabaseFlag, "payments", "MongoDB database name")
 	rootCmd.Flags().String(authUriFlag, "auth-uri", "Auth uri")
+	rootCmd.Flags().Bool(otelTracesFlag, false, "Enable OpenTelemetry traces support")
+	rootCmd.Flags().String(otelTracesExporterFlag, "stdout", "OpenTelemetry traces exporter")
+	rootCmd.Flags().String(otelTracesExporterJaegerEndpointFlag, "", "OpenTelemetry traces Jaeger exporter endpoint")
+	rootCmd.Flags().String(otelTracesExporterJaegerUserFlag, "", "OpenTelemetry traces Jaeger exporter user")
+	rootCmd.Flags().String(otelTracesExporterJaegerPasswordFlag, "", "OpenTelemetry traces Jaeger exporter password")
+	rootCmd.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
+	rootCmd.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
+	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
