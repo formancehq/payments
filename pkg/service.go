@@ -2,34 +2,56 @@ package payment
 
 import (
 	"context"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+type Sort struct {
+	Key  string
+	Desc bool
+}
+
+type ListQueryParameters struct {
+	Limit int64
+	Skip  int64
+	Sort  []Sort
+}
 
 type Service interface {
 	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
 	UpdatePayment(ctx context.Context, organization string, id string, data Data) error
-	ListPayments(ctx context.Context, organization string) ([]*Payment, error)
+	ListPayments(ctx context.Context, organization string, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
 type defaultServiceImpl struct {
 	database *mongo.Database
 }
 
-func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string) ([]*Payment, error) {
-	cursor, err := d.database.Collection("Payment").Find(ctx, map[string]interface{}{
+func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, parameters ListQueryParameters) (*mongo.Cursor, error) {
+	opts := options.Find()
+	if parameters.Skip != 0 {
+		opts = opts.SetSkip(parameters.Skip)
+	}
+	if parameters.Limit != 0 {
+		opts = opts.SetLimit(parameters.Limit)
+	}
+	if parameters.Sort != nil {
+		for _, s := range parameters.Sort {
+			opts = opts.SetSort(bson.E{
+				Key: s.Key,
+				Value: func() int {
+					if s.Desc {
+						return -1
+					}
+					return 1
+				}(),
+			})
+		}
+	}
+	return d.database.Collection("Payment").Find(ctx, map[string]interface{}{
 		"organization": org,
-	})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	results := make([]*Payment, 0)
-	err = cursor.All(ctx, &results)
-	if err != nil {
-		return nil, err
-	}
-	return results, nil
+	}, opts)
 }
 
 func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data Data) (*Payment, error) {

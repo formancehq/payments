@@ -73,8 +73,8 @@ func TestListPayments(t *testing.T) {
 		}))
 
 		service := payment.NewDefaultService(t.DB)
-		payments, err := service.ListPayments(context.Background(), "test")
+		cursor, err := service.ListPayments(context.Background(), "test", payment.ListQueryParameters{})
 		assert.NoError(t, err)
-		assert.Len(t, payments, 3)
+		assert.Equal(t, cursor.RemainingBatchLength(), 3)
 	})
 }
