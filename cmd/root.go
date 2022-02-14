@@ -34,10 +34,6 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-
-	_ "go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	_ "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 )
 
 const (
@@ -52,12 +48,33 @@ const (
 	otelTracesExporterOTLPModeFlag       = "otel-traces-exporter-otlp-mode"
 	otelTracesExporterOTLPEndpointFlag   = "otel-traces-exporter-otlp-endpoint"
 	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
+	debugFlag                            = "debug"
+	envFlag                              = "env"
+
+	serviceName = "Payments"
+)
+
+var (
+	Version = "latest"
 )
 
 var rootCmd = &cobra.Command{
 	Use:   "payment",
 	Short: "Payment api",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if viper.GetBool(debugFlag) {
+			logrus.SetLevel(logrus.DebugLevel)
+		}
+
+		if viper.GetBool(otelTracesFlag) {
+			logrus.SetFormatter(payment.DatadogAttributesAppender(
+				&logrus.JSONFormatter{},
+				serviceName,
+				viper.GetString(envFlag),
+				Version),
+			)
+		}
 
 		mongodbUri := viper.GetString(mongodbUriFlag)
 		if mongodbUri == "" {
@@ -142,7 +159,11 @@ var rootCmd = &cobra.Command{
 			tp := sdktrace.NewTracerProvider(
 				sdktrace.WithSampler(sdktrace.AlwaysSample()),
 				sdktrace.WithBatcher(exporter),
-				sdktrace.WithResource(resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String("Payments"))),
+				sdktrace.WithResource(resource.NewWithAttributes(
+					semconv.SchemaURL,
+					semconv.ServiceNameKey.String(serviceName),
+					semconv.ServiceVersionKey.String(Version),
+				)),
 			)
 			otel.SetTracerProvider(tp)
 			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
@@ -153,10 +174,8 @@ var rootCmd = &cobra.Command{
 
 		m := payment.NewMux(s)
 		if viper.GetBool(otelTracesFlag) {
-			m.Use(otelmux.Middleware("Payments"))
+			m.Use(otelmux.Middleware(serviceName))
 		}
-		// TODO: Logging
-		// TODO: Chart health endpoint
 		// TODO: Pagination
 		m.Use(
 			middlewares.AuthMiddleware(authUri),
@@ -204,6 +223,7 @@ func Execute() {
 
 func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().Bool(debugFlag, false, "Debug mode")
 	rootCmd.Flags().String(mongodbUriFlag, "mongodb://localhost:27017", "MongoDB address")
 	rootCmd.Flags().String(mongodbDatabaseFlag, "payments", "MongoDB database name")
 	rootCmd.Flags().String(authUriFlag, "auth-uri", "Auth uri")
@@ -215,6 +235,7 @@ func init() {
 	rootCmd.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
 	rootCmd.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
 	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
+	rootCmd.Flags().String(envFlag, "local", "Environment")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
