@@ -26,11 +26,15 @@ spec:
       labels:
         app: {{ .Values.serviceName }}
     spec:
-      serviceAccountName: {{ .Values.serviceName }}-cluster-service-account
+      serviceAccountName: {{ .Values.serviceName }}-cluster-secret-manager
       containers:
         - image: "{{ .Values.awsAccountId }}.{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           name: {{ .Values.serviceName }}
           imagePullPolicy: Always
+          volumeMounts:
+            - name: secrets-store-inline
+              mountPath: '/mnt/secrets'
+              readOnly: true
           livenessProbe:
             httpGet:
               port: 8080
@@ -45,7 +49,14 @@ spec:
             - name: AUTH_URI
               value: {{ .Values.auth }}
             - name: MONGODB_URI
+              {{ if not .Values.resource.ephemeral}}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.serviceName }}-service-secrets
+                  key: NUMARY_MONGODB_CONN_STRING
+              {{ else }}
               value: {{ .Values.mongodbUri }}
+              {{ end }}
             - name: MONGODB_DATABASE
               value: {{ .Values.mongodbDatabase }}
             - name: SERVICE_ENV
@@ -78,3 +89,10 @@ spec:
             requests:
               cpu: 500m
               memory: 512Mi
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: {{ .Values.serviceName }}-secret-provider-class
