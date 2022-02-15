@@ -18,6 +18,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
@@ -174,6 +175,7 @@ var rootCmd = &cobra.Command{
 					semconv.SchemaURL,
 					semconv.ServiceNameKey.String(serviceName),
 					semconv.ServiceVersionKey.String(Version),
+					attribute.String("deployment.environment", viper.GetString(envFlag)),
 				)),
 			)
 			otel.SetTracerProvider(tp)
