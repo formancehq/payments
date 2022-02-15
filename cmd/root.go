@@ -17,6 +17,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -36,6 +37,7 @@ import (
 	"github.com/spf13/cobra"
 
 	_ "github.com/opensearch-project/opensearch-go"
+	_ "go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -98,7 +100,7 @@ var rootCmd = &cobra.Command{
 			return errors.New("missing auth uri")
 		}
 
-		client, err := mongo.NewClient(options.Client().ApplyURI(mongodbUri))
+		client, err := mongo.NewClient(options.Client().ApplyURI(mongodbUri).SetMonitor(otelmongo.NewMonitor()))
 		if err != nil {
 			return err
 		}
