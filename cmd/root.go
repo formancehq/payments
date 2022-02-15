@@ -122,7 +122,7 @@ var rootCmd = &cobra.Command{
 
 		pubSub := gochannel.NewGoChannel(
 			gochannel.Config{},
-			watermill.NewStdLogger(false, false),
+			watermill.NewStdLogger(viper.GetBool(debugFlag), viper.GetBool(debugFlag)),
 		)
 
 		if viper.GetBool(otelTracesFlag) {
