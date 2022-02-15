@@ -200,7 +200,9 @@ var rootCmd = &cobra.Command{
 		}
 		m.Use(
 			middlewares.AuthMiddleware(authUri),
-			payment.CheckOrganizationAccessMiddleware(),
+			middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
+				return mux.Vars(r)[name]
+			}),
 		)
 
 		rootMux := mux.NewRouter()

@@ -34,13 +34,15 @@ func TestAuthMiddleware(t *testing.T) {
 }
 
 func TestCheckOrganizationAccessMiddleware(t *testing.T) {
-	runApiWithMock(t, func(t *mtest.T, mux *mux.Router) {
+	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		testServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 		}))
 		defer testServer.Close()
 
-		mux = payment.ConfigureAuthMiddleware(mux, payment.CheckOrganizationAccessMiddleware())
+		m = payment.ConfigureAuthMiddleware(m, middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
+			return mux.Vars(r)[name]
+		}))
 
 		token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, auth.ClaimStruct{
 			Organizations: []auth.ClaimOrganization{{Name: "foo"}},
@@ -51,7 +53,7 @@ func TestCheckOrganizationAccessMiddleware(t *testing.T) {
 		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString("{}"))
 		req.Header.Set("Authorization", "Bearer "+token)
 
-		mux.ServeHTTP(rec, req)
+		m.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusCreated, rec.Result().StatusCode)
 	})
