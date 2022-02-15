@@ -159,7 +159,7 @@ var rootCmd = &cobra.Command{
 					if endpoint := viper.GetString(otelTracesExporterOTLPEndpointFlag); endpoint != "" {
 						options = append(options, otlptracegrpc.WithEndpoint(endpoint))
 					}
-					client = otlptracegrpc.NewClient()
+					client = otlptracegrpc.NewClient(options...)
 				}
 				exporter, err = otlptrace.New(context.Background(), client)
 			}
