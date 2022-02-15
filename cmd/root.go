@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/payment/pkg"
+	"github.com/opensearch-project/opensearch-go"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -31,6 +34,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	_ "github.com/opensearch-project/opensearch-go"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -50,6 +54,8 @@ const (
 	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
 	debugFlag                            = "debug"
 	envFlag                              = "env"
+	esIndexFlag                          = "es-index"
+	esAddressFlag                        = "es-address"
 
 	serviceName = "Payments"
 )
@@ -111,6 +117,11 @@ var rootCmd = &cobra.Command{
 
 		db := client.Database(mongodbDatabase)
 
+		pubSub := gochannel.NewGoChannel(
+			gochannel.Config{},
+			watermill.NewStdLogger(false, false),
+		)
+
 		if viper.GetBool(otelTracesFlag) {
 			var exporter sdktrace.SpanExporter
 			switch viper.GetString(otelTracesExporterFlag) {
@@ -170,13 +181,19 @@ var rootCmd = &cobra.Command{
 			defer tp.Shutdown(context.Background())
 		}
 
-		s := payment.NewDefaultService(db)
+		openSearchClient, err := opensearch.NewClient(opensearch.Config{
+			Addresses: viper.GetStringSlice(esAddressFlag),
+		})
+		if err != nil {
+			return err
+		}
+
+		s := payment.NewDefaultService(db, payment.WithPublisher(pubSub))
 
 		m := payment.NewMux(s)
 		if viper.GetBool(otelTracesFlag) {
 			m.Use(otelmux.Middleware(serviceName))
 		}
-		// TODO: Pagination
 		m.Use(
 			middlewares.AuthMiddleware(authUri),
 			payment.CheckOrganizationAccessMiddleware(),
@@ -209,6 +226,9 @@ var rootCmd = &cobra.Command{
 		rootMux.Path("/_live").Handler(payment.LiveHandler())
 		rootMux.PathPrefix("/").Handler(m)
 
+		logrus.Infoln("Start listening new events...")
+		go payment.ReplicatePaymentOnES(context.Background(), pubSub, viper.GetString(esIndexFlag), openSearchClient)
+
 		logrus.Infoln("Listening on port 8080...")
 		return http.ListenAndServe(":8080", rootMux)
 	},
@@ -235,6 +255,8 @@ func init() {
 	rootCmd.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
 	rootCmd.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
 	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
+	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
+	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))

@@ -2,6 +2,8 @@ package payment
 
 import (
 	"context"
+	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -27,7 +29,8 @@ type Service interface {
 }
 
 type defaultServiceImpl struct {
-	database *mongo.Database
+	database  *mongo.Database
+	publisher message.Publisher
 }
 
 func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, parameters ListQueryParameters) (*mongo.Cursor, error) {
@@ -70,6 +73,15 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	if err != nil {
 		return nil, err
 	}
+
+	if d.publisher != nil {
+		err = d.publisher.Publish(TopicCreatedPayment, newMessage(CreatedPaymentEvent{
+			Payment: payment,
+		}))
+		if err != nil {
+			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
+		}
+	}
 	return &payment, nil
 }
 
@@ -86,13 +98,42 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 	if ret.ModifiedCount == 0 {
 		return false, nil
 	}
+	if d.publisher != nil {
+		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(UpdatedPaymentEvent{
+			ID:   id,
+			Data: data,
+		}))
+		if err != nil {
+			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
+		}
+	}
 	return true, err
 }
 
 var _ Service = &defaultServiceImpl{}
 
-func NewDefaultService(database *mongo.Database) *defaultServiceImpl {
-	return &defaultServiceImpl{
+type serviceOption interface {
+	apply(impl *defaultServiceImpl)
+}
+type serviceOptionFn func(impl *defaultServiceImpl)
+
+func (fn serviceOptionFn) apply(impl *defaultServiceImpl) {
+	fn(impl)
+}
+
+func WithPublisher(publisher message.Publisher) serviceOptionFn {
+	return func(impl *defaultServiceImpl) {
+		impl.publisher = publisher
+	}
+}
+
+func NewDefaultService(database *mongo.Database, opts ...serviceOption) *defaultServiceImpl {
+	ret := &defaultServiceImpl{
 		database: database,
 	}
+	for _, opt := range opts {
+		opt.apply(ret)
+	}
+
+	return ret
 }

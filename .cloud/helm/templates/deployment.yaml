@@ -43,11 +43,11 @@ spec:
             - name: DEBUG
               value: "true"
             - name: AUTH_URI
-              value: {{ .Values.global.auth }}
+              value: {{ .Values.auth }}
             - name: MONGODB_URI
-              value: {{ .Values.global.mongodbUri }}
+              value: {{ .Values.mongodbUri }}
             - name: MONGODB_DATABASE
-              value: {{ .Values.global.mongodbDatabase }}
+              value: {{ .Values.mongodbDatabase }}
             - name: SERVICE_ENV
               value: {{.Values.env}}
             - name: ENDPOINT_IP
@@ -64,6 +64,10 @@ spec:
               value: "true"
             - name: OTEL_TRACES_EXPORTER_OTLP_ENDPOINT
               value: $(ENDPOINT_IP):4317
+            - name: ES_ADDRESS
+              value: {{ .Values.elasticSearch.url }}
+            - name: ES_INDEX
+              value: {{ .Values.elasticSearch.index }}
           ports:
             - containerPort: 8080
               name: {{ .Values.serviceName }}

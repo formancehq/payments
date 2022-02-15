@@ -16,8 +16,10 @@ resource:
 
 ephemeralName: ""
 
-global:
-  exposeUrl: ""
-  auth: http://auth
-  mongodbUri: "mongodb://dev-maxence-payments-mongodb:27017"
-  mongodbDatabase: "payments"
+elasticSearch:
+  url: http://opensearch-cluster-master:9200
+  index: ledger
+exposeUrl: ""
+auth: http://auth
+mongodbUri: "mongodb://dev-maxence-payments-mongodb:27017"
+mongodbDatabase: "payments"

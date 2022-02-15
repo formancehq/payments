@@ -16,8 +16,11 @@ resource:
 
 ephemeralName: ""
 
-global:
-  exposeUrl: "api.int.staging.numary.cloud"
-  auth: https://api.staging.numary.cloud/auth
-  mongodbUri: "mongodb://mongodb:27017"
-  mongodbDatabase: "payments"
+elasticSearch:
+  url: https://vpc-app-staging-search-os-thbshekkqrlx3oe3bf2ncoaxye.eu-west-1.es.amazonaws.com
+  index: ledger
+
+exposeUrl: "api.int.staging.numary.cloud"
+auth: https://api.staging.numary.cloud/auth
+mongodbUri: "mongodb://mongodb:27017"
+mongodbDatabase: "payments"

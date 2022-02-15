@@ -34,10 +34,10 @@ spec:
     - web
     - websecure
   tls:
-    secretName: "{{ .Values.global.exposeUrl }}"
+    secretName: "{{ .Values.exposeUrl }}"
   routes:
     - kind: Rule
-      match: Host(`{{ .Values.global.exposeUrl}}`) && PathPrefix(`/payments`)
+      match: Host(`{{ .Values.exposeUrl}}`) && PathPrefix(`/payments`)
       middlewares:
         - name: redirect-https
           namespace: ingress
