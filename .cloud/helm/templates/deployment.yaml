@@ -59,7 +59,7 @@ spec:
               {{ end }}
             - name: MONGODB_DATABASE
               value: {{ .Values.mongodbDatabase }}
-            - name: SERVICE_ENV
+            - name: ENV
               value: {{.Values.env}}
             - name: ENDPOINT_IP
               valueFrom:
