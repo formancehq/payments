@@ -24,7 +24,7 @@ type ListQueryParameters struct {
 
 type Service interface {
 	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
-	UpdatePayment(ctx context.Context, organization string, id string, data Data) (bool, error)
+	UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (bool, bool, error)
 	ListPayments(ctx context.Context, organization string, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
@@ -85,18 +85,22 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	return &payment, nil
 }
 
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data) (bool, error) {
+func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (bool, bool, error) {
+	opts := options.Update()
+	if upsert {
+		opts = opts.SetUpsert(true)
+	}
 	ret, err := d.database.Collection(PaymentCollection).UpdateOne(ctx, map[string]interface{}{
 		"_id":          id,
 		"organization": organization,
 	}, map[string]interface{}{
 		"$set": data,
-	})
+	}, opts)
 	if err != nil {
-		return false, err
+		return false, false, err
 	}
-	if ret.ModifiedCount == 0 {
-		return false, nil
+	if ret.ModifiedCount == 0 && ret.UpsertedCount == 0 {
+		return false, false, nil
 	}
 	if d.publisher != nil {
 		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(UpdatedPaymentEvent{
@@ -107,7 +111,7 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
 		}
 	}
-	return true, err
+	return ret.ModifiedCount > 0, ret.UpsertedCount > 0, err
 }
 
 var _ Service = &defaultServiceImpl{}

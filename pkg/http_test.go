@@ -50,6 +50,18 @@ func TestHttpServerUpdatePayment(t *testing.T) {
 	})
 }
 
+func TestHttpServerUpsertPayment(t *testing.T) {
+	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
+
+		rec := httptest.NewRecorder()
+		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments/1?upsert=true", bytes.NewBufferString(`{}`))
+
+		m.ServeHTTP(rec, req)
+
+		assert.Equal(t, http.StatusCreated, rec.Result().StatusCode)
+	})
+}
+
 func TestHttpServerListPayments(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		_, err := t.DB.Collection("Payment").InsertMany(context.Background(), []interface{}{

@@ -115,6 +115,23 @@ func CreatePaymentHandler(s Service) http.HandlerFunc {
 	}
 }
 
+func Bool(r *http.Request, key string) (bool, bool) {
+	vv := r.URL.Query().Get(key)
+	if vv == "" {
+		return false, false
+	}
+	vv = strings.ToUpper(vv)
+	return vv == "YES" || vv == "TRUE" || vv == "1", true
+}
+
+func BoolWithDefault(r *http.Request, key string, def bool) bool {
+	v, ok := Bool(r, key)
+	if !ok {
+		return def
+	}
+	return v
+}
+
 func UpdatePaymentHandler(s Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := Data{}
@@ -124,17 +141,26 @@ func UpdatePaymentHandler(s Service) http.HandlerFunc {
 			return
 		}
 
-		modified, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data)
+		upsert := BoolWithDefault(r, "upsert", false)
+		modified, upserted, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data, upsert)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
+		}
+		switch {
+		case !modified && !upserted:
+			w.WriteHeader(http.StatusNotFound)
+			return
+		case upserted:
+			w.Header().Set("Location", "./"+mux.Vars(r)["paymentId"])
+			w.WriteHeader(http.StatusCreated)
+		case modified:
+			w.WriteHeader(http.StatusOK)
 		}
 		if !modified {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-
-		w.WriteHeader(http.StatusOK)
 	}
 }
 

@@ -38,7 +38,7 @@ func TestUpdatePayment(t *testing.T) {
 		assert.NoError(t, err)
 
 		service := payment.NewDefaultService(t.DB)
-		_, err = service.UpdatePayment(context.Background(), "test", "1", payment.Data{
+		modified, created, err := service.UpdatePayment(context.Background(), "foo", "1", payment.Data{
 			Provider:  "stripe",
 			Reference: "ref",
 			Scheme:    payment.SchemeSepa,
@@ -49,8 +49,31 @@ func TestUpdatePayment(t *testing.T) {
 				Asset:  "USD",
 			},
 			Date: time.Now(),
-		})
+		}, false)
 		assert.NoError(t, err)
+		assert.True(t, modified)
+		assert.False(t, created)
+	})
+}
+
+func TestUpsertPayment(t *testing.T) {
+	runWithMock(t, func(t *mtest.T) {
+		service := payment.NewDefaultService(t.DB)
+		modified, created, err := service.UpdatePayment(context.Background(), "test", "1", payment.Data{
+			Provider:  "stripe",
+			Reference: "ref",
+			Scheme:    payment.SchemeSepa,
+			Type:      payment.TypePayIn,
+			Status:    "accepted",
+			Value: payment.Value{
+				Amount: 100,
+				Asset:  "USD",
+			},
+			Date: time.Now(),
+		}, true)
+		assert.NoError(t, err)
+		assert.True(t, created)
+		assert.False(t, modified)
 	})
 }
 
