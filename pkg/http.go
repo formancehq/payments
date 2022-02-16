@@ -39,6 +39,9 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 				handleClientError(w, r, err)
 				return
 			}
+			if parameters.Limit > maxPerPage {
+				parameters.Limit = maxPerPage
+			}
 		}
 		if sorts := r.URL.Query()["sort"]; sorts != nil {
 			for _, s := range sorts {
