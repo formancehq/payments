@@ -3,29 +3,27 @@ info:
   title: Sample API
   version: 0.1.9
 paths:
-  /payments:
-    post:
-      summary: Returns a list of payments.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentData'
-      responses:
-        '200': # status code
-          description: A payment object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
+  /organizations/{organizationId}/payments/{paymentId}:
     put:
       summary: Update a payment (can upsert)
+      operationId: updatePayment
+      tags:
+        - payments
       parameters:
         - name: upsert
           in: query
           schema:
             type: boolean
+        - in: path
+          name: organizationId
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: paymentId
+          schema:
+            type: string
+          required: true
       requestBody:
         required: true
         content:
@@ -37,13 +35,44 @@ paths:
           description: Document not found
         '201':
           description: Document was created
-        '304':
-          description: Document was found but no update was performed
-        '200': # status code
-          description: The modified payment object
-    get:
+        '204':
+          description: Document was updated
+  /organizations/{organizationId}/payments:
+    post:
+      operationId: createPayment
+      tags:
+        - payments
       summary: Returns a list of payments.
       parameters:
+        - in: path
+          name: organizationId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentData'
+      responses:
+        '201':
+          description: A payment object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+    get:
+      summary: Returns a list of payments.
+      operationId: listPayments
+      tags:
+        - payments
+      parameters:
+        - in: path
+          name: organizationId
+          schema:
+            type: string
+          required: true
         - name: limit
           in: query
           schema:
@@ -74,7 +103,8 @@ components:
         - $ref: '#/components/schemas/PaymentData'
         - type: object
           properties:
-            id: string
+            id:
+              type: string
           required:
             - id
     PaymentData:

@@ -46,7 +46,7 @@ func TestHttpServerUpdatePayment(t *testing.T) {
 
 		m.ServeHTTP(rec, req)
 
-		assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
+		assert.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
 	})
 }
 

@@ -168,19 +168,23 @@ func UpdatePaymentHandler(s Service) http.HandlerFunc {
 		switch {
 		case !ret.Updated && !ret.Created && !ret.Found:
 			w.WriteHeader(http.StatusNotFound)
-		case !ret.Updated && !ret.Created && ret.Found:
-			w.WriteHeader(http.StatusNotModified)
 		case ret.Created:
 			w.Header().Set("Location", "./"+mux.Vars(r)["paymentId"])
 			w.WriteHeader(http.StatusCreated)
-		case ret.Updated:
-			w.WriteHeader(http.StatusOK)
+		default:
+			w.WriteHeader(http.StatusNoContent)
 		}
 	}
 }
 
 func NewMux(service Service) *mux.Router {
 	router := mux.NewRouter()
+	router.Use(func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			h.ServeHTTP(w, r)
+		})
+	})
 	organizationRouter := router.PathPrefix("/organizations/{organizationId}").Subrouter()
 	organizationRouter.Path("/payments").Methods(http.MethodGet).Handler(ListPaymentsHandler(service))
 	organizationRouter.Path("/payments").Methods(http.MethodPost).Handler(CreatePaymentHandler(service))

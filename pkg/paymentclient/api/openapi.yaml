@@ -1,0 +1,179 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  version: 0.1.9
+servers:
+- url: /
+paths:
+  /organizations/{organizationId}/payments/{paymentId}:
+    put:
+      operationId: updatePayment
+      parameters:
+      - explode: true
+        in: query
+        name: upsert
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - explode: false
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: false
+        in: path
+        name: paymentId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentData'
+        required: true
+      responses:
+        "404":
+          description: Document not found
+        "201":
+          description: Document was created
+        "204":
+          description: Document was updated
+      summary: Update a payment (can upsert)
+      tags:
+      - payments
+  /organizations/{organizationId}/payments:
+    get:
+      operationId: listPayments
+      parameters:
+      - explode: false
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: string
+        style: simple
+      - explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: skip
+        required: false
+        schema:
+          type: integer
+        style: form
+      - explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          items:
+            type: string
+          type: array
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/components/schemas/Payment'
+                type: array
+          description: A JSON array of payments
+      summary: Returns a list of payments.
+      tags:
+      - payments
+    post:
+      operationId: createPayment
+      parameters:
+      - explode: false
+        in: path
+        name: organizationId
+        required: true
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentData'
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+          description: A payment object
+      summary: Returns a list of payments.
+      tags:
+      - payments
+components:
+  schemas:
+    Payment:
+      allOf:
+      - $ref: '#/components/schemas/PaymentData'
+      - $ref: '#/components/schemas/Payment_allOf'
+    PaymentData:
+      example:
+        reference: reference
+        date: date
+        scheme: scheme
+        provider: provider
+        raw: '{}'
+        value:
+          amount: 0
+          asset: asset
+        status: status
+      properties:
+        provider:
+          type: string
+        reference:
+          type: string
+        scheme:
+          type: string
+        status:
+          type: string
+        value:
+          $ref: '#/components/schemas/PaymentData_value'
+        date:
+          format: datetime
+          type: string
+        raw:
+          type: object
+      required:
+      - date
+      - provider
+      - status
+      - value
+      type: object
+    Payment_allOf:
+      properties:
+        id:
+          type: string
+      required:
+      - id
+      type: object
+    PaymentData_value:
+      example:
+        amount: 0
+        asset: asset
+      properties:
+        amount:
+          type: integer
+        asset:
+          type: string
+      required:
+      - amount
+      - asset
+      type: object
