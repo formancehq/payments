@@ -22,9 +22,15 @@ type ListQueryParameters struct {
 	Sort  []Sort
 }
 
+type UpdateResult struct {
+	Found   bool
+	Created bool
+	Updated bool
+}
+
 type Service interface {
 	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
-	UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (bool, bool, error)
+	UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (*UpdateResult, error)
 	ListPayments(ctx context.Context, organization string, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
@@ -85,7 +91,7 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	return &payment, nil
 }
 
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (bool, bool, error) {
+func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (*UpdateResult, error) {
 	opts := options.Update()
 	if upsert {
 		opts = opts.SetUpsert(true)
@@ -97,10 +103,10 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 		"$set": data,
 	}, opts)
 	if err != nil {
-		return false, false, err
+		return nil, err
 	}
-	if ret.ModifiedCount == 0 && ret.UpsertedCount == 0 {
-		return false, false, nil
+	if ret.ModifiedCount == 0 && ret.UpsertedCount == 0 && ret.MatchedCount == 0 {
+		return &UpdateResult{}, nil
 	}
 	if d.publisher != nil {
 		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(UpdatedPaymentEvent{
@@ -111,7 +117,11 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
 		}
 	}
-	return ret.ModifiedCount > 0, ret.UpsertedCount > 0, err
+	return &UpdateResult{
+		Found:   ret.MatchedCount > 0,
+		Created: ret.UpsertedCount > 0,
+		Updated: ret.ModifiedCount > 0,
+	}, err
 }
 
 var _ Service = &defaultServiceImpl{}

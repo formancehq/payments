@@ -9,6 +9,45 @@ import (
 	"strings"
 )
 
+func Bool(r *http.Request, key string) (bool, bool) {
+	vv := r.URL.Query().Get(key)
+	if vv == "" {
+		return false, false
+	}
+	vv = strings.ToUpper(vv)
+	return vv == "YES" || vv == "TRUE" || vv == "1", true
+}
+
+func BoolWithDefault(r *http.Request, key string, def bool) bool {
+	v, ok := Bool(r, key)
+	if !ok {
+		return def
+	}
+	return v
+}
+
+func Integer(r *http.Request, key string) (int64, bool, error) {
+	if value := r.URL.Query().Get(key); value != "" {
+		ret, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return 0, false, err
+		}
+		return ret, true, nil
+	}
+	return 0, false, nil
+}
+
+func IntegerWithDefault(r *http.Request, key string, def int64) (int64, error) {
+	value, ok, err := Integer(r, key)
+	if err != nil {
+		return 0, err
+	}
+	if ok {
+		return value, nil
+	}
+	return def, nil
+}
+
 const (
 	maxPerPage = 100
 )
@@ -26,22 +65,18 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 
 		var err error
 		parameters := ListQueryParameters{}
-		if skip := r.URL.Query().Get("skip"); skip != "" {
-			parameters.Skip, err = strconv.ParseInt(skip, 10, 64)
-			if err != nil {
-				handleClientError(w, r, err)
-				return
-			}
+		parameters.Skip, err = IntegerWithDefault(r, "skip", 0)
+		if err != nil {
+			handleClientError(w, r, err)
+			return
 		}
-		if limit := r.URL.Query().Get("limit"); limit != "" {
-			parameters.Limit, err = strconv.ParseInt(limit, 10, 64)
-			if err != nil {
-				handleClientError(w, r, err)
-				return
-			}
-			if parameters.Limit > maxPerPage {
-				parameters.Limit = maxPerPage
-			}
+		parameters.Limit, err = IntegerWithDefault(r, "limit", maxPerPage)
+		if err != nil {
+			handleClientError(w, r, err)
+			return
+		}
+		if parameters.Limit > maxPerPage {
+			parameters.Limit = maxPerPage
 		}
 		if sorts := r.URL.Query()["sort"]; sorts != nil {
 			for _, s := range sorts {
@@ -115,23 +150,6 @@ func CreatePaymentHandler(s Service) http.HandlerFunc {
 	}
 }
 
-func Bool(r *http.Request, key string) (bool, bool) {
-	vv := r.URL.Query().Get(key)
-	if vv == "" {
-		return false, false
-	}
-	vv = strings.ToUpper(vv)
-	return vv == "YES" || vv == "TRUE" || vv == "1", true
-}
-
-func BoolWithDefault(r *http.Request, key string, def bool) bool {
-	v, ok := Bool(r, key)
-	if !ok {
-		return def
-	}
-	return v
-}
-
 func UpdatePaymentHandler(s Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		data := Data{}
@@ -142,24 +160,21 @@ func UpdatePaymentHandler(s Service) http.HandlerFunc {
 		}
 
 		upsert := BoolWithDefault(r, "upsert", false)
-		modified, upserted, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data, upsert)
+		ret, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data, upsert)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
 		}
 		switch {
-		case !modified && !upserted:
+		case !ret.Updated && !ret.Created && !ret.Found:
 			w.WriteHeader(http.StatusNotFound)
-			return
-		case upserted:
+		case !ret.Updated && !ret.Created && ret.Found:
+			w.WriteHeader(http.StatusNotModified)
+		case ret.Created:
 			w.Header().Set("Location", "./"+mux.Vars(r)["paymentId"])
 			w.WriteHeader(http.StatusCreated)
-		case modified:
+		case ret.Updated:
 			w.WriteHeader(http.StatusOK)
-		}
-		if !modified {
-			w.WriteHeader(http.StatusNotFound)
-			return
 		}
 	}
 }

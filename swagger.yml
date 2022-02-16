@@ -1,0 +1,110 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  version: 0.1.9
+paths:
+  /payments:
+    post:
+      summary: Returns a list of payments.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentData'
+      responses:
+        '200': # status code
+          description: A payment object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+    put:
+      summary: Update a payment (can upsert)
+      parameters:
+        - name: upsert
+          in: query
+          schema:
+            type: boolean
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentData'
+      responses:
+        '404':
+          description: Document not found
+        '201':
+          description: Document was created
+        '304':
+          description: Document was found but no update was performed
+        '200': # status code
+          description: The modified payment object
+    get:
+      summary: Returns a list of payments.
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: skip
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':    # status code
+          description: A JSON array of payments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+components:
+  schemas:
+    Payment:
+      allOf:
+        - $ref: '#/components/schemas/PaymentData'
+        - type: object
+          properties:
+            id: string
+          required:
+            - id
+    PaymentData:
+      type: object
+      required:
+        - provider
+        - status
+        - value
+        - date
+      properties:
+        provider:
+          type: string
+        reference:
+          type: string
+        scheme:
+          type: string
+        status:
+          type: string
+        value:
+          type: object
+          required:
+            - amount
+            - asset
+          properties:
+            amount:
+              type: integer
+            asset:
+              type: string
+        date:
+          type: string
+          format: datetime
+        raw:
+          type: object
