@@ -1,9 +1,9 @@
 package payment
 
 import (
+	"github.com/numary/go-libs-cloud/pkg/sharedotlp"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/trace"
-	"strconv"
 )
 
 type datadogAttributesAppender struct {
@@ -19,8 +19,8 @@ func (d datadogAttributesAppender) Format(entry *logrus.Entry) ([]byte, error) {
 		return d.underlying.Format(entry)
 	}
 	return d.underlying.Format(entry.WithFields(logrus.Fields{
-		"dd.trace_id": convertTraceID(span.SpanContext().TraceID().String()),
-		"dd.span_id":  convertTraceID(span.SpanContext().SpanID().String()),
+		"dd.trace_id": sharedotlp.ConvertToDatadogTraceId(span.SpanContext().TraceID().String()),
+		"dd.span_id":  sharedotlp.ConvertToDatadogTraceId(span.SpanContext().SpanID().String()),
 		"dd.service":  d.serviceName,
 		"dd.env":      d.env,
 		"dd.version":  d.serviceVersion,
@@ -36,19 +36,4 @@ func DatadogAttributesAppender(underlying logrus.Formatter, serviceName, env, se
 		env:            env,
 		serviceVersion: serviceVersion,
 	}
-}
-
-// See https://docs.datadoghq.com/fr/tracing/connect_logs_and_traces/opentelemetry/
-func convertTraceID(id string) string {
-	if len(id) < 16 {
-		return ""
-	}
-	if len(id) > 16 {
-		id = id[16:]
-	}
-	intValue, err := strconv.ParseUint(id, 16, 64)
-	if err != nil {
-		return ""
-	}
-	return strconv.FormatUint(intValue, 10)
 }
