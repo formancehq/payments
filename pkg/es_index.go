@@ -94,6 +94,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 			createdPayment.Ack()
 			func() {
 				ctx, span := tracer.Start(ctx, "Event.Created",
+					trace.WithSpanKind(trace.SpanKindClient),
 					trace.WithAttributes(attribute.String("resource.name", "Event.Created"), attribute.String("span.name", "Event.Created")) /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
