@@ -24,10 +24,13 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/jaeger"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 	"go.opentelemetry.io/otel/trace"
 	"net/http"
@@ -37,10 +40,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 )
 
 const (
@@ -103,33 +102,11 @@ var rootCmd = &cobra.Command{
 			return errors.New("missing auth uri")
 		}
 
-		client, err := mongo.NewClient(options.Client().ApplyURI(mongodbUri).SetMonitor(otelmongo.NewMonitor()))
-		if err != nil {
-			return err
-		}
-
-		logrus.Infoln("Connection on database: " + mongodbUri)
-		err = client.Connect(context.Background())
-		if err != nil {
-			return err
-		}
-
-		logrus.Infoln("Ping database...")
-		ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
-		err = client.Ping(ctx, readpref.Primary())
-		if err != nil {
-			return err
-		}
-
-		db := client.Database(mongodbDatabase)
-
-		pubSub := gochannel.NewGoChannel(
-			gochannel.Config{},
-			watermill.NewStdLoggerWithOut(logrus.StandardLogger().Out, viper.GetBool(debugFlag), viper.GetBool(debugFlag)),
-		)
-
 		if viper.GetBool(otelTracesFlag) {
-			var exporter sdktrace.SpanExporter
+			var (
+				exporter sdktrace.SpanExporter
+				err      error
+			)
 			switch viper.GetString(otelTracesExporterFlag) {
 			case "stdout":
 				exporter, err = stdouttrace.New(stdouttrace.WithPrettyPrint())
@@ -187,6 +164,31 @@ var rootCmd = &cobra.Command{
 			otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 			defer tp.Shutdown(context.Background())
 		}
+
+		client, err := mongo.NewClient(options.Client().ApplyURI(mongodbUri).SetMonitor(otelmongo.NewMonitor()))
+		if err != nil {
+			return err
+		}
+
+		logrus.Infoln("Connection on database: " + mongodbUri)
+		err = client.Connect(context.Background())
+		if err != nil {
+			return err
+		}
+
+		logrus.Infoln("Ping database...")
+		ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second*5))
+		err = client.Ping(ctx, readpref.Primary())
+		if err != nil {
+			return err
+		}
+
+		db := client.Database(mongodbDatabase)
+
+		pubSub := gochannel.NewGoChannel(
+			gochannel.Config{},
+			watermill.NewStdLoggerWithOut(logrus.StandardLogger().Out, viper.GetBool(debugFlag), viper.GetBool(debugFlag)),
+		)
 
 		var openSearchClient esapi.Transport
 		openSearchClient, err = opensearch.NewClient(opensearch.Config{
