@@ -37,7 +37,7 @@ type Data struct {
 	Type      string          `json:"type" bson:"type"`
 	Status    string          `json:"status" bson:"status"`
 	Value     Value           `json:"value" bson:"value"`
-	Date      time.Time       `json:"data" bson:"date"`
+	Date      time.Time       `json:"date" bson:"date"`
 	Raw       json.RawMessage `json:"raw" bson:"raw"`
 }
 
