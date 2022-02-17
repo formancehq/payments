@@ -91,8 +91,8 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 			createdPayment.Ack()
 			func() {
 				ctx, span := otel.Tracer("testing",
-					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "EventCreated",
-					trace.WithSpanKind(trace.SpanKindClient), /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
+					trace.WithInstrumentationVersion("semver:1.0.0")).Start(context.Background(), "EventCreated",
+					trace.WithSpanKind(trace.SpanKindClient) /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
