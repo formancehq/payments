@@ -60,6 +60,8 @@ const (
 	esIndexFlag                          = "es-index"
 	esAddressFlag                        = "es-address"
 	esInsecureFlag                       = "es-insecure"
+	esUsernameFlag                       = "es-username"
+	esPasswordFlag                       = "es-password"
 
 	serviceName = "Payments"
 )
@@ -189,6 +191,8 @@ var rootCmd = &cobra.Command{
 		var openSearchClient esapi.Transport
 		openSearchClient, err = opensearch.NewClient(opensearch.Config{
 			Addresses: viper.GetStringSlice(esAddressFlag),
+			Username:  viper.GetString(esUsernameFlag),
+			Password:  viper.GetString(esPasswordFlag),
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
 					InsecureSkipVerify: viper.GetBool(esInsecureFlag),
@@ -280,6 +284,8 @@ func init() {
 	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
 	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
 	rootCmd.Flags().Bool(esInsecureFlag, false, "Insecure es connection (no valid tls certificate)")
+	rootCmd.Flags().String(esUsernameFlag, "admin", "ES username")
+	rootCmd.Flags().String(esPasswordFlag, "admin", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
