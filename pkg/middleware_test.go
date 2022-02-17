@@ -21,7 +21,7 @@ func TestAuthMiddleware(t *testing.T) {
 		}))
 		defer testServer.Close()
 
-		mux = payment.ConfigureAuthMiddleware(mux, middlewares.AuthMiddleware(testServer.URL))
+		mux = payment.ConfigureAuthMiddleware(mux, middlewares.AuthMiddleware(http.DefaultClient, testServer.URL))
 
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString("{}"))

@@ -205,7 +205,7 @@ var rootCmd = &cobra.Command{
 			m.Use(otelmux.Middleware(serviceName))
 		}
 		m.Use(
-			middlewares.AuthMiddleware(authUri),
+			middlewares.AuthMiddleware(http.DefaultClient, authUri),
 			middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
 				return mux.Vars(r)[name]
 			}),

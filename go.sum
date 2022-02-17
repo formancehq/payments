@@ -395,6 +395,12 @@ github.com/numary/go-libs-cloud v0.0.0-20220215104759-b6535a72e1d7 h1:VFZ9n/IHDx
 github.com/numary/go-libs-cloud v0.0.0-20220215104759-b6535a72e1d7/go.mod h1:lS9on5S0TtjpkI8e3xtuzB2o5DUVF42ESK9s4tOR5hg=
 github.com/numary/go-libs-cloud v0.0.0-20220216172421-b92242a92d97 h1:7C2mmYVR5yWCb4hsRl6pgChZ8B98P8mVek0bbskRAlM=
 github.com/numary/go-libs-cloud v0.0.0-20220216172421-b92242a92d97/go.mod h1:p70GS7VD+TKBdiT13De7lnrO4eYwq1iEMjT3XoAzbu8=
+github.com/numary/go-libs-cloud v0.0.0-20220217094556-84c3b9ffd27a h1:vdvQ/W8WB7iAY31IiFdzFdIuLaXkqOlyhMwsCg2aIg8=
+github.com/numary/go-libs-cloud v0.0.0-20220217094556-84c3b9ffd27a/go.mod h1:p70GS7VD+TKBdiT13De7lnrO4eYwq1iEMjT3XoAzbu8=
+github.com/numary/go-libs-cloud v0.0.0-20220217100142-d34ccbbdb142 h1:lQWPMo8+z4OE6/Z14IypDzjV1eS4lGVTq5t0oFiF8EM=
+github.com/numary/go-libs-cloud v0.0.0-20220217100142-d34ccbbdb142/go.mod h1:p70GS7VD+TKBdiT13De7lnrO4eYwq1iEMjT3XoAzbu8=
+github.com/numary/go-libs-cloud v0.0.0-20220217103717-d241a3da7ef9 h1:DmvplscAtAq+Hzk6rAjZhDszU3En9oWf4mjVsMmmtJA=
+github.com/numary/go-libs-cloud v0.0.0-20220217103717-d241a3da7ef9/go.mod h1:p70GS7VD+TKBdiT13De7lnrO4eYwq1iEMjT3XoAzbu8=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=

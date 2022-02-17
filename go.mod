@@ -7,7 +7,7 @@ require (
 	github.com/elastic/go-elasticsearch/v7 v7.17.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/numary/go-libs-cloud v0.0.0-20220216172421-b92242a92d97
+	github.com/numary/go-libs-cloud v0.0.0-20220217103717-d241a3da7ef9
 	github.com/opensearch-project/opensearch-go v1.0.0
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1

@@ -1,6 +1,10 @@
 version: '3.8'
 
 services:
+  opensearch:
+    image: opensearchproject/opensearch:1.2.4
+    environment:
+      discovery.type: single-node
   postgres:
     image: postgres:13.4-alpine
     environment:
@@ -25,6 +29,8 @@ services:
       STYTCH_SIGNUP_MAGIC_LINK: https://control.numary.localhost/signup
       STYTCH_INVITE_MAGIC_LINK: https://control.numary.localhost/invite
       STYTCH_SECRET_AUTH: foo
+      ES_INDEX: ledger
+      ES_ADDRESS: http://opensearch:9200
     depends_on:
       - postgres
   mongodb:
@@ -36,6 +42,7 @@ services:
       - jaeger
       - auth
       - mongodb
+      - opensearch
     command:
       - go
       - run
