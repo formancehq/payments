@@ -68,8 +68,6 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 	if err != nil {
 		panic(err)
 	}
-	tracer := otel.Tracer("com.numary.payments.indexer",
-		trace.WithInstrumentationVersion("semver:1.0.0"))
 
 	//extractCtx := func(msg *message.Message) context.Context {
 	//	tracingContext := msg.Metadata.Get("tracing-context")
@@ -93,7 +91,8 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 		case createdPayment := <-createdPayments:
 			createdPayment.Ack()
 			func() {
-				ctx, span := tracer.Start(ctx, "Event.Created",
+				ctx, span := otel.Tracer("com.numary.payments.indexer",
+					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "Event.Created",
 					trace.WithSpanKind(trace.SpanKindClient),
 					trace.WithAttributes(attribute.String("resource.name", "Event.Created"), attribute.String("span.name", "Event.Created")) /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
@@ -117,7 +116,8 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 			updatedPayment.Ack()
 			func() {
 
-				ctx, span := tracer.Start(ctx, "Event.Updated" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment)))*/)
+				ctx, span := otel.Tracer("com.numary.payments.indexer",
+					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "Event.Updated" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
