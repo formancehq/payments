@@ -66,5 +66,5 @@ func runWithMock(t *testing.T, fn func(t *mtest.T)) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Default))
 	defer mt.Close()
 
-	mt.RunOpts("Default", mtest.NewOptions().CollectionName(payment.PaymentCollection), fn)
+	mt.RunOpts("Default", mtest.NewOptions().CollectionName(payment.Collection), fn)
 }

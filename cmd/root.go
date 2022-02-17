@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
+	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs-cloud/pkg/middlewares"
+	"github.com/numary/go-libs-cloud/pkg/sharedotlp"
 	"github.com/numary/payment/pkg"
 	"github.com/opensearch-project/opensearch-go"
 	"github.com/rs/cors"
@@ -185,11 +187,15 @@ var rootCmd = &cobra.Command{
 			defer tp.Shutdown(context.Background())
 		}
 
-		openSearchClient, err := opensearch.NewClient(opensearch.Config{
+		var openSearchClient esapi.Transport
+		openSearchClient, err = opensearch.NewClient(opensearch.Config{
 			Addresses: viper.GetStringSlice(esAddressFlag),
 		})
 		if err != nil {
 			return err
+		}
+		if viper.GetBool(otelTracesFlag) {
+			openSearchClient = sharedotlp.WrapOpenSearchTransport(openSearchClient)
 		}
 
 		s := payment.NewDefaultService(db, payment.WithPublisher(pubSub))

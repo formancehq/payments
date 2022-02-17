@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const PaymentCollection = "Payment"
+const Collection = "Payment"
 
 type Sort struct {
 	Key  string
@@ -62,14 +62,14 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, param
 		}
 		opts = opts.SetSort(sort)
 	}
-	return d.database.Collection(PaymentCollection).Find(ctx, map[string]interface{}{
+	return d.database.Collection(Collection).Find(ctx, map[string]interface{}{
 		"organization": org,
 	}, opts)
 }
 
 func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data Data) (*Payment, error) {
 	payment := NewPayment(data)
-	_, err := d.database.Collection(PaymentCollection).InsertOne(ctx, struct {
+	_, err := d.database.Collection(Collection).InsertOne(ctx, struct {
 		Payment      `bson:",inline"`
 		Organization string `bson:"organization"`
 	}{
@@ -96,7 +96,7 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 	if upsert {
 		opts = opts.SetUpsert(true)
 	}
-	ret, err := d.database.Collection(PaymentCollection).UpdateOne(ctx, map[string]interface{}{
+	ret, err := d.database.Collection(Collection).UpdateOne(ctx, map[string]interface{}{
 		"_id":          id,
 		"organization": organization,
 	}, map[string]interface{}{
