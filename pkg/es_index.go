@@ -3,13 +3,18 @@ package payment
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	_ "github.com/elastic/go-elasticsearch/v7/esapi"
+	"github.com/numary/go-libs-cloud/pkg/sharedotlp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/trace"
 	"time"
 )
 
@@ -64,43 +69,75 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 	if err != nil {
 		panic(err)
 	}
+	tracer := otel.Tracer("com.numary.payments.indexer")
+
+	extractCtx := func(msg *message.Message) context.Context {
+		tracingContext := msg.Metadata.Get("tracing-context")
+		data, err := base64.StdEncoding.DecodeString(tracingContext)
+		if err != nil {
+			panic(err)
+		}
+
+		carrier := propagation.MapCarrier{}
+		err = json.Unmarshal(data, &carrier)
+		if err != nil {
+			panic(err)
+		}
+
+		p := propagation.TraceContext{}
+		return p.Extract(ctx, carrier)
+	}
 
 	for {
 		select {
 		case createdPayment := <-createdPayments:
-			event := CreatedPaymentEvent{}
-			err := json.Unmarshal(createdPayment.Payload, &event)
-			if err != nil {
-				logrus.Errorf("error processing message '%s': %s", createdPayment.UUID, err)
-				continue
-			}
+			func() {
+				ctx, span := tracer.Start(ctx, "Event.Created", trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment))))
+				defer span.End()
+				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
-			err = insert(ctx, index, t, event.Payment)
-			if err != nil {
-				logrus.Errorf("error inserting payment on es: %s", err)
-				continue
-			}
+				event := CreatedPaymentEvent{}
+				err = json.Unmarshal(createdPayment.Payload, &event)
+				if err != nil {
+					sharedotlp.RecordError(ctx, err)
+					return
+				}
 
-			createdPayment.Ack()
+				err = insert(ctx, index, t, event.Payment)
+				if err != nil {
+					sharedotlp.RecordError(ctx, err)
+					return
+				}
+
+				createdPayment.Ack()
+			}()
 
 		case updatedPayment := <-updatedPayments:
-			event := UpdatedPaymentEvent{}
-			err := json.Unmarshal(updatedPayment.Payload, &event)
-			if err != nil {
-				logrus.Errorf("error processing message '%s': %s", updatedPayment.UUID, err)
-				continue
-			}
+			func() {
 
-			err = insert(ctx, index, t, Payment{
-				Data: event.Data,
-				ID:   event.ID,
-			})
-			if err != nil {
-				logrus.Errorf("error updating payment on es: %s", err)
-				continue
-			}
+				ctx, span := tracer.Start(ctx, "Event.Updated", trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment))))
+				defer span.End()
+				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
-			updatedPayment.Ack()
+				event := UpdatedPaymentEvent{}
+				err := json.Unmarshal(updatedPayment.Payload, &event)
+				if err != nil {
+					sharedotlp.RecordError(ctx, err)
+					return
+				}
+
+				err = insert(ctx, index, t, Payment{
+					Data: event.Data,
+					ID:   event.ID,
+				})
+				if err != nil {
+					sharedotlp.RecordError(ctx, err)
+					return
+				}
+
+				updatedPayment.Ack()
+
+			}()
 		case <-ctx.Done():
 			return
 		}

@@ -29,8 +29,6 @@ services:
       STYTCH_SIGNUP_MAGIC_LINK: https://control.numary.localhost/signup
       STYTCH_INVITE_MAGIC_LINK: https://control.numary.localhost/invite
       STYTCH_SECRET_AUTH: foo
-      ES_INDEX: ledger
-      ES_ADDRESS: http://opensearch:9200
     depends_on:
       - postgres
   mongodb:
@@ -60,6 +58,9 @@ services:
       OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
       MONGODB_URI: mongodb://mongodb:27017
       AUTH_URI: http://auth:8080
+      ES_INDEX: ledger
+      ES_ADDRESS: https://opensearch:9200
+      ES_INSECURE: "true"
     healthcheck:
       test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
       interval: 10s

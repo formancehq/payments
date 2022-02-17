@@ -2,8 +2,9 @@ package cmd
 
 import (
 	"context"
+	"crypto/tls"
+	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
@@ -20,10 +21,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/jaeger"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
@@ -60,6 +59,7 @@ const (
 	envFlag                              = "env"
 	esIndexFlag                          = "es-index"
 	esAddressFlag                        = "es-address"
+	esInsecureFlag                       = "es-insecure"
 
 	serviceName = "Payments"
 )
@@ -67,17 +67,6 @@ const (
 var (
 	Version = "latest"
 )
-
-type transport struct {
-	underlying http.RoundTripper
-}
-
-func (t *transport) RoundTrip(r *http.Request) (*http.Response, error) {
-	otelhttptrace.Inject(r.Context(), r)
-	return t.underlying.RoundTrip(r)
-}
-
-var _ http.RoundTripper = &transport{}
 
 var rootCmd = &cobra.Command{
 	Use:   "payment",
@@ -200,6 +189,11 @@ var rootCmd = &cobra.Command{
 		var openSearchClient esapi.Transport
 		openSearchClient, err = opensearch.NewClient(opensearch.Config{
 			Addresses: viper.GetStringSlice(esAddressFlag),
+			Transport: &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: viper.GetBool(esInsecureFlag),
+				},
+			},
 		})
 		if err != nil {
 			return err
@@ -213,10 +207,20 @@ var rootCmd = &cobra.Command{
 		m := payment.NewMux(s)
 		if viper.GetBool(otelTracesFlag) {
 			m.Use(otelmux.Middleware(serviceName))
+			m.Use(func(handler http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					data, err := json.Marshal(r.Header)
+					if err != nil {
+						panic(err)
+					}
+					trace.SpanFromContext(r.Context()).SetAttributes(attribute.String("headers", string(data)))
+					handler.ServeHTTP(w, r)
+				})
+			})
 		}
 		m.Use(
 			middlewares.AuthMiddleware(&http.Client{
-				Transport: &transport{http.DefaultTransport},
+				Transport: sharedotlp.NewHTTPTransport(http.DefaultTransport),
 				Timeout:   10 * time.Second,
 			}, authUri),
 			middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
@@ -228,14 +232,7 @@ var rootCmd = &cobra.Command{
 		rootMux.Use(
 			payment.Recovery(func(ctx context.Context, e interface{}) {
 				if viper.GetBool(otelTracesFlag) {
-					switch err := e.(type) {
-					case error:
-						trace.SpanFromContext(ctx).RecordError(err, trace.WithStackTrace(true))
-						trace.SpanFromContext(ctx).SetStatus(codes.Error, err.Error())
-					default:
-						trace.SpanFromContext(ctx).RecordError(fmt.Errorf("%s", e), trace.WithStackTrace(true))
-						trace.SpanFromContext(ctx).SetStatus(codes.Error, fmt.Sprintf("%s", e))
-					}
+					sharedotlp.RecordAsError(ctx, e)
 				} else {
 					logrus.Errorln(e)
 					debug.PrintStack()
@@ -282,6 +279,7 @@ func init() {
 	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
 	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
 	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
+	rootCmd.Flags().Bool(esInsecureFlag, false, "Insecure es connection (no valid tls certificate)")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))

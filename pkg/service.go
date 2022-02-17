@@ -81,7 +81,7 @@ func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data
 	}
 
 	if d.publisher != nil {
-		err = d.publisher.Publish(TopicCreatedPayment, newMessage(CreatedPaymentEvent{
+		err = d.publisher.Publish(TopicCreatedPayment, newMessage(ctx, CreatedPaymentEvent{
 			Payment: payment,
 		}))
 		if err != nil {
@@ -109,7 +109,7 @@ func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization str
 		return &UpdateResult{}, nil
 	}
 	if d.publisher != nil {
-		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(UpdatedPaymentEvent{
+		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(ctx, UpdatedPaymentEvent{
 			ID:   id,
 			Data: data,
 		}))
