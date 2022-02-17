@@ -12,7 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 	"time"
 )
@@ -91,10 +90,9 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 		case createdPayment := <-createdPayments:
 			createdPayment.Ack()
 			func() {
-				ctx, span := otel.Tracer("com.numary.payments.indexer",
-					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "Event.Created",
-					trace.WithSpanKind(trace.SpanKindClient),
-					trace.WithAttributes(attribute.String("resource.name", "Event.Created"), attribute.String("span.name", "Event.Created")) /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
+				ctx, span := otel.Tracer("testing",
+					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "EventCreated",
+					trace.WithSpanKind(trace.SpanKindClient), /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
