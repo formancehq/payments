@@ -3,7 +3,6 @@ package payment
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -13,8 +12,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 	"time"
 )
 
@@ -71,28 +68,28 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 	}
 	tracer := otel.Tracer("com.numary.payments.indexer")
 
-	extractCtx := func(msg *message.Message) context.Context {
-		tracingContext := msg.Metadata.Get("tracing-context")
-		data, err := base64.StdEncoding.DecodeString(tracingContext)
-		if err != nil {
-			panic(err)
-		}
-
-		carrier := propagation.MapCarrier{}
-		err = json.Unmarshal(data, &carrier)
-		if err != nil {
-			panic(err)
-		}
-
-		p := propagation.TraceContext{}
-		return p.Extract(ctx, carrier)
-	}
+	//extractCtx := func(msg *message.Message) context.Context {
+	//	tracingContext := msg.Metadata.Get("tracing-context")
+	//	data, err := base64.StdEncoding.DecodeString(tracingContext)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	carrier := propagation.MapCarrier{}
+	//	err = json.Unmarshal(data, &carrier)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//
+	//	p := propagation.TraceContext{}
+	//	return p.Extract(ctx, carrier)
+	//}
 
 	for {
 		select {
 		case createdPayment := <-createdPayments:
 			func() {
-				ctx, span := tracer.Start(ctx, "Event.Created", trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment))))
+				ctx, span := tracer.Start(ctx, "Event.Created" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
@@ -115,7 +112,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 		case updatedPayment := <-updatedPayments:
 			func() {
 
-				ctx, span := tracer.Start(ctx, "Event.Updated", trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment))))
+				ctx, span := tracer.Start(ctx, "Event.Updated" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment)))*/)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
