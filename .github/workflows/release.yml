@@ -8,7 +8,7 @@ jobs:
     uses: numary/gh-workflows/.github/workflows/docker-build-prod.yml@main
     with:
       go_version: 1.17
-      service: ledgers-operator
+      service: payments
       version: ${{ github.event.release.tag_name }}
       sha: ${{ github.sha }}
       env: prod
@@ -20,7 +20,7 @@ jobs:
       - Build
     uses: numary/gh-workflows/.github/workflows/deploy-production.yml@main
     with:
-      service: ledgers-operator
-      version: ledgers-operator-${{ github.event.release.tag_name }}
+      service: payments
+      version: payments-${{ github.event.release.tag_name }}
     secrets:
       ARGOCD_TOKEN: ${{ secrets.ARGOCD_PRODUCTION }}
