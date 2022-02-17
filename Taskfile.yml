@@ -17,7 +17,7 @@ tasks:
   build:
     run: once
     cmds:
-      - docker build -t numary:{{.SERVICE}}-{{.APP_SHA}} --target app --build-arg APP_SHA={{.APP_SHA}} --build-arg APP_VERSION={{.APP_VERSION}} .
+      - docker build -t numary:{{.SERVICE}}-{{.APP_SHA}} --target app --build-arg SHA={{.APP_SHA}} --build-arg VERSION={{.APP_VERSION}} .
 
   push-staging:
     cmds:
