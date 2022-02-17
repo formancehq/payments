@@ -68,7 +68,8 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 	if err != nil {
 		panic(err)
 	}
-	tracer := otel.Tracer("com.numary.payments.indexer")
+	tracer := otel.Tracer("com.numary.payments.indexer",
+		trace.WithInstrumentationVersion("semver:1.0.0"))
 
 	//extractCtx := func(msg *message.Message) context.Context {
 	//	tracingContext := msg.Metadata.Get("tracing-context")
