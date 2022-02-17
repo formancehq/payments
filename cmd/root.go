@@ -284,8 +284,8 @@ func init() {
 	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
 	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
 	rootCmd.Flags().Bool(esInsecureFlag, false, "Insecure es connection (no valid tls certificate)")
-	rootCmd.Flags().String(esUsernameFlag, "admin", "ES username")
-	rootCmd.Flags().String(esPasswordFlag, "admin", "ES password")
+	rootCmd.Flags().String(esUsernameFlag, "", "ES username")
+	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))

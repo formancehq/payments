@@ -61,6 +61,8 @@ services:
       ES_INDEX: ledger
       ES_ADDRESS: https://opensearch:9200
       ES_INSECURE: "true"
+      ES_USERNAME: admin
+      ES_PASSWORD: admin
     healthcheck:
       test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
       interval: 10s
