@@ -20,6 +20,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -38,8 +39,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	_ "github.com/opensearch-project/opensearch-go"
-	_ "go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/stdout/stdouttrace"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -68,6 +67,17 @@ const (
 var (
 	Version = "latest"
 )
+
+type transport struct {
+	underlying http.RoundTripper
+}
+
+func (t *transport) RoundTrip(r *http.Request) (*http.Response, error) {
+	otelhttptrace.Inject(r.Context(), r)
+	return t.underlying.RoundTrip(r)
+}
+
+var _ http.RoundTripper = &transport{}
 
 var rootCmd = &cobra.Command{
 	Use:   "payment",
@@ -205,7 +215,10 @@ var rootCmd = &cobra.Command{
 			m.Use(otelmux.Middleware(serviceName))
 		}
 		m.Use(
-			middlewares.AuthMiddleware(http.DefaultClient, authUri),
+			middlewares.AuthMiddleware(&http.Client{
+				Transport: &transport{http.DefaultTransport},
+				Timeout:   10 * time.Second,
+			}, authUri),
 			middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
 				return mux.Vars(r)[name]
 			}),
