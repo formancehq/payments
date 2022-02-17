@@ -88,6 +88,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 	for {
 		select {
 		case createdPayment := <-createdPayments:
+			createdPayment.Ack()
 			func() {
 				ctx, span := tracer.Start(ctx, "Event.Created" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
 				defer span.End()
@@ -105,11 +106,10 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 					sharedotlp.RecordError(ctx, err)
 					return
 				}
-
-				createdPayment.Ack()
 			}()
 
 		case updatedPayment := <-updatedPayments:
+			updatedPayment.Ack()
 			func() {
 
 				ctx, span := tracer.Start(ctx, "Event.Updated" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment)))*/)
@@ -131,9 +131,6 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 					sharedotlp.RecordError(ctx, err)
 					return
 				}
-
-				updatedPayment.Ack()
-
 			}()
 		case <-ctx.Done():
 			return
