@@ -18,15 +18,14 @@ import (
 )
 
 type Record struct {
-	Kind   string      `json:"kind"`
-	Ledger string      `json:"ledger"`
-	When   time.Time   `json:"when"`
-	Data   interface{} `json:"data"`
+	Kind string      `json:"kind"`
+	When time.Time   `json:"when"`
+	Data interface{} `json:"data"`
 }
 
 func insert(ctx context.Context, index string, t esapi.Transport, payment Payment) error {
 	data, err := json.Marshal(Record{
-		Kind: "ACCOUNT",
+		Kind: "PAYMENT",
 		When: time.Now(),
 		Data: payment,
 	})
