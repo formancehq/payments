@@ -152,7 +152,7 @@ var rootCmd = &cobra.Command{
 
 			tp := sdktrace.NewTracerProvider(
 				sdktrace.WithSampler(sdktrace.AlwaysSample()),
-				sdktrace.WithBatcher(exporter),
+				sdktrace.WithSyncer(exporter),
 				sdktrace.WithResource(resource.NewWithAttributes(
 					semconv.SchemaURL,
 					semconv.ServiceNameKey.String(serviceName),
