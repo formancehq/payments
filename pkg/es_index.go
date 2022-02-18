@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
-	_ "github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/numary/go-libs-cloud/pkg/sharedotlp"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -87,15 +86,19 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 		return p.Extract(ctx, carrier)
 	}
 
+	tracer := otel.Tracer("com.numary.payments.indexer")
+
 	for {
 		select {
 		case createdPayment := <-createdPayments:
 			createdPayment.Ack()
 			func() {
-				//<-time.After(5 * time.Second)
-				ctx, span := otel.Tracer("testing",
-					trace.WithInstrumentationVersion("semver:1.0.0")).Start(context.Background(), "EventCreated",
-					trace.WithSpanKind(trace.SpanKindServer), trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment))))
+				ctx, span := tracer.Start(
+					context.Background(),
+					"Event.Created",
+					trace.WithSpanKind(trace.SpanKindClient),
+					trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment))),
+				)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
@@ -117,8 +120,12 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 			updatedPayment.Ack()
 			func() {
 
-				ctx, span := otel.Tracer("com.numary.payments.indexer",
-					trace.WithInstrumentationVersion("semver:1.0.0")).Start(ctx, "Event.Updated" /*, trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment)))*/)
+				ctx, span := tracer.Start(
+					context.Background(),
+					"Event.Updated",
+					trace.WithSpanKind(trace.SpanKindClient),
+					trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment))),
+				)
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
