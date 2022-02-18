@@ -3,6 +3,7 @@ package payment
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -12,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
 	"time"
 )
@@ -68,22 +70,22 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 		panic(err)
 	}
 
-	//extractCtx := func(msg *message.Message) context.Context {
-	//	tracingContext := msg.Metadata.Get("tracing-context")
-	//	data, err := base64.StdEncoding.DecodeString(tracingContext)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	carrier := propagation.MapCarrier{}
-	//	err = json.Unmarshal(data, &carrier)
-	//	if err != nil {
-	//		panic(err)
-	//	}
-	//
-	//	p := propagation.TraceContext{}
-	//	return p.Extract(ctx, carrier)
-	//}
+	extractCtx := func(msg *message.Message) context.Context {
+		tracingContext := msg.Metadata.Get("tracing-context")
+		data, err := base64.StdEncoding.DecodeString(tracingContext)
+		if err != nil {
+			panic(err)
+		}
+
+		carrier := propagation.MapCarrier{}
+		err = json.Unmarshal(data, &carrier)
+		if err != nil {
+			panic(err)
+		}
+
+		p := propagation.TraceContext{}
+		return p.Extract(ctx, carrier)
+	}
 
 	for {
 		select {
@@ -93,7 +95,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 				//<-time.After(5 * time.Second)
 				ctx, span := otel.Tracer("testing",
 					trace.WithInstrumentationVersion("semver:1.0.0")).Start(context.Background(), "EventCreated",
-					trace.WithSpanKind(trace.SpanKindServer) /*, trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment)))*/)
+					trace.WithSpanKind(trace.SpanKindServer), trace.WithLinks(trace.LinkFromContext(extractCtx(createdPayment))))
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
