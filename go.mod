@@ -20,7 +20,6 @@ require (
 	go.mongodb.org/mongo-driver v1.8.3
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.28.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.29.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.29.0
 	go.opentelemetry.io/otel v1.4.1
 	go.opentelemetry.io/otel/exporters/jaeger v1.4.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.4.0
@@ -76,6 +75,7 @@ require (
 	github.com/opencontainers/runc v1.1.0 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/poloxue/modv v0.1.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
@@ -86,6 +86,7 @@ require (
 	github.com/xdg-go/scram v1.0.2 // indirect
 	github.com/xdg-go/stringprep v1.0.2 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.29.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.28.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.4.0 // indirect
 	go.opentelemetry.io/otel/internal/metric v0.26.0 // indirect

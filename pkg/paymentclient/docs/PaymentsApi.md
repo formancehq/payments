@@ -25,12 +25,13 @@ import (
     "context"
     "fmt"
     "os"
+    "time"
     openapiclient "./openapi"
 )
 
 func main() {
     organizationId := "organizationId_example" // string | 
-    paymentData := *openapiclient.NewPaymentData("Provider_example", "Status_example", *openapiclient.NewPaymentDataValue(int32(123), "Asset_example"), "Date_example") // PaymentData | 
+    paymentData := *openapiclient.NewPaymentData("Provider_example", "Status_example", *openapiclient.NewPaymentDataValue(int32(123), "Asset_example"), time.Now()) // PaymentData | 
 
     configuration := openapiclient.NewConfiguration()
     api_client := openapiclient.NewAPIClient(configuration)
@@ -169,13 +170,14 @@ import (
     "context"
     "fmt"
     "os"
+    "time"
     openapiclient "./openapi"
 )
 
 func main() {
     organizationId := "organizationId_example" // string | 
     paymentId := "paymentId_example" // string | 
-    paymentData := *openapiclient.NewPaymentData("Provider_example", "Status_example", *openapiclient.NewPaymentDataValue(int32(123), "Asset_example"), "Date_example") // PaymentData | 
+    paymentData := *openapiclient.NewPaymentData("Provider_example", "Status_example", *openapiclient.NewPaymentDataValue(int32(123), "Asset_example"), time.Now()) // PaymentData | 
     upsert := true // bool |  (optional)
 
     configuration := openapiclient.NewConfiguration()

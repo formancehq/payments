@@ -1,4 +1,4 @@
-package paymentclient_test
+package client_test
 
 import (
 	"context"
@@ -89,7 +89,9 @@ func TestCreatePayment(t *testing.T) {
 	client := paymentclient.NewAPIClient(Configuration)
 	_, _, err := client.PaymentsApi.
 		CreatePayment(context.Background(), "foo").
-		PaymentData(paymentclient.PaymentData{}).
+		PaymentData(paymentclient.PaymentData{
+			Date: time.Now().Format(time.RFC3339),
+		}).
 		Execute()
 	assert.NoError(t, err)
 }
@@ -104,7 +106,9 @@ func TestUpdatePayment(t *testing.T) {
 	client := paymentclient.NewAPIClient(Configuration)
 	_, err = client.PaymentsApi.
 		UpdatePayment(context.Background(), orgId, payment.ID).
-		PaymentData(paymentclient.PaymentData{}).
+		PaymentData(paymentclient.PaymentData{
+			Date: time.Now().Format(time.RFC3339),
+		}).
 		Execute()
 	assert.NoError(t, err)
 }
@@ -115,7 +119,9 @@ func TestUpsertPayment(t *testing.T) {
 	client := paymentclient.NewAPIClient(Configuration)
 	_, err := client.PaymentsApi.
 		UpdatePayment(context.Background(), orgId, "1").
-		PaymentData(paymentclient.PaymentData{}).
+		PaymentData(paymentclient.PaymentData{
+			Date: time.Now().Format(time.RFC3339),
+		}).
 		Upsert(true).
 		Execute()
 	assert.NoError(t, err)

@@ -135,6 +135,6 @@ components:
               type: string
         date:
           type: string
-          format: datetime
+          format: date-time
         raw:
           type: object

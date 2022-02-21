@@ -9,7 +9,7 @@ Name | Type | Description | Notes
 **Scheme** | Pointer to **string** |  | [optional] 
 **Status** | **string** |  | 
 **Value** | [**PaymentDataValue**](PaymentDataValue.md) |  | 
-**Date** | **string** |  | 
+**Date** | **time.Time** |  | 
 **Raw** | Pointer to **map[string]interface{}** |  | [optional] 
 **Id** | **string** |  | 
 
@@ -17,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewPayment
 
-`func NewPayment(provider string, status string, value PaymentDataValue, date string, id string, ) *Payment`
+`func NewPayment(provider string, status string, value PaymentDataValue, date time.Time, id string, ) *Payment`
 
 NewPayment instantiates a new Payment object
 This constructor will assign default values to properties that have it defined,
@@ -144,20 +144,20 @@ SetValue sets Value field to given value.
 
 ### GetDate
 
-`func (o *Payment) GetDate() string`
+`func (o *Payment) GetDate() time.Time`
 
 GetDate returns the Date field if non-nil, zero value otherwise.
 
 ### GetDateOk
 
-`func (o *Payment) GetDateOk() (*string, bool)`
+`func (o *Payment) GetDateOk() (*time.Time, bool)`
 
 GetDateOk returns a tuple with the Date field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetDate
 
-`func (o *Payment) SetDate(v string)`
+`func (o *Payment) SetDate(v time.Time)`
 
 SetDate sets Date field to given value.
 

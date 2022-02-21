@@ -12,6 +12,7 @@ package paymentclient
 
 import (
 	"encoding/json"
+	"time"
 )
 
 // Payment struct for Payment
@@ -21,7 +22,7 @@ type Payment struct {
 	Scheme *string `json:"scheme,omitempty"`
 	Status string `json:"status"`
 	Value PaymentDataValue `json:"value"`
-	Date string `json:"date"`
+	Date time.Time `json:"date"`
 	Raw *map[string]interface{} `json:"raw,omitempty"`
 	Id string `json:"id"`
 }
@@ -30,7 +31,7 @@ type Payment struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPayment(provider string, status string, value PaymentDataValue, date string, id string) *Payment {
+func NewPayment(provider string, status string, value PaymentDataValue, date time.Time, id string) *Payment {
 	this := Payment{}
 	this.Provider = provider
 	this.Status = status
@@ -185,9 +186,9 @@ func (o *Payment) SetValue(v PaymentDataValue) {
 }
 
 // GetDate returns the Date field value
-func (o *Payment) GetDate() string {
+func (o *Payment) GetDate() time.Time {
 	if o == nil {
-		var ret string
+		var ret time.Time
 		return ret
 	}
 
@@ -196,7 +197,7 @@ func (o *Payment) GetDate() string {
 
 // GetDateOk returns a tuple with the Date field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetDateOk() (*string, bool) {
+func (o *Payment) GetDateOk() (*time.Time, bool) {
 	if o == nil  {
 		return nil, false
 	}
@@ -204,7 +205,7 @@ func (o *Payment) GetDateOk() (*string, bool) {
 }
 
 // SetDate sets field value
-func (o *Payment) SetDate(v string) {
+func (o *Payment) SetDate(v time.Time) {
 	o.Date = v
 }
 

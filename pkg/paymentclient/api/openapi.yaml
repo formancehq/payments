@@ -127,7 +127,7 @@ components:
     PaymentData:
       example:
         reference: reference
-        date: date
+        date: 2000-01-23T04:56:07.000+00:00
         scheme: scheme
         provider: provider
         raw: '{}'
@@ -147,7 +147,7 @@ components:
         value:
           $ref: '#/components/schemas/PaymentData_value'
         date:
-          format: datetime
+          format: date-time
           type: string
         raw:
           type: object
