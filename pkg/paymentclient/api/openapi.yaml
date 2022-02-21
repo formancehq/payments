@@ -5,47 +5,6 @@ info:
 servers:
 - url: /
 paths:
-  /organizations/{organizationId}/payments/{paymentId}:
-    put:
-      operationId: updatePayment
-      parameters:
-      - explode: true
-        in: query
-        name: upsert
-        required: false
-        schema:
-          type: boolean
-        style: form
-      - explode: false
-        in: path
-        name: organizationId
-        required: true
-        schema:
-          type: string
-        style: simple
-      - explode: false
-        in: path
-        name: paymentId
-        required: true
-        schema:
-          type: string
-        style: simple
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentData'
-        required: true
-      responses:
-        "404":
-          description: Document not found
-        "201":
-          description: Document was created
-        "204":
-          description: Document was updated
-      summary: Update a payment (can upsert)
-      tags:
-      - payments
   /organizations/{organizationId}/payments:
     get:
       operationId: listPayments
@@ -92,8 +51,8 @@ paths:
       summary: Returns a list of payments.
       tags:
       - payments
-    post:
-      operationId: createPayment
+    put:
+      operationId: savePayment
       parameters:
       - explode: false
         in: path
@@ -110,12 +69,10 @@ paths:
         required: true
       responses:
         "201":
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
-          description: A payment object
-      summary: Returns a list of payments.
+          description: A payment object was created
+        "204":
+          description: A payment object was updated
+      summary: Persist payment
       tags:
       - payments
 components:
@@ -131,6 +88,7 @@ components:
         scheme: scheme
         provider: provider
         raw: '{}'
+        id: id
         value:
           amount: 0
           asset: asset
@@ -144,6 +102,8 @@ components:
           type: string
         status:
           type: string
+        id:
+          type: string
         value:
           $ref: '#/components/schemas/PaymentData_value'
         date:
@@ -153,16 +113,17 @@ components:
           type: object
       required:
       - date
+      - id
       - provider
       - status
       - value
       type: object
     Payment_allOf:
       properties:
-        id:
+        organizationId:
           type: string
       required:
-      - id
+      - organizationId
       type: object
     PaymentData_value:
       example:

@@ -2,7 +2,6 @@ package payment
 
 import (
 	"encoding/json"
-	"github.com/pborman/uuid"
 	"time"
 )
 
@@ -31,6 +30,7 @@ type Value struct {
 }
 
 type Data struct {
+	ID        string          `json:"id" bson:"_id"`
 	Provider  string          `json:"provider" bson:"provider"`
 	Reference string          `json:"reference" bson:"reference"`
 	Scheme    string          `json:"scheme" bson:"scheme"`
@@ -42,13 +42,6 @@ type Data struct {
 }
 
 type Payment struct {
-	Data `bson:",inline"`
-	ID   string `json:"id" bson:"_id"`
-}
-
-func NewPayment(data Data) Payment {
-	return Payment{
-		Data: data,
-		ID:   uuid.New(),
-	}
+	Data           `bson:",inline"`
+	OrganizationID string `json:"organizationId" bson:"organizationId"`
 }

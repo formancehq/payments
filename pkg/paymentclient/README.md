@@ -78,9 +78,8 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*PaymentsApi* | [**CreatePayment**](docs/PaymentsApi.md#createpayment) | **Post** /organizations/{organizationId}/payments | Returns a list of payments.
 *PaymentsApi* | [**ListPayments**](docs/PaymentsApi.md#listpayments) | **Get** /organizations/{organizationId}/payments | Returns a list of payments.
-*PaymentsApi* | [**UpdatePayment**](docs/PaymentsApi.md#updatepayment) | **Put** /organizations/{organizationId}/payments/{paymentId} | Update a payment (can upsert)
+*PaymentsApi* | [**SavePayment**](docs/PaymentsApi.md#savepayment) | **Put** /organizations/{organizationId}/payments | Persist payment
 
 
 ## Documentation For Models

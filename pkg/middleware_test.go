@@ -24,7 +24,7 @@ func TestAuthMiddleware(t *testing.T) {
 		mux = payment.ConfigureAuthMiddleware(mux, middlewares.AuthMiddleware(http.DefaultClient, testServer.URL))
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString("{}"))
+		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments", bytes.NewBufferString("{}"))
 		req.Header.Set("Authorization", "Bearer XXX")
 
 		mux.ServeHTTP(rec, req)
@@ -50,7 +50,7 @@ func TestCheckOrganizationAccessMiddleware(t *testing.T) {
 		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString("{}"))
+		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments", bytes.NewBufferString("{}"))
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		m.ServeHTTP(rec, req)

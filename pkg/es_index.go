@@ -59,11 +59,7 @@ func insert(ctx context.Context, index string, t esapi.Transport, payment Paymen
 }
 
 func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, index string, t esapi.Transport) {
-	createdPayments, err := subscriber.Subscribe(ctx, TopicCreatedPayment)
-	if err != nil {
-		panic(err)
-	}
-	updatedPayments, err := subscriber.Subscribe(ctx, TopicUpdatedPayment)
+	payments, err := subscriber.Subscribe(ctx, TopicSavedPayment)
 	if err != nil {
 		panic(err)
 	}
@@ -89,7 +85,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 
 	for {
 		select {
-		case createdPayment := <-createdPayments:
+		case createdPayment := <-payments:
 			createdPayment.Ack()
 			func() {
 				ctx, span := tracer.Start(
@@ -101,7 +97,7 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 				defer span.End()
 				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
 
-				event := CreatedPaymentEvent{}
+				event := SavedPaymentEvent{}
 				err = json.Unmarshal(createdPayment.Payload, &event)
 				if err != nil {
 					sharedotlp.RecordError(ctx, err)
@@ -109,36 +105,6 @@ func ReplicatePaymentOnES(ctx context.Context, subscriber message.Subscriber, in
 				}
 
 				err = insert(ctx, index, t, event.Payment)
-				if err != nil {
-					sharedotlp.RecordError(ctx, err)
-					return
-				}
-			}()
-
-		case updatedPayment := <-updatedPayments:
-			updatedPayment.Ack()
-			func() {
-
-				ctx, span := tracer.Start(
-					context.Background(),
-					"Event.Updated",
-					trace.WithSpanKind(trace.SpanKindClient),
-					trace.WithLinks(trace.LinkFromContext(extractCtx(updatedPayment))),
-				)
-				defer span.End()
-				defer sharedotlp.RecordErrorOnRecover(ctx, false)()
-
-				event := UpdatedPaymentEvent{}
-				err := json.Unmarshal(updatedPayment.Payload, &event)
-				if err != nil {
-					sharedotlp.RecordError(ctx, err)
-					return
-				}
-
-				err = insert(ctx, index, t, Payment{
-					Data: event.Data,
-					ID:   event.ID,
-				})
 				if err != nil {
 					sharedotlp.RecordError(ctx, err)
 					return

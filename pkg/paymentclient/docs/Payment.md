@@ -8,16 +8,17 @@ Name | Type | Description | Notes
 **Reference** | Pointer to **string** |  | [optional] 
 **Scheme** | Pointer to **string** |  | [optional] 
 **Status** | **string** |  | 
+**Id** | **string** |  | 
 **Value** | [**PaymentDataValue**](PaymentDataValue.md) |  | 
 **Date** | **time.Time** |  | 
 **Raw** | Pointer to **map[string]interface{}** |  | [optional] 
-**Id** | **string** |  | 
+**OrganizationId** | **string** |  | 
 
 ## Methods
 
 ### NewPayment
 
-`func NewPayment(provider string, status string, value PaymentDataValue, date time.Time, id string, ) *Payment`
+`func NewPayment(provider string, status string, id string, value PaymentDataValue, date time.Time, organizationId string, ) *Payment`
 
 NewPayment instantiates a new Payment object
 This constructor will assign default values to properties that have it defined,
@@ -122,6 +123,26 @@ and a boolean to check if the value has been set.
 SetStatus sets Status field to given value.
 
 
+### GetId
+
+`func (o *Payment) GetId() string`
+
+GetId returns the Id field if non-nil, zero value otherwise.
+
+### GetIdOk
+
+`func (o *Payment) GetIdOk() (*string, bool)`
+
+GetIdOk returns a tuple with the Id field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetId
+
+`func (o *Payment) SetId(v string)`
+
+SetId sets Id field to given value.
+
+
 ### GetValue
 
 `func (o *Payment) GetValue() PaymentDataValue`
@@ -187,24 +208,24 @@ SetRaw sets Raw field to given value.
 
 HasRaw returns a boolean if a field has been set.
 
-### GetId
+### GetOrganizationId
 
-`func (o *Payment) GetId() string`
+`func (o *Payment) GetOrganizationId() string`
 
-GetId returns the Id field if non-nil, zero value otherwise.
+GetOrganizationId returns the OrganizationId field if non-nil, zero value otherwise.
 
-### GetIdOk
+### GetOrganizationIdOk
 
-`func (o *Payment) GetIdOk() (*string, bool)`
+`func (o *Payment) GetOrganizationIdOk() (*string, bool)`
 
-GetIdOk returns a tuple with the Id field if it's non-nil, zero value otherwise
+GetOrganizationIdOk returns a tuple with the OrganizationId field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetId
+### SetOrganizationId
 
-`func (o *Payment) SetId(v string)`
+`func (o *Payment) SetOrganizationId(v string)`
 
-SetId sets Id field to given value.
+SetOrganizationId sets OrganizationId field to given value.
 
 
 

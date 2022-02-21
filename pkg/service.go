@@ -29,8 +29,7 @@ type UpdateResult struct {
 }
 
 type Service interface {
-	CreatePayment(ctx context.Context, organization string, data Data) (*Payment, error)
-	UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (*UpdateResult, error)
+	SavePayment(ctx context.Context, organization string, data Data) (bool, error)
 	ListPayments(ctx context.Context, organization string, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
@@ -63,65 +62,32 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, org string, param
 		opts = opts.SetSort(sort)
 	}
 	return d.database.Collection(Collection).Find(ctx, map[string]interface{}{
-		"organization": org,
+		"organizationId": org,
 	}, opts)
 }
 
-func (d *defaultServiceImpl) CreatePayment(ctx context.Context, org string, data Data) (*Payment, error) {
-	payment := NewPayment(data)
-	_, err := d.database.Collection(Collection).InsertOne(ctx, struct {
-		Payment      `bson:",inline"`
-		Organization string `bson:"organization"`
-	}{
-		Payment:      payment,
-		Organization: org,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if d.publisher != nil {
-		err = d.publisher.Publish(TopicCreatedPayment, newMessage(ctx, CreatedPaymentEvent{
-			Payment: payment,
-		}))
-		if err != nil {
-			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
-		}
-	}
-	return &payment, nil
-}
-
-func (d *defaultServiceImpl) UpdatePayment(ctx context.Context, organization string, id string, data Data, upsert bool) (*UpdateResult, error) {
-	opts := options.Update()
-	if upsert {
-		opts = opts.SetUpsert(true)
-	}
+func (d *defaultServiceImpl) SavePayment(ctx context.Context, org string, data Data) (bool, error) {
 	ret, err := d.database.Collection(Collection).UpdateOne(ctx, map[string]interface{}{
-		"_id":          id,
-		"organization": organization,
+		"_id":            data.ID,
+		"organizationId": org,
 	}, map[string]interface{}{
 		"$set": data,
-	}, opts)
+	}, options.Update().SetUpsert(true))
 	if err != nil {
-		return nil, err
-	}
-	if ret.ModifiedCount == 0 && ret.UpsertedCount == 0 && ret.MatchedCount == 0 {
-		return &UpdateResult{}, nil
+		return false, err
 	}
 	if d.publisher != nil {
-		err = d.publisher.Publish(TopicUpdatedPayment, newMessage(ctx, UpdatedPaymentEvent{
-			ID:   id,
-			Data: data,
+		err = d.publisher.Publish(TopicSavedPayment, newMessage(ctx, SavedPaymentEvent{
+			Payment: Payment{
+				Data:           data,
+				OrganizationID: org,
+			},
 		}))
 		if err != nil {
-			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicCreatedPayment, err)
+			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicSavedPayment, err)
 		}
 	}
-	return &UpdateResult{
-		Found:   ret.MatchedCount > 0,
-		Created: ret.UpsertedCount > 0,
-		Updated: ret.ModifiedCount > 0,
-	}, err
+	return ret.UpsertedCount > 0, nil
 }
 
 var _ Service = &defaultServiceImpl{}

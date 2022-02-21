@@ -87,10 +87,10 @@ func TestMain(m *testing.M) {
 
 func TestCreatePayment(t *testing.T) {
 	client := paymentclient.NewAPIClient(Configuration)
-	_, _, err := client.PaymentsApi.
-		CreatePayment(context.Background(), "foo").
+	_, err := client.PaymentsApi.
+		SavePayment(context.Background(), "foo").
 		PaymentData(paymentclient.PaymentData{
-			Date: time.Now().Format(time.RFC3339),
+			Date: time.Now(),
 		}).
 		Execute()
 	assert.NoError(t, err)
@@ -100,29 +100,18 @@ func TestUpdatePayment(t *testing.T) {
 
 	orgId := uuid.New()
 
-	payment, err := Service.CreatePayment(context.Background(), orgId, payment.Data{})
+	_, err := Service.SavePayment(context.Background(), orgId, payment.Data{
+		ID: "foo",
+	})
 	assert.NoError(t, err)
 
 	client := paymentclient.NewAPIClient(Configuration)
 	_, err = client.PaymentsApi.
-		UpdatePayment(context.Background(), orgId, payment.ID).
+		SavePayment(context.Background(), orgId).
 		PaymentData(paymentclient.PaymentData{
-			Date: time.Now().Format(time.RFC3339),
+			Id:   "foo",
+			Date: time.Now(),
 		}).
-		Execute()
-	assert.NoError(t, err)
-}
-
-func TestUpsertPayment(t *testing.T) {
-	orgId := uuid.New()
-
-	client := paymentclient.NewAPIClient(Configuration)
-	_, err := client.PaymentsApi.
-		UpdatePayment(context.Background(), orgId, "1").
-		PaymentData(paymentclient.PaymentData{
-			Date: time.Now().Format(time.RFC3339),
-		}).
-		Upsert(true).
 		Execute()
 	assert.NoError(t, err)
 }
@@ -130,10 +119,14 @@ func TestUpsertPayment(t *testing.T) {
 func TestListPayments(t *testing.T) {
 	orgId := uuid.New()
 
-	_, err := Service.CreatePayment(context.Background(), orgId, payment.Data{})
+	_, err := Service.SavePayment(context.Background(), orgId, payment.Data{
+		ID: "1",
+	})
 	assert.NoError(t, err)
 
-	_, err = Service.CreatePayment(context.Background(), orgId, payment.Data{})
+	_, err = Service.SavePayment(context.Background(), orgId, payment.Data{
+		ID: "2",
+	})
 	assert.NoError(t, err)
 
 	client := paymentclient.NewAPIClient(Configuration)

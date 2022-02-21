@@ -124,7 +124,7 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 	}
 }
 
-func CreatePaymentHandler(s Service) http.HandlerFunc {
+func SavePaymentHandler(s Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		data := Data{}
@@ -134,46 +134,17 @@ func CreatePaymentHandler(s Service) http.HandlerFunc {
 			return
 		}
 
-		p, err := s.CreatePayment(r.Context(), mux.Vars(r)["organizationId"], data)
+		created, err := s.SavePayment(r.Context(), mux.Vars(r)["organizationId"], data)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
 		}
 
-		w.Header().Set("Location", "./"+p.ID)
-		w.WriteHeader(http.StatusCreated)
-		err = json.NewEncoder(w).Encode(p)
-		if err != nil {
-			handleServerError(w, r, err)
-			return
-		}
-	}
-}
-
-func UpdatePaymentHandler(s Service) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		data := Data{}
-		err := json.NewDecoder(r.Body).Decode(&data)
-		if err != nil {
-			handleClientError(w, r, err)
-			return
-		}
-
-		upsert := BoolWithDefault(r, "upsert", false)
-		ret, err := s.UpdatePayment(r.Context(), mux.Vars(r)["organizationId"], mux.Vars(r)["paymentId"], data, upsert)
-		if err != nil {
-			handleServerError(w, r, err)
-			return
-		}
-		switch {
-		case !ret.Updated && !ret.Created && !ret.Found:
-			w.WriteHeader(http.StatusNotFound)
-		case ret.Created:
-			w.Header().Set("Location", "./"+mux.Vars(r)["paymentId"])
+		if created {
 			w.WriteHeader(http.StatusCreated)
-		default:
-			w.WriteHeader(http.StatusNoContent)
+			return
 		}
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
@@ -187,9 +158,7 @@ func NewMux(service Service) *mux.Router {
 	})
 	organizationRouter := router.PathPrefix("/organizations/{organizationId}").Subrouter()
 	organizationRouter.Path("/payments").Methods(http.MethodGet).Handler(ListPaymentsHandler(service))
-	organizationRouter.Path("/payments").Methods(http.MethodPost).Handler(CreatePaymentHandler(service))
-	paymentsRouter := organizationRouter.PathPrefix("/payments").Subrouter()
-	paymentsRouter.Path("/{paymentId}").Methods(http.MethodPut).Handler(UpdatePaymentHandler(service))
+	organizationRouter.Path("/payments").Methods(http.MethodPut).Handler(SavePaymentHandler(service))
 
 	return router
 }

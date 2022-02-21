@@ -10,17 +10,11 @@ import (
 )
 
 const (
-	TopicCreatedPayment = "payment.created"
-	TopicUpdatedPayment = "payment.updated"
+	TopicSavedPayment = "payment.saved"
 )
 
-type CreatedPaymentEvent struct {
+type SavedPaymentEvent struct {
 	Payment Payment `json:"payment"`
-}
-
-type UpdatedPaymentEvent struct {
-	ID   string `json:"id"`
-	Data Data   `json:"data"`
 }
 
 func newMessage(ctx context.Context, v interface{}) *message.Message {

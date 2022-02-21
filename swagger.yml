@@ -3,46 +3,12 @@ info:
   title: Sample API
   version: 0.1.9
 paths:
-  /organizations/{organizationId}/payments/{paymentId}:
-    put:
-      summary: Update a payment (can upsert)
-      operationId: updatePayment
-      tags:
-        - payments
-      parameters:
-        - name: upsert
-          in: query
-          schema:
-            type: boolean
-        - in: path
-          name: organizationId
-          schema:
-            type: string
-          required: true
-        - in: path
-          name: paymentId
-          schema:
-            type: string
-          required: true
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PaymentData'
-      responses:
-        '404':
-          description: Document not found
-        '201':
-          description: Document was created
-        '204':
-          description: Document was updated
   /organizations/{organizationId}/payments:
-    post:
-      operationId: createPayment
+    put:
+      operationId: savePayment
       tags:
         - payments
-      summary: Returns a list of payments.
+      summary: Persist payment
       parameters:
         - in: path
           name: organizationId
@@ -57,11 +23,9 @@ paths:
               $ref: '#/components/schemas/PaymentData'
       responses:
         '201':
-          description: A payment object
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Payment'
+          description: A payment object was created
+        '204':
+          description: A payment object was updated
     get:
       summary: Returns a list of payments.
       operationId: listPayments
@@ -103,10 +67,10 @@ components:
         - $ref: '#/components/schemas/PaymentData'
         - type: object
           properties:
-            id:
+            organizationId:
               type: string
           required:
-            - id
+            - organizationId
     PaymentData:
       type: object
       required:
@@ -114,6 +78,7 @@ components:
         - status
         - value
         - date
+        - id
       properties:
         provider:
           type: string
@@ -122,6 +87,8 @@ components:
         scheme:
           type: string
         status:
+          type: string
+        id:
           type: string
         value:
           type: object

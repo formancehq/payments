@@ -21,23 +21,25 @@ type Payment struct {
 	Reference *string `json:"reference,omitempty"`
 	Scheme *string `json:"scheme,omitempty"`
 	Status string `json:"status"`
+	Id string `json:"id"`
 	Value PaymentDataValue `json:"value"`
 	Date time.Time `json:"date"`
 	Raw *map[string]interface{} `json:"raw,omitempty"`
-	Id string `json:"id"`
+	OrganizationId string `json:"organizationId"`
 }
 
 // NewPayment instantiates a new Payment object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPayment(provider string, status string, value PaymentDataValue, date time.Time, id string) *Payment {
+func NewPayment(provider string, status string, id string, value PaymentDataValue, date time.Time, organizationId string) *Payment {
 	this := Payment{}
 	this.Provider = provider
 	this.Status = status
+	this.Id = id
 	this.Value = value
 	this.Date = date
-	this.Id = id
+	this.OrganizationId = organizationId
 	return &this
 }
 
@@ -161,6 +163,30 @@ func (o *Payment) SetStatus(v string) {
 	o.Status = v
 }
 
+// GetId returns the Id field value
+func (o *Payment) GetId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Id
+}
+
+// GetIdOk returns a tuple with the Id field value
+// and a boolean to check if the value has been set.
+func (o *Payment) GetIdOk() (*string, bool) {
+	if o == nil  {
+		return nil, false
+	}
+	return &o.Id, true
+}
+
+// SetId sets field value
+func (o *Payment) SetId(v string) {
+	o.Id = v
+}
+
 // GetValue returns the Value field value
 func (o *Payment) GetValue() PaymentDataValue {
 	if o == nil {
@@ -241,28 +267,28 @@ func (o *Payment) SetRaw(v map[string]interface{}) {
 	o.Raw = &v
 }
 
-// GetId returns the Id field value
-func (o *Payment) GetId() string {
+// GetOrganizationId returns the OrganizationId field value
+func (o *Payment) GetOrganizationId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return o.OrganizationId
 }
 
-// GetIdOk returns a tuple with the Id field value
+// GetOrganizationIdOk returns a tuple with the OrganizationId field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetIdOk() (*string, bool) {
+func (o *Payment) GetOrganizationIdOk() (*string, bool) {
 	if o == nil  {
 		return nil, false
 	}
-	return &o.Id, true
+	return &o.OrganizationId, true
 }
 
-// SetId sets field value
-func (o *Payment) SetId(v string) {
-	o.Id = v
+// SetOrganizationId sets field value
+func (o *Payment) SetOrganizationId(v string) {
+	o.OrganizationId = v
 }
 
 func (o Payment) MarshalJSON() ([]byte, error) {
@@ -280,6 +306,9 @@ func (o Payment) MarshalJSON() ([]byte, error) {
 		toSerialize["status"] = o.Status
 	}
 	if true {
+		toSerialize["id"] = o.Id
+	}
+	if true {
 		toSerialize["value"] = o.Value
 	}
 	if true {
@@ -289,7 +318,7 @@ func (o Payment) MarshalJSON() ([]byte, error) {
 		toSerialize["raw"] = o.Raw
 	}
 	if true {
-		toSerialize["id"] = o.Id
+		toSerialize["organizationId"] = o.OrganizationId
 	}
 	return json.Marshal(toSerialize)
 }

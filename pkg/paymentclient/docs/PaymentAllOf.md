@@ -4,13 +4,13 @@
 
 Name | Type | Description | Notes
 ------------ | ------------- | ------------- | -------------
-**Id** | **string** |  | 
+**OrganizationId** | **string** |  | 
 
 ## Methods
 
 ### NewPaymentAllOf
 
-`func NewPaymentAllOf(id string, ) *PaymentAllOf`
+`func NewPaymentAllOf(organizationId string, ) *PaymentAllOf`
 
 NewPaymentAllOf instantiates a new PaymentAllOf object
 This constructor will assign default values to properties that have it defined,
@@ -25,24 +25,24 @@ NewPaymentAllOfWithDefaults instantiates a new PaymentAllOf object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
-### GetId
+### GetOrganizationId
 
-`func (o *PaymentAllOf) GetId() string`
+`func (o *PaymentAllOf) GetOrganizationId() string`
 
-GetId returns the Id field if non-nil, zero value otherwise.
+GetOrganizationId returns the OrganizationId field if non-nil, zero value otherwise.
 
-### GetIdOk
+### GetOrganizationIdOk
 
-`func (o *PaymentAllOf) GetIdOk() (*string, bool)`
+`func (o *PaymentAllOf) GetOrganizationIdOk() (*string, bool)`
 
-GetIdOk returns a tuple with the Id field if it's non-nil, zero value otherwise
+GetOrganizationIdOk returns a tuple with the OrganizationId field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
-### SetId
+### SetOrganizationId
 
-`func (o *PaymentAllOf) SetId(v string)`
+`func (o *PaymentAllOf) SetOrganizationId(v string)`
 
-SetId sets Id field to given value.
+SetOrganizationId sets OrganizationId field to given value.
 
 
 

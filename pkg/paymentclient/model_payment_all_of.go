@@ -16,16 +16,16 @@ import (
 
 // PaymentAllOf struct for PaymentAllOf
 type PaymentAllOf struct {
-	Id string `json:"id"`
+	OrganizationId string `json:"organizationId"`
 }
 
 // NewPaymentAllOf instantiates a new PaymentAllOf object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPaymentAllOf(id string) *PaymentAllOf {
+func NewPaymentAllOf(organizationId string) *PaymentAllOf {
 	this := PaymentAllOf{}
-	this.Id = id
+	this.OrganizationId = organizationId
 	return &this
 }
 
@@ -37,34 +37,34 @@ func NewPaymentAllOfWithDefaults() *PaymentAllOf {
 	return &this
 }
 
-// GetId returns the Id field value
-func (o *PaymentAllOf) GetId() string {
+// GetOrganizationId returns the OrganizationId field value
+func (o *PaymentAllOf) GetOrganizationId() string {
 	if o == nil {
 		var ret string
 		return ret
 	}
 
-	return o.Id
+	return o.OrganizationId
 }
 
-// GetIdOk returns a tuple with the Id field value
+// GetOrganizationIdOk returns a tuple with the OrganizationId field value
 // and a boolean to check if the value has been set.
-func (o *PaymentAllOf) GetIdOk() (*string, bool) {
+func (o *PaymentAllOf) GetOrganizationIdOk() (*string, bool) {
 	if o == nil  {
 		return nil, false
 	}
-	return &o.Id, true
+	return &o.OrganizationId, true
 }
 
-// SetId sets field value
-func (o *PaymentAllOf) SetId(v string) {
-	o.Id = v
+// SetOrganizationId sets field value
+func (o *PaymentAllOf) SetOrganizationId(v string) {
+	o.OrganizationId = v
 }
 
 func (o PaymentAllOf) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if true {
-		toSerialize["id"] = o.Id
+		toSerialize["organizationId"] = o.OrganizationId
 	}
 	return json.Marshal(toSerialize)
 }

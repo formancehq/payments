@@ -23,7 +23,7 @@ func runApiWithMock(t *testing.T, fn func(t *mtest.T, mux *mux.Router)) {
 func TestHttpServerCreatePayment(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/organizations/foo/payments", bytes.NewBufferString(`{}`))
+		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments", bytes.NewBufferString(`{}`))
 
 		m.ServeHTTP(rec, req)
 
@@ -36,29 +36,17 @@ func TestHttpServerCreatePayment(t *testing.T) {
 func TestHttpServerUpdatePayment(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		_, err := t.DB.Collection("Payment").InsertOne(context.Background(), map[string]interface{}{
-			"_id":          "1",
-			"organization": "foo",
+			"_id":            "1",
+			"organizationId": "foo",
 		})
 		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments/1", bytes.NewBufferString(`{}`))
+		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments", bytes.NewBufferString(`{"id": "1"}`))
 
 		m.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
-	})
-}
-
-func TestHttpServerUpsertPayment(t *testing.T) {
-	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
-
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPut, "/organizations/foo/payments/1?upsert=true", bytes.NewBufferString(`{}`))
-
-		m.ServeHTTP(rec, req)
-
-		assert.Equal(t, http.StatusCreated, rec.Result().StatusCode)
 	})
 }
 

@@ -21,6 +21,7 @@ type PaymentData struct {
 	Reference *string `json:"reference,omitempty"`
 	Scheme *string `json:"scheme,omitempty"`
 	Status string `json:"status"`
+	Id string `json:"id"`
 	Value PaymentDataValue `json:"value"`
 	Date time.Time `json:"date"`
 	Raw *map[string]interface{} `json:"raw,omitempty"`
@@ -30,10 +31,11 @@ type PaymentData struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPaymentData(provider string, status string, value PaymentDataValue, date time.Time) *PaymentData {
+func NewPaymentData(provider string, status string, id string, value PaymentDataValue, date time.Time) *PaymentData {
 	this := PaymentData{}
 	this.Provider = provider
 	this.Status = status
+	this.Id = id
 	this.Value = value
 	this.Date = date
 	return &this
@@ -159,6 +161,30 @@ func (o *PaymentData) SetStatus(v string) {
 	o.Status = v
 }
 
+// GetId returns the Id field value
+func (o *PaymentData) GetId() string {
+	if o == nil {
+		var ret string
+		return ret
+	}
+
+	return o.Id
+}
+
+// GetIdOk returns a tuple with the Id field value
+// and a boolean to check if the value has been set.
+func (o *PaymentData) GetIdOk() (*string, bool) {
+	if o == nil  {
+		return nil, false
+	}
+	return &o.Id, true
+}
+
+// SetId sets field value
+func (o *PaymentData) SetId(v string) {
+	o.Id = v
+}
+
 // GetValue returns the Value field value
 func (o *PaymentData) GetValue() PaymentDataValue {
 	if o == nil {
@@ -252,6 +278,9 @@ func (o PaymentData) MarshalJSON() ([]byte, error) {
 	}
 	if true {
 		toSerialize["status"] = o.Status
+	}
+	if true {
+		toSerialize["id"] = o.Id
 	}
 	if true {
 		toSerialize["value"] = o.Value

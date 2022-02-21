@@ -8,6 +8,7 @@ Name | Type | Description | Notes
 **Reference** | Pointer to **string** |  | [optional] 
 **Scheme** | Pointer to **string** |  | [optional] 
 **Status** | **string** |  | 
+**Id** | **string** |  | 
 **Value** | [**PaymentDataValue**](PaymentDataValue.md) |  | 
 **Date** | **time.Time** |  | 
 **Raw** | Pointer to **map[string]interface{}** |  | [optional] 
@@ -16,7 +17,7 @@ Name | Type | Description | Notes
 
 ### NewPaymentData
 
-`func NewPaymentData(provider string, status string, value PaymentDataValue, date time.Time, ) *PaymentData`
+`func NewPaymentData(provider string, status string, id string, value PaymentDataValue, date time.Time, ) *PaymentData`
 
 NewPaymentData instantiates a new PaymentData object
 This constructor will assign default values to properties that have it defined,
@@ -119,6 +120,26 @@ and a boolean to check if the value has been set.
 `func (o *PaymentData) SetStatus(v string)`
 
 SetStatus sets Status field to given value.
+
+
+### GetId
+
+`func (o *PaymentData) GetId() string`
+
+GetId returns the Id field if non-nil, zero value otherwise.
+
+### GetIdOk
+
+`func (o *PaymentData) GetIdOk() (*string, bool)`
+
+GetIdOk returns a tuple with the Id field if it's non-nil, zero value otherwise
+and a boolean to check if the value has been set.
+
+### SetId
+
+`func (o *PaymentData) SetId(v string)`
+
+SetId sets Id field to given value.
 
 
 ### GetValue
