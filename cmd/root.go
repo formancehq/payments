@@ -61,6 +61,7 @@ const (
 	esInsecureFlag                       = "es-insecure"
 	esUsernameFlag                       = "es-username"
 	esPasswordFlag                       = "es-password"
+	noAuthFlag                           = "no-auth"
 
 	serviceName = "Payments"
 )
@@ -224,15 +225,17 @@ var rootCmd = &cobra.Command{
 				})
 			})
 		}
-		m.Use(
-			middlewares.AuthMiddleware(&http.Client{
-				Transport: sharedotlp.NewHTTPTransport(http.DefaultTransport),
-				Timeout:   10 * time.Second,
-			}, authUri),
-			middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
-				return mux.Vars(r)[name]
-			}),
-		)
+		if !viper.GetBool(noAuthFlag) {
+			m.Use(
+				middlewares.AuthMiddleware(&http.Client{
+					Transport: sharedotlp.NewHTTPTransport(http.DefaultTransport),
+					Timeout:   10 * time.Second,
+				}, authUri),
+				middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
+					return mux.Vars(r)[name]
+				}),
+			)
+		}
 
 		rootMux := mux.NewRouter()
 		rootMux.Use(
@@ -289,6 +292,7 @@ func init() {
 	rootCmd.Flags().String(esUsernameFlag, "", "ES username")
 	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
+	rootCmd.Flags().Bool(noAuthFlag, false, "Disable authentication")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
