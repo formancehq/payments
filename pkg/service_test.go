@@ -33,18 +33,18 @@ func TestCreatePayment(t *testing.T) {
 
 func TestListPayments(t *testing.T) {
 	runWithMock(t, func(t *mtest.T) {
-		t.DB.Collection("Payment").InsertMany(context.Background(), []interface{}{
+		t.DB.Collection(payment.Collection).InsertMany(context.Background(), []interface{}{
 			map[string]interface{}{
-				"_id":          uuid.New(),
-				"organization": "test",
+				"_id":            uuid.New(),
+				"organizationId": "test",
 			},
 			map[string]interface{}{
-				"_id":          uuid.New(),
-				"organization": "test",
+				"_id":            uuid.New(),
+				"organizationId": "test",
 			},
 			map[string]interface{}{
-				"_id":          uuid.New(),
-				"organization": "test",
+				"_id":            uuid.New(),
+				"organizationId": "test",
 			},
 		})
 		service := payment.NewDefaultService(t.DB)

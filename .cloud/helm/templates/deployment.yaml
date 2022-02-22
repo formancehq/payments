@@ -79,6 +79,8 @@ spec:
               value: {{ .Values.elasticSearch.url }}
             - name: ES_INDEX
               value: {{ .Values.elasticSearch.index }}
+            - name: HTTP_BASIC
+              value: "{{ join "," .Values.basic.accounts }}"
           ports:
             - containerPort: 8080
               name: {{ .Values.serviceName }}

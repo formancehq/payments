@@ -63,6 +63,7 @@ services:
       ES_INSECURE: "true"
       ES_USERNAME: admin
       ES_PASSWORD: admin
+      HTTP_BASIC: test:test
     healthcheck:
       test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
       interval: 10s

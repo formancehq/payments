@@ -23,3 +23,6 @@ exposeUrl: ""
 auth: http://auth
 mongodbUri: "mongodb://dev-maxence-payments-mongodb:27017"
 mongodbDatabase: "payments"
+basic:
+  accounts:
+    - "bridge:QkSjMZDzLs7m5T6F"

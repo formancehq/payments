@@ -9,7 +9,6 @@ import (
 	"github.com/ThreeDotsLabs/watermill/pubsub/gochannel"
 	"github.com/elastic/go-elasticsearch/v7/esapi"
 	"github.com/gorilla/mux"
-	"github.com/numary/go-libs-cloud/pkg/middlewares"
 	"github.com/numary/go-libs-cloud/pkg/sharedotlp"
 	"github.com/numary/payment/pkg"
 	"github.com/opensearch-project/opensearch-go"
@@ -62,6 +61,7 @@ const (
 	esUsernameFlag                       = "es-username"
 	esPasswordFlag                       = "es-password"
 	noAuthFlag                           = "no-auth"
+	httpBasicFlag                        = "http-basic"
 
 	serviceName = "Payments"
 )
@@ -226,15 +226,21 @@ var rootCmd = &cobra.Command{
 			})
 		}
 		if !viper.GetBool(noAuthFlag) {
-			m.Use(
-				middlewares.AuthMiddleware(&http.Client{
+			credentials := make(map[string]string)
+			for _, c := range viper.GetStringSlice(httpBasicFlag) {
+				parts := strings.SplitN(c, ":", 2)
+				if len(parts) < 2 {
+					return errors.New("invalid http basic flag")
+				}
+				credentials[parts[0]] = parts[1]
+			}
+			m.Use(payment.Middleware(
+				payment.NewHttpBearerMethod(&http.Client{
 					Transport: sharedotlp.NewHTTPTransport(http.DefaultTransport),
 					Timeout:   10 * time.Second,
 				}, authUri),
-				middlewares.CheckOrganizationAccessMiddleware(func(r *http.Request, name string) string {
-					return mux.Vars(r)[name]
-				}),
-			)
+				payment.NewHTTPBasicMethod(credentials),
+			))
 		}
 
 		rootMux := mux.NewRouter()
@@ -293,6 +299,7 @@ func init() {
 	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
 	rootCmd.Flags().Bool(noAuthFlag, false, "Disable authentication")
+	rootCmd.Flags().String(httpBasicFlag, "", "HTTP basic authentication")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()

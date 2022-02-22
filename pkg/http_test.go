@@ -54,16 +54,16 @@ func TestHttpServerListPayments(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		_, err := t.DB.Collection("Payment").InsertMany(context.Background(), []interface{}{
 			map[string]interface{}{
-				"_id":          "1",
-				"organization": "foo",
+				"_id":            "1",
+				"organizationId": "foo",
 			},
 			map[string]interface{}{
-				"_id":          "2",
-				"organization": "foo",
+				"_id":            "2",
+				"organizationId": "foo",
 			},
 			map[string]interface{}{
-				"_id":          "3",
-				"organization": "foo",
+				"_id":            "3",
+				"organizationId": "foo",
 			},
 		})
 		assert.NoError(t, err)
