@@ -21,6 +21,6 @@ jobs:
     uses: numary/gh-workflows/.github/workflows/deploy-production.yml@main
     with:
       service: payments
-      version: payments-${{ github.event.release.tag_name }}
+      version: ${{ github.event.release.tag_name }}
     secrets:
       ARGOCD_TOKEN: ${{ secrets.ARGOCD_PRODUCTION }}
