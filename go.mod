@@ -8,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.0
 	github.com/numary/go-libs v0.0.0-20220224131631-02329283c5bd
-	github.com/numary/go-libs-cloud v0.0.0-20220217114939-76bdfb442215
+	github.com/numary/go-libs-cloud v0.0.0-20220224220343-05b6ba2cc103
 	github.com/opensearch-project/opensearch-go v1.0.0
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1

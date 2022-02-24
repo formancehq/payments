@@ -411,6 +411,8 @@ github.com/numary/go-libs-cloud v0.0.0-20220217113907-658668a2f9be h1:g/ZWd9bQhA
 github.com/numary/go-libs-cloud v0.0.0-20220217113907-658668a2f9be/go.mod h1:p70GS7VD+TKBdiT13De7lnrO4eYwq1iEMjT3XoAzbu8=
 github.com/numary/go-libs-cloud v0.0.0-20220217114939-76bdfb442215 h1:rgulWSqQ7Iff8Kw4j8vkt9CsgT81KQVEIUgiv8AV8Zw=
 github.com/numary/go-libs-cloud v0.0.0-20220217114939-76bdfb442215/go.mod h1:YhamPw3MoqNm3LG+QOaV5nb0KDUTR84+JMRkb4cYyx0=
+github.com/numary/go-libs-cloud v0.0.0-20220224220343-05b6ba2cc103 h1:3D1RpvNJ5iv2EpGCJ+B2viOqTJMv1dcqD2w9glWAbTo=
+github.com/numary/go-libs-cloud v0.0.0-20220224220343-05b6ba2cc103/go.mod h1:YhamPw3MoqNm3LG+QOaV5nb0KDUTR84+JMRkb4cYyx0=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
 github.com/oklog/ulid v1.3.1 h1:EGfNDEx6MqHz8B3uNV6QAib1UR2Lm97sHi3ocA6ESJ4=
