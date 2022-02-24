@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/gorilla/mux"
+	"github.com/numary/go-libs/sharedapi"
 	payment "github.com/numary/payment/pkg"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
@@ -78,8 +79,13 @@ func TestHttpServerListPayments(t *testing.T) {
 		m.ServeHTTP(rec, req)
 
 		assert.Equal(t, http.StatusOK, rec.Result().StatusCode)
-		ret := make([]payment.Payment, 0)
+
+		type Response struct {
+			sharedapi.BaseResponse
+			Data []payment.Payment `json:"data"`
+		}
+		ret := &Response{}
 		assert.NoError(t, json.NewDecoder(rec.Body).Decode(&ret))
-		assert.Len(t, ret, 2)
+		assert.Len(t, ret.Data, 2)
 	})
 }

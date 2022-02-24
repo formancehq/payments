@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/gorilla/mux"
+	"github.com/numary/go-libs/sharedapi"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,11 +54,24 @@ const (
 )
 
 func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
-	panic(err)
+	w.WriteHeader(http.StatusInternalServerError)
+	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode: "INTERNAL",
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func handleClientError(w http.ResponseWriter, r *http.Request, err error) {
-	http.Error(w, err.Error(), http.StatusBadRequest)
+	w.WriteHeader(http.StatusBadRequest)
+	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode:    "INTERNAL",
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func ListPaymentsHandler(s Service) http.HandlerFunc {
@@ -116,7 +130,9 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 			handleServerError(w, r, err)
 			return
 		}
-		err = json.NewEncoder(w).Encode(results)
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
+			Data: results,
+		})
 		if err != nil {
 			handleServerError(w, r, err)
 			return
