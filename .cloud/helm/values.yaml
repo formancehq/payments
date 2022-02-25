@@ -2,7 +2,7 @@ serviceName: payments
 env: dev
 awsAccountId: "955332203423"
 
-replicaCount: 2
+replicaCount: 1
 hpaMinReplicas: 1
 hpaMaxReplicas: 20
 
