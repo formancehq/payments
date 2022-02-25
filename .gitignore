@@ -2,3 +2,4 @@
 vendor
 .cloud/ressources/.terraform
 .cloud/ressources/.terraform.lock.hcl
+/.cloud/helm/charts/

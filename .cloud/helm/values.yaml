@@ -26,3 +26,6 @@ mongodbDatabase: "payments"
 basic:
   accounts:
     - "bridge:QkSjMZDzLs7m5T6F"
+
+mongodb:
+  architecture: "standalone"
