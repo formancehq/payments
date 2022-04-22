@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  opensearch:
+    image: opensearchproject/opensearch:1.2.4
+    environment:
+      discovery.type: single-node
+  postgres:
+    image: postgres:13.4-alpine
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: auth
+  auth:
+    image: 955332203423.dkr.ecr.eu-west-1.amazonaws.com/numary:auth-main
+    environment:
+      PORT: 8080
+      TOKEN_KEY: guTUZbJn4whReYvbHpahBmA3yBmwTNJLSthJuRG9YQBPrWRJVCRnN3ZXub5XADAjVHSZaaKKBcrSK7sgkUuXMjxS6sFxU6Fsq94bUqLnsM5Mv7EERXefSBXPTuWqbdtb
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: auth
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root
+      # Well, these vars does not work for this deployment but these are mandatory
+      STYTCH_PROJECT_ID: project-test-ea7b6a33-7bef-43e8-beb4-af43099aef61
+      STYTCH_PUBLIC_TOKEN: public-token-test-be7e543f-3a6e-474f-8a15-fa4762afeb58
+      STYTCH_URL:
+      STYTCH_LOGIN_MAGIC_LINK: https://control.numary.localhost/login-magic-link
+      STYTCH_SIGNUP_MAGIC_LINK: https://control.numary.localhost/signup
+      STYTCH_INVITE_MAGIC_LINK: https://control.numary.localhost/invite
+      STYTCH_SECRET_AUTH: foo
+    depends_on:
+      - postgres
+  mongodb:
+    image: mongo:4.4
+  payments:
+    image: golang:1.17-alpine
+    depends_on:
+      - postgres
+      - jaeger
+      - auth
+      - mongodb
+      - opensearch
+    command:
+      - go
+      - run
+      - main.go
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/src
+    working_dir: /src
+    environment:
+      DEBUG: "true"
+      OTEL_TRACES: "true"
+      OTEL_TRACES_EXPORTER: jaeger
+      OTEL_TRACES_EXPORTER_JAEGER_ENDPOINT: http://jaeger:14268/api/traces
+      OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
+      MONGODB_URI: mongodb://mongodb:27017
+      AUTH_URI: http://auth:8080
+      ES_INDEX: ledger
+      ES_ADDRESS: https://opensearch:9200
+      ES_INSECURE: "true"
+      ES_USERNAME: admin
+      ES_PASSWORD: admin
+      HTTP_BASIC: test:test
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
+      interval: 10s
+      timeout: 5s
+      start_period: 3s
+  jaeger:
+    image: jaegertracing/all-in-one:1.31
+    ports:
+      - "16686:16686/tcp"

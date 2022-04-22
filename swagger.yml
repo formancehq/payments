@@ -1,0 +1,116 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  version: 0.1.9
+paths:
+  /:
+    put:
+      operationId: savePayment
+      tags:
+        - payments
+      summary: Persist payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Payment'
+      responses:
+        '201':
+          description: A payment object was created
+        '204':
+          description: A payment object was updated
+    get:
+      summary: Returns a list of payments.
+      operationId: listPayments
+      tags:
+        - payments
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: skip
+          in: query
+          schema:
+            type: integer
+        - name: sort
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':    # status code
+          description: A JSON array of payments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListPaymentsResponse'
+
+components:
+  schemas:
+    ListPaymentsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Payment'
+    Payment:
+      type: object
+      required:
+        - provider
+        - status
+        - value
+        - date
+        - id
+        - type
+        - scheme
+      properties:
+        provider:
+          type: string
+        reference:
+          type: string
+        scheme:
+          type: string
+          enum:
+            - visa
+            - mastercard
+            - apple pay
+            - google pay
+            - sepa debit
+            - sepa credit
+            - sepa
+            - a2a
+            - ach debit
+            - ach
+            - rtp
+            - other
+        status:
+          type: string
+        type:
+          type: string
+          enum:
+            - pay-in
+            - payout
+            - other
+        id:
+          type: string
+        value:
+          type: object
+          required:
+            - amount
+            - asset
+          properties:
+            amount:
+              type: integer
+            asset:
+              type: string
+        date:
+          type: string
+          format: date-time
+        raw:
+          nullable: true

@@ -1,0 +1,70 @@
+name: release
+on:
+  release:
+    types: [prereleased, released]
+permissions:
+  contents: write
+jobs:
+  build_binary:
+    name: 'Build Binary'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v2
+        with:
+          go-version: '1.18'
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Fetch all tags
+        run: git fetch --force --tags
+      - uses: actions/cache@v2
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: OSXCross for CGO Support
+        run: |
+          mkdir ../../osxcross
+          git clone https://github.com/plentico/osxcross-target.git ../../osxcross/target
+      - name: Downgrade libssl
+        run: |
+          echo 'deb http://security.ubuntu.com/ubuntu bionic-security main' | sudo tee -a /etc/apt/sources.list
+          sudo apt update && apt-cache policy libssl1.0-dev
+          sudo apt-get install libssl1.0-dev
+      - run: sudo apt install gcc-mingw-w64 -y
+      - name: Run GoReleaser
+        env:
+          GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+          FURY_TOKEN: ${{ secrets.FURY_TOKEN   }}
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          version: latest
+          args: release --parallelism 4 --rm-dist --skip-validate
+  build_docker:
+    name: 'Build & Publish Docker'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: "NumaryBot"
+          password: ${{ secrets.NUMARY_GITHUB_TOKEN }}
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ghcr.io/numary/payments:latest,ghcr.io/numary/payments:${{ github.event.release.tag_name }}
+          build-args: |
+            APP_SHA=${{ github.sha }}
+            VERSION=${{ github.event.release.tag_name }}
