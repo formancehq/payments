@@ -101,7 +101,9 @@ func (d *defaultServiceImpl) SavePayment(ctx context.Context, p Payment) error {
 	}
 	if d.publisher != nil {
 		err = d.publisher.Publish(TopicSavedPayment, newMessage(ctx, SavedPaymentEvent{
-			Payment: p,
+			Date:    p.Date,
+			Type:    TopicSavedPayment,
+			Payload: p,
 		}))
 		if err != nil {
 			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicSavedPayment, err)

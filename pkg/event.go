@@ -7,14 +7,17 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"go.opentelemetry.io/otel/propagation"
+	"time"
 )
 
 const (
-	TopicSavedPayment = "payment.saved"
+	TopicSavedPayment = "SAVED_PAYMENT"
 )
 
 type SavedPaymentEvent struct {
-	Payment Payment `json:"payment"`
+	Date    time.Time `json:"date"`
+	Type    string    `json:"type"`
+	Payload Payment   `json:"payload"`
 }
 
 func newMessage(ctx context.Context, v interface{}) *message.Message {
