@@ -27,7 +27,7 @@ func runApiWithMock(t *testing.T, fn func(t *mtest.T, mux *mux.Router)) {
 func TestHttpServerCreatePayment(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPut, "/payments", bytes.NewBufferString(`{}`))
+		req := httptest.NewRequest(http.MethodPut, "/", bytes.NewBufferString(`{}`))
 
 		m.ServeHTTP(rec, req)
 
@@ -44,7 +44,7 @@ func TestHttpServerUpdatePayment(t *testing.T) {
 		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPut, "/payments", bytes.NewBufferString(`{"id": "1", "scheme": "visa", "date": "`+time.Now().Add(time.Minute).Format(time.RFC3339)+`"}`))
+		req := httptest.NewRequest(http.MethodPut, "/", bytes.NewBufferString(`{"id": "1", "scheme": "visa", "date": "`+time.Now().Add(time.Minute).Format(time.RFC3339)+`"}`))
 
 		m.ServeHTTP(rec, req)
 
@@ -77,7 +77,7 @@ func TestHttpServerListPayments(t *testing.T) {
 		assert.NoError(t, err)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodGet, "/payments", nil)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		values := url.Values{}
 		values.Set("limit", "2")
 		values.Set("sort", "id:desc")
