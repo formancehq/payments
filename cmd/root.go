@@ -5,6 +5,8 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/gorilla/mux"
+	"github.com/numary/go-libs/oauth2/oauth2introspect"
+	"github.com/numary/go-libs/sharedauth"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
 	"github.com/numary/go-libs/sharedotlp"
@@ -25,7 +27,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.uber.org/fx"
 	"net/http"
 	"os"
@@ -65,6 +66,12 @@ const (
 	publisherKafkaTLSEnabled             = "publisher-kafka-tls-enabled"
 	publisherTopicMappingFlag            = "publisher-topic-mapping"
 	publisherHttpEnabledFlag             = "publisher-http-enabled"
+	authBasicEnabledFlag                 = "auth-basic-enabled"
+	authBasicCredentialsFlag             = "auth-basic-credentials"
+	authBearerEnabledFlag                = "auth-bearer-enabled"
+	authBearerIntrospectUrlFlag          = "auth-bearer-introspect-url"
+	authBearerAudienceFlag               = "auth-bearer-audience"
+	authBearerAudiencesWildcardFlag      = "auth-bearer-audiences-wildcard"
 
 	serviceName = "Payments"
 )
@@ -137,22 +144,24 @@ func HTTPModule(authUri string) fx.Option {
 			if viper.GetBool(otelTracesFlag) {
 				m.Use(otelmux.Middleware(serviceName))
 			}
-			if !viper.GetBool(noAuthFlag) {
+			methods := make([]sharedauth.Method, 0)
+			if viper.GetBool(authBasicEnabledFlag) {
 				credentials := make(map[string]string)
-				for _, c := range viper.GetStringSlice(httpBasicFlag) {
-					parts := strings.SplitN(c, ":", 2)
-					if len(parts) < 2 {
-						return nil, errors.New("invalid http basic flag")
-					}
+				for _, kv := range viper.GetStringSlice(authBasicCredentialsFlag) {
+					parts := strings.SplitN(kv, ":", 2)
 					credentials[parts[0]] = parts[1]
 				}
-				m.Use(payment.AuthMiddleware(
-					payment.NewHttpBearerMethod(&http.Client{
-						Transport: otelhttp.NewTransport(http.DefaultTransport),
-						Timeout:   10 * time.Second,
-					}, authUri),
-					payment.NewHTTPBasicMethod(credentials),
+				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
+			}
+			if viper.GetBool(authBearerEnabledFlag) {
+				methods = append(methods, sharedauth.NewHttpBearerMethod(
+					oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
+					viper.GetBool(authBearerAudiencesWildcardFlag),
+					viper.GetStringSlice(authBearerAudienceFlag)...,
 				))
+			}
+			if len(methods) > 0 {
+				m.Use(sharedauth.Middleware(methods...))
 			}
 
 			rootMux := mux.NewRouter()
@@ -325,6 +334,12 @@ func init() {
 	rootCmd.Flags().String(publisherKafkaSASLMechanism, "", "SASL authentication mechanism")
 	rootCmd.Flags().Int(publisherKafkaSASLScramSHASize, 512, "SASL SCRAM SHA size")
 	rootCmd.Flags().Bool(publisherKafkaTLSEnabled, false, "Enable TLS to connect on kafka")
+	rootCmd.Flags().Bool(authBasicEnabledFlag, false, "Enable basic auth")
+	rootCmd.Flags().StringSlice(authBasicCredentialsFlag, []string{}, "HTTP basic auth credentials (<username>:<password>)")
+	rootCmd.Flags().Bool(authBearerEnabledFlag, false, "Enable bearer auth")
+	rootCmd.Flags().String(authBearerIntrospectUrlFlag, "", "OAuth2 introspect URL")
+	rootCmd.Flags().StringSlice(authBearerAudienceFlag, []string{}, "Allowed audiences")
+	rootCmd.Flags().Bool(authBearerAudiencesWildcardFlag, false, "Don't check audience")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
