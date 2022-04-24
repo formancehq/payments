@@ -3,7 +3,6 @@ package cmd
 import (
 	"context"
 	"github.com/Shopify/sarama"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
@@ -38,7 +37,6 @@ import (
 const (
 	mongodbUriFlag                       = "mongodb-uri"
 	mongodbDatabaseFlag                  = "mongodb-database"
-	authUriFlag                          = "auth-uri"
 	otelTracesFlag                       = "otel-traces"
 	otelTracesExporterFlag               = "otel-traces-exporter"
 	otelTracesExporterJaegerEndpointFlag = "otel-traces-exporter-jaeger-endpoint"
@@ -123,12 +121,12 @@ func ServiceModule() fx.Option {
 }
 
 func ServicePublishModule() fx.Option {
-	return fx.Provide(func(p message.Publisher) payment.ServiceOptionFn {
+	return fx.Provide(fx.Annotate(func(p *sharedpublish.TopicMapperPublisher) payment.ServiceOption {
 		return payment.WithPublisher(p)
-	})
+	}, fx.ResultTags(`group:"serviceOptions"`)))
 }
 
-func HTTPModule(authUri string) fx.Option {
+func HTTPModule() fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
@@ -220,9 +218,14 @@ var rootCmd = &cobra.Command{
 			return errors.New("missing mongodb database name")
 		}
 
-		authUri := viper.GetString(authUriFlag)
-		if authUri == "" {
-			return errors.New("missing auth uri")
+		topics := viper.GetStringSlice(publisherTopicMappingFlag)
+		mapping := make(map[string]string)
+		for _, topic := range topics {
+			parts := strings.SplitN(topic, ":", 2)
+			if len(parts) != 2 {
+				panic("invalid topic flag")
+			}
+			mapping[parts[0]] = parts[1]
 		}
 
 		options := make([]fx.Option, 0)
@@ -240,9 +243,10 @@ var rootCmd = &cobra.Command{
 					Insecure: viper.GetBool(otelTracesExporterOTLPInsecureFlag),
 				},
 			}),
+			sharedpublish.TopicMapperPublisherModule(mapping),
 			ServiceModule(),
 			ServicePublishModule(),
-			HTTPModule(authUri),
+			HTTPModule(),
 		)
 
 		options = append(options, sharedpublish.Module())
@@ -307,7 +311,6 @@ func init() {
 	rootCmd.Flags().Bool(debugFlag, false, "Debug mode")
 	rootCmd.Flags().String(mongodbUriFlag, "mongodb://localhost:27017", "MongoDB address")
 	rootCmd.Flags().String(mongodbDatabaseFlag, "payments", "MongoDB database name")
-	rootCmd.Flags().String(authUriFlag, "auth-uri", "Auth uri")
 	rootCmd.Flags().Bool(otelTracesFlag, false, "Enable OpenTelemetry traces support")
 	rootCmd.Flags().String(otelTracesExporterFlag, "stdout", "OpenTelemetry traces exporter")
 	rootCmd.Flags().String(otelTracesExporterJaegerEndpointFlag, "", "OpenTelemetry traces Jaeger exporter endpoint")

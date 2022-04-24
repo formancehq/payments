@@ -7,7 +7,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.1.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/gorilla/mux v1.8.0
-	github.com/numary/go-libs v0.0.0-20220422182305-6598727372a6
+	github.com/numary/go-libs v0.0.0-20220424155450-f2a5122cde41
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1

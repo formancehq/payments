@@ -2,7 +2,8 @@ package payment
 
 import (
 	"context"
-	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/go-libs/sharedpublish"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -35,7 +36,7 @@ type Service interface {
 
 type defaultServiceImpl struct {
 	database  *mongo.Database
-	publisher message.Publisher
+	publisher *sharedpublish.TopicMapperPublisher
 }
 
 func (d *defaultServiceImpl) ListPayments(ctx context.Context, parameters ListQueryParameters) (*mongo.Cursor, error) {
@@ -100,21 +101,24 @@ func (d *defaultServiceImpl) SavePayment(ctx context.Context, p Payment) error {
 		return err
 	}
 	if d.publisher != nil {
-		err = d.publisher.Publish(TopicSavedPayment, newMessage(ctx, SavedPaymentEvent{
+		err = d.publisher.Publish(ctx, TopicSavedPayment, SavedPaymentEvent{
 			Date:    p.Date,
 			Type:    TopicSavedPayment,
 			Payload: p,
-		}))
+		})
 		if err != nil {
 			logrus.Errorf("publishing created payment event to topic '%s': %s", TopicSavedPayment, err)
 		}
+		sharedlogging.GetLogger(ctx).Debug("Event published")
+	} else {
+		sharedlogging.GetLogger(ctx).Debug("No publisher defined for event")
 	}
 	return nil
 }
 
 var _ Service = &defaultServiceImpl{}
 
-type serviceOption interface {
+type ServiceOption interface {
 	apply(impl *defaultServiceImpl)
 }
 type ServiceOptionFn func(impl *defaultServiceImpl)
@@ -123,13 +127,13 @@ func (fn ServiceOptionFn) apply(impl *defaultServiceImpl) {
 	fn(impl)
 }
 
-func WithPublisher(publisher message.Publisher) ServiceOptionFn {
+func WithPublisher(publisher *sharedpublish.TopicMapperPublisher) ServiceOptionFn {
 	return func(impl *defaultServiceImpl) {
 		impl.publisher = publisher
 	}
 }
 
-func NewDefaultService(database *mongo.Database, opts ...serviceOption) *defaultServiceImpl {
+func NewDefaultService(database *mongo.Database, opts ...ServiceOption) *defaultServiceImpl {
 	ret := &defaultServiceImpl{
 		database: database,
 	}
