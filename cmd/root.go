@@ -47,12 +47,6 @@ const (
 	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
 	debugFlag                            = "debug"
 	envFlag                              = "env"
-	esIndexFlag                          = "es-index"
-	esAddressFlag                        = "es-address"
-	esInsecureFlag                       = "es-insecure"
-	esUsernameFlag                       = "es-username"
-	esPasswordFlag                       = "es-password"
-	httpBasicFlag                        = "http-basic"
 	publisherKafkaEnabledFlag            = "publisher-kafka-enabled"
 	publisherKafkaBrokerFlag             = "publisher-kafka-broker"
 	publisherKafkaSASLEnabled            = "publisher-kafka-sasl-enabled"
@@ -324,13 +318,7 @@ func init() {
 	rootCmd.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
 	rootCmd.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
 	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
-	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
-	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
-	rootCmd.Flags().Bool(esInsecureFlag, false, "Insecure es connection (no valid tls certificate)")
-	rootCmd.Flags().String(esUsernameFlag, "", "ES username")
-	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
-	rootCmd.Flags().String(httpBasicFlag, "", "HTTP basic authentication")
 	rootCmd.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	rootCmd.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")
 	rootCmd.Flags().StringSlice(publisherTopicMappingFlag, []string{}, "Define mapping between internal event types and topics")
