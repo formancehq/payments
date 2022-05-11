@@ -52,7 +52,6 @@ const (
 	esInsecureFlag                       = "es-insecure"
 	esUsernameFlag                       = "es-username"
 	esPasswordFlag                       = "es-password"
-	noAuthFlag                           = "no-auth"
 	httpBasicFlag                        = "http-basic"
 	publisherKafkaEnabledFlag            = "publisher-kafka-enabled"
 	publisherKafkaBrokerFlag             = "publisher-kafka-broker"
@@ -331,7 +330,6 @@ func init() {
 	rootCmd.Flags().String(esUsernameFlag, "", "ES username")
 	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
-	rootCmd.Flags().Bool(noAuthFlag, false, "Disable authentication")
 	rootCmd.Flags().String(httpBasicFlag, "", "HTTP basic authentication")
 	rootCmd.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	rootCmd.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")
