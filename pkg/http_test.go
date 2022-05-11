@@ -20,7 +20,7 @@ import (
 
 func runApiWithMock(t *testing.T, fn func(t *mtest.T, mux *mux.Router)) {
 	runWithMock(t, func(t *mtest.T) {
-		fn(t, payment.NewMux(payment.NewDefaultService(t.DB)))
+		fn(t, payment.NewMux(payment.NewDefaultService(t.DB), false))
 	})
 }
 
