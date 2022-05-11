@@ -1,10 +1,6 @@
 version: '3.8'
 
 services:
-  opensearch:
-    image: opensearchproject/opensearch:1.2.4
-    environment:
-      discovery.type: single-node
   postgres:
     image: postgres:13.4-alpine
     environment:
@@ -37,11 +33,6 @@ services:
       OTEL_TRACES_EXPORTER_JAEGER_ENDPOINT: http://jaeger:14268/api/traces
       OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
       MONGODB_URI: mongodb://mongodb:27017
-      ES_INDEX: ledger
-      ES_ADDRESS: https://opensearch:9200
-      ES_INSECURE: "true"
-      ES_USERNAME: admin
-      ES_PASSWORD: admin
     healthcheck:
       test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
       interval: 10s
