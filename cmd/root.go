@@ -47,13 +47,6 @@ const (
 	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
 	debugFlag                            = "debug"
 	envFlag                              = "env"
-	esIndexFlag                          = "es-index"
-	esAddressFlag                        = "es-address"
-	esInsecureFlag                       = "es-insecure"
-	esUsernameFlag                       = "es-username"
-	esPasswordFlag                       = "es-password"
-	noAuthFlag                           = "no-auth"
-	httpBasicFlag                        = "http-basic"
 	publisherKafkaEnabledFlag            = "publisher-kafka-enabled"
 	publisherKafkaBrokerFlag             = "publisher-kafka-broker"
 	publisherKafkaSASLEnabled            = "publisher-kafka-sasl-enabled"
@@ -70,6 +63,7 @@ const (
 	authBearerIntrospectUrlFlag          = "auth-bearer-introspect-url"
 	authBearerAudienceFlag               = "auth-bearer-audience"
 	authBearerAudiencesWildcardFlag      = "auth-bearer-audiences-wildcard"
+	authBearerUseScopesFlag              = "auth-bearer-use-scopes"
 
 	serviceName = "Payments"
 )
@@ -138,24 +132,29 @@ func HTTPModule() fx.Option {
 		}),
 		fx.Provide(func(srv payment.Service, client *mongo.Client) (*mux.Router, error) {
 
-			m := payment.NewMux(srv)
+			m := payment.NewMux(srv, viper.GetBool(authBearerUseScopesFlag))
 			if viper.GetBool(otelTracesFlag) {
 				m.Use(otelmux.Middleware(serviceName))
 			}
 			methods := make([]sharedauth.Method, 0)
 			if viper.GetBool(authBasicEnabledFlag) {
-				credentials := make(map[string]string)
+				credentials := sharedauth.Credentials{}
 				for _, kv := range viper.GetStringSlice(authBasicCredentialsFlag) {
 					parts := strings.SplitN(kv, ":", 2)
-					credentials[parts[0]] = parts[1]
+					credentials[parts[0]] = sharedauth.Credential{
+						Password: parts[1],
+						Scopes:   payment.AllScopes,
+					}
 				}
 				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
 			}
 			if viper.GetBool(authBearerEnabledFlag) {
 				methods = append(methods, sharedauth.NewHttpBearerMethod(
-					oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
-					viper.GetBool(authBearerAudiencesWildcardFlag),
-					viper.GetStringSlice(authBearerAudienceFlag)...,
+					sharedauth.NewIntrospectionValidator(
+						oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
+						viper.GetBool(authBearerAudiencesWildcardFlag),
+						viper.GetStringSlice(authBearerAudienceFlag)...,
+					),
 				))
 			}
 			if len(methods) > 0 {
@@ -319,14 +318,7 @@ func init() {
 	rootCmd.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
 	rootCmd.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
 	rootCmd.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
-	rootCmd.Flags().String(esIndexFlag, "ledger", "Index on which push new payments")
-	rootCmd.Flags().StringSlice(esAddressFlag, []string{}, "ES addresses")
-	rootCmd.Flags().Bool(esInsecureFlag, false, "Insecure es connection (no valid tls certificate)")
-	rootCmd.Flags().String(esUsernameFlag, "", "ES username")
-	rootCmd.Flags().String(esPasswordFlag, "", "ES password")
 	rootCmd.Flags().String(envFlag, "local", "Environment")
-	rootCmd.Flags().Bool(noAuthFlag, false, "Disable authentication")
-	rootCmd.Flags().String(httpBasicFlag, "", "HTTP basic authentication")
 	rootCmd.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	rootCmd.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")
 	rootCmd.Flags().StringSlice(publisherTopicMappingFlag, []string{}, "Define mapping between internal event types and topics")
@@ -343,6 +335,7 @@ func init() {
 	rootCmd.Flags().String(authBearerIntrospectUrlFlag, "", "OAuth2 introspect URL")
 	rootCmd.Flags().StringSlice(authBearerAudienceFlag, []string{}, "Allowed audiences")
 	rootCmd.Flags().Bool(authBearerAudiencesWildcardFlag, false, "Don't check audience")
+	rootCmd.Flags().Bool(authBearerUseScopesFlag, false, "Use scopes as defined by rfc https://datatracker.ietf.org/doc/html/rfc8693")
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()

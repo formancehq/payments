@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
+	"github.com/numary/go-libs/sharedauth"
 	"github.com/numary/go-libs/sharedlogging"
 	"net/http"
 	"strconv"
@@ -162,7 +163,14 @@ func SavePaymentHandler(s Service) http.HandlerFunc {
 	}
 }
 
-func NewMux(service Service) *mux.Router {
+func wrapHandler(useScopes bool, h http.Handler, scopes ...string) http.Handler {
+	if !useScopes {
+		return h
+	}
+	return sharedauth.NeedOneOfScopes(scopes...)(h)
+}
+
+func NewMux(service Service, useScopes bool) *mux.Router {
 	router := mux.NewRouter()
 	router.Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -170,8 +178,8 @@ func NewMux(service Service) *mux.Router {
 			h.ServeHTTP(w, r)
 		})
 	})
-	router.Path("/").Methods(http.MethodGet).Handler(ListPaymentsHandler(service))
-	router.Path("/").Methods(http.MethodPut).Handler(SavePaymentHandler(service))
+	router.Path("/").Methods(http.MethodGet).Handler(wrapHandler(useScopes, ListPaymentsHandler(service), ScopeReadPayments, ScopeWritePayments))
+	router.Path("/").Methods(http.MethodPut).Handler(wrapHandler(useScopes, SavePaymentHandler(service), ScopeWritePayments))
 
 	return router
 }

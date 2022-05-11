@@ -37,13 +37,11 @@ services:
       OTEL_TRACES_EXPORTER_JAEGER_ENDPOINT: http://jaeger:14268/api/traces
       OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
       MONGODB_URI: mongodb://mongodb:27017
-      AUTH_URI: http://auth:8080
       ES_INDEX: ledger
       ES_ADDRESS: https://opensearch:9200
       ES_INSECURE: "true"
       ES_USERNAME: admin
       ES_PASSWORD: admin
-      HTTP_BASIC: test:test
     healthcheck:
       test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
       interval: 10s
