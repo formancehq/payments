@@ -10,7 +10,9 @@ import (
 
 func HealthHandler(client *mongo.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, _ := context.WithDeadline(r.Context(), time.Now().Add(3*time.Second))
+		ctx, cancel := context.WithDeadline(r.Context(), time.Now().Add(3*time.Second))
+		defer cancel()
+
 		err := client.Ping(ctx, readpref.Primary())
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

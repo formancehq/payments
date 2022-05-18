@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"github.com/Shopify/sarama"
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
@@ -13,8 +14,11 @@ import (
 	"github.com/numary/go-libs/sharedpublish"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
-	http2 "github.com/numary/payments/pkg/http"
-	payment "github.com/numary/payments/pkg/service"
+	"github.com/numary/payments/pkg/bridge"
+	"github.com/numary/payments/pkg/bridge/connectors/noop"
+	"github.com/numary/payments/pkg/bridge/connectors/stripe"
+	_ "github.com/numary/payments/pkg/bridge/connectors/stripe"
+	paymentapi "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -28,6 +32,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.uber.org/fx"
+	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
@@ -90,7 +95,9 @@ func MongoModule(uri string, dbName string) fx.Option {
 						return err
 					}
 					sharedlogging.Debug("Ping database...")
-					ctx, _ = context.WithDeadline(ctx, time.Now().Add(time.Second*5))
+					ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
+					defer cancel()
+
 					err = client.Ping(ctx, readpref.Primary())
 					if err != nil {
 						return err
@@ -109,16 +116,35 @@ func MongoMonitor() fx.Option {
 	})
 }
 
-func ServiceModule() fx.Option {
-	return fx.Provide(fx.Annotate(
-		payment.NewDefaultService, fx.ParamTags(``, `group:"serviceOptions"`), fx.As(new(payment.Service)),
-	))
+type ConnectorHandler struct {
+	Handler http.Handler
+	Name    string
 }
 
-func ServicePublishModule() fx.Option {
-	return fx.Provide(fx.Annotate(func(p *sharedpublish.TopicMapperPublisher) payment.ServiceOption {
-		return payment.WithPublisher(p)
-	}, fx.ResultTags(`group:"serviceOptions"`)))
+func ConnectorModule[T bridge.ConnectorConfigObject, S bridge.ConnectorState, C bridge.Connector[T, S]](
+	name string, controller bridge.Controller[T, S, C],
+) fx.Option {
+	return fx.Options(
+		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *bridge.ConnectorManager[T, S] {
+			return bridge.NewConnectorManager[T, S, C](db, name, controller,
+				bridge.NewDefaultIngester[T, S, C](db, sharedlogging.GetLogger(context.Background()), publisher),
+			)
+		}),
+		fx.Provide(fx.Annotate(func(cm *bridge.ConnectorManager[T, S]) ConnectorHandler {
+			return ConnectorHandler{
+				Handler: paymentapi.ConnectorRouter(name, viper.GetBool(authBearerUseScopesFlag), cm),
+				Name:    name,
+			}
+		}, fx.ResultTags(`group:"connectorHandlers"`))),
+		fx.Invoke(func(lc fx.Lifecycle, cm *bridge.ConnectorManager[T, S]) {
+			lc.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					_ = cm.Restore(ctx)
+					return nil
+				},
+			})
+		}),
+	)
 }
 
 func HTTPModule() fx.Option {
@@ -126,14 +152,23 @@ func HTTPModule() fx.Option {
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					go http.ListenAndServe(":8080", m)
+					conn, err := net.Listen("tcp", ":8080")
+					if err != nil {
+						return err
+					}
+					go func() {
+						err := http.Serve(conn, m)
+						if err != nil {
+							panic(err)
+						}
+					}()
 					return nil
 				},
 			})
 		}),
-		fx.Provide(func(srv payment.Service, client *mongo.Client) (*mux.Router, error) {
+		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []ConnectorHandler) (*mux.Router, error) {
 
-			m := http2.NewMux(srv, viper.GetBool(authBearerUseScopesFlag))
+			m := paymentapi.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag))
 			if viper.GetBool(otelTracesFlag) {
 				m.Use(otelmux.Middleware(serviceName))
 			}
@@ -144,7 +179,7 @@ func HTTPModule() fx.Option {
 					parts := strings.SplitN(kv, ":", 2)
 					credentials[parts[0]] = sharedauth.Credential{
 						Password: parts[1],
-						Scopes:   http2.AllScopes,
+						Scopes:   paymentapi.AllScopes,
 					}
 				}
 				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
@@ -154,7 +189,7 @@ func HTTPModule() fx.Option {
 					sharedauth.NewIntrospectionValidator(
 						oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
 						viper.GetBool(authBearerAudiencesWildcardFlag),
-						viper.GetStringSlice(authBearerAudienceFlag)...,
+						sharedauth.AudienceIn(viper.GetStringSlice(authBearerAudienceFlag)...),
 					),
 				))
 			}
@@ -164,7 +199,7 @@ func HTTPModule() fx.Option {
 
 			rootMux := mux.NewRouter()
 			rootMux.Use(
-				http2.Recovery(func(ctx context.Context, e interface{}) {
+				paymentapi.Recovery(func(ctx context.Context, e interface{}) {
 					if viper.GetBool(otelTracesFlag) {
 						sharedotlp.RecordAsError(ctx, e)
 					} else {
@@ -178,12 +213,26 @@ func HTTPModule() fx.Option {
 					AllowCredentials: true,
 				}).Handler,
 			)
-			rootMux.Path("/_health").Handler(http2.HealthHandler(client))
-			rootMux.Path("/_live").Handler(http2.LiveHandler())
+			rootMux.Use(func(handler http.Handler) http.Handler {
+				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.Header().Set("Content-Type", "application/json")
+					handler.ServeHTTP(w, r)
+				})
+			})
+			rootMux.Path("/_health").Handler(paymentapi.HealthHandler(client))
+			rootMux.Path("/_live").Handler(paymentapi.LiveHandler())
+			connectorsSubRouter := rootMux.PathPrefix("/connectors").Subrouter()
+			for _, h := range handlers {
+				connectorsSubRouter.PathPrefix("/" + h.Name).Handler(
+					http.StripPrefix("/connectors", h.Handler),
+				)
+			}
 			rootMux.PathPrefix("/").Handler(m)
 
 			return rootMux, nil
-		}),
+		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
+		ConnectorModule[stripe.Config, stripe.State, *stripe.Connector]("stripe", &stripe.Controller{}),
+		ConnectorModule[noop.Config, noop.State, *noop.Connector]("noop", &noop.Controller{}),
 	)
 }
 
@@ -232,9 +281,11 @@ var rootCmd = &cobra.Command{
 		if !viper.GetBool(debugFlag) {
 			options = append(options, fx.NopLogger)
 		}
+		if viper.GetBool(otelTracesFlag) {
+			options = append(options, MongoMonitor())
+		}
 		options = append(options,
 			MongoModule(mongodbUri, mongodbDatabase),
-			MongoMonitor(),
 			sharedotlptraces.TracesModule(sharedotlptraces.ModuleConfig{
 				Exporter: viper.GetString(otelTracesExporterFlag),
 				OTLPConfig: &sharedotlptraces.OTLPConfig{
@@ -243,9 +294,9 @@ var rootCmd = &cobra.Command{
 					Insecure: viper.GetBool(otelTracesExporterOTLPInsecureFlag),
 				},
 			}),
-			sharedpublish.TopicMapperPublisherModule(mapping),
-			ServiceModule(),
-			ServicePublishModule(),
+			fx.Provide(fx.Annotate(func(p message.Publisher) *sharedpublish.TopicMapperPublisher {
+				return sharedpublish.NewTopicMapperPublisher(p, mapping)
+			}, fx.As(new(sharedpublish.Publisher)))),
 			HTTPModule(),
 		)
 
@@ -340,5 +391,8 @@ func init() {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
-	viper.BindPFlags(rootCmd.Flags())
+	err := viper.BindPFlags(rootCmd.Flags())
+	if err != nil {
+		panic(err)
+	}
 }

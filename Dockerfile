@@ -12,11 +12,11 @@ WORKDIR /go/src/github.com/numary/payments
 # get deps first so it's cached
 COPY go.mod .
 COPY go.sum .
-RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
+RUN --mount=type=cache,id=gomod,target=/go/bridge/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
     go mod download
 COPY . .
-RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
+RUN --mount=type=cache,id=gomod,target=/go/bridge/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
     CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH \
     CC=$TARGETARCH-linux-gnu-gcc \

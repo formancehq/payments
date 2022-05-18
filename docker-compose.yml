@@ -1,22 +1,12 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:13.4-alpine
-    environment:
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: root
-      POSTGRES_DB: auth
   mongodb:
     image: mongo:4.4
   payments:
-    image: golang:1.17-alpine
+    image: golang:1.18-alpine
     depends_on:
-      - postgres
-      - jaeger
-      - auth
       - mongodb
-      - opensearch
     command:
       - go
       - run
@@ -28,17 +18,4 @@ services:
     working_dir: /src
     environment:
       DEBUG: "true"
-      OTEL_TRACES: "true"
-      OTEL_TRACES_EXPORTER: jaeger
-      OTEL_TRACES_EXPORTER_JAEGER_ENDPOINT: http://jaeger:14268/api/traces
-      OTEL_TRACES_EXPORTER_JAEGER_INSECURE: "true"
       MONGODB_URI: mongodb://mongodb:27017
-    healthcheck:
-      test: ["CMD", "wget", "http://localhost:8080/_health", "-O", "-"]
-      interval: 10s
-      timeout: 5s
-      start_period: 3s
-  jaeger:
-    image: jaegertracing/all-in-one:1.31
-    ports:
-      - "16686:16686/tcp"
