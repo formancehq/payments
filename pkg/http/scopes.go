@@ -1,4 +1,4 @@
-package payment
+package http
 
 const (
 	ScopeReadPayments  = "payments:read"

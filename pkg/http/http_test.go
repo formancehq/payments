@@ -1,4 +1,4 @@
-package payment_test
+package http_test
 
 import (
 	"bytes"
@@ -7,6 +7,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	payment "github.com/numary/payments/pkg"
+	http2 "github.com/numary/payments/pkg/http"
+	"github.com/numary/payments/pkg/service"
+	testing2 "github.com/numary/payments/pkg/testing"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
@@ -19,8 +22,8 @@ import (
 )
 
 func runApiWithMock(t *testing.T, fn func(t *mtest.T, mux *mux.Router)) {
-	runWithMock(t, func(t *mtest.T) {
-		fn(t, payment.NewMux(payment.NewDefaultService(t.DB), false))
+	testing2.RunWithMock(t, func(t *mtest.T) {
+		fn(t, http2.NewMux(service.NewDefaultService(t.DB), false))
 	})
 }
 
@@ -37,7 +40,7 @@ func TestHttpServerCreatePayment(t *testing.T) {
 
 func TestHttpServerUpdatePayment(t *testing.T) {
 	runApiWithMock(t, func(t *mtest.T, m *mux.Router) {
-		_, err := t.DB.Collection(payment.Collection).InsertOne(context.Background(), map[string]interface{}{
+		_, err := t.DB.Collection(service.Collection).InsertOne(context.Background(), map[string]interface{}{
 			"id":   "1",
 			"date": time.Now(),
 		})
@@ -50,7 +53,7 @@ func TestHttpServerUpdatePayment(t *testing.T) {
 
 		assert.Equal(t, http.StatusNoContent, rec.Result().StatusCode)
 
-		ret := t.DB.Collection(payment.Collection).FindOne(context.Background(), map[string]interface{}{
+		ret := t.DB.Collection(service.Collection).FindOne(context.Background(), map[string]interface{}{
 			"id": "1",
 		}, options.FindOne().SetSort(bson.M{"date": -1}))
 		assert.NoError(t, ret.Err())

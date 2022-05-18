@@ -13,7 +13,8 @@ import (
 	"github.com/numary/go-libs/sharedpublish"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
-	payment "github.com/numary/payments/pkg"
+	http2 "github.com/numary/payments/pkg/http"
+	payment "github.com/numary/payments/pkg/service"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -132,7 +133,7 @@ func HTTPModule() fx.Option {
 		}),
 		fx.Provide(func(srv payment.Service, client *mongo.Client) (*mux.Router, error) {
 
-			m := payment.NewMux(srv, viper.GetBool(authBearerUseScopesFlag))
+			m := http2.NewMux(srv, viper.GetBool(authBearerUseScopesFlag))
 			if viper.GetBool(otelTracesFlag) {
 				m.Use(otelmux.Middleware(serviceName))
 			}
@@ -143,7 +144,7 @@ func HTTPModule() fx.Option {
 					parts := strings.SplitN(kv, ":", 2)
 					credentials[parts[0]] = sharedauth.Credential{
 						Password: parts[1],
-						Scopes:   payment.AllScopes,
+						Scopes:   http2.AllScopes,
 					}
 				}
 				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
@@ -163,7 +164,7 @@ func HTTPModule() fx.Option {
 
 			rootMux := mux.NewRouter()
 			rootMux.Use(
-				payment.Recovery(func(ctx context.Context, e interface{}) {
+				http2.Recovery(func(ctx context.Context, e interface{}) {
 					if viper.GetBool(otelTracesFlag) {
 						sharedotlp.RecordAsError(ctx, e)
 					} else {
@@ -177,8 +178,8 @@ func HTTPModule() fx.Option {
 					AllowCredentials: true,
 				}).Handler,
 			)
-			rootMux.Path("/_health").Handler(payment.HealthHandler(client))
-			rootMux.Path("/_live").Handler(payment.LiveHandler())
+			rootMux.Path("/_health").Handler(http2.HealthHandler(client))
+			rootMux.Path("/_live").Handler(http2.LiveHandler())
 			rootMux.PathPrefix("/").Handler(m)
 
 			return rootMux, nil

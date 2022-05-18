@@ -1,8 +1,10 @@
-package payment_test
+package service_test
 
 import (
 	"context"
 	payment "github.com/numary/payments/pkg"
+	service2 "github.com/numary/payments/pkg/service"
+	testing2 "github.com/numary/payments/pkg/testing"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
@@ -11,8 +13,8 @@ import (
 )
 
 func TestCreatePayment(t *testing.T) {
-	runWithMock(t, func(t *mtest.T) {
-		service := payment.NewDefaultService(t.DB)
+	testing2.RunWithMock(t, func(t *mtest.T) {
+		service := service2.NewDefaultService(t.DB)
 		err := service.SavePayment(context.Background(), payment.Payment{
 			ID:        "payment0",
 			Provider:  "stripe",
@@ -31,8 +33,8 @@ func TestCreatePayment(t *testing.T) {
 }
 
 func TestListPayments(t *testing.T) {
-	runWithMock(t, func(t *mtest.T) {
-		_, err := t.DB.Collection(payment.Collection).InsertMany(context.Background(), []interface{}{
+	testing2.RunWithMock(t, func(t *mtest.T) {
+		_, err := t.DB.Collection(service2.Collection).InsertMany(context.Background(), []interface{}{
 			map[string]interface{}{
 				"id": uuid.New(),
 			},
@@ -45,18 +47,18 @@ func TestListPayments(t *testing.T) {
 		})
 		assert.NoError(t, err)
 
-		service := payment.NewDefaultService(t.DB)
-		cursor, err := service.ListPayments(context.Background(), payment.ListQueryParameters{})
+		service := service2.NewDefaultService(t.DB)
+		cursor, err := service.ListPayments(context.Background(), service2.ListQueryParameters{})
 		assert.NoError(t, err)
 		assert.Equal(t, cursor.RemainingBatchLength(), 3)
 	})
 }
 
 func TestPaymentHistory(t *testing.T) {
-	runWithMock(t, func(t *mtest.T) {
+	testing2.RunWithMock(t, func(t *mtest.T) {
 		id := uuid.New()
 		moreRecent := time.Now().Round(time.Second).UTC()
-		_, err := t.DB.Collection(payment.Collection).InsertMany(context.Background(), []interface{}{
+		_, err := t.DB.Collection(service2.Collection).InsertMany(context.Background(), []interface{}{
 			map[string]interface{}{
 				"id":             id,
 				"organizationId": "test",
@@ -77,8 +79,8 @@ func TestPaymentHistory(t *testing.T) {
 			return
 		}
 
-		service := payment.NewDefaultService(t.DB)
-		cursor, err := service.ListPayments(context.Background(), payment.ListQueryParameters{})
+		service := service2.NewDefaultService(t.DB)
+		cursor, err := service.ListPayments(context.Background(), service2.ListQueryParameters{})
 		if !assert.NoError(t, err) {
 			return
 		}

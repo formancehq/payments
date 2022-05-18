@@ -1,9 +1,10 @@
-package payment
+package service
 
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
+	"github.com/numary/payments/pkg"
 	"github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +31,7 @@ type UpdateResult struct {
 }
 
 type Service interface {
-	SavePayment(ctx context.Context, data Payment) error
+	SavePayment(ctx context.Context, data payment.Payment) error
 	ListPayments(ctx context.Context, parameters ListQueryParameters) (*mongo.Cursor, error)
 }
 
@@ -95,7 +96,7 @@ func (d *defaultServiceImpl) ListPayments(ctx context.Context, parameters ListQu
 	return d.database.Collection(Collection).Aggregate(ctx, pipeline)
 }
 
-func (d *defaultServiceImpl) SavePayment(ctx context.Context, p Payment) error {
+func (d *defaultServiceImpl) SavePayment(ctx context.Context, p payment.Payment) error {
 	_, err := d.database.Collection(Collection).InsertOne(ctx, p)
 	if err != nil {
 		return err

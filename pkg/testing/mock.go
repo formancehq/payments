@@ -1,8 +1,8 @@
-package payment_test
+package testing
 
 import (
 	"context"
-	payment "github.com/numary/payments/pkg"
+	payment "github.com/numary/payments/pkg/service"
 	"github.com/ory/dockertest"
 	_ "github.com/ory/dockertest"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -10,12 +10,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
-	"os"
 	"testing"
 	"time"
 )
 
-func TestMain(m *testing.M) {
+func RunWithMock(t *testing.T, fn func(t *mtest.T)) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Default))
+	defer mt.Close()
+
 	pool, err := dockertest.NewPool("")
 	if err != nil {
 		panic(err)
@@ -52,19 +54,12 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
-	code := m.Run()
-
-	// You can't defer this because os.Exit doesn't care for defer
-	if err := pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
-
-	os.Exit(code)
-}
-
-func runWithMock(t *testing.T, fn func(t *mtest.T)) {
-	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Default))
-	defer mt.Close()
+	defer func() {
+		// You can't defer this because os.Exit doesn't care for defer
+		if err := pool.Purge(resource); err != nil {
+			log.Fatalf("Could not purge resource: %s", err)
+		}
+	}()
 
 	mt.RunOpts("Default", mtest.NewOptions().CollectionName(payment.Collection), fn)
 }

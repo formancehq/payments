@@ -1,4 +1,4 @@
-package payment
+package http
 
 import (
 	"encoding/json"
@@ -7,6 +7,8 @@ import (
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedauth"
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/service"
 	"net/http"
 	"strconv"
 	"strings"
@@ -77,11 +79,11 @@ func handleClientError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func ListPaymentsHandler(s Service) http.HandlerFunc {
+func ListPaymentsHandler(s service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var err error
-		parameters := ListQueryParameters{}
+		parameters := service.ListQueryParameters{}
 		parameters.Skip, err = IntegerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleClientError(w, r, err)
@@ -113,7 +115,7 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 				if key == "id" {
 					key = "_id"
 				}
-				parameters.Sort = append(parameters.Sort, Sort{
+				parameters.Sort = append(parameters.Sort, service.Sort{
 					Key:  key,
 					Desc: desc,
 				})
@@ -127,7 +129,7 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 		}
 		defer cursor.Close(r.Context())
 
-		results := make([]*Payment, 0)
+		results := make([]*payment.Payment, 0)
 		err = cursor.All(r.Context(), &results)
 		if err != nil {
 			handleServerError(w, r, err)
@@ -143,10 +145,10 @@ func ListPaymentsHandler(s Service) http.HandlerFunc {
 	}
 }
 
-func SavePaymentHandler(s Service) http.HandlerFunc {
+func SavePaymentHandler(s service.Service) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		payment := Payment{}
+		payment := payment.Payment{}
 		err := json.NewDecoder(r.Body).Decode(&payment)
 		if err != nil {
 			handleClientError(w, r, err)
@@ -170,7 +172,7 @@ func wrapHandler(useScopes bool, h http.Handler, scopes ...string) http.Handler 
 	return sharedauth.NeedOneOfScopes(scopes...)(h)
 }
 
-func NewMux(service Service, useScopes bool) *mux.Router {
+func NewMux(service service.Service, useScopes bool) *mux.Router {
 	router := mux.NewRouter()
 	router.Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
