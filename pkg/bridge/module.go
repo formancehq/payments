@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
+	"github.com/numary/payments/pkg"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 	http2 "net/http"
@@ -14,7 +15,7 @@ type ConnectorHandler struct {
 	Name    string
 }
 
-func ConnectorModule[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]](
+func ConnectorModule[T payments.ConnectorConfigObject, S payments.ConnectorState, C Connector[T, S]](
 	useScopes bool,
 	controller Loader[T, S, C],
 ) fx.Option {

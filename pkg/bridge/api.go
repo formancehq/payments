@@ -5,6 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/pkg"
 	. "github.com/numary/payments/pkg/http"
 	"net/http"
 )
@@ -22,11 +23,10 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func ReadConnectorConfig[T ConnectorConfigObject, S ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
+func ReadConnectorConfig[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var config T
-		err := cm.ReadConfig(r.Context(), &config)
+		config, err := cm.ReadConfig(r.Context())
 		if err != nil {
 			handleError(w, r, err)
 			return
@@ -39,11 +39,10 @@ func ReadConnectorConfig[T ConnectorConfigObject, S ConnectorState](cm *Connecto
 	}
 }
 
-func ReadConnectorState[T ConnectorConfigObject, S ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
+func ReadConnectorState[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var state S
-		err := cm.ReadState(r.Context(), &state)
+		state, err := cm.ReadState(r.Context())
 		if err != nil {
 			handleError(w, r, err)
 			return
@@ -56,7 +55,7 @@ func ReadConnectorState[T ConnectorConfigObject, S ConnectorState](cm *Connector
 	}
 }
 
-func ResetConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
+func ResetConnector[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		err := cm.Reset(r.Context())
@@ -69,7 +68,7 @@ func ResetConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorMana
 	}
 }
 
-func DisableConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
+func DisableConnector[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := cm.Disable(r.Context())
 		if err != nil {
@@ -86,25 +85,23 @@ func DisableConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorMa
 	}
 }
 
-func EnableConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
+func EnableConnector[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var config T
+		var config *T
 		if r.ContentLength > 0 {
-			if r.ContentLength > 0 {
-				err := json.NewDecoder(r.Body).Decode(&config)
-				if err != nil {
-					panic(err)
-				}
+			err := json.NewDecoder(r.Body).Decode(config)
+			if err != nil {
+				panic(err)
 			}
-
-			err := cm.Configure(r.Context(), config)
+			err = cm.Configure(r.Context(), *config)
 			if err != nil {
 				handleError(w, r, err)
 				return
 			}
 		} else {
-			err := cm.ReadConfig(r.Context(), &config)
+			var err error
+			config, err = cm.ReadConfig(r.Context())
 			if err != nil {
 				handleError(w, r, err)
 				return
@@ -123,7 +120,7 @@ func EnableConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorMan
 			return
 		}
 
-		err = cm.StartWithConfig(r.Context(), config)
+		err = cm.StartWithConfig(r.Context(), *config)
 		if err != nil {
 			handleError(w, r, err)
 			return
@@ -132,7 +129,7 @@ func EnableConnector[T ConnectorConfigObject, S ConnectorState](cm *ConnectorMan
 	}
 }
 
-func ConnectorRouter[T ConnectorConfigObject, S ConnectorState](
+func ConnectorRouter[T payments.ConnectorConfigObject, S payments.ConnectorState](
 	name string,
 	useScopes bool,
 	manager *ConnectorManager[T, S],

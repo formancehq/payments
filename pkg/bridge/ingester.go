@@ -35,11 +35,11 @@ type BatchElement struct {
 
 type Batch []BatchElement
 
-type Ingester[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]] interface {
+type Ingester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]] interface {
 	Ingest(ctx context.Context, batch Batch, commitState S) error
 }
 
-type defaultIngester[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]] struct {
+type defaultIngester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]] struct {
 	db        *mongo.Database
 	logger    sharedlogging.Logger
 	publisher sharedpublish.Publisher
@@ -229,7 +229,7 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 	return nil
 }
 
-func NewDefaultIngester[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]](
+func NewDefaultIngester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]](
 	db *mongo.Database,
 	logger sharedlogging.Logger,
 	publisher sharedpublish.Publisher,

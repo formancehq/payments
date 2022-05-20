@@ -4,17 +4,11 @@ import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
 	payment "github.com/numary/payments/pkg"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type connectorWithRawConfig struct {
-	Config bson.Raw `bson:"config"`
-	State  bson.Raw `bson:"state"`
-}
-
-type ConnectorManager[T ConnectorConfigObject, S ConnectorState] struct {
+type ConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState] struct {
 	connector Connector[T, S]
 	db        *mongo.Database
 	name      string
@@ -63,51 +57,44 @@ func (l *ConnectorManager[T, S]) Enable(ctx context.Context) error {
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context, config *T) error {
-	c := &connectorWithRawConfig{}
+func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, error) {
+	c := &payment.Connector[T, S]{}
 
 	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
 		"provider": l.name,
 	})
 	if ret.Err() != nil {
-		return ret.Err()
+		return nil, ret.Err()
 	}
 	err := ret.Decode(c)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = bson.Unmarshal(c.Config, config)
-	if err != nil {
-		return err
-	}
+	config := l.connector.ApplyDefaults(c.Config)
 
-	*config = l.connector.ApplyDefaults(*config)
-	return nil
+	return &config, nil
 }
 
-func (l *ConnectorManager[T, S]) ReadState(ctx context.Context, state *S) error {
-	c := &connectorWithRawConfig{}
+func (l *ConnectorManager[T, S]) ReadState(ctx context.Context) (S, error) {
+	c := &payment.Connector[T, S]{}
 
+	var zero S
 	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
 		"provider": l.name,
 	})
 	if ret.Err() != nil {
 		if ret.Err() == mongo.ErrNoDocuments {
-			return nil
+			return zero, nil
 		}
-		return ret.Err()
+		return zero, ret.Err()
 	}
 	err := ret.Decode(c)
 	if err != nil {
-		return err
+		return zero, err
 	}
 
-	if c.State == nil || len(c.State) == 0 {
-		return nil
-	}
-
-	return bson.Unmarshal(c.State, state)
+	return c.State, nil
 }
 
 func (l *ConnectorManager[T, S]) Restart(ctx context.Context) error {
@@ -141,8 +128,7 @@ func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) 
 		"config": config,
 	}).Infof("Starting connector %s", l.name)
 
-	var state S
-	err := l.ReadState(ctx, &state)
+	state, err := l.ReadState(ctx)
 	if err != nil {
 		return err
 	}
@@ -151,13 +137,12 @@ func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) 
 }
 
 func (l *ConnectorManager[T, S]) StartWithState(ctx context.Context, state S) error {
-	var config T
-	err := l.ReadConfig(ctx, &config)
+	config, err := l.ReadConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	return l.StartWithConfigAndState(ctx, config, state)
+	return l.StartWithConfigAndState(ctx, *config, state)
 }
 
 func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, config T, state S) error {
@@ -178,15 +163,13 @@ func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, co
 }
 
 func (l *ConnectorManager[T, S]) Start(ctx context.Context) error {
-
 	l.logger(ctx).Info("Start")
-	var config T
-	err := l.ReadConfig(ctx, &config)
+	config, err := l.ReadConfig(ctx)
 	if err != nil {
 		return err
 	}
 
-	return l.StartWithConfig(ctx, config)
+	return l.StartWithConfig(ctx, *config)
 }
 
 func (l *ConnectorManager[T, S]) Restore(ctx context.Context) error {
@@ -278,7 +261,7 @@ func (l *ConnectorManager[T, S]) ResetState(ctx context.Context) error {
 	return err
 }
 
-func NewConnectorManager[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]](
+func NewConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]](
 	db *mongo.Database,
 	ctrl Loader[T, S, C],
 	ingester Ingester[T, S, C],

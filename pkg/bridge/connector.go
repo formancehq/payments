@@ -2,15 +2,10 @@ package bridge
 
 import (
 	"context"
+	"github.com/numary/payments/pkg"
 )
 
-type ConnectorConfigObject interface {
-	Validate() error
-}
-
-type ConnectorState interface{}
-
-type Connector[T ConnectorConfigObject, S ConnectorState] interface {
+type Connector[T payments.ConnectorConfigObject, S payments.ConnectorState] interface {
 	ApplyDefaults(t T) T
 	Name() string
 	Start(ctx context.Context, object T, state S) error
