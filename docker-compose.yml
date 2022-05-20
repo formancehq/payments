@@ -17,5 +17,5 @@ services:
       - .:/src
     working_dir: /src
     environment:
-      DEBUG: "true"
+      DEBUG: ${DEBUG:-"true"}
       MONGODB_URI: mongodb://mongodb:27017

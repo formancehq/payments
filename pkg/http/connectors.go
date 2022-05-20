@@ -40,6 +40,19 @@ func ReadConnectorState[T bridge.ConnectorConfigObject, S bridge.ConnectorState]
 	}
 }
 
+func ResetConnector[T bridge.ConnectorConfigObject, S bridge.ConnectorState](cm *bridge.ConnectorManager[T, S]) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		err := cm.Reset(r.Context())
+		if err != nil {
+			handleServerError(w, r, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func DisableConnector[T bridge.ConnectorConfigObject, S bridge.ConnectorState](cm *bridge.ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := cm.Disable(r.Context())

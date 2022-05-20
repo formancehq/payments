@@ -150,6 +150,16 @@ func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) 
 	return l.StartWithConfigAndState(ctx, config, state)
 }
 
+func (l *ConnectorManager[T, S]) StartWithState(ctx context.Context, state S) error {
+	var config T
+	err := l.ReadConfig(ctx, &config)
+	if err != nil {
+		return err
+	}
+
+	return l.StartWithConfigAndState(ctx, config, state)
+}
+
 func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, config T, state S) error {
 	config = l.connector.ApplyDefaults(config)
 	l.logger(ctx).WithFields(map[string]interface{}{
@@ -202,6 +212,65 @@ func (l *ConnectorManager[T, S]) Disable(ctx context.Context) error {
 	}, map[string]any{
 		"$set": map[string]any{
 			"disabled": true,
+		},
+	})
+	return err
+}
+
+func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
+	l.logger(ctx).Infof("Reset connector")
+
+	ses, err := l.db.Client().StartSession()
+	if err != nil {
+		return err
+	}
+	defer ses.EndSession(ctx)
+
+	err = ses.StartTransaction()
+	if err != nil {
+		return err
+	}
+	defer ses.AbortTransaction(ctx)
+
+	ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
+		"provider": l.name,
+	})
+	if err != nil {
+		return err
+	}
+	l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
+
+	err = l.ResetState(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = l.Stop(ctx)
+	if err != nil {
+		return err
+	}
+
+	var state S
+	err = l.StartWithState(ctx, state)
+	if err != nil {
+		return err
+	}
+
+	err = ses.CommitTransaction(ctx)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (l *ConnectorManager[T, S]) ResetState(ctx context.Context) error {
+	var zeroState S
+	_, err := l.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
+		"provider": l.name,
+	}, map[string]any{
+		"$set": map[string]any{
+			"state": zeroState,
 		},
 	})
 	return err

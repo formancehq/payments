@@ -217,5 +217,8 @@ func ConnectorRouter[T bridge.ConnectorConfigObject, S bridge.ConnectorState](
 	r.Path("/" + name + "/state").Methods(http.MethodGet).Handler(
 		wrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors),
 	)
+	r.Path("/" + name + "/reset").Methods(http.MethodPut).Handler(
+		wrapHandler(useScopes, ResetConnector(manager), ScopeWriteConnectors),
+	)
 	return r
 }
