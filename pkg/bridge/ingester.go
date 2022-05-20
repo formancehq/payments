@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	PaymentsTopics = "payments"
+	PaymentsTopics = "SAVED_PAYMENT"
 )
 
 type BatchElement struct {
