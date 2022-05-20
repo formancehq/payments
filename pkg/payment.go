@@ -30,11 +30,6 @@ const (
 	StatusSucceeded = "succeeded"
 )
 
-type Value struct {
-	Amount int64  `json:"amount" bson:"amount"`
-	Asset  string `json:"asset" bson:"asset"`
-}
-
 type Identifier struct {
 	Provider  string `json:"provider" bson:"provider"`
 	Reference string `json:"reference" bson:"reference"`
@@ -62,17 +57,27 @@ func IdentifierFromString(v string) (*Identifier, error) {
 	return &ret, nil
 }
 
+type Adjustment struct {
+	Status   string      `json:"status" bson:"status"`
+	Amount   int64       `json:"amount" bson:"amount"`
+	Date     time.Time   `json:"date" bson:"date"`
+	Raw      interface{} `json:"raw" bson:"raw"`
+	Absolute bool        `json:"absolute" bson:"absolute"`
+}
+
 type Data struct {
-	Scheme Scheme      `json:"scheme" bson:"scheme"`
-	Status string      `json:"status" bson:"status"`
-	Value  Value       `json:"value" bson:"value"`
-	Date   time.Time   `json:"date" bson:"date"`
-	Raw    interface{} `json:"raw" bson:"raw"`
+	Status        string      `json:"status" bson:"status"`
+	InitialAmount int64       `json:"initialAmount" bson:"initialAmount"`
+	Scheme        Scheme      `json:"scheme" bson:"scheme"`
+	Asset         string      `json:"asset" bson:"asset"`
+	CreatedAt     time.Time   `json:"createdAt" bson:"createdAt"`
+	Raw           interface{} `json:"raw" bson:"raw"`
 }
 
 type Payment struct {
-	Identifier `bson:",inline"`
-	Data       `bson:",inline"`
+	Identifier  `bson:",inline"`
+	Data        `bson:",inline"`
+	Adjustments []Adjustment `json:"adjustments" bson:"adjustments"`
 }
 
 func (p Payment) MarshalJSON() ([]byte, error) {
@@ -84,4 +89,33 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 		ID:  p.Identifier.String(),
 		Aux: Aux(p),
 	})
+}
+
+func (p Payment) Computed() ComputedPayment {
+
+	aggregatedAdjustmentValue := p.InitialAmount
+	amount := int64(0)
+	for _, a := range p.Adjustments {
+		if a.Absolute {
+			amount = a.Amount
+			break
+		}
+
+		aggregatedAdjustmentValue += a.Amount
+	}
+	if amount == 0 {
+		amount = p.InitialAmount + aggregatedAdjustmentValue
+	}
+
+	return ComputedPayment{
+		Identifier: p.Identifier,
+		Data:       p.Data,
+		Amount:     amount,
+	}
+}
+
+type ComputedPayment struct {
+	Identifier `bson:",inline"`
+	Data       `bson:",inline"`
+	Amount     int64 `bson:"amount" json:"amount"`
 }

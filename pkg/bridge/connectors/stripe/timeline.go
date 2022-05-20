@@ -167,7 +167,7 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 }
 
 func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func(), error) {
-	if tl.firstIDAfterStartingAt == "" && tl.state.MoreRecentID != "" {
+	if tl.firstIDAfterStartingAt == "" && tl.state.MoreRecentID == "" {
 		err := tl.init(ctx)
 		if err != nil {
 			return false, State{}, nil, err
@@ -191,10 +191,6 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 	}
 
 	valueOfTo := reflect.ValueOf(to).Elem()
-	swap := reflect.Swapper(valueOfTo.Interface())
-	for i, j := 0, valueOfTo.Len()-1; i < j; i, j = i+1, j-1 {
-		swap(i, j)
-	}
 
 	futureState := tl.state
 	if valueOfTo.Len() > 0 {
@@ -203,6 +199,11 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 			FieldByName("ID").
 			String()
 		futureState.MoreRecentDate = time.Unix(valueOfTo.Index(0).FieldByName("Created").Int(), 0)
+	}
+
+	swap := reflect.Swapper(valueOfTo.Interface())
+	for i, j := 0, valueOfTo.Len()-1; i < j; i, j = i+1, j-1 {
+		swap(i, j)
 	}
 
 	return hasMore, futureState, func() {

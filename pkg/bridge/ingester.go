@@ -16,9 +16,9 @@ const (
 )
 
 type Event struct {
-	Date    time.Time   `json:"date"`
-	Type    string      `json:"type"`
-	Payload interface{} `json:"payload"`
+	Date    time.Time               `json:"date"`
+	Type    string                  `json:"type"`
+	Payload payment.ComputedPayment `json:"payload"`
 }
 
 type Order interface {
@@ -26,8 +26,10 @@ type Order interface {
 }
 
 type BatchElement struct {
-	Payment payment.Payment
-	Forward bool
+	Identifier payment.Identifier
+	Payment    *payment.Data
+	Adjustment *payment.Adjustment
+	Forward    bool
 }
 
 type Batch []BatchElement
@@ -40,6 +42,119 @@ type defaultIngester[T ConnectorConfigObject, S ConnectorState, C Connector[T, S
 	db        *mongo.Database
 	logger    sharedlogging.Logger
 	publisher sharedpublish.Publisher
+}
+
+func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch) ([]payment.Payment, error) {
+	payments := make([]payment.Payment, 0)
+	for _, elem := range batch {
+		logger := i.logger.WithFields(map[string]any{
+			"id": elem.Identifier.String(),
+		})
+
+		var (
+			update     bson.M
+			newPayment payment.Payment
+		)
+
+		var err error
+		switch {
+		case elem.Forward && elem.Adjustment != nil:
+			update = bson.M{
+				"$push": bson.M{
+					"items": bson.M{
+						"$each":     []any{elem.Adjustment},
+						"$position": 0,
+					},
+				},
+				"$set": bson.M{
+					"status": elem.Adjustment.Status,
+					"raw":    elem.Adjustment.Raw,
+					"data":   elem.Adjustment.Date,
+				},
+			}
+		case elem.Forward && elem.Payment != nil:
+			newPayment = payment.Payment{
+				Identifier: elem.Identifier,
+				Data:       *elem.Payment,
+				Adjustments: []payment.Adjustment{
+					{
+						Status: elem.Payment.Status,
+						Amount: elem.Payment.InitialAmount,
+						Date:   elem.Payment.CreatedAt,
+						Raw:    elem.Payment.Raw,
+					},
+				},
+			}
+		case !elem.Forward && elem.Adjustment != nil:
+			update = bson.M{
+				"$push": bson.M{
+					"items": bson.M{
+						"$each": []any{elem.Adjustment},
+					},
+				},
+				"$setOnInsert": bson.M{
+					"status": elem.Adjustment.Status,
+				},
+			}
+		case !elem.Forward && elem.Payment != nil:
+			update = bson.M{
+				"$push": bson.M{
+					"items": bson.M{
+						"$each": []any{payment.Adjustment{
+							Status: elem.Payment.Status,
+							Amount: elem.Payment.InitialAmount,
+							Date:   elem.Payment.CreatedAt,
+							Raw:    elem.Payment.Raw,
+						}},
+					},
+				},
+				"$set": bson.M{
+					"raw":           elem.Payment.Raw,
+					"createdAt":     elem.Payment.CreatedAt,
+					"scheme":        elem.Payment.Scheme,
+					"initialAmount": elem.Payment.InitialAmount,
+				},
+			}
+		}
+
+		if update != nil {
+			ret := i.db.Collection(payment.PaymentsCollection).FindOneAndUpdate(
+				ctx,
+				elem.Identifier,
+				update,
+				options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+			)
+			if ret.Err() != nil {
+				logger.Errorf("Error updating payment: %s", err)
+				return nil, ret.Err()
+			}
+			p := payment.Payment{}
+			err = ret.Decode(&p)
+			if err != nil {
+				return nil, err
+			}
+			payments = append(payments, p)
+		} else {
+			payments = append(payments, newPayment)
+			_, err = i.db.Collection(payment.PaymentsCollection).InsertOne(ctx, newPayment)
+			if err != nil {
+				logger.Errorf("Error inserting payment: %s", err)
+				return nil, err
+			}
+		}
+
+	}
+	return payments, nil
+}
+
+func Filter[T any](objects []T, compareFn func(t T) bool) []T {
+	ret := make([]T, 0)
+	for _, o := range objects {
+		if compareFn(o) {
+			ret = append(ret, o)
+		}
+	}
+	return ret
 }
 
 func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, commitState S) error {
@@ -55,35 +170,19 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 		}
 		defer ctx.AbortTransaction(ctx)
 
-		for _, elem := range batch {
-			logger := i.logger.WithFields(map[string]any{
-				"id":   elem.Payment.Identifier.String(),
-				"date": elem.Payment.Date,
-			})
-
-			items := bson.M{
-				"$each": []any{elem.Payment},
-			}
-			if elem.Forward {
-				items["$position"] = 0
-			}
-
-			_, err = i.db.Collection(payment.PaymentsCollection).UpdateOne(ctx, elem.Payment.Identifier, map[string]any{
-				"$push": bson.M{
-					"items": items,
-				},
-			}, options.Update().SetUpsert(true))
-			if err != nil {
-				logger.Errorf("Error persisting payment: %s", err)
-				return err
-			}
+		payments, err := i.processBatch(ctx, batch)
+		if err != nil {
+			return err
 		}
+		payments = Filter(payments, func(p payment.Payment) bool {
+			return p.InitialAmount != 0
+		})
 
-		for _, e := range batch {
+		for _, e := range payments {
 			err = i.publisher.Publish(ctx, PaymentsTopics, Event{
 				Date:    time.Now(),
 				Type:    "SAVED_PAYMENT",
-				Payload: e.Payment,
+				Payload: e.Computed(),
 			})
 			if err != nil {
 				i.logger.Errorf("Error publishing payment: %s", err)

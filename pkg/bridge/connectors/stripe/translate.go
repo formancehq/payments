@@ -2,54 +2,79 @@ package stripe
 
 import (
 	payment "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/bridge"
 	"github.com/stripe/stripe-go/v72"
-	"strings"
 	"time"
 )
 
-func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
+func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.BatchElement {
 	var (
-		reference string
-		scheme    payment.Scheme
-		status    string
-		amount    int64
-		asset     string
-		date      int64
-		ptype     string
+		identifier  payment.Identifier
+		paymentData *payment.Data
+		adjustment  *payment.Adjustment
 	)
 	switch bt.Type {
 	case "charge":
-		reference = bt.Source.ID
-		scheme = payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand) // TODO: Check with clem
-		ptype = payment.TypePayIn
-		status = string(bt.Source.Charge.Status)
-		amount = bt.Source.Charge.Amount
-		asset = string(bt.Source.Charge.Currency)
-		date = bt.Created
-	case "payout":
-		reference = bt.Source.ID
-		ptype = payment.TypePayIn
-		scheme = payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand) // TODO: Check with clem
-		status = string(bt.Source.Payout.Status)
-		amount = bt.Source.Payout.Amount
-		asset = string(bt.Source.Payout.Currency)
-		date = bt.Created
-	}
-	return payment.Payment{
-		Identifier: payment.Identifier{
+		identifier = payment.Identifier{
 			Provider:  ConnectorName,
-			Reference: reference,
-			Type:      ptype,
-		},
-		Data: payment.Data{
-			Value: payment.Value{
-				Amount: amount,
-				Asset:  strings.ToUpper(asset),
-			},
-			Date:   time.Unix(date, 0),
+			Reference: bt.Source.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		paymentData = &payment.Data{
+			Status:        string(bt.Status),
+			InitialAmount: bt.Source.Charge.Amount,
+			Asset:         string(bt.Source.Charge.Currency),
+			Raw:           bt,
+			Scheme:        payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
+			CreatedAt:     time.Unix(bt.Source.Charge.Created, 0),
+		}
+	case "payout":
+		identifier = payment.Identifier{
+			Provider:  ConnectorName,
+			Reference: bt.Source.Payout.ID,
+			Type:      payment.TypePayout,
+		}
+		paymentData = &payment.Data{
+			Status:        string(bt.Status),
+			InitialAmount: bt.Source.Payout.Amount,
+			Raw:           bt,
+			Asset:         string(bt.Source.Payout.Currency),
+			Scheme:        "", // TODO
+			CreatedAt:     time.Unix(bt.Source.Payout.Created, 0),
+		}
+
+	case "transfer":
+		identifier = payment.Identifier{
+			Provider:  ConnectorName,
+			Reference: bt.Source.Transfer.ID,
+			Type:      payment.TypePayout,
+		}
+		paymentData = &payment.Data{
+			Status:        string(bt.Status),
+			InitialAmount: bt.Source.Transfer.Amount,
+			Raw:           bt,
+			Asset:         string(bt.Source.Transfer.Currency),
+			Scheme:        payment.SchemeSepa, // TODO: Check with clem
+			CreatedAt:     time.Unix(bt.Source.Transfer.Created, 0),
+		}
+	case "refund":
+		identifier = payment.Identifier{
+			Provider:  ConnectorName,
+			Reference: bt.Source.Refund.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		adjustment = &payment.Adjustment{
+			Status: string(bt.Status),
+			Amount: bt.Source.Refund.Amount,
+			Date:   time.Unix(bt.Source.Refund.Created, 0),
 			Raw:    bt,
-			Status: status,
-			Scheme: scheme,
-		},
+		}
+	}
+
+	return bridge.BatchElement{
+		Identifier: identifier,
+		Payment:    paymentData,
+		Adjustment: adjustment,
+		Forward:    forward,
 	}
 }

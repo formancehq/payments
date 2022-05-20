@@ -21,7 +21,6 @@ func NewRunner(db *mongo.Database, logger sharedlogging.Logger, ingester bridge.
 		db:        db,
 		config:    config,
 		commands:  make(chan commandHolder),
-		pages:     make(chan *page, 2),
 		tailToken: make(chan struct{}, 1),
 		ingester:  ingester,
 		timeline:  NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
@@ -40,7 +39,6 @@ type Runner struct {
 	timeline  *timeline
 	commands  chan commandHolder
 	config    Config
-	pages     chan *page
 	tailToken chan struct{}
 	logger    sharedlogging.Logger
 	ingester  bridge.Ingester[Config, State, *Connector]
@@ -63,7 +61,7 @@ func (r *Runner) Stop(ctx context.Context) error {
 	}
 }
 
-func (r *Runner) triggerPage(ctx context.Context, tail bool) {
+func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 
 	r.logger.WithFields(map[string]interface{}{
 		"tail": tail,
@@ -76,32 +74,21 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) {
 	}
 	hasMore, futureState, commitFn, err := method(ctx, &ret)
 	if err != nil {
-		r.pages <- &page{
-			err:  err,
-			tail: tail,
-		}
-		return
+		return false, err
 	}
 
 	batch := bridge.Batch{}
 	for _, bt := range ret {
-
-		if bt.Type != "charge" && bt.Type != "payout" {
+		batchElement := CreateBatchElement(bt, !tail)
+		if batchElement.Adjustment == nil && batchElement.Payment == nil {
 			continue
 		}
-		batch = append(batch, bridge.BatchElement{
-			Payment: TranslateBalanceTransaction(bt),
-			Forward: !tail,
-		})
+		batch = append(batch, batchElement)
 	}
 
 	err = r.ingester.Ingest(ctx, batch, futureState)
 	if err != nil {
-		r.pages <- &page{
-			err:  err,
-			tail: tail,
-		}
-		return
+		return false, err
 	}
 
 	// TODO: Recordings all stripe balance transaction for debug purpose
@@ -110,16 +97,15 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) {
 	for _, elem := range ret {
 		docs = append(docs, elem)
 	}
-	_, err = r.db.Collection("StripeBalanceTransaction").InsertMany(ctx, docs)
-	if err != nil {
-		sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
+	if len(docs) > 0 {
+		_, err = r.db.Collection("StripeBalanceTransaction").InsertMany(ctx, docs)
+		if err != nil {
+			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
+		}
 	}
 
 	commitFn()
-	r.pages <- &page{
-		hasMore: hasMore,
-		tail:    tail,
-	}
+	return hasMore, nil
 }
 
 func (r *Runner) doCmd(ctx context.Context, fn func()) error {
@@ -145,6 +131,12 @@ func (r *Runner) Run(ctx context.Context) error {
 	r.triggerPage(ctx, false)
 	r.tailToken <- struct{}{}
 
+	var timer *time.Timer
+	resetTimer := func() {
+		timer = time.NewTimer(r.config.PollingPeriod)
+	}
+	resetTimer()
+
 	for {
 		select { // Add a dedicated select to handle commands. It allow command to be executed in priority.
 		case cmd := <-r.commands:
@@ -153,33 +145,53 @@ func (r *Runner) Run(ctx context.Context) error {
 		case ch := <-r.stopChan:
 			close(ch)
 			return nil
-		case page := <-r.pages:
-			switch {
-			case page.tail && page.err == nil && !page.hasMore:
-				r.tailToken = nil
-			case page.tail && page.err != nil:
-				r.logger.Errorf("Error fetching page: %s", page.err)
-				go func() {
-					select {
-					case <-time.After(r.config.PollingPeriod):
-					case <-ctx.Done():
-						return
-					}
-					select {
-					case r.tailToken <- struct{}{}:
-					case <-ctx.Done():
-					}
-				}()
-			case page.tail && page.hasMore:
-				r.logger.Debugf("Fetch next histories")
-				r.tailToken <- struct{}{}
-			case !page.tail && page.hasMore:
-				go r.triggerPage(ctx, false)
+		case <-timer.C:
+			hasMore := true
+			var err error
+			for hasMore {
+				hasMore, err = r.triggerPage(ctx, false)
+				if err != nil {
+					r.logger.Errorf("Error fetching page: %s", err)
+					break
+				}
+				select {
+				case <-ctx.Done():
+					return nil
+				case cmd := <-r.commands:
+					cmd.command()
+					close(cmd.done)
+				default:
+					// Nothing to do
+				}
 			}
-		case <-r.tailToken:
-			go r.triggerPage(ctx, true)
-		case <-time.After(r.config.PollingPeriod):
-			go r.triggerPage(ctx, false)
+			resetTimer()
+		default:
+			select {
+			case <-r.tailToken:
+				hasMore, err := r.triggerPage(ctx, true)
+				if err != nil {
+					r.logger.Errorf("Error fetching page: %s", err)
+					go func() {
+						select {
+						case <-time.After(r.config.PollingPeriod):
+						case <-ctx.Done():
+							return
+						}
+						select {
+						case r.tailToken <- struct{}{}:
+						case <-ctx.Done():
+						}
+					}()
+					break
+				}
+				if hasMore {
+					r.tailToken <- struct{}{}
+				} else {
+					r.tailToken = nil
+				}
+			default:
+				// Nothing to do
+			}
 		}
 	}
 }

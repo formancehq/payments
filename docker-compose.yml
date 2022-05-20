@@ -8,6 +8,8 @@ services:
       MONGODB_REPLICA_SET_KEY: abcdef
       MONGODB_ADVERTISED_HOSTNAME: mongodb
       MONGODB_ROOT_PASSWORD: root
+    ports:
+    - "27017:27017/tcp"
   payments:
     image: golang:1.18-alpine
     depends_on:
