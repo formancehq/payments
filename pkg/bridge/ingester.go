@@ -2,6 +2,7 @@ package bridge
 
 import (
 	"context"
+	"errors"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
 	payment "github.com/numary/payments/pkg"
@@ -55,6 +56,10 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 			update     bson.M
 			newPayment payment.Payment
 		)
+
+		if elem.Adjustment != nil && elem.Payment != nil {
+			return nil, errors.New("either adjustment or payment must be provided")
+		}
 
 		var err error
 		switch {
