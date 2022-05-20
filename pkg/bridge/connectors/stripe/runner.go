@@ -82,8 +82,10 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) {
 		}
 		return
 	}
+
 	batch := bridge.Batch{}
 	for _, bt := range ret {
+
 		if bt.Type != "charge" && bt.Type != "payout" {
 			continue
 		}
@@ -100,6 +102,17 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) {
 			tail: tail,
 		}
 		return
+	}
+
+	// TODO: Recordings all stripe balance transaction for debug purpose
+	// This will be removed in a later version
+	docs := make([]interface{}, 0)
+	for _, elem := range ret {
+		docs = append(docs, elem)
+	}
+	_, err = r.db.Collection("StripeBalanceTransaction").InsertMany(ctx, docs)
+	if err != nil {
+		sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
 	}
 
 	commitFn()
