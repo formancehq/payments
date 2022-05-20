@@ -280,7 +280,7 @@ func (l *ConnectorManager[T, S]) ResetState(ctx context.Context) error {
 
 func NewConnectorManager[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]](
 	db *mongo.Database,
-	ctrl Controller[T, S, C],
+	ctrl Loader[T, S, C],
 	ingester Ingester[T, S, C],
 ) *ConnectorManager[T, S] {
 	var connector C
@@ -288,7 +288,7 @@ func NewConnectorManager[T ConnectorConfigObject, S ConnectorState, C Connector[
 	logger := sharedlogging.WithFields(map[string]interface{}{
 		"connector": connector.Name(),
 	})
-	connector, err := ctrl.New(logObjectStorage, logger, ingester)
+	connector, err := ctrl.Load(logObjectStorage, logger, ingester)
 	if err != nil {
 		panic(err)
 	}

@@ -15,11 +15,11 @@ type Connector struct {
 }
 
 func (c *Connector) Name() string {
-	return ConnectorName
+	return "stripe"
 }
 
 func (c *Connector) Start(ctx context.Context, object Config, state State) error {
-	c.runner = NewRunner(c.logObjectStorage, c.logger, c.ingester, object, state)
+	c.runner = NewRunner(c.Name(), c.logObjectStorage, c.logger, c.ingester, object, state)
 	return c.runner.Run(ctx)
 }
 
@@ -45,10 +45,10 @@ func (c *Connector) ApplyDefaults(cfg Config) Config {
 
 var _ bridge.Connector[Config, State] = &Connector{}
 
-func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) *Connector {
+func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) (*Connector, error) {
 	return &Connector{
 		logObjectStorage: logObjectStorage,
 		logger:           logger,
 		ingester:         ingester,
-	}
+	}, nil
 }

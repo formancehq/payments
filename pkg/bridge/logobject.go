@@ -7,6 +7,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type LogObjectStorage interface {
+	Store(ctx context.Context, objects ...any) error
+}
+
 type defaultLogObjectStorage struct {
 	db   *mongo.Database
 	name string

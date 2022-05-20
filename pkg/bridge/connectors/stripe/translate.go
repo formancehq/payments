@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.BatchElement {
+func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forward bool) bridge.BatchElement {
 	var (
 		identifier  payment.Identifier
 		paymentData *payment.Data
@@ -16,7 +16,7 @@ func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.Batch
 	switch bt.Type {
 	case "charge":
 		identifier = payment.Identifier{
-			Provider:  ConnectorName,
+			Provider:  connectorName,
 			Reference: bt.Source.Charge.ID,
 			Type:      payment.TypePayIn,
 		}
@@ -30,7 +30,7 @@ func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.Batch
 		}
 	case "payout":
 		identifier = payment.Identifier{
-			Provider:  ConnectorName,
+			Provider:  connectorName,
 			Reference: bt.Source.Payout.ID,
 			Type:      payment.TypePayout,
 		}
@@ -45,7 +45,7 @@ func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.Batch
 
 	case "transfer":
 		identifier = payment.Identifier{
-			Provider:  ConnectorName,
+			Provider:  connectorName,
 			Reference: bt.Source.Transfer.ID,
 			Type:      payment.TypePayout,
 		}
@@ -59,7 +59,7 @@ func CreateBatchElement(bt stripe.BalanceTransaction, forward bool) bridge.Batch
 		}
 	case "refund":
 		identifier = payment.Identifier{
-			Provider:  ConnectorName,
+			Provider:  connectorName,
 			Reference: bt.Source.Refund.Charge.ID,
 			Type:      payment.TypePayIn,
 		}

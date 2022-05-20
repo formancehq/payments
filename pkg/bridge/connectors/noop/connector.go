@@ -11,7 +11,7 @@ type Connector struct {
 }
 
 func (c *Connector) Name() string {
-	return ConnectorName
+	return "noop"
 }
 
 func (c *Connector) Start(ctx context.Context, object Config, state State) error {
@@ -30,8 +30,12 @@ func (c *Connector) ApplyDefaults(cfg Config) Config {
 
 var _ bridge.Connector[Config, State] = &Connector{}
 
-func NewConnector(logger sharedlogging.Logger) *Connector {
+func NewConnector(
+	storage bridge.LogObjectStorage,
+	logger sharedlogging.Logger,
+	ingester bridge.Ingester[Config, State, *Connector],
+) (*Connector, error) {
 	return &Connector{
 		logger: logger,
-	}
+	}, nil
 }

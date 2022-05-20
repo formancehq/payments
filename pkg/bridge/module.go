@@ -16,7 +16,7 @@ type ConnectorHandler struct {
 
 func ConnectorModule[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]](
 	useScopes bool,
-	controller Controller[T, S, C],
+	controller Loader[T, S, C],
 ) fx.Option {
 	var connector C
 	return fx.Options(

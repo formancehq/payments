@@ -14,8 +14,9 @@ type commandHolder struct {
 	done    chan struct{}
 }
 
-func NewRunner(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
+func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
 	return &Runner{
+		name:             name,
 		logger:           logger,
 		logObjectStorage: logObjectStorage,
 		config:           config,
@@ -27,6 +28,7 @@ func NewRunner(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Lo
 }
 
 type Runner struct {
+	name             string
 	logObjectStorage bridge.LogObjectStorage
 	stopChan         chan chan struct{}
 	timeline         *timeline
@@ -72,7 +74,7 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 
 	batch := bridge.Batch{}
 	for _, bt := range ret {
-		batchElement := CreateBatchElement(bt, !tail)
+		batchElement := CreateBatchElement(bt, r.name, !tail)
 		if batchElement.Adjustment == nil && batchElement.Payment == nil {
 			continue
 		}

@@ -160,10 +160,12 @@ func HTTPModule() fx.Option {
 			return rootMux, nil
 		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
 		bridge.ConnectorModule[stripe.Config, stripe.State, *stripe.Connector](
-			viper.GetBool(authBearerUseScopesFlag), &stripe.Controller{},
+			viper.GetBool(authBearerUseScopesFlag),
+			bridge.LoaderFn[stripe.Config, stripe.State, *stripe.Connector](stripe.NewConnector),
 		),
 		bridge.ConnectorModule[noop.Config, noop.State, *noop.Connector](
-			viper.GetBool(authBearerUseScopesFlag), &noop.Controller{},
+			viper.GetBool(authBearerUseScopesFlag),
+			bridge.LoaderFn[noop.Config, noop.State, *noop.Connector](noop.NewConnector),
 		),
 	)
 }
