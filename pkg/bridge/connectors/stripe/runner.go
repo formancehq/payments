@@ -26,12 +26,6 @@ func NewRunner(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Lo
 	}
 }
 
-type page struct {
-	tail    bool
-	hasMore bool
-	err     error
-}
-
 type Runner struct {
 	logObjectStorage bridge.LogObjectStorage
 	stopChan         chan chan struct{}

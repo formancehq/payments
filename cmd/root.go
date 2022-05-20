@@ -14,10 +14,11 @@ import (
 	"github.com/numary/go-libs/sharedpublish"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
+	"github.com/numary/payments/pkg/api"
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/numary/payments/pkg/bridge/connectors/noop"
 	"github.com/numary/payments/pkg/bridge/connectors/stripe"
-	_ "github.com/numary/payments/pkg/bridge/connectors/stripe"
+	"github.com/numary/payments/pkg/database"
 	paymentapi "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"github.com/rs/cors"
@@ -27,17 +28,13 @@ import (
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
 	"github.com/xdg-go/scram"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
-	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
 	"os"
 	"runtime/debug"
 	"strings"
-	"time"
 )
 
 const (
@@ -78,75 +75,6 @@ var (
 	Version = "latest"
 )
 
-func MongoModule(uri string, dbName string) fx.Option {
-	return fx.Options(
-		fx.Supply(options.Client().ApplyURI(uri)),
-		fx.Provide(func(opts *options.ClientOptions) (*mongo.Client, error) {
-			return mongo.NewClient(opts)
-		}),
-		fx.Provide(func(client *mongo.Client) *mongo.Database {
-			return client.Database(dbName)
-		}),
-		fx.Invoke(func(lc fx.Lifecycle, client *mongo.Client) {
-			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					err := client.Connect(context.Background())
-					if err != nil {
-						return err
-					}
-					sharedlogging.Debug("Ping database...")
-					ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
-					defer cancel()
-
-					err = client.Ping(ctx, readpref.Primary())
-					if err != nil {
-						return err
-					}
-					return nil
-				},
-			})
-		}),
-	)
-}
-
-func MongoMonitor() fx.Option {
-	return fx.Decorate(func(opts *options.ClientOptions) *options.ClientOptions {
-		opts.SetMonitor(otelmongo.NewMonitor())
-		return opts
-	})
-}
-
-type ConnectorHandler struct {
-	Handler http.Handler
-	Name    string
-}
-
-func ConnectorModule[T bridge.ConnectorConfigObject, S bridge.ConnectorState, C bridge.Connector[T, S]](
-	name string, controller bridge.Controller[T, S, C],
-) fx.Option {
-	return fx.Options(
-		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *bridge.ConnectorManager[T, S] {
-			return bridge.NewConnectorManager[T, S, C](db, controller,
-				bridge.NewDefaultIngester[T, S, C](db, sharedlogging.GetLogger(context.Background()), publisher),
-			)
-		}),
-		fx.Provide(fx.Annotate(func(cm *bridge.ConnectorManager[T, S]) ConnectorHandler {
-			return ConnectorHandler{
-				Handler: paymentapi.ConnectorRouter(name, viper.GetBool(authBearerUseScopesFlag), cm),
-				Name:    name,
-			}
-		}, fx.ResultTags(`group:"connectorHandlers"`))),
-		fx.Invoke(func(lc fx.Lifecycle, cm *bridge.ConnectorManager[T, S]) {
-			lc.Append(fx.Hook{
-				OnStart: func(ctx context.Context) error {
-					_ = cm.Restore(ctx)
-					return nil
-				},
-			})
-		}),
-	)
-}
-
 func HTTPModule() fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
@@ -166,9 +94,9 @@ func HTTPModule() fx.Option {
 				},
 			})
 		}),
-		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []ConnectorHandler) (*mux.Router, error) {
+		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []bridge.ConnectorHandler) (*mux.Router, error) {
 
-			m := paymentapi.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag))
+			m := api.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag))
 			if viper.GetBool(otelTracesFlag) {
 				m.Use(otelmux.Middleware(serviceName))
 			}
@@ -179,7 +107,7 @@ func HTTPModule() fx.Option {
 					parts := strings.SplitN(kv, ":", 2)
 					credentials[parts[0]] = sharedauth.Credential{
 						Password: parts[1],
-						Scopes:   paymentapi.AllScopes,
+						Scopes:   append(api.AllScopes, bridge.AllScopes...),
 					}
 				}
 				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
@@ -231,8 +159,12 @@ func HTTPModule() fx.Option {
 
 			return rootMux, nil
 		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
-		ConnectorModule[stripe.Config, stripe.State, *stripe.Connector]("stripe", &stripe.Controller{}),
-		ConnectorModule[noop.Config, noop.State, *noop.Connector]("noop", &noop.Controller{}),
+		bridge.ConnectorModule[stripe.Config, stripe.State, *stripe.Connector](
+			viper.GetBool(authBearerUseScopesFlag), &stripe.Controller{},
+		),
+		bridge.ConnectorModule[noop.Config, noop.State, *noop.Connector](
+			viper.GetBool(authBearerUseScopesFlag), &noop.Controller{},
+		),
 	)
 }
 
@@ -282,10 +214,10 @@ var rootCmd = &cobra.Command{
 			options = append(options, fx.NopLogger)
 		}
 		if viper.GetBool(otelTracesFlag) {
-			options = append(options, MongoMonitor())
+			options = append(options, database.MongoMonitor())
 		}
 		options = append(options,
-			MongoModule(mongodbUri, mongodbDatabase),
+			database.MongoModule(mongodbUri, mongodbDatabase),
 			sharedotlptraces.TracesModule(sharedotlptraces.ModuleConfig{
 				Exporter: viper.GetString(otelTracesExporterFlag),
 				OTLPConfig: &sharedotlptraces.OTLPConfig{

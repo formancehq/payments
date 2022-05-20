@@ -1,4 +1,4 @@
-package payment
+package payments
 
 type Connector struct {
 	Provider string      `json:"provider" bson:"provider"`

@@ -1,13 +1,13 @@
-package http
+package api
 
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
-	"github.com/numary/go-libs/sharedauth"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge"
+	"github.com/numary/payments/pkg/auth"
+	http2 "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -76,7 +76,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			}
 			pipeline = append(pipeline, map[string]any{"$sort": sort})
 		}
-		skip, err := IntegerWithDefault(r, "skip", 0)
+		skip, err := http2.IntegerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleClientError(w, r, err)
 			return
@@ -86,7 +86,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 				"$skip": skip,
 			})
 		}
-		limit, err := IntegerWithDefault(r, "limit", maxPerPage)
+		limit, err := http2.IntegerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
 			handleClientError(w, r, err)
 			return
@@ -112,14 +112,14 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			},
 		})
 
-		cursor, err := db.Collection(payment.PaymentsCollection).Aggregate(r.Context(), pipeline)
+		cursor, err := db.Collection(payments.PaymentsCollection).Aggregate(r.Context(), pipeline)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
 		}
 		defer cursor.Close(r.Context())
 
-		ret := make([]payment.Payment, 0)
+		ret := make([]payments.Payment, 0)
 		err = cursor.All(r.Context(), &ret)
 		if err != nil {
 			handleServerError(w, r, err)
@@ -141,13 +141,13 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 
 		paymentId := mux.Vars(r)["paymentId"]
 
-		identifier, err := payment.IdentifierFromString(paymentId)
+		identifier, err := payments.IdentifierFromString(paymentId)
 		if err != nil {
 			handleClientError(w, r, err)
 			return
 		}
 
-		ret := db.Collection(payment.PaymentsCollection).FindOne(r.Context(), identifier)
+		ret := db.Collection(payments.PaymentsCollection).FindOne(r.Context(), identifier)
 		if ret.Err() != nil {
 			if ret.Err() == mongo.ErrNoDocuments {
 				w.WriteHeader(http.StatusNotFound)
@@ -157,7 +157,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 		type Object struct {
-			Items []payment.Payment `bson:"items"`
+			Items []payments.Payment `bson:"items"`
 		}
 		ob := &Object{}
 		err = ret.Decode(ob)
@@ -176,13 +176,6 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-func wrapHandler(useScopes bool, h http.Handler, scopes ...string) http.Handler {
-	if !useScopes {
-		return h
-	}
-	return sharedauth.NeedOneOfScopes(scopes...)(h)
-}
-
 func PaymentsRouter(
 	db *mongo.Database,
 	useScopes bool) *mux.Router {
@@ -193,32 +186,8 @@ func PaymentsRouter(
 			h.ServeHTTP(w, r)
 		})
 	})
-	router.Path("/payments").Methods(http.MethodGet).Handler(wrapHandler(useScopes, ListPaymentsHandler(db), ScopeReadPayments, ScopeWritePayments))
-	router.Path("/payments/{paymentId}").Methods(http.MethodGet).Handler(wrapHandler(useScopes, ReadPaymentHandler(db), ScopeReadPayments, ScopeWritePayments))
+	router.Path("/payments").Methods(http.MethodGet).Handler(bridge.WrapHandler(useScopes, ListPaymentsHandler(db), ScopeReadPayments, ScopeWritePayments))
+	router.Path("/payments/{paymentId}").Methods(http.MethodGet).Handler(bridge.WrapHandler(useScopes, ReadPaymentHandler(db), ScopeReadPayments, ScopeWritePayments))
 
 	return router
-}
-
-func ConnectorRouter[T bridge.ConnectorConfigObject, S bridge.ConnectorState](
-	name string,
-	useScopes bool,
-	manager *bridge.ConnectorManager[T, S],
-) *mux.Router {
-	r := mux.NewRouter()
-	r.Path("/" + name).Methods(http.MethodPut).Handler(
-		wrapHandler(useScopes, EnableConnector(manager), ScopeWriteConnectors),
-	)
-	r.Path("/" + name).Methods(http.MethodDelete).Handler(
-		wrapHandler(useScopes, DisableConnector(manager), ScopeWriteConnectors),
-	)
-	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, ReadConnectorConfig(manager), ScopeReadConnectors),
-	)
-	r.Path("/" + name + "/state").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors),
-	)
-	r.Path("/" + name + "/reset").Methods(http.MethodPut).Handler(
-		wrapHandler(useScopes, ResetConnector(manager), ScopeWriteConnectors),
-	)
-	return r
 }

@@ -1,4 +1,4 @@
-package payment
+package payments
 
 import (
 	"encoding/base64"
