@@ -2,23 +2,25 @@ package noop
 
 import (
 	"context"
-	"fmt"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Connector struct{}
+type Connector struct {
+	logger sharedlogging.Logger
+}
 
 func (c *Connector) Name() string {
 	return ConnectorName
 }
 
 func (c *Connector) Start(ctx context.Context, object Config, state State) error {
-	return fmt.Errorf("noop connector")
+	c.logger.Info("Starting noop connector")
+	return nil
 }
 
 func (c *Connector) Stop(ctx context.Context) error {
+	c.logger.Info("Stopping noop connector")
 	return nil
 }
 
@@ -28,6 +30,8 @@ func (c *Connector) ApplyDefaults(cfg Config) Config {
 
 var _ bridge.Connector[Config, State] = &Connector{}
 
-func NewConnector(db *mongo.Database, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) *Connector {
-	return &Connector{}
+func NewConnector(logger sharedlogging.Logger) *Connector {
+	return &Connector{
+		logger: logger,
+	}
 }

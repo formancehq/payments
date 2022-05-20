@@ -6,7 +6,6 @@ import (
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
-	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
@@ -15,15 +14,15 @@ type commandHolder struct {
 	done    chan struct{}
 }
 
-func NewRunner(db *mongo.Database, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
+func NewRunner(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
 	return &Runner{
-		logger:    logger,
-		db:        db,
-		config:    config,
-		commands:  make(chan commandHolder),
-		tailToken: make(chan struct{}, 1),
-		ingester:  ingester,
-		timeline:  NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
+		logger:           logger,
+		logObjectStorage: logObjectStorage,
+		config:           config,
+		commands:         make(chan commandHolder),
+		tailToken:        make(chan struct{}, 1),
+		ingester:         ingester,
+		timeline:         NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
 	}
 }
 
@@ -34,14 +33,14 @@ type page struct {
 }
 
 type Runner struct {
-	db        *mongo.Database
-	stopChan  chan chan struct{}
-	timeline  *timeline
-	commands  chan commandHolder
-	config    Config
-	tailToken chan struct{}
-	logger    sharedlogging.Logger
-	ingester  bridge.Ingester[Config, State, *Connector]
+	logObjectStorage bridge.LogObjectStorage
+	stopChan         chan chan struct{}
+	timeline         *timeline
+	commands         chan commandHolder
+	config           Config
+	tailToken        chan struct{}
+	logger           sharedlogging.Logger
+	ingester         bridge.Ingester[Config, State, *Connector]
 }
 
 func (r *Runner) Stop(ctx context.Context) error {
@@ -91,14 +90,12 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 		return false, err
 	}
 
-	// TODO: Recordings all stripe balance transaction for debug purpose
-	// This will be removed in a later version
-	docs := make([]interface{}, 0)
+	docs := make([]any, 0)
 	for _, elem := range ret {
 		docs = append(docs, elem)
 	}
 	if len(docs) > 0 {
-		_, err = r.db.Collection("StripeBalanceTransaction").InsertMany(ctx, docs)
+		err = r.logObjectStorage.Store(ctx, docs...)
 		if err != nil {
 			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
 		}

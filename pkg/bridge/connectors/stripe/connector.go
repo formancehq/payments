@@ -4,15 +4,14 @@ import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge"
-	"go.mongodb.org/mongo-driver/mongo"
 	"time"
 )
 
 type Connector struct {
-	db       *mongo.Database
-	runner   *Runner
-	logger   sharedlogging.Logger
-	ingester bridge.Ingester[Config, State, *Connector]
+	logObjectStorage bridge.LogObjectStorage
+	runner           *Runner
+	logger           sharedlogging.Logger
+	ingester         bridge.Ingester[Config, State, *Connector]
 }
 
 func (c *Connector) Name() string {
@@ -20,7 +19,7 @@ func (c *Connector) Name() string {
 }
 
 func (c *Connector) Start(ctx context.Context, object Config, state State) error {
-	c.runner = NewRunner(c.db, c.logger, c.ingester, object, state)
+	c.runner = NewRunner(c.logObjectStorage, c.logger, c.ingester, object, state)
 	return c.runner.Run(ctx)
 }
 
@@ -46,10 +45,10 @@ func (c *Connector) ApplyDefaults(cfg Config) Config {
 
 var _ bridge.Connector[Config, State] = &Connector{}
 
-func NewConnector(db *mongo.Database, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) *Connector {
+func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) *Connector {
 	return &Connector{
-		db:       db,
-		logger:   logger,
-		ingester: ingester,
+		logObjectStorage: logObjectStorage,
+		logger:           logger,
+		ingester:         ingester,
 	}
 }

@@ -126,7 +126,7 @@ func ConnectorModule[T bridge.ConnectorConfigObject, S bridge.ConnectorState, C 
 ) fx.Option {
 	return fx.Options(
 		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *bridge.ConnectorManager[T, S] {
-			return bridge.NewConnectorManager[T, S, C](db, name, controller,
+			return bridge.NewConnectorManager[T, S, C](db, controller,
 				bridge.NewDefaultIngester[T, S, C](db, sharedlogging.GetLogger(context.Background()), publisher),
 			)
 		}),

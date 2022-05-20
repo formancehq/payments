@@ -1,10 +1,18 @@
 package bridge
 
 import (
+	"context"
 	"github.com/numary/go-libs/sharedlogging"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type Controller[T ConnectorConfigObject, S ConnectorState, C Connector[T, S]] interface {
-	New(db *mongo.Database, logger sharedlogging.Logger, ingester Ingester[T, S, C]) (C, error)
+type LogObjectStorage interface {
+	Store(ctx context.Context, objects ...any) error
+}
+
+type Controller[
+	T ConnectorConfigObject,
+	S ConnectorState,
+	C Connector[T, S],
+] interface {
+	New(logObjectStore LogObjectStorage, logger sharedlogging.Logger, ingester Ingester[T, S, C]) (C, error)
 }
