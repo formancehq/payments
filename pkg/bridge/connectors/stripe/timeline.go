@@ -158,6 +158,7 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 		futureState.OldestID = lastItem.
 			FieldByName("ID").
 			String()
+		futureState.OldestDate = time.Unix(lastItem.FieldByName("Created").Int(), 0)
 	}
 
 	return hasMore, futureState, func() {
@@ -202,6 +203,7 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 			Index(0).
 			FieldByName("ID").
 			String()
+		futureState.MoreRecentDate = time.Unix(valueOfTo.Index(0).FieldByName("Created").Int(), 0)
 	}
 
 	return hasMore, futureState, func() {

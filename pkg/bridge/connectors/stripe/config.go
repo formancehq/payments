@@ -25,6 +25,8 @@ func (c Config) Validate() error {
 }
 
 type State struct {
-	OldestID     string `bson:"OldestID" json:"oldestID"`
-	MoreRecentID string `bson:"MoreRecentID" json:"moreRecentID"`
+	OldestID       string    `bson:"OldestID" json:"oldestID"`
+	OldestDate     time.Time `bson:"oldestDate" json:"oldestDate"`
+	MoreRecentID   string    `bson:"MoreRecentID" json:"moreRecentID"`
+	MoreRecentDate time.Time `bson:"moreRecentDate" json:"moreRecentDate"`
 }
