@@ -167,7 +167,7 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 }
 
 func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func(), error) {
-	if tl.firstIDAfterStartingAt == "" {
+	if tl.firstIDAfterStartingAt == "" && tl.state.MoreRecentID != "" {
 		err := tl.init(ctx)
 		if err != nil {
 			return false, State{}, nil, err
@@ -183,7 +183,6 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 		queryParams.Set("ending_before", tl.state.MoreRecentID)
 	case tl.firstIDAfterStartingAt != "":
 		queryParams.Set("ending_before", tl.firstIDAfterStartingAt)
-	default:
 	}
 
 	hasMore, err := tl.doRequest(ctx, queryParams, to)
