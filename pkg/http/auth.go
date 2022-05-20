@@ -1,4 +1,4 @@
-package bridge
+package http
 
 import (
 	"github.com/numary/go-libs/sharedauth"

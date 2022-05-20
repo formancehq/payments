@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/gibson042/canonicaljson-go"
+	"go.mongodb.org/mongo-driver/bson"
 	"time"
 )
 
@@ -79,6 +80,25 @@ type Payment struct {
 	Data        `bson:",inline"`
 	Adjustments []Adjustment `json:"adjustments" bson:"adjustments"`
 }
+
+func (p *Payment) UnmarshalBSON(bytes []byte) error {
+	type Aux Payment
+	type WithRaw struct {
+		Aux
+		Raw map[string]interface{} `bson:"raw"`
+	}
+	wr := WithRaw{}
+	err := bson.Unmarshal(bytes, &wr)
+	if err != nil {
+		return err
+	}
+
+	*p = Payment(wr.Aux)
+	p.Raw = wr.Raw
+	return nil
+}
+
+var _ bson.Unmarshaler = &Payment{}
 
 func (p Payment) MarshalJSON() ([]byte, error) {
 	type Aux Payment

@@ -5,7 +5,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/auth"
+	. "github.com/numary/payments/pkg/http"
 	"net/http"
 )
 
@@ -139,19 +139,19 @@ func ConnectorRouter[T ConnectorConfigObject, S ConnectorState](
 ) *mux.Router {
 	r := mux.NewRouter()
 	r.Path("/" + name).Methods(http.MethodPut).Handler(
-		bridge.WrapHandler(useScopes, EnableConnector(manager), ScopeWriteConnectors),
+		WrapHandler(useScopes, EnableConnector(manager), ScopeWriteConnectors),
 	)
 	r.Path("/" + name).Methods(http.MethodDelete).Handler(
-		bridge.WrapHandler(useScopes, DisableConnector(manager), ScopeWriteConnectors),
+		WrapHandler(useScopes, DisableConnector(manager), ScopeWriteConnectors),
 	)
 	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(
-		bridge.WrapHandler(useScopes, ReadConnectorConfig(manager), ScopeReadConnectors),
+		WrapHandler(useScopes, ReadConnectorConfig(manager), ScopeReadConnectors),
 	)
 	r.Path("/" + name + "/state").Methods(http.MethodGet).Handler(
-		bridge.WrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors),
+		WrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors),
 	)
 	r.Path("/" + name + "/reset").Methods(http.MethodPut).Handler(
-		bridge.WrapHandler(useScopes, ResetConnector(manager), ScopeWriteConnectors),
+		WrapHandler(useScopes, ResetConnector(manager), ScopeWriteConnectors),
 	)
 	return r
 }

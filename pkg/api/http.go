@@ -2,12 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/auth"
-	http2 "github.com/numary/payments/pkg/http"
+	. "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,6 +19,7 @@ const (
 	maxPerPage = 100
 )
 
+// TODO: Handle errors
 func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	sharedlogging.GetLogger(r.Context()).Error(err)
@@ -76,7 +77,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			}
 			pipeline = append(pipeline, map[string]any{"$sort": sort})
 		}
-		skip, err := http2.IntegerWithDefault(r, "skip", 0)
+		skip, err := IntegerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleClientError(w, r, err)
 			return
@@ -86,7 +87,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 				"$skip": skip,
 			})
 		}
-		limit, err := http2.IntegerWithDefault(r, "limit", maxPerPage)
+		limit, err := IntegerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
 			handleClientError(w, r, err)
 			return
@@ -99,18 +100,6 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 				"$limit": limit,
 			})
 		}
-		pipeline = append(pipeline, map[string]any{
-			"$addFields": map[string]any{
-				"actualPayment": map[string]any{
-					"$first": "$items",
-				},
-			},
-		})
-		pipeline = append(pipeline, map[string]any{
-			"$replaceRoot": map[string]any{
-				"newRoot": "$actualPayment",
-			},
-		})
 
 		cursor, err := db.Collection(payments.PaymentsCollection).Aggregate(r.Context(), pipeline)
 		if err != nil {
@@ -125,6 +114,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			handleServerError(w, r, err)
 			return
 		}
+		spew.Dump(ret[0].Raw)
 
 		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
 			Data: ret,
@@ -186,8 +176,8 @@ func PaymentsRouter(
 			h.ServeHTTP(w, r)
 		})
 	})
-	router.Path("/payments").Methods(http.MethodGet).Handler(bridge.WrapHandler(useScopes, ListPaymentsHandler(db), ScopeReadPayments, ScopeWritePayments))
-	router.Path("/payments/{paymentId}").Methods(http.MethodGet).Handler(bridge.WrapHandler(useScopes, ReadPaymentHandler(db), ScopeReadPayments, ScopeWritePayments))
+	router.Path("/payments").Methods(http.MethodGet).Handler(WrapHandler(useScopes, ListPaymentsHandler(db), ScopeReadPayments, ScopeWritePayments))
+	router.Path("/payments/{paymentId}").Methods(http.MethodGet).Handler(WrapHandler(useScopes, ReadPaymentHandler(db), ScopeReadPayments, ScopeWritePayments))
 
 	return router
 }
