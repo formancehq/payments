@@ -167,7 +167,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 		}
 
 		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
-			Data: ob,
+			Data: ob.Items[0],
 		})
 		if err != nil {
 			handleServerError(w, r, err)
