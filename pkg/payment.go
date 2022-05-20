@@ -7,23 +7,27 @@ import (
 	"time"
 )
 
+type Scheme string
+
 const (
-	SchemeVisa       = "visa"
-	SchemeMasterCard = "mastercard"
-	SchemeApplePay   = "apple pay"
-	SchemeGooglePay  = "google pay"
-	SchemeSepaDebit  = "sepa debit"
-	SchemeSepaCredit = "sepa credit"
-	SchemeSepa       = "sepa"
-	SchemeA2A        = "a2a"
-	SchemeAchDebit   = "ach debit"
-	SchemeAch        = "ach"
-	SchemeRtp        = "rtp"
-	SchemeOther      = "other"
+	SchemeVisa       Scheme = "visa"
+	SchemeMasterCard Scheme = "mastercard"
+	SchemeApplePay   Scheme = "apple pay"
+	SchemeGooglePay  Scheme = "google pay"
+	SchemeSepaDebit  Scheme = "sepa debit"
+	SchemeSepaCredit Scheme = "sepa credit"
+	SchemeSepa       Scheme = "sepa"
+	SchemeA2A        Scheme = "a2a"
+	SchemeAchDebit   Scheme = "ach debit"
+	SchemeAch        Scheme = "ach"
+	SchemeRtp        Scheme = "rtp"
+	SchemeOther      Scheme = "other"
 
 	TypePayIn  = "pay-in"
 	TypePayout = "payout"
 	TypeOther  = "other"
+
+	StatusSucceeded = "succeeded"
 )
 
 type Value struct {
@@ -34,7 +38,6 @@ type Value struct {
 type Identifier struct {
 	Provider  string `json:"provider" bson:"provider"`
 	Reference string `json:"reference" bson:"reference"`
-	Scheme    string `json:"scheme" bson:"scheme"`
 	Type      string `json:"type" bson:"type"`
 }
 
@@ -60,6 +63,7 @@ func IdentifierFromString(v string) (*Identifier, error) {
 }
 
 type Data struct {
+	Scheme Scheme      `json:"scheme" bson:"scheme"`
 	Status string      `json:"status" bson:"status"`
 	Value  Value       `json:"value" bson:"value"`
 	Date   time.Time   `json:"date" bson:"date"`

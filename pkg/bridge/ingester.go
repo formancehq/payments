@@ -21,6 +21,10 @@ type Event struct {
 	Payload interface{} `json:"payload"`
 }
 
+type Order interface {
+	apply(ctx context.Context)
+}
+
 type BatchElement struct {
 	Payment payment.Payment
 	Forward bool
@@ -44,71 +48,73 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 		"size": len(batch),
 	}).Infof("Ingest batch")
 
-	ses, err := i.db.Client().StartSession()
-	if err != nil {
-		return err
-	}
-	defer ses.EndSession(ctx)
-
-	err = ses.StartTransaction()
-	if err != nil {
-		return err
-	}
-	defer ses.AbortTransaction(ctx)
-
-	for _, elem := range batch {
-		logger := i.logger.WithFields(map[string]any{
-			"id":   elem.Payment.Identifier.String(),
-			"date": elem.Payment.Date,
-		})
-
-		items := bson.M{
-			"$each": []any{elem.Payment},
-		}
-		if elem.Forward {
-			items["$position"] = 0
-		}
-
-		_, err = i.db.Collection(payment.PaymentsCollection).UpdateOne(ctx, elem.Payment.Identifier, map[string]any{
-			"$push": bson.M{
-				"items": items,
-			},
-		}, options.Update().SetUpsert(true))
+	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
+		err := ctx.StartTransaction()
 		if err != nil {
-			logger.Errorf("Error persisting payment: %s", err)
 			return err
 		}
-	}
+		defer ctx.AbortTransaction(ctx)
 
-	for _, e := range batch {
-		err = i.publisher.Publish(ctx, PaymentsTopics, Event{
-			Date:    time.Now(),
-			Type:    "SAVED_PAYMENT",
-			Payload: e.Payment,
+		for _, elem := range batch {
+			logger := i.logger.WithFields(map[string]any{
+				"id":   elem.Payment.Identifier.String(),
+				"date": elem.Payment.Date,
+			})
+
+			items := bson.M{
+				"$each": []any{elem.Payment},
+			}
+			if elem.Forward {
+				items["$position"] = 0
+			}
+
+			_, err = i.db.Collection(payment.PaymentsCollection).UpdateOne(ctx, elem.Payment.Identifier, map[string]any{
+				"$push": bson.M{
+					"items": items,
+				},
+			}, options.Update().SetUpsert(true))
+			if err != nil {
+				logger.Errorf("Error persisting payment: %s", err)
+				return err
+			}
+		}
+
+		for _, e := range batch {
+			err = i.publisher.Publish(ctx, PaymentsTopics, Event{
+				Date:    time.Now(),
+				Type:    "SAVED_PAYMENT",
+				Payload: e.Payment,
+			})
+			if err != nil {
+				i.logger.Errorf("Error publishing payment: %s", err)
+			}
+		}
+
+		i.logger.WithFields(map[string]interface{}{
+			"state": commitState,
+		}).Infof("Update state")
+
+		var connector C
+		_, err = i.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
+			"provider": connector.Name(),
+		}, bson.M{
+			"$set": bson.M{
+				"state": commitState,
+			},
 		})
 		if err != nil {
-			i.logger.Errorf("Error publishing payment: %s", err)
+			return err
 		}
-	}
 
-	i.logger.WithFields(map[string]interface{}{
-		"state": commitState,
-	}).Infof("Update state")
+		err = ctx.CommitTransaction(ctx)
+		if err != nil {
+			return err
+		}
 
-	var connector C
-	_, err = i.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
-		"provider": connector.Name(),
-	}, bson.M{
-		"$set": bson.M{
-			"state": commitState,
-		},
+		return nil
 	})
 	if err != nil {
-		return err
-	}
-
-	err = ses.CommitTransaction(ctx)
-	if err != nil {
+		sharedlogging.GetLogger(ctx).Errorf("Error ingesting batch: %s", err)
 		return err
 	}
 

@@ -220,44 +220,46 @@ func (l *ConnectorManager[T, S]) Disable(ctx context.Context) error {
 func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	l.logger(ctx).Infof("Reset connector")
 
-	ses, err := l.db.Client().StartSession()
-	if err != nil {
-		return err
-	}
-	defer ses.EndSession(ctx)
+	err := l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
+		err := ctx.StartTransaction()
+		if err != nil {
+			return err
+		}
+		defer ctx.AbortTransaction(ctx)
 
-	err = ses.StartTransaction()
-	if err != nil {
-		return err
-	}
-	defer ses.AbortTransaction(ctx)
+		ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
+			"provider": l.name,
+		})
+		if err != nil {
+			return err
+		}
+		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
 
-	ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
-		"provider": l.name,
+		err = l.ResetState(ctx)
+		if err != nil {
+			return err
+		}
+
+		err = l.Stop(ctx)
+		if err != nil {
+			return err
+		}
+
+		var state S
+		err = l.StartWithState(ctx, state)
+		if err != nil {
+			return err
+		}
+
+		err = ctx.CommitTransaction(ctx)
+		if err != nil {
+			return err
+		}
+
+		return nil
 	})
 	if err != nil {
-		return err
-	}
-	l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
-
-	err = l.ResetState(ctx)
-	if err != nil {
-		return err
-	}
-
-	err = l.Stop(ctx)
-	if err != nil {
-		return err
-	}
-
-	var state S
-	err = l.StartWithState(ctx, state)
-	if err != nil {
-		return err
-	}
-
-	err = ses.CommitTransaction(ctx)
-	if err != nil {
+		sharedlogging.GetLogger(ctx).Errorf("Error resetting connector: %s", err)
 		return err
 	}
 

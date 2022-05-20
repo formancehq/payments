@@ -10,7 +10,7 @@ import (
 func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
 	var (
 		reference string
-		scheme    string
+		scheme    payment.Scheme
 		status    string
 		amount    int64
 		asset     string
@@ -20,7 +20,7 @@ func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
 	switch bt.Type {
 	case "charge":
 		reference = bt.Source.ID
-		scheme = string(bt.Source.Charge.PaymentMethodDetails.Card.Brand)
+		scheme = payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand) // TODO: Check with clem
 		ptype = payment.TypePayIn
 		status = string(bt.Source.Charge.Status)
 		amount = bt.Source.Charge.Amount
@@ -28,8 +28,8 @@ func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
 		date = bt.Created
 	case "payout":
 		reference = bt.Source.ID
-		ptype = payment.TypePayout
-		scheme = string(bt.Source.Payout.Type)
+		ptype = payment.TypePayIn
+		scheme = payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand) // TODO: Check with clem
 		status = string(bt.Source.Payout.Status)
 		amount = bt.Source.Payout.Amount
 		asset = string(bt.Source.Payout.Currency)
@@ -39,7 +39,6 @@ func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
 		Identifier: payment.Identifier{
 			Provider:  ConnectorName,
 			Reference: reference,
-			Scheme:    scheme,
 			Type:      ptype,
 		},
 		Data: payment.Data{
@@ -50,6 +49,7 @@ func TranslateBalanceTransaction(bt stripe.BalanceTransaction) payment.Payment {
 			Date:   time.Unix(date, 0),
 			Raw:    bt,
 			Status: status,
+			Scheme: scheme,
 		},
 	}
 }

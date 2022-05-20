@@ -2,7 +2,12 @@ version: '3.8'
 
 services:
   mongodb:
-    image: mongo:4.4
+    image: bitnami/mongodb:4.4
+    environment:
+      MONGODB_REPLICA_SET_MODE: primary
+      MONGODB_REPLICA_SET_KEY: abcdef
+      MONGODB_ADVERTISED_HOSTNAME: mongodb
+      MONGODB_ROOT_PASSWORD: root
   payments:
     image: golang:1.18-alpine
     depends_on:
@@ -18,4 +23,4 @@ services:
     working_dir: /src
     environment:
       DEBUG: ${DEBUG:-"true"}
-      MONGODB_URI: mongodb://mongodb:27017
+      MONGODB_URI: mongodb://root:root@mongodb:27017
