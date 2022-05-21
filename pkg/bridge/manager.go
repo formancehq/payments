@@ -2,10 +2,15 @@ package bridge
 
 import (
 	"context"
+	"errors"
 	"github.com/numary/go-libs/sharedlogging"
 	payment "github.com/numary/payments/pkg"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+)
+
+var (
+	ErrNotFound = errors.New("not found")
 )
 
 type ConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState] struct {
@@ -64,6 +69,9 @@ func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, error) {
 		"provider": l.name,
 	})
 	if ret.Err() != nil {
+		if ret.Err() == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
 		return nil, ret.Err()
 	}
 	err := ret.Decode(c)

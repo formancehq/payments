@@ -10,10 +10,10 @@ import (
 	"net/http"
 )
 
-// TODO: Properly handle errors
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	sharedlogging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
 	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
 		ErrorCode:    "INTERNAL",
 		ErrorMessage: err.Error(),
@@ -28,6 +28,10 @@ func ReadConnectorConfig[T payments.ConnectorConfigObject, S payments.ConnectorS
 
 		config, err := cm.ReadConfig(r.Context())
 		if err != nil {
+			if err == ErrNotFound {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
 			handleError(w, r, err)
 			return
 		}

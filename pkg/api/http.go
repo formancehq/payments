@@ -2,7 +2,6 @@ package api
 
 import (
 	"encoding/json"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
@@ -19,10 +18,10 @@ const (
 	maxPerPage = 100
 )
 
-// TODO: Handle errors
 func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
 	sharedlogging.GetLogger(r.Context()).Error(err)
+	//TODO: Opentracing
 	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
 		ErrorCode:    "INTERNAL",
 		ErrorMessage: err.Error(),
@@ -32,11 +31,12 @@ func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func handleClientError(w http.ResponseWriter, r *http.Request, err error) {
+func handleValidationError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusBadRequest)
 	sharedlogging.GetLogger(r.Context()).Error(err)
+	//TODO: Opentracing
 	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
-		ErrorCode:    "INTERNAL",
+		ErrorCode:    "VALIDATION",
 		ErrorMessage: err.Error(),
 	})
 	if err != nil {
@@ -59,7 +59,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 					case "dsc", "desc", "DSC", "DESC":
 						desc = true
 					default:
-						handleClientError(w, r, errors.New("sort order not well specified, got "+parts[1]))
+						handleValidationError(w, r, errors.New("sort order not well specified, got "+parts[1]))
 						return
 					}
 				}
@@ -79,7 +79,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 		}
 		skip, err := IntegerWithDefault(r, "skip", 0)
 		if err != nil {
-			handleClientError(w, r, err)
+			handleValidationError(w, r, err)
 			return
 		}
 		if skip != 0 {
@@ -89,7 +89,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 		}
 		limit, err := IntegerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
-			handleClientError(w, r, err)
+			handleValidationError(w, r, err)
 			return
 		}
 		if limit > maxPerPage {
@@ -114,7 +114,6 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			handleServerError(w, r, err)
 			return
 		}
-		spew.Dump(ret[0].Raw)
 
 		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
 			Data: ret,
@@ -133,7 +132,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 
 		identifier, err := payments.IdentifierFromString(paymentId)
 		if err != nil {
-			handleClientError(w, r, err)
+			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
