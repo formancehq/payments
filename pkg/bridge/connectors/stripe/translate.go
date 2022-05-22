@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forward bool) bridge.BatchElement {
+func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forward bool) (bridge.BatchElement, bool) {
 	var (
 		identifier  payment.Identifier
 		paymentData *payment.Data
@@ -69,6 +69,8 @@ func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forw
 			Date:   time.Unix(bt.Source.Refund.Created, 0),
 			Raw:    bt,
 		}
+	default:
+		return bridge.BatchElement{}, false
 	}
 
 	return bridge.BatchElement{
@@ -76,5 +78,5 @@ func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forw
 		Payment:    paymentData,
 		Adjustment: adjustment,
 		Forward:    forward,
-	}
+	}, true
 }

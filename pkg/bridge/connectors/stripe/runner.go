@@ -74,7 +74,11 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 
 	batch := bridge.Batch{}
 	for _, bt := range ret {
-		batchElement := CreateBatchElement(bt, r.name, !tail)
+		batchElement, handled := CreateBatchElement(bt, r.name, !tail)
+		if !handled {
+			r.logger.Errorf("Balance transaction type not handled: %s", bt.Type)
+			continue
+		}
 		if batchElement.Adjustment == nil && batchElement.Payment == nil {
 			continue
 		}
