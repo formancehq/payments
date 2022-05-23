@@ -199,7 +199,7 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 		}).Infof("Update state")
 
 		var connector C
-		_, err = i.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
+		_, err = i.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
 			"provider": connector.Name(),
 		}, bson.M{
 			"$set": bson.M{

@@ -26,7 +26,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 func ReadConnectorConfig[T payments.ConnectorConfigObject, S payments.ConnectorState](cm *ConnectorManager[T, S]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		config, err := cm.ReadConfig(r.Context())
+		config, _, err := cm.ReadConfig(r.Context())
 		if err != nil {
 			if err == ErrNotFound {
 				w.WriteHeader(http.StatusNotFound)
@@ -107,7 +107,7 @@ func EnableConnector[T payments.ConnectorConfigObject, S payments.ConnectorState
 			}
 		} else {
 			var err error
-			config, err = cm.ReadConfig(r.Context())
+			config, _, err = cm.ReadConfig(r.Context())
 			if err != nil {
 				handleError(w, r, err)
 				return

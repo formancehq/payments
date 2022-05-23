@@ -2,11 +2,11 @@ package bridge
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/gobeam/stringy"
 	"github.com/numary/go-libs/sharedlogging"
 	payment "github.com/numary/payments/pkg"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -64,7 +64,7 @@ func (l *ConnectorManager[T, S]) Enable(ctx context.Context) error {
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, error) {
+func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, bool, error) {
 	c := &payment.Connector[T, S]{}
 
 	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
@@ -72,18 +72,18 @@ func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, error) {
 	})
 	if ret.Err() != nil {
 		if ret.Err() == mongo.ErrNoDocuments {
-			return nil, ErrNotFound
+			return nil, false, ErrNotFound
 		}
-		return nil, ret.Err()
+		return nil, false, ret.Err()
 	}
 	err := ret.Decode(c)
 	if err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	config := l.connector.ApplyDefaults(c.Config)
 
-	return &config, nil
+	return &config, c.Disabled, nil
 }
 
 func (l *ConnectorManager[T, S]) ReadState(ctx context.Context) (S, error) {
@@ -147,15 +147,6 @@ func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) 
 	return l.StartWithConfigAndState(ctx, config, state)
 }
 
-func (l *ConnectorManager[T, S]) StartWithState(ctx context.Context, state S) error {
-	config, err := l.ReadConfig(ctx)
-	if err != nil {
-		return err
-	}
-
-	return l.StartWithConfigAndState(ctx, *config, state)
-}
-
 func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, config T, state S) error {
 	config = l.connector.ApplyDefaults(config)
 	l.logger(ctx).WithFields(map[string]interface{}{
@@ -175,7 +166,7 @@ func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, co
 
 func (l *ConnectorManager[T, S]) Start(ctx context.Context) error {
 	l.logger(ctx).Info("Start")
-	config, err := l.ReadConfig(ctx)
+	config, _, err := l.ReadConfig(ctx)
 	if err != nil {
 		return err
 	}
@@ -230,25 +221,33 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 			"provider": l.name,
 		})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "Removing payments")
 		}
 		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
 
 		str := stringy.New(l.name)
-		_, err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).DeleteMany(ctx, map[string]any{})
+		ret, err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).DeleteMany(ctx, map[string]any{})
 		if err != nil {
-			return err
+			return errors.Wrap(err, "removing LogObjectStorage")
 		}
+		l.logger(ctx).Infof("%d log object deleted", ret.DeletedCount)
 
 		err = l.ResetState(ctx)
 		if err != nil {
 			return err
 		}
 
-		var state S
-		err = l.StartWithState(ctx, state)
+		config, disabled, err := l.ReadConfig(ctx)
 		if err != nil {
 			return err
+		}
+
+		if !disabled {
+			var state S
+			err = l.StartWithConfigAndState(ctx, *config, state)
+			if err != nil {
+				return err
+			}
 		}
 
 		err = ctx.CommitTransaction(ctx)
