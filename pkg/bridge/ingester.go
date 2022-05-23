@@ -118,6 +118,10 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 					"createdAt":     elem.Payment.CreatedAt,
 					"scheme":        elem.Payment.Scheme,
 					"initialAmount": elem.Payment.InitialAmount,
+					"asset":         elem.Payment.Asset,
+				},
+				"$setOnInsert": bson.M{
+					"status": elem.Payment.Status,
 				},
 			}
 		}

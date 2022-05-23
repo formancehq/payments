@@ -84,7 +84,7 @@ type Payment struct {
 func (p *Payment) UnmarshalBSON(bytes []byte) error {
 	type Aux Payment
 	type WithRaw struct {
-		Aux
+		Aux `bson:",inline"`
 		Raw map[string]interface{} `bson:"raw"`
 	}
 	wr := WithRaw{}
