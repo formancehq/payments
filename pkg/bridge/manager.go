@@ -2,8 +2,6 @@ package bridge
 
 import (
 	"context"
-	"fmt"
-	"github.com/gobeam/stringy"
 	"github.com/numary/go-libs/sharedlogging"
 	payment "github.com/numary/payments/pkg"
 	"github.com/pkg/errors"
@@ -17,9 +15,10 @@ var (
 )
 
 type ConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState] struct {
-	connector Connector[T, S]
-	db        *mongo.Database
-	name      string
+	connector        Connector[T, S]
+	db               *mongo.Database
+	name             string
+	logObjectStorage LogObjectStorage
 }
 
 func (l *ConnectorManager[T, S]) logger(ctx context.Context) sharedlogging.Logger {
@@ -206,7 +205,12 @@ func (l *ConnectorManager[T, S]) Disable(ctx context.Context) error {
 func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	l.logger(ctx).Infof("Reset connector")
 
-	err := l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
+	err := l.Stop(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		err := ctx.StartTransaction(options.
 			Transaction().
 			SetWriteConcern(writeconcern.New(writeconcern.WMajority())),
@@ -216,11 +220,6 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 		}
 		defer ctx.AbortTransaction(ctx)
 
-		err = l.Stop(ctx)
-		if err != nil {
-			return err
-		}
-
 		ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
 			"provider": l.name,
 		})
@@ -229,29 +228,9 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 		}
 		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
 
-		str := stringy.New(l.name)
-		err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).Drop(ctx)
-		if err != nil {
-			return errors.Wrap(err, "removing LogObjectStorage")
-		}
-		l.logger(ctx).Infof("%d log object deleted", ret.DeletedCount)
-
 		err = l.ResetState(ctx)
 		if err != nil {
 			return err
-		}
-
-		config, disabled, err := l.ReadConfig(ctx)
-		if err != nil {
-			return err
-		}
-
-		if !disabled {
-			var state S
-			err = l.StartWithConfigAndState(ctx, *config, state)
-			if err != nil {
-				return err
-			}
 		}
 
 		err = ctx.CommitTransaction(ctx)
@@ -264,6 +243,24 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	if err != nil {
 		sharedlogging.GetLogger(ctx).Errorf("Error resetting connector: %s", err)
 		return err
+	}
+
+	err = l.logObjectStorage.drop(ctx)
+	if err != nil {
+		return err
+	}
+
+	config, disabled, err := l.ReadConfig(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !disabled {
+		var state S
+		err = l.StartWithConfigAndState(ctx, *config, state)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -287,17 +284,23 @@ func NewConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorSta
 	ingester Ingester[T, S, C],
 ) *ConnectorManager[T, S] {
 	var connector C
-	logObjectStorage := NewDefaultLogObjectStorage(connector.Name(), db)
 	logger := sharedlogging.WithFields(map[string]interface{}{
 		"connector": connector.Name(),
 	})
+
+	logObjectStorage := NewDefaultLogObjectStorage(connector.Name(), db, logger.WithFields(map[string]interface{}{
+		"component": "log-object-storage",
+	}))
+
 	connector, err := ctrl.Load(logObjectStorage, logger, ingester)
 	if err != nil {
 		panic(err)
 	}
+
 	return &ConnectorManager[T, S]{
-		db:        db,
-		connector: connector,
-		name:      connector.Name(),
+		db:               db,
+		connector:        connector,
+		name:             connector.Name(),
+		logObjectStorage: logObjectStorage,
 	}
 }
