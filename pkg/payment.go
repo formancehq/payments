@@ -136,10 +136,10 @@ func (p Payment) Computed() ComputedPayment {
 }
 
 type ComputedPayment struct {
-	Identifier  `bson:",inline"`
-	Data        `bson:",inline"`
-	Amount      int64 `bson:"amount" json:"amount"`
-	Adjustments []Adjustment
+	Identifier
+	Data
+	Amount      int64        `json:"amount"`
+	Adjustments []Adjustment `json:"adjustments"`
 }
 
 func (p ComputedPayment) MarshalJSON() ([]byte, error) {
