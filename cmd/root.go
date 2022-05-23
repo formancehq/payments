@@ -96,36 +96,10 @@ func HTTPModule() fx.Option {
 		}),
 		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []bridge.ConnectorHandler) (*mux.Router, error) {
 
-			m := api.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag))
-			if viper.GetBool(otelTracesFlag) {
-				m.Use(otelmux.Middleware(serviceName))
-			}
-			methods := make([]sharedauth.Method, 0)
-			if viper.GetBool(authBasicEnabledFlag) {
-				credentials := sharedauth.Credentials{}
-				for _, kv := range viper.GetStringSlice(authBasicCredentialsFlag) {
-					parts := strings.SplitN(kv, ":", 2)
-					credentials[parts[0]] = sharedauth.Credential{
-						Password: parts[1],
-						Scopes:   append(api.AllScopes, bridge.AllScopes...),
-					}
-				}
-				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
-			}
-			if viper.GetBool(authBearerEnabledFlag) {
-				methods = append(methods, sharedauth.NewHttpBearerMethod(
-					sharedauth.NewIntrospectionValidator(
-						oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
-						viper.GetBool(authBearerAudiencesWildcardFlag),
-						sharedauth.AudienceIn(viper.GetStringSlice(authBearerAudienceFlag)...),
-					),
-				))
-			}
-			if len(methods) > 0 {
-				m.Use(sharedauth.Middleware(methods...))
-			}
-
 			rootMux := mux.NewRouter()
+			if viper.GetBool(otelTracesFlag) {
+				rootMux.Use(otelmux.Middleware(serviceName))
+			}
 			rootMux.Use(
 				paymentapi.Recovery(func(ctx context.Context, e interface{}) {
 					if viper.GetBool(otelTracesFlag) {
@@ -149,13 +123,40 @@ func HTTPModule() fx.Option {
 			})
 			rootMux.Path("/_health").Handler(paymentapi.HealthHandler(client))
 			rootMux.Path("/_live").Handler(paymentapi.LiveHandler())
-			connectorsSubRouter := rootMux.PathPrefix("/connectors").Subrouter()
+			authenticatedRouter := rootMux.Name("authenticated").Subrouter()
+			methods := make([]sharedauth.Method, 0)
+			if viper.GetBool(authBasicEnabledFlag) {
+				credentials := sharedauth.Credentials{}
+				for _, kv := range viper.GetStringSlice(authBasicCredentialsFlag) {
+					parts := strings.SplitN(kv, ":", 2)
+					credentials[parts[0]] = sharedauth.Credential{
+						Password: parts[1],
+						Scopes:   append(api.AllScopes, bridge.AllScopes...),
+					}
+				}
+				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
+			}
+			if viper.GetBool(authBearerEnabledFlag) {
+				methods = append(methods, sharedauth.NewHttpBearerMethod(
+					sharedauth.NewIntrospectionValidator(
+						oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
+						viper.GetBool(authBearerAudiencesWildcardFlag),
+						sharedauth.AudienceIn(viper.GetStringSlice(authBearerAudienceFlag)...),
+					),
+				))
+			}
+			if len(methods) > 0 {
+				authenticatedRouter.Use(sharedauth.Middleware(methods...))
+			}
+			connectorsSubRouter := authenticatedRouter.PathPrefix("/connectors").Subrouter()
 			for _, h := range handlers {
 				connectorsSubRouter.PathPrefix("/" + h.Name).Handler(
 					http.StripPrefix("/connectors", h.Handler),
 				)
 			}
-			rootMux.PathPrefix("/").Handler(m)
+			authenticatedRouter.PathPrefix("/").Handler(
+				api.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag)),
+			)
 
 			return rootMux, nil
 		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),

@@ -148,10 +148,10 @@ func ConnectorRouter[T payments.ConnectorConfigObject, S payments.ConnectorState
 		WrapHandler(useScopes, DisableConnector(manager), ScopeWriteConnectors),
 	)
 	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(
-		WrapHandler(useScopes, ReadConnectorConfig(manager), ScopeReadConnectors),
+		WrapHandler(useScopes, ReadConnectorConfig(manager), ScopeReadConnectors, ScopeWriteConnectors),
 	)
 	r.Path("/" + name + "/state").Methods(http.MethodGet).Handler(
-		WrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors),
+		WrapHandler(useScopes, ReadConnectorState(manager), ScopeReadConnectors, ScopeWriteConnectors),
 	)
 	r.Path("/" + name + "/reset").Methods(http.MethodPut).Handler(
 		WrapHandler(useScopes, ResetConnector(manager), ScopeWriteConnectors),
