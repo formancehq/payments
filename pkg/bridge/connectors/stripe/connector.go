@@ -25,7 +25,11 @@ func (c *Connector) Start(ctx context.Context, object Config, state State) error
 
 func (c *Connector) Stop(ctx context.Context) error {
 	if c.runner != nil {
-		return c.runner.Stop(ctx)
+		err := c.runner.Stop(ctx)
+		if err != nil {
+			return err
+		}
+		c.runner = nil
 	}
 	return nil
 }
