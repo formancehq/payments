@@ -176,14 +176,24 @@ func (l *ConnectorManager[T, S]) Start(ctx context.Context) error {
 
 func (l *ConnectorManager[T, S]) Restore(ctx context.Context) error {
 	l.logger(ctx).Info("Restoring state")
-	err := l.Start(ctx)
+
+	config, disabled, err := l.ReadConfig(ctx)
+	if err != nil {
+		if err == ErrNotFound {
+			l.logger(ctx).Info("Not enabled, skip")
+			return nil
+		}
+		return err
+	}
+	if disabled {
+		l.logger(ctx).Errorf("Connector disabled")
+		return nil
+	}
+
+	err = l.StartWithConfig(ctx, *config)
 	if err != nil && err != mongo.ErrNoDocuments {
 		l.logger(ctx).Errorf("Unable to restore state: %s", err)
 		return err
-	}
-	if err == mongo.ErrNoDocuments {
-		l.logger(ctx).Info("Not enabled, skip")
-		return nil
 	}
 	l.logger(ctx).Info("State restored")
 	return nil
