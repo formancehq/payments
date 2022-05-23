@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 var (
@@ -207,8 +207,10 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	l.logger(ctx).Infof("Reset connector")
 
 	err := l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		maxCommitTime := 3 * time.Minute
-		err := ctx.StartTransaction(options.Transaction().SetMaxCommitTime(&maxCommitTime))
+		err := ctx.StartTransaction(options.
+			Transaction().
+			SetWriteConcern(writeconcern.New(writeconcern.WMajority())),
+		)
 		if err != nil {
 			return err
 		}
@@ -228,7 +230,7 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
 
 		str := stringy.New(l.name)
-		ret, err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).DeleteMany(ctx, map[string]any{})
+		err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).Drop(ctx)
 		if err != nil {
 			return errors.Wrap(err, "removing LogObjectStorage")
 		}
