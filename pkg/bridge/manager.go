@@ -3,6 +3,8 @@ package bridge
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/gobeam/stringy"
 	"github.com/numary/go-libs/sharedlogging"
 	payment "github.com/numary/payments/pkg"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -226,6 +228,12 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 			return err
 		}
 		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
+
+		str := stringy.New(l.name)
+		_, err = l.db.Collection(fmt.Sprintf("%sLogObjectStorage", str.CamelCase())).DeleteMany(ctx, map[string]any{})
+		if err != nil {
+			return err
+		}
 
 		err = l.ResetState(ctx)
 		if err != nil {
