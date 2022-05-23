@@ -121,12 +121,13 @@ func (l *ConnectorManager[T, S]) Restart(ctx context.Context) error {
 }
 
 func (l *ConnectorManager[T, S]) Stop(ctx context.Context) error {
-	l.logger(ctx).Infof("Stopping connector %s", l.name)
+	l.logger(ctx).Infof("Stopping connector")
 
 	err := l.connector.Stop(ctx)
 	if err != nil {
 		l.logger(ctx).Errorf("Error stopping connector: %s", err)
 	}
+	l.logger(ctx).Infof("Connector stopped")
 	return err
 }
 
