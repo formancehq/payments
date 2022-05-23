@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"time"
 )
 
 var (
@@ -206,7 +207,8 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	l.logger(ctx).Infof("Reset connector")
 
 	err := l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		err := ctx.StartTransaction()
+		maxCommitTime := 3 * time.Minute
+		err := ctx.StartTransaction(options.Transaction().SetMaxCommitTime(&maxCommitTime))
 		if err != nil {
 			return err
 		}
