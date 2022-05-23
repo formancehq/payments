@@ -94,9 +94,11 @@ func EnableConnector[T payments.ConnectorConfigObject, S payments.ConnectorState
 
 		var config *T
 		if r.ContentLength > 0 {
+			config = new(T)
 			err := json.NewDecoder(r.Body).Decode(config)
 			if err != nil {
-				panic(err)
+				handleError(w, r, err)
+				return
 			}
 			err = cm.Configure(r.Context(), *config)
 			if err != nil {
