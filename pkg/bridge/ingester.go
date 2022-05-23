@@ -66,7 +66,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 		case elem.Forward && elem.Adjustment != nil:
 			update = bson.M{
 				"$push": bson.M{
-					"items": bson.M{
+					"adjustments": bson.M{
 						"$each":     []any{elem.Adjustment},
 						"$position": 0,
 					},
@@ -93,7 +93,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 		case !elem.Forward && elem.Adjustment != nil:
 			update = bson.M{
 				"$push": bson.M{
-					"items": bson.M{
+					"adjustments": bson.M{
 						"$each": []any{elem.Adjustment},
 					},
 				},
@@ -104,7 +104,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 		case !elem.Forward && elem.Payment != nil:
 			update = bson.M{
 				"$push": bson.M{
-					"items": bson.M{
+					"adjustments": bson.M{
 						"$each": []any{payment.Adjustment{
 							Status: elem.Payment.Status,
 							Amount: elem.Payment.InitialAmount,
