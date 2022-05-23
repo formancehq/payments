@@ -221,6 +221,11 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 		}
 		defer ctx.AbortTransaction(ctx)
 
+		err = l.Stop(ctx)
+		if err != nil {
+			return err
+		}
+
 		ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
 			"provider": l.name,
 		})
@@ -236,11 +241,6 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 		}
 
 		err = l.ResetState(ctx)
-		if err != nil {
-			return err
-		}
-
-		err = l.Stop(ctx)
 		if err != nil {
 			return err
 		}
