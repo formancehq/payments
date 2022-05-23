@@ -128,14 +128,27 @@ func (p Payment) Computed() ComputedPayment {
 	}
 
 	return ComputedPayment{
-		Identifier: p.Identifier,
-		Data:       p.Data,
-		Amount:     amount,
+		Identifier:  p.Identifier,
+		Data:        p.Data,
+		Amount:      amount,
+		Adjustments: p.Adjustments,
 	}
 }
 
 type ComputedPayment struct {
-	Identifier `bson:",inline"`
-	Data       `bson:",inline"`
-	Amount     int64 `bson:"amount" json:"amount"`
+	Identifier  `bson:",inline"`
+	Data        `bson:",inline"`
+	Amount      int64 `bson:"amount" json:"amount"`
+	Adjustments []Adjustment
+}
+
+func (p ComputedPayment) MarshalJSON() ([]byte, error) {
+	type Aux ComputedPayment
+	return json.Marshal(struct {
+		ID string `json:"id"`
+		Aux
+	}{
+		ID:  p.Identifier.String(),
+		Aux: Aux(p),
+	})
 }
