@@ -11,7 +11,7 @@ type Connector struct {
 	logObjectStorage bridge.LogObjectStorage
 	runner           *Runner
 	logger           sharedlogging.Logger
-	ingester         bridge.Ingester[Config, State, *Connector]
+	ingester         bridge.Ingester[State]
 }
 
 func (c *Connector) Name() string {
@@ -49,7 +49,7 @@ func (c *Connector) ApplyDefaults(cfg Config) Config {
 
 var _ bridge.Connector[Config, State] = &Connector{}
 
-func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector]) (*Connector, error) {
+func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[State]) (*Connector, error) {
 	return &Connector{
 		logObjectStorage: logObjectStorage,
 		logger:           logger,

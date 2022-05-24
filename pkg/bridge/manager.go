@@ -13,20 +13,20 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-type ConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState] struct {
-	connector        Connector[T, S]
+type ConnectorManager[CONFIG payment.ConnectorConfigObject, STATE payment.ConnectorState] struct {
+	connector        Connector[CONFIG, STATE]
 	db               *mongo.Database
 	name             string
 	logObjectStorage LogObjectStorage
 }
 
-func (l *ConnectorManager[T, S]) logger(ctx context.Context) sharedlogging.Logger {
+func (l *ConnectorManager[CONFIG, STATE]) logger(ctx context.Context) sharedlogging.Logger {
 	return sharedlogging.GetLogger(ctx).WithFields(map[string]interface{}{
 		"connector": l.name,
 	})
 }
 
-func (l *ConnectorManager[T, S]) Configure(ctx context.Context, config T) error {
+func (l *ConnectorManager[CONFIG, STATE]) Configure(ctx context.Context, config CONFIG) error {
 
 	l.logger(ctx).WithFields(map[string]interface{}{
 		"config": config,
@@ -46,7 +46,7 @@ func (l *ConnectorManager[T, S]) Configure(ctx context.Context, config T) error 
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) Enable(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Enable(ctx context.Context) error {
 
 	l.logger(ctx).Info("Enabling connector")
 	_, err := l.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
@@ -63,8 +63,8 @@ func (l *ConnectorManager[T, S]) Enable(ctx context.Context) error {
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, bool, error) {
-	c := &payment.Connector[T, S]{}
+func (l *ConnectorManager[CONFIG, STATE]) ReadConfig(ctx context.Context) (*CONFIG, bool, error) {
+	c := &payment.Connector[CONFIG]{}
 
 	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
 		"provider": l.name,
@@ -85,11 +85,11 @@ func (l *ConnectorManager[T, S]) ReadConfig(ctx context.Context) (*T, bool, erro
 	return &config, c.Disabled, nil
 }
 
-func (l *ConnectorManager[T, S]) ReadState(ctx context.Context) (S, error) {
-	c := &payment.Connector[T, S]{}
+func (l *ConnectorManager[CONFIG, STATE]) ReadState(ctx context.Context) (STATE, error) {
+	connectorState := &payment.State[STATE]{}
 
-	var zero S
-	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
+	var zero STATE
+	ret := l.db.Collection(payment.ConnectorStatesCollection).FindOne(ctx, map[string]any{
 		"provider": l.name,
 	})
 	if ret.Err() != nil {
@@ -98,15 +98,15 @@ func (l *ConnectorManager[T, S]) ReadState(ctx context.Context) (S, error) {
 		}
 		return zero, ret.Err()
 	}
-	err := ret.Decode(c)
+	err := ret.Decode(connectorState)
 	if err != nil {
 		return zero, err
 	}
 
-	return c.State, nil
+	return connectorState.State, nil
 }
 
-func (l *ConnectorManager[T, S]) Restart(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Restart(ctx context.Context) error {
 	l.logger(ctx).Infof("Restarting connector %s", l.name)
 	err := func() error {
 		err := l.Stop(ctx)
@@ -121,7 +121,7 @@ func (l *ConnectorManager[T, S]) Restart(ctx context.Context) error {
 	return err
 }
 
-func (l *ConnectorManager[T, S]) Stop(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Stop(ctx context.Context) error {
 	l.logger(ctx).Infof("Stopping connector")
 
 	err := l.connector.Stop(ctx)
@@ -132,7 +132,7 @@ func (l *ConnectorManager[T, S]) Stop(ctx context.Context) error {
 	return err
 }
 
-func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) error {
+func (l *ConnectorManager[CONFIG, STATE]) StartWithConfig(ctx context.Context, config CONFIG) error {
 	config = l.connector.ApplyDefaults(config)
 	l.logger(ctx).WithFields(map[string]interface{}{
 		"config": config,
@@ -146,7 +146,7 @@ func (l *ConnectorManager[T, S]) StartWithConfig(ctx context.Context, config T) 
 	return l.StartWithConfigAndState(ctx, config, state)
 }
 
-func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, config T, state S) error {
+func (l *ConnectorManager[CONFIG, STATE]) StartWithConfigAndState(ctx context.Context, config CONFIG, state STATE) error {
 	config = l.connector.ApplyDefaults(config)
 	l.logger(ctx).WithFields(map[string]interface{}{
 		"config": config,
@@ -163,7 +163,7 @@ func (l *ConnectorManager[T, S]) StartWithConfigAndState(ctx context.Context, co
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) Start(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Start(ctx context.Context) error {
 	l.logger(ctx).Info("Start")
 	config, _, err := l.ReadConfig(ctx)
 	if err != nil {
@@ -173,7 +173,7 @@ func (l *ConnectorManager[T, S]) Start(ctx context.Context) error {
 	return l.StartWithConfig(ctx, *config)
 }
 
-func (l *ConnectorManager[T, S]) Restore(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Restore(ctx context.Context) error {
 	l.logger(ctx).Info("Restoring state")
 
 	config, disabled, err := l.ReadConfig(ctx)
@@ -198,10 +198,10 @@ func (l *ConnectorManager[T, S]) Restore(ctx context.Context) error {
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) Disable(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Disable(ctx context.Context) error {
 	l.logger(ctx).Info("Disabling connector")
 
-	_, err := l.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
+	_, err := l.db.Collection(payment.ConnectorConfigsCollection).UpdateOne(ctx, map[string]any{
 		"provider": l.name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -211,7 +211,7 @@ func (l *ConnectorManager[T, S]) Disable(ctx context.Context) error {
 	return err
 }
 
-func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
+func (l *ConnectorManager[CONFIG, STATE]) Reset(ctx context.Context) error {
 	l.logger(ctx).Infof("Reset connector")
 
 	err := l.Stop(ctx)
@@ -222,7 +222,7 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	err = l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		var deleted int64
 		_, err = ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-			ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
+			ret, err := l.db.Collection(payment.Collection).DeleteMany(ctx, map[string]interface{}{
 				"provider": l.name,
 			})
 			if err != nil {
@@ -253,7 +253,7 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	}
 
 	if !disabled {
-		var state S
+		var state STATE
 		err = l.StartWithConfigAndState(ctx, *config, state)
 		if err != nil {
 			return err
@@ -263,24 +263,19 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	return nil
 }
 
-func (l *ConnectorManager[T, S]) ResetState(ctx context.Context) error {
-	var zeroState S
-	_, err := l.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
+func (l *ConnectorManager[CONFIG, STATE]) ResetState(ctx context.Context) error {
+	_, err := l.db.Collection(payment.ConnectorStatesCollection).DeleteOne(ctx, map[string]any{
 		"provider": l.name,
-	}, map[string]any{
-		"$set": map[string]any{
-			"state": zeroState,
-		},
 	})
 	return err
 }
 
-func NewConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]](
+func NewConnectorManager[CONFIG payment.ConnectorConfigObject, STATE payment.ConnectorState, CONNECTOR Connector[CONFIG, STATE]](
 	db *mongo.Database,
-	ctrl Loader[T, S, C],
-	ingester Ingester[T, S, C],
-) *ConnectorManager[T, S] {
-	var connector C
+	ctrl Loader[CONFIG, STATE, CONNECTOR],
+	ingester Ingester[STATE],
+) *ConnectorManager[CONFIG, STATE] {
+	var connector CONNECTOR
 	logger := sharedlogging.WithFields(map[string]interface{}{
 		"connector": connector.Name(),
 	})
@@ -294,7 +289,7 @@ func NewConnectorManager[T payment.ConnectorConfigObject, S payment.ConnectorSta
 		panic(err)
 	}
 
-	return &ConnectorManager[T, S]{
+	return &ConnectorManager[CONFIG, STATE]{
 		db:               db,
 		connector:        connector,
 		name:             connector.Name(),

@@ -33,7 +33,7 @@ var _ bridge.Connector[Config, State] = &Connector{}
 func NewConnector(
 	storage bridge.LogObjectStorage,
 	logger sharedlogging.Logger,
-	ingester bridge.Ingester[Config, State, *Connector],
+	ingester bridge.Ingester[State],
 ) (*Connector, error) {
 	return &Connector{
 		logger: logger,

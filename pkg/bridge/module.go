@@ -15,24 +15,24 @@ type ConnectorHandler struct {
 	Name    string
 }
 
-func ConnectorModule[T payments.ConnectorConfigObject, S payments.ConnectorState, C Connector[T, S]](
+func ConnectorModule[CONFIG payments.ConnectorConfigObject, STATE payments.ConnectorState, CONNECTOR Connector[CONFIG, STATE]](
 	useScopes bool,
-	controller Loader[T, S, C],
+	controller Loader[CONFIG, STATE, CONNECTOR],
 ) fx.Option {
-	var connector C
+	var connector CONNECTOR
 	return fx.Options(
-		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *ConnectorManager[T, S] {
-			return NewConnectorManager[T, S, C](db, controller,
-				NewDefaultIngester[T, S, C](db, sharedlogging.GetLogger(context.Background()), publisher),
+		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *ConnectorManager[CONFIG, STATE] {
+			return NewConnectorManager[CONFIG, STATE, CONNECTOR](db, controller,
+				NewDefaultIngester[STATE](connector.Name(), db, sharedlogging.GetLogger(context.Background()), publisher),
 			)
 		}),
-		fx.Provide(fx.Annotate(func(cm *ConnectorManager[T, S]) ConnectorHandler {
+		fx.Provide(fx.Annotate(func(cm *ConnectorManager[CONFIG, STATE]) ConnectorHandler {
 			return ConnectorHandler{
 				Handler: ConnectorRouter(connector.Name(), useScopes, cm),
 				Name:    connector.Name(),
 			}
 		}, fx.ResultTags(`group:"connectorHandlers"`))),
-		fx.Invoke(func(lc fx.Lifecycle, cm *ConnectorManager[T, S]) {
+		fx.Invoke(func(lc fx.Lifecycle, cm *ConnectorManager[CONFIG, STATE]) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					_ = cm.Restore(ctx)

@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
+func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[State], config Config, state State) *Runner {
 	return &Runner{
 		name:             name,
 		logger:           logger,
@@ -29,7 +29,7 @@ type Runner struct {
 	config           Config
 	tailToken        chan struct{}
 	logger           sharedlogging.Logger
-	ingester         bridge.Ingester[Config, State, *Connector]
+	ingester         bridge.Ingester[State]
 }
 
 func (r *Runner) Stop(ctx context.Context) error {
