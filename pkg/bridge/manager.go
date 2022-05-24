@@ -7,7 +7,6 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 var (
@@ -221,37 +220,25 @@ func (l *ConnectorManager[T, S]) Reset(ctx context.Context) error {
 	}
 
 	err = l.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		err := ctx.StartTransaction(options.
-			Transaction().
-			SetWriteConcern(writeconcern.New(writeconcern.WMajority())),
-		)
-		if err != nil {
-			return err
-		}
-		defer ctx.AbortTransaction(ctx)
-
-		ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
-			"provider": l.name,
+		var deleted int64
+		_, err = ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			ret, err := l.db.Collection(payment.PaymentsCollection).DeleteMany(ctx, map[string]interface{}{
+				"provider": l.name,
+			})
+			if err != nil {
+				return nil, errors.Wrap(err, "Removing payments")
+			}
+			deleted = ret.DeletedCount
+			return nil, l.ResetState(ctx)
 		})
-		if err != nil {
-			return errors.Wrap(err, "Removing payments")
-		}
-		l.logger(ctx).Infof("%d payments deleted", ret.DeletedCount)
-
-		err = l.ResetState(ctx)
-		if err != nil {
-			return err
+		if err == nil {
+			l.logger(ctx).Infof("%d payments deleted", deleted)
 		}
 
-		err = ctx.CommitTransaction(ctx)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 	if err != nil {
-		sharedlogging.GetLogger(ctx).Errorf("Error resetting connector: %s", err)
+		l.logger(ctx).Errorf("Error cleaning data: %s", err)
 		return err
 	}
 

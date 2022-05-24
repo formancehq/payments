@@ -134,7 +134,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 				options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
 			)
 			if ret.Err() != nil {
-				logger.Errorf("Error updating payment: %s", err)
+				logger.Errorf("Error updating payment: %s", ret.Err())
 				return nil, ret.Err()
 			}
 			p := payment.Payment{}
@@ -173,53 +173,44 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 	}).Infof("Ingest batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		err := ctx.StartTransaction()
-		if err != nil {
-			return err
-		}
-		defer ctx.AbortTransaction(ctx)
+		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			payments, err := i.processBatch(ctx, batch)
+			if err != nil {
+				return nil, err
+			}
+			payments = Filter(payments, func(p payment.Payment) bool {
+				return p.InitialAmount != 0
+			})
 
-		payments, err := i.processBatch(ctx, batch)
-		if err != nil {
-			return err
-		}
-		payments = Filter(payments, func(p payment.Payment) bool {
-			return p.InitialAmount != 0
-		})
+			for _, e := range payments {
+				err = i.publisher.Publish(ctx, PaymentsTopics, Event{
+					Date:    time.Now(),
+					Type:    "SAVED_PAYMENT",
+					Payload: e.Computed(),
+				})
+				if err != nil {
+					i.logger.Errorf("Error publishing payment: %s", err)
+				}
+			}
 
-		for _, e := range payments {
-			err = i.publisher.Publish(ctx, PaymentsTopics, Event{
-				Date:    time.Now(),
-				Type:    "SAVED_PAYMENT",
-				Payload: e.Computed(),
+			i.logger.WithFields(map[string]interface{}{
+				"state": commitState,
+			}).Infof("Update state")
+
+			var connector C
+			_, err = i.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
+				"provider": connector.Name(),
+			}, bson.M{
+				"$set": bson.M{
+					"state": commitState,
+				},
 			})
 			if err != nil {
-				i.logger.Errorf("Error publishing payment: %s", err)
+				return nil, err
 			}
-		}
-
-		i.logger.WithFields(map[string]interface{}{
-			"state": commitState,
-		}).Infof("Update state")
-
-		var connector C
-		_, err = i.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
-			"provider": connector.Name(),
-		}, bson.M{
-			"$set": bson.M{
-				"state": commitState,
-			},
+			return nil, nil
 		})
-		if err != nil {
-			return err
-		}
-
-		err = ctx.CommitTransaction(ctx)
-		if err != nil {
-			return err
-		}
-
-		return nil
+		return err
 	})
 	if err != nil {
 		sharedlogging.GetLogger(ctx).Errorf("Error ingesting batch: %s", err)
