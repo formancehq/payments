@@ -22,10 +22,6 @@ type Event struct {
 	Payload payment.ComputedPayment `json:"payload"`
 }
 
-type Order interface {
-	apply(ctx context.Context)
-}
-
 type BatchElement struct {
 	Identifier payment.Identifier
 	Payment    *payment.Data
@@ -205,6 +201,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 					"state": commitState,
 				},
 			}, options.Update().SetUpsert(true))
+
 			if err != nil {
 				return nil, err
 			}

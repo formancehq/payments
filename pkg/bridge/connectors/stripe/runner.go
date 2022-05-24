@@ -3,33 +3,32 @@ package stripe
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/bridge"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 	"time"
 )
 
-func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[State], config Config, state State) *Runner {
+func NewRunner(
+	logger sharedlogging.Logger,
+	ingester Ingester,
+	tl *timeline,
+) *Runner {
 	return &Runner{
-		name:             name,
-		logger:           logger,
-		logObjectStorage: logObjectStorage,
-		config:           config,
-		tailToken:        make(chan struct{}, 1),
-		ingester:         ingester,
-		timeline:         NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
+		logger:    logger,
+		tailToken: make(chan struct{}, 1),
+		ingester:  ingester,
+		timeline:  tl,
 	}
 }
 
 type Runner struct {
-	name             string
-	logObjectStorage bridge.LogObjectStorage
-	stopChan         chan chan struct{}
-	timeline         *timeline
-	config           Config
-	tailToken        chan struct{}
-	logger           sharedlogging.Logger
-	ingester         bridge.Ingester[State]
+	name      string
+	stopChan  chan chan struct{}
+	timeline  *timeline
+	config    Config
+	tailToken chan struct{}
+	logger    sharedlogging.Logger
+	ingester  Ingester
 }
 
 func (r *Runner) Stop(ctx context.Context) error {
@@ -65,33 +64,9 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 		return false, err
 	}
 
-	batch := bridge.Batch{}
-	for _, bt := range ret {
-		batchElement, handled := CreateBatchElement(bt, r.name, !tail)
-		if !handled {
-			r.logger.Errorf("Balance transaction type not handled: %s", bt.Type)
-			continue
-		}
-		if batchElement.Adjustment == nil && batchElement.Payment == nil {
-			continue
-		}
-		batch = append(batch, batchElement)
-	}
-
-	err = r.ingester.Ingest(ctx, batch, futureState)
+	err = r.ingester.Ingest(ctx, ret, futureState, tail)
 	if err != nil {
 		return false, err
-	}
-
-	docs := make([]any, 0)
-	for _, elem := range ret {
-		docs = append(docs, elem)
-	}
-	if len(docs) > 0 {
-		err = r.logObjectStorage.Store(ctx, docs...)
-		if err != nil {
-			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
-		}
 	}
 
 	commitFn()

@@ -3,6 +3,7 @@ package paymentstesting
 import (
 	"context"
 	"github.com/ory/dockertest"
+	"github.com/ory/dockertest/docker"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -20,7 +21,22 @@ func RunWithMock(t *testing.T, fn func(t *mtest.T)) {
 	}
 
 	// pulls an image, creates a container based on it and runs it
-	resource, err := pool.Run("mongo", "4.4", []string{})
+	resource, err := pool.RunWithOptions(&dockertest.RunOptions{
+		Repository: "bitnami/mongodb",
+		Cmd: []string{
+			"--storageEngine",
+			"inMemory",
+		},
+		Tag: "4.4",
+		Env: []string{
+			"MONGODB_REPLICA_SET_MODE=primary",
+			"MONGODB_REPLICA_SET_KEY=abcdef",
+			"MONGODB_ADVERTISED_HOSTNAME=localhost",
+			"MONGODB_ROOT_PASSWORD=root",
+		},
+	}, func(config *docker.HostConfig) {
+		config.NetworkMode = "host"
+	})
 	if err != nil {
 		panic(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/alitto/pond"
 	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
@@ -14,8 +15,7 @@ import (
 const (
 	apiEndpoint = "https://api.stripe.com/v1"
 
-	EventsEndpoint              = "/events"
-	BalanceTransactionsEndpoint = "/balance_transactions"
+	balanceTransactionsEndpoint = "/balance_transactions"
 )
 
 type listResponse struct {
@@ -54,11 +54,11 @@ var defaultOptions = []TimelineOption{
 	WithTimelineHttpClient(http.DefaultClient),
 }
 
-func NewTimeline(endpoint string, cfg Config, state State, options ...TimelineOption) *timeline {
+func NewTimeline(pool *pond.WorkerPool, cfg Config, state TimelineState, options ...TimelineOption) *timeline {
 	c := &timeline{
-		config:   cfg,
-		endpoint: endpoint,
-		state:    state,
+		config: cfg,
+		state:  state,
+		pool:   pool,
 	}
 	options = append(defaultOptions, append([]TimelineOption{
 		WithStartingAt(time.Now()),
@@ -70,18 +70,18 @@ func NewTimeline(endpoint string, cfg Config, state State, options ...TimelineOp
 }
 
 type timeline struct {
-	state                  State
+	state                  TimelineState
 	firstIDAfterStartingAt string
-	endpoint               string
 	httpClient             *http.Client
 	expand                 []string
 	startingAt             time.Time
 	config                 Config
+	pool                   *pond.WorkerPool
 }
 
 func (tl *timeline) doRequest(ctx context.Context, queryParams url.Values, to interface{}) (bool, error) {
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", apiEndpoint, tl.endpoint), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", apiEndpoint, balanceTransactionsEndpoint), nil)
 	if err != nil {
 		return false, errors.Wrap(err, "creating http request")
 	}
@@ -95,7 +95,10 @@ func (tl *timeline) doRequest(ctx context.Context, queryParams url.Values, to in
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(tl.config.ApiKey, "") // gfyrag: really weird authentication right?
 
-	httpResponse, err := tl.httpClient.Do(req)
+	var httpResponse *http.Response
+	tl.pool.SubmitAndWait(func() {
+		httpResponse, err = tl.httpClient.Do(req)
+	})
 	if err != nil {
 		return false, errors.Wrap(err, "doing request")
 	}
@@ -137,7 +140,7 @@ func (tl *timeline) init(ctx context.Context) error {
 	return nil
 }
 
-func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func(), error) {
+func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, TimelineState, func(), error) {
 	queryParams := url.Values{}
 	switch {
 	case tl.state.OldestID != "":
@@ -148,7 +151,7 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 
 	hasMore, err := tl.doRequest(ctx, queryParams, to)
 	if err != nil {
-		return false, State{}, nil, err
+		return false, TimelineState{}, nil, err
 	}
 
 	futureState := tl.state
@@ -158,7 +161,8 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 		futureState.OldestID = lastItem.
 			FieldByName("ID").
 			String()
-		futureState.OldestDate = time.Unix(lastItem.FieldByName("Created").Int(), 0)
+		oldestDate := time.Unix(lastItem.FieldByName("Created").Int(), 0)
+		futureState.OldestDate = &oldestDate
 	}
 
 	return hasMore, futureState, func() {
@@ -166,14 +170,14 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, State, func
 	}, nil
 }
 
-func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func(), error) {
+func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, TimelineState, func(), error) {
 	if tl.firstIDAfterStartingAt == "" && tl.state.MoreRecentID == "" {
 		err := tl.init(ctx)
 		if err != nil {
-			return false, State{}, nil, err
+			return false, TimelineState{}, nil, err
 		}
 		if tl.firstIDAfterStartingAt == "" {
-			return false, State{}, nil, nil
+			return false, TimelineState{}, nil, nil
 		}
 	}
 
@@ -187,7 +191,7 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 
 	hasMore, err := tl.doRequest(ctx, queryParams, to)
 	if err != nil {
-		return false, State{}, nil, err
+		return false, TimelineState{}, nil, err
 	}
 
 	valueOfTo := reflect.ValueOf(to).Elem()
@@ -198,7 +202,8 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 			Index(0).
 			FieldByName("ID").
 			String()
-		futureState.MoreRecentDate = time.Unix(valueOfTo.Index(0).FieldByName("Created").Int(), 0)
+		moreRecentDate := time.Unix(valueOfTo.Index(0).FieldByName("Created").Int(), 0)
+		futureState.MoreRecentDate = &moreRecentDate
 	}
 
 	swap := reflect.Swapper(valueOfTo.Interface())
@@ -211,6 +216,6 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, State, func
 	}, nil
 }
 
-func (tl *timeline) State() State {
+func (tl *timeline) State() TimelineState {
 	return tl.state
 }

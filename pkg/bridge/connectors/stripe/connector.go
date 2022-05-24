@@ -12,24 +12,27 @@ type Connector struct {
 	runner           *Runner
 	logger           sharedlogging.Logger
 	ingester         bridge.Ingester[State]
+	scheduler        *Scheduler
 }
 
 func (c *Connector) Name() string {
 	return "stripe"
 }
 
-func (c *Connector) Start(ctx context.Context, object Config, state State) error {
-	c.runner = NewRunner(c.Name(), c.logObjectStorage, c.logger, c.ingester, object, state)
-	return c.runner.Run(ctx)
+func (c *Connector) Start(ctx context.Context, cfg Config, state State) error {
+	c.scheduler = NewScheduler(c.logObjectStorage, c.logger.WithFields(map[string]interface{}{
+		"component": "scheduler",
+	}), c.ingester)
+	return c.scheduler.Start(ctx, cfg, state)
 }
 
 func (c *Connector) Stop(ctx context.Context) error {
-	if c.runner != nil {
-		err := c.runner.Stop(ctx)
+	if c.scheduler != nil {
+		err := c.scheduler.Stop(ctx)
 		if err != nil {
 			return err
 		}
-		c.runner = nil
+		c.scheduler = nil
 	}
 	return nil
 }
