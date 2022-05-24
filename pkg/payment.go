@@ -80,6 +80,10 @@ type Payment struct {
 	Adjustments []Adjustment `json:"adjustments" bson:"adjustments"`
 }
 
+func (p Payment) HasInitialValue() bool {
+	return p.InitialAmount != 0
+}
+
 func (p Payment) MarshalJSON() ([]byte, error) {
 	type Aux Payment
 	return json.Marshal(struct {
@@ -93,9 +97,10 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 
 func (p Payment) Computed() ComputedPayment {
 
-	aggregatedAdjustmentValue := p.InitialAmount
+	aggregatedAdjustmentValue := int64(0)
 	amount := int64(0)
-	for _, a := range p.Adjustments {
+	for i := 0; i < len(p.Adjustments)-1; i++ {
+		a := p.Adjustments[i]
 		if a.Absolute {
 			amount = a.Amount
 			break

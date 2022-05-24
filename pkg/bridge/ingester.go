@@ -178,9 +178,7 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 			if err != nil {
 				return nil, err
 			}
-			payments = Filter(payments, func(p payment.Payment) bool {
-				return p.InitialAmount != 0
-			})
+			payments = Filter(payments, payment.Payment.HasInitialValue)
 
 			for _, e := range payments {
 				err = i.publisher.Publish(ctx, PaymentsTopics, Event{
