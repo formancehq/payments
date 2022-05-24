@@ -126,6 +126,7 @@ func (r *Runner) Run(ctx context.Context) error {
 		}
 	}()
 
+l:
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,7 +145,7 @@ func (r *Runner) Run(ctx context.Context) error {
 				}
 				select {
 				case <-ctx.Done():
-					return nil
+					continue l
 				default:
 					// Nothing to do
 				}
