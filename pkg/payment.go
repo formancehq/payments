@@ -75,6 +75,23 @@ type Data struct {
 	Raw           interface{} `json:"raw" bson:"raw"`
 }
 
+func (p *Data) UnmarshalBSON(bytes []byte) error {
+	type Aux Data
+	type WithRaw struct {
+		Aux `bson:",inline"`
+		Raw map[string]interface{} `bson:"raw"`
+	}
+	wr := WithRaw{}
+	err := bson.Unmarshal(bytes, &wr)
+	if err != nil {
+		return err
+	}
+
+	*p = Data(wr.Aux)
+	p.Raw = wr.Raw
+	return nil
+}
+
 type Payment struct {
 	Identifier  `bson:",inline"`
 	Data        `bson:",inline"`
