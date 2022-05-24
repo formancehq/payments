@@ -191,7 +191,7 @@ func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forw
 		}
 		adjustment = &payment.Adjustment{
 			Status: string(bt.Status),
-			Amount: bt.Source.Refund.Amount,
+			Amount: bt.Amount,
 			Date:   time.Unix(bt.Source.Refund.Created, 0),
 			Raw:    bt,
 		}
