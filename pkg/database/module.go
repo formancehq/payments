@@ -3,17 +3,27 @@ package database
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.uber.org/fx"
+	"reflect"
 	"time"
 )
 
 func MongoModule(uri string, dbName string) fx.Option {
+
 	return fx.Options(
-		fx.Supply(options.Client().ApplyURI(uri)),
+		fx.Provide(func() *options.ClientOptions {
+			tM := reflect.TypeOf(bson.M{})
+			reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
+			return options.Client().
+				SetRegistry(reg).
+				ApplyURI(uri)
+		}),
 		fx.Provide(func(opts *options.ClientOptions) (*mongo.Client, error) {
 			return mongo.NewClient(opts)
 		}),
