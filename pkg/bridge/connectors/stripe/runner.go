@@ -9,18 +9,12 @@ import (
 	"time"
 )
 
-type commandHolder struct {
-	command func()
-	done    chan struct{}
-}
-
 func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
 	return &Runner{
 		name:             name,
 		logger:           logger,
 		logObjectStorage: logObjectStorage,
 		config:           config,
-		commands:         make(chan commandHolder),
 		tailToken:        make(chan struct{}, 1),
 		ingester:         ingester,
 		timeline:         NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
@@ -32,7 +26,6 @@ type Runner struct {
 	logObjectStorage bridge.LogObjectStorage
 	stopChan         chan chan struct{}
 	timeline         *timeline
-	commands         chan commandHolder
 	config           Config
 	tailToken        chan struct{}
 	logger           sharedlogging.Logger
@@ -105,17 +98,6 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 	return hasMore, nil
 }
 
-func (r *Runner) doCmd(ctx context.Context, fn func()) error {
-	doneCh := make(chan struct{})
-	r.commands <- commandHolder{command: fn, done: doneCh}
-	select {
-	case <-doneCh:
-	case <-ctx.Done():
-		return ctx.Err()
-	}
-	return nil
-}
-
 func (r *Runner) Run(ctx context.Context) error {
 
 	r.logger.WithFields(map[string]interface{}{
@@ -134,13 +116,22 @@ func (r *Runner) Run(ctx context.Context) error {
 	}
 	resetTimer()
 
+	var closeChannel chan struct{}
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		select {
+		case closeChannel = <-r.stopChan:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
+
 	for {
-		select { // Add a dedicated select to handle commands. It allow command to be executed in priority.
-		case cmd := <-r.commands:
-			cmd.command()
-			close(cmd.done)
-		case ch := <-r.stopChan:
-			close(ch)
+		select {
+		case <-ctx.Done():
+			if closeChannel != nil {
+				close(closeChannel)
+			}
 			return nil
 		case <-timer.C:
 			hasMore := true
@@ -154,9 +145,6 @@ func (r *Runner) Run(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
 					return nil
-				case cmd := <-r.commands:
-					cmd.command()
-					close(cmd.done)
 				default:
 					// Nothing to do
 				}
@@ -164,6 +152,7 @@ func (r *Runner) Run(ctx context.Context) error {
 			resetTimer()
 		default:
 			select {
+			case <-ctx.Done():
 			case <-r.tailToken:
 				hasMore, err := r.triggerPage(ctx, true)
 				if err != nil {
