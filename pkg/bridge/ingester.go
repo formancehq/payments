@@ -200,7 +200,11 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 
 			_, err = i.db.Collection(payment.ConnectorStatesCollection).UpdateOne(ctx, map[string]any{
 				"provider": i.name,
-			}, commitState, options.Update().SetUpsert(true))
+			}, map[string]any{
+				"$set": map[string]any{
+					"state": commitState,
+				},
+			}, options.Update().SetUpsert(true))
 			if err != nil {
 				return nil, err
 			}
