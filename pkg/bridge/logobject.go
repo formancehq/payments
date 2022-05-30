@@ -14,6 +14,18 @@ type LogObjectStorage interface {
 	drop(ctx context.Context) error
 }
 
+type noOpLogObjectStorage struct{}
+
+func (n noOpLogObjectStorage) Store(ctx context.Context, objects ...any) error {
+	return nil
+}
+
+func (n noOpLogObjectStorage) drop(ctx context.Context) error {
+	return nil
+}
+
+var NoOpLogObjectStorage LogObjectStorage = &noOpLogObjectStorage{}
+
 type defaultLogObjectStorage struct {
 	db     *mongo.Database
 	name   string

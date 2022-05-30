@@ -12,23 +12,25 @@ func NewRunner(
 	logger sharedlogging.Logger,
 	ingester Ingester,
 	tl *timeline,
+	pollingPeriod time.Duration,
 ) *Runner {
 	return &Runner{
-		logger:    logger,
-		tailToken: make(chan struct{}, 1),
-		ingester:  ingester,
-		timeline:  tl,
+		logger:        logger,
+		tailToken:     make(chan struct{}, 1),
+		ingester:      ingester,
+		timeline:      tl,
+		pollingPeriod: pollingPeriod,
 	}
 }
 
 type Runner struct {
-	name      string
-	stopChan  chan chan struct{}
-	timeline  *timeline
-	config    Config
-	tailToken chan struct{}
-	logger    sharedlogging.Logger
-	ingester  Ingester
+	name          string
+	stopChan      chan chan struct{}
+	timeline      *timeline
+	tailToken     chan struct{}
+	logger        sharedlogging.Logger
+	ingester      Ingester
+	pollingPeriod time.Duration
 }
 
 func (r *Runner) Stop(ctx context.Context) error {
@@ -48,22 +50,29 @@ func (r *Runner) Stop(ctx context.Context) error {
 	}
 }
 
+func (r *Runner) IsTailing() bool {
+	return r.tailToken != nil
+}
+
 func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 
-	r.logger.WithFields(map[string]interface{}{
+	logger := r.logger.WithFields(map[string]interface{}{
 		"tail": tail,
-	}).Info("Trigger page")
+	})
+	logger.Info("Trigger page")
 
-	ret := make([]stripe.BalanceTransaction, 0)
+	ret := make([]*stripe.BalanceTransaction, 0)
 	method := r.timeline.Head
 	if tail {
 		method = r.timeline.Tail
 	}
+
 	hasMore, futureState, commitFn, err := method(ctx, &ret)
 	if err != nil {
 		return false, err
 	}
 
+	logger.Infof("ingest")
 	err = r.ingester.Ingest(ctx, ret, futureState, tail)
 	if err != nil {
 		return false, err
@@ -76,8 +85,7 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 func (r *Runner) Run(ctx context.Context) error {
 
 	r.logger.WithFields(map[string]interface{}{
-		"config": r.config,
-		"state":  r.timeline.State(),
+		"polling-period": r.pollingPeriod,
 	}).Info("Starting runner")
 
 	r.stopChan = make(chan chan struct{}, 1)
@@ -87,7 +95,7 @@ func (r *Runner) Run(ctx context.Context) error {
 
 	var timer *time.Timer
 	resetTimer := func() {
-		timer = time.NewTimer(r.config.PollingPeriod)
+		timer = time.NewTimer(r.pollingPeriod)
 	}
 	resetTimer()
 
@@ -135,7 +143,7 @@ l:
 					r.logger.Errorf("Error fetching page: %s", err)
 					go func() {
 						select {
-						case <-time.After(r.config.PollingPeriod):
+						case <-time.After(r.pollingPeriod):
 						case <-ctx.Done():
 							return
 						}

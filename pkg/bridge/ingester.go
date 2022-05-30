@@ -34,6 +34,17 @@ type Batch []BatchElement
 type Ingester[STATE payment.ConnectorState] interface {
 	Ingest(ctx context.Context, batch Batch, commitState STATE) error
 }
+type IngesterFn[STATE payment.ConnectorState] func(ctx context.Context, batch Batch, commitState STATE) error
+
+func (fn IngesterFn[STATE]) Ingest(ctx context.Context, batch Batch, commitState STATE) error {
+	return fn(ctx, batch, commitState)
+}
+
+func NoOpIngester[STATE payment.ConnectorState]() IngesterFn[STATE] {
+	return IngesterFn[STATE](func(ctx context.Context, batch Batch, commitState STATE) error {
+		return nil
+	})
+}
 
 type defaultIngester[STATE payment.ConnectorState] struct {
 	db        *mongo.Database
@@ -165,8 +176,10 @@ func Filter[T any](objects []T, compareFn func(t T) bool) []T {
 
 func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commitState STATE) error {
 
+	startingAt := time.Now()
 	i.logger.WithFields(map[string]interface{}{
-		"size": len(batch),
+		"size":       len(batch),
+		"startingAt": startingAt,
 	}).Infof("Ingest batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
@@ -190,9 +203,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 				}
 			}
 
-			i.logger.WithFields(map[string]interface{}{
-				"state": commitState,
-			}).Infof("Update state")
+			i.logger.Infof("Update state")
 
 			_, err = i.db.Collection(payment.ConnectorStatesCollection).UpdateOne(ctx, map[string]any{
 				"provider": i.name,
@@ -214,8 +225,12 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 		return err
 	}
 
+	endedAt := time.Now()
+
 	i.logger.WithFields(map[string]interface{}{
-		"size": len(batch),
+		"size":    len(batch),
+		"endedAt": endedAt,
+		"latency": endedAt.Sub(startingAt),
 	}).Infof("Batch ingested")
 
 	return nil

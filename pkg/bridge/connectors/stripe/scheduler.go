@@ -2,34 +2,37 @@ package stripe
 
 import (
 	"context"
-	"github.com/alitto/pond"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/stripe/stripe-go/v72"
 	"sync"
-	"time"
 )
 
 type Scheduler struct {
+	name             string
 	logObjectStorage bridge.LogObjectStorage
 	runner           *Runner
 	accountRunners   map[string]*Runner
 	logger           sharedlogging.Logger
+	runnersLock      sync.RWMutex
+	stateLock        sync.Mutex
+	state            State
 	ingester         bridge.Ingester[State]
-	pool             *pond.WorkerPool
-	mu               sync.RWMutex
+	config           Config
+	timelineOptions  []TimelineOption
+	client           Client
 }
 
-func (c *Scheduler) Name() string {
+func (s *Scheduler) Name() string {
 	return "stripe"
 }
 
-func (c *Scheduler) createRunner(account string, cfg Config, state TimelineState) {
+func (s *Scheduler) createRunner(account string, cfg Config, state TimelineState) {
 
-	c.mu.Lock()
-	defer c.mu.Unlock()
+	s.runnersLock.Lock()
+	defer s.runnersLock.Unlock()
 
-	logger := c.logger.WithFields(map[string]interface{}{
+	logger := s.logger.WithFields(map[string]interface{}{
 		"account": account,
 	})
 
@@ -39,12 +42,11 @@ func (c *Scheduler) createRunner(account string, cfg Config, state TimelineState
 		logger.WithFields(map[string]interface{}{
 			"component": "runner",
 		}),
-		NewDefaultIngester(c.Name(), account, logger.WithFields(map[string]interface{}{
-			"component": "ingester",
-		}), c.ingester, c.logObjectStorage),
-		NewTimeline(c.pool, cfg, state, WithTimelineExpand("data.source")),
+		s.ingesterFor(account),
+		NewTimeline(s.client, cfg.TimelineConfig, state, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
+		cfg.PollingPeriod,
 	)
-	c.accountRunners[account] = runner
+	s.accountRunners[account] = runner
 
 	go func(runner *Runner) {
 		err := runner.Run(context.Background())
@@ -54,107 +56,134 @@ func (c *Scheduler) createRunner(account string, cfg Config, state TimelineState
 	}(runner)
 }
 
-func (c *Scheduler) wrapMainIngester(cfg Config, i *defaultIngester) IngesterFn {
-	return func(ctx context.Context, batch []stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
-		err := i.Ingest(ctx, batch, commitState, tail)
-		if err != nil {
-			return err
-		}
-		missingAccounts := make([]string, 0)
-		func() {
-			c.mu.RLock()
-			defer c.mu.RUnlock()
+func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction, account string, commitState TimelineState, tail bool) error {
+	s.stateLock.Lock()
+	defer s.stateLock.Unlock()
 
-			for _, tx := range batch {
-				if tx.Type == "transfer" {
-					accountId := tx.Source.Transfer.Destination.ID
-					_, exists := c.accountRunners[accountId]
-					if !exists {
-						missingAccounts = append(missingAccounts, accountId)
-					}
-				}
-			}
-		}()
-		if len(missingAccounts) > 0 {
-			for _, account := range missingAccounts {
-				c.createRunner(account, cfg, TimelineState{})
-			}
+	connectedAccounts := make([]string, 0)
+
+	batch := bridge.Batch{}
+	for _, bt := range bts {
+		batchElement, handled := CreateBatchElement(bt, s.name, !tail)
+		if !handled {
+			s.logger.Errorf("Balance transaction type not handled: %s", bt.Type)
+			continue
 		}
-		return nil
+		if batchElement.Adjustment == nil && batchElement.Payment == nil {
+			continue
+		}
+		batch = append(batch, batchElement)
+		if bt.Type == "transfer" {
+			connectedAccounts = append(connectedAccounts, bt.Source.Transfer.Destination.ID)
+		}
 	}
+	newState := s.state
+	if account == "" {
+		newState.TimelineState = commitState
+	} else {
+		if newState.Accounts == nil {
+			newState.Accounts = map[string]TimelineState{}
+		}
+		newState.Accounts[account] = commitState
+	}
+
+	for _, ca := range connectedAccounts {
+		_, ok := newState.Accounts[ca]
+		if !ok {
+			newState.Accounts[ca] = TimelineState{}
+			s.createRunner(ca, s.config, TimelineState{})
+		}
+	}
+
+	err := s.ingester.Ingest(ctx, batch, newState)
+	if err != nil {
+		return err
+	}
+
+	s.state = newState
+
+	docs := make([]any, 0)
+	for _, elem := range bts {
+		docs = append(docs, elem)
+	}
+	if len(docs) > 0 {
+		err = s.logObjectStorage.Store(ctx, docs...)
+		if err != nil {
+			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
+		}
+	}
+
+	return nil
 }
 
-func (c *Scheduler) Start(ctx context.Context, cfg Config, state State) error {
-	c.pool = pond.New(cfg.Pool, 0)
+func (i *Scheduler) ingesterFor(account string) Ingester {
+	return IngesterFn(func(ctx context.Context, batch []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
+		return i.ingest(ctx, batch, account, commitState, tail)
+	})
+}
 
-	c.runner = NewRunner(
-		c.logger.WithFields(map[string]interface{}{
+func (s *Scheduler) Start(ctx context.Context) error {
+
+	s.runner = NewRunner(
+		s.logger.WithFields(map[string]interface{}{
 			"component": "runner",
 			"timeline":  "main",
 		}),
-		c.wrapMainIngester(cfg, NewDefaultIngester(c.Name(), "", c.logger.WithFields(map[string]interface{}{
-			"component": "ingester",
-			"timeline":  "main",
-		}), c.ingester, c.logObjectStorage)),
-		NewTimeline(c.pool, cfg, state.TimelineState, WithTimelineExpand("data.source")),
+		s.ingesterFor(""),
+		NewTimeline(s.client, s.config.TimelineConfig, s.state.TimelineState, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
+		s.config.PollingPeriod,
 	)
 
 	go func() {
-		err := c.runner.Run(ctx)
+		err := s.runner.Run(ctx)
 		if err != nil {
 			panic(err)
 		}
 	}()
 
-	if state.Accounts != nil {
-		for account, accountState := range state.Accounts {
-			c.createRunner(account, cfg, accountState)
+	if s.state.Accounts != nil {
+		for account, accountState := range s.state.Accounts {
+			s.createRunner(account, s.config, accountState)
 		}
 	}
 
 	return nil
 }
 
-func (c *Scheduler) Stop(ctx context.Context) error {
-	if c.runner != nil {
-		err := c.runner.Stop(ctx)
+func (s *Scheduler) Stop(ctx context.Context) error {
+	if s.runner != nil {
+		err := s.runner.Stop(ctx)
 		if err != nil {
 			return err
 		}
-		c.runner = nil
+		s.runner = nil
 	}
-	for account, runner := range c.accountRunners {
+	for account, runner := range s.accountRunners {
 		err := runner.Stop(ctx)
 		if err != nil {
 			return err
 		}
-		delete(c.accountRunners, account)
-	}
-	if c.pool != nil {
-		c.pool.StopAndWait()
-		c.pool = nil
+		delete(s.accountRunners, account)
 	}
 	return nil
 }
 
-func (c *Scheduler) ApplyDefaults(cfg Config) Config {
-	if cfg.Pool == 0 {
-		cfg.Pool = 1
-	}
-	if cfg.PageSize == 0 {
-		cfg.PageSize = 100
-	}
-	if cfg.PollingPeriod == 0 {
-		cfg.PollingPeriod = 5 * time.Second
-	}
-	return cfg
-}
-
-func NewScheduler(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[State]) *Scheduler {
+func NewScheduler(
+	logObjectStorage bridge.LogObjectStorage,
+	logger sharedlogging.Logger,
+	ingester bridge.Ingester[State],
+	client Client,
+	cfg Config,
+	state State,
+	opts ...TimelineOption) *Scheduler {
 	return &Scheduler{
 		logObjectStorage: logObjectStorage,
 		logger:           logger,
-		ingester:         ingester,
 		accountRunners:   map[string]*Runner{},
+		ingester:         ingester,
+		config:           cfg,
+		state:            state,
+		timelineOptions:  opts,
+		client:           client,
 	}
 }

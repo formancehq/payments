@@ -2,25 +2,19 @@ package stripe
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/alitto/pond"
-	"github.com/pkg/errors"
-	"net/http"
+	"github.com/stripe/stripe-go/v72"
 	"net/url"
-	"reflect"
 	"time"
 )
 
 const (
-	apiEndpoint = "https://api.stripe.com/v1"
-
-	balanceTransactionsEndpoint = "/balance_transactions"
+	balanceTransactionsEndpoint = "https://api.stripe.com/v1/balance_transactions"
 )
 
-type listResponse struct {
-	HasMore bool            `json:"has_more"`
-	Data    json.RawMessage `json:"data"`
+type ListResponse struct {
+	HasMore bool                         `json:"has_more"`
+	Data    []*stripe.BalanceTransaction `json:"data"`
 }
 
 type TimelineOption interface {
@@ -38,27 +32,19 @@ func WithTimelineExpand(v ...string) TimelineOptionFn {
 	}
 }
 
-func WithTimelineHttpClient(v *http.Client) TimelineOptionFn {
-	return func(c *timeline) {
-		c.httpClient = v
-	}
-}
-
 func WithStartingAt(v time.Time) TimelineOptionFn {
 	return func(c *timeline) {
 		c.startingAt = v
 	}
 }
 
-var defaultOptions = []TimelineOption{
-	WithTimelineHttpClient(http.DefaultClient),
-}
+var defaultOptions = []TimelineOption{}
 
-func NewTimeline(pool *pond.WorkerPool, cfg Config, state TimelineState, options ...TimelineOption) *timeline {
+func NewTimeline(client Client, cfg TimelineConfig, state TimelineState, options ...TimelineOption) *timeline {
 	c := &timeline{
 		config: cfg,
 		state:  state,
-		pool:   pool,
+		client: client,
 	}
 	options = append(defaultOptions, append([]TimelineOption{
 		WithStartingAt(time.Now()),
@@ -72,61 +58,33 @@ func NewTimeline(pool *pond.WorkerPool, cfg Config, state TimelineState, options
 type timeline struct {
 	state                  TimelineState
 	firstIDAfterStartingAt string
-	httpClient             *http.Client
 	expand                 []string
 	startingAt             time.Time
-	config                 Config
-	pool                   *pond.WorkerPool
+	config                 TimelineConfig
+	client                 Client
 }
 
-func (tl *timeline) doRequest(ctx context.Context, queryParams url.Values, to interface{}) (bool, error) {
+func (tl *timeline) doRequest(ctx context.Context, queryParams url.Values, to *[]*stripe.BalanceTransaction) (bool, error) {
 
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s%s", apiEndpoint, balanceTransactionsEndpoint), nil)
-	if err != nil {
-		return false, errors.Wrap(err, "creating http request")
-	}
-
-	req = req.WithContext(ctx)
-	queryParams.Set("limit", fmt.Sprintf("%d", tl.config.PageSize))
+	options := make([]ClientOption, 0)
+	options = append(options, QueryParam("limit", fmt.Sprintf("%d", tl.config.PageSize)))
 	for _, e := range tl.expand {
-		queryParams.Add("expand[]", e)
+		options = append(options, QueryParam("expand[]", e))
 	}
-	req.URL.RawQuery = queryParams.Encode()
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(tl.config.ApiKey, "") // gfyrag: really weird authentication right?
+	for k, v := range queryParams {
+		options = append(options, QueryParam(k, v[0]))
+	}
 
-	var httpResponse *http.Response
-	tl.pool.SubmitAndWait(func() {
-		httpResponse, err = tl.httpClient.Do(req)
-	})
+	txs, hasMore, err := tl.client.BalanceTransactions(ctx, options...)
 	if err != nil {
-		return false, errors.Wrap(err, "doing request")
+		return false, err
 	}
-	defer httpResponse.Body.Close()
-
-	if httpResponse.StatusCode != http.StatusOK {
-		return false, fmt.Errorf("unexpected status code: %d", httpResponse.StatusCode)
-	}
-
-	rsp := &listResponse{}
-	err = json.NewDecoder(httpResponse.Body).Decode(rsp)
-	if err != nil {
-		return false, errors.Wrap(err, "decoding response")
-	}
-
-	err = json.Unmarshal(rsp.Data, to)
-	if err != nil {
-		return false, errors.Wrap(err, "unmarshalling json response")
-	}
-
-	return rsp.HasMore, nil
+	*to = txs
+	return hasMore, nil
 }
 
 func (tl *timeline) init(ctx context.Context) error {
-	type x struct {
-		ID string `json:"id"`
-	}
-	ret := make([]x, 0)
+	ret := make([]*stripe.BalanceTransaction, 0)
 	params := url.Values{}
 	params.Set("limit", "1")
 	params.Set("created[lt]", fmt.Sprintf("%d", tl.startingAt.Unix()))
@@ -135,12 +93,12 @@ func (tl *timeline) init(ctx context.Context) error {
 		return err
 	}
 	if len(ret) > 0 {
-		tl.firstIDAfterStartingAt = reflect.ValueOf(ret).Index(0).FieldByName("ID").String()
+		tl.firstIDAfterStartingAt = ret[0].ID
 	}
 	return nil
 }
 
-func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, TimelineState, func(), error) {
+func (tl *timeline) Tail(ctx context.Context, to *[]*stripe.BalanceTransaction) (bool, TimelineState, func(), error) {
 	queryParams := url.Values{}
 	switch {
 	case tl.state.OldestID != "":
@@ -155,29 +113,35 @@ func (tl *timeline) Tail(ctx context.Context, to interface{}) (bool, TimelineSta
 	}
 
 	futureState := tl.state
-	valueOfTo := reflect.ValueOf(to).Elem()
-	if valueOfTo.Len() > 0 {
-		lastItem := valueOfTo.Index(valueOfTo.Len() - 1)
-		futureState.OldestID = lastItem.
-			FieldByName("ID").
-			String()
-		oldestDate := time.Unix(lastItem.FieldByName("Created").Int(), 0)
+	if len(*to) > 0 {
+		lastItem := (*to)[len(*to)-1]
+		futureState.OldestID = lastItem.ID
+		oldestDate := time.Unix(lastItem.Created, 0)
 		futureState.OldestDate = &oldestDate
+		if futureState.MoreRecentID == "" {
+			firstItem := (*to)[0]
+			futureState.MoreRecentID = firstItem.ID
+			moreRecentDate := time.Unix(firstItem.Created, 0)
+			futureState.MoreRecentDate = &moreRecentDate
+		}
 	}
+	futureState.NoMoreHistory = !hasMore
 
 	return hasMore, futureState, func() {
 		tl.state = futureState
 	}, nil
 }
 
-func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, TimelineState, func(), error) {
+func (tl *timeline) Head(ctx context.Context, to *[]*stripe.BalanceTransaction) (bool, TimelineState, func(), error) {
 	if tl.firstIDAfterStartingAt == "" && tl.state.MoreRecentID == "" {
 		err := tl.init(ctx)
 		if err != nil {
 			return false, TimelineState{}, nil, err
 		}
 		if tl.firstIDAfterStartingAt == "" {
-			return false, TimelineState{}, nil, nil
+			return false, TimelineState{
+				NoMoreHistory: true,
+			}, func() {}, nil
 		}
 	}
 
@@ -194,21 +158,22 @@ func (tl *timeline) Head(ctx context.Context, to interface{}) (bool, TimelineSta
 		return false, TimelineState{}, nil, err
 	}
 
-	valueOfTo := reflect.ValueOf(to).Elem()
-
 	futureState := tl.state
-	if valueOfTo.Len() > 0 {
-		futureState.MoreRecentID = valueOfTo.
-			Index(0).
-			FieldByName("ID").
-			String()
-		moreRecentDate := time.Unix(valueOfTo.Index(0).FieldByName("Created").Int(), 0)
+	if len(*to) > 0 {
+		firstItem := (*to)[0]
+		futureState.MoreRecentID = firstItem.ID
+		moreRecentDate := time.Unix(firstItem.Created, 0)
 		futureState.MoreRecentDate = &moreRecentDate
+		if futureState.OldestID == "" {
+			lastItem := (*to)[len(*to)-1]
+			futureState.OldestID = lastItem.ID
+			oldestDate := time.Unix(lastItem.Created, 0)
+			futureState.OldestDate = &oldestDate
+		}
 	}
 
-	swap := reflect.Swapper(valueOfTo.Interface())
-	for i, j := 0, valueOfTo.Len()-1; i < j; i, j = i+1, j-1 {
-		swap(i, j)
+	for i, j := 0, len(*to)-1; i < j; i, j = i+1, j-1 {
+		(*to)[i], (*to)[j] = (*to)[j], (*to)[i]
 	}
 
 	return hasMore, futureState, func() {
