@@ -29,12 +29,20 @@ func QueryParam(key string, value string) ClientOptionFn {
 
 type Client interface {
 	BalanceTransactions(ctx context.Context, options ...ClientOption) ([]*stripe.BalanceTransaction, bool, error)
+	ForAccount(account string) Client
 }
 
 type defaultClient struct {
-	httpClient *http.Client
-	apiKey     string
-	pool       *pond.WorkerPool
+	httpClient    *http.Client
+	apiKey        string
+	pool          *pond.WorkerPool
+	stripeAccount string
+}
+
+func (d *defaultClient) ForAccount(account string) Client {
+	cp := *d
+	cp.stripeAccount = account
+	return &cp
 }
 
 func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...ClientOption) ([]*stripe.BalanceTransaction, bool, error) {
@@ -47,6 +55,9 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 
 	for _, opt := range options {
 		opt.apply(req)
+	}
+	if d.stripeAccount != "" {
+		req.URL.Query().Set("Stripe-Account", d.stripeAccount)
 	}
 	req.URL.RawQuery = req.URL.Query().Encode()
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")

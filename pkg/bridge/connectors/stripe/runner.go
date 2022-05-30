@@ -157,6 +157,7 @@ l:
 				if hasMore {
 					r.tailToken <- struct{}{}
 				} else {
+					r.logger.Infof("No more history, stop fetching")
 					r.tailToken = nil
 				}
 			default:

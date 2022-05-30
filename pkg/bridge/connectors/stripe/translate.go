@@ -209,6 +209,8 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, connectorName string, for
 			Scheme:        payment.SchemeSepa,
 			CreatedAt:     time.Unix(bt.Source.Charge.Created, 0),
 		}
+	case "stripe_fee":
+	case "network_cost":
 	default:
 		return bridge.BatchElement{}, false
 	}

@@ -26,6 +26,11 @@ func (c *Connector) Name() string {
 }
 
 func (c *Connector) Start(ctx context.Context, cfg Config, state State) error {
+	c.logger.WithFields(map[string]interface{}{
+		"pool":           cfg.Pool,
+		"page-size":      cfg.PageSize,
+		"polling-period": cfg.PollingPeriod,
+	}).Infof("Starting connector")
 	c.pool = pond.New(cfg.Pool, 0)
 	c.client = NewDefaultClient(http.DefaultClient, c.pool, cfg.ApiKey)
 	c.scheduler = NewScheduler(c.logObjectStorage, c.logger.WithFields(map[string]interface{}{

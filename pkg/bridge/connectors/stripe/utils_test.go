@@ -13,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"reflect"
-	"sync"
 	"testing"
 	"time"
 )
@@ -87,6 +86,10 @@ type clientMock struct {
 	expectations *FIFO[*clientMockExpectation]
 }
 
+func (m *clientMock) ForAccount(account string) Client {
+	return m
+}
+
 func (m *clientMock) BalanceTransactions(ctx context.Context, options ...ClientOption) ([]*stripe.BalanceTransaction, bool, error) {
 	e, ok := m.expectations.Pop()
 	if !ok {
@@ -117,40 +120,3 @@ func NewClientMock(t *testing.T) *clientMock {
 }
 
 var _ Client = &clientMock{}
-
-type FIFO[ITEM any] struct {
-	mu    sync.Mutex
-	items []ITEM
-}
-
-func (s *FIFO[ITEM]) Pop() (ret ITEM, ok bool) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if len(s.items) == 0 {
-		var z ITEM
-		return z, false
-	}
-	ret = s.items[0]
-	ok = true
-	if len(s.items) == 1 {
-		s.items = make([]ITEM, 0)
-		return
-	}
-	s.items = s.items[1:]
-	return
-}
-
-func (s *FIFO[ITEM]) Push(i ITEM) *FIFO[ITEM] {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.items = append(s.items, i)
-	return s
-}
-
-func (s *FIFO[ITEM]) Empty() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.items) == 0
-}

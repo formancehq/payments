@@ -27,23 +27,28 @@ func (s *Scheduler) Name() string {
 	return "stripe"
 }
 
+func (s *Scheduler) accountLogger(account string) sharedlogging.Logger {
+	if account == "" {
+		return s.logger
+	}
+	return s.logger.WithFields(map[string]interface{}{
+		"account": account,
+	})
+}
+
 func (s *Scheduler) createRunner(account string, cfg Config, state TimelineState) {
 
 	s.runnersLock.Lock()
 	defer s.runnersLock.Unlock()
 
-	logger := s.logger.WithFields(map[string]interface{}{
-		"account": account,
-	})
-
-	logger.Infof("Create new runner")
+	s.accountLogger(account).Infof("Create new runner")
 
 	runner := NewRunner(
-		logger.WithFields(map[string]interface{}{
+		s.accountLogger(account).WithFields(map[string]interface{}{
 			"component": "runner",
 		}),
 		s.ingesterFor(account),
-		NewTimeline(s.client, cfg.TimelineConfig, state, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
+		NewTimeline(s.client.ForAccount(account), cfg.TimelineConfig, state, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
 		cfg.PollingPeriod,
 	)
 	s.accountRunners[account] = runner
@@ -66,7 +71,7 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 	for _, bt := range bts {
 		batchElement, handled := CreateBatchElement(bt, s.name, !tail)
 		if !handled {
-			s.logger.Errorf("Balance transaction type not handled: %s", bt.Type)
+			s.accountLogger(account).Errorf("Balance transaction type not handled: %s", bt.Type)
 			continue
 		}
 		if batchElement.Adjustment == nil && batchElement.Payment == nil {
@@ -77,6 +82,9 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 			connectedAccounts = append(connectedAccounts, bt.Source.Transfer.Destination.ID)
 		}
 	}
+	s.accountLogger(account).WithFields(map[string]interface{}{
+		"state": commitState,
+	}).Infof("updating state")
 	newState := s.state
 	if account == "" {
 		newState.TimelineState = commitState
@@ -90,6 +98,9 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 	for _, ca := range connectedAccounts {
 		_, ok := newState.Accounts[ca]
 		if !ok {
+			if newState.Accounts == nil {
+				newState.Accounts = map[string]TimelineState{}
+			}
 			newState.Accounts[ca] = TimelineState{}
 			s.createRunner(ca, s.config, TimelineState{})
 		}
@@ -109,7 +120,7 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 	if len(docs) > 0 {
 		err = s.logObjectStorage.Store(ctx, docs...)
 		if err != nil {
-			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
+			s.accountLogger(account).Errorf("Unable to record stripe balance transactions: %s", err)
 		}
 	}
 
