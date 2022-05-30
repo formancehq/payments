@@ -57,9 +57,8 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 		opt.apply(req)
 	}
 	if d.stripeAccount != "" {
-		req.URL.Query().Set("Stripe-Account", d.stripeAccount)
+		req.Header.Set("Stripe-Account", d.stripeAccount)
 	}
-	req.URL.RawQuery = req.URL.Query().Encode()
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(d.apiKey, "") // gfyrag: really weird authentication right?
 

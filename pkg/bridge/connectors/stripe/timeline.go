@@ -114,6 +114,7 @@ func (tl *timeline) Tail(ctx context.Context, to *[]*stripe.BalanceTransaction) 
 
 	futureState := tl.state
 	if len(*to) > 0 {
+
 		lastItem := (*to)[len(*to)-1]
 		futureState.OldestID = lastItem.ID
 		oldestDate := time.Unix(lastItem.Created, 0)
