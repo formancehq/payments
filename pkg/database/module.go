@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/bsontype"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -30,7 +31,7 @@ func MongoModule(uri string, dbName string) fx.Option {
 		fx.Provide(func(client *mongo.Client) *mongo.Database {
 			return client.Database(dbName)
 		}),
-		fx.Invoke(func(lc fx.Lifecycle, client *mongo.Client) {
+		fx.Invoke(func(lc fx.Lifecycle, client *mongo.Client, db *mongo.Database) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					err := client.Connect(context.Background())
@@ -44,6 +45,11 @@ func MongoModule(uri string, dbName string) fx.Option {
 					err = client.Ping(ctx, readpref.Primary())
 					if err != nil {
 						return err
+					}
+
+					err = CreateIndexes(ctx, db)
+					if err != nil {
+						return errors.Wrap(err, "creating indices")
 					}
 					return nil
 				},

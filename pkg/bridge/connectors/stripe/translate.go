@@ -214,13 +214,13 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, connectorName string, for
 	case "payout_failure":
 		identifier = payment.Identifier{
 			Provider:  connectorName,
-			Reference: bt.Source.Refund.Charge.ID,
+			Reference: bt.Source.Payout.ID,
 			Type:      payment.TypePayIn,
 		}
 		adjustment = &payment.Adjustment{
 			Status:   string(bt.Status),
 			Amount:   0,
-			Date:     time.Unix(bt.Source.Refund.Created, 0),
+			Date:     time.Unix(bt.Created, 0),
 			Raw:      bt,
 			Absolute: true,
 		}
