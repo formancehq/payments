@@ -9,7 +9,6 @@ import (
 )
 
 type Scheduler struct {
-	name             string
 	logObjectStorage bridge.LogObjectStorage
 	runner           *Runner
 	accountRunners   map[string]*Runner
@@ -69,7 +68,7 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 
 	batch := bridge.Batch{}
 	for _, bt := range bts {
-		batchElement, handled := CreateBatchElement(bt, s.name, !tail)
+		batchElement, handled := CreateBatchElement(bt, !tail)
 		if !handled {
 			s.accountLogger(account).Errorf("Balance transaction type not handled: %s", bt.Type)
 			continue
