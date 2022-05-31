@@ -211,6 +211,31 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, connectorName string, for
 		}
 	case "stripe_fee":
 	case "network_cost":
+	case "payout_failure":
+		identifier = payment.Identifier{
+			Provider:  connectorName,
+			Reference: bt.Source.Refund.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		adjustment = &payment.Adjustment{
+			Status:   string(bt.Status),
+			Amount:   0,
+			Date:     time.Unix(bt.Source.Refund.Created, 0),
+			Raw:      bt,
+			Absolute: true,
+		}
+	case "payment_refund":
+		identifier = payment.Identifier{
+			Provider:  connectorName,
+			Reference: bt.Source.Refund.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		adjustment = &payment.Adjustment{
+			Status: string(bt.Status),
+			Amount: bt.Amount,
+			Date:   time.Unix(bt.Source.Refund.Created, 0),
+			Raw:    bt,
+		}
 	default:
 		return bridge.BatchElement{}, false
 	}
