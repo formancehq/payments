@@ -230,7 +230,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 	i.logger.WithFields(map[string]interface{}{
 		"size":    len(batch),
 		"endedAt": endedAt,
-		"latency": endedAt.Sub(startingAt),
+		"latency": endedAt.Sub(startingAt).String(),
 	}).Debugf("Batch ingested")
 
 	return nil
