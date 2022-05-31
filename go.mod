@@ -5,7 +5,8 @@ go 1.18
 require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/ThreeDotsLabs/watermill v1.1.1
-	github.com/golang-jwt/jwt v3.2.2+incompatible
+	github.com/gibson042/canonicaljson-go v1.0.3
+	github.com/gobeam/stringy v0.0.5
 	github.com/gorilla/mux v1.8.0
 	github.com/numary/go-libs v0.0.0-20220520102151-5ca12f3c7926
 	github.com/ory/dockertest v3.3.5+incompatible
@@ -16,13 +17,12 @@ require (
 	github.com/spf13/cobra v1.3.0
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
+	github.com/stripe/stripe-go/v72 v72.107.0
 	github.com/uptrace/opentelemetry-go-extra/otellogrus v0.1.12
 	github.com/xdg-go/scram v1.1.0
 	go.mongodb.org/mongo-driver v1.9.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.28.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.29.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.31.0
-	go.opentelemetry.io/otel v1.6.3
 	go.uber.org/fx v1.17.1
 )
 
@@ -34,7 +34,6 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ThreeDotsLabs/watermill-http v1.1.4 // indirect
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.1 // indirect
-	github.com/alitto/pond v1.8.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
@@ -54,13 +53,12 @@ require (
 	github.com/envoyproxy/protoc-gen-validate v0.6.2 // indirect
 	github.com/felixge/httpsnoop v1.0.2 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/gibson042/canonicaljson-go v1.0.3 // indirect
 	github.com/go-chi/chi v4.0.2+incompatible // indirect
 	github.com/go-chi/render v1.0.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-stack/stack v1.8.0 // indirect
-	github.com/gobeam/stringy v0.0.5 // indirect
+	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -81,7 +79,6 @@ require (
 	github.com/jcmturner/gofork v1.0.0 // indirect
 	github.com/jcmturner/gokrb5/v8 v8.4.2 // indirect
 	github.com/jcmturner/rpc/v2 v2.0.3 // indirect
-	github.com/joho/godotenv v1.4.0 // indirect
 	github.com/klauspost/compress v1.14.4 // indirect
 	github.com/lib/pq v1.10.5 // indirect
 	github.com/lithammer/shortuuid/v3 v3.0.7 // indirect
@@ -99,20 +96,19 @@ require (
 	github.com/spf13/cast v1.4.1 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stripe/stripe-go/v72 v72.107.0 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
 	github.com/uptrace/opentelemetry-go-extra/otelutil v0.1.12 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opencensus.io v0.23.0 // indirect
+	go.opentelemetry.io/otel v1.6.3 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.5.0 // indirect
-	go.opentelemetry.io/otel/metric v0.28.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.5.0 // indirect
 	go.opentelemetry.io/otel/trace v1.6.3 // indirect
 	go.opentelemetry.io/proto/otlp v0.12.0 // indirect
