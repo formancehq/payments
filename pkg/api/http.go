@@ -101,7 +101,7 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			})
 		}
 
-		cursor, err := db.Collection(payments.PaymentsCollection).Aggregate(r.Context(), pipeline)
+		cursor, err := db.Collection(payments.Collection).Aggregate(r.Context(), pipeline)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
@@ -136,7 +136,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		ret := db.Collection(payments.PaymentsCollection).FindOne(r.Context(), identifier)
+		ret := db.Collection(payments.Collection).FindOne(r.Context(), identifier)
 		if ret.Err() != nil {
 			if ret.Err() == mongo.ErrNoDocuments {
 				w.WriteHeader(http.StatusNotFound)

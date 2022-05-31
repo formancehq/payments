@@ -120,7 +120,7 @@ var currencies = map[string]currency{
 	"ZWD": {2}, //  Zimbabwe Dollar
 }
 
-func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forward bool) (bridge.BatchElement, bool) {
+func CreateBatchElement(bt *stripe.BalanceTransaction, connectorName string, forward bool) (bridge.BatchElement, bool) {
 	var (
 		identifier  payment.Identifier
 		paymentData *payment.Data
@@ -195,6 +195,22 @@ func CreateBatchElement(bt stripe.BalanceTransaction, connectorName string, forw
 			Date:   time.Unix(bt.Source.Refund.Created, 0),
 			Raw:    bt,
 		}
+	case "payment":
+		identifier = payment.Identifier{
+			Provider:  connectorName,
+			Reference: bt.Source.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		paymentData = &payment.Data{
+			Status:        string(bt.Status),
+			InitialAmount: bt.Source.Charge.Amount,
+			Raw:           bt,
+			Asset:         formatAsset(bt.Source.Charge.Currency),
+			Scheme:        payment.SchemeSepa,
+			CreatedAt:     time.Unix(bt.Source.Charge.Created, 0),
+		}
+	case "stripe_fee":
+	case "network_cost":
 	default:
 		return bridge.BatchElement{}, false
 	}

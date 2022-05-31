@@ -3,33 +3,34 @@ package stripe
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/bridge"
-	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 	"time"
 )
 
-func NewRunner(name string, logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[Config, State, *Connector], config Config, state State) *Runner {
+func NewRunner(
+	logger sharedlogging.Logger,
+	ingester Ingester,
+	tl *timeline,
+	pollingPeriod time.Duration,
+) *Runner {
 	return &Runner{
-		name:             name,
-		logger:           logger,
-		logObjectStorage: logObjectStorage,
-		config:           config,
-		tailToken:        make(chan struct{}, 1),
-		ingester:         ingester,
-		timeline:         NewTimeline(BalanceTransactionsEndpoint, config, state, WithTimelineExpand("data.source")),
+		logger:        logger,
+		tailToken:     make(chan struct{}, 1),
+		ingester:      ingester,
+		timeline:      tl,
+		pollingPeriod: pollingPeriod,
+		stopChan:      make(chan chan struct{}),
 	}
 }
 
 type Runner struct {
-	name             string
-	logObjectStorage bridge.LogObjectStorage
-	stopChan         chan chan struct{}
-	timeline         *timeline
-	config           Config
-	tailToken        chan struct{}
-	logger           sharedlogging.Logger
-	ingester         bridge.Ingester[Config, State, *Connector]
+	name          string
+	stopChan      chan chan struct{}
+	timeline      *timeline
+	tailToken     chan struct{}
+	logger        sharedlogging.Logger
+	ingester      Ingester
+	pollingPeriod time.Duration
 }
 
 func (r *Runner) Stop(ctx context.Context) error {
@@ -44,54 +45,35 @@ func (r *Runner) Stop(ctx context.Context) error {
 		}
 	case <-ctx.Done():
 		return ctx.Err()
-	default:
-		return errors.New("already closed")
 	}
+}
+
+func (r *Runner) IsTailing() bool {
+	return r.tailToken != nil
 }
 
 func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 
-	r.logger.WithFields(map[string]interface{}{
+	logger := r.logger.WithFields(map[string]interface{}{
 		"tail": tail,
-	}).Info("Trigger page")
+	})
+	logger.Debugf("Trigger page")
 
-	ret := make([]stripe.BalanceTransaction, 0)
+	ret := make([]*stripe.BalanceTransaction, 0)
 	method := r.timeline.Head
 	if tail {
 		method = r.timeline.Tail
 	}
+
 	hasMore, futureState, commitFn, err := method(ctx, &ret)
 	if err != nil {
 		return false, err
 	}
 
-	batch := bridge.Batch{}
-	for _, bt := range ret {
-		batchElement, handled := CreateBatchElement(bt, r.name, !tail)
-		if !handled {
-			r.logger.Errorf("Balance transaction type not handled: %s", bt.Type)
-			continue
-		}
-		if batchElement.Adjustment == nil && batchElement.Payment == nil {
-			continue
-		}
-		batch = append(batch, batchElement)
-	}
-
-	err = r.ingester.Ingest(ctx, batch, futureState)
+	logger.Debug("Ingest batch")
+	err = r.ingester.Ingest(ctx, ret, futureState, tail)
 	if err != nil {
 		return false, err
-	}
-
-	docs := make([]any, 0)
-	for _, elem := range ret {
-		docs = append(docs, elem)
-	}
-	if len(docs) > 0 {
-		err = r.logObjectStorage.Store(ctx, docs...)
-		if err != nil {
-			sharedlogging.GetLogger(ctx).Errorf("Unable to record stripe balance transactions: %s", err)
-		}
 	}
 
 	commitFn()
@@ -101,18 +83,15 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 func (r *Runner) Run(ctx context.Context) error {
 
 	r.logger.WithFields(map[string]interface{}{
-		"config": r.config,
-		"state":  r.timeline.State(),
+		"polling-period": r.pollingPeriod,
 	}).Info("Starting runner")
-
-	r.stopChan = make(chan chan struct{}, 1)
 
 	r.triggerPage(ctx, false)
 	r.tailToken <- struct{}{}
 
 	var timer *time.Timer
 	resetTimer := func() {
-		timer = time.NewTimer(r.config.PollingPeriod)
+		timer = time.NewTimer(r.pollingPeriod)
 	}
 	resetTimer()
 
@@ -121,6 +100,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	go func() {
 		select {
 		case closeChannel = <-r.stopChan:
+			r.logger.Infof("Got close signal")
 			cancel()
 		case <-ctx.Done():
 		}
@@ -130,6 +110,7 @@ l:
 	for {
 		select {
 		case <-ctx.Done():
+			r.logger.Infof("Closed runner!")
 			if closeChannel != nil {
 				close(closeChannel)
 			}
@@ -140,7 +121,7 @@ l:
 			for hasMore {
 				hasMore, err = r.triggerPage(ctx, false)
 				if err != nil {
-					r.logger.Errorf("Error fetching page: %s", err)
+					r.logger.Errorf("Error fetching head page: %s", err)
 					break
 				}
 				select {
@@ -157,10 +138,10 @@ l:
 			case <-r.tailToken:
 				hasMore, err := r.triggerPage(ctx, true)
 				if err != nil {
-					r.logger.Errorf("Error fetching page: %s", err)
+					r.logger.Errorf("Error fetching tail page: %s", err)
 					go func() {
 						select {
-						case <-time.After(r.config.PollingPeriod):
+						case <-time.After(r.pollingPeriod):
 						case <-ctx.Done():
 							return
 						}
@@ -174,6 +155,7 @@ l:
 				if hasMore {
 					r.tailToken <- struct{}{}
 				} else {
+					r.logger.Infof("No more history, stop fetching")
 					r.tailToken = nil
 				}
 			default:

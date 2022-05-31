@@ -1,4 +1,5 @@
 package payments
 
-const PaymentsCollection = "Payments"
-const ConnectorsCollector = "Connectors"
+const Collection = "Payments"
+const ConnectorConfigsCollection = "Configs"
+const ConnectorStatesCollection = "States"

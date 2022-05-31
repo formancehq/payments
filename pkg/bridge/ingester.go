@@ -22,10 +22,6 @@ type Event struct {
 	Payload payment.ComputedPayment `json:"payload"`
 }
 
-type Order interface {
-	apply(ctx context.Context)
-}
-
 type BatchElement struct {
 	Identifier payment.Identifier
 	Payment    *payment.Data
@@ -35,17 +31,29 @@ type BatchElement struct {
 
 type Batch []BatchElement
 
-type Ingester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]] interface {
-	Ingest(ctx context.Context, batch Batch, commitState S) error
+type Ingester[STATE payment.ConnectorState] interface {
+	Ingest(ctx context.Context, batch Batch, commitState STATE) error
+}
+type IngesterFn[STATE payment.ConnectorState] func(ctx context.Context, batch Batch, commitState STATE) error
+
+func (fn IngesterFn[STATE]) Ingest(ctx context.Context, batch Batch, commitState STATE) error {
+	return fn(ctx, batch, commitState)
 }
 
-type defaultIngester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]] struct {
+func NoOpIngester[STATE payment.ConnectorState]() IngesterFn[STATE] {
+	return IngesterFn[STATE](func(ctx context.Context, batch Batch, commitState STATE) error {
+		return nil
+	})
+}
+
+type defaultIngester[STATE payment.ConnectorState] struct {
 	db        *mongo.Database
 	logger    sharedlogging.Logger
 	publisher sharedpublish.Publisher
+	name      string
 }
 
-func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch) ([]payment.Payment, error) {
+func (i *defaultIngester[STATE]) processBatch(ctx context.Context, batch Batch) ([]payment.Payment, error) {
 	payments := make([]payment.Payment, 0)
 	for _, elem := range batch {
 		logger := i.logger.WithFields(map[string]any{
@@ -127,7 +135,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 		}
 
 		if update != nil {
-			ret := i.db.Collection(payment.PaymentsCollection).FindOneAndUpdate(
+			ret := i.db.Collection(payment.Collection).FindOneAndUpdate(
 				ctx,
 				elem.Identifier,
 				update,
@@ -145,7 +153,7 @@ func (i *defaultIngester[T, S, C]) processBatch(ctx context.Context, batch Batch
 			payments = append(payments, p)
 		} else {
 			payments = append(payments, newPayment)
-			_, err = i.db.Collection(payment.PaymentsCollection).InsertOne(ctx, newPayment)
+			_, err = i.db.Collection(payment.Collection).InsertOne(ctx, newPayment)
 			if err != nil {
 				logger.Errorf("Error inserting payment: %s", err)
 				return nil, err
@@ -166,11 +174,13 @@ func Filter[T any](objects []T, compareFn func(t T) bool) []T {
 	return ret
 }
 
-func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, commitState S) error {
+func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commitState STATE) error {
 
+	startingAt := time.Now()
 	i.logger.WithFields(map[string]interface{}{
-		"size": len(batch),
-	}).Infof("Ingest batch")
+		"size":       len(batch),
+		"startingAt": startingAt,
+	}).Debugf("Ingest batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
@@ -180,29 +190,29 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 			}
 			payments = Filter(payments, payment.Payment.HasInitialValue)
 
-			for _, e := range payments {
-				err = i.publisher.Publish(ctx, PaymentsTopics, Event{
-					Date:    time.Now(),
-					Type:    "SAVED_PAYMENT",
-					Payload: e.Computed(),
-				})
-				if err != nil {
-					i.logger.Errorf("Error publishing payment: %s", err)
+			if i.publisher != nil {
+				for _, e := range payments {
+					err = i.publisher.Publish(ctx, PaymentsTopics, Event{
+						Date:    time.Now(),
+						Type:    "SAVED_PAYMENT",
+						Payload: e.Computed(),
+					})
+					if err != nil {
+						i.logger.Errorf("Error publishing payment: %s", err)
+					}
 				}
 			}
 
-			i.logger.WithFields(map[string]interface{}{
-				"state": commitState,
-			}).Infof("Update state")
+			i.logger.Debugf("Update state")
 
-			var connector C
-			_, err = i.db.Collection(payment.ConnectorsCollector).UpdateOne(ctx, map[string]any{
-				"provider": connector.Name(),
-			}, bson.M{
-				"$set": bson.M{
+			_, err = i.db.Collection(payment.ConnectorStatesCollection).UpdateOne(ctx, map[string]any{
+				"provider": i.name,
+			}, map[string]any{
+				"$set": map[string]any{
 					"state": commitState,
 				},
-			})
+			}, options.Update().SetUpsert(true))
+
 			if err != nil {
 				return nil, err
 			}
@@ -215,25 +225,27 @@ func (i *defaultIngester[T, S, C]) Ingest(ctx context.Context, batch Batch, comm
 		return err
 	}
 
+	endedAt := time.Now()
+
 	i.logger.WithFields(map[string]interface{}{
-		"size": len(batch),
-	}).Infof("Batch ingested")
+		"size":    len(batch),
+		"endedAt": endedAt,
+		"latency": endedAt.Sub(startingAt),
+	}).Debugf("Batch ingested")
 
 	return nil
 }
 
-func NewDefaultIngester[T payment.ConnectorConfigObject, S payment.ConnectorState, C Connector[T, S]](
+func NewDefaultIngester[STATE payment.ConnectorState](
+	name string,
 	db *mongo.Database,
 	logger sharedlogging.Logger,
 	publisher sharedpublish.Publisher,
-) *defaultIngester[T, S, C] {
-	var connector C
-	return &defaultIngester[T, S, C]{
-		db: db,
-		logger: logger.WithFields(map[string]interface{}{
-			"connector": connector.Name(),
-			"component": "ingester",
-		}),
+) *defaultIngester[STATE] {
+	return &defaultIngester[STATE]{
+		name:      name,
+		db:        db,
+		logger:    logger,
 		publisher: publisher,
 	}
 }
