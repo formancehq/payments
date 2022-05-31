@@ -120,7 +120,7 @@ var currencies = map[string]currency{
 	"ZWD": {2}, //  Zimbabwe Dollar
 }
 
-func CreateBatchElement(bt *stripe.BalanceTransaction, connectorName string, forward bool) (bridge.BatchElement, bool) {
+func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.BatchElement, bool) {
 	var (
 		identifier  payment.Identifier
 		paymentData *payment.Data
