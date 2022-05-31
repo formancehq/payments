@@ -180,7 +180,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 	i.logger.WithFields(map[string]interface{}{
 		"size":       len(batch),
 		"startingAt": startingAt,
-	}).Infof("Ingest batch")
+	}).Debugf("Ingest batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
@@ -203,7 +203,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 				}
 			}
 
-			i.logger.Infof("Update state")
+			i.logger.Debugf("Update state")
 
 			_, err = i.db.Collection(payment.ConnectorStatesCollection).UpdateOne(ctx, map[string]any{
 				"provider": i.name,
@@ -231,7 +231,7 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 		"size":    len(batch),
 		"endedAt": endedAt,
 		"latency": endedAt.Sub(startingAt),
-	}).Infof("Batch ingested")
+	}).Debugf("Batch ingested")
 
 	return nil
 }

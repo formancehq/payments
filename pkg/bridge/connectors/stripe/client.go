@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/alitto/pond"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 	"net/http"
@@ -35,7 +34,7 @@ type Client interface {
 type defaultClient struct {
 	httpClient    *http.Client
 	apiKey        string
-	pool          *pond.WorkerPool
+	pool          *pool
 	stripeAccount string
 }
 
@@ -63,8 +62,9 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	req.SetBasicAuth(d.apiKey, "") // gfyrag: really weird authentication right?
 
 	var httpResponse *http.Response
-	d.pool.SubmitAndWait(func() {
+	err = d.pool.Push(ctx, func(ctx context.Context) error {
 		httpResponse, err = d.httpClient.Do(req)
+		return err
 	})
 	if err != nil {
 		return nil, false, errors.Wrap(err, "doing request")
@@ -84,7 +84,7 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	return rsp.Data, rsp.HasMore, nil
 }
 
-func NewDefaultClient(httpClient *http.Client, pool *pond.WorkerPool, apiKey string) *defaultClient {
+func NewDefaultClient(httpClient *http.Client, pool *pool, apiKey string) *defaultClient {
 	return &defaultClient{
 		httpClient: httpClient,
 		apiKey:     apiKey,

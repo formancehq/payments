@@ -84,7 +84,7 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 	}
 	s.accountLogger(account).WithFields(map[string]interface{}{
 		"state": commitState,
-	}).Infof("updating state")
+	}).Debugf("updating state")
 	newState := s.state
 	if account == "" {
 		newState.TimelineState = commitState
@@ -162,20 +162,35 @@ func (s *Scheduler) Start(ctx context.Context) error {
 }
 
 func (s *Scheduler) Stop(ctx context.Context) error {
+	s.logger.Infof("Stopping...")
 	if s.runner != nil {
+		s.logger.Infof("Stopping main runner...")
 		err := s.runner.Stop(ctx)
 		if err != nil {
 			return err
 		}
 		s.runner = nil
+		s.logger.Infof("Main runner stopped!")
 	}
+	wg := sync.WaitGroup{}
+	wg.Add(len(s.accountRunners))
 	for account, runner := range s.accountRunners {
-		err := runner.Stop(ctx)
-		if err != nil {
-			return err
-		}
-		delete(s.accountRunners, account)
+		go func(runner *Runner) {
+			defer wg.Done()
+			logger := s.logger.WithFields(map[string]any{
+				"account": account,
+			})
+			logger.Infof("Stopping account runner...")
+			err := runner.Stop(ctx)
+			if err != nil {
+				logger.Infof("Error stopping runner: %s", err)
+				return
+			}
+			delete(s.accountRunners, account)
+			logger.Infof("Runner stopped")
+		}(runner)
 	}
+	wg.Wait()
 	return nil
 }
 

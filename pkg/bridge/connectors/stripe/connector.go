@@ -2,7 +2,6 @@ package stripe
 
 import (
 	"context"
-	"github.com/alitto/pond"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge"
 	"net/http"
@@ -17,7 +16,7 @@ type Connector struct {
 	logger           sharedlogging.Logger
 	scheduler        *Scheduler
 	ingester         bridge.Ingester[State]
-	pool             *pond.WorkerPool
+	pool             *pool
 	client           *defaultClient
 }
 
@@ -30,8 +29,10 @@ func (c *Connector) Start(ctx context.Context, cfg Config, state State) error {
 		"pool":           cfg.Pool,
 		"page-size":      cfg.PageSize,
 		"polling-period": cfg.PollingPeriod,
-	}).Infof("Starting connector")
-	c.pool = pond.New(cfg.Pool, 0)
+	}).Infof("Starting...")
+	c.pool = NewPool(cfg.Pool)
+	go c.pool.Run(ctx)
+
 	c.client = NewDefaultClient(http.DefaultClient, c.pool, cfg.ApiKey)
 	c.scheduler = NewScheduler(c.logObjectStorage, c.logger.WithFields(map[string]interface{}{
 		"component": "scheduler",
@@ -40,16 +41,21 @@ func (c *Connector) Start(ctx context.Context, cfg Config, state State) error {
 }
 
 func (c *Connector) Stop(ctx context.Context) error {
+	c.logger.Infof("Stopping...")
 	if c.scheduler != nil {
+		c.logger.Infof("Stopping scheduler...")
 		err := c.scheduler.Stop(ctx)
 		if err != nil {
 			return err
 		}
 		c.scheduler = nil
+		c.logger.Infof("Scheduler stopped!")
 	}
 	if c.pool != nil {
-		c.pool.StopAndWait()
+		c.logger.Infof("Stopping pool...")
+		c.pool.Stop(ctx)
 		c.pool = nil
+		c.logger.Infof("Pool stopped!")
 	}
 	return nil
 }
@@ -72,7 +78,9 @@ var _ bridge.Connector[Config, State] = &Connector{}
 func NewConnector(logObjectStorage bridge.LogObjectStorage, logger sharedlogging.Logger, ingester bridge.Ingester[State]) (*Connector, error) {
 	return &Connector{
 		logObjectStorage: logObjectStorage,
-		logger:           logger,
-		ingester:         ingester,
+		logger: logger.WithFields(map[string]any{
+			"component": "connector",
+		}),
+		ingester: ingester,
 	}, nil
 }

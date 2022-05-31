@@ -44,5 +44,4 @@ func TestScheduleNewAccounts(t *testing.T) {
 	require.Eventually(t, func() bool {
 		return len(scheduler.accountRunners) == 1
 	}, 3*time.Second, 10*time.Millisecond)
-
 }

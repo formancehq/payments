@@ -3,7 +3,6 @@ package stripe
 import (
 	"context"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 	"time"
 )
@@ -20,6 +19,7 @@ func NewRunner(
 		ingester:      ingester,
 		timeline:      tl,
 		pollingPeriod: pollingPeriod,
+		stopChan:      make(chan chan struct{}),
 	}
 }
 
@@ -45,8 +45,6 @@ func (r *Runner) Stop(ctx context.Context) error {
 		}
 	case <-ctx.Done():
 		return ctx.Err()
-	default:
-		return errors.New("already closed")
 	}
 }
 
@@ -59,7 +57,7 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 	logger := r.logger.WithFields(map[string]interface{}{
 		"tail": tail,
 	})
-	logger.Info("Trigger page")
+	logger.Debugf("Trigger page")
 
 	ret := make([]*stripe.BalanceTransaction, 0)
 	method := r.timeline.Head
@@ -72,7 +70,7 @@ func (r *Runner) triggerPage(ctx context.Context, tail bool) (bool, error) {
 		return false, err
 	}
 
-	logger.Infof("ingest")
+	logger.Debug("Ingest batch")
 	err = r.ingester.Ingest(ctx, ret, futureState, tail)
 	if err != nil {
 		return false, err
@@ -88,8 +86,6 @@ func (r *Runner) Run(ctx context.Context) error {
 		"polling-period": r.pollingPeriod,
 	}).Info("Starting runner")
 
-	r.stopChan = make(chan chan struct{}, 1)
-
 	r.triggerPage(ctx, false)
 	r.tailToken <- struct{}{}
 
@@ -104,6 +100,7 @@ func (r *Runner) Run(ctx context.Context) error {
 	go func() {
 		select {
 		case closeChannel = <-r.stopChan:
+			r.logger.Infof("Got close signal")
 			cancel()
 		case <-ctx.Done():
 		}
@@ -113,6 +110,7 @@ l:
 	for {
 		select {
 		case <-ctx.Done():
+			r.logger.Infof("Closed runner!")
 			if closeChannel != nil {
 				close(closeChannel)
 			}
@@ -123,7 +121,7 @@ l:
 			for hasMore {
 				hasMore, err = r.triggerPage(ctx, false)
 				if err != nil {
-					r.logger.Errorf("Error fetching page: %s", err)
+					r.logger.Errorf("Error fetching head page: %s", err)
 					break
 				}
 				select {
@@ -140,7 +138,7 @@ l:
 			case <-r.tailToken:
 				hasMore, err := r.triggerPage(ctx, true)
 				if err != nil {
-					r.logger.Errorf("Error fetching page: %s", err)
+					r.logger.Errorf("Error fetching tail page: %s", err)
 					go func() {
 						select {
 						case <-time.After(r.pollingPeriod):

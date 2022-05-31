@@ -23,7 +23,10 @@ func ConnectorModule[CONFIG payments.ConnectorConfigObject, STATE payments.Conne
 	return fx.Options(
 		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *ConnectorManager[CONFIG, STATE] {
 			return NewConnectorManager[CONFIG, STATE, CONNECTOR](db, controller,
-				NewDefaultIngester[STATE](connector.Name(), db, sharedlogging.GetLogger(context.Background()), publisher),
+				NewDefaultIngester[STATE](connector.Name(), db, sharedlogging.GetLogger(context.Background()).WithFields(map[string]any{
+					"component": "ingester",
+					"connector": connector.Name(),
+				}), publisher),
 			)
 		}),
 		fx.Provide(fx.Annotate(func(cm *ConnectorManager[CONFIG, STATE]) ConnectorHandler {
