@@ -62,13 +62,13 @@ func (c *Connector) Stop(ctx context.Context) error {
 
 func (c *Connector) ApplyDefaults(cfg Config) Config {
 	if cfg.Pool == 0 {
-		cfg.Pool = 1
+		cfg.Pool = 5
 	}
 	if cfg.PageSize == 0 {
-		cfg.PageSize = 100
+		cfg.PageSize = 10
 	}
 	if cfg.PollingPeriod == 0 {
-		cfg.PollingPeriod = 5 * time.Second
+		cfg.PollingPeriod = time.Minute
 	}
 	return cfg
 }
