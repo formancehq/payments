@@ -49,11 +49,10 @@ func (p *pool) Run(ctx context.Context) error {
 			return ctx.Err()
 		case errCh := <-p.stopChan:
 			close(p.actions)
-			close(p.workers)
-
 			for i := 0; i < cap(p.workers); i++ { // Drain all workers
 				<-p.workers
 			}
+			close(p.workers)
 
 			for action := range p.actions { // Drain all pending actions
 				action.ret <- fmt.Errorf("pool stopped")
