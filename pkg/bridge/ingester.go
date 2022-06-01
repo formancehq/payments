@@ -61,8 +61,7 @@ func (i *defaultIngester[STATE]) processBatch(ctx context.Context, batch Batch) 
 		})
 
 		var (
-			update     bson.M
-			newPayment payment.Payment
+			update bson.M
 		)
 
 		if elem.Adjustment != nil && elem.Payment != nil {
@@ -86,15 +85,17 @@ func (i *defaultIngester[STATE]) processBatch(ctx context.Context, batch Batch) 
 				},
 			}
 		case elem.Forward && elem.Payment != nil:
-			newPayment = payment.Payment{
-				Identifier: elem.Identifier,
-				Data:       *elem.Payment,
-				Adjustments: []payment.Adjustment{
-					{
-						Status: elem.Payment.Status,
-						Amount: elem.Payment.InitialAmount,
-						Date:   elem.Payment.CreatedAt,
-						Raw:    elem.Payment.Raw,
+			update = bson.M{
+				"$set": payment.Payment{
+					Identifier: elem.Identifier,
+					Data:       *elem.Payment,
+					Adjustments: []payment.Adjustment{
+						{
+							Status: elem.Payment.Status,
+							Amount: elem.Payment.InitialAmount,
+							Date:   elem.Payment.CreatedAt,
+							Raw:    elem.Payment.Raw,
+						},
 					},
 				},
 			}
@@ -134,32 +135,22 @@ func (i *defaultIngester[STATE]) processBatch(ctx context.Context, batch Batch) 
 			}
 		}
 
-		if update != nil {
-			ret := i.db.Collection(payment.Collection).FindOneAndUpdate(
-				ctx,
-				elem.Identifier,
-				update,
-				options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
-			)
-			if ret.Err() != nil {
-				logger.Errorf("Error updating payment: %s", ret.Err())
-				return nil, ret.Err()
-			}
-			p := payment.Payment{}
-			err = ret.Decode(&p)
-			if err != nil {
-				return nil, err
-			}
-			payments = append(payments, p)
-		} else {
-			payments = append(payments, newPayment)
-			_, err = i.db.Collection(payment.Collection).InsertOne(ctx, newPayment)
-			if err != nil {
-				logger.Errorf("Error inserting payment: %s", err)
-				return nil, err
-			}
+		ret := i.db.Collection(payment.Collection).FindOneAndUpdate(
+			ctx,
+			elem.Identifier,
+			update,
+			options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
+		)
+		if ret.Err() != nil {
+			logger.Errorf("Error updating payment: %s", ret.Err())
+			return nil, ret.Err()
 		}
-
+		p := payment.Payment{}
+		err = ret.Decode(&p)
+		if err != nil {
+			return nil, err
+		}
+		payments = append(payments, p)
 	}
 	return payments, nil
 }
