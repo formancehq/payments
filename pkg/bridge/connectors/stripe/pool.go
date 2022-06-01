@@ -25,12 +25,10 @@ func (p *pool) Push(ctx context.Context, fn func(ctx context.Context) error) err
 	}
 	select {
 	case <-ctx.Done():
-		fmt.Println("cancel push")
 		return ctx.Err()
 	case p.actions <- action:
 		select {
 		case <-ctx.Done():
-			fmt.Println("cancel push wait")
 			return ctx.Err()
 		case err := <-action.ret:
 			return err
