@@ -194,11 +194,11 @@ func (s *Scheduler) Stop(ctx context.Context) error {
 			})
 			logger.Infof("Stopping account trigger...")
 			trigger.Cancel(ctx)
-			delete(s.accountTriggers, account)
 			logger.Infof("Trigger stopped")
 		}(trigger)
 	}
 	wg.Wait()
+	s.accountTriggers = make(map[string]*timelineTrigger)
 	return nil
 }
 
