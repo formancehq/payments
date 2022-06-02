@@ -29,6 +29,15 @@ var indexes = map[string][]mongo.IndexModel{
 			},
 			Options: options.Index().SetUnique(true).SetName("identifier"),
 		},
+		{
+			Keys: bsonx.Doc{
+				bsonx.Elem{
+					Key:   "provider",
+					Value: bsonx.Int32(1),
+				},
+			},
+			Options: options.Index().SetName("provider"),
+		},
 	},
 }
 
