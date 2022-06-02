@@ -2,6 +2,8 @@ package stripe
 
 import (
 	"context"
+	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/stripe/stripe-go/v72"
@@ -46,7 +48,7 @@ func (s *Scheduler) createTrigger(account string, state TimelineState) *timeline
 			"timeline":  account,
 		}),
 		s.ingesterFor(account),
-		NewTimeline(s.client, s.config.TimelineConfig, state, s.timelineOptions...),
+		NewTimeline(s.client.ForAccount(account), s.config.TimelineConfig, state, s.timelineOptions...),
 	)
 	if account != "" {
 		if s.accountTriggers == nil {
@@ -91,7 +93,12 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 			continue
 		}
 		batch = append(batch, batchElement)
-		if bt.Type == "transfer" {
+		if bt.Type == stripe.BalanceTransactionTypeTransfer && account != "" {
+			fmt.Println("got illegal transactions for account: ", account)
+			spew.Dump(bt)
+			panic("not handled case")
+		}
+		if bt.Type == stripe.BalanceTransactionTypeTransfer {
 			connectedAccounts = append(connectedAccounts, bt.Source.Transfer.Destination.ID)
 		}
 	}
