@@ -107,15 +107,18 @@ func (m *clientMock) Expect() *clientMockExpectation {
 	return e
 }
 
-func NewClientMock(t *testing.T) *clientMock {
+func NewClientMock(t *testing.T, expectationsShouldBeConsumed bool) *clientMock {
 	m := &clientMock{
 		expectations: &FIFO[*clientMockExpectation]{},
 	}
-	t.Cleanup(func() {
-		if !m.expectations.Empty() && !t.Failed() {
-			t.Errorf("all expectations not consumed")
-		}
-	})
+	if expectationsShouldBeConsumed {
+		t.Cleanup(func() {
+			if !m.expectations.Empty() && !t.Failed() {
+				t.Errorf("all expectations not consumed")
+			}
+		})
+	}
+
 	return m
 }
 

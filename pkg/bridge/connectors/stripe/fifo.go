@@ -12,8 +12,7 @@ func (s *FIFO[ITEM]) Pop() (ret ITEM, ok bool) {
 	defer s.mu.Unlock()
 
 	if len(s.items) == 0 {
-		var z ITEM
-		return z, false
+		return
 	}
 	ret = s.items[0]
 	ok = true

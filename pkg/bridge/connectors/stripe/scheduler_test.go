@@ -11,9 +11,9 @@ import (
 )
 
 func TestScheduleNewAccounts(t *testing.T) {
-	mock := NewClientMock(t)
+	mock := NewClientMock(t, true)
 	mock.Expect().RespondsWith(false, &stripe.BalanceTransaction{
-		ID: "tx1",
+		ID: "tx2",
 		Source: &stripe.BalanceTransactionSource{
 			Transfer: &stripe.Transfer{
 				Destination: &stripe.TransferDestination{
@@ -22,7 +22,7 @@ func TestScheduleNewAccounts(t *testing.T) {
 			},
 			Type: stripe.BalanceTransactionSourceTypeTransfer,
 		},
-		Type: "transfer",
+		Type: stripe.BalanceTransactionTypeTransfer, // TODO: DEBUG
 	})
 
 	scheduler := NewScheduler(bridge.NoOpLogObjectStorage, sharedlogging.GetLogger(context.Background()), bridge.NoOpIngester[State](), mock, Config{
@@ -42,6 +42,6 @@ func TestScheduleNewAccounts(t *testing.T) {
 	defer scheduler.Stop(context.Background())
 
 	require.Eventually(t, func() bool {
-		return len(scheduler.accountRunners) == 1
+		return len(scheduler.accountTriggers) == 1
 	}, 3*time.Second, 10*time.Millisecond)
 }

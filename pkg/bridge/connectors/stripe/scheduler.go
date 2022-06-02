@@ -11,9 +11,9 @@ import (
 type Scheduler struct {
 	logObjectStorage bridge.LogObjectStorage
 	runner           *Runner
-	accountRunners   map[string]*Runner
+	accountTriggers  map[string]*timelineTrigger
 	logger           sharedlogging.Logger
-	runnersLock      sync.RWMutex
+	triggersLock     sync.RWMutex
 	stateLock        sync.Mutex
 	state            State
 	ingester         bridge.Ingester[State]
@@ -35,29 +35,43 @@ func (s *Scheduler) accountLogger(account string) sharedlogging.Logger {
 	})
 }
 
-func (s *Scheduler) createRunner(account string, cfg Config, state TimelineState) {
+func (s *Scheduler) createTrigger(account string, state TimelineState) *timelineTrigger {
+	s.triggersLock.Lock()
+	defer s.triggersLock.Unlock()
 
-	s.runnersLock.Lock()
-	defer s.runnersLock.Unlock()
-
-	s.accountLogger(account).Infof("Create new runner")
-
-	runner := NewRunner(
-		s.accountLogger(account).WithFields(map[string]interface{}{
-			"component": "runner",
+	s.accountLogger(account).Infof("Create new trigger")
+	trigger := NewTimelineTrigger(
+		s.logger.WithFields(map[string]interface{}{
+			"component": "trigger",
+			"timeline":  account,
 		}),
 		s.ingesterFor(account),
-		NewTimeline(s.client.ForAccount(account), cfg.TimelineConfig, state, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
-		cfg.PollingPeriod,
+		NewTimeline(s.client, s.config.TimelineConfig, state, s.timelineOptions...),
 	)
-	s.accountRunners[account] = runner
-
-	go func(runner *Runner) {
-		err := runner.Run(context.Background())
-		if err != nil {
-			panic(err)
+	if account != "" {
+		if s.accountTriggers == nil {
+			s.accountTriggers = make(map[string]*timelineTrigger)
 		}
-	}(runner)
+		s.accountTriggers[account] = trigger
+	}
+	return trigger
+}
+
+func (s *Scheduler) triggerFetch(account string) {
+	s.triggersLock.RLock()
+	trigger, ok := s.accountTriggers[account]
+	s.triggersLock.RUnlock()
+
+	if !ok {
+		trigger = s.createTrigger(account, s.state.Accounts[account])
+	}
+
+	go func() {
+		err := trigger.Fetch(context.Background())
+		if err != nil {
+			s.logger.Errorf("Error triggering connected account fetching: %s", err)
+		}
+	}()
 }
 
 func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction, account string, commitState TimelineState, tail bool) error {
@@ -101,7 +115,7 @@ func (s *Scheduler) ingest(ctx context.Context, bts []*stripe.BalanceTransaction
 				newState.Accounts = map[string]TimelineState{}
 			}
 			newState.Accounts[ca] = TimelineState{}
-			s.createRunner(ca, s.config, TimelineState{})
+			s.triggerFetch(ca)
 		}
 	}
 
@@ -139,8 +153,7 @@ func (s *Scheduler) Start(ctx context.Context) error {
 			"component": "runner",
 			"timeline":  "main",
 		}),
-		s.ingesterFor(""),
-		NewTimeline(s.client, s.config.TimelineConfig, s.state.TimelineState, append(s.timelineOptions, WithTimelineExpand("data.source"))...),
+		s.createTrigger("", s.state.TimelineState),
 		s.config.PollingPeriod,
 	)
 
@@ -152,8 +165,8 @@ func (s *Scheduler) Start(ctx context.Context) error {
 	}()
 
 	if s.state.Accounts != nil {
-		for account, accountState := range s.state.Accounts {
-			s.createRunner(account, s.config, accountState)
+		for account := range s.state.Accounts {
+			s.triggerFetch(account)
 		}
 	}
 
@@ -172,22 +185,18 @@ func (s *Scheduler) Stop(ctx context.Context) error {
 		s.logger.Infof("Main runner stopped!")
 	}
 	wg := sync.WaitGroup{}
-	wg.Add(len(s.accountRunners))
-	for account, runner := range s.accountRunners {
-		go func(runner *Runner) {
+	wg.Add(len(s.accountTriggers))
+	for account, trigger := range s.accountTriggers {
+		go func(trigger *timelineTrigger) {
 			defer wg.Done()
 			logger := s.logger.WithFields(map[string]any{
 				"account": account,
 			})
-			logger.Infof("Stopping account runner...")
-			err := runner.Stop(ctx)
-			if err != nil {
-				logger.Infof("Error stopping runner: %s", err)
-				return
-			}
-			delete(s.accountRunners, account)
-			logger.Infof("Runner stopped")
-		}(runner)
+			logger.Infof("Stopping account trigger...")
+			trigger.Cancel(ctx)
+			delete(s.accountTriggers, account)
+			logger.Infof("Trigger stopped")
+		}(trigger)
 	}
 	wg.Wait()
 	return nil
@@ -203,12 +212,14 @@ func NewScheduler(
 	opts ...TimelineOption) *Scheduler {
 	return &Scheduler{
 		logObjectStorage: logObjectStorage,
-		logger:           logger,
-		accountRunners:   map[string]*Runner{},
-		ingester:         ingester,
-		config:           cfg,
-		state:            state,
-		timelineOptions:  opts,
-		client:           client,
+		logger: logger.WithFields(map[string]any{
+			"component": "scheduler",
+		}),
+		accountTriggers: map[string]*timelineTrigger{},
+		ingester:        ingester,
+		config:          cfg,
+		state:           state,
+		timelineOptions: opts,
+		client:          client,
 	}
 }
