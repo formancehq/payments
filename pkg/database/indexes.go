@@ -47,6 +47,15 @@ var indexes = map[string][]mongo.IndexModel{
 			},
 			Options: options.Index().SetName("payment-type"),
 		},
+		{
+			Keys: bsonx.Doc{
+				bsonx.Elem{
+					Key:   "reference",
+					Value: bsonx.Int32(1),
+				},
+			},
+			Options: options.Index().SetName("payment-reference"),
+		},
 	},
 }
 
