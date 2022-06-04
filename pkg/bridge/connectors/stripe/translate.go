@@ -2,9 +2,11 @@ package stripe
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	payment "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/stripe/stripe-go/v72"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -126,6 +128,15 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		paymentData *payment.Data
 		adjustment  *payment.Adjustment
 	)
+	defer func() {
+		// DEBUG
+		if e := recover(); e != nil {
+			fmt.Println("Error translating transaction")
+			debug.PrintStack()
+			spew.Dump(bt)
+			panic(e)
+		}
+	}()
 
 	formatAsset := func(cur stripe.Currency) string {
 		asset := strings.ToUpper(string(cur))
