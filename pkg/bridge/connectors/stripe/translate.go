@@ -138,6 +138,10 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		}
 	}()
 
+	if bt.Source == nil {
+		return bridge.BatchElement{}, false
+	}
+
 	formatAsset := func(cur stripe.Currency) string {
 		asset := strings.ToUpper(string(cur))
 		def, ok := currencies[asset]
