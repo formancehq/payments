@@ -1,5 +1,5 @@
 package payments
 
 const Collection = "Payments"
-const ConnectorConfigsCollection = "Configs"
+const ConnectorConfigsCollection = "Connectors"
 const ConnectorStatesCollection = "States"

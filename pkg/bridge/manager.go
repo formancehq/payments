@@ -7,6 +7,8 @@ import (
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.mongodb.org/mongo-driver/mongo/readconcern"
+	"go.mongodb.org/mongo-driver/mongo/writeconcern"
 )
 
 var (
@@ -31,7 +33,7 @@ func (l *ConnectorManager[CONFIG, STATE]) Configure(ctx context.Context, config 
 	l.logger(ctx).WithFields(map[string]interface{}{
 		"config": config,
 	}).Info("Updating connector config")
-	_, err := l.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
+	_, err := l.db.Collection(payment.ConnectorConfigsCollection).UpdateOne(ctx, map[string]any{
 		"provider": l.name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -49,7 +51,7 @@ func (l *ConnectorManager[CONFIG, STATE]) Configure(ctx context.Context, config 
 func (l *ConnectorManager[CONFIG, STATE]) Enable(ctx context.Context) error {
 
 	l.logger(ctx).Info("Enabling connector")
-	_, err := l.db.Collection("Connectors").UpdateOne(ctx, map[string]any{
+	_, err := l.db.Collection(payment.ConnectorConfigsCollection).UpdateOne(ctx, map[string]any{
 		"provider": l.name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -66,16 +68,20 @@ func (l *ConnectorManager[CONFIG, STATE]) Enable(ctx context.Context) error {
 func (l *ConnectorManager[CONFIG, STATE]) ReadConfig(ctx context.Context) (*CONFIG, bool, error) {
 	c := &payment.Connector[CONFIG]{}
 
-	ret := l.db.Collection("Connectors").FindOne(ctx, map[string]any{
+	l.logger(ctx).Infof("Will find config")
+	ret := l.db.Collection(payment.ConnectorConfigsCollection).FindOne(ctx, map[string]any{
 		"provider": l.name,
 	})
+	l.logger(ctx).Infof("Config query terminated")
 	if ret.Err() != nil {
 		if ret.Err() == mongo.ErrNoDocuments {
 			return nil, false, ErrNotFound
 		}
 		return nil, false, ret.Err()
 	}
+	l.logger(ctx).Infof("Decode config")
 	err := ret.Decode(c)
+	l.logger(ctx).Infof("Decode config terminated")
 	if err != nil {
 		return nil, false, err
 	}
@@ -230,7 +236,7 @@ func (l *ConnectorManager[CONFIG, STATE]) Reset(ctx context.Context) error {
 			}
 			deleted = ret.DeletedCount
 			return nil, l.ResetState(ctx)
-		})
+		}, options.Transaction().SetReadConcern(readconcern.Snapshot()).SetWriteConcern(writeconcern.New(writeconcern.WMajority())))
 		if err == nil {
 			l.logger(ctx).Infof("%d payments deleted", deleted)
 		}
