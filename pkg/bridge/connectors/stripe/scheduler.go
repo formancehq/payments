@@ -187,7 +187,7 @@ func (s *Scheduler) Stop(ctx context.Context) error {
 	wg := sync.WaitGroup{}
 	wg.Add(len(s.accountTriggers))
 	for account, trigger := range s.accountTriggers {
-		go func(trigger *timelineTrigger) {
+		go func(account string, trigger *timelineTrigger) {
 			defer wg.Done()
 			logger := s.logger.WithFields(map[string]any{
 				"account": account,
@@ -195,7 +195,7 @@ func (s *Scheduler) Stop(ctx context.Context) error {
 			logger.Infof("Stopping account trigger...")
 			trigger.Cancel(ctx)
 			logger.Infof("Trigger stopped")
-		}(trigger)
+		}(account, trigger)
 	}
 	wg.Wait()
 	s.accountTriggers = make(map[string]*timelineTrigger)
