@@ -173,25 +173,12 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 		"startingAt": startingAt,
 	}).Debugf("Ingest batch")
 
-	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-			payments, err := i.processBatch(ctx, batch)
+	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) (err error) {
+		var payments []payment.Payment
+		_, err = ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			payments, err = i.processBatch(ctx, batch)
 			if err != nil {
 				return nil, err
-			}
-			payments = Filter(payments, payment.Payment.HasInitialValue)
-
-			if i.publisher != nil {
-				for _, e := range payments {
-					err = i.publisher.Publish(ctx, PaymentsTopics, Event{
-						Date:    time.Now(),
-						Type:    "SAVED_PAYMENT",
-						Payload: e.Computed(),
-					})
-					if err != nil {
-						i.logger.Errorf("Error publishing payment: %s", err)
-					}
-				}
 			}
 
 			i.logger.Debugf("Update state")
@@ -209,6 +196,20 @@ func (i *defaultIngester[STATE]) Ingest(ctx context.Context, batch Batch, commit
 			}
 			return nil, nil
 		})
+		payments = Filter(payments, payment.Payment.HasInitialValue)
+
+		if i.publisher != nil {
+			for _, e := range payments {
+				err = i.publisher.Publish(ctx, PaymentsTopics, Event{
+					Date:    time.Now(),
+					Type:    "SAVED_PAYMENT",
+					Payload: e.Computed(),
+				})
+				if err != nil {
+					i.logger.Errorf("Error publishing payment: %s", err)
+				}
+			}
+		}
 		return err
 	})
 	if err != nil {
