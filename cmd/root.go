@@ -222,9 +222,9 @@ var rootCmd = &cobra.Command{
 		if !viper.GetBool(debugFlag) {
 			options = append(options, fx.NopLogger)
 		}
-		if viper.GetBool(otelTracesFlag) {
-			options = append(options, database.MongoMonitor())
-		}
+		//if viper.GetBool(otelTracesFlag) {
+		//	options = append(options, database.MongoMonitor())
+		//}
 		options = append(options,
 			database.MongoModule(mongodbUri, mongodbDatabase),
 			sharedotlptraces.TracesModule(sharedotlptraces.ModuleConfig{
