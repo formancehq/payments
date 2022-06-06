@@ -3,8 +3,8 @@ package stripe
 import (
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
-	payment "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge"
+	"github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/stripe/stripe-go/v72"
 	"runtime/debug"
 	"strings"
@@ -122,11 +122,11 @@ var currencies = map[string]currency{
 	"ZWD": {2}, //  Zimbabwe Dollar
 }
 
-func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.BatchElement, bool) {
+func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.BatchElement, bool) {
 	var (
-		identifier  payment.Identifier
-		paymentData *payment.Data
-		adjustment  *payment.Adjustment
+		reference   payments.Referenced
+		paymentData *payments.Data
+		adjustment  *payments.Adjustment
 	)
 	defer func() {
 		// DEBUG
@@ -139,7 +139,7 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 	}()
 
 	if bt.Source == nil {
-		return bridge.BatchElement{}, false
+		return ingestion.BatchElement{}, false
 	}
 
 	formatAsset := func(cur stripe.Currency) string {
@@ -154,134 +154,147 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		return fmt.Sprintf("%s/%d", asset, def.decimals)
 	}
 
+	convertPayoutStatus := func() (status payments.Status) {
+		switch bt.Source.Payout.Status {
+		case stripe.PayoutStatusCanceled:
+			status = payments.StatusCancelled
+		case stripe.PayoutStatusFailed:
+			status = payments.StatusFailed
+		case stripe.PayoutStatusInTransit, stripe.PayoutStatusPending:
+			status = payments.StatusPending
+		case stripe.PayoutStatusPaid:
+			status = payments.StatusSucceeded
+		}
+		return
+	}
+
 	switch bt.Type {
 	case "charge":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Charge.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		paymentData = &payment.Data{
-			Status:        string(bt.Status),
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Charge.Amount,
 			Asset:         formatAsset(bt.Source.Charge.Currency),
 			Raw:           bt,
-			Scheme:        payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
+			Scheme:        payments.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "payout":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      payment.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		paymentData = &payment.Data{
-			Status:        string(bt.Status),
+		paymentData = &payments.Data{
+			Status:        convertPayoutStatus(),
 			InitialAmount: bt.Source.Payout.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Payout.Currency),
-			Scheme:        "", // TODO
-			CreatedAt:     time.Unix(bt.Created, 0),
+			Scheme: func() payments.Scheme {
+				switch bt.Source.Payout.Type {
+				case "bank_account":
+					return payments.SchemeSepaCredit
+				case "card":
+					return payments.Scheme(bt.Source.Payout.Card.Brand)
+				}
+				return payments.SchemeUnknown
+			}(),
+			CreatedAt: time.Unix(bt.Created, 0),
 		}
 
 	case "transfer":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Transfer.ID,
-			Type:      payment.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		paymentData = &payment.Data{
-			Status:        string(bt.Status),
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Transfer.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Transfer.Currency),
-			Scheme:        payment.SchemeSepa, // TODO: Check with clem
+			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "refund":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Refund.Charge.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &payment.Adjustment{
-			Status: string(bt.Status),
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusSucceeded,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	case "payment":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Charge.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		paymentData = &payment.Data{
-			Status:        string(bt.Status),
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Charge.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Charge.Currency),
-			Scheme:        payment.SchemeSepa,
+			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
-	case "stripe_fee":
-	case "network_cost":
 	case "payout_cancel":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      payment.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		adjustment = &payment.Adjustment{
-			Status:   string(bt.Status),
+		adjustment = &payments.Adjustment{
+			Status:   convertPayoutStatus(),
 			Amount:   0,
 			Date:     time.Unix(bt.Created, 0),
 			Raw:      bt,
 			Absolute: true,
 		}
 	case "payout_failure":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &payment.Adjustment{
-			Status:   string(bt.Status),
+		adjustment = &payments.Adjustment{
+			Status:   convertPayoutStatus(),
 			Amount:   0,
 			Date:     time.Unix(bt.Created, 0),
 			Raw:      bt,
 			Absolute: true,
 		}
 	case "payment_refund":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Refund.Charge.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &payment.Adjustment{
-			Status: string(bt.Status),
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusSucceeded,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	case "adjustment":
-		identifier = payment.Identifier{
-			Provider:  connectorName,
+		reference = payments.Referenced{
 			Reference: bt.Source.Dispute.Charge.ID,
-			Type:      payment.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &payment.Adjustment{
-			Status: string(bt.Status),
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusCancelled,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
+	case "stripe_fee", "network_cost":
+		return ingestion.BatchElement{}, true
 	default:
-		return bridge.BatchElement{}, false
+		return ingestion.BatchElement{}, false
 	}
 
-	return bridge.BatchElement{
-		Identifier: identifier,
+	return ingestion.BatchElement{
+		Referenced: reference,
 		Payment:    paymentData,
 		Adjustment: adjustment,
 		Forward:    forward,

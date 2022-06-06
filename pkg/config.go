@@ -9,7 +9,3 @@ type EmptyConnectorConfig struct{}
 func (cfg EmptyConnectorConfig) Validate() error {
 	return nil
 }
-
-type ConnectorState interface{}
-
-type EmptyConnectorState struct{}

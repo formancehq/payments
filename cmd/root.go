@@ -17,9 +17,9 @@ import (
 	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
 	"github.com/numary/payments/pkg/api"
-	"github.com/numary/payments/pkg/bridge"
-	"github.com/numary/payments/pkg/bridge/connectors/noop"
+	"github.com/numary/payments/pkg/bridge/cdi"
 	"github.com/numary/payments/pkg/bridge/connectors/stripe"
+	bridgeHttp "github.com/numary/payments/pkg/bridge/http"
 	"github.com/numary/payments/pkg/database"
 	paymentapi "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
@@ -97,7 +97,7 @@ func HTTPModule() fx.Option {
 				},
 			})
 		}),
-		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []bridge.ConnectorHandler) (*mux.Router, error) {
+		fx.Provide(fx.Annotate(func(db *mongo.Database, client *mongo.Client, handlers []cdi.ConnectorHandler) (*mux.Router, error) {
 
 			rootMux := mux.NewRouter()
 			if viper.GetBool(otelTracesFlag) {
@@ -134,7 +134,7 @@ func HTTPModule() fx.Option {
 					parts := strings.SplitN(kv, ":", 2)
 					credentials[parts[0]] = sharedauth.Credential{
 						Password: parts[1],
-						Scopes:   append(api.AllScopes, bridge.AllScopes...),
+						Scopes:   append(api.AllScopes, bridgeHttp.AllScopes...),
 					}
 				}
 				methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
@@ -163,13 +163,9 @@ func HTTPModule() fx.Option {
 
 			return rootMux, nil
 		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
-		bridge.ConnectorModule[stripe.Config, stripe.State, *stripe.Connector](
+		cdi.ConnectorModule[stripe.Config, stripe.TaskDescriptor, stripe.TimelineState](
 			viper.GetBool(authBearerUseScopesFlag),
-			bridge.LoaderFn[stripe.Config, stripe.State, *stripe.Connector](stripe.NewConnector),
-		),
-		bridge.ConnectorModule[noop.Config, noop.State, *noop.Connector](
-			viper.GetBool(authBearerUseScopesFlag),
-			bridge.LoaderFn[noop.Config, noop.State, *noop.Connector](noop.NewConnector),
+			stripe.NewLoader(),
 		),
 	)
 }

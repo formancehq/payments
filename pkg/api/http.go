@@ -115,8 +115,8 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
-			Data: ret,
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]payments.Payment]{
+			Data: &ret,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
@@ -155,8 +155,8 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse{
-			Data: ob.Items[0],
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
+			Data: &ob.Items[0],
 		})
 		if err != nil {
 			handleServerError(w, r, err)

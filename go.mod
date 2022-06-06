@@ -8,7 +8,7 @@ require (
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/gobeam/stringy v0.0.5
 	github.com/gorilla/mux v1.8.0
-	github.com/numary/go-libs v0.0.0-20220520102151-5ca12f3c7926
+	github.com/numary/go-libs v0.0.0-20220614122310-19e6f94d07c3
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1

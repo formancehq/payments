@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
+	"github.com/numary/payments/pkg/bridge/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v72"
 	"net/http"
@@ -83,7 +84,7 @@ func (e *clientMockExpectation) handle(ctx context.Context, options ...ClientOpt
 }
 
 type clientMock struct {
-	expectations *FIFO[*clientMockExpectation]
+	expectations *utils.FIFO[*clientMockExpectation]
 }
 
 func (m *clientMock) ForAccount(account string) Client {
@@ -109,7 +110,7 @@ func (m *clientMock) Expect() *clientMockExpectation {
 
 func NewClientMock(t *testing.T, expectationsShouldBeConsumed bool) *clientMock {
 	m := &clientMock{
-		expectations: &FIFO[*clientMockExpectation]{},
+		expectations: &utils.FIFO[*clientMockExpectation]{},
 	}
 	if expectationsShouldBeConsumed {
 		t.Cleanup(func() {

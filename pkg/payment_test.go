@@ -11,9 +11,11 @@ func TestPayment(t *testing.T) {
 	now := time.Now()
 	p := Payment{
 		Identifier: Identifier{
-			Provider:  "testing",
-			Reference: uuid.New(),
-			Type:      TypePayIn,
+			Provider: "testing",
+			Referenced: Referenced{
+				Reference: uuid.New(),
+				Type:      TypePayIn,
+			},
 		},
 		Data: Data{
 			Status:        "success",
