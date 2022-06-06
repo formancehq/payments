@@ -8,32 +8,50 @@ import (
 )
 
 type Scheme string
+type Status string
 
 const (
-	SchemeVisa       Scheme = "visa"
-	SchemeMasterCard Scheme = "mastercard"
-	SchemeApplePay   Scheme = "apple pay"
-	SchemeGooglePay  Scheme = "google pay"
+	SchemeUnknown Scheme = "unknown"
+	SchemeOther   Scheme = "other"
+
+	SchemeCardVisa       Scheme = "visa"
+	SchemeCardMasterCard Scheme = "mastercard"
+	SchemeCardAmex       Scheme = "amex"
+	SchemeCardDiners     Scheme = "diners"
+	SchemeCardDiscover   Scheme = "discover"
+	SchemeCardJCB        Scheme = "jcb"
+	SchemeCardUnionPay   Scheme = "unionpay"
+
 	SchemeSepaDebit  Scheme = "sepa debit"
 	SchemeSepaCredit Scheme = "sepa credit"
 	SchemeSepa       Scheme = "sepa"
-	SchemeA2A        Scheme = "a2a"
-	SchemeAchDebit   Scheme = "ach debit"
-	SchemeAch        Scheme = "ach"
-	SchemeRtp        Scheme = "rtp"
-	SchemeOther      Scheme = "other"
+
+	SchemeApplePay  Scheme = "apple pay"
+	SchemeGooglePay Scheme = "google pay"
+
+	SchemeA2A      Scheme = "a2a"
+	SchemeAchDebit Scheme = "ach debit"
+	SchemeAch      Scheme = "ach"
+	SchemeRtp      Scheme = "rtp"
 
 	TypePayIn  = "pay-in"
 	TypePayout = "payout"
 	TypeOther  = "other"
 
-	StatusSucceeded = "succeeded"
+	StatusSucceeded Status = "succeeded"
+	StatusCancelled Status = "cancelled"
+	StatusFailed    Status = "failed"
+	StatusPending   Status = "pending"
 )
 
-type Identifier struct {
-	Provider  string `json:"provider" bson:"provider"`
+type Referenced struct {
 	Reference string `json:"reference" bson:"reference"`
 	Type      string `json:"type" bson:"type"`
+}
+
+type Identifier struct {
+	Referenced `bson:",inline"`
+	Provider   string `json:"provider" bson:"provider"`
 }
 
 func (i Identifier) String() string {
@@ -58,7 +76,7 @@ func IdentifierFromString(v string) (*Identifier, error) {
 }
 
 type Adjustment struct {
-	Status   string      `json:"status" bson:"status"`
+	Status   Status      `json:"status" bson:"status"`
 	Amount   int64       `json:"amount" bson:"amount"`
 	Date     time.Time   `json:"date" bson:"date"`
 	Raw      interface{} `json:"raw" bson:"raw"`
@@ -66,7 +84,7 @@ type Adjustment struct {
 }
 
 type Data struct {
-	Status        string      `json:"status" bson:"status"`
+	Status        Status      `json:"status" bson:"status"`
 	InitialAmount int64       `json:"initialAmount" bson:"initialAmount"`
 	Scheme        Scheme      `json:"scheme" bson:"scheme"`
 	Asset         string      `json:"asset" bson:"asset"`

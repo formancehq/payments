@@ -14,7 +14,9 @@ func NewTimelineTrigger(
 	tl *timeline,
 ) *timelineTrigger {
 	return &timelineTrigger{
-		logger:   logger,
+		logger: logger.WithFields(map[string]interface{}{
+			"component": "timeline-trigger",
+		}),
 		ingester: ingester,
 		timeline: tl,
 		sem:      semaphore.NewWeighted(1),
@@ -91,13 +93,13 @@ func (t *timelineTrigger) triggerPage(ctx context.Context, tail bool) (bool, err
 
 	hasMore, futureState, commitFn, err := method(ctx, &ret)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "fetching timeline")
 	}
 
 	logger.Debug("Ingest batch")
 	err = t.ingester.Ingest(ctx, ret, futureState, tail)
 	if err != nil {
-		return false, err
+		return false, errors.Wrap(err, "ingesting batch")
 	}
 
 	commitFn()

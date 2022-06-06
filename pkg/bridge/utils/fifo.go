@@ -1,4 +1,4 @@
-package stripe
+package utils
 
 import "sync"
 
@@ -22,6 +22,16 @@ func (s *FIFO[ITEM]) Pop() (ret ITEM, ok bool) {
 	}
 	s.items = s.items[1:]
 	return
+}
+
+func (s *FIFO[ITEM]) Peek() (ret ITEM, ok bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if len(s.items) == 0 {
+		return
+	}
+	return s.items[0], true
 }
 
 func (s *FIFO[ITEM]) Push(i ITEM) *FIFO[ITEM] {

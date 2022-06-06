@@ -12,7 +12,9 @@ func NewRunner(
 	pollingPeriod time.Duration,
 ) *Runner {
 	return &Runner{
-		logger:        logger,
+		logger: logger.WithFields(map[string]interface{}{
+			"component": "runner",
+		}),
 		trigger:       trigger,
 		pollingPeriod: pollingPeriod,
 		stopChan:      make(chan chan struct{}),

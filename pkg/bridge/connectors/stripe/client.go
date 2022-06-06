@@ -34,7 +34,6 @@ type Client interface {
 type defaultClient struct {
 	httpClient    *http.Client
 	apiKey        string
-	pool          *pool
 	stripeAccount string
 }
 
@@ -62,10 +61,7 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	req.SetBasicAuth(d.apiKey, "") // gfyrag: really weird authentication right?
 
 	var httpResponse *http.Response
-	err = d.pool.Push(ctx, func(ctx context.Context) error {
-		httpResponse, err = d.httpClient.Do(req)
-		return err
-	})
+	httpResponse, err = d.httpClient.Do(req)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "doing request")
 	}
@@ -84,11 +80,10 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	return rsp.Data, rsp.HasMore, nil
 }
 
-func NewDefaultClient(httpClient *http.Client, pool *pool, apiKey string) *defaultClient {
+func NewDefaultClient(httpClient *http.Client, apiKey string) *defaultClient {
 	return &defaultClient{
 		httpClient: httpClient,
 		apiKey:     apiKey,
-		pool:       pool,
 	}
 }
 
