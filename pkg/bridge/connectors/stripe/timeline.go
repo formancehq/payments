@@ -26,19 +26,13 @@ func (fn TimelineOptionFn) apply(c *timeline) {
 	fn(c)
 }
 
-func WithTimelineExpand(v ...string) TimelineOptionFn {
-	return func(c *timeline) {
-		c.expand = v
-	}
-}
-
 func WithStartingAt(v time.Time) TimelineOptionFn {
 	return func(c *timeline) {
 		c.startingAt = v
 	}
 }
 
-var defaultOptions = []TimelineOption{}
+var defaultOptions = make([]TimelineOption, 0)
 
 func NewTimeline(client Client, cfg TimelineConfig, state TimelineState, options ...TimelineOption) *timeline {
 	c := &timeline{
@@ -58,7 +52,6 @@ func NewTimeline(client Client, cfg TimelineConfig, state TimelineState, options
 type timeline struct {
 	state                  TimelineState
 	firstIDAfterStartingAt string
-	expand                 []string
 	startingAt             time.Time
 	config                 TimelineConfig
 	client                 Client
@@ -68,9 +61,7 @@ func (tl *timeline) doRequest(ctx context.Context, queryParams url.Values, to *[
 
 	options := make([]ClientOption, 0)
 	options = append(options, QueryParam("limit", fmt.Sprintf("%d", tl.config.PageSize)))
-	for _, e := range tl.expand {
-		options = append(options, QueryParam("expand[]", e))
-	}
+	options = append(options, QueryParam("expand[]", "data.source"))
 	for k, v := range queryParams {
 		options = append(options, QueryParam(k, v[0]))
 	}

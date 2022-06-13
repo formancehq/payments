@@ -2,9 +2,11 @@ package stripe
 
 import (
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	payment "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge"
 	"github.com/stripe/stripe-go/v72"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -126,6 +128,19 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		paymentData *payment.Data
 		adjustment  *payment.Adjustment
 	)
+	defer func() {
+		// DEBUG
+		if e := recover(); e != nil {
+			fmt.Println("Error translating transaction")
+			debug.PrintStack()
+			spew.Dump(bt)
+			panic(e)
+		}
+	}()
+
+	if bt.Source == nil {
+		return bridge.BatchElement{}, false
+	}
 
 	formatAsset := func(cur stripe.Currency) string {
 		asset := strings.ToUpper(string(cur))
@@ -152,7 +167,7 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 			Asset:         formatAsset(bt.Source.Charge.Currency),
 			Raw:           bt,
 			Scheme:        payment.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
-			CreatedAt:     time.Unix(bt.Source.Charge.Created, 0),
+			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "payout":
 		identifier = payment.Identifier{
@@ -166,7 +181,7 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Payout.Currency),
 			Scheme:        "", // TODO
-			CreatedAt:     time.Unix(bt.Source.Payout.Created, 0),
+			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 
 	case "transfer":
@@ -181,7 +196,7 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Transfer.Currency),
 			Scheme:        payment.SchemeSepa, // TODO: Check with clem
-			CreatedAt:     time.Unix(bt.Source.Transfer.Created, 0),
+			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "refund":
 		identifier = payment.Identifier{
@@ -192,7 +207,7 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		adjustment = &payment.Adjustment{
 			Status: string(bt.Status),
 			Amount: bt.Amount,
-			Date:   time.Unix(bt.Source.Refund.Created, 0),
+			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	case "payment":
@@ -207,10 +222,23 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Charge.Currency),
 			Scheme:        payment.SchemeSepa,
-			CreatedAt:     time.Unix(bt.Source.Charge.Created, 0),
+			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "stripe_fee":
 	case "network_cost":
+	case "payout_cancel":
+		identifier = payment.Identifier{
+			Provider:  connectorName,
+			Reference: bt.Source.Payout.ID,
+			Type:      payment.TypePayout,
+		}
+		adjustment = &payment.Adjustment{
+			Status:   string(bt.Status),
+			Amount:   0,
+			Date:     time.Unix(bt.Created, 0),
+			Raw:      bt,
+			Absolute: true,
+		}
 	case "payout_failure":
 		identifier = payment.Identifier{
 			Provider:  connectorName,
@@ -233,7 +261,19 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (bridge.Bat
 		adjustment = &payment.Adjustment{
 			Status: string(bt.Status),
 			Amount: bt.Amount,
-			Date:   time.Unix(bt.Source.Refund.Created, 0),
+			Date:   time.Unix(bt.Created, 0),
+			Raw:    bt,
+		}
+	case "adjustment":
+		identifier = payment.Identifier{
+			Provider:  connectorName,
+			Reference: bt.Source.Dispute.Charge.ID,
+			Type:      payment.TypePayIn,
+		}
+		adjustment = &payment.Adjustment{
+			Status: string(bt.Status),
+			Amount: bt.Amount,
+			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	default:

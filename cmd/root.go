@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/bombsimon/logrusr/v3"
+	_ "github.com/bombsimon/logrusr/v3"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
@@ -29,6 +31,7 @@ import (
 	"github.com/xdg-go/scram"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
+	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 	"net"
 	"net/http"
@@ -192,6 +195,9 @@ var rootCmd = &cobra.Command{
 		}
 		sharedlogging.SetFactory(sharedlogging.StaticLoggerFactory(sharedlogginglogrus.New(l)))
 
+		// Add a dedicated logger for opentelemetry in case of error
+		otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
+
 		mongodbUri := viper.GetString(mongodbUriFlag)
 		if mongodbUri == "" {
 			return errors.New("missing mongodb uri")
@@ -216,9 +222,9 @@ var rootCmd = &cobra.Command{
 		if !viper.GetBool(debugFlag) {
 			options = append(options, fx.NopLogger)
 		}
-		if viper.GetBool(otelTracesFlag) {
-			options = append(options, database.MongoMonitor())
-		}
+		//if viper.GetBool(otelTracesFlag) {
+		//	options = append(options, database.MongoMonitor())
+		//}
 		options = append(options,
 			database.MongoModule(mongodbUri, mongodbDatabase),
 			sharedotlptraces.TracesModule(sharedotlptraces.ModuleConfig{

@@ -9,7 +9,7 @@ import (
 )
 
 func TestTimeline(t *testing.T) {
-	mock := NewClientMock(t)
+	mock := NewClientMock(t, true)
 	ref := time.Now()
 	tl := NewTimeline(mock, TimelineConfig{
 		PageSize: 2,
@@ -25,7 +25,10 @@ func TestTimeline(t *testing.T) {
 		Created: ref.Add(-2 * time.Minute).Unix(),
 	}
 
-	mock.Expect().Limit(2).CreatedLte(ref).RespondsWith(true, tx1, tx2)
+	mock.Expect().
+		Limit(2).
+		CreatedLte(ref).
+		RespondsWith(true, tx1, tx2)
 
 	ret := make([]*stripe.BalanceTransaction, 0)
 	hasMore, state, commit, err := tl.Tail(context.Background(), &ret)
@@ -58,5 +61,4 @@ func TestTimeline(t *testing.T) {
 		MoreRecentDate: DatePtr(time.Unix(tx1.Created, 0)),
 		NoMoreHistory:  true,
 	}, state)
-
 }
