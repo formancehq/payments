@@ -1,16 +1,17 @@
 package stripe
 
 import (
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/bridge/integration"
 	"net/http"
 	"time"
+
+	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/pkg/bridge/integration"
 )
 
 type loader struct{}
 
 func (l *loader) AllowTasks() int {
-	return 5
+	return 50
 }
 
 func (l *loader) Name() string {
