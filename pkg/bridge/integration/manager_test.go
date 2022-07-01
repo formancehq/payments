@@ -2,13 +2,14 @@ package integration
 
 import (
 	"context"
+	"testing"
+
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func ChanClosed[T any](ch chan T) bool {
@@ -88,7 +89,7 @@ func TestUninstallConnector(t *testing.T) {
 			}))
 		}).
 		WithInstall(func(ctx task.ConnectorContext[any]) error {
-			return ctx.Scheduler().Schedule(uuid.New())
+			return ctx.Scheduler().Schedule(uuid.New(), false)
 		}).
 		WithUninstall(func(ctx context.Context) error {
 			close(uninstalled)
