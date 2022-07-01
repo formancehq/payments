@@ -3,13 +3,14 @@ package task
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	payments "github.com/numary/payments/pkg"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"strings"
-	"time"
 )
 
 var (
@@ -33,7 +34,20 @@ type inMemoryStore[TaskDescriptor payments.TaskDescriptor, TaskState any] struct
 }
 
 func (s *inMemoryStore[TaskDescriptor, TaskState]) ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor, TaskState], error) {
-	panic("implement me")
+	id := payments.IDFromDescriptor(descriptor)
+	status, ok := s.statuses[id]
+	if !ok {
+		return nil, ErrNotFound
+	}
+	var zeroState TaskState
+	return &payments.TaskState[TaskDescriptor, TaskState]{
+		Provider:   provider,
+		Descriptor: descriptor,
+		Status:     status,
+		Error:      s.errors[id],
+		State:      zeroState,
+		CreatedAt:  s.created[id],
+	}, nil
 }
 
 func (s *inMemoryStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
@@ -168,6 +182,9 @@ func (m *mongoDBStore[TaskDescriptor, State]) ReadTaskState(ctx context.Context,
 		"descriptor": descriptor,
 	})
 	if ret.Err() != nil {
+		if ret.Err() == mongo.ErrNoDocuments {
+			return nil, ErrNotFound
+		}
 		return nil, ret.Err()
 	}
 	ts := payments.TaskState[TaskDescriptor, State]{}

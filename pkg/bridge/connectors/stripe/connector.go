@@ -2,6 +2,7 @@ package stripe
 
 import (
 	"context"
+
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
@@ -18,7 +19,7 @@ type Connector struct {
 func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
 	return ctx.Scheduler().Schedule(TaskDescriptor{
 		Main: true,
-	})
+	}, false)
 }
 
 func (c *Connector) Uninstall(ctx context.Context) error {

@@ -3,13 +3,14 @@ package task
 import (
 	"context"
 	"fmt"
+	"runtime/debug"
+	"sync"
+
 	"github.com/numary/go-libs/sharedlogging"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/utils"
 	"github.com/pkg/errors"
-	"runtime/debug"
-	"sync"
 )
 
 var (
@@ -40,7 +41,7 @@ func (fn ResolverFn[TaskDescriptor, TaskState]) Resolve(descriptor TaskDescripto
 }
 
 type Scheduler[TaskDescriptor payments.TaskDescriptor] interface {
-	Schedule(p TaskDescriptor) error
+	Schedule(p TaskDescriptor, restart bool) error
 }
 
 type runnerHolder[TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
@@ -70,7 +71,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor, TaskState]) ReadTask(ctx context.C
 	return s.store.ReadTaskState(ctx, s.provider, descriptor)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor, TaskState]) Schedule(descriptor TaskDescriptor) error {
+func (s *DefaultTaskScheduler[TaskDescriptor, TaskState]) Schedule(descriptor TaskDescriptor, restart bool) error {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -78,6 +79,13 @@ func (s *DefaultTaskScheduler[TaskDescriptor, TaskState]) Schedule(descriptor Ta
 	taskId := payments.IDFromDescriptor(descriptor)
 	if _, ok := s.tasks[taskId]; ok {
 		return ErrAlreadyScheduled
+	}
+
+	if !restart {
+		_, err := s.store.ReadTaskState(context.Background(), s.provider, descriptor)
+		if err == nil {
+			return nil
+		}
 	}
 
 	if len(s.tasks) >= s.maxTasks || s.stopped {

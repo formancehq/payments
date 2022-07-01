@@ -2,6 +2,7 @@ package stripe
 
 import (
 	"context"
+
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/task"
 	"github.com/pkg/errors"
@@ -43,7 +44,7 @@ func (p *mainTask) Ingest(ctx task.Context[TaskDescriptor, TimelineState], bts [
 	for _, connectedAccount := range connectedAccounts {
 		err := ctx.Scheduler().Schedule(TaskDescriptor{
 			Account: connectedAccount,
-		})
+		}, true)
 		if err != nil && err != task.ErrAlreadyScheduled {
 			return errors.Wrap(err, "scheduling connected account")
 		}

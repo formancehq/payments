@@ -3,13 +3,14 @@ package task
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor, expectedStatus payments.TaskStatus, errString string) func() bool {
@@ -66,7 +67,7 @@ func TestTaskScheduler(t *testing.T) {
 			}), 1)
 
 		descriptor := uuid.New()
-		err := scheduler.Schedule(descriptor)
+		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 
 		require.Eventually(t, TaskActive(store, provider, descriptor), time.Second, 100*time.Millisecond)
@@ -87,11 +88,11 @@ func TestTaskScheduler(t *testing.T) {
 		}), 1)
 
 		descriptor := uuid.New()
-		err := scheduler.Schedule(descriptor)
+		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 		require.Eventually(t, TaskActive(store, provider, descriptor), time.Second, 100*time.Millisecond)
 
-		err = scheduler.Schedule(descriptor)
+		err = scheduler.Schedule(descriptor, false)
 		require.Equal(t, ErrAlreadyScheduled, err)
 	})
 
@@ -114,7 +115,7 @@ func TestTaskScheduler(t *testing.T) {
 		}), 1)
 
 		descriptor := uuid.New()
-		err := scheduler.Schedule(descriptor)
+		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 		require.Eventually(t, TaskTerminated(store, provider, descriptor), time.Second, 100*time.Millisecond)
 	})
@@ -129,7 +130,7 @@ func TestTaskScheduler(t *testing.T) {
 		}), 1)
 
 		descriptor := uuid.New()
-		err := scheduler.Schedule(descriptor)
+		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 		require.Eventually(t, TaskFailed(store, provider, descriptor, "test"), time.Second, 100*time.Millisecond)
 	})
@@ -167,8 +168,8 @@ func TestTaskScheduler(t *testing.T) {
 			panic("unknown descriptor")
 		}), 1)
 
-		require.NoError(t, scheduler.Schedule(descriptor1))
-		require.NoError(t, scheduler.Schedule(descriptor2))
+		require.NoError(t, scheduler.Schedule(descriptor1, false))
+		require.NoError(t, scheduler.Schedule(descriptor2, false))
 		require.Eventually(t, TaskActive(store, provider, descriptor1), time.Second, 100*time.Millisecond)
 		require.Eventually(t, TaskPending(store, provider, descriptor2), time.Second, 100*time.Millisecond)
 		close(task1Terminated)
@@ -187,7 +188,7 @@ func TestTaskScheduler(t *testing.T) {
 				return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
 					select {
 					case <-ctx.Context().Done():
-						require.NoError(t, ctx.Scheduler().Schedule("worker"))
+						require.NoError(t, ctx.Scheduler().Schedule("worker", false))
 						return nil
 					}
 				}))
@@ -196,7 +197,7 @@ func TestTaskScheduler(t *testing.T) {
 			}
 		}), 1)
 
-		require.NoError(t, scheduler.Schedule("main"))
+		require.NoError(t, scheduler.Schedule("main", false))
 		require.Eventually(t, TaskActive(store, provider, "main"), time.Second, 100*time.Millisecond)
 		require.NoError(t, scheduler.Shutdown(context.Background()))
 		require.Eventually(t, TaskTerminated(store, provider, "main"), time.Second, 100*time.Millisecond)
