@@ -8,7 +8,6 @@ import (
 
 	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
 	payments "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -55,7 +54,7 @@ func TestTaskScheduler(t *testing.T) {
 		done := make(chan struct{})
 
 		scheduler := NewDefaultScheduler[string](provider, logger, store,
-			NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+			DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 				return func(ctx context.Context) error {
 					select {
 					case <-ctx.Done():
@@ -78,7 +77,7 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Duplicate task", func(t *testing.T) {
 		store := NewInMemoryStore[string]()
 		provider := uuid.New()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 			return func(ctx context.Context) error {
 				select {
 				case <-ctx.Done():
@@ -96,34 +95,10 @@ func TestTaskScheduler(t *testing.T) {
 		require.Equal(t, ErrAlreadyScheduled, err)
 	})
 
-	t.Run("Ingest", func(t *testing.T) {
-		provider := uuid.New()
-		store := NewInMemoryStore[string]()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
-			return func(ctx context.Context, ingester ingestion.Ingester) error {
-				return ingester.Ingest(ctx, ingestion.Batch{
-					{
-						Referenced: payments.Referenced{
-							Reference: "p1",
-							Type:      payments.TypePayIn,
-						},
-					},
-				}, State{
-					Counter: 2,
-				})
-			}
-		}), 1)
-
-		descriptor := uuid.New()
-		err := scheduler.Schedule(descriptor, false)
-		require.NoError(t, err)
-		require.Eventually(t, TaskTerminated(store, provider, descriptor), time.Second, 100*time.Millisecond)
-	})
-
 	t.Run("Error", func(t *testing.T) {
 		provider := uuid.New()
 		store := NewInMemoryStore[string]()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 			return func() error {
 				return errors.New("test")
 			}
@@ -144,7 +119,7 @@ func TestTaskScheduler(t *testing.T) {
 		task1Terminated := make(chan struct{})
 		task2Terminated := make(chan struct{})
 
-		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 			switch descriptor {
 			case descriptor1:
 				return func(ctx context.Context) error {
@@ -182,7 +157,7 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Stop scheduler", func(t *testing.T) {
 		provider := uuid.New()
 		store := NewInMemoryStore[string]()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 			switch descriptor {
 			case "main":
 				return func(ctx context.Context, scheduler Scheduler[string]) {

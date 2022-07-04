@@ -12,6 +12,7 @@ import (
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.uber.org/dig"
 	"go.uber.org/fx"
 )
 
@@ -30,10 +31,16 @@ func ConnectorModule[
 			taskStore := task.NewMongoDBStore[TaskDescriptor](db)
 			logger := sharedlogging.GetLogger(context.Background())
 			schedulerFactory := integration.TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
-				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger, taskStore, task.IngesterFactoryFn(func(ctx context.Context, provider string, descriptor payments.TaskDescriptor) ingestion.Ingester {
-					return ingestion.NewDefaultIngester(provider, descriptor, db, logger.WithFields(map[string]interface{}{
-						"task-id": payments.IDFromDescriptor(descriptor),
-					}), publisher)
+				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger, taskStore, task.ContainerFactoryFn(func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
+					container := dig.New()
+					if err := container.Provide(func() ingestion.Ingester {
+						return ingestion.NewDefaultIngester(loader.Name(), descriptor, db, logger.WithFields(map[string]interface{}{
+							"task-id": payments.IDFromDescriptor(descriptor),
+						}), publisher)
+					}); err != nil {
+						return nil, err
+					}
+					return container, nil
 				}), resolver, maxTasks)
 			})
 			return integration.NewConnectorManager[ConnectorConfig, TaskDescriptor](logger, connectorStore, loader, schedulerFactory)

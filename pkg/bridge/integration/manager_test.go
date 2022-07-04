@@ -35,7 +35,7 @@ func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor 
 	managerStore := NewInMemoryStore()
 	provider := uuid.New()
 	schedulerFactory := TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
-		return task.NewDefaultScheduler[TaskDescriptor](provider, logger, taskStore, task.NoOpIngesterFactory, resolver, maxTasks)
+		return task.NewDefaultScheduler[TaskDescriptor](provider, logger, taskStore, task.DefaultContainerFactory, resolver, maxTasks)
 	})
 
 	loader := NewLoaderBuilder[ConnectorConfig, TaskDescriptor](provider).
