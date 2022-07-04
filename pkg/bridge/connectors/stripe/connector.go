@@ -26,21 +26,14 @@ func (c *Connector) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task[TaskDescriptor, TimelineState] {
+func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
 	if descriptor.Main {
-		return &mainTask{
-			config: c.cfg,
-			client: c.client,
-		}
+		return MainTask(c.client, c.cfg)
 	}
-	return &connectedAccountTask{
-		account: descriptor.Account,
-		client:  c.client,
-		config:  c.cfg.TimelineConfig,
-	}
+	return ConnectedAccountTask(c.client, c.cfg, descriptor.Account)
 }
 
-var _ integration.Connector[TaskDescriptor, TimelineState] = &Connector{}
+var _ integration.Connector[TaskDescriptor] = &Connector{}
 
 func NewConnector(logger sharedlogging.Logger, client Client, cfg Config) *Connector {
 	return &Connector{

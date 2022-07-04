@@ -21,33 +21,33 @@ func ChanClosed[T any](ch chan T) bool {
 	}
 }
 
-type testContext[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
-	manager        *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]
-	taskStore      task.Store[TaskDescriptor, TaskState]
+type testContext[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
+	manager        *ConnectorManager[ConnectorConfig, TaskDescriptor]
+	taskStore      task.Store[TaskDescriptor]
 	connectorStore ConnectorStore
-	loader         Loader[ConnectorConfig, TaskDescriptor, TaskState]
+	loader         Loader[ConnectorConfig, TaskDescriptor]
 	provider       string
 }
 
-func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor, TaskState any](builder *ConnectorBuilder[TaskDescriptor, TaskState], callback func(ctx *testContext[ConnectorConfig, TaskDescriptor, TaskState])) {
+func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor](builder *ConnectorBuilder[TaskDescriptor], callback func(ctx *testContext[ConnectorConfig, TaskDescriptor])) {
 	logger := sharedloggingtesting.Logger()
-	taskStore := task.NewInMemoryStore[TaskDescriptor, TaskState]()
+	taskStore := task.NewInMemoryStore[TaskDescriptor]()
 	managerStore := NewInMemoryStore()
 	provider := uuid.New()
-	schedulerFactory := TaskSchedulerFactoryFn[TaskDescriptor, TaskState](func(resolver task.Resolver[TaskDescriptor, TaskState], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor, TaskState] {
-		return task.NewDefaultScheduler[TaskDescriptor, TaskState](provider, logger, taskStore, task.NoOpIngesterFactory, resolver, maxTasks)
+	schedulerFactory := TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
+		return task.NewDefaultScheduler[TaskDescriptor](provider, logger, taskStore, task.NoOpIngesterFactory, resolver, maxTasks)
 	})
 
-	loader := NewLoaderBuilder[ConnectorConfig, TaskDescriptor, TaskState](provider).
-		WithLoad(func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor, TaskState] {
+	loader := NewLoaderBuilder[ConnectorConfig, TaskDescriptor](provider).
+		WithLoad(func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor] {
 			return builder.Build()
 		}).
 		WithAllowedTasks(1).
 		Build()
-	manager := NewConnectorManager[ConnectorConfig, TaskDescriptor, TaskState](logger, managerStore, loader, schedulerFactory)
+	manager := NewConnectorManager[ConnectorConfig, TaskDescriptor](logger, managerStore, loader, schedulerFactory)
 	defer manager.Uninstall(context.Background())
 
-	callback(&testContext[ConnectorConfig, TaskDescriptor, TaskState]{
+	callback(&testContext[ConnectorConfig, TaskDescriptor]{
 		manager:        manager,
 		taskStore:      taskStore,
 		connectorStore: managerStore,
@@ -58,12 +58,12 @@ func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor 
 
 func TestInstallConnector(t *testing.T) {
 	installed := make(chan struct{})
-	builder := NewConnectorBuilder[any, any]().
+	builder := NewConnectorBuilder[any]().
 		WithInstall(func(ctx task.ConnectorContext[any]) error {
 			close(installed)
 			return nil
 		})
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
 		require.NoError(t, err)
 		require.True(t, ChanClosed(installed))
@@ -77,16 +77,17 @@ func TestUninstallConnector(t *testing.T) {
 	uninstalled := make(chan struct{})
 	taskTerminated := make(chan struct{})
 	taskStarted := make(chan struct{})
-	builder := NewConnectorBuilder[any, any]().
-		WithResolve(func(name any) task.Task[any, any] {
-			return task.NewFunctionTask[any, any](task.RunnerFn[any, any](func(ctx task.Context[any, any]) error {
+	builder := NewConnectorBuilder[any]().
+		WithResolve(func(name any) task.Task {
+			return func(ctx context.Context, stopChan task.StopChan) {
 				close(taskStarted)
 				defer close(taskTerminated)
 				select {
-				case <-ctx.Context().Done():
+				case flag := <-stopChan:
+					flag <- struct{}{}
+				case <-ctx.Done():
 				}
-				return nil
-			}))
+			}
 		}).
 		WithInstall(func(ctx task.ConnectorContext[any]) error {
 			return ctx.Scheduler().Schedule(uuid.New(), false)
@@ -95,12 +96,13 @@ func TestUninstallConnector(t *testing.T) {
 			close(uninstalled)
 			return nil
 		})
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
 		require.NoError(t, err)
 		<-taskStarted
 		require.NoError(t, tc.manager.Uninstall(context.Background()))
 		require.True(t, ChanClosed(uninstalled))
+		//TODO: We need to give a chance to the connector to properly stop execution
 		require.True(t, ChanClosed(taskTerminated))
 
 		isInstalled, err := tc.manager.IsInstalled(context.Background())
@@ -111,12 +113,12 @@ func TestUninstallConnector(t *testing.T) {
 
 func TestDisableConnector(t *testing.T) {
 	uninstalled := make(chan struct{})
-	builder := NewConnectorBuilder[any, any]().
+	builder := NewConnectorBuilder[any]().
 		WithUninstall(func(ctx context.Context) error {
 			close(uninstalled)
 			return nil
 		})
-	withManager[payments.EmptyConnectorConfig, any, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	withManager[payments.EmptyConnectorConfig, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
 		require.NoError(t, err)
 
@@ -132,8 +134,8 @@ func TestDisableConnector(t *testing.T) {
 }
 
 func TestEnableConnector(t *testing.T) {
-	builder := NewConnectorBuilder[any, any]()
-	withManager[payments.EmptyConnectorConfig, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	builder := NewConnectorBuilder[any]()
+	withManager[payments.EmptyConnectorConfig, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.connectorStore.Enable(context.Background(), tc.loader.Name())
 		require.NoError(t, err)
 
@@ -143,8 +145,8 @@ func TestEnableConnector(t *testing.T) {
 }
 
 func TestRestoreEnabledConnector(t *testing.T) {
-	builder := NewConnectorBuilder[any, any]()
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	builder := NewConnectorBuilder[any]()
+	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.connectorStore.Install(context.Background(), tc.loader.Name(), payments.EmptyConnectorConfig{})
 		require.NoError(t, err)
 
@@ -155,8 +157,8 @@ func TestRestoreEnabledConnector(t *testing.T) {
 }
 
 func TestRestoreNotInstalledConnector(t *testing.T) {
-	builder := NewConnectorBuilder[any, any]()
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any, any]) {
+	builder := NewConnectorBuilder[any]()
+	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
 		err := tc.manager.Restore(context.Background())
 		require.Equal(t, ErrNotInstalled, err)
 	})

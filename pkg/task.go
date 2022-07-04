@@ -3,8 +3,10 @@ package payments
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/gibson042/canonicaljson-go"
 	"time"
+
+	"github.com/gibson042/canonicaljson-go"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type TaskStatus string
@@ -17,23 +19,23 @@ var (
 	TaskStatusFailed     TaskStatus = "failed"
 )
 
-type TaskState[Descriptor TaskDescriptor, State any] struct {
+type TaskState[Descriptor TaskDescriptor] struct {
 	Provider   string     `json:"provider" bson:"provider"`
 	Descriptor Descriptor `json:"descriptor" bson:"descriptor"`
 	CreatedAt  time.Time  `json:"createdAt" bson:"createdAt"`
 	Status     TaskStatus `json:"status" bson:"status"`
 	Error      string     `json:"error" bson:"error"`
-	State      State      `json:"state" bson:"state"`
+	State      bson.Raw   `json:"state" bson:"state"`
 }
 
-type taskState[Descriptor any, State any] TaskState[Descriptor, State]
+type taskState[Descriptor any] TaskState[Descriptor]
 
-func (t TaskState[Descriptor, State]) MarshalJSON() ([]byte, error) {
+func (t TaskState[Descriptor]) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		taskState[Descriptor, State]
+		taskState[Descriptor]
 		ID string `json:"id"`
 	}{
-		taskState: taskState[Descriptor, State](t),
+		taskState: taskState[Descriptor](t),
 		ID:        IDFromDescriptor(t.Descriptor),
 	})
 }
