@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor, expectedStatus payments.TaskStatus, errString string) func() bool {
+func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, expectedStatus payments.TaskStatus, errString string) func() bool {
 	return func() bool {
 		status, err, ok := store.Result(provider, descriptor)
 		if !ok {
@@ -26,19 +26,19 @@ func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor, TaskState 
 	}
 }
 
-func TaskTerminated[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor) func() bool {
+func TaskTerminated[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusTerminated, "")
 }
 
-func TaskFailed[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor, errStr string) func() bool {
+func TaskFailed[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, errStr string) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusFailed, errStr)
 }
 
-func TaskPending[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor) func() bool {
+func TaskPending[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusPending, "")
 }
 
-func TaskActive[TaskDescriptor payments.TaskDescriptor, TaskState any](store *inMemoryStore[TaskDescriptor, TaskState], provider string, descriptor TaskDescriptor) func() bool {
+func TaskActive[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusActive, "")
 }
 
@@ -50,20 +50,20 @@ func TestTaskScheduler(t *testing.T) {
 	logger := sharedloggingtesting.Logger()
 
 	t.Run("Nominal", func(t *testing.T) {
-		store := NewInMemoryStore[string, any]()
+		store := NewInMemoryStore[string]()
 		provider := uuid.New()
 		done := make(chan struct{})
 
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store,
-			NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
-				return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+		scheduler := NewDefaultScheduler[string](provider, logger, store,
+			NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+				return func(ctx context.Context) error {
 					select {
-					case <-ctx.Context().Done():
-						return ctx.Context().Err()
+					case <-ctx.Done():
+						return ctx.Err()
 					case <-done:
 						return nil
 					}
-				}))
+				}
 			}), 1)
 
 		descriptor := uuid.New()
@@ -76,15 +76,15 @@ func TestTaskScheduler(t *testing.T) {
 	})
 
 	t.Run("Duplicate task", func(t *testing.T) {
-		store := NewInMemoryStore[string, any]()
+		store := NewInMemoryStore[string]()
 		provider := uuid.New()
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store, NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
-			return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+			return func(ctx context.Context) error {
 				select {
-				case <-ctx.Context().Done():
-					return ctx.Context().Err()
+				case <-ctx.Done():
+					return ctx.Err()
 				}
-			}))
+			}
 		}), 1)
 
 		descriptor := uuid.New()
@@ -98,10 +98,10 @@ func TestTaskScheduler(t *testing.T) {
 
 	t.Run("Ingest", func(t *testing.T) {
 		provider := uuid.New()
-		store := NewInMemoryStore[string, any]()
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store, NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
-			return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
-				return ctx.Ingester().Ingest(ctx.Context(), ingestion.Batch{
+		store := NewInMemoryStore[string]()
+		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+			return func(ctx context.Context, ingester ingestion.Ingester) error {
+				return ingester.Ingest(ctx, ingestion.Batch{
 					{
 						Referenced: payments.Referenced{
 							Reference: "p1",
@@ -111,7 +111,7 @@ func TestTaskScheduler(t *testing.T) {
 				}, State{
 					Counter: 2,
 				})
-			}))
+			}
 		}), 1)
 
 		descriptor := uuid.New()
@@ -122,11 +122,11 @@ func TestTaskScheduler(t *testing.T) {
 
 	t.Run("Error", func(t *testing.T) {
 		provider := uuid.New()
-		store := NewInMemoryStore[string, any]()
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store, NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
-			return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+		store := NewInMemoryStore[string]()
+		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
+			return func() error {
 				return errors.New("test")
-			}))
+			}
 		}), 1)
 
 		descriptor := uuid.New()
@@ -137,33 +137,33 @@ func TestTaskScheduler(t *testing.T) {
 
 	t.Run("Pending", func(t *testing.T) {
 		provider := uuid.New()
-		store := NewInMemoryStore[string, any]()
+		store := NewInMemoryStore[string]()
 		descriptor1 := uuid.New()
 		descriptor2 := uuid.New()
 
 		task1Terminated := make(chan struct{})
 		task2Terminated := make(chan struct{})
 
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store, NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
+		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
 			switch descriptor {
 			case descriptor1:
-				return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+				return func(ctx context.Context) error {
 					select {
 					case <-task1Terminated:
 						return nil
-					case <-ctx.Context().Done():
-						return ctx.Context().Err()
+					case <-ctx.Done():
+						return ctx.Err()
 					}
-				}))
+				}
 			case descriptor2:
-				return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+				return func(ctx context.Context) error {
 					select {
 					case <-task2Terminated:
 						return nil
-					case <-ctx.Context().Done():
-						return ctx.Context().Err()
+					case <-ctx.Done():
+						return ctx.Err()
 					}
-				}))
+				}
 			}
 			panic("unknown descriptor")
 		}), 1)
@@ -181,17 +181,16 @@ func TestTaskScheduler(t *testing.T) {
 
 	t.Run("Stop scheduler", func(t *testing.T) {
 		provider := uuid.New()
-		store := NewInMemoryStore[string, any]()
-		scheduler := NewDefaultScheduler[string, any](provider, logger, store, NoOpIngesterFactory, ResolverFn[string, any](func(descriptor string) Task[string, any] {
+		store := NewInMemoryStore[string]()
+		scheduler := NewDefaultScheduler[string](provider, logger, store, NoOpIngesterFactory, ResolverFn[string](func(descriptor string) Task {
 			switch descriptor {
 			case "main":
-				return NewFunctionTask[string, any](RunnerFn[string, any](func(ctx Context[string, any]) error {
+				return func(ctx context.Context, scheduler Scheduler[string]) {
 					select {
-					case <-ctx.Context().Done():
-						require.NoError(t, ctx.Scheduler().Schedule("worker", false))
-						return nil
+					case <-ctx.Done():
+						require.NoError(t, scheduler.Schedule("worker", false))
 					}
-				}))
+				}
 			default:
 				panic("should not be called")
 			}

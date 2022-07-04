@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+
 	"github.com/numary/go-libs/sharedlogging"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
@@ -16,29 +17,28 @@ var (
 	ErrAlreadyRunning   = errors.New("already running")
 )
 
-type TaskSchedulerFactory[TaskDescriptor payments.TaskDescriptor, TaskState any] interface {
-	Make(resolver task.Resolver[TaskDescriptor, TaskState], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor, TaskState]
+type TaskSchedulerFactory[TaskDescriptor payments.TaskDescriptor] interface {
+	Make(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor]
 }
-type TaskSchedulerFactoryFn[TaskDescriptor payments.TaskDescriptor, TaskState any] func(resolver task.Resolver[TaskDescriptor, TaskState], maxProcesses int) *task.DefaultTaskScheduler[TaskDescriptor, TaskState]
+type TaskSchedulerFactoryFn[TaskDescriptor payments.TaskDescriptor] func(resolver task.Resolver[TaskDescriptor], maxProcesses int) *task.DefaultTaskScheduler[TaskDescriptor]
 
-func (fn TaskSchedulerFactoryFn[TaskDescriptor, TaskState]) Make(resolver task.Resolver[TaskDescriptor, TaskState], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor, TaskState] {
+func (fn TaskSchedulerFactoryFn[TaskDescriptor]) Make(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
 	return fn(resolver, maxTasks)
 }
 
 type ConnectorManager[
 	Config payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor,
-	TaskState any,
 ] struct {
 	logger           sharedlogging.Logger
-	loader           Loader[Config, TaskDescriptor, TaskState]
-	connector        Connector[TaskDescriptor, TaskState]
+	loader           Loader[Config, TaskDescriptor]
+	connector        Connector[TaskDescriptor]
 	store            ConnectorStore
-	schedulerFactory TaskSchedulerFactory[TaskDescriptor, TaskState]
-	scheduler        *task.DefaultTaskScheduler[TaskDescriptor, TaskState]
+	schedulerFactory TaskSchedulerFactory[TaskDescriptor]
+	scheduler        *task.DefaultTaskScheduler[TaskDescriptor]
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Enable(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Enable(ctx context.Context) error {
 
 	l.logger.Info("Enabling connector")
 	err := l.store.Enable(ctx, l.loader.Name())
@@ -49,7 +49,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Enable(ct
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) ReadConfig(ctx context.Context) (*ConnectorConfig, error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) ReadConfig(ctx context.Context) (*ConnectorConfig, error) {
 
 	var config ConnectorConfig
 	err := l.store.ReadConfig(ctx, l.loader.Name(), &config)
@@ -62,12 +62,12 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) ReadConfi
 	return &config, nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) load(config ConnectorConfig) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) load(config ConnectorConfig) {
 	l.connector = l.loader.Load(l.logger, config)
 	l.scheduler = l.schedulerFactory.Make(l.connector, l.loader.AllowTasks())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Install(ctx context.Context, config ConnectorConfig) (err error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.Context, config ConnectorConfig) (err error) {
 
 	l.logger.WithFields(map[string]interface{}{
 		"config": config,
@@ -103,7 +103,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Install(c
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Uninstall(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Uninstall(ctx context.Context) error {
 
 	l.logger.Infof("Uninstalling connector")
 
@@ -136,7 +136,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Uninstall
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Restore(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Restore(ctx context.Context) error {
 	l.logger.Info("Restoring state")
 
 	installed, err := l.IsInstalled(ctx)
@@ -178,29 +178,29 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Restore(c
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Disable(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Disable(ctx context.Context) error {
 	l.logger.Info("Disabling connector")
 
 	return l.store.Disable(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) IsEnabled(ctx context.Context) (bool, error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsEnabled(ctx context.Context) (bool, error) {
 	return l.store.IsEnabled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) IsInstalled(ctx context.Context) (bool, error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsInstalled(ctx context.Context) (bool, error) {
 	return l.store.IsInstalled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) ListTasksStates(ctx context.Context) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) ListTasksStates(ctx context.Context) ([]payments.TaskState[TaskDescriptor], error) {
 	return l.scheduler.ListTasks(ctx)
 }
 
-func (l ConnectorManager[Config, TaskDescriptor, TaskState]) ReadTaskState(ctx context.Context, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (l ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor], error) {
 	return l.scheduler.ReadTask(ctx, descriptor)
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Reset(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Reset(ctx context.Context) error {
 	config, err := l.ReadConfig(ctx)
 	if err != nil {
 		return err
@@ -215,14 +215,13 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]) Reset(ctx
 func NewConnectorManager[
 	ConnectorConfig payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor,
-	TaskState any,
 ](
 	logger sharedlogging.Logger,
 	store ConnectorStore,
-	loader Loader[ConnectorConfig, TaskDescriptor, TaskState],
-	schedulerFactory TaskSchedulerFactory[TaskDescriptor, TaskState],
-) *ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState] {
-	return &ConnectorManager[ConnectorConfig, TaskDescriptor, TaskState]{
+	loader Loader[ConnectorConfig, TaskDescriptor],
+	schedulerFactory TaskSchedulerFactory[TaskDescriptor],
+) *ConnectorManager[ConnectorConfig, TaskDescriptor] {
+	return &ConnectorManager[ConnectorConfig, TaskDescriptor]{
 		logger: logger.WithFields(map[string]interface{}{
 			"component": "connector-manager",
 			"provider":  loader.Name(),

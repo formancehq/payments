@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/integration"
 	. "github.com/numary/payments/pkg/http"
-	"net/http"
 )
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
@@ -26,7 +27,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func ReadConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func ReadConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		config, err := cm.ReadConfig(r.Context())
@@ -42,7 +43,7 @@ func ReadConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskD
 	}
 }
 
-func ListTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func ListTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		tasks, err := cm.ListTasksStates(r.Context())
@@ -58,7 +59,7 @@ func ListTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func ReadTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func ReadTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var descriptor Descriptor
@@ -77,7 +78,7 @@ func ReadTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDes
 	}
 }
 
-func Uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func Uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := cm.Uninstall(r.Context())
 		if err != nil {
@@ -89,7 +90,7 @@ func Uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		installed, err := cm.IsInstalled(context.Background())
@@ -122,7 +123,7 @@ func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDesc
 	}
 }
 
-func Reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](cm *integration.ConnectorManager[Config, Descriptor, TaskState]) http.HandlerFunc {
+func Reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		installed, err := cm.IsInstalled(context.Background())
@@ -145,10 +146,10 @@ func Reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescri
 	}
 }
 
-func ConnectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor, TaskState any](
+func ConnectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](
 	name string,
 	useScopes bool,
-	manager *integration.ConnectorManager[Config, Descriptor, TaskState],
+	manager *integration.ConnectorManager[Config, Descriptor],
 ) *mux.Router {
 	r := mux.NewRouter()
 	r.Path("/" + name).Methods(http.MethodPost).Handler(

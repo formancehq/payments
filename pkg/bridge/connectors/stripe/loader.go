@@ -18,7 +18,7 @@ func (l *loader) Name() string {
 	return connectorName
 }
 
-func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor, TimelineState] {
+func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 	client := NewDefaultClient(http.DefaultClient, config.ApiKey)
 	return NewConnector(logger, client, config)
 }
@@ -33,7 +33,7 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 	return cfg
 }
 
-var _ integration.Loader[Config, TaskDescriptor, TimelineState] = &loader{}
+var _ integration.Loader[Config, TaskDescriptor] = &loader{}
 
 func NewLoader() *loader {
 	return &loader{}

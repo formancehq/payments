@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"os"
+	"runtime/debug"
+	"strings"
+
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/bombsimon/logrusr/v3"
@@ -33,11 +39,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
-	"net"
-	"net/http"
-	"os"
-	"runtime/debug"
-	"strings"
 )
 
 const (
@@ -163,7 +164,7 @@ func HTTPModule() fx.Option {
 
 			return rootMux, nil
 		}, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
-		cdi.ConnectorModule[stripe.Config, stripe.TaskDescriptor, stripe.TimelineState](
+		cdi.ConnectorModule[stripe.Config, stripe.TaskDescriptor](
 			viper.GetBool(authBearerUseScopesFlag),
 			stripe.NewLoader(),
 		),

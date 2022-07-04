@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+
 	"github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
 )
@@ -9,39 +10,39 @@ import (
 // Connector provide entry point to a payment provider
 // It requires a payments.ConnectorConfigObject representing the configuration of the specific payment provider
 // as well as a payments.ConnectorState object which represents the state of the connector
-type Connector[TaskDescriptor payments.TaskDescriptor, TaskState any] interface {
+type Connector[TaskDescriptor payments.TaskDescriptor] interface {
 	// Install is used to start the connector. The implementation if in charge of scheduling all required resources.
 	Install(ctx task.ConnectorContext[TaskDescriptor]) error
 	// Uninstall is used to uninstall the connector. It has to close all related resources opened by the connector.
 	Uninstall(ctx context.Context) error
 	// Resolve is used to recover state of a failed or restarted task
-	Resolve(descriptor TaskDescriptor) task.Task[TaskDescriptor, TaskState]
+	Resolve(descriptor TaskDescriptor) task.Task
 }
 
-type ConnectorBuilder[TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
+type ConnectorBuilder[TaskDescriptor payments.TaskDescriptor] struct {
 	name      string
 	uninstall func(ctx context.Context) error
-	resolve   func(descriptor TaskDescriptor) task.Task[TaskDescriptor, TaskState]
+	resolve   func(descriptor TaskDescriptor) task.Task
 	install   func(ctx task.ConnectorContext[TaskDescriptor]) error
 }
 
-func (b *ConnectorBuilder[TaskDescriptor, TaskState]) WithUninstall(uninstallFunction func(ctx context.Context) error) *ConnectorBuilder[TaskDescriptor, TaskState] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithUninstall(uninstallFunction func(ctx context.Context) error) *ConnectorBuilder[TaskDescriptor] {
 	b.uninstall = uninstallFunction
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor, TaskState]) WithResolve(resolveFunction func(name TaskDescriptor) task.Task[TaskDescriptor, TaskState]) *ConnectorBuilder[TaskDescriptor, TaskState] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithResolve(resolveFunction func(name TaskDescriptor) task.Task) *ConnectorBuilder[TaskDescriptor] {
 	b.resolve = resolveFunction
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor, TaskState]) WithInstall(installFunction func(ctx task.ConnectorContext[TaskDescriptor]) error) *ConnectorBuilder[TaskDescriptor, TaskState] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithInstall(installFunction func(ctx task.ConnectorContext[TaskDescriptor]) error) *ConnectorBuilder[TaskDescriptor] {
 	b.install = installFunction
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor, TaskState]) Build() Connector[TaskDescriptor, TaskState] {
-	return &BuiltConnector[TaskDescriptor, TaskState]{
+func (b *ConnectorBuilder[TaskDescriptor]) Build() Connector[TaskDescriptor] {
+	return &BuiltConnector[TaskDescriptor]{
 		name:      b.name,
 		uninstall: b.uninstall,
 		resolve:   b.resolve,
@@ -49,40 +50,40 @@ func (b *ConnectorBuilder[TaskDescriptor, TaskState]) Build() Connector[TaskDesc
 	}
 }
 
-func NewConnectorBuilder[TaskDescriptor payments.TaskDescriptor, TaskState any]() *ConnectorBuilder[TaskDescriptor, TaskState] {
-	return &ConnectorBuilder[TaskDescriptor, TaskState]{}
+func NewConnectorBuilder[TaskDescriptor payments.TaskDescriptor]() *ConnectorBuilder[TaskDescriptor] {
+	return &ConnectorBuilder[TaskDescriptor]{}
 }
 
-type BuiltConnector[TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
+type BuiltConnector[TaskDescriptor payments.TaskDescriptor] struct {
 	name      string
 	uninstall func(ctx context.Context) error
-	resolve   func(name TaskDescriptor) task.Task[TaskDescriptor, TaskState]
+	resolve   func(name TaskDescriptor) task.Task
 	install   func(ctx task.ConnectorContext[TaskDescriptor]) error
 }
 
-func (b *BuiltConnector[TaskDescriptor, TaskState]) Name() string {
+func (b *BuiltConnector[TaskDescriptor]) Name() string {
 	return b.name
 }
 
-func (b *BuiltConnector[TaskDescriptor, TaskState]) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
+func (b *BuiltConnector[TaskDescriptor]) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
 	if b.install != nil {
 		return b.install(ctx)
 	}
 	return nil
 }
 
-func (b *BuiltConnector[TaskDescriptor, TaskState]) Uninstall(ctx context.Context) error {
+func (b *BuiltConnector[TaskDescriptor]) Uninstall(ctx context.Context) error {
 	if b.uninstall != nil {
 		return b.uninstall(ctx)
 	}
 	return nil
 }
 
-func (b *BuiltConnector[TaskDescriptor, TaskState]) Resolve(name TaskDescriptor) task.Task[TaskDescriptor, TaskState] {
+func (b *BuiltConnector[TaskDescriptor]) Resolve(name TaskDescriptor) task.Task {
 	if b.resolve != nil {
 		return b.resolve(name)
 	}
 	return nil
 }
 
-var _ Connector[struct{}, struct{}] = &BuiltConnector[struct{}, struct{}]{}
+var _ Connector[struct{}] = &BuiltConnector[struct{}]{}

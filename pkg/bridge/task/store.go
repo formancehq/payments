@@ -17,41 +17,40 @@ var (
 	ErrNotFound = errors.New("not found")
 )
 
-type Store[TaskDescriptor payments.TaskDescriptor, TaskState any] interface {
+type Store[TaskDescriptor payments.TaskDescriptor] interface {
 	UpdateTaskStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, err string) error
 	FindTaskAndUpdateStatus(ctx context.Context, provider string, descriptor TaskDescriptor,
-		status payments.TaskStatus, err string) (*payments.TaskState[TaskDescriptor, TaskState], error)
-	ListTaskStatesByStatus(ctx context.Context, provider string, status payments.TaskStatus) ([]payments.TaskState[TaskDescriptor, TaskState], error)
-	ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor, TaskState], error)
-	ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor, TaskState], error)
-	ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor, TaskState], error)
+		status payments.TaskStatus, err string) (*payments.TaskState[TaskDescriptor], error)
+	ListTaskStatesByStatus(ctx context.Context, provider string, status payments.TaskStatus) ([]payments.TaskState[TaskDescriptor], error)
+	ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor], error)
+	ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor], error)
+	ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor], error)
 }
 
-type inMemoryStore[TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
+type inMemoryStore[TaskDescriptor payments.TaskDescriptor] struct {
 	statuses map[string]payments.TaskStatus
 	created  map[string]time.Time
 	errors   map[string]string
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (s *inMemoryStore[TaskDescriptor]) ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor], error) {
 	id := payments.IDFromDescriptor(descriptor)
 	status, ok := s.statuses[id]
 	if !ok {
 		return nil, ErrNotFound
 	}
-	var zeroState TaskState
-	return &payments.TaskState[TaskDescriptor, TaskState]{
+	return &payments.TaskState[TaskDescriptor]{
 		Provider:   provider,
 		Descriptor: descriptor,
 		Status:     status,
 		Error:      s.errors[id],
-		State:      zeroState,
+		State:      nil,
 		CreatedAt:  s.created[id],
 	}, nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
-	ret := make([]payments.TaskState[TaskDescriptor, TaskState], 0)
+func (s *inMemoryStore[TaskDescriptor]) ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor], error) {
+	ret := make([]payments.TaskState[TaskDescriptor], 0)
 	for id, status := range s.statuses {
 		if !strings.HasPrefix(id, fmt.Sprintf("%s/", provider)) {
 			continue
@@ -60,20 +59,19 @@ func (s *inMemoryStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Co
 		var descriptor TaskDescriptor
 		payments.DescriptorFromID(id, &descriptor)
 
-		var zeroState TaskState
-		ret = append(ret, payments.TaskState[TaskDescriptor, TaskState]{
+		ret = append(ret, payments.TaskState[TaskDescriptor]{
 			Provider:   provider,
 			Descriptor: descriptor,
 			Status:     status,
 			Error:      s.errors[id],
-			State:      zeroState,
+			State:      nil,
 			CreatedAt:  s.created[id],
 		})
 	}
 	return ret, nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (s *inMemoryStore[TaskDescriptor]) ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor], error) {
 	var (
 		oldestDate time.Time
 		oldestId   string
@@ -96,24 +94,23 @@ func (s *inMemoryStore[TaskDescriptor, TaskState]) ReadOldestPendingTask(ctx con
 	var descriptor TaskDescriptor
 	payments.DescriptorFromID(descriptorStr, &descriptor)
 
-	var zeroState TaskState
-	return &payments.TaskState[TaskDescriptor, TaskState]{
+	return &payments.TaskState[TaskDescriptor]{
 		Provider:   provider,
 		Descriptor: descriptor,
 		Status:     payments.TaskStatusPending,
-		State:      zeroState,
+		State:      nil,
 		CreatedAt:  s.created[oldestId],
 	}, nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) ListTaskStatesByStatus(ctx context.Context, provider string, taskStatus payments.TaskStatus) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
+func (s *inMemoryStore[TaskDescriptor]) ListTaskStatesByStatus(ctx context.Context, provider string, taskStatus payments.TaskStatus) ([]payments.TaskState[TaskDescriptor], error) {
 
 	all, err := s.ListTaskStates(ctx, provider)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]payments.TaskState[TaskDescriptor, TaskState], 0)
+	ret := make([]payments.TaskState[TaskDescriptor], 0)
 	for _, v := range all {
 		if v.Status != taskStatus {
 			continue
@@ -124,24 +121,23 @@ func (s *inMemoryStore[TaskDescriptor, TaskState]) ListTaskStatesByStatus(ctx co
 	return ret, nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) FindTaskAndUpdateStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (s *inMemoryStore[TaskDescriptor]) FindTaskAndUpdateStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) (*payments.TaskState[TaskDescriptor], error) {
 	err := s.UpdateTaskStatus(ctx, provider, descriptor, status, taskErr)
 	if err != nil {
 		return nil, err
 	}
 
-	var zeroState TaskState
-	return &payments.TaskState[TaskDescriptor, TaskState]{
+	return &payments.TaskState[TaskDescriptor]{
 		Provider:   provider,
 		Descriptor: descriptor,
 		Status:     status,
 		//CreatedAt:  s.created[fmt.Sprintf("%s/%s", provider, name)],
 		Error: taskErr,
-		State: zeroState,
+		State: nil,
 	}, nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) UpdateTaskStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, err string) error {
+func (s *inMemoryStore[TaskDescriptor]) UpdateTaskStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, err string) error {
 	taskId := payments.IDFromDescriptor(descriptor)
 	key := fmt.Sprintf("%s/%s", provider, taskId)
 	s.statuses[key] = status
@@ -152,7 +148,7 @@ func (s *inMemoryStore[TaskDescriptor, TaskState]) UpdateTaskStatus(ctx context.
 	return nil
 }
 
-func (s *inMemoryStore[TaskDescriptor, TaskState]) Result(provider string, descriptor payments.TaskDescriptor) (payments.TaskStatus, string, bool) {
+func (s *inMemoryStore[TaskDescriptor]) Result(provider string, descriptor payments.TaskDescriptor) (payments.TaskStatus, string, bool) {
 	taskId := payments.IDFromDescriptor(descriptor)
 	key := fmt.Sprintf("%s/%s", provider, taskId)
 	status, ok := s.statuses[key]
@@ -162,21 +158,21 @@ func (s *inMemoryStore[TaskDescriptor, TaskState]) Result(provider string, descr
 	return status, s.errors[key], true
 }
 
-func NewInMemoryStore[TaskDescriptor payments.TaskDescriptor, TaskState any]() *inMemoryStore[TaskDescriptor, TaskState] {
-	return &inMemoryStore[TaskDescriptor, TaskState]{
+func NewInMemoryStore[TaskDescriptor payments.TaskDescriptor]() *inMemoryStore[TaskDescriptor] {
+	return &inMemoryStore[TaskDescriptor]{
 		statuses: make(map[string]payments.TaskStatus),
 		errors:   make(map[string]string),
 		created:  make(map[string]time.Time),
 	}
 }
 
-var _ Store[struct{}, struct{}] = &inMemoryStore[struct{}, struct{}]{}
+var _ Store[struct{}] = &inMemoryStore[struct{}]{}
 
-type mongoDBStore[TaskDescriptor payments.TaskDescriptor, TaskState any] struct {
+type mongoDBStore[TaskDescriptor payments.TaskDescriptor] struct {
 	db *mongo.Database
 }
 
-func (m *mongoDBStore[TaskDescriptor, State]) ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor, State], error) {
+func (m *mongoDBStore[TaskDescriptor]) ReadTaskState(ctx context.Context, provider string, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor], error) {
 	ret := m.db.Collection(payments.TasksCollection).FindOne(ctx, map[string]any{
 		"provider":   provider,
 		"descriptor": descriptor,
@@ -187,7 +183,7 @@ func (m *mongoDBStore[TaskDescriptor, State]) ReadTaskState(ctx context.Context,
 		}
 		return nil, ret.Err()
 	}
-	ts := payments.TaskState[TaskDescriptor, State]{}
+	ts := payments.TaskState[TaskDescriptor]{}
 	err := ret.Decode(&ts)
 	if err != nil {
 		return nil, err
@@ -196,7 +192,7 @@ func (m *mongoDBStore[TaskDescriptor, State]) ReadTaskState(ctx context.Context,
 	return &ts, nil
 }
 
-func (m *mongoDBStore[TaskDescriptor, TaskState]) ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (m *mongoDBStore[TaskDescriptor]) ReadOldestPendingTask(ctx context.Context, provider string) (*payments.TaskState[TaskDescriptor], error) {
 	ret := m.db.Collection(payments.TasksCollection).FindOne(ctx, map[string]any{
 		"provider": provider,
 		"status":   payments.TaskStatusPending,
@@ -207,7 +203,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ReadOldestPendingTask(ctx cont
 		}
 		return nil, ret.Err()
 	}
-	ps := &payments.TaskState[TaskDescriptor, TaskState]{}
+	ps := &payments.TaskState[TaskDescriptor]{}
 	err := ret.Decode(ps)
 	if err != nil {
 		return nil, err
@@ -216,7 +212,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ReadOldestPendingTask(ctx cont
 	return ps, nil
 }
 
-func (m *mongoDBStore[TaskDescriptor, TaskState]) UpdateTaskStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) error {
+func (m *mongoDBStore[TaskDescriptor]) UpdateTaskStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) error {
 	_, err := m.db.Collection(payments.TasksCollection).UpdateOne(ctx, map[string]any{
 		"provider":   provider,
 		"descriptor": descriptor,
@@ -232,7 +228,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) UpdateTaskStatus(ctx context.C
 	return err
 }
 
-func (m *mongoDBStore[TaskDescriptor, TaskState]) FindTaskAndUpdateStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) (*payments.TaskState[TaskDescriptor, TaskState], error) {
+func (m *mongoDBStore[TaskDescriptor]) FindTaskAndUpdateStatus(ctx context.Context, provider string, descriptor TaskDescriptor, status payments.TaskStatus, taskErr string) (*payments.TaskState[TaskDescriptor], error) {
 	ret := m.db.Collection(payments.TasksCollection).FindOneAndUpdate(ctx, map[string]any{
 		"provider":   provider,
 		"descriptor": descriptor,
@@ -248,7 +244,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) FindTaskAndUpdateStatus(ctx co
 	if ret.Err() != nil {
 		return nil, errors.Wrap(ret.Err(), "retrieving task")
 	}
-	ps := &payments.TaskState[TaskDescriptor, TaskState]{}
+	ps := &payments.TaskState[TaskDescriptor]{}
 	err := ret.Decode(ps)
 	if err != nil {
 		return nil, errors.Wrap(err, "decoding task state")
@@ -256,7 +252,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) FindTaskAndUpdateStatus(ctx co
 	return ps, nil
 }
 
-func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStatesByStatus(ctx context.Context, provider string, status payments.TaskStatus) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
+func (m *mongoDBStore[TaskDescriptor]) ListTaskStatesByStatus(ctx context.Context, provider string, status payments.TaskStatus) ([]payments.TaskState[TaskDescriptor], error) {
 	cursor, err := m.db.Collection(payments.TasksCollection).Find(ctx, map[string]any{
 		"provider": provider,
 		"status":   status,
@@ -267,7 +263,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStatesByStatus(ctx con
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]payments.TaskState[TaskDescriptor, TaskState], 0)
+	ret := make([]payments.TaskState[TaskDescriptor], 0)
 	err = cursor.All(ctx, &ret)
 	if err != nil {
 		return nil, err
@@ -276,7 +272,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStatesByStatus(ctx con
 	return ret, nil
 }
 
-func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor, TaskState], error) {
+func (m *mongoDBStore[TaskDescriptor]) ListTaskStates(ctx context.Context, provider string) ([]payments.TaskState[TaskDescriptor], error) {
 	cursor, err := m.db.Collection(payments.TasksCollection).Find(ctx, map[string]any{
 		"provider": provider,
 	})
@@ -286,7 +282,7 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	ret := make([]payments.TaskState[TaskDescriptor, TaskState], 0)
+	ret := make([]payments.TaskState[TaskDescriptor], 0)
 	err = cursor.All(ctx, &ret)
 	if err != nil {
 		return nil, err
@@ -295,8 +291,8 @@ func (m *mongoDBStore[TaskDescriptor, TaskState]) ListTaskStates(ctx context.Con
 	return ret, nil
 }
 
-var _ Store[struct{}, struct{}] = &mongoDBStore[struct{}, struct{}]{}
+var _ Store[struct{}] = &mongoDBStore[struct{}]{}
 
-func NewMongoDBStore[TaskDescriptor payments.TaskDescriptor, TaskState any](db *mongo.Database) *mongoDBStore[TaskDescriptor, TaskState] {
-	return &mongoDBStore[TaskDescriptor, TaskState]{db: db}
+func NewMongoDBStore[TaskDescriptor payments.TaskDescriptor](db *mongo.Database) *mongoDBStore[TaskDescriptor] {
+	return &mongoDBStore[TaskDescriptor]{db: db}
 }

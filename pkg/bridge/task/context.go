@@ -2,19 +2,9 @@ package task
 
 import (
 	"context"
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
-)
 
-type Context[TaskDescriptor payments.TaskDescriptor, TaskState any] interface {
-	Context() context.Context
-	Scheduler() Scheduler[TaskDescriptor]
-	Logger() sharedlogging.Logger
-	Ingester() ingestion.Ingester
-	State() TaskState
-	WithContext(ctx context.Context) Context[TaskDescriptor, TaskState]
-}
+	"github.com/numary/payments/pkg"
+)
 
 type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
 	Context() context.Context
