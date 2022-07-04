@@ -4,9 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/numary/payments/pkg/bridge/writeonly"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
-	"net/http"
 )
 
 type ClientOption interface {
@@ -35,6 +37,7 @@ type defaultClient struct {
 	httpClient    *http.Client
 	apiKey        string
 	stripeAccount string
+	storage       writeonly.Storage
 }
 
 func (d *defaultClient) ForAccount(account string) Client {
@@ -71,19 +74,51 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 		return nil, false, fmt.Errorf("unexpected status code: %d", httpResponse.StatusCode)
 	}
 
-	rsp := &ListResponse{}
+	type listResponse struct {
+		ListResponse
+		Data []json.RawMessage `json:"data"`
+	}
+
+	rsp := &listResponse{}
 	err = json.NewDecoder(httpResponse.Body).Decode(rsp)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "decoding response")
 	}
 
-	return rsp.Data, rsp.HasMore, nil
+	asBalanceTransactions := make([]*stripe.BalanceTransaction, 0)
+	if len(rsp.Data) > 0 {
+		asMaps := make([]any, 0)
+
+		for _, data := range rsp.Data {
+			asMap := make(map[string]interface{})
+			err := json.Unmarshal(data, &asMap)
+			if err != nil {
+				return nil, false, err
+			}
+			asMaps = append(asMaps, asMap)
+
+			asBalanceTransaction := &stripe.BalanceTransaction{}
+			err = json.Unmarshal(data, &asBalanceTransaction)
+			if err != nil {
+				return nil, false, err
+			}
+			asBalanceTransactions = append(asBalanceTransactions, asBalanceTransaction)
+		}
+
+		err = d.storage.Write(ctx, asMaps...)
+		if err != nil {
+			return nil, false, err
+		}
+	}
+
+	return asBalanceTransactions, rsp.HasMore, nil
 }
 
-func NewDefaultClient(httpClient *http.Client, apiKey string) *defaultClient {
+func NewDefaultClient(httpClient *http.Client, apiKey string, storage writeonly.Storage) *defaultClient {
 	return &defaultClient{
 		httpClient: httpClient,
 		apiKey:     apiKey,
+		storage:    storage,
 	}
 }
 

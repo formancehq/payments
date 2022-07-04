@@ -2,10 +2,12 @@ package stripe
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/task"
+	"github.com/numary/payments/pkg/bridge/writeonly"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 )
@@ -43,10 +45,10 @@ func ingest(
 	return nil
 }
 
-func MainTask(client Client, config Config) func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-	scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester) error {
+func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
+	scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester, storage writeonly.Storage) error {
 	return func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-		scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester) error {
+		scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester, storage writeonly.Storage) error {
 		runner := NewRunner(
 			logger,
 			NewTimelineTrigger(
@@ -54,7 +56,7 @@ func MainTask(client Client, config Config) func(ctx context.Context, logger sha
 				IngesterFn(func(ctx context.Context, batch []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 					return ingest(ctx, logger, scheduler, ingester, batch, commitState, tail)
 				}),
-				NewTimeline(client, config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
+				NewTimeline(NewDefaultClient(http.DefaultClient, config.ApiKey, storage), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 			),
 			config.PollingPeriod,
 		)

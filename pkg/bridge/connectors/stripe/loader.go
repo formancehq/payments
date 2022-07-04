@@ -1,7 +1,6 @@
 package stripe
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
@@ -19,8 +18,7 @@ func (l *loader) Name() string {
 }
 
 func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-	client := NewDefaultClient(http.DefaultClient, config.ApiKey)
-	return NewConnector(logger, client, config)
+	return NewConnector(logger, config)
 }
 
 func (l *loader) ApplyDefaults(cfg Config) Config {

@@ -2,14 +2,18 @@ package stripe
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/task"
+	"github.com/numary/payments/pkg/bridge/writeonly"
 	"github.com/stripe/stripe-go/v72"
 )
 
-func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
+func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester,
+	bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
+
 	batch := ingestion.Batch{}
 	for _, bt := range bts {
 		batchElement, handled := CreateBatchElement(bt, !tail)
@@ -34,9 +38,10 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 	return nil
 }
 
-func ConnectedAccountTask(client Client, config Config, account string) func(ctx context.Context, logger sharedlogging.Logger,
-	ingester ingestion.Ingester, resolver task.StateResolver) error {
-	return func(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester, resolver task.StateResolver) error {
+func ConnectedAccountTask(config Config, account string) func(ctx context.Context, logger sharedlogging.Logger,
+	ingester ingestion.Ingester, resolver task.StateResolver, storage writeonly.Storage) error {
+	return func(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester,
+		resolver task.StateResolver, storage writeonly.Storage) error {
 		logger.Infof("Create new trigger")
 
 		trigger := NewTimelineTrigger(
@@ -44,7 +49,7 @@ func ConnectedAccountTask(client Client, config Config, account string) func(ctx
 			IngesterFn(func(ctx context.Context, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 				return ingestBatch(ctx, logger, ingester, bts, commitState, tail)
 			}),
-			NewTimeline(client.ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
+			NewTimeline(NewDefaultClient(http.DefaultClient, config.ApiKey, storage).ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 		)
 		return trigger.Fetch(ctx)
 	}

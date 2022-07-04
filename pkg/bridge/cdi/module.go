@@ -11,6 +11,7 @@ import (
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
+	"github.com/numary/payments/pkg/bridge/writeonly"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/fx"
@@ -40,6 +41,9 @@ func ConnectorModule[
 					}); err != nil {
 						return nil, err
 					}
+					container.Provide(func() writeonly.Storage {
+						return writeonly.NewMongoDBStorage(db, loader.Name(), descriptor)
+					})
 					return container, nil
 				}), resolver, maxTasks)
 			})
