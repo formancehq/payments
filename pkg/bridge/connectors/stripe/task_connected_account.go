@@ -9,6 +9,31 @@ import (
 	"github.com/stripe/stripe-go/v72"
 )
 
+func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
+	batch := ingestion.Batch{}
+	for _, bt := range bts {
+		batchElement, handled := CreateBatchElement(bt, !tail)
+		if !handled {
+			logger.Debugf("Balance transaction type not handled: %s", bt.Type)
+			continue
+		}
+		if batchElement.Adjustment == nil && batchElement.Payment == nil {
+			continue
+		}
+		batch = append(batch, batchElement)
+	}
+	logger.WithFields(map[string]interface{}{
+		"state": commitState,
+	}).Debugf("updating state")
+
+	err := ingester.Ingest(ctx, batch, commitState)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func ConnectedAccountTask(client Client, config Config, account string) func(ctx context.Context, logger sharedlogging.Logger,
 	ingester ingestion.Ingester, resolver task.StateResolver) error {
 	return func(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester, resolver task.StateResolver) error {
@@ -17,29 +42,7 @@ func ConnectedAccountTask(client Client, config Config, account string) func(ctx
 		trigger := NewTimelineTrigger(
 			logger,
 			IngesterFn(func(ctx context.Context, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
-
-				batch := ingestion.Batch{}
-				for _, bt := range bts {
-					batchElement, handled := CreateBatchElement(bt, !tail)
-					if !handled {
-						logger.Debugf("Balance transaction type not handled: %s", bt.Type)
-						continue
-					}
-					if batchElement.Adjustment == nil && batchElement.Payment == nil {
-						continue
-					}
-					batch = append(batch, batchElement)
-				}
-				logger.WithFields(map[string]interface{}{
-					"state": commitState,
-				}).Debugf("updating state")
-
-				err := ingester.Ingest(ctx, batch, commitState)
-				if err != nil {
-					return err
-				}
-
-				return nil
+				return ingestBatch(ctx, logger, ingester, bts, commitState, tail)
 			}),
 			NewTimeline(client.ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 		)
