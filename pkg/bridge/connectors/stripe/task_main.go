@@ -18,26 +18,18 @@ func ingest(
 	bts []*stripe.BalanceTransaction,
 	commitState TimelineState,
 	tail bool) error {
-	connectedAccounts := make([]string, 0)
 
-	batch := ingestion.Batch{}
+	err := ingestBatch(ctx, logger, ingester, bts, commitState, tail)
+	if err != nil {
+		return err
+	}
+
+	connectedAccounts := make([]string, 0)
 	for _, bt := range bts {
-		batchElement, handled := CreateBatchElement(bt, !tail)
-		if !handled {
-			logger.Debugf("Balance transaction type not handled: %s", bt.Type)
-			continue
-		}
-		if batchElement.Adjustment == nil && batchElement.Payment == nil {
-			continue
-		}
-		batch = append(batch, batchElement)
 		if bt.Type == stripe.BalanceTransactionTypeTransfer {
 			connectedAccounts = append(connectedAccounts, bt.Source.Transfer.Destination.ID)
 		}
 	}
-	logger.WithFields(map[string]interface{}{
-		"state": commitState,
-	}).Debugf("updating state")
 
 	for _, connectedAccount := range connectedAccounts {
 		err := scheduler.Schedule(TaskDescriptor{
@@ -46,11 +38,6 @@ func ingest(
 		if err != nil && err != task.ErrAlreadyScheduled {
 			return errors.Wrap(err, "scheduling connected account")
 		}
-	}
-
-	err := ingester.Ingest(ctx, batch, commitState)
-	if err != nil {
-		return errors.Wrap(err, "ingesting batch")
 	}
 
 	return nil
