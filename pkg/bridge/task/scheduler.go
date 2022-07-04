@@ -9,8 +9,6 @@ import (
 
 	"github.com/numary/go-libs/sharedlogging"
 	payments "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
-	"github.com/numary/payments/pkg/bridge/utils"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.uber.org/dig"
@@ -21,19 +19,6 @@ var (
 	ErrUnableToResolve  = errors.New("unable to resolve task")
 )
 
-type IngesterFactory interface {
-	Make(ctx context.Context, provider string, task payments.TaskDescriptor) ingestion.Ingester
-}
-type IngesterFactoryFn func(ctx context.Context, provider string, task payments.TaskDescriptor) ingestion.Ingester
-
-func (fn IngesterFactoryFn) Make(ctx context.Context, provider string, task payments.TaskDescriptor) ingestion.Ingester {
-	return fn(ctx, provider, task)
-}
-
-var NoOpIngesterFactory IngesterFactoryFn = func(ctx context.Context, provider string, task payments.TaskDescriptor) ingestion.Ingester {
-	return ingestion.NoOpIngester()
-}
-
 type Resolver[TaskDescriptor payments.TaskDescriptor] interface {
 	Resolve(descriptor TaskDescriptor) Task
 }
@@ -42,6 +27,19 @@ type ResolverFn[TaskDescriptor payments.TaskDescriptor] func(descriptor TaskDesc
 func (fn ResolverFn[TaskDescriptor]) Resolve(descriptor TaskDescriptor) Task {
 	return fn(descriptor)
 }
+
+type ContainerFactory interface {
+	Create(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error)
+}
+type ContainerFactoryFn func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error)
+
+func (fn ContainerFactoryFn) Create(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
+	return fn(ctx, descriptor)
+}
+
+var DefaultContainerFactory = ContainerFactoryFn(func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
+	return dig.New(), nil
+})
 
 type Scheduler[TaskDescriptor payments.TaskDescriptor] interface {
 	Schedule(p TaskDescriptor, restart bool) error
@@ -55,16 +53,15 @@ type taskHolder[TaskDescriptor payments.TaskDescriptor] struct {
 }
 
 type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
-	provider        string
-	logger          sharedlogging.Logger
-	store           Store[TaskDescriptor]
-	ingesterFactory IngesterFactory
-	tasks           map[string]*taskHolder[TaskDescriptor]
-	idles           utils.FIFO[*taskHolder[TaskDescriptor]]
-	mu              sync.Mutex
-	maxTasks        int
-	resolver        Resolver[TaskDescriptor]
-	stopped         bool
+	provider         string
+	logger           sharedlogging.Logger
+	store            Store[TaskDescriptor]
+	containerFactory ContainerFactory
+	tasks            map[string]*taskHolder[TaskDescriptor]
+	mu               sync.Mutex
+	maxTasks         int
+	resolver         Resolver[TaskDescriptor]
+	stopped          bool
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context) ([]payments.TaskState[TaskDescriptor], error) {
@@ -205,8 +202,9 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		return errors.Wrap(err, "finding task and update")
 	}
 
+	taskId := payments.IDFromDescriptor(descriptor)
 	logger := s.logger.WithFields(map[string]interface{}{
-		"task-id": payments.IDFromDescriptor(descriptor),
+		"task-id": taskId,
 	})
 
 	task := s.resolver.Resolve(descriptor)
@@ -223,16 +221,20 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		descriptor: descriptor,
 	}
 
-	container := dig.New()
+	container, err := s.containerFactory.Create(ctx, descriptor)
+	if err != nil {
+		// TODO: Handle error
+		panic(err)
+	}
 	container.Provide(func() context.Context {
 		return ctx
 	})
 	container.Provide(func() Scheduler[TaskDescriptor] {
 		return s
 	})
-	container.Provide(func() ingestion.Ingester {
-		return s.ingesterFactory.Make(ctx, s.provider, descriptor)
-	})
+	//container.Provide(func() ingestion.Ingester {
+	//	return s.ingesterFactory.Make(ctx, s.provider, descriptor)
+	//})
 	container.Provide(func() StopChan {
 		s.mu.Lock()
 		defer s.mu.Unlock()
@@ -294,7 +296,7 @@ func NewDefaultScheduler[TaskDescriptor payments.TaskDescriptor](
 	provider string,
 	logger sharedlogging.Logger,
 	store Store[TaskDescriptor],
-	ingesterFactory IngesterFactory,
+	containerFactory ContainerFactory,
 	resolver Resolver[TaskDescriptor],
 	maxTasks int,
 ) *DefaultTaskScheduler[TaskDescriptor] {
@@ -304,10 +306,10 @@ func NewDefaultScheduler[TaskDescriptor payments.TaskDescriptor](
 			"component": "scheduler",
 			"provider":  provider,
 		}),
-		store:           store,
-		tasks:           map[string]*taskHolder[TaskDescriptor]{},
-		ingesterFactory: ingesterFactory,
-		maxTasks:        maxTasks,
-		resolver:        resolver,
+		store:            store,
+		tasks:            map[string]*taskHolder[TaskDescriptor]{},
+		containerFactory: containerFactory,
+		maxTasks:         maxTasks,
+		resolver:         resolver,
 	}
 }
