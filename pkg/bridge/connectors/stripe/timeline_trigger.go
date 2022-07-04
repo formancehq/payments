@@ -2,6 +2,7 @@ package stripe
 
 import (
 	"context"
+
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
@@ -97,9 +98,11 @@ func (t *timelineTrigger) triggerPage(ctx context.Context, tail bool) (bool, err
 	}
 
 	logger.Debug("Ingest batch")
-	err = t.ingester.Ingest(ctx, ret, futureState, tail)
-	if err != nil {
-		return false, errors.Wrap(err, "ingesting batch")
+	if len(ret) > 0 {
+		err = t.ingester.Ingest(ctx, ret, futureState, tail)
+		if err != nil {
+			return false, errors.Wrap(err, "ingesting batch")
+		}
 	}
 
 	commitFn()
