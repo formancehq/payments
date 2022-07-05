@@ -8,8 +8,6 @@ import (
 )
 
 // Connector provide entry point to a payment provider
-// It requires a payments.ConnectorConfigObject representing the configuration of the specific payment provider
-// as well as a payments.ConnectorState object which represents the state of the connector
 type Connector[TaskDescriptor payments.TaskDescriptor] interface {
 	// Install is used to start the connector. The implementation if in charge of scheduling all required resources.
 	Install(ctx task.ConnectorContext[TaskDescriptor]) error

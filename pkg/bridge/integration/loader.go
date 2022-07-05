@@ -10,6 +10,9 @@ type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payme
 	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 	// ApplyDefaults is used to fill default values of the provided configuration object
 	ApplyDefaults(t ConnectorConfig) ConnectorConfig
+	// AllowTasks define how many task the connector can run
+	// If too many tasks are scheduled by the connector,
+	// those will be set to pending state and restarted later when some other tasks will be terminated
 	AllowTasks() int
 }
 
@@ -66,6 +69,9 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Name() string {
 }
 
 func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor] {
+	if b.loadFunction != nil {
+		return b.loadFunction(logger, config)
+	}	
 	return b.loadFunction(logger, config)
 }
 

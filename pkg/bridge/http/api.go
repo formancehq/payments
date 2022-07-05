@@ -103,17 +103,16 @@ func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDesc
 			return
 		}
 
-		var config *Config
+		var config Config
 		if r.ContentLength > 0 {
-			config = new(Config)
-			err := json.NewDecoder(r.Body).Decode(config)
+			err := json.NewDecoder(r.Body).Decode(&config)
 			if err != nil {
 				handleError(w, r, err)
 				return
 			}
 		}
 
-		err = cm.Install(r.Context(), *config)
+		err = cm.Install(r.Context(), config)
 		if err != nil {
 			handleError(w, r, err)
 			return

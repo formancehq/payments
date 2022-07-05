@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/bombsimon/logrusr/v3"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

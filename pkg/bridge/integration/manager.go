@@ -84,6 +84,9 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.
 	}
 
 	config = l.loader.ApplyDefaults(config)
+	if err := config.Validate(); err != nil {
+		return err
+	}
 
 	l.load(config)
 
