@@ -29,4 +29,5 @@ FROM ubuntu:jammy
 RUN apt update && apt install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /go/src/github.com/numary/payments/payments /usr/local/bin/payments
 EXPOSE 8080
-CMD ["payments", "server"]
+ENTRYPOINT ["payments"]
+CMD ["server"]
