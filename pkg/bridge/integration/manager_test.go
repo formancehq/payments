@@ -45,7 +45,9 @@ func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor 
 		WithAllowedTasks(1).
 		Build()
 	manager := NewConnectorManager[ConnectorConfig, TaskDescriptor](logger, managerStore, loader, schedulerFactory)
-	defer manager.Uninstall(context.Background())
+	defer func() {
+		_ = manager.Uninstall(context.Background())
+	}()
 
 	callback(&testContext[ConnectorConfig, TaskDescriptor]{
 		manager:        manager,

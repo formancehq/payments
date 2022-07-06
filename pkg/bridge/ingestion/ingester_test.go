@@ -25,8 +25,8 @@ func TestIngester(t *testing.T) {
 
 		mt.AddMockResponses(
 			bson.D{
-				{"ok", 1},
-				{"value", bson.D{}},
+				{Key: "ok", Value: 1},
+				{Key: "value", Value: bson.D{}},
 			}, // Find payment update
 			mtest.CreateSuccessResponse(), // Respond to state update
 			mtest.CreateSuccessResponse(), // Commit transaction

@@ -48,7 +48,8 @@ func RunWithMock(t *testing.T, fn func(t *mtest.T)) {
 		panic(err)
 	}
 
-	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+	defer cancel()
 	err = client.Connect(ctx)
 	if err != nil {
 		panic(err)
@@ -56,7 +57,8 @@ func RunWithMock(t *testing.T, fn func(t *mtest.T)) {
 
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	if err := pool.Retry(func() error {
-		ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+		ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(2*time.Second))
+		defer cancel()
 		return client.Ping(ctx, readpref.Primary())
 	}); err != nil {
 		panic("could not connect to database, last error: " + err.Error())

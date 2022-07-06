@@ -49,9 +49,10 @@ func TestTimelineTrigger(t *testing.T) {
 		mock.Expect().Limit(2).RespondsWith(i < txCount/2-2, allTxs[txCount/2-i-2], allTxs[txCount/2-i-1])
 	}
 
-	ctx, _ := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	ctx, cancel := context.WithDeadline(context.Background(), time.Now().Add(time.Second))
+	defer cancel()
 
-	trigger.Fetch(ctx)
+	require.NoError(t, trigger.Fetch(ctx))
 	require.Len(t, ingestedTx, txCount)
 }
 
@@ -69,10 +70,8 @@ func TestCancelTimelineTrigger(t *testing.T) {
 		sharedlogging.GetLogger(context.Background()),
 		IngesterFn(func(ctx context.Context, batch []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 			close(waiting) // Instruct the test the trigger is in fetching state
-			select {       // Simulate a long running processing
-			case <-ctx.Done():
-				return nil
-			}
+			<-ctx.Done()
+			return nil
 		}),
 		tl,
 	)
@@ -85,7 +84,10 @@ func TestCancelTimelineTrigger(t *testing.T) {
 		mock.Expect().Limit(1).RespondsWith(i < txCount-1, allTxs[i])
 	}
 
-	go trigger.Fetch(context.Background())
+	go func() {
+		//TODO: Handle error
+		_ = trigger.Fetch(context.Background())
+	}()
 	select {
 	case <-time.After(time.Second):
 		t.Fatalf("timeout")

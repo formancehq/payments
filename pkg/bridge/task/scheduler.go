@@ -226,26 +226,35 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		// TODO: Handle error
 		panic(err)
 	}
-	container.Provide(func() context.Context {
+	err = container.Provide(func() context.Context {
 		return ctx
 	})
-	container.Provide(func() Scheduler[TaskDescriptor] {
+	if err != nil {
+		panic(err)
+	}
+	err = container.Provide(func() Scheduler[TaskDescriptor] {
 		return s
 	})
-	//container.Provide(func() ingestion.Ingester {
-	//	return s.ingesterFactory.Make(ctx, s.provider, descriptor)
-	//})
-	container.Provide(func() StopChan {
+	if err != nil {
+		panic(err)
+	}
+	err = container.Provide(func() StopChan {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		holder.stopChan = make(StopChan, 1)
 		return holder.stopChan
 	})
-	container.Provide(func() sharedlogging.Logger {
+	if err != nil {
+		panic(err)
+	}
+	err = container.Provide(func() sharedlogging.Logger {
 		return s.logger
 	})
-	container.Provide(func() StateResolver {
+	if err != nil {
+		panic(err)
+	}
+	err = container.Provide(func() StateResolver {
 		return StateResolverFn(func(ctx context.Context, v any) error {
 			if ps.State == nil || len(ps.State) == 0 {
 				return nil
@@ -253,6 +262,9 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 			return bson.Unmarshal(ps.State, v)
 		})
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	s.tasks[payments.IDFromDescriptor(descriptor)] = holder
 	go func() {

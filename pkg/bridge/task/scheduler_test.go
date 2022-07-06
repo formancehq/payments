@@ -42,10 +42,6 @@ func TaskActive[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[Tas
 }
 
 func TestTaskScheduler(t *testing.T) {
-	type State struct {
-		Counter int `json:"counter"`
-	}
-
 	logger := sharedloggingtesting.Logger()
 
 	t.Run("Nominal", func(t *testing.T) {
@@ -79,10 +75,8 @@ func TestTaskScheduler(t *testing.T) {
 		provider := uuid.New()
 		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
 			return func(ctx context.Context) error {
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				}
+				<-ctx.Done()
+				return ctx.Err()
 			}
 		}), 1)
 
@@ -161,10 +155,8 @@ func TestTaskScheduler(t *testing.T) {
 			switch descriptor {
 			case "main":
 				return func(ctx context.Context, scheduler Scheduler[string]) {
-					select {
-					case <-ctx.Done():
-						require.NoError(t, scheduler.Schedule("worker", false))
-					}
+					<-ctx.Done()
+					require.NoError(t, scheduler.Schedule("worker", false))
 				}
 			default:
 				panic("should not be called")

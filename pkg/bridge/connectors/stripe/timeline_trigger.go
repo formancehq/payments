@@ -56,7 +56,10 @@ func (t *timelineTrigger) Fetch(ctx context.Context) error {
 func (t *timelineTrigger) Cancel(ctx context.Context) {
 	if t.cancel != nil {
 		t.cancel()
-		t.sem.Acquire(ctx, 1)
+		err := t.sem.Acquire(ctx, 1)
+		if err != nil {
+			panic(err)
+		}
 		t.sem.Release(1)
 	}
 }
@@ -76,7 +79,6 @@ func (t *timelineTrigger) fetch(ctx context.Context, tail bool) error {
 			}
 		}
 	}
-	return nil
 }
 
 func (t *timelineTrigger) triggerPage(ctx context.Context, tail bool) (bool, error) {
