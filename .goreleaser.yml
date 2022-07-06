@@ -8,47 +8,17 @@ before:
 
 builds:
   - binary: payments
-    id: numary_windows
-    ldflags:
-      - -X github.com/numary/payments/cmd.BuildDate={{ .Date }}
-      - -X github.com/numary/payments/cmd.Version={{ .Version }}
-      - -X github.com/numary/payments/cmd.Commit={{ .ShortCommit }}
-    env:
-      - CGO_ENABLED=1
-      - CC=x86_64-w64-mingw32-gcc
-    goos:
-      - windows
-    goarch:
-      - amd64
-    flags:
-      - -tags=json1
-  - binary: payments
-    id: payments_linux
+    id: payments
     ldflags:
       - -X github.com/numary/payments/cmd.BuildDate={{ .Date }}
       - -X github.com/numary/payments/cmd.Version={{ .Version }}
       - -X github.com/numary/payments/cmd.Commit={{ .ShortCommit }}
       - -extldflags "-static"
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
+      - windows
       - linux
-    goarch:
-      - amd64
-    flags:
-      - -tags=json1
-  - binary: payments
-    id: payments_darwin
-    ldflags:
-      - -X github.com/numary/payments/cmd.BuildDate={{ .Date }}
-      - -X github.com/numary/payments/cmd.Version={{ .Version }}
-      - -X github.com/numary/payments/cmd.Commit={{ .ShortCommit }}
-      - -s
-    env:
-      - CGO_ENABLED=1
-      - CC=/home/runner/work/osxcross/target/bin/o64-clang
-      - CXX=/home/runner/work/osxcross/target/bin/o64-clang++
-    goos:
       - darwin
     goarch:
       - amd64
@@ -59,26 +29,16 @@ builds:
 archives:
   - id: "payments"
     builds:
-      - payments_linux
-      - payments_darwin
-      - payments_windows
+      - payments
     format: tar.gz
     format_overrides:
       - goos: windows
         format: zip
-    name_template: "{{.ProjectName}}_{{.Version}}_{{.Os}}-{{.Arch}}"
-    replacements:
-      amd64: 64bit
-      386: 32bit
-      arm: ARM
-      arm64: ARM64
-      darwin: macOS
-      linux: Linux
-      windows: Windows
+    name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
 
 
 checksum:
-  name_template: 'checksums_linux.txt'
+  name_template: 'checksums.txt'
 
 snapshot:
   name_template: "{{ .Tag }}"
@@ -110,7 +70,7 @@ release:
   footer: |
     **Full Changelog**: https://github.com/numary/payments/compare/{{ .PreviousTag }}...{{ .Tag }}
     ## What to do next?
-    - Read the [documentation](https://docs.numary.com/oss/payments/get-started/installation)
+    - Read the [documentation](https://docs.formance.com/oss/payments/get-started/installation)
     - Join our [Discord server](https://discord.gg/xyHvcbzk4w)
 
 brews:
@@ -119,8 +79,8 @@ brews:
       name: homebrew-tap
     name: payments
     folder: Formula
-    homepage: https://numary.com
-    skip_upload: false
+    homepage: https://formance.com
+    skip_upload: 'false'
     test: |
       system "#{bin}/payments version"
     install: |
@@ -131,9 +91,9 @@ nfpms:
     package_name: payments
     file_name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     builds:
-      - payments_linux
-    homepage: https://numary.com
-    maintainer: Maxence Maireaux <maxence@numary.com>
+      - payments
+    homepage: https://formance.com
+    maintainer: Maxence Maireaux <maxence@formance.com>
     formats:
       - deb
       - rpm

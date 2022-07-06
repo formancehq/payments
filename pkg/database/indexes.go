@@ -3,11 +3,12 @@ package database
 import (
 	"context"
 	"fmt"
-	"github.com/numary/payments/pkg"
+	"reflect"
+
+	payments "github.com/numary/payments/pkg"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
-	"reflect"
 )
 
 var indexes = map[string][]mongo.IndexModel{

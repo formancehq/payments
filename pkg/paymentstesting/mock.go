@@ -2,15 +2,16 @@ package paymentstesting
 
 import (
 	"context"
+	"log"
+	"testing"
+	"time"
+
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"log"
-	"testing"
-	"time"
 )
 
 func RunWithMock(t *testing.T, fn func(t *mtest.T)) {

@@ -3,9 +3,10 @@ package stripe
 import (
 	"context"
 	"fmt"
-	"github.com/stripe/stripe-go/v72"
 	"net/url"
 	"time"
+
+	"github.com/stripe/stripe-go/v72"
 )
 
 const (

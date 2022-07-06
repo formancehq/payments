@@ -2,10 +2,11 @@ package stripe
 
 import (
 	"context"
-	"github.com/stretchr/testify/require"
-	"github.com/stripe/stripe-go/v72"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/require"
+	"github.com/stripe/stripe-go/v72"
 )
 
 func TestTimeline(t *testing.T) {

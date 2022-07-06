@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 )
 
 type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {

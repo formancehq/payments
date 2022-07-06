@@ -4,11 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
-	"github.com/numary/payments/pkg/bridge/utils"
-	"github.com/sirupsen/logrus"
-	"github.com/stripe/stripe-go/v72"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -16,6 +11,12 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
+	"github.com/numary/payments/pkg/bridge/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/stripe/stripe-go/v72"
 )
 
 func TestMain(m *testing.M) {

@@ -3,8 +3,9 @@ package payments
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/gibson042/canonicaljson-go"
 	"time"
+
+	"github.com/gibson042/canonicaljson-go"
 )
 
 type Scheme string

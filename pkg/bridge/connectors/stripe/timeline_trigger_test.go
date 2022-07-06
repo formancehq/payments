@@ -3,11 +3,12 @@ package stripe
 import (
 	"context"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/stretchr/testify/require"
 	"github.com/stripe/stripe-go/v72"
-	"testing"
-	"time"
 )
 
 func TestTimelineTrigger(t *testing.T) {

@@ -2,12 +2,13 @@ package integration
 
 import (
 	"context"
+	"reflect"
+
 	payments "github.com/numary/payments/pkg"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"reflect"
 )
 
 type ConnectorStore interface {

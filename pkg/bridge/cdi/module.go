@@ -6,7 +6,7 @@ import (
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/http"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/integration"

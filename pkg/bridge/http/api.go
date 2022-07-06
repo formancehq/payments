@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/integration"
 	. "github.com/numary/payments/pkg/http"
 )

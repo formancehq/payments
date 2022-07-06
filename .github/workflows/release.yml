@@ -25,16 +25,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - name: OSXCross for CGO Support
-        run: |
-          mkdir ../../osxcross
-          git clone https://github.com/plentico/osxcross-target.git ../../osxcross/target
-      - name: Downgrade libssl
-        run: |
-          echo 'deb http://security.ubuntu.com/ubuntu bionic-security main' | sudo tee -a /etc/apt/sources.list
-          sudo apt update && apt-cache policy libssl1.0-dev
-          sudo apt-get install libssl1.0-dev
-      - run: sudo apt install gcc-mingw-w64 -y
       - name: Run GoReleaser
         env:
           GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
