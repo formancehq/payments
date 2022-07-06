@@ -6,20 +6,10 @@ on:
 name: Main
 jobs:
   Test:
-    name: 'Test'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.18'
-          cache: true
-      - name: get deps
-        run: go mod download
-      - name: run tests
-        run: go test -v -coverpkg=./... -coverprofile=coverage.out -covermode=atomic -tags json1 ./...
-      - name: Upload coverage to Codecov
-        run: bash <(curl -s https://codecov.io/bash)
+    uses: numary/gh-workflows/.github/workflows/go-test.yml@main
+    with:
+      go_version: 1.18
+
   build:
     name: 'Build'
     runs-on: ubuntu-latest
