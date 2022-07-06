@@ -5,8 +5,6 @@ on:
 jobs:
   Pr:
     uses: numary/gh-workflows/.github/workflows/pr-style.yml@main
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Test:
     uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
