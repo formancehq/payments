@@ -4,45 +4,20 @@ on:
     types: [assigned, opened, synchronize, reopened]
 jobs:
   Pr:
-    name: 'Check PR Style'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: aslafy-z/conventional-pr-title-action@v2.2.5
-        with:
-          success-state: Title follows the specification.
-          failure-state: Title does not follow the specification.
-          context-name: conventional-pr-title
-          preset: conventional-changelog-angular@latest
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    uses: numary/gh-workflows/.github/workflows/pr-style.yml@main
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   Test:
-    name: 'Test'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.18'
-          cache: true
-      - name: get deps
-        run: go mod download
-      - name: run tests
-        run: go test -v -coverpkg=./... -coverprofile=coverage.out -covermode=atomic -tags json1 ./...
-      - name: Upload coverage to Codecov
-        run: bash <(curl -s https://codecov.io/bash)
+    uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
+    with:
+      go_version: 1.18
+
   Lint:
-      name: 'Lint'
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/setup-go@v3
-          with:
-            go-version: '1.18'
-            cache: true
-        - name: golangci-lint
-          uses: golangci/golangci-lint-action@v3
-          with:
-            version: latest
+    uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
+    with:
+      go_version: 1.18
+
   Build:
     name: 'Build'
     needs:
@@ -62,7 +37,3 @@ jobs:
           args: build --parallelism 4 --rm-dist --skip-validate --snapshot
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/upload-artifact@v2
-        with:
-          name: build-${{matrix.file}}
-          path: ./build/**
