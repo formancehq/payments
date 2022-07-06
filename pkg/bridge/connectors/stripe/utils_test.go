@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -78,8 +77,6 @@ func (e *clientMockExpectation) handle(ctx context.Context, options ...ClientOpt
 		if req.URL.Query().Get(k) != e.query.Get(k) {
 			return nil, false, fmt.Errorf("mismatch query params, expected query param '%s' with value '%s', got '%s'", k, e.query.Get(k), req.URL.Query().Get(k))
 		}
-	}
-	if !reflect.DeepEqual(req.URL.Query(), e.query) {
 	}
 	return e.items, e.hasMore, nil
 }

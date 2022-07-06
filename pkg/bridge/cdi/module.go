@@ -41,9 +41,12 @@ func ConnectorModule[
 					}); err != nil {
 						return nil, err
 					}
-					container.Provide(func() writeonly.Storage {
+					err := container.Provide(func() writeonly.Storage {
 						return writeonly.NewMongoDBStorage(db, loader.Name(), descriptor)
 					})
+					if err != nil {
+						panic(err)
+					}
 					return container, nil
 				}), resolver, maxTasks)
 			})
