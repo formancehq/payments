@@ -1,11 +1,26 @@
 version: '3'
 
 vars:
-  SERVICE: payments
-  APP_VERSION: develop
-  APP_SHA: ksjfsldkf
+  BINARY_NAME: payments
+  PKG: ./...
+  COVERAGE_FILE: coverage.out
+  FAILFAST: -failfast
+  TIMEOUT: 10m
 
 tasks:
   tests:
     cmds:
-      - go test -v -coverpkg=./... -coverprofile=coverage.out ./...
+      - go test -v {{.FAILFAST}} -coverpkg {{.PKG}} -coverprofile {{.COVERAGE_FILE}} -covermode atomic -timeout {{.TIMEOUT}} {{.PKG}}
+  lint:
+    cmds:
+    - golangci-lint run -v --fix {{.PKG}}
+  build:
+    cmds:
+    - go build -o {{.BINARY_NAME}}
+  install:
+    cmds:
+    - go install -o {{.BINARY_NAME}}
+  clean:
+    cmds:
+    - go clean
+    - rm -f {{.BINARY_NAME}} {{.COVERAGE_FILE}}
