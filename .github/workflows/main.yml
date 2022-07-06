@@ -10,24 +10,11 @@ jobs:
     with:
       go_version: 1.18
 
-  build:
-    name: 'Build'
-    runs-on: ubuntu-latest
+  Build:
+    uses: numary/gh-workflows/.github/workflows/goreleaser-build.yml@main
     needs:
       - Test
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
-        with:
-          go-version: '1.18'
-          cache: true
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v2
-        with:
-          version: latest
-          args: build --parallelism 4 --rm-dist --skip-validate --snapshot
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build_docker:
     name: 'Build & Publish Docker'
     runs-on: ubuntu-latest
