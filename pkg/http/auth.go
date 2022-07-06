@@ -1,8 +1,9 @@
 package http
 
 import (
-	"github.com/numary/go-libs/sharedauth"
 	"net/http"
+
+	"github.com/numary/go-libs/sharedauth"
 )
 
 func WrapHandler(useScopes bool, h http.Handler, scopes ...string) http.Handler {

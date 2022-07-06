@@ -2,16 +2,17 @@ package api
 
 import (
 	"encoding/json"
+	"net/http"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 	. "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"net/http"
-	"strings"
 )
 
 const (

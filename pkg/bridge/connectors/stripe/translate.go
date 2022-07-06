@@ -2,13 +2,14 @@ package stripe
 
 import (
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
-	"github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
-	"github.com/stripe/stripe-go/v72"
 	"runtime/debug"
 	"strings"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
+	payments "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/bridge/ingestion"
+	"github.com/stripe/stripe-go/v72"
 )
 
 type currency struct {

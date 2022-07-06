@@ -2,7 +2,7 @@ package integration
 
 import (
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 )
 
 type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {

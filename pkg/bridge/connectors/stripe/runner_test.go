@@ -2,10 +2,11 @@ package stripe
 
 import (
 	"context"
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/numary/go-libs/sharedlogging"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStopTailing(t *testing.T) {

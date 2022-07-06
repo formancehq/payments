@@ -5,9 +5,11 @@ go 1.18
 require (
 	github.com/Shopify/sarama v1.32.0
 	github.com/ThreeDotsLabs/watermill v1.1.1
+	github.com/bombsimon/logrusr/v3 v3.0.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/gibson042/canonicaljson-go v1.0.3
-	github.com/gobeam/stringy v0.0.5
 	github.com/gorilla/mux v1.8.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/numary/go-libs v0.0.0-20220614122310-19e6f94d07c3
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1
@@ -23,7 +25,10 @@ require (
 	go.mongodb.org/mongo-driver v1.9.1
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.28.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.29.0
+	go.opentelemetry.io/otel v1.6.3
+	go.uber.org/dig v1.14.1
 	go.uber.org/fx v1.17.1
+	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f
 )
 
 require (
@@ -34,8 +39,6 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ThreeDotsLabs/watermill-http v1.1.4 // indirect
 	github.com/ThreeDotsLabs/watermill-kafka/v2 v2.2.1 // indirect
-	github.com/blang/semver v3.5.1+incompatible // indirect
-	github.com/bombsimon/logrusr/v3 v3.0.0 // indirect
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.2 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.3.0 // indirect
@@ -43,7 +46,6 @@ require (
 	github.com/cncf/udpa/go v0.0.0-20210930031921-04548b0d99d4 // indirect
 	github.com/cncf/xds/go v0.0.0-20211216145620-d92e9ce0af51 // indirect
 	github.com/containerd/continuity v0.2.2 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgraph-io/ristretto v0.1.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
@@ -75,7 +77,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/iancoleman/strcase v0.2.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect
 	github.com/jcmturner/dnsutils/v2 v2.0.0 // indirect
@@ -105,7 +106,6 @@ require (
 	github.com/xdg-go/stringprep v1.0.3 // indirect
 	github.com/youmark/pkcs8 v0.0.0-20181117223130-1be2e3e5546d // indirect
 	go.opencensus.io v0.23.0 // indirect
-	go.opentelemetry.io/otel v1.6.3 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.5.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.5.0 // indirect
@@ -116,13 +116,11 @@ require (
 	go.opentelemetry.io/otel/trace v1.6.3 // indirect
 	go.opentelemetry.io/proto/otlp v0.12.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/dig v1.14.1 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	go.uber.org/zap v1.21.0 // indirect
 	golang.org/x/crypto v0.0.0-20220214200702-86341886e292 // indirect
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd // indirect
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sync v0.0.0-20220601150217-0de741cfad7f // indirect
 	golang.org/x/sys v0.0.0-20220422013727-9388b58f7150 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect

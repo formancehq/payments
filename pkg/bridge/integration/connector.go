@@ -3,7 +3,7 @@ package integration
 import (
 	"context"
 
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
 )
 

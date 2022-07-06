@@ -2,14 +2,15 @@ package ingestion
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg"
+	payments "github.com/numary/payments/pkg"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
-	"testing"
-	"time"
 )
 
 type State struct {

@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/stripe/stripe-go/v72"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/stripe/stripe-go/v72"
 )
 
 type httpMockExpectation interface {

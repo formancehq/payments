@@ -1,10 +1,11 @@
 package payments
 
 import (
-	"github.com/pborman/uuid"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+
+	"github.com/pborman/uuid"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPayment(t *testing.T) {

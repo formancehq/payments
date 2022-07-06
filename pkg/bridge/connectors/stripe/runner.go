@@ -2,8 +2,9 @@ package stripe
 
 import (
 	"context"
-	"github.com/numary/go-libs/sharedlogging"
 	"time"
+
+	"github.com/numary/go-libs/sharedlogging"
 )
 
 func NewRunner(
