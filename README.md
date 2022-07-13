@@ -4,23 +4,26 @@
 
 # Getting started
 
-Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/numary/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.numary.com/oss/payments/get-started/installation).
+Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/numary/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
 
 ```SHELL
 payments 
 ```
 
-# Documentation
+# What is it?
 
-You can find the complete Payments documentation at [docs.numary.com](https://docs.numary.com/oss/payments/get-started/installation)
+Basically, a framework.
 
-# Dashboard
+A framework to ingest payin and payout coming from different payment providers (PSP). 
 
-A simple [dashboard](https://github.com/numary/control) is built in the payments binary, to make it easier to visualize transactions. It can be started with:
+The framework contains connectors. Each connector is basically a translator for a PSP.
+Translator, because the main role of a connector is to translate specific PSP payin/payout formats to a generalized format used at Formance.
 
-<img width="909" alt="control-screenshot" src="https://user-images.githubusercontent.com/1770991/153751534-d8bba99e-610a-4b8c-9c63-4bde6eb6f96f.png">
+Because it is a framework, it is extensible. Please follow the guide below if you want to add your connector.
 
-You can use the dashboard by heading to [control.numary.com](https://control.numary.com) which provides a hosted version that can connect to any payments instance.
+# Contribute
+
+Please follow [this guide](./docs/development.md) if you want to contribute.
 
 # Roadmap & Community
 

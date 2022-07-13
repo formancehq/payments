@@ -89,7 +89,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 		}
 	}
 
-	if len(s.tasks) >= s.maxTasks || s.stopped {
+	if s.maxTasks != 0 && len(s.tasks) >= s.maxTasks || s.stopped {
 		err := s.stackTask(descriptor)
 		if err != nil {
 			return errors.Wrap(err, "stacking task")
@@ -277,7 +277,6 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 				debug.PrintStack()
 				return
 			}
-			logger.Infof("Task terminated with success")
 		}()
 
 		err := container.Invoke(task)
@@ -285,6 +284,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 			s.registerTaskError(ctx, holder, err)
 			return
 		}
+		logger.Infof("Task terminated with success")
 
 		err = s.store.UpdateTaskStatus(ctx, s.provider, descriptor, payments.TaskStatusTerminated, "")
 		if err != nil {
