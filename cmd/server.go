@@ -24,6 +24,7 @@ import (
 	"github.com/numary/payments/pkg/bridge/cdi"
 	"github.com/numary/payments/pkg/bridge/connectors/dummypay"
 	"github.com/numary/payments/pkg/bridge/connectors/stripe"
+	"github.com/numary/payments/pkg/bridge/connectors/wise"
 	bridgeHttp "github.com/numary/payments/pkg/bridge/http"
 	"github.com/numary/payments/pkg/database"
 	paymentapi "github.com/numary/payments/pkg/http"
@@ -282,6 +283,10 @@ func HTTPModule() fx.Option {
 		cdi.ConnectorModule[dummypay.Config, dummypay.TaskDescriptor](
 			viper.GetBool(authBearerUseScopesFlag),
 			dummypay.NewLoader(),
+		),
+		cdi.ConnectorModule(
+			viper.GetBool(authBearerUseScopesFlag),
+			wise.NewLoader(),
 		),
 	)
 }
