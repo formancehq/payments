@@ -1,3 +1,3 @@
 package task
 
-type Task any
+type Task interface{}
