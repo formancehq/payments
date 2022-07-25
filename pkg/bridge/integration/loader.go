@@ -71,7 +71,7 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Name() string {
 func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor] {
 	if b.loadFunction != nil {
 		return b.loadFunction(logger, config)
-	}	
+	}
 	return b.loadFunction(logger, config)
 }
 

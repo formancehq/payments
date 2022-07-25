@@ -3,20 +3,18 @@ on:
   pull_request:
     types: [assigned, opened, synchronize, reopened]
 jobs:
-  Pr:
+  pr-style:
     uses: numary/gh-workflows/.github/workflows/pr-style.yml@main
 
-  Test:
-    uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
-    with:
-      go_version: 1.18
-
-  Lint:
+  lint:
     uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
-    with:
-      go_version: 1.18
 
-  Build:
+  test:
+    uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
+
+  build:
     uses: numary/gh-workflows/.github/workflows/goreleaser-build.yml@main
     needs:
-      - Test
+      - pr-style
+      - lint
+      - test
