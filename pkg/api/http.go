@@ -146,10 +146,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			handleServerError(w, r, ret.Err())
 			return
 		}
-		type Object struct {
-			Items []payments.Payment `bson:"items"`
-		}
-		ob := &Object{}
+		ob := &payments.Payment{}
 		err = ret.Decode(ob)
 		if err != nil {
 			handleServerError(w, r, err)
@@ -157,7 +154,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 		}
 
 		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
-			Data: &ob.Items[0],
+			Data: ob,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
