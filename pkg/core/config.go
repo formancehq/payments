@@ -1,4 +1,4 @@
-package payments
+package core
 
 type ConnectorConfigObject interface {
 	Validate() error

@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/core"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -96,19 +96,19 @@ type mongodbConnectorStore struct {
 func (m *mongodbConnectorStore) Uninstall(ctx context.Context, name string) error {
 	return m.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-			_, err := m.db.Collection(payments.TasksCollection).DeleteMany(ctx, map[string]any{
+			_, err := m.db.Collection(core.TasksCollection).DeleteMany(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
 				return nil, errors.Wrap(err, "deleting tasks")
 			}
-			_, err = m.db.Collection(payments.Collection).DeleteMany(ctx, map[string]any{
+			_, err = m.db.Collection(core.Collection).DeleteMany(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
 				return nil, errors.Wrap(err, "deleting payments")
 			}
-			_, err = m.db.Collection(payments.ConnectorsCollection).DeleteOne(ctx, map[string]any{
+			_, err = m.db.Collection(core.ConnectorsCollection).DeleteOne(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
@@ -121,7 +121,7 @@ func (m *mongodbConnectorStore) Uninstall(ctx context.Context, name string) erro
 }
 
 func (m *mongodbConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
-	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
+	ret := m.db.Collection(core.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
 	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
@@ -134,7 +134,7 @@ func (m *mongodbConnectorStore) IsInstalled(ctx context.Context, name string) (b
 }
 
 func (m *mongodbConnectorStore) Install(ctx context.Context, name string, config any) error {
-	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+	_, err := m.db.Collection(core.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -145,7 +145,7 @@ func (m *mongodbConnectorStore) Install(ctx context.Context, name string, config
 }
 
 func (m *mongodbConnectorStore) UpdateConfig(ctx context.Context, name string, config any) error {
-	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+	_, err := m.db.Collection(core.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -156,7 +156,7 @@ func (m *mongodbConnectorStore) UpdateConfig(ctx context.Context, name string, c
 }
 
 func (m *mongodbConnectorStore) Enable(ctx context.Context, name string) error {
-	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+	_, err := m.db.Collection(core.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -167,7 +167,7 @@ func (m *mongodbConnectorStore) Enable(ctx context.Context, name string) error {
 }
 
 func (m *mongodbConnectorStore) Disable(ctx context.Context, name string) error {
-	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+	_, err := m.db.Collection(core.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
@@ -178,7 +178,7 @@ func (m *mongodbConnectorStore) Disable(ctx context.Context, name string) error 
 }
 
 func (m *mongodbConnectorStore) IsEnabled(ctx context.Context, name string) (bool, error) {
-	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
+	ret := m.db.Collection(core.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
 	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
@@ -187,7 +187,7 @@ func (m *mongodbConnectorStore) IsEnabled(ctx context.Context, name string) (boo
 	if ret.Err() == mongo.ErrNoDocuments {
 		return false, ErrNotInstalled
 	}
-	p := payments.Connector[payments.EmptyConnectorConfig]{}
+	p := core.Connector[core.EmptyConnectorConfig]{}
 	err := ret.Decode(&p)
 	if err != nil {
 		return false, err
@@ -197,7 +197,7 @@ func (m *mongodbConnectorStore) IsEnabled(ctx context.Context, name string) (boo
 }
 
 func (m *mongodbConnectorStore) ReadConfig(ctx context.Context, name string, to interface{}) error {
-	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
+	ret := m.db.Collection(core.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
 	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
@@ -206,7 +206,7 @@ func (m *mongodbConnectorStore) ReadConfig(ctx context.Context, name string, to 
 	if ret.Err() == mongo.ErrNoDocuments {
 		return errors.New("not installed")
 	}
-	p := payments.Connector[bson.Raw]{}
+	p := core.Connector[bson.Raw]{}
 	err := ret.Decode(&p)
 	if err != nil {
 		return err

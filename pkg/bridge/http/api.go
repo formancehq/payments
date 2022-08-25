@@ -9,8 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/integration"
+	"github.com/numary/payments/pkg/core"
 	. "github.com/numary/payments/pkg/http"
 )
 
@@ -27,7 +27,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func ReadConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func ReadConfig[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		config, err := cm.ReadConfig(r.Context())
@@ -43,7 +43,7 @@ func ReadConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskD
 	}
 }
 
-func ListTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func ListTasks[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		tasks, err := cm.ListTasksStates(r.Context())
@@ -59,11 +59,11 @@ func ListTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func ReadTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func ReadTask[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		var descriptor Descriptor
-		payments.DescriptorFromID(mux.Vars(r)["taskId"], &descriptor)
+		core.DescriptorFromID(mux.Vars(r)["taskId"], &descriptor)
 
 		tasks, err := cm.ReadTaskState(r.Context(), descriptor)
 		if err != nil {
@@ -78,7 +78,7 @@ func ReadTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDes
 	}
 }
 
-func Uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func Uninstall[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := cm.Uninstall(r.Context())
 		if err != nil {
@@ -90,7 +90,7 @@ func Uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func Install[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		installed, err := cm.IsInstalled(context.Background())
@@ -122,7 +122,7 @@ func Install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDesc
 	}
 }
 
-func Reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func Reset[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		installed, err := cm.IsInstalled(context.Background())
@@ -145,7 +145,7 @@ func Reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescri
 	}
 }
 
-func ConnectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](
+func ConnectorRouter[Config core.ConnectorConfigObject, Descriptor core.TaskDescriptor](
 	name string,
 	useScopes bool,
 	manager *integration.ConnectorManager[Config, Descriptor],

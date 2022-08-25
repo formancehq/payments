@@ -1,4 +1,4 @@
-package payments
+package core
 
 type Connector[T ConnectorConfigObject] struct {
 	Provider string `json:"provider" bson:"provider"`

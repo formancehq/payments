@@ -1,4 +1,4 @@
-package payments
+package core
 
 const Collection = "Payments"
 const ConnectorsCollection = "Connectors"

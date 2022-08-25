@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
+	"github.com/numary/payments/pkg/core"
 	"github.com/pborman/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, expectedStatus payments.TaskStatus, errString string) func() bool {
+func TaskTerminatedWithStatus[TaskDescriptor core.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, expectedStatus core.TaskStatus, errString string) func() bool {
 	return func() bool {
 		status, err, ok := store.Result(provider, descriptor)
 		if !ok {
@@ -25,24 +26,28 @@ func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *inM
 	}
 }
 
-func TaskTerminated[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusTerminated, "")
+func TaskTerminated[TaskDescriptor core.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
+	return TaskTerminatedWithStatus(store, provider, descriptor, core.TaskStatusTerminated, "")
 }
 
-func TaskFailed[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, errStr string) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusFailed, errStr)
+func TaskFailed[TaskDescriptor core.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor, errStr string) func() bool {
+	return TaskTerminatedWithStatus(store, provider, descriptor, core.TaskStatusFailed, errStr)
 }
 
-func TaskPending[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusPending, "")
+func TaskPending[TaskDescriptor core.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
+	return TaskTerminatedWithStatus(store, provider, descriptor, core.TaskStatusPending, "")
 }
 
-func TaskActive[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusActive, "")
+func TaskActive[TaskDescriptor core.TaskDescriptor](store *inMemoryStore[TaskDescriptor], provider string, descriptor TaskDescriptor) func() bool {
+	return TaskTerminatedWithStatus(store, provider, descriptor, core.TaskStatusActive, "")
 }
 
 func TestTaskScheduler(t *testing.T) {
-	logger := sharedloggingtesting.Logger()
+	l := logrus.New()
+	if testing.Verbose() {
+		l.SetLevel(logrus.DebugLevel)
+	}
+	logger := sharedlogginglogrus.New(l)
 
 	t.Run("Nominal", func(t *testing.T) {
 		store := NewInMemoryStore[string]()

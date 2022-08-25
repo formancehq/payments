@@ -3,15 +3,15 @@ package task
 import (
 	"context"
 
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/core"
 )
 
-type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
+type ConnectorContext[TaskDescriptor core.TaskDescriptor] interface {
 	Context() context.Context
 	Scheduler() Scheduler[TaskDescriptor]
 }
 
-type connectorContext[TaskDescriptor payments.TaskDescriptor] struct {
+type connectorContext[TaskDescriptor core.TaskDescriptor] struct {
 	ctx       context.Context
 	scheduler Scheduler[TaskDescriptor]
 }
@@ -23,7 +23,7 @@ func (ctx *connectorContext[TaskDescriptor]) Scheduler() Scheduler[TaskDescripto
 	return ctx.scheduler
 }
 
-func NewConnectorContext[TaskDescriptor payments.TaskDescriptor](ctx context.Context, scheduler Scheduler[TaskDescriptor]) *connectorContext[TaskDescriptor] {
+func NewConnectorContext[TaskDescriptor core.TaskDescriptor](ctx context.Context, scheduler Scheduler[TaskDescriptor]) *connectorContext[TaskDescriptor] {
 	return &connectorContext[TaskDescriptor]{
 		ctx:       ctx,
 		scheduler: scheduler,

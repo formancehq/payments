@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
 	"github.com/numary/payments/pkg/bridge/task"
+	"github.com/numary/payments/pkg/core"
 	"github.com/pborman/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -21,7 +22,7 @@ func ChanClosed[T any](ch chan T) bool {
 	}
 }
 
-type testContext[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
+type testContext[ConnectorConfig core.ConnectorConfigObject, TaskDescriptor core.TaskDescriptor] struct {
 	manager        *ConnectorManager[ConnectorConfig, TaskDescriptor]
 	taskStore      task.Store[TaskDescriptor]
 	connectorStore ConnectorStore
@@ -29,8 +30,12 @@ type testContext[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor 
 	provider       string
 }
 
-func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor](builder *ConnectorBuilder[TaskDescriptor], callback func(ctx *testContext[ConnectorConfig, TaskDescriptor])) {
-	logger := sharedloggingtesting.Logger()
+func withManager[ConnectorConfig core.ConnectorConfigObject, TaskDescriptor core.TaskDescriptor](builder *ConnectorBuilder[TaskDescriptor], callback func(ctx *testContext[ConnectorConfig, TaskDescriptor])) {
+	l := logrus.New()
+	if testing.Verbose() {
+		l.SetLevel(logrus.DebugLevel)
+	}
+	logger := sharedlogginglogrus.New(l)
 	taskStore := task.NewInMemoryStore[TaskDescriptor]()
 	managerStore := NewInMemoryStore()
 	provider := uuid.New()
@@ -65,12 +70,12 @@ func TestInstallConnector(t *testing.T) {
 			close(installed)
 			return nil
 		})
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
-		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
+	withManager(builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
+		err := tc.manager.Install(context.Background(), core.EmptyConnectorConfig{})
 		require.NoError(t, err)
 		require.True(t, ChanClosed(installed))
 
-		err = tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
+		err = tc.manager.Install(context.Background(), core.EmptyConnectorConfig{})
 		require.Equal(t, ErrAlreadyInstalled, err)
 	})
 }
@@ -98,8 +103,8 @@ func TestUninstallConnector(t *testing.T) {
 			close(uninstalled)
 			return nil
 		})
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
-		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
+	withManager(builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
+		err := tc.manager.Install(context.Background(), core.EmptyConnectorConfig{})
 		require.NoError(t, err)
 		<-taskStarted
 		require.NoError(t, tc.manager.Uninstall(context.Background()))
@@ -120,8 +125,8 @@ func TestDisableConnector(t *testing.T) {
 			close(uninstalled)
 			return nil
 		})
-	withManager[payments.EmptyConnectorConfig, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
-		err := tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
+	withManager[core.EmptyConnectorConfig, any](builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
+		err := tc.manager.Install(context.Background(), core.EmptyConnectorConfig{})
 		require.NoError(t, err)
 
 		enabled, err := tc.manager.IsEnabled(context.Background())
@@ -137,19 +142,19 @@ func TestDisableConnector(t *testing.T) {
 
 func TestEnableConnector(t *testing.T) {
 	builder := NewConnectorBuilder[any]()
-	withManager[payments.EmptyConnectorConfig, any](builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
+	withManager[core.EmptyConnectorConfig, any](builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
 		err := tc.connectorStore.Enable(context.Background(), tc.loader.Name())
 		require.NoError(t, err)
 
-		err = tc.manager.Install(context.Background(), payments.EmptyConnectorConfig{})
+		err = tc.manager.Install(context.Background(), core.EmptyConnectorConfig{})
 		require.NoError(t, err)
 	})
 }
 
 func TestRestoreEnabledConnector(t *testing.T) {
 	builder := NewConnectorBuilder[any]()
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
-		err := tc.connectorStore.Install(context.Background(), tc.loader.Name(), payments.EmptyConnectorConfig{})
+	withManager(builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
+		err := tc.connectorStore.Install(context.Background(), tc.loader.Name(), core.EmptyConnectorConfig{})
 		require.NoError(t, err)
 
 		err = tc.manager.Restore(context.Background())
@@ -160,7 +165,7 @@ func TestRestoreEnabledConnector(t *testing.T) {
 
 func TestRestoreNotInstalledConnector(t *testing.T) {
 	builder := NewConnectorBuilder[any]()
-	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
+	withManager(builder, func(tc *testContext[core.EmptyConnectorConfig, any]) {
 		err := tc.manager.Restore(context.Background())
 		require.Equal(t, ErrNotInstalled, err)
 	})

@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"reflect"
 
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/core"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/x/bsonx"
 )
 
 var indexes = map[string][]mongo.IndexModel{
-	payments.Collection: {
+	core.Collection: {
 		{
 			Keys: bsonx.Doc{
 				bsonx.Elem{

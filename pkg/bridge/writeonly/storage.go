@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/iancoleman/strcase"
-	payments "github.com/numary/payments/pkg"
+	"github.com/numary/payments/pkg/core"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -32,7 +32,7 @@ func Write[T any](ctx context.Context, storage Storage, items ...T) error {
 type MongoDBStorage struct {
 	db             *mongo.Database
 	provider       string
-	taskDescriptor payments.TaskDescriptor
+	taskDescriptor core.TaskDescriptor
 }
 
 func (m *MongoDBStorage) Write(ctx context.Context, items ...any) error {
@@ -40,7 +40,7 @@ func (m *MongoDBStorage) Write(ctx context.Context, items ...any) error {
 	for _, i := range items {
 		toSave = append(toSave, Item{
 			Provider: m.provider,
-			TaskId:   payments.IDFromDescriptor(m.taskDescriptor),
+			TaskId:   core.IDFromDescriptor(m.taskDescriptor),
 			Data:     i,
 		})
 	}
@@ -53,7 +53,7 @@ func (m *MongoDBStorage) Write(ctx context.Context, items ...any) error {
 	return nil
 }
 
-func NewMongoDBStorage(db *mongo.Database, provider string, descriptor payments.TaskDescriptor) *MongoDBStorage {
+func NewMongoDBStorage(db *mongo.Database, provider string, descriptor core.TaskDescriptor) *MongoDBStorage {
 	return &MongoDBStorage{
 		db:             db,
 		provider:       provider,
