@@ -10,7 +10,7 @@ require (
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/gorilla/mux v1.8.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/numary/go-libs v0.0.0-20220801164020-fc3e3280ca13
+	github.com/numary/go-libs v0.0.0-20220826075524-cb04b561a84c
 	github.com/numary/go-libs/sharedotlp v0.0.0-20220801164020-fc3e3280ca13
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1
