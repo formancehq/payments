@@ -210,14 +210,9 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 		if i.publisher != nil {
 			for _, e := range allPayments {
-				err = i.publisher.Publish(ctx,
-					TopicPayments,
-					EventPaymentsMessage{
-						Date:    time.Now().UTC(),
-						Type:    EventPaymentsSavedPayment,
-						Payload: e.Computed(),
-					})
-				if err != nil {
+				if err = i.publisher.Publish(ctx, TopicPayments,
+					NewEventPaymentsSavedPayment(SavedPayment(e.Computed())),
+				); err != nil {
 					i.logger.Errorf("Error publishing payment: %s", err)
 				}
 			}
