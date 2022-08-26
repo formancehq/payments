@@ -7,13 +7,18 @@ import (
 const (
 	TopicPayments = "payments"
 
-	EventPaymentsSavedPayment = "SAVED_PAYMENT"
+	EventVersion = "v1"
+	EventApp     = "payments"
+
+	EventPaymentsTypeSavedPayment = "SAVED_PAYMENT"
 )
 
-type EventPaymentsMessage[P any] struct {
+type EventPaymentsMessage[T any] struct {
 	Date    time.Time `json:"date"`
+	App     string    `json:"app"`
+	Version string    `json:"version"`
 	Type    string    `json:"type"`
-	Payload P         `json:"payload"`
+	Payload T         `json:"payload"`
 }
 
 type SavedPayment ComputedPayment
@@ -21,7 +26,9 @@ type SavedPayment ComputedPayment
 func NewEventPaymentsSavedPayment(payload SavedPayment) EventPaymentsMessage[SavedPayment] {
 	return EventPaymentsMessage[SavedPayment]{
 		Date:    time.Now().UTC(),
-		Type:    EventPaymentsSavedPayment,
+		App:     EventApp,
+		Version: EventVersion,
+		Type:    EventPaymentsTypeSavedPayment,
 		Payload: payload,
 	}
 }
