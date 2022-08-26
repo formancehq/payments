@@ -1,9 +1,7 @@
-package ingestion
+package core
 
 import (
 	"time"
-
-	"github.com/numary/payments/pkg/core"
 )
 
 const (
@@ -18,7 +16,7 @@ type EventPaymentsMessage[P any] struct {
 	Payload P         `json:"payload"`
 }
 
-type SavedPayment core.ComputedPayment
+type SavedPayment ComputedPayment
 
 func NewEventPaymentsSavedPayment(payload SavedPayment) EventPaymentsMessage[SavedPayment] {
 	return EventPaymentsMessage[SavedPayment]{
