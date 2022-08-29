@@ -9,16 +9,16 @@ import (
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
-	"github.com/numary/payments/pkg/core"
+	payments "github.com/numary/payments/pkg"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type BatchElement struct {
-	Referenced core.Referenced
-	Payment    *core.Data
-	Adjustment *core.Adjustment
+	Referenced payments.Referenced
+	Payment    *payments.Data
+	Adjustment *payments.Adjustment
 	Forward    bool
 }
 
@@ -43,14 +43,14 @@ type defaultIngester struct {
 	db         *mongo.Database
 	logger     sharedlogging.Logger
 	provider   string
-	descriptor core.TaskDescriptor
+	descriptor payments.TaskDescriptor
 	publisher  sharedpublish.Publisher
 }
 
-type referenced core.Referenced
+type referenced payments.Referenced
 
-func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]core.Payment, error) {
-	allPayments := make([]core.Payment, 0)
+func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]payments.Payment, error) {
+	allPayments := make([]payments.Payment, 0)
 	for _, elem := range batch {
 		logger := i.logger.WithFields(map[string]any{
 			"id": referenced(elem.Referenced),
@@ -82,13 +82,13 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]core
 			}
 		case elem.Forward && elem.Payment != nil:
 			update = bson.M{
-				"$set": core.Payment{
-					Identifier: core.Identifier{
+				"$set": payments.Payment{
+					Identifier: payments.Identifier{
 						Referenced: elem.Referenced,
 						Provider:   i.provider,
 					},
 					Data: *elem.Payment,
-					Adjustments: []core.Adjustment{
+					Adjustments: []payments.Adjustment{
 						{
 							Status: elem.Payment.Status,
 							Amount: elem.Payment.InitialAmount,
@@ -113,7 +113,7 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]core
 			update = bson.M{
 				"$push": bson.M{
 					"adjustments": bson.M{
-						"$each": []any{core.Adjustment{
+						"$each": []any{payments.Adjustment{
 							Status: elem.Payment.Status,
 							Amount: elem.Payment.InitialAmount,
 							Date:   elem.Payment.CreatedAt,
@@ -141,9 +141,9 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]core
 		logger.WithFields(map[string]interface{}{
 			"update": string(data),
 		}).Debugf("Update payment")
-		ret := i.db.Collection(core.Collection).FindOneAndUpdate(
+		ret := i.db.Collection(payments.Collection).FindOneAndUpdate(
 			ctx,
-			core.Identifier{
+			payments.Identifier{
 				Referenced: elem.Referenced,
 				Provider:   i.provider,
 			},
@@ -154,7 +154,7 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]core
 			logger.Errorf("Error updating payment: %s", ret.Err())
 			return nil, fmt.Errorf("error updating payment: %s", ret.Err())
 		}
-		p := core.Payment{}
+		p := payments.Payment{}
 		err = ret.Decode(&p)
 		if err != nil {
 			return nil, err
@@ -184,7 +184,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 	}).Debugf("Ingest batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) (err error) {
-		var allPayments []core.Payment
+		var allPayments []payments.Payment
 		_, err = ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
 			allPayments, err = i.processBatch(ctx, batch)
 			if err != nil {
@@ -193,7 +193,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 			i.logger.Debugf("Update state")
 
-			_, err = i.db.Collection(core.TasksCollection).UpdateOne(ctx, map[string]any{
+			_, err = i.db.Collection(payments.TasksCollection).UpdateOne(ctx, map[string]any{
 				"provider":   i.provider,
 				"descriptor": i.descriptor,
 			}, map[string]any{
@@ -206,12 +206,12 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 			}
 			return nil, nil
 		})
-		allPayments = Filter(allPayments, core.Payment.HasInitialValue)
+		allPayments = Filter(allPayments, payments.Payment.HasInitialValue)
 
 		if i.publisher != nil {
 			for _, e := range allPayments {
-				if err = i.publisher.Publish(ctx, core.TopicPayments,
-					core.NewEventPaymentsSavedPayment(core.SavedPayment(e.Computed())),
+				if err = i.publisher.Publish(ctx, payments.TopicPayments,
+					payments.NewEventPaymentsSavedPayment(payments.SavedPayment(e.Computed())),
 				); err != nil {
 					i.logger.Errorf("Error publishing payment: %s", err)
 				}
@@ -238,7 +238,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 func NewDefaultIngester(
 	provider string,
-	descriptor core.TaskDescriptor,
+	descriptor payments.TaskDescriptor,
 	db *mongo.Database,
 	logger sharedlogging.Logger,
 	publisher sharedpublish.Publisher,

@@ -6,12 +6,12 @@ import (
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
+	payments "github.com/numary/payments/pkg"
 	bridgeHttp "github.com/numary/payments/pkg/bridge/http"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
 	"github.com/numary/payments/pkg/bridge/writeonly"
-	"github.com/numary/payments/pkg/core"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/fx"
@@ -23,8 +23,8 @@ type ConnectorHandler struct {
 }
 
 func ConnectorModule[
-	ConnectorConfig core.ConnectorConfigObject,
-	TaskDescriptor core.TaskDescriptor,
+	ConnectorConfig payments.ConnectorConfigObject,
+	TaskDescriptor payments.TaskDescriptor,
 ](useScopes bool, loader integration.Loader[ConnectorConfig, TaskDescriptor]) fx.Option {
 	return fx.Options(
 		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *integration.ConnectorManager[ConnectorConfig, TaskDescriptor] {
@@ -32,11 +32,11 @@ func ConnectorModule[
 			taskStore := task.NewMongoDBStore[TaskDescriptor](db)
 			logger := sharedlogging.GetLogger(context.Background())
 			schedulerFactory := integration.TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
-				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger, taskStore, task.ContainerFactoryFn(func(ctx context.Context, descriptor core.TaskDescriptor) (*dig.Container, error) {
+				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger, taskStore, task.ContainerFactoryFn(func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
 					container := dig.New()
 					if err := container.Provide(func() ingestion.Ingester {
 						return ingestion.NewDefaultIngester(loader.Name(), descriptor, db, logger.WithFields(map[string]interface{}{
-							"task-id": core.IDFromDescriptor(descriptor),
+							"task-id": payments.IDFromDescriptor(descriptor),
 						}), publisher)
 					}); err != nil {
 						return nil, err

@@ -8,7 +8,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/core"
+	payments "github.com/numary/payments/pkg"
 	. "github.com/numary/payments/pkg/http"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -102,21 +102,21 @@ func ListPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			})
 		}
 
-		cursor, err := db.Collection(core.Collection).Aggregate(r.Context(), pipeline)
+		cursor, err := db.Collection(payments.Collection).Aggregate(r.Context(), pipeline)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
 		}
 		defer cursor.Close(r.Context())
 
-		ret := make([]core.Payment, 0)
+		ret := make([]payments.Payment, 0)
 		err = cursor.All(r.Context(), &ret)
 		if err != nil {
 			handleServerError(w, r, err)
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]core.Payment]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]payments.Payment]{
 			Data: &ret,
 		})
 		if err != nil {
@@ -131,13 +131,13 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 
 		paymentId := mux.Vars(r)["paymentId"]
 
-		identifier, err := core.IdentifierFromString(paymentId)
+		identifier, err := payments.IdentifierFromString(paymentId)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 
-		ret := db.Collection(core.Collection).FindOne(r.Context(), identifier)
+		ret := db.Collection(payments.Collection).FindOne(r.Context(), identifier)
 		if ret.Err() != nil {
 			if ret.Err() == mongo.ErrNoDocuments {
 				w.WriteHeader(http.StatusNotFound)
@@ -147,7 +147,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 		type Object struct {
-			Items []core.Payment `bson:"items"`
+			Items []payments.Payment `bson:"items"`
 		}
 		ob := &Object{}
 		err = ret.Decode(ob)
@@ -156,7 +156,7 @@ func ReadPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[core.Payment]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
 			Data: &ob.Items[0],
 		})
 		if err != nil {

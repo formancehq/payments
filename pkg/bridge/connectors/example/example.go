@@ -9,10 +9,10 @@ import (
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
-	"github.com/numary/payments/pkg/core"
 )
 
 type (
@@ -69,7 +69,7 @@ var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").
 					}
 
 					type JsonPayment struct {
-						core.Data
+						payments.Data
 						Reference string `json:"reference"`
 						Type      string `json:"type"`
 					}
@@ -82,7 +82,7 @@ var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").
 
 					return ingester.Ingest(ctx, ingestion.Batch{
 						{
-							Referenced: core.Referenced{
+							Referenced: payments.Referenced{
 								Reference: jsonPayment.Reference,
 								Type:      jsonPayment.Type,
 							},

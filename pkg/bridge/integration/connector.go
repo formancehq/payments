@@ -3,12 +3,12 @@ package integration
 import (
 	"context"
 
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
-	"github.com/numary/payments/pkg/core"
 )
 
 // Connector provide entry point to a payment provider
-type Connector[TaskDescriptor core.TaskDescriptor] interface {
+type Connector[TaskDescriptor payments.TaskDescriptor] interface {
 	// Install is used to start the connector. The implementation if in charge of scheduling all required resources.
 	Install(ctx task.ConnectorContext[TaskDescriptor]) error
 	// Uninstall is used to uninstall the connector. It has to close all related resources opened by the connector.
@@ -17,7 +17,7 @@ type Connector[TaskDescriptor core.TaskDescriptor] interface {
 	Resolve(descriptor TaskDescriptor) task.Task
 }
 
-type ConnectorBuilder[TaskDescriptor core.TaskDescriptor] struct {
+type ConnectorBuilder[TaskDescriptor payments.TaskDescriptor] struct {
 	name      string
 	uninstall func(ctx context.Context) error
 	resolve   func(descriptor TaskDescriptor) task.Task
@@ -48,11 +48,11 @@ func (b *ConnectorBuilder[TaskDescriptor]) Build() Connector[TaskDescriptor] {
 	}
 }
 
-func NewConnectorBuilder[TaskDescriptor core.TaskDescriptor]() *ConnectorBuilder[TaskDescriptor] {
+func NewConnectorBuilder[TaskDescriptor payments.TaskDescriptor]() *ConnectorBuilder[TaskDescriptor] {
 	return &ConnectorBuilder[TaskDescriptor]{}
 }
 
-type BuiltConnector[TaskDescriptor core.TaskDescriptor] struct {
+type BuiltConnector[TaskDescriptor payments.TaskDescriptor] struct {
 	name      string
 	uninstall func(ctx context.Context) error
 	resolve   func(name TaskDescriptor) task.Task

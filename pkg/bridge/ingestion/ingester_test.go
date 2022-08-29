@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/pkg/core"
+	payments "github.com/numary/payments/pkg"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
@@ -34,14 +34,14 @@ func TestIngester(t *testing.T) {
 
 		err := ingester.Ingest(context.Background(), Batch{
 			{
-				Referenced: core.Referenced{
+				Referenced: payments.Referenced{
 					Reference: "p1",
-					Type:      core.TypePayIn,
+					Type:      payments.TypePayIn,
 				},
-				Payment: &core.Data{
-					Status:        core.StatusSucceeded,
+				Payment: &payments.Data{
+					Status:        payments.StatusSucceeded,
 					InitialAmount: 100,
-					Scheme:        core.SchemeOther,
+					Scheme:        payments.SchemeOther,
 					Asset:         "USD/2",
 					CreatedAt:     time.Now(),
 				},

@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/davecgh/go-spew/spew"
+	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/ingestion"
-	"github.com/numary/payments/pkg/core"
 	"github.com/stripe/stripe-go/v72"
 )
 
@@ -125,9 +125,9 @@ var currencies = map[string]currency{
 
 func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.BatchElement, bool) {
 	var (
-		reference   core.Referenced
-		paymentData *core.Data
-		adjustment  *core.Adjustment
+		reference   payments.Referenced
+		paymentData *payments.Data
+		adjustment  *payments.Adjustment
 	)
 	defer func() {
 		// DEBUG
@@ -155,99 +155,99 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.
 		return fmt.Sprintf("%s/%d", asset, def.decimals)
 	}
 
-	convertPayoutStatus := func() (status core.Status) {
+	convertPayoutStatus := func() (status payments.Status) {
 		switch bt.Source.Payout.Status {
 		case stripe.PayoutStatusCanceled:
-			status = core.StatusCancelled
+			status = payments.StatusCancelled
 		case stripe.PayoutStatusFailed:
-			status = core.StatusFailed
+			status = payments.StatusFailed
 		case stripe.PayoutStatusInTransit, stripe.PayoutStatusPending:
-			status = core.StatusPending
+			status = payments.StatusPending
 		case stripe.PayoutStatusPaid:
-			status = core.StatusSucceeded
+			status = payments.StatusSucceeded
 		}
 		return
 	}
 
 	switch bt.Type {
 	case "charge":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Charge.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		paymentData = &core.Data{
-			Status:        core.StatusSucceeded,
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Charge.Amount,
 			Asset:         formatAsset(bt.Source.Charge.Currency),
 			Raw:           bt,
-			Scheme:        core.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
+			Scheme:        payments.Scheme(bt.Source.Charge.PaymentMethodDetails.Card.Brand),
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "payout":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      core.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		paymentData = &core.Data{
+		paymentData = &payments.Data{
 			Status:        convertPayoutStatus(),
 			InitialAmount: bt.Source.Payout.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Payout.Currency),
-			Scheme: func() core.Scheme {
+			Scheme: func() payments.Scheme {
 				switch bt.Source.Payout.Type {
 				case "bank_account":
-					return core.SchemeSepaCredit
+					return payments.SchemeSepaCredit
 				case "card":
-					return core.Scheme(bt.Source.Payout.Card.Brand)
+					return payments.Scheme(bt.Source.Payout.Card.Brand)
 				}
-				return core.SchemeUnknown
+				return payments.SchemeUnknown
 			}(),
 			CreatedAt: time.Unix(bt.Created, 0),
 		}
 
 	case "transfer":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Transfer.ID,
-			Type:      core.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		paymentData = &core.Data{
-			Status:        core.StatusSucceeded,
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Transfer.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Transfer.Currency),
-			Scheme:        core.SchemeOther,
+			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "refund":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Refund.Charge.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &core.Adjustment{
-			Status: core.StatusSucceeded,
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusSucceeded,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	case "payment":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Charge.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		paymentData = &core.Data{
-			Status:        core.StatusSucceeded,
+		paymentData = &payments.Data{
+			Status:        payments.StatusSucceeded,
 			InitialAmount: bt.Source.Charge.Amount,
 			Raw:           bt,
 			Asset:         formatAsset(bt.Source.Charge.Currency),
-			Scheme:        core.SchemeOther,
+			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(bt.Created, 0),
 		}
 	case "payout_cancel":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      core.TypePayout,
+			Type:      payments.TypePayout,
 		}
-		adjustment = &core.Adjustment{
+		adjustment = &payments.Adjustment{
 			Status:   convertPayoutStatus(),
 			Amount:   0,
 			Date:     time.Unix(bt.Created, 0),
@@ -255,11 +255,11 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.
 			Absolute: true,
 		}
 	case "payout_failure":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Payout.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &core.Adjustment{
+		adjustment = &payments.Adjustment{
 			Status:   convertPayoutStatus(),
 			Amount:   0,
 			Date:     time.Unix(bt.Created, 0),
@@ -267,23 +267,23 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.
 			Absolute: true,
 		}
 	case "payment_refund":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Refund.Charge.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &core.Adjustment{
-			Status: core.StatusSucceeded,
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusSucceeded,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,
 		}
 	case "adjustment":
-		reference = core.Referenced{
+		reference = payments.Referenced{
 			Reference: bt.Source.Dispute.Charge.ID,
-			Type:      core.TypePayIn,
+			Type:      payments.TypePayIn,
 		}
-		adjustment = &core.Adjustment{
-			Status: core.StatusCancelled,
+		adjustment = &payments.Adjustment{
+			Status: payments.StatusCancelled,
 			Amount: bt.Amount,
 			Date:   time.Unix(bt.Created, 0),
 			Raw:    bt,

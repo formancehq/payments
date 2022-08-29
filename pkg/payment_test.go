@@ -1,4 +1,4 @@
-package core
+package payments
 
 import (
 	"testing"
