@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
+	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
 	payments "github.com/numary/payments/pkg"
 	"github.com/pborman/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,7 +43,11 @@ func TaskActive[TaskDescriptor payments.TaskDescriptor](store *inMemoryStore[Tas
 }
 
 func TestTaskScheduler(t *testing.T) {
-	logger := sharedloggingtesting.Logger()
+	l := logrus.New()
+	if testing.Verbose() {
+		l.SetLevel(logrus.DebugLevel)
+	}
+	logger := sharedlogginglogrus.New(l)
 
 	t.Run("Nominal", func(t *testing.T) {
 		store := NewInMemoryStore[string]()

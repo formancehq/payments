@@ -2,12 +2,12 @@ package cdi
 
 import (
 	"context"
-	http2 "net/http"
+	"net/http"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
 	payments "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/http"
+	bridgeHttp "github.com/numary/payments/pkg/bridge/http"
 	"github.com/numary/payments/pkg/bridge/ingestion"
 	"github.com/numary/payments/pkg/bridge/integration"
 	"github.com/numary/payments/pkg/bridge/task"
@@ -18,7 +18,7 @@ import (
 )
 
 type ConnectorHandler struct {
-	Handler http2.Handler
+	Handler http.Handler
 	Name    string
 }
 
@@ -54,7 +54,7 @@ func ConnectorModule[
 		}),
 		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig, TaskDescriptor]) ConnectorHandler {
 			return ConnectorHandler{
-				Handler: http.ConnectorRouter(loader.Name(), useScopes, cm),
+				Handler: bridgeHttp.ConnectorRouter(loader.Name(), useScopes, cm),
 				Name:    loader.Name(),
 			}
 		}, fx.ResultTags(`group:"connectorHandlers"`))),

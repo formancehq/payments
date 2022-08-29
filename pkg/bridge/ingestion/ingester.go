@@ -15,16 +15,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const (
-	PaymentsTopics = "payments"
-)
-
-type Event struct {
-	Date    time.Time                `json:"date"`
-	Type    string                   `json:"type"`
-	Payload payments.ComputedPayment `json:"payload"`
-}
-
 type BatchElement struct {
 	Referenced payments.Referenced
 	Payment    *payments.Data
@@ -220,14 +210,9 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 		if i.publisher != nil {
 			for _, e := range allPayments {
-				err = i.publisher.Publish(ctx, PaymentsTopics, Event{
-					Date:    time.Now(),
-					Type:    "SAVED_PAYMENT",
-					Payload: e.Computed(),
-				})
-				if err != nil {
-					i.logger.Errorf("Error publishing payment: %s", err)
-				}
+				i.publish(ctx, TopicPayments,
+					NewEventSavedPayment(
+						SavedPayment(e.Computed())))
 			}
 		}
 

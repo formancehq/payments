@@ -5,10 +5,11 @@ import (
 	"testing"
 
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedlogging/sharedloggingtesting"
+	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
 	"github.com/pborman/uuid"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +31,11 @@ type testContext[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor 
 }
 
 func withManager[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor](builder *ConnectorBuilder[TaskDescriptor], callback func(ctx *testContext[ConnectorConfig, TaskDescriptor])) {
-	logger := sharedloggingtesting.Logger()
+	l := logrus.New()
+	if testing.Verbose() {
+		l.SetLevel(logrus.DebugLevel)
+	}
+	logger := sharedlogginglogrus.New(l)
 	taskStore := task.NewInMemoryStore[TaskDescriptor]()
 	managerStore := NewInMemoryStore()
 	provider := uuid.New()
