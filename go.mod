@@ -11,7 +11,7 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/numary/go-libs v1.0.0
-	github.com/numary/go-libs/sharedotlp v0.0.0-20220801164020-fc3e3280ca13
+	github.com/numary/go-libs/sharedotlp v0.0.0-20220829123039-3eeb76619d81
 	github.com/ory/dockertest v3.3.5+incompatible
 	github.com/pborman/uuid v1.2.1
 	github.com/pkg/errors v0.9.1
