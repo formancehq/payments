@@ -26,9 +26,7 @@ type EventMessage struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-type SavedPayment payments.ComputedPayment
-
-func NewEventSavedPayment(payment SavedPayment) EventMessage {
+func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
 	payload, err := json.Marshal(payment)
 	if err != nil {
 		panic(err)

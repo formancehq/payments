@@ -212,7 +212,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 			for _, e := range allPayments {
 				i.publish(ctx, TopicPayments,
 					NewEventSavedPayment(
-						SavedPayment(e.Computed())))
+						e.Computed()))
 			}
 		}
 
