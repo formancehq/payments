@@ -25,9 +25,7 @@ type EventMessage struct {
 	Payload any       `json:"payload"`
 }
 
-type SavedPayment payments.ComputedPayment
-
-func NewEventSavedPayment(payment SavedPayment) EventMessage {
+func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
 	return EventMessage{
 		Date:    time.Now().UTC(),
 		App:     EventApp,

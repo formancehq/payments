@@ -114,7 +114,7 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (p Payment) Computed() ComputedPayment {
+func (p Payment) Computed() SavedPayment {
 
 	aggregatedAdjustmentValue := int64(0)
 	amount := int64(0)
@@ -131,7 +131,7 @@ func (p Payment) Computed() ComputedPayment {
 		amount = p.InitialAmount + aggregatedAdjustmentValue
 	}
 
-	return ComputedPayment{
+	return SavedPayment{
 		Identifier:  p.Identifier,
 		Data:        p.Data,
 		Amount:      amount,
@@ -139,15 +139,15 @@ func (p Payment) Computed() ComputedPayment {
 	}
 }
 
-type ComputedPayment struct {
+type SavedPayment struct {
 	Identifier
 	Data
 	Amount      int64        `json:"amount"`
 	Adjustments []Adjustment `json:"adjustments"`
 }
 
-func (p ComputedPayment) MarshalJSON() ([]byte, error) {
-	type Aux ComputedPayment
+func (p SavedPayment) MarshalJSON() ([]byte, error) {
+	type Aux SavedPayment
 	return json.Marshal(struct {
 		ID string `json:"id"`
 		Aux
