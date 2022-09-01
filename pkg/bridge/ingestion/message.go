@@ -2,7 +2,6 @@ package ingestion
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
@@ -19,25 +18,20 @@ const (
 )
 
 type EventMessage struct {
-	Date    time.Time       `json:"date"`
-	App     string          `json:"app"`
-	Version string          `json:"version"`
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"payload"`
+	Date    time.Time `json:"date"`
+	App     string    `json:"app"`
+	Version string    `json:"version"`
+	Type    string    `json:"type"`
+	Payload any       `json:"payload"`
 }
 
 func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
-	payload, err := json.Marshal(payment)
-	if err != nil {
-		panic(err)
-	}
-
 	return EventMessage{
 		Date:    time.Now().UTC(),
 		App:     EventApp,
 		Version: EventVersion,
 		Type:    EventTypeSavedPayment,
-		Payload: payload,
+		Payload: payment,
 	}
 }
 
