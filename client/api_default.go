@@ -19,15 +19,14 @@ import (
 	"strings"
 )
 
-
 // DefaultApiService DefaultApi service
 type DefaultApiService service
 
 type ApiGetConnectorTaskRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *DefaultApiService
-	connector string
-	taskId string
+	connector  string
+	taskId     string
 }
 
 func (r ApiGetConnectorTaskRequest) Execute() (*ConnectorTask, *http.Response, error) {
@@ -47,9 +46,9 @@ Get a specific task associated to the connector
 func (a *DefaultApiService) GetConnectorTask(ctx context.Context, connector string, taskId string) ApiGetConnectorTaskRequest {
 	return ApiGetConnectorTaskRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
-		taskId: taskId,
+		ctx:        ctx,
+		connector:  connector,
+		taskId:     taskId,
 	}
 }
 
@@ -57,10 +56,10 @@ func (a *DefaultApiService) GetConnectorTask(ctx context.Context, connector stri
 //  @return ConnectorTask
 func (a *DefaultApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskRequest) (*ConnectorTask, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *ConnectorTask
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *ConnectorTask
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.GetConnectorTask")
@@ -131,9 +130,9 @@ func (a *DefaultApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskRequest
 }
 
 type ApiInstallConnectorRequest struct {
-	ctx context.Context
-	ApiService *DefaultApiService
-	connector string
+	ctx             context.Context
+	ApiService      *DefaultApiService
+	connector       string
 	connectorConfig *ConnectorConfig
 }
 
@@ -158,17 +157,17 @@ Install connector
 func (a *DefaultApiService) InstallConnector(ctx context.Context, connector string) ApiInstallConnectorRequest {
 	return ApiInstallConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *DefaultApiService) InstallConnectorExecute(r ApiInstallConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.InstallConnector")
@@ -234,9 +233,9 @@ func (a *DefaultApiService) InstallConnectorExecute(r ApiInstallConnectorRequest
 }
 
 type ApiListConnectorTasksRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *DefaultApiService
-	connector string
+	connector  string
 }
 
 func (r ApiListConnectorTasksRequest) Execute() ([]ConnectorTask, *http.Response, error) {
@@ -255,8 +254,8 @@ List all tasks associated with this connector.
 func (a *DefaultApiService) ListConnectorTasks(ctx context.Context, connector string) ApiListConnectorTasksRequest {
 	return ApiListConnectorTasksRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
@@ -264,10 +263,10 @@ func (a *DefaultApiService) ListConnectorTasks(ctx context.Context, connector st
 //  @return []ConnectorTask
 func (a *DefaultApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRequest) ([]ConnectorTask, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  []ConnectorTask
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue []ConnectorTask
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.ListConnectorTasks")
@@ -337,9 +336,9 @@ func (a *DefaultApiService) ListConnectorTasksExecute(r ApiListConnectorTasksReq
 }
 
 type ApiReadConnectorConfigRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *DefaultApiService
-	connector string
+	connector  string
 }
 
 func (r ApiReadConnectorConfigRequest) Execute() (*ConnectorConfig, *http.Response, error) {
@@ -358,8 +357,8 @@ Read connector config
 func (a *DefaultApiService) ReadConnectorConfig(ctx context.Context, connector string) ApiReadConnectorConfigRequest {
 	return ApiReadConnectorConfigRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
@@ -367,10 +366,10 @@ func (a *DefaultApiService) ReadConnectorConfig(ctx context.Context, connector s
 //  @return ConnectorConfig
 func (a *DefaultApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfigRequest) (*ConnectorConfig, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *ConnectorConfig
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *ConnectorConfig
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.ReadConnectorConfig")
@@ -440,9 +439,9 @@ func (a *DefaultApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfigR
 }
 
 type ApiResetConnectorRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *DefaultApiService
-	connector string
+	connector  string
 }
 
 func (r ApiResetConnectorRequest) Execute() (*http.Response, error) {
@@ -461,17 +460,17 @@ Reset connector. Will remove the connector and ALL PAYMENTS generated with it.
 func (a *DefaultApiService) ResetConnector(ctx context.Context, connector string) ApiResetConnectorRequest {
 	return ApiResetConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *DefaultApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.ResetConnector")
@@ -532,9 +531,9 @@ func (a *DefaultApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (*
 }
 
 type ApiUninstallConnectorRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *DefaultApiService
-	connector string
+	connector  string
 }
 
 func (r ApiUninstallConnectorRequest) Execute() (*http.Response, error) {
@@ -553,17 +552,17 @@ Uninstall  connector
 func (a *DefaultApiService) UninstallConnector(ctx context.Context, connector string) ApiUninstallConnectorRequest {
 	return ApiUninstallConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *DefaultApiService) UninstallConnectorExecute(r ApiUninstallConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodDelete
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodDelete
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "DefaultApiService.UninstallConnector")

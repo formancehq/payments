@@ -16,18 +16,17 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"reflect"
+	"strings"
 )
-
 
 // PaymentsApiService PaymentsApi service
 type PaymentsApiService service
 
 type ApiGetPaymentRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	paymentId string
+	paymentId  string
 }
 
 func (r ApiGetPaymentRequest) Execute() (*Payment, *http.Response, error) {
@@ -44,8 +43,8 @@ GetPayment Returns a payment.
 func (a *PaymentsApiService) GetPayment(ctx context.Context, paymentId string) ApiGetPaymentRequest {
 	return ApiGetPaymentRequest{
 		ApiService: a,
-		ctx: ctx,
-		paymentId: paymentId,
+		ctx:        ctx,
+		paymentId:  paymentId,
 	}
 }
 
@@ -53,10 +52,10 @@ func (a *PaymentsApiService) GetPayment(ctx context.Context, paymentId string) A
 //  @return Payment
 func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *Payment
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *Payment
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetPayment")
@@ -126,11 +125,11 @@ func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment
 }
 
 type ApiListPaymentsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	limit *int32
-	skip *int32
-	sort *[]string
+	limit      *int32
+	skip       *int32
+	sort       *[]string
 }
 
 // Limit the number of payments to return, pagination can be achieved in conjunction with &#39;skip&#39; parameter.
@@ -164,7 +163,7 @@ ListPayments Returns a list of payments.
 func (a *PaymentsApiService) ListPayments(ctx context.Context) ApiListPaymentsRequest {
 	return ApiListPaymentsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
@@ -172,10 +171,10 @@ func (a *PaymentsApiService) ListPayments(ctx context.Context) ApiListPaymentsRe
 //  @return ListPaymentsResponse
 func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*ListPaymentsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *ListPaymentsResponse
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *ListPaymentsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ListPayments")
