@@ -23,7 +23,7 @@ require (
 	github.com/stripe/stripe-go/v72 v72.122.0
 	github.com/uptrace/opentelemetry-go-extra/otellogrus v0.1.15
 	github.com/xdg-go/scram v1.1.1
-	go.mongodb.org/mongo-driver v1.10.1
+	go.mongodb.org/mongo-driver v1.10.2
 	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.34.0
 	go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo v0.34.0
 	go.opentelemetry.io/otel v1.9.0
