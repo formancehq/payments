@@ -18,8 +18,8 @@ import (
 type StripeConfig struct {
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
 	PollingPeriod *string `json:"pollingPeriod,omitempty"`
-	ApiKey string `json:"apiKey"`
-	// Number of BalanceTransaction to fetch at each polling interval. 
+	ApiKey        string  `json:"apiKey"`
+	// Number of BalanceTransaction to fetch at each polling interval.
 	PageSize *float32 `json:"pageSize,omitempty"`
 }
 
@@ -186,5 +186,3 @@ func (v *NullableStripeConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

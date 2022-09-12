@@ -17,16 +17,16 @@ import (
 
 // Payment struct for Payment
 type Payment struct {
-	Provider string `json:"provider"`
-	Reference *string `json:"reference,omitempty"`
-	Scheme string `json:"scheme"`
-	Status string `json:"status"`
-	Type string `json:"type"`
-	Id string `json:"id"`
-	Amount int32 `json:"amount"`
-	Asset string `json:"asset"`
-	Date time.Time `json:"date"`
-	Raw interface{} `json:"raw,omitempty"`
+	Provider  string      `json:"provider"`
+	Reference *string     `json:"reference,omitempty"`
+	Scheme    string      `json:"scheme"`
+	Status    string      `json:"status"`
+	Type      string      `json:"type"`
+	Id        string      `json:"id"`
+	Amount    int32       `json:"amount"`
+	Asset     string      `json:"asset"`
+	Date      time.Time   `json:"date"`
+	Raw       interface{} `json:"raw,omitempty"`
 }
 
 // NewPayment instantiates a new Payment object
@@ -381,5 +381,3 @@ func (v *NullablePayment) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
