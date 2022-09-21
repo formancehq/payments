@@ -7,7 +7,19 @@ jobs:
     uses: numary/gh-workflows/.github/workflows/pr-style.yml@main
 
   lint:
-    uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
+    #uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-go@v3
+      with:
+        go-version-file: 'go.mod'
+        cache: true
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: v1.49.0
+        args: --verbose
 
   test:
     uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
