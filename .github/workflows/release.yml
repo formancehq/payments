@@ -41,7 +41,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/numary/payments:latest,ghcr.io/numary/payments:${{ github.event.release.tag_name }}
+          tags: ghcr.io/formancehq/payments:latest,ghcr.io/formancehq/payments:${{ github.event.release.tag_name }}
           build-args: |
             APP_SHA=${{ github.sha }}
             VERSION=${{ github.event.release.tag_name }}
