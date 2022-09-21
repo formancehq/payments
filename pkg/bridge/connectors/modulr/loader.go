@@ -37,10 +37,9 @@ func NewLoader() integration.Loader[Config, TaskDescriptor] {
 		WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 			return integration.NewConnectorBuilder[TaskDescriptor]().
 				WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
-					ctx.Scheduler().Schedule(TaskDescriptor{
+					return ctx.Scheduler().Schedule(TaskDescriptor{
 						Name: "fetch-accounts",
 					}, false)
-					return nil
 				}).
 				WithResolve(func(desc TaskDescriptor) task.Task {
 					if desc.Name == "fetch-transactions" {

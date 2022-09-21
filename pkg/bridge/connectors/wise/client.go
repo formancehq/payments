@@ -1,10 +1,13 @@
 package wise
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/numary/go-libs/sharedlogging"
 )
 
 const (
@@ -73,14 +76,19 @@ func (w *WiseClient) GetProfiles() ([]Profile, error) {
 		return profiles, err
 	}
 
-	b, _ := io.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	json.Unmarshal(b, &profiles)
+	if err := json.Unmarshal(b, &profiles); err != nil {
+		return nil, err
+	}
 
 	return profiles, nil
 }
 
-func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
+func (w *WiseClient) GetTransfers(ctx context.Context, profile *Profile) ([]Transfer, error) {
 	transfers := []Transfer{}
 
 	limit := 10
@@ -89,7 +97,7 @@ func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
 	for {
 		ts := []Transfer{}
 
-		req, err := http.NewRequest(http.MethodGet, w.Endpoint("v1/transfers"), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, w.Endpoint("v1/transfers"), nil)
 		if err != nil {
 			return transfers, err
 		}
@@ -105,12 +113,12 @@ func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
 			return transfers, err
 		}
 
-		b, _ := io.ReadAll(res.Body)
-		json.Unmarshal(b, &ts)
-
-		for _, t := range ts {
-			transfers = append(transfers, t)
+		if err := json.NewDecoder(res.Body).Decode(&ts); err != nil {
+			sharedlogging.GetLogger(ctx).Errorf("unmarshalling response: %s", err)
+			continue
 		}
+
+		transfers = append(transfers, ts...)
 
 		if len(ts) < limit {
 			break

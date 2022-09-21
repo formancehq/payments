@@ -27,7 +27,7 @@ func buildKeyId(apiKey string) string {
 }
 
 func generateEncodedSignature(apiSecret string, nonce string, date string) string {
-	encodedSig := encodeSignature(DatePrefix + date + Newline + Nonce + nonce, apiSecret)
+	encodedSig := encodeSignature(DatePrefix+date+Newline+Nonce+nonce, apiSecret)
 	return SignaturePrefix + encodedSig + SignatureSuffix
 }
 

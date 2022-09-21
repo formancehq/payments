@@ -53,14 +53,17 @@ func NewLoader() integration.Loader[Config, TaskDefinition] {
 								return err
 							}
 
-							fmt.Println(profiles)
+							sharedlogging.GetLogger(ctx).Infof("Got profiles: %s", profiles)
 
 							for _, profile := range profiles {
 								logger.Infof(fmt.Sprintf("scheduling fetch-transfers: %d", profile.Id))
-								scheduler.Schedule(TaskDefinition{
-									Name:      fmt.Sprintf("fetch-transfers"),
+								if err := scheduler.Schedule(TaskDefinition{
+									Name:      "fetch-transfers",
 									ProfileId: profile.Id,
-								}, false)
+								}, false); err != nil {
+									sharedlogging.GetLogger(ctx).Infof("Error scheduling task '%s': %s", profile.Id, err)
+									continue
+								}
 							}
 
 							return nil
@@ -73,7 +76,7 @@ func NewLoader() integration.Loader[Config, TaskDefinition] {
 					) error {
 						client := NewClient(config.ApiKey)
 
-						transfers, err := client.GetTransfers(&Profile{
+						transfers, err := client.GetTransfers(ctx, &Profile{
 							Id: def.ProfileId,
 						})
 
@@ -81,7 +84,7 @@ func NewLoader() integration.Loader[Config, TaskDefinition] {
 							return err
 						}
 
-						fmt.Println(transfers)
+						sharedlogging.GetLogger(ctx).Infof("Got transfers: %s", transfers)
 
 						batch := ingestion.Batch{}
 
