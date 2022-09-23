@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"reflect"
 	"sync"
@@ -106,7 +106,7 @@ func (e *httpExpect[REQUEST, RESPONSE]) handle(t *testing.T, request *http.Reque
 
 	return &http.Response{
 		StatusCode:    e.statusCode,
-		Body:          ioutil.NopCloser(bytes.NewReader(data)),
+		Body:          io.NopCloser(bytes.NewReader(data)),
 		ContentLength: int64(len(data)),
 		Request:       request,
 	}, nil
