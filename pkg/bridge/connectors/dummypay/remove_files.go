@@ -2,14 +2,15 @@ package dummypay
 
 import (
 	"fmt"
-	"os"
 	"strings"
+
+	"github.com/spf13/afero"
 )
 
 // removeFiles removes all files from the given directory.
 // Only removes files that has generatedFilePrefix in the name.
-func removeFiles(config Config) error {
-	dir, err := os.ReadDir(config.Directory)
+func removeFiles(config Config, fs fs) error {
+	dir, err := afero.ReadDir(fs, config.Directory)
 	if err != nil {
 		return fmt.Errorf("failed to open directory '%s': %w", config.Directory, err)
 	}
@@ -22,7 +23,7 @@ func removeFiles(config Config) error {
 		}
 
 		// remove the file
-		err = os.Remove(fmt.Sprintf("%s/%s", config.Directory, file.Name()))
+		err = fs.Remove(fmt.Sprintf("%s/%s", config.Directory, file.Name()))
 		if err != nil {
 			return fmt.Errorf("failed to remove file '%s': %w", file.Name(), err)
 		}

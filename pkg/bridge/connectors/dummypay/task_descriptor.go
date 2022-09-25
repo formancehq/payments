@@ -16,14 +16,14 @@ type TaskDescriptor struct {
 }
 
 // handleResolve resolves a task execution request based on the task descriptor.
-func handleResolve(config Config, descriptor TaskDescriptor) task.Task {
+func handleResolve(config Config, descriptor TaskDescriptor, fs fs) task.Task {
 	switch descriptor.Key {
 	case taskKeyReadFiles:
-		return taskReadFiles(config)
+		return taskReadFiles(config, fs)
 	case taskKeyIngest:
-		return taskIngest(config, descriptor)
+		return taskIngest(config, descriptor, fs)
 	case taskKeyGenerateFiles:
-		return taskGenerateFiles(config)
+		return taskGenerateFiles(config, fs)
 	}
 
 	// This should never happen.

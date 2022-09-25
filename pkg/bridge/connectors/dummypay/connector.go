@@ -15,6 +15,7 @@ const connectorName = "dummypay"
 type Connector struct {
 	logger sharedlogging.Logger
 	cfg    Config
+	fs     fs
 }
 
 // Install executes post-installation steps to read and generate files.
@@ -36,7 +37,7 @@ func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
 func (c *Connector) Uninstall(ctx context.Context) error {
 	c.logger.Infof("Removing generated files from '%s'...", c.cfg.Directory)
 
-	err := removeFiles(c.cfg)
+	err := removeFiles(c.cfg, c.fs)
 	if err != nil {
 		return fmt.Errorf("failed to remove generated files: %w", err)
 	}
@@ -48,15 +49,16 @@ func (c *Connector) Uninstall(ctx context.Context) error {
 func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
 	c.logger.Infof("Executing '%s' task...", descriptor.Key)
 
-	return handleResolve(c.cfg, descriptor)
+	return handleResolve(c.cfg, descriptor, c.fs)
 }
 
 // NewConnector creates a new dummy payment connector.
-func NewConnector(logger sharedlogging.Logger, cfg Config) *Connector {
+func NewConnector(logger sharedlogging.Logger, cfg Config, fs fs) *Connector {
 	return &Connector{
 		logger: logger.WithFields(map[string]any{
 			"component": "connector",
 		}),
 		cfg: cfg,
+		fs:  fs,
 	}
 }

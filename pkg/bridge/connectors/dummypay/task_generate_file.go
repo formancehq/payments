@@ -5,10 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
-	"os"
 	"time"
 
-	"github.com/numary/go-libs/sharedlogging"
 	payments "github.com/numary/payments/pkg"
 	"github.com/numary/payments/pkg/bridge/task"
 )
@@ -27,49 +25,57 @@ func newTaskGenerateFiles() TaskDescriptor {
 }
 
 // taskGenerateFiles generates payment files to a given directory.
-func taskGenerateFiles(config Config) task.Task {
-	return func(ctx context.Context, logger sharedlogging.Logger,
-		scheduler task.Scheduler[TaskDescriptor]) error {
+func taskGenerateFiles(config Config, fs fs) task.Task {
+	return func(ctx context.Context) error {
 		for {
 			select {
 			case <-ctx.Done():
 				return nil
 			case <-time.After(config.FileGenerationPeriod):
-				key := fmt.Sprintf("%s-%d", generatedFilePrefix, time.Now().UnixNano())
-				fileKey := fmt.Sprintf("%s/%s.json", config.Directory, key)
-
-				var paymentObj payment
-
-				// Generate a random payment.
-				paymentObj.Reference = key
-				paymentObj.Type = generateRandomType()
-				paymentObj.Status = generateRandomStatus()
-				paymentObj.InitialAmount = int64(generateRandomNumber())
-				paymentObj.Asset = asset
-
-				file, err := os.Create(fileKey)
+				err := generateFile(config, fs)
 				if err != nil {
-					return fmt.Errorf("failed to create file: %w", err)
-				}
-
-				// Encode the payment object as JSON to a new file.
-				err = json.NewEncoder(file).Encode(&paymentObj)
-				if err != nil {
-					// Close the file before returning.
-					if fileCloseErr := file.Close(); fileCloseErr != nil {
-						return fmt.Errorf("failed to close file: %w", fileCloseErr)
-					}
-
-					return fmt.Errorf("failed to encode json into file: %w", err)
-				}
-
-				// Close the file.
-				if err = file.Close(); err != nil {
-					return fmt.Errorf("failed to close file: %w", err)
+					return err
 				}
 			}
 		}
 	}
+}
+
+func generateFile(config Config, fs fs) error {
+	key := fmt.Sprintf("%s-%d", generatedFilePrefix, time.Now().UnixNano())
+	fileKey := fmt.Sprintf("%s/%s.json", config.Directory, key)
+
+	var paymentObj payment
+
+	// Generate a random payment.
+	paymentObj.Reference = key
+	paymentObj.Type = generateRandomType()
+	paymentObj.Status = generateRandomStatus()
+	paymentObj.InitialAmount = int64(generateRandomNumber())
+	paymentObj.Asset = asset
+
+	file, err := fs.Create(fileKey)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+
+	// Encode the payment object as JSON to a new file.
+	err = json.NewEncoder(file).Encode(&paymentObj)
+	if err != nil {
+		// Close the file before returning.
+		if fileCloseErr := file.Close(); fileCloseErr != nil {
+			return fmt.Errorf("failed to close file: %w", fileCloseErr)
+		}
+
+		return fmt.Errorf("failed to encode json into file: %w", err)
+	}
+
+	// Close the file.
+	if err = file.Close(); err != nil {
+		return fmt.Errorf("failed to close file: %w", err)
+	}
+
+	return nil
 }
 
 // nMax is the maximum number that can be generated

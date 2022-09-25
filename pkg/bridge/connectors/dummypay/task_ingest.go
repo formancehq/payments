@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 
 	payments "github.com/numary/payments/pkg"
@@ -23,32 +22,12 @@ func newTaskIngest(filePath string) TaskDescriptor {
 }
 
 // taskIngest ingests a payment file.
-func taskIngest(config Config, descriptor TaskDescriptor) task.Task {
-	return func(ctx context.Context, ingester ingestion.Ingester, resolver task.StateResolver) error {
-		// Open the file.
-		file, err := os.Open(filepath.Join(config.Directory, descriptor.FileName))
+func taskIngest(config Config, descriptor TaskDescriptor, fs fs) task.Task {
+	return func(ctx context.Context, ingester ingestion.Ingester) error {
+		ingestionPayload, err := parseIngestionPayload(config, descriptor, fs)
 		if err != nil {
-			return fmt.Errorf("failed to open file '%s': %w", descriptor.FileName, err)
+			return err
 		}
-
-		defer file.Close()
-
-		var paymentElement payment
-
-		// Decode the JSON file.
-		err = json.NewDecoder(file).Decode(&paymentElement)
-		if err != nil {
-			return fmt.Errorf("failed to decode file '%s': %w", descriptor.FileName, err)
-		}
-
-		ingestionPayload := ingestion.Batch{ingestion.BatchElement{
-			Referenced: payments.Referenced{
-				Reference: paymentElement.Reference,
-				Type:      paymentElement.Type,
-			},
-			Payment: &paymentElement.Data,
-			Forward: true,
-		}}
 
 		// Ingest the payment into the system.
 		err = ingester.Ingest(ctx, ingestionPayload, struct{}{})
@@ -58,4 +37,33 @@ func taskIngest(config Config, descriptor TaskDescriptor) task.Task {
 
 		return nil
 	}
+}
+
+func parseIngestionPayload(config Config, descriptor TaskDescriptor, fs fs) (ingestion.Batch, error) {
+	// Open the file.
+	file, err := fs.Open(filepath.Join(config.Directory, descriptor.FileName))
+	if err != nil {
+		return nil, fmt.Errorf("failed to open file '%s': %w", descriptor.FileName, err)
+	}
+
+	defer file.Close()
+
+	var paymentElement payment
+
+	// Decode the JSON file.
+	err = json.NewDecoder(file).Decode(&paymentElement)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode file '%s': %w", descriptor.FileName, err)
+	}
+
+	ingestionPayload := ingestion.Batch{ingestion.BatchElement{
+		Referenced: payments.Referenced{
+			Reference: paymentElement.Reference,
+			Type:      paymentElement.Type,
+		},
+		Payment: &paymentElement.Data,
+		Forward: true,
+	}}
+
+	return ingestionPayload, nil
 }

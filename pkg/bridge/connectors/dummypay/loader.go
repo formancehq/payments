@@ -42,7 +42,7 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 
 // Load returns the connector.
 func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-	return NewConnector(logger, config)
+	return NewConnector(logger, config, newFS())
 }
 
 // NewLoader creates a new loader.
