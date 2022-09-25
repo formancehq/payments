@@ -1,35 +1,51 @@
 package dummypay
 
 import (
-	"fmt"
+	"time"
+
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge/integration"
-	"github.com/numary/payments/pkg/bridge/task"
 )
 
+type loader struct{}
+
+// Name returns the name of the connector.
+func (l *loader) Name() string {
+	return connectorName
+}
+
+// AllowTasks returns the amount of tasks that are allowed to be scheduled.
+func (l *loader) AllowTasks() int {
+	return 10
+}
+
+const (
+	// defaultFilePollingPeriod is the default period between file polling.
+	defaultFilePollingPeriod = 10 * time.Second
+
+	// defaultFileGenerationPeriod is the default period between file generation.
+	defaultFileGenerationPeriod = 5 * time.Second
+)
+
+// ApplyDefaults applies default values to the configuration.
+func (l *loader) ApplyDefaults(cfg Config) Config {
+	if cfg.FileGenerationPeriod == 0 {
+		cfg.FileGenerationPeriod = defaultFileGenerationPeriod
+	}
+
+	if cfg.FilePollingPeriod == 0 {
+		cfg.FilePollingPeriod = defaultFilePollingPeriod
+	}
+
+	return cfg
+}
+
+// Load returns the connector.
+func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
+	return NewConnector(logger, config)
+}
+
+// NewLoader creates a new loader.
 func NewLoader() integration.Loader[Config, TaskDescriptor] {
-	loader := integration.
-		NewLoaderBuilder[Config, TaskDescriptor](connectorName).
-		WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-			return integration.NewConnectorBuilder[TaskDescriptor]().
-				WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
-					return ctx.Scheduler().Schedule(newTaskReadFiles(), true)
-				}).
-				WithResolve(func(descriptor TaskDescriptor) task.Task {
-					switch descriptor.Key {
-					case taskKeyReadFiles:
-						return taskReadFiles(config)
-					case taskKeyIngest:
-						return taskIngest(config, descriptor)
-					}
-
-					return func() error {
-						return fmt.Errorf("key '%s': %w", descriptor.Key, ErrMissingTask)
-					}
-				}).
-				Build()
-		}).
-		Build()
-
-	return loader
+	return &loader{}
 }
