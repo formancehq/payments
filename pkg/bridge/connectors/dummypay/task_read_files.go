@@ -6,10 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/afero"
-
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/pkg/bridge/task"
+	"github.com/spf13/afero"
 )
 
 const taskKeyReadFiles = "read-files"
