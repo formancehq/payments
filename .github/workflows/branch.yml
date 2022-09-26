@@ -30,7 +30,7 @@ jobs:
         context: .
         platforms: linux/amd64,linux/arm64
         push: true
-        tags: ghcr.io/numary/payments:${{ github.sha }}
+        tags: ghcr.io/formancehq/payments:${{ github.sha }}
         build-args: |
           APP_SHA=${{ github.sha }}
           VERSION=${{ github.sha }}

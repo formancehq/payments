@@ -6,13 +6,13 @@ permissions:
   contents: write
 jobs:
   lint:
-    uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/golang-lint.yml@main
 
   test:
-    uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/golang-test.yml@main
 
   build:
-    uses: numary/gh-workflows/.github/workflows/goreleaser-release.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/goreleaser-release.yml@main
     secrets:
       NUMARY_GITHUB_TOKEN: ${{ secrets.NUMARY_GITHUB_TOKEN }}
       FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
@@ -41,7 +41,7 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: ghcr.io/numary/payments:latest,ghcr.io/numary/payments:${{ github.event.release.tag_name }}
+          tags: ghcr.io/formancehq/payments:latest,ghcr.io/formancehq/payments:${{ github.event.release.tag_name }}
           build-args: |
             APP_SHA=${{ github.sha }}
             VERSION=${{ github.event.release.tag_name }}
