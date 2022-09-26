@@ -2,7 +2,6 @@ package dummypay
 
 import (
 	"fmt"
-	"syscall"
 	"time"
 )
 
@@ -29,11 +28,6 @@ func (cfg Config) Validate() error {
 	// require directory path to be present
 	if cfg.Directory == "" {
 		return ErrMissingDirectory
-	}
-
-	// check if RW access is available for the given directory
-	if err := syscall.Access(cfg.Directory, syscall.O_RDWR); err != nil {
-		return fmt.Errorf("directory is not accessible: %w", err)
 	}
 
 	// check if file polling period is set properly
