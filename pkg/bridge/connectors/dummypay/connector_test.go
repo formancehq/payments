@@ -42,7 +42,7 @@ func TestConnector(t *testing.T) {
 	connector := NewConnector(logger, config, fs)
 
 	err := connector.Install(new(mockConnectorContext[TaskDescriptor]))
-	assert.NoErrorf(t, err, "Install() failed: %v")
+	assert.NoErrorf(t, err, "Install() failed")
 
 	testCases := []struct {
 		key  taskKey
