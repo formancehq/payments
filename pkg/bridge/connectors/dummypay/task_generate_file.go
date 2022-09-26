@@ -53,6 +53,7 @@ func generateFile(config Config, fs fs) error {
 	paymentObj.Status = generateRandomStatus()
 	paymentObj.InitialAmount = int64(generateRandomNumber())
 	paymentObj.Asset = asset
+	paymentObj.Scheme = generateRandomScheme()
 
 	file, err := fs.Create(fileKey)
 	if err != nil {
@@ -121,4 +122,35 @@ func generateRandomStatus() payments.Status {
 	}
 
 	return paymentStatus
+}
+
+// generateRandomScheme generates a random payment scheme.
+func generateRandomScheme() payments.Scheme {
+	n := generateRandomNumber() / 1000
+
+	paymentScheme := payments.SchemeCardMasterCard
+
+	availableSchemes := []payments.Scheme{
+		payments.SchemeCardMasterCard,
+		payments.SchemeCardVisa,
+		payments.SchemeCardDiscover,
+		payments.SchemeCardJCB,
+		payments.SchemeCardUnionPay,
+		payments.SchemeCardAmex,
+		payments.SchemeCardDiners,
+		payments.SchemeSepaDebit,
+		payments.SchemeSepaCredit,
+		payments.SchemeApplePay,
+		payments.SchemeGooglePay,
+		payments.SchemeA2A,
+		payments.SchemeAchDebit,
+		payments.SchemeAch,
+		payments.SchemeRtp,
+	}
+
+	if n < len(availableSchemes) {
+		paymentScheme = availableSchemes[n]
+	}
+
+	return paymentScheme
 }
