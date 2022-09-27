@@ -3,7 +3,7 @@ info:
   title: Payments API
   version: 1.0.0
 paths:
-  /payments:
+  '/payments':
     get:
       summary: Returns a list of payments.
       operationId: listPayments
@@ -37,7 +37,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListPaymentsResponse'
-  /payments/{paymentId}:
+  '/payments/{paymentId}':
     get:
       summary: Returns a payment.
       operationId: getPayment
@@ -58,7 +58,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
-  /connectors/{connector}:
+  '/connectors/{connector}':
     post:
       summary: Install connector
       operationId: installConnector
@@ -71,6 +71,7 @@ paths:
           type: string
           enum:
           - stripe
+          - dummypay
         required: true
       requestBody:
         required: true
@@ -97,7 +98,7 @@ paths:
       responses:
         204:
           description: Connector has been uninstalled
-  /connectors/{connector}/config:
+  '/connectors/{connector}/config':
     get:
       summary: Read connector config
       operationId: readConnectorConfig
@@ -118,7 +119,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorConfig'
-  /connectors/{connector}/reset:
+  '/connectors/{connector}/reset':
     post:
       summary: Reset connector
       operationId: resetConnector
@@ -135,7 +136,7 @@ paths:
       responses:
         204:
           description: Connector has been reset
-  /connectors/{connector}/tasks:
+  '/connectors/{connector}/tasks':
     get:
       summary: List connector tasks
       operationId: listConnectorTasks
@@ -158,7 +159,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ConnectorTask'
-  /connectors/{connector}/tasks/{taskId}:
+  '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
       operationId: getConnectorTask
@@ -191,6 +192,7 @@ components:
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
+      - $ref: '#/components/schemas/DummyPayConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -201,9 +203,9 @@ components:
       properties:
         pollingPeriod:
           type: string
-          example: "60s"
+          example: '60s'
           description: The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
-          default: "120s"
+          default: '120s'
         apiKey:
           type: string
           example: XXX
@@ -232,7 +234,24 @@ components:
           description: The creation date of the more recent BalanceTransaction fetched from stripe for this account
         noMoreHistory:
           type: boolean
-          description: Indicate that there no more history to fetch on this account
+    DummyPayConfig:
+      type: object
+      required:
+      - directory
+      properties:
+        filePollingPeriod:
+          type: string
+          example: '60s'
+          description: The frequency at which the connector will try to fetch new payment objects from the directory
+          default: '10s'
+        fileGenerationPeriod:
+          type: string
+          example: '60s'
+          description: The frequency at which the connector will create new payment objects in the directory
+          default: '10s'
+        directory:
+          type: string
+          example: '/tmp/dummypay'
     ListPaymentsResponse:
       type: object
       required:
