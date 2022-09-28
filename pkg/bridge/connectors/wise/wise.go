@@ -14,7 +14,6 @@ import (
 const (
 	taskNameFetchTransfers = "fetch-transfers"
 	taskNameFetchProfiles  = "fetch-profiles"
-	taskNameFetchBalances  = "fetch-balances"
 )
 
 type Config struct {
@@ -48,19 +47,19 @@ func NewLoader() integration.Loader[Config, TaskDefinition] {
 							client := NewClient(config.ApiKey)
 
 							profiles, err := client.GetProfiles()
-
 							if err != nil {
 								return err
 							}
 
-							fmt.Println(profiles)
-
 							for _, profile := range profiles {
 								logger.Infof(fmt.Sprintf("scheduling fetch-transfers: %d", profile.Id))
-								scheduler.Schedule(TaskDefinition{
-									Name:      fmt.Sprintf("fetch-transfers"),
+								err = scheduler.Schedule(TaskDefinition{
+									Name:      taskNameFetchTransfers,
 									ProfileId: profile.Id,
 								}, false)
+								if err != nil {
+									return err
+								}
 							}
 
 							return nil
@@ -80,8 +79,6 @@ func NewLoader() integration.Loader[Config, TaskDefinition] {
 						if err != nil {
 							return err
 						}
-
-						fmt.Println(transfers)
 
 						batch := ingestion.Batch{}
 

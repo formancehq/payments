@@ -20,7 +20,7 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-type WiseClient struct {
+type Client struct {
 	httpClient *http.Client
 }
 
@@ -61,12 +61,12 @@ type BalanceAccount struct {
 	} `json:"amount"`
 }
 
-func (w *WiseClient) Endpoint(path string) string {
+func (w *Client) Endpoint(path string) string {
 	return fmt.Sprintf("%s/%s", apiEndpoint, path)
 }
 
-func (w *WiseClient) GetProfiles() ([]Profile, error) {
-	profiles := []Profile{}
+func (w *Client) GetProfiles() ([]Profile, error) {
+	var profiles []Profile
 
 	res, err := w.httpClient.Get(w.Endpoint("v1/profiles"))
 	if err != nil {
@@ -75,19 +75,22 @@ func (w *WiseClient) GetProfiles() ([]Profile, error) {
 
 	b, _ := io.ReadAll(res.Body)
 
-	json.Unmarshal(b, &profiles)
+	err = json.Unmarshal(b, &profiles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal profiles: %w", err)
+	}
 
 	return profiles, nil
 }
 
-func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
-	transfers := []Transfer{}
+func (w *Client) GetTransfers(profile *Profile) ([]Transfer, error) {
+	var transfers []Transfer
 
 	limit := 10
 	offset := 0
 
 	for {
-		ts := []Transfer{}
+		var ts []Transfer
 
 		req, err := http.NewRequest(http.MethodGet, w.Endpoint("v1/transfers"), nil)
 		if err != nil {
@@ -106,11 +109,12 @@ func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
 		}
 
 		b, _ := io.ReadAll(res.Body)
-		json.Unmarshal(b, &ts)
-
-		for _, t := range ts {
-			transfers = append(transfers, t)
+		err = json.Unmarshal(b, &ts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal transfers: %w", err)
 		}
+
+		transfers = append(transfers, ts...)
 
 		if len(ts) < limit {
 			break
@@ -122,14 +126,14 @@ func (w *WiseClient) GetTransfers(profile *Profile) ([]Transfer, error) {
 	return transfers, nil
 }
 
-func NewClient(apiKey string) *WiseClient {
+func NewClient(apiKey string) *Client {
 	httpClient := &http.Client{
 		Transport: &apiTransport{
 			ApiKey: apiKey,
 		},
 	}
 
-	return &WiseClient{
+	return &Client{
 		httpClient: httpClient,
 	}
 }
