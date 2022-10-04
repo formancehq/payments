@@ -72,6 +72,7 @@ paths:
           enum:
           - stripe
           - dummypay
+          - wise
         required: true
       requestBody:
         required: true
@@ -193,6 +194,7 @@ components:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
       - $ref: '#/components/schemas/DummyPayConfig'
+      - $ref: '#/components/schemas/WiseConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -252,6 +254,14 @@ components:
         directory:
           type: string
           example: '/tmp/dummypay'
+    WiseConfig:
+      type: object
+      required:
+      - apiKey
+      properties:
+        apiKey:
+          type: string
+          example: 'XXX'
     ListPaymentsResponse:
       type: object
       required:
