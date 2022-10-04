@@ -19,12 +19,14 @@ type TaskDefinition struct {
 }
 
 func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinition TaskDefinition) task.Task {
+	client := newClient(config.APIKey)
+
 	return func(taskDefinition TaskDefinition) task.Task {
 		switch taskDefinition.Name {
 		case taskNameFetchProfiles:
-			return taskFetchProfiles(logger, config)
+			return taskFetchProfiles(logger, client)
 		case taskNameFetchTransfers:
-			return taskFetchTransfers(logger, config, taskDefinition.ProfileID)
+			return taskFetchTransfers(logger, client, taskDefinition.ProfileID)
 		}
 
 		// This should never happen.

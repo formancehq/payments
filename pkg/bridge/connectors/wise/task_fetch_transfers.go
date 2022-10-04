@@ -10,18 +10,15 @@ import (
 	"github.com/numary/payments/pkg/bridge/task"
 )
 
-func taskFetchTransfers(logger sharedlogging.Logger, config Config, profileID uint64) task.Task {
+func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID uint64) task.Task {
 	return func(
 		ctx context.Context,
 		scheduler task.Scheduler[TaskDefinition],
 		ingester ingestion.Ingester,
 	) error {
-		client := newClient(config.APIKey)
-
 		transfers, err := client.getTransfers(&profile{
 			ID: profileID,
 		})
-
 		if err != nil {
 			return err
 		}
@@ -30,21 +27,39 @@ func taskFetchTransfers(logger sharedlogging.Logger, config Config, profileID ui
 
 		for _, transfer := range transfers {
 			logger.Info(transfer)
-			batch = append(batch, ingestion.BatchElement{
+
+			batchElement := ingestion.BatchElement{
 				Referenced: payments.Referenced{
 					Reference: fmt.Sprintf("%d", transfer.ID),
-					Type:      "transfer",
+					Type:      payments.TypeTransfer,
 				},
 				Payment: &payments.Data{
-					Status:        payments.StatusSucceeded,
+					Status:        matchTransferStatus(transfer.Status),
 					Scheme:        payments.SchemeOther,
 					InitialAmount: int64(transfer.TargetValue * 100),
 					Asset:         fmt.Sprintf("%s/2", transfer.TargetCurrency),
 					Raw:           transfer,
 				},
-			})
+			}
+
+			batch = append(batch, batchElement)
 		}
 
 		return ingester.Ingest(ctx, batch, struct{}{})
 	}
+}
+
+func matchTransferStatus(status string) payments.Status {
+	switch status {
+	case "incoming_payment_waiting", "processing":
+		return payments.StatusPending
+	case "funds_converted", "outgoing_payment_sent":
+		return payments.StatusSucceeded
+	case "bounced_back", "funds_refunded":
+		return payments.StatusFailed
+	case "cancelled":
+		return payments.StatusCancelled
+	}
+
+	return payments.StatusOther
 }

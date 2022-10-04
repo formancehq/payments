@@ -8,13 +8,11 @@ import (
 	"github.com/numary/payments/pkg/bridge/task"
 )
 
-func taskFetchProfiles(logger sharedlogging.Logger, config Config) task.Task {
+func taskFetchProfiles(logger sharedlogging.Logger, client *client) task.Task {
 	return func(
 		ctx context.Context,
 		scheduler task.Scheduler[TaskDefinition],
 	) error {
-		client := newClient(config.APIKey)
-
 		profiles, err := client.getProfiles()
 		if err != nil {
 			return err
