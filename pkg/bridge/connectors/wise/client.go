@@ -59,7 +59,10 @@ func (w *client) getProfiles() ([]profile, error) {
 		return profiles, err
 	}
 
-	b, _ := io.ReadAll(res.Body)
+	b, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
 
 	err = json.Unmarshal(b, &profiles)
 	if err != nil {
@@ -94,7 +97,11 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 			return transfers, err
 		}
 
-		b, _ := io.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
 		err = json.Unmarshal(b, &ts)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal transfers: %w", err)
