@@ -73,6 +73,7 @@ paths:
           - stripe
           - dummypay
           - wise
+          - modulr
         required: true
       requestBody:
         required: true
@@ -195,6 +196,7 @@ components:
       - $ref: '#/components/schemas/StripeConfig'
       - $ref: '#/components/schemas/DummyPayConfig'
       - $ref: '#/components/schemas/WiseConfig'
+      - $ref: '#/components/schemas/ModulrConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -260,6 +262,21 @@ components:
       - apiKey
       properties:
         apiKey:
+          type: string
+          example: 'XXX'
+    ModulrConfig:
+      type: object
+      required:
+      - apiKey
+      - apiSecret
+      properties:
+        apiKey:
+          type: string
+          example: 'XXX'
+        apiSecret:
+          type: string
+          example: 'XXX'
+        endpoint:
           type: string
           example: 'XXX'
     ListPaymentsResponse:

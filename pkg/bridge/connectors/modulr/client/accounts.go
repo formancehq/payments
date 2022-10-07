@@ -1,8 +1,9 @@
-package modulr
+package client
 
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 )
 
 type Account struct {
@@ -21,19 +22,20 @@ type Account struct {
 	CreatedDate string `json:"createdDate"`
 }
 
-func (m *ModulrClient) GetAccounts() ([]Account, error) {
-	resp, err := m.httpClient.Get(m.Endpoint("accounts"))
+func (m *Client) GetAccounts() ([]Account, error) {
+	resp, err := m.httpClient.Get(m.buildEndpoint("accounts"))
 	if err != nil {
 		return nil, err
 	}
+
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	var res ResponseWrapper[[]Account]
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	var res responseWrapper[[]Account]
+	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return nil, err
 	}
 

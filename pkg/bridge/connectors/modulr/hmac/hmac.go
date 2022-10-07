@@ -3,53 +3,58 @@ package hmac
 import (
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/google/uuid"
-	"github.com/numary/payments/pkg/bridge/connectors/modulr/hmac/signature"
+	"github.com/pkg/errors"
 )
 
 const (
-	AuthorizationHeader = "Authorization"
-	DateHeader          = "Date"
-	EmptyString         = ""
-	NonceHeader         = "x-mod-nonce"
-	Retry               = "x-mod-retry"
-	RetryTrue           = "true"
-	RetryFalse          = "false"
+	authorizationHeader = "Authorization"
+	dateHeader          = "Date"
+	emptyString         = ""
+	nonceHeader         = "x-mod-nonce"
+	retry               = "x-mod-retry"
+	retryTrue           = "true"
+	retryFalse          = "false"
 )
 
-var dateNow = time.Now
+var ErrInvalidCredentials = errors.New("invalid api credentials")
 
-func GenerateHeaders(apiKey string, apiSecret string, nonce string, hasRetry bool) (map[string]string, *ValidationError) {
-	validationError := validateInput(apiKey, apiSecret)
-
-	if validationError != nil {
-		return nil, validationError
+func GenerateHeaders(apiKey string, apiSecret string, nonce string, hasRetry bool) (map[string]string, error) {
+	if apiKey == "" || apiSecret == "" {
+		return nil, ErrInvalidCredentials
 	}
-	return constructHeadersMap(apiKey, apiSecret, nonce, hasRetry), nil
+
+	return constructHeadersMap(apiKey, apiSecret, nonce, hasRetry, time.Now()), nil
 }
 
-func constructHeadersMap(apiKey string, apiSecret string, nonce string, hasRetry bool) map[string]string {
+func constructHeadersMap(apiKey string, apiSecret string, nonce string, hasRetry bool,
+	timestamp time.Time) map[string]string {
 	headers := make(map[string]string)
-	date := dateNow().Format(time.RFC1123)
+	date := timestamp.Format(time.RFC1123)
 	nonce = generateNonceIfEmpty(nonce)
 
-	headers[DateHeader] = date
-	headers[AuthorizationHeader] = signature.Build(apiKey, apiSecret, nonce, date)
-	headers[NonceHeader] = nonce
-	headers[Retry] = parseRetryBool(hasRetry)
+	headers[dateHeader] = date
+	headers[authorizationHeader] = buildSignature(apiKey, apiSecret, nonce, date)
+	headers[nonceHeader] = nonce
+	headers[retry] = parseRetryBool(hasRetry)
+
 	return headers
 }
 
 func generateNonceIfEmpty(nonce string) string {
-	if nonce == EmptyString {
+	if nonce == emptyString {
 		nonce = uuid.New().String()
 	}
+
 	return nonce
 }
 
 func parseRetryBool(hasRetry bool) string {
 	if hasRetry {
-		return RetryTrue
+		return retryTrue
 	}
-	return RetryFalse
+
+	return retryFalse
 }

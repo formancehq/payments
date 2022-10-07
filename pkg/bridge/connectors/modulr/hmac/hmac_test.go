@@ -14,9 +14,12 @@ func TestGenerateReturnsAnHMACString(t *testing.T) {
 }
 
 func TestGenerateReturnsADateHeader(t *testing.T) {
-	injectMockDate()
-	headers, _ := GenerateHeaders("api_key", "api_secret", "", false)
-	expectedDate := "Thu, 02 Jan 2020 15:04:05 GMT"
+	timestamp := time.Date(2020, 1, 2, 15, 4, 5, 0, time.UTC)
+
+	headers := constructHeadersMap("api_key", "api_secret", "", false, timestamp)
+
+	expectedDate := "Thu, 02 Jan 2020 15:04:05 UTC"
+
 	assert.Equal(t, expectedDate, headers["Date"])
 }
 
@@ -43,17 +46,10 @@ func TestGenerateReturnsAGeneratedNonceHeaderIfNonceIsEmpty(t *testing.T) {
 
 func TestGenerateThrowsErrorIfApiKeyIsNull(t *testing.T) {
 	_, err := GenerateHeaders("", "api_secret", "", false)
-	assert.Equal(t, "api_key cannot be empty", err.Message)
+	assert.ErrorIs(t, err, ErrInvalidCredentials)
 }
 
 func TestGenerateThrowsErrorIfApiSecretIsNull(t *testing.T) {
 	_, err := GenerateHeaders("api_key", "", "", false)
-	assert.Equal(t, "api_secret cannot be empty", err.Message)
-}
-
-func injectMockDate() {
-	dateNow = func() time.Time {
-		now, _ := time.Parse(time.RFC1123, "Mon, 02 Jan 2020 15:04:05 GMT")
-		return now
-	}
+	assert.ErrorIs(t, err, ErrInvalidCredentials)
 }
