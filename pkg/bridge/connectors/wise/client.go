@@ -1,18 +1,13 @@
 package wise
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
-
-	"github.com/numary/go-libs/sharedlogging"
 )
 
-const (
-	apiEndpoint = "https://api.wise.com"
-)
+const apiEndpoint = "https://api.wise.com"
 
 type apiTransport struct {
 	ApiKey string
@@ -23,16 +18,16 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(req)
 }
 
-type WiseClient struct {
+type client struct {
 	httpClient *http.Client
 }
 
-type Profile struct {
-	Id   uint64 `json:"id"`
+type profile struct {
+	ID   uint64 `json:"id"`
 	Type string `json:"type"`
 }
 
-type Transfer struct {
+type transfer struct {
 	ID                    uint64  `json:"id"`
 	Reference             string  `json:"reference"`
 	Status                string  `json:"status"`
@@ -42,7 +37,7 @@ type Transfer struct {
 	TargetAccount         uint64  `json:"targetAccount"`
 	TargetCurrency        string  `json:"targetCurrency"`
 	TargetValue           float64 `json:"targetValue"`
-	Business              string  `json:"business"`
+	Business              uint64  `json:"business"`
 	Created               string  `json:"created"`
 	CustomerTransactionId string  `json:"customerTransactionId"`
 	Details               struct {
@@ -52,59 +47,48 @@ type Transfer struct {
 	User uint64  `json:"user"`
 }
 
-type BalanceAccount struct {
-	ID           uint64 `json:"id"`
-	Type         string `json:"type"`
-	Currency     string `json:"currency"`
-	CreationTime string `json:"creationTime"`
-	Name         string `json:"name"`
-	Amount       struct {
-		Value    float64 `json:"value"`
-		Currency string  `json:"currency"`
-	} `json:"amount"`
-}
-
-func (w *WiseClient) Endpoint(path string) string {
+func (w *client) endpoint(path string) string {
 	return fmt.Sprintf("%s/%s", apiEndpoint, path)
 }
 
-func (w *WiseClient) GetProfiles() ([]Profile, error) {
-	profiles := []Profile{}
+func (w *client) getProfiles() ([]profile, error) {
+	var profiles []profile
 
-	res, err := w.httpClient.Get(w.Endpoint("v1/profiles"))
+	res, err := w.httpClient.Get(w.endpoint("v1/profiles"))
 	if err != nil {
 		return profiles, err
 	}
 
 	b, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	if err := json.Unmarshal(b, &profiles); err != nil {
-		return nil, err
+	err = json.Unmarshal(b, &profiles)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unmarshal profiles: %w", err)
 	}
 
 	return profiles, nil
 }
 
-func (w *WiseClient) GetTransfers(ctx context.Context, profile *Profile) ([]Transfer, error) {
-	transfers := []Transfer{}
+func (w *client) getTransfers(profile *profile) ([]transfer, error) {
+	var transfers []transfer
 
 	limit := 10
 	offset := 0
 
 	for {
-		ts := []Transfer{}
+		var ts []transfer
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, w.Endpoint("v1/transfers"), nil)
+		req, err := http.NewRequest(http.MethodGet, w.endpoint("v1/transfers"), nil)
 		if err != nil {
 			return transfers, err
 		}
 
 		q := req.URL.Query()
 		q.Add("limit", fmt.Sprintf("%d", limit))
-		q.Add("profile", fmt.Sprintf("%d", profile.Id))
+		q.Add("profile", fmt.Sprintf("%d", profile.ID))
 		q.Add("offset", fmt.Sprintf("%d", offset))
 		req.URL.RawQuery = q.Encode()
 
@@ -113,9 +97,14 @@ func (w *WiseClient) GetTransfers(ctx context.Context, profile *Profile) ([]Tran
 			return transfers, err
 		}
 
-		if err := json.NewDecoder(res.Body).Decode(&ts); err != nil {
-			sharedlogging.GetLogger(ctx).Errorf("unmarshalling response: %s", err)
-			continue
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		err = json.Unmarshal(b, &ts)
+		if err != nil {
+			return nil, fmt.Errorf("failed to unmarshal transfers: %w", err)
 		}
 
 		transfers = append(transfers, ts...)
@@ -130,14 +119,14 @@ func (w *WiseClient) GetTransfers(ctx context.Context, profile *Profile) ([]Tran
 	return transfers, nil
 }
 
-func NewClient(apiKey string) *WiseClient {
+func newClient(apiKey string) *client {
 	httpClient := &http.Client{
 		Transport: &apiTransport{
 			ApiKey: apiKey,
 		},
 	}
 
-	return &WiseClient{
+	return &client{
 		httpClient: httpClient,
 	}
 }

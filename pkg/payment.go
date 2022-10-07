@@ -35,14 +35,16 @@ const (
 	SchemeAch      Scheme = "ach"
 	SchemeRtp      Scheme = "rtp"
 
-	TypePayIn  = "pay-in"
-	TypePayout = "payout"
-	TypeOther  = "other"
+	TypePayIn    = "pay-in"
+	TypePayout   = "payout"
+	TypeTransfer = "transfer"
+	TypeOther    = "other"
 
 	StatusSucceeded Status = "succeeded"
 	StatusCancelled Status = "cancelled"
 	StatusFailed    Status = "failed"
 	StatusPending   Status = "pending"
+	StatusOther     Status = "other"
 )
 
 type Referenced struct {
