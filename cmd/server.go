@@ -22,6 +22,7 @@ import (
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
 	"github.com/numary/payments/pkg/api"
 	"github.com/numary/payments/pkg/bridge/cdi"
+	"github.com/numary/payments/pkg/bridge/connectors/bankingcircle"
 	"github.com/numary/payments/pkg/bridge/connectors/dummypay"
 	"github.com/numary/payments/pkg/bridge/connectors/modulr"
 	"github.com/numary/payments/pkg/bridge/connectors/stripe"
@@ -292,6 +293,10 @@ func HTTPModule() fx.Option {
 		cdi.ConnectorModule(
 			viper.GetBool(authBearerUseScopesFlag),
 			modulr.NewLoader(),
+		),
+		cdi.ConnectorModule(
+			viper.GetBool(authBearerUseScopesFlag),
+			bankingcircle.NewLoader(),
 		),
 	)
 }
