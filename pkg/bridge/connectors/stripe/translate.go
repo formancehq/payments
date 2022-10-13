@@ -12,11 +12,11 @@ import (
 	"github.com/stripe/stripe-go/v72"
 )
 
-type currency struct {
-	decimals int
+type Currency struct {
+	Decimals int
 }
 
-var currencies = map[string]currency{
+var Currencies = map[string]Currency{
 	"ARS": {2}, //  Argentine Peso
 	"AMD": {2}, //  Armenian Dram
 	"AWG": {2}, //  Aruban Guilder
@@ -145,14 +145,14 @@ func CreateBatchElement(bt *stripe.BalanceTransaction, forward bool) (ingestion.
 
 	formatAsset := func(cur stripe.Currency) string {
 		asset := strings.ToUpper(string(cur))
-		def, ok := currencies[asset]
+		def, ok := Currencies[asset]
 		if !ok {
 			return asset
 		}
-		if def.decimals == 0 {
+		if def.Decimals == 0 {
 			return asset
 		}
-		return fmt.Sprintf("%s/%d", asset, def.decimals)
+		return fmt.Sprintf("%s/%d", asset, def.Decimals)
 	}
 
 	convertPayoutStatus := func() (status payments.Status) {
