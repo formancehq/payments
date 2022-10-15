@@ -1,8 +1,42 @@
+linters-settings:
+  dupl:
+    threshold: 30
+  funlen:
+    lines: 100
+    statements: 30
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+  gocyclo:
+    min-complexity: 20
+  goimports:
+    local-prefixes: github.com/numary/payments
+  govet:
+    check-shadowing: true
+  lll:
+    line-length: 80
+  misspell:
+    locale: US
+  nakedret:
+    max-func-lines: 0
+  tagliatelle:
+    case:
+      rules:
+        json: goCamel
+
 linters:
-  enable:
-    - gofmt
-    - gci
-    - goimports
+  enable-all: true
+  disable:
+    - gci # conflicts with gofumpt
+    - goimports # conflicts with gofumpt
+    - gocritic # TODO: FIX
 
 run:
   timeout: 5m

@@ -20,7 +20,7 @@ var (
 	Commit    = "-"
 )
 
-func NewRootCommand() *cobra.Command {
+func rootCommand() *cobra.Command {
 	viper.SetDefault("version", Version)
 
 	root := &cobra.Command{
@@ -29,9 +29,10 @@ func NewRootCommand() *cobra.Command {
 		DisableAutoGenTag: true,
 	}
 
-	version := NewVersion()
+	version := newVersion()
 	root.AddCommand(version)
-	server := NewServer()
+
+	server := newServer()
 	root.AddCommand(server)
 
 	root.PersistentFlags().Bool(debugFlag, false, "Debug mode")
@@ -44,14 +45,14 @@ func NewRootCommand() *cobra.Command {
 	root.Flags().String(otelTracesExporterJaegerEndpointFlag, "", "OpenTelemetry traces Jaeger exporter endpoint")
 	root.Flags().String(otelTracesExporterJaegerUserFlag, "", "OpenTelemetry traces Jaeger exporter user")
 	root.Flags().String(otelTracesExporterJaegerPasswordFlag, "", "OpenTelemetry traces Jaeger exporter password")
-	root.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
+	root.Flags().String(otelTracesExporterOTLPModeFlag, "grpc", "OpenTelemetry traces OTLP exporter mode (grpc|httphelpers)")
 	root.Flags().String(otelTracesExporterOTLPEndpointFlag, "", "OpenTelemetry traces grpc endpoint")
 	root.Flags().Bool(otelTracesExporterOTLPInsecureFlag, false, "OpenTelemetry traces grpc insecure")
 	root.Flags().String(envFlag, "local", "Environment")
 	root.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	root.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")
 	root.Flags().StringSlice(publisherTopicMappingFlag, []string{}, "Define mapping between internal event types and topics")
-	root.Flags().Bool(publisherHttpEnabledFlag, false, "Sent write event to http endpoint")
+	root.Flags().Bool(publisherHttpEnabledFlag, false, "Sent write event to httphelpers endpoint")
 	root.Flags().Bool(publisherKafkaSASLEnabled, false, "Enable SASL authentication on kafka publisher")
 	root.Flags().String(publisherKafkaSASLUsername, "", "SASL username")
 	root.Flags().String(publisherKafkaSASLPassword, "", "SASL password")
@@ -68,6 +69,7 @@ func NewRootCommand() *cobra.Command {
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 	viper.AutomaticEnv()
+
 	err := viper.BindPFlags(root.Flags())
 	if err != nil {
 		panic(err)
@@ -77,7 +79,7 @@ func NewRootCommand() *cobra.Command {
 }
 
 func Execute() {
-	if err := NewRootCommand().Execute(); err != nil {
+	if err := rootCommand().Execute(); err != nil {
 		if _, err := fmt.Fprintln(os.Stderr, err); err != nil {
 			panic(err)
 		}
