@@ -1,12 +1,16 @@
-package cmd
+package api
 
 import (
 	"context"
+	"net"
+	"net/http"
+	"runtime/debug"
+	"strings"
+
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
 	sharedotlp "github.com/numary/go-libs/sharedotlp/pkg"
-	"github.com/numary/payments/internal/app/api"
 	"github.com/numary/payments/internal/pkg/connectors/dummypay"
 	"github.com/numary/payments/internal/pkg/connectors/modulr"
 	"github.com/numary/payments/internal/pkg/connectors/stripe"
@@ -17,13 +21,22 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.uber.org/fx"
-	"net"
-	"net/http"
-	"runtime/debug"
-	"strings"
 )
 
-func httpModule() fx.Option {
+const (
+	otelTracesFlag                  = "otel-traces"
+	authBasicEnabledFlag            = "auth-basic-enabled"
+	authBasicCredentialsFlag        = "auth-basic-credentials"
+	authBearerEnabledFlag           = "auth-bearer-enabled"
+	authBearerIntrospectUrlFlag     = "auth-bearer-introspect-url"
+	authBearerAudienceFlag          = "auth-bearer-audience"
+	authBearerAudiencesWildcardFlag = "auth-bearer-audiences-wildcard"
+	authBearerUseScopesFlag         = "auth-bearer-use-scopes"
+
+	serviceName = "Payments"
+)
+
+func HTTPModule() fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
@@ -44,39 +57,27 @@ func httpModule() fx.Option {
 				},
 			})
 		}),
-		fx.Provide(fx.Annotate(httpRouter), fx.ParamTags(``, ``, `group:"connectorHandlers"`)),
-		api.ConnectorModule[stripe.Config, stripe.TaskDescriptor](
-			viper.GetBool(authBearerUseScopesFlag),
-			stripe.NewLoader(),
-		),
-		api.ConnectorModule[dummypay.Config, dummypay.TaskDescriptor](
-			viper.GetBool(authBearerUseScopesFlag),
-			dummypay.NewLoader(),
-		),
-		api.ConnectorModule(
-			viper.GetBool(authBearerUseScopesFlag),
-			wise.NewLoader(),
-		),
-		api.ConnectorModule(
-			viper.GetBool(authBearerUseScopesFlag),
-			modulr.NewLoader(),
-		),
+		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
+		addConnector(dummypay.NewLoader()),
+		addConnector(modulr.NewLoader()),
+		addConnector(stripe.NewLoader()),
+		addConnector(wise.NewLoader()),
 	)
 }
 
-func httpRouter(db *mongo.Database, client *mongo.Client, handlers []api.ConnectorHandler) (*mux.Router, error) {
+func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHandler) (*mux.Router, error) {
 	rootMux := mux.NewRouter()
 
 	if viper.GetBool(otelTracesFlag) {
 		rootMux.Use(otelmux.Middleware(serviceName))
 	}
 
-	rootMux.Use(api.Recovery(httpRecoveryFunc))
+	rootMux.Use(recoveryHandler(httpRecoveryFunc))
 	rootMux.Use(httpCorsHandler())
 	rootMux.Use(httpServeFunc)
 
-	rootMux.Path("/_health").Handler(api.HealthHandler(client))
-	rootMux.Path("/_live").Handler(api.LiveHandler())
+	rootMux.Path("/_health").Handler(healthHandler(client))
+	rootMux.Path("/_live").Handler(liveHandler())
 
 	authGroup := rootMux.Name("authenticated").Subrouter()
 
@@ -93,7 +94,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []api.Connect
 	}
 
 	authGroup.PathPrefix("/").Handler(
-		api.PaymentsRouter(db, viper.GetBool(authBearerUseScopesFlag)),
+		paymentsRouter(db, viper.GetBool(authBearerUseScopesFlag)),
 	)
 
 	return rootMux, nil
@@ -132,7 +133,7 @@ func sharedAuthMethods() []sharedauth.Method {
 			parts := strings.SplitN(kv, ":", 2)
 			credentials[parts[0]] = sharedauth.Credential{
 				Password: parts[1],
-				Scopes:   api.AllScopes,
+				Scopes:   allScopes,
 			}
 		}
 		methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))

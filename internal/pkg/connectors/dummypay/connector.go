@@ -53,8 +53,7 @@ func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
 	return handleResolve(c.cfg, descriptor, c.fs)
 }
 
-// NewConnector creates a new dummy payment connector.
-func NewConnector(logger sharedlogging.Logger, cfg Config, fs fs) *Connector {
+func newConnector(logger sharedlogging.Logger, cfg Config, fs fs) *Connector {
 	return &Connector{
 		logger: logger.WithFields(map[string]any{
 			"component": "connector",

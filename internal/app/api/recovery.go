@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Recovery(reporter func(ctx context.Context, e interface{})) func(h http.Handler) http.Handler {
+func recoveryHandler(reporter func(ctx context.Context, e interface{})) func(h http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			defer func() {

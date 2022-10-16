@@ -35,7 +35,7 @@ func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
 
 var _ integration.Connector[TaskDescriptor] = &Connector{}
 
-func NewConnector(logger sharedlogging.Logger, cfg Config) *Connector {
+func newConnector(logger sharedlogging.Logger, cfg Config) *Connector {
 	return &Connector{
 		logger: logger.WithFields(map[string]any{
 			"component": "connector",

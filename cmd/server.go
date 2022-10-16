@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"strings"
+
 	"github.com/bombsimon/logrusr/v3"
+	"github.com/numary/payments/internal/app/api"
 	"github.com/numary/payments/internal/app/database"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
-	"strings"
 
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
@@ -95,7 +97,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 			return sharedpublish.NewTopicMapperPublisher(p, topicsMapping())
 		}, fx.As(new(sharedpublish.Publisher)))))
 
-	options = append(options, httpModule())
+	options = append(options, api.HTTPModule())
 	options = append(options, sharedpublish.Module())
 
 	switch {

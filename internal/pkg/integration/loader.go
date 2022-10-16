@@ -2,21 +2,23 @@ package integration
 
 import (
 	"github.com/numary/go-libs/sharedlogging"
-	payments2 "github.com/numary/payments/internal/pkg/payments"
+	"github.com/numary/payments/internal/pkg/payments"
 )
 
-type Loader[ConnectorConfig payments2.ConnectorConfigObject, TaskDescriptor payments2.TaskDescriptor] interface {
+type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {
 	Name() string
 	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
+
 	// ApplyDefaults is used to fill default values of the provided configuration object
 	ApplyDefaults(t ConnectorConfig) ConnectorConfig
+
 	// AllowTasks define how many task the connector can run
 	// If too many tasks are scheduled by the connector,
 	// those will be set to pending state and restarted later when some other tasks will be terminated
 	AllowTasks() int
 }
 
-type LoaderBuilder[ConnectorConfig payments2.ConnectorConfigObject, TaskDescriptor payments2.TaskDescriptor] struct {
+type LoaderBuilder[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
 	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
 	name          string
@@ -47,13 +49,13 @@ func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) Build() *BuiltLoader[Co
 	}
 }
 
-func NewLoaderBuilder[ConnectorConfig payments2.ConnectorConfigObject, TaskDescriptor payments2.TaskDescriptor](name string) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
+func NewLoaderBuilder[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor](name string) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
 	return &LoaderBuilder[ConnectorConfig, TaskDescriptor]{
 		name: name,
 	}
 }
 
-type BuiltLoader[ConnectorConfig payments2.ConnectorConfigObject, TaskDescriptor payments2.TaskDescriptor] struct {
+type BuiltLoader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
 	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
 	name          string
@@ -82,4 +84,4 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) ApplyDefaults(t Connector
 	return t
 }
 
-var _ Loader[payments2.EmptyConnectorConfig, struct{}] = &BuiltLoader[payments2.EmptyConnectorConfig, struct{}]{}
+var _ Loader[payments.EmptyConnectorConfig, struct{}] = &BuiltLoader[payments.EmptyConnectorConfig, struct{}]{}

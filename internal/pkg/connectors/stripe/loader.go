@@ -19,7 +19,7 @@ func (l *loader) Name() string {
 }
 
 func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-	return NewConnector(logger, config)
+	return newConnector(logger, config)
 }
 
 func (l *loader) ApplyDefaults(cfg Config) Config {
@@ -32,8 +32,6 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 	return cfg
 }
 
-var _ integration.Loader[Config, TaskDescriptor] = &loader{}
-
-func NewLoader() *loader {
+func NewLoader() integration.Loader[Config, TaskDescriptor] {
 	return &loader{}
 }

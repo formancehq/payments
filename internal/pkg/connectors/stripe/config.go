@@ -12,7 +12,7 @@ type Config struct {
 	TimelineConfig `bson:",inline"`
 }
 
-func (c *Config) String() string {
+func (c Config) String() string {
 	return fmt.Sprintf("pollingPeriod=%d, pageSize=%d, apiKey=%s", c.PollingPeriod, c.PageSize, c.ApiKey)
 }
 

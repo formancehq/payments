@@ -161,7 +161,7 @@ func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-func PaymentsRouter(
+func paymentsRouter(
 	db *mongo.Database,
 	useScopes bool,
 ) *mux.Router {

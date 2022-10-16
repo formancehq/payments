@@ -2,8 +2,10 @@ package api
 
 import (
 	"context"
-	"github.com/gorilla/mux"
 	"net/http"
+
+	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	"github.com/numary/payments/internal/pkg/ingestion"
 	"github.com/numary/payments/internal/pkg/integration"
@@ -18,43 +20,18 @@ import (
 	"go.uber.org/fx"
 )
 
-//viper.GetBool(authBearerUseScopesFlag),
-
-//func Connectors(authBearerUseScopesFlag bool) []fx.Option {
-//	return []fx.Option{
-//		ConnectorModule[stripe.Config, stripe.TaskDescriptor](
-//			authBearerUseScopesFlag,
-//			stripe.NewLoader(),
-//		)}
-
-//ConnectorModule[stripe.Config, stripe.TaskDescriptor](
-//	viper.GetBool(authBearerUseScopesFlag),
-//	stripe.NewLoader(),
-//),
-//ConnectorModule[dummypay.Config, dummypay.TaskDescriptor](
-//	viper.GetBool(authBearerUseScopesFlag),
-//	dummypay.NewLoader(),
-//),
-//ConnectorModule[modulr.Config, modulr.TaskDescriptor](
-//	viper.GetBool(authBearerUseScopesFlag),
-//	modulr.NewLoader(),
-//),
-//ConnectorModule[wise.Config, wise.TaskDescriptor](
-//	viper.GetBool(authBearerUseScopesFlag),
-//	wise.NewLoader(),
-//),
-//}
-
-type ConnectorHandler struct {
+type connectorHandler struct {
 	Handler http.Handler
 	Name    string
 }
 
-func ConnectorModule[
+func addConnector[
 	ConnectorConfig payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor,
-](useScopes bool, loader integration.Loader[ConnectorConfig, TaskDescriptor],
+](loader integration.Loader[ConnectorConfig, TaskDescriptor],
 ) fx.Option {
+	useScopes := viper.GetBool(authBearerUseScopesFlag)
+
 	return fx.Options(
 		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *integration.ConnectorManager[ConnectorConfig, TaskDescriptor] {
 			connectorStore := integration.NewMongoDBConnectorStore(db)
@@ -76,7 +53,6 @@ func ConnectorModule[
 					err := container.Provide(func() writeonly.Storage {
 						return writeonly.NewMongoDBStorage(db, loader.Name(), descriptor)
 					})
-
 					if err != nil {
 						panic(err)
 					}
@@ -87,8 +63,8 @@ func ConnectorModule[
 
 			return integration.NewConnectorManager[ConnectorConfig, TaskDescriptor](logger, connectorStore, loader, schedulerFactory)
 		}),
-		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig, TaskDescriptor]) ConnectorHandler {
-			return ConnectorHandler{
+		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig, TaskDescriptor]) connectorHandler {
+			return connectorHandler{
 				Handler: connectorRouter(loader.Name(), useScopes, cm),
 				Name:    loader.Name(),
 			}
@@ -112,27 +88,27 @@ func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.
 	r := mux.NewRouter()
 
 	r.Path("/" + name).Methods(http.MethodPost).Handler(
-		wrapHandler(useScopes, Install(manager), scopeWriteConnectors),
+		wrapHandler(useScopes, install(manager), scopeWriteConnectors),
 	)
 
 	r.Path("/" + name + "/reset").Methods(http.MethodPost).Handler(
-		wrapHandler(useScopes, Reset(manager), scopeWriteConnectors),
+		wrapHandler(useScopes, reset(manager), scopeWriteConnectors),
 	)
 
 	r.Path("/" + name).Methods(http.MethodDelete).Handler(
-		wrapHandler(useScopes, Uninstall(manager), scopeWriteConnectors),
+		wrapHandler(useScopes, uninstall(manager), scopeWriteConnectors),
 	)
 
 	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, ReadConfig(manager), scopeReadConnectors, scopeWriteConnectors),
+		wrapHandler(useScopes, readConfig(manager), scopeReadConnectors, scopeWriteConnectors),
 	)
 
 	r.Path("/" + name + "/tasks").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, ListTasks(manager), scopeReadConnectors, scopeWriteConnectors),
+		wrapHandler(useScopes, listTasks(manager), scopeReadConnectors, scopeWriteConnectors),
 	)
 
 	r.Path("/" + name + "/tasks/{taskId}").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, ReadTask(manager), scopeReadConnectors, scopeWriteConnectors),
+		wrapHandler(useScopes, readTask(manager), scopeReadConnectors, scopeWriteConnectors),
 	)
 
 	return r
