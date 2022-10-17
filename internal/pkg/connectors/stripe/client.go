@@ -56,7 +56,7 @@ func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 ) ([]*stripe.BalanceTransaction, bool, error) {
 	req, err := http.NewRequest(http.MethodGet, balanceTransactionsEndpoint, nil)
 	if err != nil {
-		return nil, false, errors.Wrap(err, "creating httphelpers request")
+		return nil, false, errors.Wrap(err, "creating http request")
 	}
 
 	req = req.WithContext(ctx)

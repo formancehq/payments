@@ -51,7 +51,7 @@ func rootCommand() *cobra.Command {
 	root.Flags().String(otelTracesExporterJaegerPasswordFlag,
 		"", "OpenTelemetry traces Jaeger exporter password")
 	root.Flags().String(otelTracesExporterOTLPModeFlag,
-		"grpc", "OpenTelemetry traces OTLP exporter mode (grpc|httphelpers)")
+		"grpc", "OpenTelemetry traces OTLP exporter mode (grpc|http)")
 	root.Flags().String(otelTracesExporterOTLPEndpointFlag,
 		"", "OpenTelemetry traces grpc endpoint")
 	root.Flags().Bool(otelTracesExporterOTLPInsecureFlag,
@@ -61,7 +61,7 @@ func rootCommand() *cobra.Command {
 	root.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")
 	root.Flags().StringSlice(publisherTopicMappingFlag,
 		[]string{}, "Define mapping between internal event types and topics")
-	root.Flags().Bool(publisherHTTPEnabledFlag, false, "Sent write event to httphelpers endpoint")
+	root.Flags().Bool(publisherHTTPEnabledFlag, false, "Sent write event to http endpoint")
 	root.Flags().Bool(publisherKafkaSASLEnabled, false, "Enable SASL authentication on kafka publisher")
 	root.Flags().String(publisherKafkaSASLUsername, "", "SASL username")
 	root.Flags().String(publisherKafkaSASLPassword, "", "SASL password")
