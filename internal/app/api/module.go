@@ -47,7 +47,7 @@ func HTTPModule() fx.Option {
 						//nolint:gomnd // allow timeout values
 						srv := &http.Server{
 							Handler:      m,
-							Addr:         "127.0.0.1:8080",
+							Addr:         "0.0.0.0:8080",
 							WriteTimeout: 15 * time.Second,
 							ReadTimeout:  15 * time.Second,
 						}
