@@ -1,6 +1,4 @@
-ARG BUILDPLATFORM
-
-FROM --platform=$BUILDPLATFORM golang:1.19.2-bullseye AS builder
+FROM golang:1.19.2-bullseye AS builder
 
 RUN apt-get update && \
     apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu && \
