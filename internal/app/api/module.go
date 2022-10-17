@@ -32,7 +32,6 @@ const (
 	authBearerIntrospectURLFlag     = "auth-bearer-introspect-url"
 	authBearerAudienceFlag          = "auth-bearer-audience"
 	authBearerAudiencesWildcardFlag = "auth-bearer-audiences-wildcard"
-	authBearerUseScopesFlag         = "auth-bearer-use-scopes"
 
 	serviceName = "Payments"
 )
@@ -98,9 +97,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHa
 		)
 	}
 
-	authGroup.PathPrefix("/").Handler(
-		paymentsRouter(db, viper.GetBool(authBearerUseScopesFlag)),
-	)
+	authGroup.PathPrefix("/").Handler(paymentsRouter(db))
 
 	return rootMux, nil
 }
@@ -139,7 +136,6 @@ func sharedAuthMethods() []sharedauth.Method {
 			parts := strings.SplitN(kv, ":", 2)
 			credentials[parts[0]] = sharedauth.Credential{
 				Password: parts[1],
-				Scopes:   allScopes(),
 			}
 		}
 

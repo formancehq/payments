@@ -69,7 +69,7 @@ func readTask[Config payments.ConnectorConfigObject,
 	return func(w http.ResponseWriter, r *http.Request) {
 		var descriptor Descriptor
 
-		payments.DescriptorFromID(mux.Vars(r)["taskId"], &descriptor)
+		payments.DescriptorFromID(mux.Vars(r)["taskID"], &descriptor)
 
 		tasks, err := connectorManager.ReadTaskState(r.Context(), descriptor)
 		if err != nil {

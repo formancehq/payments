@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/spf13/viper"
-
 	"github.com/numary/payments/internal/pkg/ingestion"
 	"github.com/numary/payments/internal/pkg/integration"
 	"github.com/numary/payments/internal/pkg/payments"
@@ -31,8 +29,6 @@ func addConnector[
 	TaskDescriptor payments.TaskDescriptor,
 ](loader integration.Loader[ConnectorConfig, TaskDescriptor],
 ) fx.Option {
-	useScopes := viper.GetBool(authBearerUseScopesFlag)
-
 	return fx.Options(
 		fx.Provide(func(db *mongo.Database,
 			publisher sharedpublish.Publisher,
@@ -77,7 +73,7 @@ func addConnector[
 			TaskDescriptor],
 		) connectorHandler {
 			return connectorHandler{
-				Handler: connectorRouter(loader.Name(), useScopes, cm),
+				Handler: connectorRouter(loader.Name(), cm),
 				Name:    loader.Name(),
 			}
 		}, fx.ResultTags(`group:"connectorHandlers"`))),
@@ -95,34 +91,21 @@ func addConnector[
 
 func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](
 	name string,
-	useScopes bool,
 	manager *integration.ConnectorManager[Config, Descriptor],
 ) *mux.Router {
 	r := mux.NewRouter()
 
-	r.Path("/" + name).Methods(http.MethodPost).Handler(
-		wrapHandler(useScopes, install(manager), scopeWriteConnectors),
-	)
+	r.Path("/" + name).Methods(http.MethodPost).Handler(install(manager))
 
-	r.Path("/" + name + "/reset").Methods(http.MethodPost).Handler(
-		wrapHandler(useScopes, reset(manager), scopeWriteConnectors),
-	)
+	r.Path("/" + name + "/reset").Methods(http.MethodPost).Handler(reset(manager))
 
-	r.Path("/" + name).Methods(http.MethodDelete).Handler(
-		wrapHandler(useScopes, uninstall(manager), scopeWriteConnectors),
-	)
+	r.Path("/" + name).Methods(http.MethodDelete).Handler(uninstall(manager))
 
-	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, readConfig(manager), scopeReadConnectors, scopeWriteConnectors),
-	)
+	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(readConfig(manager))
 
-	r.Path("/" + name + "/tasks").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, listTasks(manager), scopeReadConnectors, scopeWriteConnectors),
-	)
+	r.Path("/" + name + "/tasks").Methods(http.MethodGet).Handler(listTasks(manager))
 
-	r.Path("/" + name + "/tasks/{taskId}").Methods(http.MethodGet).Handler(
-		wrapHandler(useScopes, readTask(manager), scopeReadConnectors, scopeWriteConnectors),
-	)
+	r.Path("/" + name + "/tasks/{taskID}").Methods(http.MethodGet).Handler(readTask(manager))
 
 	return r
 }

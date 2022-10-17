@@ -188,10 +188,7 @@ func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-func paymentsRouter(
-	db *mongo.Database,
-	useScopes bool,
-) *mux.Router {
+func paymentsRouter(db *mongo.Database) *mux.Router {
 	router := mux.NewRouter()
 	router.Use(func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -199,10 +196,8 @@ func paymentsRouter(
 			h.ServeHTTP(w, r)
 		})
 	})
-	router.Path("/payments").Methods(http.MethodGet).
-		Handler(wrapHandler(useScopes, listPaymentsHandler(db), scopeReadPayments, scopeWritePayments))
-	router.Path("/payments/{paymentID}").Methods(http.MethodGet).
-		Handler(wrapHandler(useScopes, readPaymentHandler(db), scopeReadPayments, scopeWritePayments))
+	router.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(db))
+	router.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(db))
 
 	return router
 }
