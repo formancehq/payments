@@ -8,23 +8,23 @@ import (
 	"github.com/numary/go-libs/sharedlogging"
 )
 
-type loader struct{}
+type Loader struct{}
 
 const allowedTasks = 50
 
-func (l *loader) AllowTasks() int {
+func (l *Loader) AllowTasks() int {
 	return allowedTasks
 }
 
-func (l *loader) Name() string {
+func (l *Loader) Name() string {
 	return connectorName
 }
 
-func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
+func (l *Loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 	return newConnector(logger, config)
 }
 
-func (l *loader) ApplyDefaults(cfg Config) Config {
+func (l *Loader) ApplyDefaults(cfg Config) Config {
 	if cfg.PageSize == 0 {
 		cfg.PageSize = 10
 	}
@@ -36,6 +36,6 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 	return cfg
 }
 
-func NewLoader() integration.Loader[Config, TaskDescriptor] {
-	return &loader{}
+func NewLoader() *Loader {
+	return &Loader{}
 }

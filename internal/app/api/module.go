@@ -63,10 +63,10 @@ func HTTPModule() fx.Option {
 			})
 		}),
 		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
-		addConnector(dummypay.NewLoader()),
-		addConnector(modulr.NewLoader()),
-		addConnector(stripe.NewLoader()),
-		addConnector(wise.NewLoader()),
+		addConnector[dummypay.Config, dummypay.TaskDescriptor](dummypay.NewLoader()),
+		addConnector[modulr.Config, modulr.TaskDescriptor](modulr.NewLoader()),
+		addConnector[stripe.Config, stripe.TaskDescriptor](stripe.NewLoader()),
+		addConnector[wise.Config, wise.TaskDescriptor](wise.NewLoader()),
 	)
 }
 

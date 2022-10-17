@@ -8,15 +8,15 @@ import (
 	"github.com/numary/go-libs/sharedlogging"
 )
 
-type loader struct{}
+type Loader struct{}
 
 // Name returns the name of the connector.
-func (l *loader) Name() string {
+func (l *Loader) Name() string {
 	return connectorName
 }
 
 // AllowTasks returns the amount of tasks that are allowed to be scheduled.
-func (l *loader) AllowTasks() int {
+func (l *Loader) AllowTasks() int {
 	return 10
 }
 
@@ -29,7 +29,7 @@ const (
 )
 
 // ApplyDefaults applies default values to the configuration.
-func (l *loader) ApplyDefaults(cfg Config) Config {
+func (l *Loader) ApplyDefaults(cfg Config) Config {
 	if cfg.FileGenerationPeriod == 0 {
 		cfg.FileGenerationPeriod = defaultFileGenerationPeriod
 	}
@@ -42,11 +42,11 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 }
 
 // Load returns the connector.
-func (l *loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
+func (l *Loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 	return newConnector(logger, config, newFS())
 }
 
 // NewLoader creates a new loader.
-func NewLoader() integration.Loader[Config, TaskDescriptor] {
-	return &loader{}
+func NewLoader() *Loader {
+	return &Loader{}
 }
