@@ -27,11 +27,14 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func readConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func readConfig[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		config, err := cm.ReadConfig(r.Context())
+		config, err := connectorManager.ReadConfig(r.Context())
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 
@@ -42,11 +45,14 @@ func readConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskD
 	}
 }
 
-func listTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func listTasks[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tasks, err := cm.ListTasksStates(r.Context())
+		tasks, err := connectorManager.ListTasksStates(r.Context())
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 
@@ -57,14 +63,18 @@ func listTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func readTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func readTask[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var descriptor Descriptor
+
 		payments.DescriptorFromID(mux.Vars(r)["taskId"], &descriptor)
 
-		tasks, err := cm.ReadTaskState(r.Context(), descriptor)
+		tasks, err := connectorManager.ReadTaskState(r.Context(), descriptor)
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 
@@ -75,11 +85,14 @@ func readTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDes
 	}
 }
 
-func uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func uninstall[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := cm.Uninstall(r.Context())
+		err := connectorManager.Uninstall(r.Context())
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 
@@ -87,30 +100,37 @@ func uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDe
 	}
 }
 
-func install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func install[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := cm.IsInstalled(context.Background())
+		installed, err := connectorManager.IsInstalled(context.Background())
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
+
 		if installed {
 			handleError(w, r, integration.ErrAlreadyInstalled)
+
 			return
 		}
 
 		var config Config
 		if r.ContentLength > 0 {
-			err := json.NewDecoder(r.Body).Decode(&config)
+			err = json.NewDecoder(r.Body).Decode(&config)
 			if err != nil {
 				handleError(w, r, err)
+
 				return
 			}
 		}
 
-		err = cm.Install(r.Context(), config)
+		err = connectorManager.Install(r.Context(), config)
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 
@@ -118,21 +138,27 @@ func install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDesc
 	}
 }
 
-func reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](cm *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
+func reset[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := cm.IsInstalled(context.Background())
+		installed, err := connectorManager.IsInstalled(context.Background())
 		if err != nil {
 			handleError(w, r, err)
-			return
-		}
-		if !installed {
-			handleError(w, r, errors.New("connector not installed"))
+
 			return
 		}
 
-		err = cm.Reset(r.Context())
+		if !installed {
+			handleError(w, r, errors.New("connector not installed"))
+
+			return
+		}
+
+		err = connectorManager.Reset(r.Context())
 		if err != nil {
 			handleError(w, r, err)
+
 			return
 		}
 

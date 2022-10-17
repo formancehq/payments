@@ -25,6 +25,7 @@ type connectorHandler struct {
 	Name    string
 }
 
+//nolint:ireturn // allow interface return
 func addConnector[
 	ConnectorConfig payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor,
@@ -33,37 +34,48 @@ func addConnector[
 	useScopes := viper.GetBool(authBearerUseScopesFlag)
 
 	return fx.Options(
-		fx.Provide(func(db *mongo.Database, publisher sharedpublish.Publisher) *integration.ConnectorManager[ConnectorConfig, TaskDescriptor] {
+		fx.Provide(func(db *mongo.Database,
+			publisher sharedpublish.Publisher,
+		) *integration.ConnectorManager[ConnectorConfig, TaskDescriptor] {
 			connectorStore := integration.NewMongoDBConnectorStore(db)
 			taskStore := task.NewMongoDBStore[TaskDescriptor](db)
 			logger := sharedlogging.GetLogger(context.Background())
 
-			schedulerFactory := integration.TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor] {
-				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger, taskStore, task.ContainerFactoryFn(func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
-					container := dig.New()
+			schedulerFactory := integration.TaskSchedulerFactoryFn[TaskDescriptor](func(
+				resolver task.Resolver[TaskDescriptor], maxTasks int,
+			) *task.DefaultTaskScheduler[TaskDescriptor] {
+				return task.NewDefaultScheduler[TaskDescriptor](loader.Name(), logger,
+					taskStore, task.ContainerFactoryFn(func(ctx context.Context,
+						descriptor payments.TaskDescriptor,
+					) (*dig.Container, error) {
+						container := dig.New()
 
-					if err := container.Provide(func() ingestion.Ingester {
-						return ingestion.NewDefaultIngester(loader.Name(), descriptor, db, logger.WithFields(map[string]interface{}{
-							"task-id": payments.IDFromDescriptor(descriptor),
-						}), publisher)
-					}); err != nil {
-						return nil, err
-					}
+						if err := container.Provide(func() ingestion.Ingester {
+							return ingestion.NewDefaultIngester(loader.Name(), descriptor, db,
+								logger.WithFields(map[string]interface{}{
+									"task-id": payments.IDFromDescriptor(descriptor),
+								}), publisher)
+						}); err != nil {
+							return nil, err
+						}
 
-					err := container.Provide(func() writeonly.Storage {
-						return writeonly.NewMongoDBStorage(db, loader.Name(), descriptor)
-					})
-					if err != nil {
-						panic(err)
-					}
+						err := container.Provide(func() writeonly.Storage {
+							return writeonly.NewMongoDBStorage(db, loader.Name(), descriptor)
+						})
+						if err != nil {
+							panic(err)
+						}
 
-					return container, nil
-				}), resolver, maxTasks)
+						return container, nil
+					}), resolver, maxTasks)
 			})
 
-			return integration.NewConnectorManager[ConnectorConfig, TaskDescriptor](logger, connectorStore, loader, schedulerFactory)
+			return integration.NewConnectorManager[ConnectorConfig, TaskDescriptor](logger,
+				connectorStore, loader, schedulerFactory)
 		}),
-		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig, TaskDescriptor]) connectorHandler {
+		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig,
+			TaskDescriptor],
+		) connectorHandler {
 			return connectorHandler{
 				Handler: connectorRouter(loader.Name(), useScopes, cm),
 				Name:    loader.Name(),
@@ -73,6 +85,7 @@ func addConnector[
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					_ = cm.Restore(ctx)
+
 					return nil
 				},
 			})

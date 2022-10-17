@@ -25,8 +25,9 @@ import (
 	"go.uber.org/fx"
 )
 
+//nolint:gosec // false positive
 const (
-	mongodbUriFlag                       = "mongodb-uri"
+	mongodbURIFlag                       = "mongodb-uri"
 	mongodbDatabaseFlag                  = "mongodb-database"
 	otelTracesFlag                       = "otel-traces"
 	otelTracesExporterFlag               = "otel-traces-exporter"
@@ -46,11 +47,11 @@ const (
 	publisherKafkaSASLScramSHASize       = "publisher-kafka-sasl-scram-sha-size"
 	publisherKafkaTLSEnabled             = "publisher-kafka-tls-enabled"
 	publisherTopicMappingFlag            = "publisher-topic-mapping"
-	publisherHttpEnabledFlag             = "publisher-http-enabled"
+	publisherHTTPEnabledFlag             = "publisher-http-enabled"
 	authBasicEnabledFlag                 = "auth-basic-enabled"
 	authBasicCredentialsFlag             = "auth-basic-credentials"
 	authBearerEnabledFlag                = "auth-bearer-enabled"
-	authBearerIntrospectUrlFlag          = "auth-bearer-introspect-url"
+	authBearerIntrospectURLFlag          = "auth-bearer-introspect-url"
 	authBearerAudienceFlag               = "auth-bearer-audience"
 	authBearerAudiencesWildcardFlag      = "auth-bearer-audiences-wildcard"
 	authBearerUseScopesFlag              = "auth-bearer-use-scopes"
@@ -101,7 +102,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	options = append(options, sharedpublish.Module())
 
 	switch {
-	case viper.GetBool(publisherHttpEnabledFlag):
+	case viper.GetBool(publisherHTTPEnabledFlag):
 		options = append(options, sharedpublishhttp.Module())
 	case viper.GetBool(publisherKafkaEnabledFlag):
 		options = append(options,
@@ -162,9 +163,10 @@ func setLogger() {
 	otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
 }
 
+//nolint:ireturn // allow interface return and mnd
 func prepareDatabaseOptions() (fx.Option, error) {
-	mongodbUri := viper.GetString(mongodbUriFlag)
-	if mongodbUri == "" {
+	mongodbURI := viper.GetString(mongodbURIFlag)
+	if mongodbURI == "" {
 		return nil, errors.New("missing mongodb uri")
 	}
 
@@ -173,7 +175,7 @@ func prepareDatabaseOptions() (fx.Option, error) {
 		return nil, errors.New("missing mongodb database name")
 	}
 
-	return database.MongoModule(mongodbUri, mongodbDatabase), nil
+	return database.MongoModule(mongodbURI, mongodbDatabase), nil
 }
 
 func topicsMapping() map[string]string {
@@ -192,6 +194,7 @@ func topicsMapping() map[string]string {
 	return mapping
 }
 
+//nolint:ireturn // allow interface return
 func setSCRAMClient() sarama.SCRAMClient {
 	var fn scram.HashGeneratorFcn
 

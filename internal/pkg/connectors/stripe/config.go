@@ -8,18 +8,19 @@ import (
 
 type Config struct {
 	PollingPeriod  time.Duration `json:"pollingPeriod" yaml:"pollingPeriod" bson:"pollingPeriod"`
-	ApiKey         string        `json:"apiKey" yaml:"apiKey" bson:"apiKey"`
+	APIKey         string        `json:"apiKey" yaml:"apiKey" bson:"apiKey"`
 	TimelineConfig `bson:",inline"`
 }
 
 func (c Config) String() string {
-	return fmt.Sprintf("pollingPeriod=%d, pageSize=%d, apiKey=%s", c.PollingPeriod, c.PageSize, c.ApiKey)
+	return fmt.Sprintf("pollingPeriod=%d, pageSize=%d, apiKey=%s", c.PollingPeriod, c.PageSize, c.APIKey)
 }
 
 func (c Config) Validate() error {
-	if c.ApiKey == "" {
+	if c.APIKey == "" {
 		return errors.New("missing api key")
 	}
+
 	return nil
 }
 

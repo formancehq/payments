@@ -2,6 +2,8 @@ package task
 
 import (
 	"context"
+
+	"github.com/pkg/errors"
 )
 
 type StateResolver interface {
@@ -18,16 +20,19 @@ func ResolveTo[State any](ctx context.Context, resolver StateResolver, to *State
 	if err != nil {
 		return nil, err
 	}
+
 	return to, nil
 }
 
 func MustResolveTo[State any](ctx context.Context, resolver StateResolver, to State) State {
 	state, err := ResolveTo[State](ctx, resolver, &to)
-	if err == ErrNotFound {
+	if errors.Is(err, ErrNotFound) {
 		return to
 	}
+
 	if err != nil {
 		panic(err)
 	}
+
 	return *state
 }

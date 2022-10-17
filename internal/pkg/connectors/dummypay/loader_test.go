@@ -25,5 +25,5 @@ func TestLoader(t *testing.T) {
 		FileGenerationPeriod: 5 * time.Second,
 	}, loader.ApplyDefaults(config))
 
-	assert.EqualValues(t, NewConnector(logger, config, newFS()), loader.Load(logger, config))
+	assert.EqualValues(t, newConnector(logger, config, newFS()), loader.Load(logger, config))
 }

@@ -2,7 +2,7 @@ linters-settings:
   dupl:
     threshold: 30
   funlen:
-    lines: 100
+    lines: 150
     statements: 30
   goconst:
     min-len: 2
@@ -14,6 +14,8 @@ linters-settings:
       - opinionated
       - performance
       - style
+  cyclop:
+    max-complexity: 20
   gocyclo:
     min-complexity: 20
   goimports:
@@ -21,7 +23,7 @@ linters-settings:
   govet:
     check-shadowing: true
   lll:
-    line-length: 80
+    line-length: 120
   misspell:
     locale: US
   nakedret:
@@ -30,13 +32,74 @@ linters-settings:
     case:
       rules:
         json: goCamel
+        yaml: goCamel
+        bson: goCamel
+  gomnd:
+    ignored-numbers:
+      - '2'
+      - '5'
+      - '10'
+      - '100'
+      - '64'
+      - '256'
+      - '512'
+  varnamelen:
+     ignore-names:
+      - id
+      - i
+      - db
+      - m
+      - r
+      - c
+      - fn
+      - w
+      - h
+      - to
+      - fs
 
 linters:
   enable-all: true
   disable:
+    - deadcode # deprecated
+    - maligned #deprecated
+    - golint # deprecated
+    - ifshort # deprecated
+    - structcheck # deprecated
+    - varcheck # deprecated
+    - interfacer # deprecated
+    - scopelint #deprecated
+    - nosnakecase # deprecated
+    - rowserrcheck # disabled due to generics
+    - sqlclosecheck # disabled due to generics
+    - structcheck # disabled due to generics
+    - wastedassign # disabled due to generics
     - gci # conflicts with gofumpt
     - goimports # conflicts with gofumpt
-    - gocritic # TODO: FIX
+    - testpackage # Disabled by design
+    - ireturn # Disabled by design
+    - wrapcheck # Disabled by design
+    - exhaustivestruct # Disabled by design
+    - exhaustruct # Disabled by design
+    - exhaustive # Disabled by design
+    - dupl # Disabled by design
+    - godox # Disabled by design
+    - gocritic # TODO: FIX. Seems to have issues with generics
+    - gocognit # TODO: FIX
+    - goerr113 # TODO: FIX
+    - noctx # TODO: FIX
+    - contextcheck # TODO: FIX
+    - containedctx # TODO: FIX
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - goerr113
+        - varnamelen
+
+    - linters:
+      - nolintlint
+      text: "should be written without leading space"
 
 run:
   timeout: 5m

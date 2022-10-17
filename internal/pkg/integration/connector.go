@@ -24,18 +24,27 @@ type ConnectorBuilder[TaskDescriptor payments.TaskDescriptor] struct {
 	install   func(ctx task.ConnectorContext[TaskDescriptor]) error
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithUninstall(uninstallFunction func(ctx context.Context) error) *ConnectorBuilder[TaskDescriptor] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithUninstall(
+	uninstallFunction func(ctx context.Context) error,
+) *ConnectorBuilder[TaskDescriptor] {
 	b.uninstall = uninstallFunction
+
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithResolve(resolveFunction func(name TaskDescriptor) task.Task) *ConnectorBuilder[TaskDescriptor] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithResolve(
+	resolveFunction func(name TaskDescriptor) task.Task,
+) *ConnectorBuilder[TaskDescriptor] {
 	b.resolve = resolveFunction
+
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithInstall(installFunction func(ctx task.ConnectorContext[TaskDescriptor]) error) *ConnectorBuilder[TaskDescriptor] {
+func (b *ConnectorBuilder[TaskDescriptor]) WithInstall(
+	installFunction func(ctx task.ConnectorContext[TaskDescriptor]) error,
+) *ConnectorBuilder[TaskDescriptor] {
 	b.install = installFunction
+
 	return b
 }
 
@@ -67,6 +76,7 @@ func (b *BuiltConnector[TaskDescriptor]) Install(ctx task.ConnectorContext[TaskD
 	if b.install != nil {
 		return b.install(ctx)
 	}
+
 	return nil
 }
 
@@ -74,6 +84,7 @@ func (b *BuiltConnector[TaskDescriptor]) Uninstall(ctx context.Context) error {
 	if b.uninstall != nil {
 		return b.uninstall(ctx)
 	}
+
 	return nil
 }
 
@@ -81,6 +92,7 @@ func (b *BuiltConnector[TaskDescriptor]) Resolve(name TaskDescriptor) task.Task 
 	if b.resolve != nil {
 		return b.resolve(name)
 	}
+
 	return nil
 }
 

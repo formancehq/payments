@@ -20,6 +20,7 @@ func MongoModule(uri string, dbName string) fx.Option {
 		fx.Provide(func() *options.ClientOptions {
 			tM := reflect.TypeOf(bson.M{})
 			reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
+
 			return options.Client().
 				SetRegistry(reg).
 				ApplyURI(uri)
@@ -32,7 +33,6 @@ func MongoModule(uri string, dbName string) fx.Option {
 		fx.Provide(func(client *mongo.Client) *mongo.Database {
 			return client.Database(dbName)
 		}),
-
 		fx.Invoke(func(lc fx.Lifecycle, client *mongo.Client, db *mongo.Database) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
@@ -40,7 +40,9 @@ func MongoModule(uri string, dbName string) fx.Option {
 					if err != nil {
 						return err
 					}
+
 					sharedlogging.Debug("Ping database...")
+
 					ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
 					defer cancel()
 
@@ -53,6 +55,7 @@ func MongoModule(uri string, dbName string) fx.Option {
 					if err != nil {
 						return errors.Wrap(err, "creating indices")
 					}
+
 					return nil
 				},
 			})

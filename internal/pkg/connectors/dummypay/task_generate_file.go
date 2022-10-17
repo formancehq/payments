@@ -87,6 +87,7 @@ const nMax = 10000
 func generateRandomNumber() int {
 	rand.Seed(time.Now().UnixNano())
 
+	//nolint:gosec // allow weak random number generator as it is not used for security
 	value := rand.Intn(nMax)
 
 	return value
@@ -110,14 +111,14 @@ func generateRandomStatus() payments.Status {
 	// ~50% chance.
 	paymentStatus := payments.StatusSucceeded
 
-	n := generateRandomNumber()
+	num := generateRandomNumber()
 
 	switch {
-	case n < nMax/4: // 25% chance
+	case num < nMax/4: // 25% chance
 		paymentStatus = payments.StatusPending
-	case n < nMax/3: // ~9% chance
+	case num < nMax/3: // ~9% chance
 		paymentStatus = payments.StatusFailed
-	case n < nMax/2: // ~16% chance
+	case num < nMax/2: // ~16% chance
 		paymentStatus = payments.StatusCancelled
 	}
 
@@ -126,7 +127,7 @@ func generateRandomStatus() payments.Status {
 
 // generateRandomScheme generates a random payment scheme.
 func generateRandomScheme() payments.Scheme {
-	n := generateRandomNumber() / 1000
+	num := generateRandomNumber() / 1000 //nolint:gomnd // allow for random number
 
 	paymentScheme := payments.SchemeCardMasterCard
 
@@ -143,13 +144,13 @@ func generateRandomScheme() payments.Scheme {
 		payments.SchemeApplePay,
 		payments.SchemeGooglePay,
 		payments.SchemeA2A,
-		payments.SchemeAchDebit,
-		payments.SchemeAch,
-		payments.SchemeRtp,
+		payments.SchemeACHDebit,
+		payments.SchemeACH,
+		payments.SchemeRTP,
 	}
 
-	if n < len(availableSchemes) {
-		paymentScheme = availableSchemes[n]
+	if num < len(availableSchemes) {
+		paymentScheme = availableSchemes[num]
 	}
 
 	return paymentScheme

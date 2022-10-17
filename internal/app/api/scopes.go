@@ -8,10 +8,12 @@ const (
 	scopeWriteConnectors = "connectors:write"
 )
 
-var allScopes = []string{
-	scopeReadPayments,
-	scopeWritePayments,
+func allScopes() []string {
+	return []string{
+		scopeReadPayments,
+		scopeWritePayments,
 
-	scopeReadConnectors,
-	scopeWriteConnectors,
+		scopeReadConnectors,
+		scopeWriteConnectors,
+	}
 }

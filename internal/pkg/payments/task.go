@@ -11,7 +11,7 @@ import (
 
 type TaskStatus string
 
-var (
+const (
 	TaskStatusStopped    TaskStatus = "stopped"
 	TaskStatusPending    TaskStatus = "pending"
 	TaskStatusActive     TaskStatus = "active"
@@ -47,6 +47,7 @@ func DescriptorFromID(id string, to interface{}) {
 	if err != nil {
 		panic(err)
 	}
+
 	err = canonicaljson.Unmarshal(data, to)
 	if err != nil {
 		panic(err)

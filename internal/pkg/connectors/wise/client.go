@@ -1,6 +1,7 @@
 package wise
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,11 +11,12 @@ import (
 const apiEndpoint = "https://api.wise.com"
 
 type apiTransport struct {
-	ApiKey string
+	APIKey string
 }
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.ApiKey))
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.APIKey))
+
 	return http.DefaultTransport.RoundTrip(req)
 }
 
@@ -28,18 +30,19 @@ type profile struct {
 }
 
 type transfer struct {
-	ID                    uint64  `json:"id"`
-	Reference             string  `json:"reference"`
-	Status                string  `json:"status"`
-	SourceAccount         uint64  `json:"sourceAccount"`
-	SourceCurrency        string  `json:"sourceCurrency"`
-	SourceValue           float64 `json:"sourceValue"`
-	TargetAccount         uint64  `json:"targetAccount"`
-	TargetCurrency        string  `json:"targetCurrency"`
-	TargetValue           float64 `json:"targetValue"`
-	Business              uint64  `json:"business"`
-	Created               string  `json:"created"`
-	CustomerTransactionId string  `json:"customerTransactionId"`
+	ID             uint64  `json:"id"`
+	Reference      string  `json:"reference"`
+	Status         string  `json:"status"`
+	SourceAccount  uint64  `json:"sourceAccount"`
+	SourceCurrency string  `json:"sourceCurrency"`
+	SourceValue    float64 `json:"sourceValue"`
+	TargetAccount  uint64  `json:"targetAccount"`
+	TargetCurrency string  `json:"targetCurrency"`
+	TargetValue    float64 `json:"targetValue"`
+	Business       uint64  `json:"business"`
+	Created        string  `json:"created"`
+	//nolint:tagliatelle // allow for clients
+	CustomerTransactionID string `json:"customerTransactionId"`
 	Details               struct {
 		Reference string `json:"reference"`
 	} `json:"details"`
@@ -59,12 +62,14 @@ func (w *client) getProfiles() ([]profile, error) {
 		return profiles, err
 	}
 
-	b, err := io.ReadAll(res.Body)
+	defer res.Body.Close()
+
+	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	err = json.Unmarshal(b, &profiles)
+	err = json.Unmarshal(body, &profiles)
 	if err != nil {
 		return nil, fmt.Errorf("failed to unmarshal profiles: %w", err)
 	}
@@ -79,9 +84,8 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 	offset := 0
 
 	for {
-		var ts []transfer
-
-		req, err := http.NewRequest(http.MethodGet, w.endpoint("v1/transfers"), nil)
+		req, err := http.NewRequestWithContext(context.TODO(),
+			http.MethodGet, w.endpoint("v1/transfers"), http.NoBody)
 		if err != nil {
 			return transfers, err
 		}
@@ -97,19 +101,27 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 			return transfers, err
 		}
 
-		b, err := io.ReadAll(res.Body)
+		body, err := io.ReadAll(res.Body)
 		if err != nil {
+			res.Body.Close()
+
 			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
 
-		err = json.Unmarshal(b, &ts)
+		if err = res.Body.Close(); err != nil {
+			return nil, fmt.Errorf("failed to close response body: %w", err)
+		}
+
+		var transferList []transfer
+
+		err = json.Unmarshal(body, &transferList)
 		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal transfers: %w", err)
 		}
 
-		transfers = append(transfers, ts...)
+		transfers = append(transferList, transferList...)
 
-		if len(ts) < limit {
+		if len(transferList) < limit {
 			break
 		}
 
@@ -122,7 +134,7 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 func newClient(apiKey string) *client {
 	httpClient := &http.Client{
 		Transport: &apiTransport{
-			ApiKey: apiKey,
+			APIKey: apiKey,
 		},
 	}
 

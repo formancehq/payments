@@ -10,5 +10,6 @@ func wrapHandler(useScopes bool, h http.Handler, scopes ...string) http.Handler 
 	if !useScopes {
 		return h
 	}
+
 	return sharedauth.NeedOneOfScopes(scopes...)(h)
 }

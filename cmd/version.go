@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"log"
 
 	"github.com/spf13/cobra"
 )
@@ -15,7 +15,7 @@ func newVersion() *cobra.Command {
 }
 
 func printVersion(cmd *cobra.Command, args []string) {
-	fmt.Printf("Version: %s \n", Version)
-	fmt.Printf("Date: %s \n", BuildDate)
-	fmt.Printf("Commit: %s \n", Commit)
+	log.Printf("Version: %s \n", Version)
+	log.Printf("Date: %s \n", BuildDate)
+	log.Printf("Commit: %s \n", Commit)
 }

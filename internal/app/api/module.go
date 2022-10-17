@@ -2,10 +2,10 @@ package api
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"runtime/debug"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
@@ -23,12 +23,13 @@ import (
 	"go.uber.org/fx"
 )
 
+//nolint:gosec // false positive
 const (
 	otelTracesFlag                  = "otel-traces"
 	authBasicEnabledFlag            = "auth-basic-enabled"
 	authBasicCredentialsFlag        = "auth-basic-credentials"
 	authBearerEnabledFlag           = "auth-bearer-enabled"
-	authBearerIntrospectUrlFlag     = "auth-bearer-introspect-url"
+	authBearerIntrospectURLFlag     = "auth-bearer-introspect-url"
 	authBearerAudienceFlag          = "auth-bearer-audience"
 	authBearerAudiencesWildcardFlag = "auth-bearer-audiences-wildcard"
 	authBearerUseScopesFlag         = "auth-bearer-use-scopes"
@@ -36,18 +37,22 @@ const (
 	serviceName = "Payments"
 )
 
+//nolint:ireturn // allow interface return
 func HTTPModule() fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
-					conn, err := net.Listen("tcp", ":8080")
-					if err != nil {
-						return err
-					}
-
 					go func() {
-						err := http.Serve(conn, m)
+						//nolint:gomnd // allow timeout values
+						srv := &http.Server{
+							Handler:      m,
+							Addr:         "127.0.0.1:8080",
+							WriteTimeout: 15 * time.Second,
+							ReadTimeout:  15 * time.Second,
+						}
+
+						err := srv.ListenAndServe()
 						if err != nil {
 							panic(err)
 						}
@@ -129,20 +134,22 @@ func sharedAuthMethods() []sharedauth.Method {
 
 	if viper.GetBool(authBasicEnabledFlag) {
 		credentials := sharedauth.Credentials{}
+
 		for _, kv := range viper.GetStringSlice(authBasicCredentialsFlag) {
 			parts := strings.SplitN(kv, ":", 2)
 			credentials[parts[0]] = sharedauth.Credential{
 				Password: parts[1],
-				Scopes:   allScopes,
+				Scopes:   allScopes(),
 			}
 		}
+
 		methods = append(methods, sharedauth.NewHTTPBasicMethod(credentials))
 	}
 
 	if viper.GetBool(authBearerEnabledFlag) {
 		methods = append(methods, sharedauth.NewHttpBearerMethod(
 			sharedauth.NewIntrospectionValidator(
-				oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectUrlFlag)),
+				oauth2introspect.NewIntrospecter(viper.GetString(authBearerIntrospectURLFlag)),
 				viper.GetBool(authBearerAudiencesWildcardFlag),
 				sharedauth.AudienceIn(viper.GetStringSlice(authBearerAudienceFlag)...),
 			),

@@ -34,20 +34,26 @@ type Client interface {
 	ForAccount(account string) Client
 }
 
-type defaultClient struct {
+type DefaultClient struct {
 	httpClient    *http.Client
 	apiKey        string
 	stripeAccount string
 	storage       writeonly.Storage
 }
 
-func (d *defaultClient) ForAccount(account string) Client {
+func (d *DefaultClient) ForAccount(account string) Client {
 	cp := *d
 	cp.stripeAccount = account
+
 	return &cp
 }
 
-func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...ClientOption) ([]*stripe.BalanceTransaction, bool, error) {
+// TODO: FIX
+//
+//nolint:funlen // allow for now
+func (d *DefaultClient) BalanceTransactions(ctx context.Context,
+	options ...ClientOption,
+) ([]*stripe.BalanceTransaction, bool, error) {
 	req, err := http.NewRequest(http.MethodGet, balanceTransactionsEndpoint, nil)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "creating httphelpers request")
@@ -58,13 +64,16 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	for _, opt := range options {
 		opt.apply(req)
 	}
+
 	if d.stripeAccount != "" {
 		req.Header.Set("Stripe-Account", d.stripeAccount)
 	}
+
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.SetBasicAuth(d.apiKey, "") // gfyrag: really weird authentication right?
 
 	var httpResponse *http.Response
+
 	httpResponse, err = d.httpClient.Do(req)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "doing request")
@@ -81,28 +90,34 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	}
 
 	rsp := &listResponse{}
+
 	err = json.NewDecoder(httpResponse.Body).Decode(rsp)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "decoding response")
 	}
 
 	asBalanceTransactions := make([]*stripe.BalanceTransaction, 0)
+
 	if len(rsp.Data) > 0 {
 		asMaps := make([]any, 0)
 
 		for _, data := range rsp.Data {
 			asMap := make(map[string]interface{})
-			err := json.Unmarshal(data, &asMap)
+
+			err = json.Unmarshal(data, &asMap)
 			if err != nil {
 				return nil, false, err
 			}
+
 			asMaps = append(asMaps, asMap)
 
 			asBalanceTransaction := &stripe.BalanceTransaction{}
+
 			err = json.Unmarshal(data, &asBalanceTransaction)
 			if err != nil {
 				return nil, false, err
 			}
+
 			asBalanceTransactions = append(asBalanceTransactions, asBalanceTransaction)
 		}
 
@@ -115,12 +130,12 @@ func (d *defaultClient) BalanceTransactions(ctx context.Context, options ...Clie
 	return asBalanceTransactions, rsp.HasMore, nil
 }
 
-func NewDefaultClient(httpClient *http.Client, apiKey string, storage writeonly.Storage) *defaultClient {
-	return &defaultClient{
+func NewDefaultClient(httpClient *http.Client, apiKey string, storage writeonly.Storage) *DefaultClient {
+	return &DefaultClient{
 		httpClient: httpClient,
 		apiKey:     apiKey,
 		storage:    storage,
 	}
 }
 
-var _ Client = &defaultClient{}
+var _ Client = &DefaultClient{}

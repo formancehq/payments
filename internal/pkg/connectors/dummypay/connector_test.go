@@ -24,7 +24,7 @@ func (mcc *mockConnectorContext[TaskDescriptor]) Context() context.Context {
 	return mcc.ctx
 }
 
-func (s mockScheduler[TaskDescriptor]) Schedule(p TaskDescriptor, restart bool) error {
+func (mcc mockScheduler[TaskDescriptor]) Schedule(p TaskDescriptor, restart bool) error {
 	return nil
 }
 
@@ -38,9 +38,9 @@ func TestConnector(t *testing.T) {
 	config := Config{}
 	logger := sharedlogging.GetLogger(context.Background())
 
-	fs := newTestFS()
+	fileSystem := newTestFS()
 
-	connector := NewConnector(logger, config, fs)
+	connector := newConnector(logger, config, fileSystem)
 
 	err := connector.Install(new(mockConnectorContext[TaskDescriptor]))
 	assert.NoErrorf(t, err, "Install() failed")
@@ -49,9 +49,9 @@ func TestConnector(t *testing.T) {
 		key  taskKey
 		task task3.Task
 	}{
-		{taskKeyReadFiles, taskReadFiles(config, fs)},
-		{taskKeyGenerateFiles, taskGenerateFiles(config, fs)},
-		{taskKeyIngest, taskIngest(config, TaskDescriptor{}, fs)},
+		{taskKeyReadFiles, taskReadFiles(config, fileSystem)},
+		{taskKeyGenerateFiles, taskGenerateFiles(config, fileSystem)},
+		{taskKeyIngest, taskIngest(config, TaskDescriptor{}, fileSystem)},
 	}
 
 	for _, testCase := range testCases {

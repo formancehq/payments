@@ -30,6 +30,7 @@ func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
 	if descriptor.Main {
 		return MainTask(c.cfg)
 	}
+
 	return ConnectedAccountTask(c.cfg, descriptor.Account)
 }
 

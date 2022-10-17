@@ -11,21 +11,23 @@ type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
 	Scheduler() Scheduler[TaskDescriptor]
 }
 
-type connectorContext[TaskDescriptor payments.TaskDescriptor] struct {
+type ConnectorCtx[TaskDescriptor payments.TaskDescriptor] struct {
 	ctx       context.Context
 	scheduler Scheduler[TaskDescriptor]
 }
 
-func (ctx *connectorContext[TaskDescriptor]) Context() context.Context {
+func (ctx *ConnectorCtx[TaskDescriptor]) Context() context.Context {
 	return ctx.ctx
 }
 
-func (ctx *connectorContext[TaskDescriptor]) Scheduler() Scheduler[TaskDescriptor] {
+func (ctx *ConnectorCtx[TaskDescriptor]) Scheduler() Scheduler[TaskDescriptor] {
 	return ctx.scheduler
 }
 
-func NewConnectorContext[TaskDescriptor payments.TaskDescriptor](ctx context.Context, scheduler Scheduler[TaskDescriptor]) *connectorContext[TaskDescriptor] {
-	return &connectorContext[TaskDescriptor]{
+func NewConnectorContext[TaskDescriptor payments.TaskDescriptor](ctx context.Context,
+	scheduler Scheduler[TaskDescriptor],
+) *ConnectorCtx[TaskDescriptor] {
+	return &ConnectorCtx[TaskDescriptor]{
 		ctx:       ctx,
 		scheduler: scheduler,
 	}

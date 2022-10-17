@@ -36,9 +36,10 @@ func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
 	}
 }
 
-func (i *defaultIngester) publish(ctx context.Context, topic string, ev EventMessage) {
+func (i *DefaultIngester) publish(ctx context.Context, topic string, ev EventMessage) {
 	if err := i.publisher.Publish(ctx, topic, ev); err != nil {
 		sharedlogging.GetLogger(ctx).Errorf("Publishing message: %s", err)
+
 		return
 	}
 }

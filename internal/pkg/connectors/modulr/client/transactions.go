@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+//nolint:tagliatelle // allow different styled tags in client
 type Transaction struct {
 	ID              string      `json:"id"`
 	Type            string      `json:"type"`
@@ -19,8 +20,8 @@ type Transaction struct {
 	AdditionalInfo  interface{} `json:"additionalInfo"`
 }
 
-func (m *Client) GetTransactions(accountId string) ([]Transaction, error) {
-	resp, err := m.httpClient.Get(m.buildEndpoint("accounts/%s/transactions", accountId))
+func (m *Client) GetTransactions(accountID string) ([]Transaction, error) {
+	resp, err := m.httpClient.Get(m.buildEndpoint("accounts/%s/transactions", accountID))
 	if err != nil {
 		return nil, err
 	}

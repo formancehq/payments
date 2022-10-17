@@ -6,13 +6,14 @@ import (
 	"net/http"
 )
 
+//nolint:tagliatelle // allow for clients
 type Account struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Status      string `json:"status"`
 	Balance     string `json:"balance"`
 	Currency    string `json:"currency"`
-	CustomerId  string `json:"customerId"`
+	CustomerID  string `json:"customerId"`
 	Identifiers []struct {
 		AccountNumber string `json:"accountNumber"`
 		SortCode      string `json:"sortCode"`

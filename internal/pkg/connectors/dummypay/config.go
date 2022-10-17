@@ -13,7 +13,8 @@ type Config struct {
 	// FilePollingPeriod is the period between file polling.
 	FilePollingPeriod time.Duration `json:"filePollingPeriod" yaml:"filePollingPeriod" bson:"filePollingPeriod"`
 
-	// FileGenerationPeriod is the period between file generation.
+	//nolint:lll // allow long line
+	// FileGenerationPeriod is the period between file generation
 	FileGenerationPeriod time.Duration `json:"fileGenerationPeriod" yaml:"fileGenerationPeriod" bson:"fileGenerationPeriod"`
 }
 

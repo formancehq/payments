@@ -19,6 +19,8 @@ type State struct {
 }
 
 func TestIngester(t *testing.T) {
+	t.Parallel()
+
 	mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock)).Run("Schedule task", func(mt *mtest.T) {
 		provider := "testing"
 		ingester := NewDefaultIngester(provider, uuid.New(), mt.DB, sharedlogging.NewNoOpLogger(), nil)

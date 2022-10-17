@@ -35,11 +35,11 @@ func (m *Client) buildEndpoint(path string, args ...interface{}) string {
 	return fmt.Sprintf("%s/%s", m.endpoint, fmt.Sprintf(path, args...))
 }
 
-const sandboxApiEndpoint = "https://api-sandbox.modulrfinance.com/api-sandbox-token"
+const sandboxAPIEndpoint = "https://api-sandbox.modulrfinance.com/api-sandbox-token"
 
 func NewClient(apiKey, apiSecret, endpoint string) (*Client, error) {
 	if endpoint == "" {
-		endpoint = sandboxApiEndpoint
+		endpoint = sandboxAPIEndpoint
 	}
 
 	headers, err := hmac.GenerateHeaders(apiKey, apiSecret, "", false)

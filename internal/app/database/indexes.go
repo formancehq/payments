@@ -2,7 +2,7 @@ package database
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"reflect"
 
 	"github.com/numary/payments/internal/pkg/payments"
@@ -63,24 +63,31 @@ func indexes() map[string][]mongo.IndexModel {
 	}
 }
 
+// TODO: Refactor
+//
+//nolint:gocyclo,cyclop // allow for now
 func createIndexes(ctx context.Context, db *mongo.Database) error {
-	type StoredIndex struct {
+	type storedIndex struct {
 		Unique                  bool               `bson:"unique"`
-		Key                     bsonx.Doc          `bson:"key"`
-		Name                    string             `bson:"name"`
-		PartialFilterExpression interface{}        `bson:"partialFilterExpression"`
 		ExpireAfterSeconds      int32              `bson:"expireAfterSeconds"`
+		Name                    string             `bson:"name"`
+		Key                     bsonx.Doc          `bson:"key"`
 		Collation               *options.Collation `bson:"collation"`
+		PartialFilterExpression interface{}        `bson:"partialFilterExpression"`
 	}
+
+	const id = "_id_"
 
 	for entity, indexes := range indexes() {
 		c := db.Collection(entity)
+
 		listCursor, err := c.Indexes().List(ctx)
 		if err != nil {
 			return err
 		}
 
-		storedIndexes := make([]StoredIndex, 0)
+		storedIndexes := make([]storedIndex, 0)
+
 		err = listCursor.All(ctx, &storedIndexes)
 		if err != nil {
 			return err
@@ -88,7 +95,7 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 
 	l:
 		for _, storedIndex := range storedIndexes {
-			if storedIndex.Name == "_id_" {
+			if storedIndex.Name == id {
 				continue l
 			}
 
@@ -99,50 +106,55 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 
 				var modified bool
 				if !reflect.DeepEqual(index.Keys, storedIndex.Key) {
-					fmt.Printf("Keys of index %s of collection %s modified\r\n", *index.Options.Name, entity)
+					log.Printf("Keys of index %s of collection %s modified\r\n", *index.Options.Name, entity)
 					modified = true
 				}
 
 				if (index.Options.PartialFilterExpression == nil && storedIndex.PartialFilterExpression != nil) ||
 					(index.Options.PartialFilterExpression != nil && storedIndex.PartialFilterExpression == nil) ||
 					!reflect.DeepEqual(index.Options.PartialFilterExpression, storedIndex.PartialFilterExpression) {
-					fmt.Printf("PartialFilterExpression of index %s of collection %s modified\r\n", *index.Options.Name, entity)
+					log.Printf("PartialFilterExpression of index %s of collection %s modified\r\n", *index.Options.Name, entity)
 					modified = true
 				}
 
-				if (index.Options.Unique == nil && storedIndex.Unique) || (index.Options.Unique != nil && *index.Options.Unique != storedIndex.Unique) {
-					fmt.Printf("Uniqueness of index %s of collection %s modified\r\n", *index.Options.Name, entity)
+				if (index.Options.Unique == nil && storedIndex.Unique) ||
+					(index.Options.Unique != nil && *index.Options.Unique != storedIndex.Unique) {
+					log.Printf("Uniqueness of index %s of collection %s modified\r\n", *index.Options.Name, entity)
 					modified = true
 				}
 
-				if (index.Options.ExpireAfterSeconds == nil && storedIndex.ExpireAfterSeconds > 0) || (index.Options.ExpireAfterSeconds != nil && *index.Options.ExpireAfterSeconds != storedIndex.ExpireAfterSeconds) {
-					fmt.Printf("ExpireAfterSeconds of index %s of collection %s modified\r\n", *index.Options.Name, entity)
+				if (index.Options.ExpireAfterSeconds == nil && storedIndex.ExpireAfterSeconds > 0) ||
+					(index.Options.ExpireAfterSeconds != nil && *index.Options.ExpireAfterSeconds != storedIndex.ExpireAfterSeconds) {
+					log.Printf("ExpireAfterSeconds of index %s of collection %s modified\r\n", *index.Options.Name, entity)
 					modified = true
 				}
 
 				if (index.Options.Collation == nil && storedIndex.Collation != nil) ||
 					(index.Options.Collation != nil && storedIndex.Collation == nil) ||
 					!reflect.DeepEqual(index.Options.Collation, storedIndex.Collation) {
-					fmt.Printf("Collation of index %s of collection %s modified\r\n", *index.Options.Name, entity)
+					log.Printf("Collation of index %s of collection %s modified\r\n", *index.Options.Name, entity)
 					modified = true
 				}
 
 				if !modified {
-					fmt.Printf("Index %s of collection %s not modified\r\n", *index.Options.Name, entity)
+					log.Printf("Index %s of collection %s not modified\r\n", *index.Options.Name, entity)
+
 					continue l
 				}
 
-				fmt.Printf("Recreate index %s on collection %s\r\n", *index.Options.Name, entity)
+				log.Printf("Recreate index %s on collection %s\r\n", *index.Options.Name, entity)
 
 				_, err = c.Indexes().DropOne(ctx, storedIndex.Name)
 				if err != nil {
-					fmt.Printf("Unable to drop index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
+					log.Printf("Unable to drop index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
+
 					continue l
 				}
 
 				_, err = c.Indexes().CreateOne(ctx, index)
 				if err != nil {
-					fmt.Printf("Unable to create index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
+					log.Printf("Unable to create index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
+
 					continue l
 				}
 			}
@@ -151,7 +163,7 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 		// Check for deleted index
 	l3:
 		for _, storedIndex := range storedIndexes {
-			if storedIndex.Name == "_id_" {
+			if storedIndex.Name == id {
 				continue l3
 			}
 
@@ -161,11 +173,11 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 				}
 			}
 
-			fmt.Printf("Detected deleted index %s on collection %s\r\n", storedIndex.Name, entity)
+			log.Printf("Detected deleted index %s on collection %s\r\n", storedIndex.Name, entity)
 
 			_, err = c.Indexes().DropOne(ctx, storedIndex.Name)
 			if err != nil {
-				fmt.Printf("Unable to drop index %s of collection %s: %s\r\n", storedIndex.Name, entity, err)
+				log.Printf("Unable to drop index %s of collection %s: %s\r\n", storedIndex.Name, entity, err)
 			}
 		}
 
@@ -178,11 +190,11 @@ func createIndexes(ctx context.Context, db *mongo.Database) error {
 				}
 			}
 
-			fmt.Printf("Create new index %s on collection %s\r\n", *index.Options.Name, entity)
+			log.Printf("Create new index %s on collection %s\r\n", *index.Options.Name, entity)
 
 			_, err = c.Indexes().CreateOne(ctx, index)
 			if err != nil {
-				fmt.Printf("Unable to create index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
+				log.Printf("Unable to create index %s of collection %s: %s\r\n", *index.Options.Name, entity, err)
 			}
 		}
 	}

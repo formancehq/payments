@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	payments2 "github.com/numary/payments/internal/pkg/payments"
+	"github.com/numary/payments/internal/pkg/payments"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"
@@ -17,9 +17,9 @@ import (
 )
 
 type BatchElement struct {
-	Referenced payments2.Referenced
-	Payment    *payments2.Data
-	Adjustment *payments2.Adjustment
+	Referenced payments.Referenced
+	Payment    *payments.Data
+	Adjustment *payments.Adjustment
 	Forward    bool
 }
 
@@ -40,18 +40,19 @@ func NoOpIngester() IngesterFn {
 	})
 }
 
-type defaultIngester struct {
+type DefaultIngester struct {
 	db         *mongo.Database
 	logger     sharedlogging.Logger
 	provider   string
-	descriptor payments2.TaskDescriptor
+	descriptor payments.TaskDescriptor
 	publisher  sharedpublish.Publisher
 }
 
-type referenced payments2.Referenced
+type referenced payments.Referenced
 
-func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]payments2.Payment, error) {
-	allPayments := make([]payments2.Payment, 0)
+func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]payments.Payment, error) {
+	allPayments := make([]payments.Payment, 0)
+
 	for _, elem := range batch {
 		logger := i.logger.WithFields(map[string]any{
 			"id": referenced(elem.Referenced),
@@ -64,6 +65,7 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 		}
 
 		var err error
+
 		switch {
 		case elem.Forward && elem.Adjustment != nil:
 			update = bson.M{
@@ -81,13 +83,13 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 			}
 		case elem.Forward && elem.Payment != nil:
 			update = bson.M{
-				"$set": payments2.Payment{
-					Identifier: payments2.Identifier{
+				"$set": payments.Payment{
+					Identifier: payments.Identifier{
 						Referenced: elem.Referenced,
 						Provider:   i.provider,
 					},
 					Data: *elem.Payment,
-					Adjustments: []payments2.Adjustment{
+					Adjustments: []payments.Adjustment{
 						{
 							Status: elem.Payment.Status,
 							Amount: elem.Payment.InitialAmount,
@@ -112,7 +114,7 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 			update = bson.M{
 				"$push": bson.M{
 					"adjustments": bson.M{
-						"$each": []any{payments2.Adjustment{
+						"$each": []any{payments.Adjustment{
 							Status: elem.Payment.Status,
 							Amount: elem.Payment.InitialAmount,
 							Date:   elem.Payment.CreatedAt,
@@ -137,12 +139,14 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 		if err != nil {
 			panic(err)
 		}
+
 		logger.WithFields(map[string]interface{}{
 			"update": string(data),
 		}).Debugf("Update payment")
-		ret := i.db.Collection(payments2.Collection).FindOneAndUpdate(
+
+		ret := i.db.Collection(payments.Collection).FindOneAndUpdate(
 			ctx,
-			payments2.Identifier{
+			payments.Identifier{
 				Referenced: elem.Referenced,
 				Provider:   i.provider,
 			},
@@ -151,39 +155,48 @@ func (i *defaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 		)
 		if ret.Err() != nil {
 			logger.Errorf("Error updating payment: %s", ret.Err())
-			return nil, fmt.Errorf("error updating payment: %s", ret.Err())
+
+			return nil, fmt.Errorf("error updating payment: %w", ret.Err())
 		}
-		p := payments2.Payment{}
-		err = ret.Decode(&p)
+
+		payment := payments.Payment{}
+
+		err = ret.Decode(&payment)
 		if err != nil {
 			return nil, err
 		}
 
-		allPayments = append(allPayments, p)
+		allPayments = append(allPayments, payment)
 	}
+
 	return allPayments, nil
 }
 
 func Filter[T any](objects []T, compareFn func(t T) bool) []T {
 	ret := make([]T, 0)
+
 	for _, o := range objects {
 		if compareFn(o) {
 			ret = append(ret, o)
 		}
 	}
+
 	return ret
 }
 
-func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState any) error {
+func (i *DefaultIngester) Ingest(ctx context.Context, batch Batch, commitState any) error {
 	startingAt := time.Now()
+
 	i.logger.WithFields(map[string]interface{}{
 		"size":       len(batch),
 		"startingAt": startingAt,
 	}).Debugf("Ingest batch")
 
-	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) (err error) {
-		var allPayments []payments2.Payment
-		_, err = ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
+		var allPayments []payments.Payment
+		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
+			var err error
+
 			allPayments, err = i.processBatch(ctx, batch)
 			if err != nil {
 				return nil, err
@@ -191,7 +204,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 			i.logger.Debugf("Update state")
 
-			_, err = i.db.Collection(payments2.TasksCollection).UpdateOne(ctx, map[string]any{
+			_, err = i.db.Collection(payments.TasksCollection).UpdateOne(ctx, map[string]any{
 				"provider":   i.provider,
 				"descriptor": i.descriptor,
 			}, map[string]any{
@@ -199,12 +212,10 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 					"state": commitState,
 				},
 			}, options.Update().SetUpsert(true))
-			if err != nil {
-				return nil, err
-			}
-			return nil, nil
+
+			return nil, err
 		})
-		allPayments = Filter(allPayments, payments2.Payment.HasInitialValue)
+		allPayments = Filter(allPayments, payments.Payment.HasInitialValue)
 
 		if i.publisher != nil {
 			for _, e := range allPayments {
@@ -218,6 +229,7 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 	})
 	if err != nil {
 		sharedlogging.GetLogger(ctx).Errorf("Error ingesting batch: %s", err)
+
 		return err
 	}
 
@@ -234,12 +246,12 @@ func (i *defaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 func NewDefaultIngester(
 	provider string,
-	descriptor payments2.TaskDescriptor,
+	descriptor payments.TaskDescriptor,
 	db *mongo.Database,
 	logger sharedlogging.Logger,
 	publisher sharedpublish.Publisher,
-) *defaultIngester {
-	return &defaultIngester{
+) *DefaultIngester {
+	return &DefaultIngester{
 		provider:   provider,
 		descriptor: descriptor,
 		db:         db,

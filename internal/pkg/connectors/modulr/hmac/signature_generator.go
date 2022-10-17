@@ -2,7 +2,7 @@ package hmac
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec // we need sha1 for the hmac
 	"encoding/base64"
 	"net/url"
 )
@@ -15,11 +15,11 @@ const (
 	suffix      = "\""
 	newline     = "\n"
 	nonceKey    = "x-mod-nonce: "
-	keyIdPrefix = "Signature keyId=\""
+	keyIDPrefix = "Signature keyId=\""
 )
 
 func buildSignature(apiKey string, apiSecret string, nonce string, date string) string {
-	keyID := keyIdPrefix + apiKey + "\","
+	keyID := keyIDPrefix + apiKey + "\","
 
 	mac := hmac.New(sha1.New, []byte(apiSecret))
 	mac.Write([]byte(datePrefix + date + newline + nonceKey + nonce))

@@ -55,7 +55,7 @@ func parseFilesToIngest(config Config, fs fs) ([]string, error) {
 		return nil, fmt.Errorf("error reading directory '%s': %w", config.Directory, err)
 	}
 
-	var files []string
+	var files []string //nolint:prealloc // length is unknown
 
 	// iterate over all files in the directory.
 	for _, file := range dir {

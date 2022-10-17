@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	payments2 "github.com/numary/payments/internal/pkg/payments"
+	"github.com/numary/payments/internal/pkg/payments"
 
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
@@ -48,11 +48,14 @@ func handleValidationError(w http.ResponseWriter, r *http.Request, err error) {
 func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pipeline := make([]map[string]any, 0)
+
 		if sortParams := r.URL.Query()["sort"]; sortParams != nil {
 			sort := bson.M{}
+
 			for _, s := range sortParams {
 				parts := strings.SplitN(s, ":", 2)
 				desc := false
+
 				if len(parts) > 1 {
 					switch parts[1] {
 					case "asc", "ASC":
@@ -60,9 +63,11 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 						desc = true
 					default:
 						handleValidationError(w, r, errors.New("sort order not well specified, got "+parts[1]))
+
 						return
 					}
 				}
+
 				key := parts[0]
 				if key == "id" {
 					key = "_id"
@@ -72,54 +77,68 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 					if desc {
 						return -1
 					}
+
 					return 1
 				}()
 			}
+
 			pipeline = append(pipeline, map[string]any{"$sort": sort})
 		}
+
 		skip, err := integerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleValidationError(w, r, err)
+
 			return
 		}
+
 		if skip != 0 {
 			pipeline = append(pipeline, map[string]any{
 				"$skip": skip,
 			})
 		}
+
 		limit, err := integerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
 			handleValidationError(w, r, err)
+
 			return
 		}
+
 		if limit > maxPerPage {
 			limit = maxPerPage
 		}
+
 		if limit != 0 {
 			pipeline = append(pipeline, map[string]any{
 				"$limit": limit,
 			})
 		}
 
-		cursor, err := db.Collection(payments2.Collection).Aggregate(r.Context(), pipeline)
+		cursor, err := db.Collection(payments.Collection).Aggregate(r.Context(), pipeline)
 		if err != nil {
 			handleServerError(w, r, err)
+
 			return
 		}
+
 		defer cursor.Close(r.Context())
 
-		ret := make([]payments2.Payment, 0)
+		ret := make([]payments.Payment, 0)
+
 		err = cursor.All(r.Context(), &ret)
 		if err != nil {
 			handleServerError(w, r, err)
+
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]payments2.Payment]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]payments.Payment]{
 			Data: &ret,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
+
 			return
 		}
 	}
@@ -127,35 +146,43 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 
 func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		paymentId := mux.Vars(r)["paymentId"]
+		paymentID := mux.Vars(r)["paymentID"]
 
-		identifier, err := payments2.IdentifierFromString(paymentId)
+		identifier, err := payments.IdentifierFromString(paymentID)
 		if err != nil {
 			w.WriteHeader(http.StatusNotFound)
+
 			return
 		}
 
-		ret := db.Collection(payments2.Collection).FindOne(r.Context(), identifier)
+		ret := db.Collection(payments.Collection).FindOne(r.Context(), identifier)
 		if ret.Err() != nil {
-			if ret.Err() == mongo.ErrNoDocuments {
+			if errors.Is(ret.Err(), mongo.ErrNoDocuments) {
 				w.WriteHeader(http.StatusNotFound)
+
 				return
 			}
+
 			handleServerError(w, r, ret.Err())
-			return
-		}
-		ob := &payments2.Payment{}
-		err = ret.Decode(ob)
-		if err != nil {
-			handleServerError(w, r, err)
+
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments2.Payment]{
-			Data: ob,
+		payment := &payments.Payment{}
+
+		err = ret.Decode(payment)
+		if err != nil {
+			handleServerError(w, r, err)
+
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
+			Data: payment,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
+
 			return
 		}
 	}
@@ -172,8 +199,10 @@ func paymentsRouter(
 			h.ServeHTTP(w, r)
 		})
 	})
-	router.Path("/payments").Methods(http.MethodGet).Handler(wrapHandler(useScopes, listPaymentsHandler(db), scopeReadPayments, scopeWritePayments))
-	router.Path("/payments/{paymentId}").Methods(http.MethodGet).Handler(wrapHandler(useScopes, readPaymentHandler(db), scopeReadPayments, scopeWritePayments))
+	router.Path("/payments").Methods(http.MethodGet).
+		Handler(wrapHandler(useScopes, listPaymentsHandler(db), scopeReadPayments, scopeWritePayments))
+	router.Path("/payments/{paymentID}").Methods(http.MethodGet).
+		Handler(wrapHandler(useScopes, readPaymentHandler(db), scopeReadPayments, scopeWritePayments))
 
 	return router
 }

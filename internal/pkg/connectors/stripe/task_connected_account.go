@@ -16,17 +16,23 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 	bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool,
 ) error {
 	batch := ingestion.Batch{}
+
 	for _, bt := range bts {
 		batchElement, handled := CreateBatchElement(bt, !tail)
+
 		if !handled {
 			logger.Debugf("Balance transaction type not handled: %s", bt.Type)
+
 			continue
 		}
+
 		if batchElement.Adjustment == nil && batchElement.Payment == nil {
 			continue
 		}
+
 		batch = append(batch, batchElement)
 	}
+
 	logger.WithFields(map[string]interface{}{
 		"state": commitState,
 	}).Debugf("updating state")
@@ -51,8 +57,10 @@ func ConnectedAccountTask(config Config, account string) func(ctx context.Contex
 			IngesterFn(func(ctx context.Context, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 				return ingestBatch(ctx, logger, ingester, bts, commitState, tail)
 			}),
-			NewTimeline(NewDefaultClient(http.DefaultClient, config.ApiKey, storage).ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
+			NewTimeline(NewDefaultClient(http.DefaultClient, config.APIKey, storage).
+				ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 		)
+
 		return trigger.Fetch(ctx)
 	}
 }

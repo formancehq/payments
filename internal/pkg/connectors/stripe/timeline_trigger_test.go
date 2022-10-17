@@ -12,11 +12,13 @@ import (
 )
 
 func TestTimelineTrigger(t *testing.T) {
+	t.Parallel()
+
 	const txCount = 12
 
 	mock := NewClientMock(t, true)
 	ref := time.Now().Add(-time.Minute * time.Duration(txCount) / 2)
-	tl := NewTimeline(mock, TimelineConfig{
+	timeline := NewTimeline(mock, TimelineConfig{
 		PageSize: 2,
 	}, TimelineState{}, WithStartingAt(ref))
 
@@ -25,9 +27,10 @@ func TestTimelineTrigger(t *testing.T) {
 		sharedlogging.GetLogger(context.Background()),
 		IngesterFn(func(ctx context.Context, batch []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 			ingestedTx = append(ingestedTx, batch...)
+
 			return nil
 		}),
-		tl,
+		timeline,
 	)
 
 	allTxs := make([]*stripe.BalanceTransaction, txCount)
@@ -45,6 +48,7 @@ func TestTimelineTrigger(t *testing.T) {
 	for i := 0; i < txCount/2; i += 2 {
 		mock.Expect().Limit(2).RespondsWith(i < txCount/2-2, allTxs[txCount/2+i], allTxs[txCount/2+i+1])
 	}
+
 	for i := 0; i < txCount/2; i += 2 {
 		mock.Expect().Limit(2).RespondsWith(i < txCount/2-2, allTxs[txCount/2-i-2], allTxs[txCount/2-i-1])
 	}
@@ -57,11 +61,13 @@ func TestTimelineTrigger(t *testing.T) {
 }
 
 func TestCancelTimelineTrigger(t *testing.T) {
+	t.Parallel()
+
 	const txCount = 12
 
 	mock := NewClientMock(t, false)
 	ref := time.Now().Add(-time.Minute * time.Duration(txCount) / 2)
-	tl := NewTimeline(mock, TimelineConfig{
+	timeline := NewTimeline(mock, TimelineConfig{
 		PageSize: 1,
 	}, TimelineState{}, WithStartingAt(ref))
 
@@ -71,9 +77,10 @@ func TestCancelTimelineTrigger(t *testing.T) {
 		IngesterFn(func(ctx context.Context, batch []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 			close(waiting) // Instruct the test the trigger is in fetching state
 			<-ctx.Done()
+
 			return nil
 		}),
-		tl,
+		timeline,
 	)
 
 	allTxs := make([]*stripe.BalanceTransaction, txCount)

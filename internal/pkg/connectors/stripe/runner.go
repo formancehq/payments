@@ -9,7 +9,7 @@ import (
 
 func NewRunner(
 	logger sharedlogging.Logger,
-	trigger *timelineTrigger,
+	trigger *TimelineTrigger,
 	pollingPeriod time.Duration,
 ) *Runner {
 	return &Runner{
@@ -24,7 +24,7 @@ func NewRunner(
 
 type Runner struct {
 	stopChan      chan chan struct{}
-	trigger       *timelineTrigger
+	trigger       *TimelineTrigger
 	logger        sharedlogging.Logger
 	pollingPeriod time.Duration
 }
@@ -55,13 +55,16 @@ func (r *Runner) Run(ctx context.Context) error {
 		defer func() {
 			done <- struct{}{}
 		}()
+
 		if err := r.trigger.Fetch(ctx); err != nil {
 			r.logger.Errorf("Error fetching page: %s", err)
 		}
 	}
+
 	go fetch()
 
 	var timeChan <-chan time.Time
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -69,11 +72,13 @@ func (r *Runner) Run(ctx context.Context) error {
 		case closeChannel := <-r.stopChan:
 			r.trigger.Cancel(ctx)
 			close(closeChannel)
+
 			return nil
 		case <-done:
 			timeChan = time.After(r.pollingPeriod)
 		case <-timeChan:
 			timeChan = nil
+
 			go fetch()
 		}
 	}

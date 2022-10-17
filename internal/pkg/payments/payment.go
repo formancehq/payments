@@ -33,9 +33,9 @@ const (
 	SchemeGooglePay Scheme = "google pay"
 
 	SchemeA2A      Scheme = "a2a"
-	SchemeAchDebit Scheme = "ach debit"
-	SchemeAch      Scheme = "ach"
-	SchemeRtp      Scheme = "rtp"
+	SchemeACHDebit Scheme = "ach debit"
+	SchemeACH      Scheme = "ach"
+	SchemeRTP      Scheme = "rtp"
 
 	TypePayIn    = "pay-in"
 	TypePayout   = "payout"
@@ -64,6 +64,7 @@ func (i Identifier) String() string {
 	if err != nil {
 		panic(err)
 	}
+
 	return base64.URLEncoding.EncodeToString(data)
 }
 
@@ -72,11 +73,14 @@ func IdentifierFromString(v string) (*Identifier, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ret := Identifier{}
+
 	err = canonicaljson.Unmarshal(data, &ret)
 	if err != nil {
 		return nil, err
 	}
+
 	return &ret, nil
 }
 
@@ -109,6 +113,7 @@ func (p Payment) HasInitialValue() bool {
 
 func (p Payment) MarshalJSON() ([]byte, error) {
 	type Aux Payment
+
 	return json.Marshal(struct {
 		ID string `json:"id"`
 		Aux
@@ -121,15 +126,18 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 func (p Payment) Computed() SavedPayment {
 	aggregatedAdjustmentValue := int64(0)
 	amount := int64(0)
+
 	for i := 0; i < len(p.Adjustments)-1; i++ {
-		a := p.Adjustments[i]
-		if a.Absolute {
-			amount = a.Amount
+		adjustment := p.Adjustments[i]
+		if adjustment.Absolute {
+			amount = adjustment.Amount
+
 			break
 		}
 
-		aggregatedAdjustmentValue += a.Amount
+		aggregatedAdjustmentValue += adjustment.Amount
 	}
+
 	if amount == 0 {
 		amount = p.InitialAmount + aggregatedAdjustmentValue
 	}
@@ -151,6 +159,7 @@ type SavedPayment struct {
 
 func (p SavedPayment) MarshalJSON() ([]byte, error) {
 	type Aux SavedPayment
+
 	return json.Marshal(struct {
 		ID string `json:"id"`
 		Aux

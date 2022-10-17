@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	payments2 "github.com/numary/payments/internal/pkg/payments"
+	"github.com/numary/payments/internal/pkg/payments"
 
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,203 +23,225 @@ type ConnectorStore interface {
 	ReadConfig(ctx context.Context, name string, to interface{}) error
 }
 
-type inMemoryConnectorStore struct {
+type InMemoryConnectorStore struct {
 	installed map[string]bool
 	disabled  map[string]bool
 	configs   map[string]any
 }
 
-func (i *inMemoryConnectorStore) Uninstall(ctx context.Context, name string) error {
+func (i *InMemoryConnectorStore) Uninstall(ctx context.Context, name string) error {
 	delete(i.installed, name)
 	delete(i.configs, name)
 	delete(i.disabled, name)
+
 	return nil
 }
 
-func (i *inMemoryConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
+func (i *InMemoryConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
 	return i.installed[name], nil
 }
 
-func (i *inMemoryConnectorStore) Install(ctx context.Context, name string, config any) error {
+func (i *InMemoryConnectorStore) Install(ctx context.Context, name string, config any) error {
 	i.installed[name] = true
 	i.configs[name] = config
 	i.disabled[name] = false
+
 	return nil
 }
 
-func (i inMemoryConnectorStore) UpdateConfig(ctx context.Context, name string, config any) error {
+func (i *InMemoryConnectorStore) UpdateConfig(ctx context.Context, name string, config any) error {
 	i.configs[name] = config
+
 	return nil
 }
 
-func (i inMemoryConnectorStore) Enable(ctx context.Context, name string) error {
+func (i *InMemoryConnectorStore) Enable(ctx context.Context, name string) error {
 	i.disabled[name] = false
+
 	return nil
 }
 
-func (i inMemoryConnectorStore) Disable(ctx context.Context, name string) error {
+func (i *InMemoryConnectorStore) Disable(ctx context.Context, name string) error {
 	i.disabled[name] = true
+
 	return nil
 }
 
-func (i inMemoryConnectorStore) IsEnabled(ctx context.Context, name string) (bool, error) {
+func (i *InMemoryConnectorStore) IsEnabled(ctx context.Context, name string) (bool, error) {
 	disabled, ok := i.disabled[name]
 	if !ok {
 		return false, nil
 	}
+
 	return !disabled, nil
 }
 
-func (i inMemoryConnectorStore) ReadConfig(ctx context.Context, name string, to interface{}) error {
+func (i *InMemoryConnectorStore) ReadConfig(ctx context.Context, name string, to interface{}) error {
 	cfg, ok := i.configs[name]
 	if !ok {
 		return ErrNotFound
 	}
 
 	reflect.ValueOf(to).Elem().Set(reflect.ValueOf(cfg))
+
 	return nil
 }
 
-var _ ConnectorStore = &inMemoryConnectorStore{}
+var _ ConnectorStore = &InMemoryConnectorStore{}
 
-func NewInMemoryStore() *inMemoryConnectorStore {
-	return &inMemoryConnectorStore{
+func NewInMemoryStore() *InMemoryConnectorStore {
+	return &InMemoryConnectorStore{
 		installed: make(map[string]bool),
 		disabled:  make(map[string]bool),
 		configs:   make(map[string]any),
 	}
 }
 
-type mongodbConnectorStore struct {
+type MongodbConnectorStore struct {
 	db *mongo.Database
 }
 
-func (m *mongodbConnectorStore) Uninstall(ctx context.Context, name string) error {
+func (m *MongodbConnectorStore) Uninstall(ctx context.Context, name string) error {
 	return m.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
-			_, err := m.db.Collection(payments2.TasksCollection).DeleteMany(ctx, map[string]any{
+			_, err := m.db.Collection(payments.TasksCollection).DeleteMany(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
 				return nil, errors.Wrap(err, "deleting tasks")
 			}
-			_, err = m.db.Collection(payments2.Collection).DeleteMany(ctx, map[string]any{
+
+			_, err = m.db.Collection(payments.Collection).DeleteMany(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
 				return nil, errors.Wrap(err, "deleting payments")
 			}
-			_, err = m.db.Collection(payments2.ConnectorsCollection).DeleteOne(ctx, map[string]any{
+
+			_, err = m.db.Collection(payments.ConnectorsCollection).DeleteOne(ctx, map[string]any{
 				"provider": name,
 			})
 			if err != nil {
 				return nil, errors.Wrap(err, "deleting configuration")
 			}
+
 			return nil, nil
 		})
+
 		return err
 	})
 }
 
-func (m *mongodbConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
-	ret := m.db.Collection(payments2.ConnectorsCollection).FindOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
+	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
-	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
+	if ret.Err() != nil {
+		if errors.Is(ret.Err(), mongo.ErrNoDocuments) {
+			return false, nil
+		}
+
 		return false, ret.Err()
 	}
-	if ret.Err() == mongo.ErrNoDocuments {
-		return false, nil
-	}
+
 	return true, nil
 }
 
-func (m *mongodbConnectorStore) Install(ctx context.Context, name string, config any) error {
-	_, err := m.db.Collection(payments2.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) Install(ctx context.Context, name string, config any) error {
+	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
 			"config": config,
 		},
 	}, options.Update().SetUpsert(true))
+
 	return err
 }
 
-func (m *mongodbConnectorStore) UpdateConfig(ctx context.Context, name string, config any) error {
-	_, err := m.db.Collection(payments2.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) UpdateConfig(ctx context.Context, name string, config any) error {
+	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
 			"config": config,
 		},
 	})
+
 	return err
 }
 
-func (m *mongodbConnectorStore) Enable(ctx context.Context, name string) error {
-	_, err := m.db.Collection(payments2.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) Enable(ctx context.Context, name string) error {
+	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
 			"disabled": false,
 		},
 	})
+
 	return err
 }
 
-func (m *mongodbConnectorStore) Disable(ctx context.Context, name string) error {
-	_, err := m.db.Collection(payments2.ConnectorsCollection).UpdateOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) Disable(ctx context.Context, name string) error {
+	_, err := m.db.Collection(payments.ConnectorsCollection).UpdateOne(ctx, map[string]any{
 		"provider": name,
 	}, map[string]any{
 		"$set": map[string]any{
 			"disabled": true,
 		},
 	})
+
 	return err
 }
 
-func (m *mongodbConnectorStore) IsEnabled(ctx context.Context, name string) (bool, error) {
-	ret := m.db.Collection(payments2.ConnectorsCollection).FindOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) IsEnabled(ctx context.Context, name string) (bool, error) {
+	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
-	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
+
+	if ret.Err() != nil {
+		if errors.Is(ret.Err(), mongo.ErrNoDocuments) {
+			return false, ErrNotInstalled
+		}
+
 		return false, ret.Err()
 	}
-	if ret.Err() == mongo.ErrNoDocuments {
-		return false, ErrNotInstalled
-	}
-	p := payments2.Connector[payments2.EmptyConnectorConfig]{}
-	err := ret.Decode(&p)
-	if err != nil {
+
+	paymentsConnector := payments.Connector[payments.EmptyConnectorConfig]{}
+
+	if err := ret.Decode(&paymentsConnector); err != nil {
 		return false, err
 	}
 
-	return !p.Disabled, nil
+	return !paymentsConnector.Disabled, nil
 }
 
-func (m *mongodbConnectorStore) ReadConfig(ctx context.Context, name string, to interface{}) error {
-	ret := m.db.Collection(payments2.ConnectorsCollection).FindOne(ctx, map[string]any{
+func (m *MongodbConnectorStore) ReadConfig(ctx context.Context, name string, to interface{}) error {
+	ret := m.db.Collection(payments.ConnectorsCollection).FindOne(ctx, map[string]any{
 		"provider": name,
 	})
-	if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
+	if ret.Err() != nil {
+		if errors.Is(ret.Err(), mongo.ErrNoDocuments) {
+			return errors.New("not installed")
+		}
+
 		return ret.Err()
 	}
-	if ret.Err() == mongo.ErrNoDocuments {
-		return errors.New("not installed")
-	}
-	p := payments2.Connector[bson.Raw]{}
-	err := ret.Decode(&p)
-	if err != nil {
+
+	paymentsConnector := payments.Connector[bson.Raw]{}
+
+	if err := ret.Decode(&paymentsConnector); err != nil {
 		return err
 	}
 
-	return bson.Unmarshal(p.Config, to)
+	return bson.Unmarshal(paymentsConnector.Config, to)
 }
 
-var _ ConnectorStore = &mongodbConnectorStore{}
+var _ ConnectorStore = &MongodbConnectorStore{}
 
-func NewMongoDBConnectorStore(db *mongo.Database) *mongodbConnectorStore {
-	return &mongodbConnectorStore{
+func NewMongoDBConnectorStore(db *mongo.Database) *MongodbConnectorStore {
+	return &MongodbConnectorStore{
 		db: db,
 	}
 }

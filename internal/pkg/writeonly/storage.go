@@ -17,15 +17,12 @@ func (fn StorageFn) Write(ctx context.Context, items ...any) error {
 	return fn(ctx, items...)
 }
 
-var NoOpStorage = StorageFn(func(ctx context.Context, items ...any) error {
-	return nil
-})
-
 func Write[T any](ctx context.Context, storage Storage, items ...T) error {
 	m := make([]any, 0)
 	for _, item := range items {
 		m = append(m, item)
 	}
+
 	return storage.Write(ctx, m...)
 }
 
@@ -40,11 +37,13 @@ func (m *MongoDBStorage) Write(ctx context.Context, items ...any) error {
 	for _, i := range items {
 		toSave = append(toSave, Item{
 			Provider: m.provider,
-			TaskId:   payments.IDFromDescriptor(m.taskDescriptor),
+			TaskID:   payments.IDFromDescriptor(m.taskDescriptor),
 			Data:     i,
 		})
 	}
+
 	collectionName := strcase.ToCamel(m.provider) + "Storage"
+
 	_, err := m.db.Collection(collectionName).InsertMany(ctx, toSave)
 	if err != nil {
 		return err

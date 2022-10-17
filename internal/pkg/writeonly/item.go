@@ -2,6 +2,6 @@ package writeonly
 
 type Item struct {
 	Provider string `bson:"provider"`
-	TaskId   string `bson:"taskId"`
+	TaskID   string `bson:"taskID"`
 	Data     any    `bson:"data"`
 }

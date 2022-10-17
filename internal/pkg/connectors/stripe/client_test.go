@@ -24,37 +24,27 @@ type httpMock struct {
 	mu           sync.Mutex
 }
 
-func NewHTTPMock(t *testing.T) (*httpMock, *http.Client) {
-	m := &httpMock{
-		t:            t,
-		expectations: []httpMockExpectation{},
-	}
-	return m, &http.Client{
-		Transport: m,
-	}
-}
+func (mock *httpMock) RoundTrip(request *http.Request) (*http.Response, error) {
+	mock.mu.Lock()
+	defer mock.mu.Unlock()
 
-func (m *httpMock) RoundTrip(request *http.Request) (*http.Response, error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	if len(m.expectations) == 0 {
+	if len(mock.expectations) == 0 {
 		return nil, fmt.Errorf("no more expectations")
 	}
 
-	e := m.expectations[0]
-	if len(m.expectations) == 1 {
-		m.expectations = make([]httpMockExpectation, 0)
+	expectations := mock.expectations[0]
+	if len(mock.expectations) == 1 {
+		mock.expectations = make([]httpMockExpectation, 0)
 	} else {
-		m.expectations = m.expectations[1:]
+		mock.expectations = mock.expectations[1:]
 	}
 
-	return e.handle(m.t, request)
+	return expectations.handle(mock.t, request)
 }
 
 var _ http.RoundTripper = &httpMock{}
 
-type httpExpect[REQUEST any, RESPONSE any] struct {
+type HTTPExpect[REQUEST any, RESPONSE any] struct {
 	statusCode   int
 	path         string
 	method       string
@@ -63,19 +53,25 @@ type httpExpect[REQUEST any, RESPONSE any] struct {
 	queryParams  map[string]any
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) handle(t *testing.T, request *http.Request) (*http.Response, error) {
+func (e *HTTPExpect[REQUEST, RESPONSE]) handle(t *testing.T, request *http.Request) (*http.Response, error) {
+	t.Helper()
+
 	if e.path != request.URL.Path {
 		return nil, fmt.Errorf("expected url was '%s', got, '%s'", e.path, request.URL.Path)
 	}
+
 	if e.method != request.Method {
 		return nil, fmt.Errorf("expected method was '%s', got, '%s'", e.method, request.Method)
 	}
+
 	if e.requestBody != nil {
 		body := new(REQUEST)
+
 		err := json.NewDecoder(request.Body).Decode(body)
 		if err != nil {
 			panic(err)
 		}
+
 		if !reflect.DeepEqual(*e.responseBody, *body) {
 			return nil, fmt.Errorf("mismatch body")
 		}
@@ -83,20 +79,24 @@ func (e *httpExpect[REQUEST, RESPONSE]) handle(t *testing.T, request *http.Reque
 
 	for key, value := range e.queryParams {
 		qpvalue := ""
+
 		switch value.(type) {
 		case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
 			qpvalue = fmt.Sprintf("%d", value)
 		default:
 			qpvalue = fmt.Sprintf("%s", value)
 		}
+
 		if rvalue := request.URL.Query().Get(key); rvalue != qpvalue {
 			return nil, fmt.Errorf("expected query param '%s' with value '%s', got '%s'", key, qpvalue, rvalue)
 		}
 	}
 
 	data := make([]byte, 0)
+
 	if e.responseBody != nil {
 		var err error
+
 		data, err = json.Marshal(e.responseBody)
 		if err != nil {
 			panic(err)
@@ -111,90 +111,111 @@ func (e *httpExpect[REQUEST, RESPONSE]) handle(t *testing.T, request *http.Reque
 	}, nil
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) Path(p string) *httpExpect[REQUEST, RESPONSE] {
+func (e *HTTPExpect[REQUEST, RESPONSE]) Path(p string) *HTTPExpect[REQUEST, RESPONSE] {
 	e.path = p
+
 	return e
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) Method(p string) *httpExpect[REQUEST, RESPONSE] {
+func (e *HTTPExpect[REQUEST, RESPONSE]) Method(p string) *HTTPExpect[REQUEST, RESPONSE] {
 	e.method = p
+
 	return e
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) Body(body *REQUEST) *httpExpect[REQUEST, RESPONSE] {
+func (e *HTTPExpect[REQUEST, RESPONSE]) Body(body *REQUEST) *HTTPExpect[REQUEST, RESPONSE] {
 	e.requestBody = body
+
 	return e
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) QueryParam(key string, value any) *httpExpect[REQUEST, RESPONSE] {
+func (e *HTTPExpect[REQUEST, RESPONSE]) QueryParam(key string, value any) *HTTPExpect[REQUEST, RESPONSE] {
 	e.queryParams[key] = value
+
 	return e
 }
 
-func (e *httpExpect[REQUEST, RESPONSE]) RespondsWith(statusCode int, body *RESPONSE) *httpExpect[REQUEST, RESPONSE] {
+func (e *HTTPExpect[REQUEST, RESPONSE]) RespondsWith(statusCode int,
+	body *RESPONSE,
+) *HTTPExpect[REQUEST, RESPONSE] {
 	e.statusCode = statusCode
 	e.responseBody = body
+
 	return e
 }
 
-func Expect[REQUEST any, RESPONSE any](mock *httpMock) *httpExpect[REQUEST, RESPONSE] {
-	e := &httpExpect[REQUEST, RESPONSE]{
+func Expect[REQUEST any, RESPONSE any](mock *httpMock) *HTTPExpect[REQUEST, RESPONSE] {
+	expectations := &HTTPExpect[REQUEST, RESPONSE]{
 		queryParams: map[string]any{},
 	}
+
 	mock.mu.Lock()
 	defer mock.mu.Unlock()
 
-	mock.expectations = append(mock.expectations, e)
+	mock.expectations = append(mock.expectations, expectations)
+
+	return expectations
+}
+
+type StripeBalanceTransactionListExpect struct {
+	*HTTPExpect[struct{}, MockedListResponse]
+}
+
+func (e *StripeBalanceTransactionListExpect) Path(p string) *StripeBalanceTransactionListExpect {
+	e.HTTPExpect.Path(p)
+
 	return e
 }
 
-type stripeBalanceTransactionListExpect struct {
-	*httpExpect[struct{}, MockedListResponse]
-}
+func (e *StripeBalanceTransactionListExpect) Method(p string) *StripeBalanceTransactionListExpect {
+	e.HTTPExpect.Method(p)
 
-func (e *stripeBalanceTransactionListExpect) Path(p string) *stripeBalanceTransactionListExpect {
-	e.httpExpect.Path(p)
 	return e
 }
 
-func (e *stripeBalanceTransactionListExpect) Method(p string) *stripeBalanceTransactionListExpect {
-	e.httpExpect.Method(p)
+func (e *StripeBalanceTransactionListExpect) QueryParam(key string,
+	value any,
+) *StripeBalanceTransactionListExpect {
+	e.HTTPExpect.QueryParam(key, value)
+
 	return e
 }
 
-func (e *stripeBalanceTransactionListExpect) QueryParam(key string, value any) *stripeBalanceTransactionListExpect {
-	e.httpExpect.QueryParam(key, value)
-	return e
-}
-
-func (e *stripeBalanceTransactionListExpect) RespondsWith(statusCode int, hasMore bool, body ...*stripe.BalanceTransaction) *stripeBalanceTransactionListExpect {
-	e.httpExpect.RespondsWith(statusCode, &MockedListResponse{
+func (e *StripeBalanceTransactionListExpect) RespondsWith(statusCode int, hasMore bool,
+	body ...*stripe.BalanceTransaction,
+) *StripeBalanceTransactionListExpect {
+	e.HTTPExpect.RespondsWith(statusCode, &MockedListResponse{
 		HasMore: hasMore,
 		Data:    body,
 	})
+
 	return e
 }
 
-func (e *stripeBalanceTransactionListExpect) StartingAfter(v string) *stripeBalanceTransactionListExpect {
+func (e *StripeBalanceTransactionListExpect) StartingAfter(v string) *StripeBalanceTransactionListExpect {
 	e.QueryParam("starting_after", v)
+
 	return e
 }
 
-func (e *stripeBalanceTransactionListExpect) CreatedLte(v time.Time) *stripeBalanceTransactionListExpect {
+func (e *StripeBalanceTransactionListExpect) CreatedLte(v time.Time) *StripeBalanceTransactionListExpect {
 	e.QueryParam("created[lte]", v.Unix())
+
 	return e
 }
 
-func (e *stripeBalanceTransactionListExpect) Limit(v int) *stripeBalanceTransactionListExpect {
+func (e *StripeBalanceTransactionListExpect) Limit(v int) *StripeBalanceTransactionListExpect {
 	e.QueryParam("limit", v)
+
 	return e
 }
 
-func ExpectBalanceTransactionList(mock *httpMock) *stripeBalanceTransactionListExpect {
+func ExpectBalanceTransactionList(mock *httpMock) *StripeBalanceTransactionListExpect {
 	e := Expect[struct{}, MockedListResponse](mock)
 	e.Path("/v1/balance_transactions").Method(http.MethodGet)
-	return &stripeBalanceTransactionListExpect{
-		httpExpect: e,
+
+	return &StripeBalanceTransactionListExpect{
+		HTTPExpect: e,
 	}
 }
 
@@ -206,6 +227,7 @@ type BalanceTransactionSource stripe.BalanceTransactionSource
 
 func (t *BalanceTransactionSource) MarshalJSON() ([]byte, error) {
 	type Aux BalanceTransactionSource
+
 	return json.Marshal(struct {
 		Aux
 		Charge   *stripe.Charge   `json:"charge"`
@@ -225,6 +247,7 @@ type BalanceTransaction stripe.BalanceTransaction
 
 func (t *BalanceTransaction) MarshalJSON() ([]byte, error) {
 	type Aux BalanceTransaction
+
 	return json.Marshal(struct {
 		Aux
 		Source *BalanceTransactionSource `json:"source"`
@@ -234,6 +257,7 @@ func (t *BalanceTransaction) MarshalJSON() ([]byte, error) {
 	})
 }
 
+//nolint:tagliatelle // allow snake_case in client
 type MockedListResponse struct {
 	HasMore bool                         `json:"has_more"`
 	Data    []*stripe.BalanceTransaction `json:"data"`

@@ -12,35 +12,12 @@ import (
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.uber.org/dig"
 )
 
 var (
 	ErrAlreadyScheduled = errors.New("already scheduled")
 	ErrUnableToResolve  = errors.New("unable to resolve task")
 )
-
-type Resolver[TaskDescriptor payments.TaskDescriptor] interface {
-	Resolve(descriptor TaskDescriptor) Task
-}
-type ResolverFn[TaskDescriptor payments.TaskDescriptor] func(descriptor TaskDescriptor) Task
-
-func (fn ResolverFn[TaskDescriptor]) Resolve(descriptor TaskDescriptor) Task {
-	return fn(descriptor)
-}
-
-type ContainerFactory interface {
-	Create(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error)
-}
-type ContainerFactoryFn func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error)
-
-func (fn ContainerFactoryFn) Create(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
-	return fn(ctx, descriptor)
-}
-
-var DefaultContainerFactory = ContainerFactoryFn(func(ctx context.Context, descriptor payments.TaskDescriptor) (*dig.Container, error) {
-	return dig.New(), nil
-})
 
 type Scheduler[TaskDescriptor payments.TaskDescriptor] interface {
 	Schedule(p TaskDescriptor, restart bool) error
@@ -65,11 +42,14 @@ type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
 	stopped          bool
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context) ([]payments.TaskState[TaskDescriptor], error) {
+func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context,
+) ([]payments.TaskState[TaskDescriptor], error) {
 	return s.store.ListTaskStates(ctx, s.provider)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context, descriptor TaskDescriptor) (*payments.TaskState[TaskDescriptor], error) {
+func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context,
+	descriptor TaskDescriptor,
+) (*payments.TaskState[TaskDescriptor], error) {
 	return s.store.ReadTaskState(ctx, s.provider, descriptor)
 }
 
@@ -77,8 +57,8 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	taskId := payments.IDFromDescriptor(descriptor)
-	if _, ok := s.tasks[taskId]; ok {
+	taskID := payments.IDFromDescriptor(descriptor)
+	if _, ok := s.tasks[taskID]; ok {
 		return ErrAlreadyScheduled
 	}
 
@@ -94,11 +74,11 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 		if err != nil {
 			return errors.Wrap(err, "stacking task")
 		}
+
 		return nil
 	}
 
-	err := s.startTask(descriptor)
-	if err != nil {
+	if err := s.startTask(descriptor); err != nil {
 		return errors.Wrap(err, "starting task")
 	}
 
@@ -111,22 +91,26 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Shutdown(ctx context.Context) err
 	s.mu.Unlock()
 
 	s.logger.Infof("Stopping scheduler...")
-	for name, p := range s.tasks {
-		p.logger.Debugf("Stopping task")
-		if p.stopChan != nil {
+
+	for name, task := range s.tasks {
+		task.logger.Debugf("Stopping task")
+
+		if task.stopChan != nil {
 			errCh := make(chan struct{})
-			p.stopChan <- errCh
+			task.stopChan <- errCh
 			select {
 			case <-errCh:
 			case <-time.After(time.Second): // TODO: Make configurable
-				p.logger.Debugf("Stopping using stop chan timeout, canceling context")
-				p.cancel()
+				task.logger.Debugf("Stopping using stop chan timeout, canceling context")
+				task.cancel()
 			}
 		} else {
-			p.cancel()
+			task.cancel()
 		}
+
 		delete(s.tasks, name)
 	}
+
 	return nil
 }
 
@@ -146,19 +130,23 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Restore(ctx context.Context) erro
 	return nil
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) registerTaskError(ctx context.Context, holder *taskHolder[TaskDescriptor], taskErr any) {
-	var pe string
+func (s *DefaultTaskScheduler[TaskDescriptor]) registerTaskError(ctx context.Context,
+	holder *taskHolder[TaskDescriptor], taskErr any,
+) {
+	var taskError string
+
 	switch v := taskErr.(type) {
 	case error:
-		pe = v.Error()
+		taskError = v.Error()
 	default:
-		pe = fmt.Sprintf("%s", v)
+		taskError = fmt.Sprintf("%s", v)
 	}
 
 	holder.logger.Errorf("Task terminated with error: %s", taskErr)
-	err := s.store.UpdateTaskStatus(ctx, s.provider, holder.descriptor, payments.TaskStatusFailed, pe)
+
+	err := s.store.UpdateTaskStatus(ctx, s.provider, holder.descriptor, payments.TaskStatusFailed, taskError)
 	if err != nil {
-		holder.logger.Error("Error updating task status: %s", pe)
+		holder.logger.Error("Error updating task status: %s", taskError)
 	}
 }
 
@@ -173,18 +161,22 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 	oldestPendingTask, err := s.store.ReadOldestPendingTask(context.Background(), s.provider)
 	if err != nil {
-		if err == ErrNotFound {
+		if errors.Is(err, ErrNotFound) {
 			return
 		}
+
 		sharedlogging.Error(err)
+
 		return
 	}
 
 	p := s.resolver.Resolve(oldestPendingTask.Descriptor)
 	if p == nil {
 		sharedlogging.Errorf("unable to resolve task")
+
 		return
 	}
+
 	err = s.startTask(oldestPendingTask.Descriptor)
 	if err != nil {
 		sharedlogging.Error(err)
@@ -193,15 +185,19 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 type StopChan chan chan struct{}
 
+// TODO: refactor
+//
+//nolint:funlen // allow for start
 func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescriptor) error {
-	ps, err := s.store.FindTaskAndUpdateStatus(context.Background(), s.provider, descriptor, payments.TaskStatusActive, "")
+	paymentState, err := s.store.FindTaskAndUpdateStatus(context.Background(), s.provider, descriptor,
+		payments.TaskStatusActive, "")
 	if err != nil {
 		return errors.Wrap(err, "finding task and update")
 	}
 
-	taskId := payments.IDFromDescriptor(descriptor)
+	taskID := payments.IDFromDescriptor(descriptor)
 	logger := s.logger.WithFields(map[string]interface{}{
-		"task-id": taskId,
+		"task-id": taskID,
 	})
 
 	task := s.resolver.Resolve(descriptor)
@@ -223,40 +219,47 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		// TODO: Handle error
 		panic(err)
 	}
+
 	err = container.Provide(func() context.Context {
 		return ctx
 	})
 	if err != nil {
 		panic(err)
 	}
+
 	err = container.Provide(func() Scheduler[TaskDescriptor] {
 		return s
 	})
 	if err != nil {
 		panic(err)
 	}
+
 	err = container.Provide(func() StopChan {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		holder.stopChan = make(StopChan, 1)
+
 		return holder.stopChan
 	})
 	if err != nil {
 		panic(err)
 	}
+
 	err = container.Provide(func() sharedlogging.Logger {
 		return s.logger
 	})
 	if err != nil {
 		panic(err)
 	}
+
 	err = container.Provide(func() StateResolver {
 		return StateResolverFn(func(ctx context.Context, v any) error {
-			if ps.State == nil || len(ps.State) == 0 {
+			if paymentState.State == nil || len(paymentState.State) == 0 {
 				return nil
 			}
-			return bson.Unmarshal(ps.State, v)
+
+			return bson.Unmarshal(paymentState.State, v)
 		})
 	})
 	if err != nil {
@@ -264,14 +267,17 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 	}
 
 	s.tasks[payments.IDFromDescriptor(descriptor)] = holder
+
 	go func() {
 		logger.Infof("Starting task...")
 
 		defer func() {
 			defer s.deleteTask(holder)
+
 			if e := recover(); e != nil {
 				s.registerTaskError(ctx, holder, e)
 				debug.PrintStack()
+
 				return
 			}
 		}()
@@ -279,8 +285,10 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		err := container.Invoke(task)
 		if err != nil {
 			s.registerTaskError(ctx, holder, err)
+
 			return
 		}
+
 		logger.Infof("Task terminated with success")
 
 		err = s.store.UpdateTaskStatus(ctx, s.provider, descriptor, payments.TaskStatusTerminated, "")
@@ -288,6 +296,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 			logger.Error("Error updating task status: %s", err)
 		}
 	}()
+
 	return nil
 }
 
@@ -295,6 +304,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) stackTask(descriptor TaskDescript
 	s.logger.WithFields(map[string]interface{}{
 		"descriptor": descriptor,
 	}).Infof("Stacking task")
+
 	return s.store.UpdateTaskStatus(
 		context.Background(), s.provider, descriptor, payments.TaskStatusPending, "")
 }

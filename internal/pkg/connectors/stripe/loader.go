@@ -10,8 +10,10 @@ import (
 
 type loader struct{}
 
+const allowedTasks = 50
+
 func (l *loader) AllowTasks() int {
-	return 50
+	return allowedTasks
 }
 
 func (l *loader) Name() string {
@@ -26,9 +28,11 @@ func (l *loader) ApplyDefaults(cfg Config) Config {
 	if cfg.PageSize == 0 {
 		cfg.PageSize = 10
 	}
+
 	if cfg.PollingPeriod == 0 {
 		cfg.PollingPeriod = 2 * time.Minute
 	}
+
 	return cfg
 }
 

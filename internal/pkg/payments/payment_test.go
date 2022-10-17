@@ -9,8 +9,11 @@ import (
 )
 
 func TestPayment(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
-	p := Payment{
+
+	payment := Payment{
 		Identifier: Identifier{
 			Provider: "testing",
 			Referenced: Referenced{
@@ -38,6 +41,8 @@ func TestPayment(t *testing.T) {
 			},
 		},
 	}
-	cp := p.Computed()
+
+	cp := payment.Computed()
+
 	require.EqualValues(t, 110, cp.Amount)
 }
