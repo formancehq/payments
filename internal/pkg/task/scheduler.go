@@ -185,9 +185,6 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 type StopChan chan chan struct{}
 
-// TODO: refactor
-//
-//nolint:funlen // allow for start
 func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescriptor) error {
 	paymentState, err := s.store.FindTaskAndUpdateStatus(context.Background(), s.provider, descriptor,
 		payments.TaskStatusActive, "")

@@ -43,7 +43,7 @@ const (
 	TypeOther    = "other"
 
 	StatusSucceeded Status = "succeeded"
-	StatusCancelled Status = "canceled"
+	StatusCancelled Status = "cancelled"
 	StatusFailed    Status = "failed"
 	StatusPending   Status = "pending"
 	StatusOther     Status = "other"

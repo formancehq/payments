@@ -163,7 +163,6 @@ func setLogger() {
 	otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
 }
 
-//nolint:ireturn // allow interface return and mnd
 func prepareDatabaseOptions() (fx.Option, error) {
 	mongodbURI := viper.GetString(mongodbURIFlag)
 	if mongodbURI == "" {
@@ -194,7 +193,6 @@ func topicsMapping() map[string]string {
 	return mapping
 }
 
-//nolint:ireturn // allow interface return
 func setSCRAMClient() sarama.SCRAMClient {
 	var fn scram.HashGeneratorFcn
 

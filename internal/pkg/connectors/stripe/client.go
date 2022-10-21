@@ -48,9 +48,6 @@ func (d *DefaultClient) ForAccount(account string) Client {
 	return &cp
 }
 
-// TODO: FIX
-//
-//nolint:funlen // allow for now
 func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 	options ...ClientOption,
 ) ([]*stripe.BalanceTransaction, bool, error) {

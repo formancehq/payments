@@ -119,7 +119,7 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 			return nil, fmt.Errorf("failed to unmarshal transfers: %w", err)
 		}
 
-		transfers = append(transferList, transferList...)
+		transfers = append(transfers, transferList...)
 
 		if len(transferList) < limit {
 			break

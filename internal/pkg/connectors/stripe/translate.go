@@ -127,9 +127,6 @@ func currencies() map[string]currency {
 	}
 }
 
-// TODO: FIX
-//
-//nolint:funlen,gocyclo,cyclop // allow for now
 func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward bool) (ingestion.BatchElement, bool) {
 	var (
 		reference   payments.Referenced
@@ -166,20 +163,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		return fmt.Sprintf("%s/%d", asset, def.decimals)
 	}
 
-	convertPayoutStatus := func() payments.Status {
-		switch balanceTransaction.Source.Payout.Status {
-		case stripe.PayoutStatusCanceled:
-			return payments.StatusCancelled
-		case stripe.PayoutStatusFailed:
-			return payments.StatusFailed
-		case stripe.PayoutStatusInTransit, stripe.PayoutStatusPending:
-			return payments.StatusPending
-		case stripe.PayoutStatusPaid:
-			return payments.StatusSucceeded
-		}
-
-		return payments.StatusOther
-	}
+	payoutStatus := convertPayoutStatus(balanceTransaction.Source.Payout.Status)
 
 	switch balanceTransaction.Type {
 	case "charge":
@@ -201,7 +185,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Type:      payments.TypePayout,
 		}
 		paymentData = &payments.Data{
-			Status:        convertPayoutStatus(),
+			Status:        payoutStatus,
 			InitialAmount: balanceTransaction.Source.Payout.Amount,
 			Raw:           balanceTransaction,
 			Asset:         formatAsset(balanceTransaction.Source.Payout.Currency),
@@ -261,7 +245,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Type:      payments.TypePayout,
 		}
 		adjustment = &payments.Adjustment{
-			Status:   convertPayoutStatus(),
+			Status:   payoutStatus,
 			Amount:   0,
 			Date:     time.Unix(balanceTransaction.Created, 0),
 			Raw:      balanceTransaction,
@@ -273,7 +257,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Type:      payments.TypePayIn,
 		}
 		adjustment = &payments.Adjustment{
-			Status:   convertPayoutStatus(),
+			Status:   payoutStatus,
 			Amount:   0,
 			Date:     time.Unix(balanceTransaction.Created, 0),
 			Raw:      balanceTransaction,
@@ -313,4 +297,19 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		Adjustment: adjustment,
 		Forward:    forward,
 	}, true
+}
+
+func convertPayoutStatus(status stripe.PayoutStatus) payments.Status {
+	switch status {
+	case stripe.PayoutStatusCanceled:
+		return payments.StatusCancelled
+	case stripe.PayoutStatusFailed:
+		return payments.StatusFailed
+	case stripe.PayoutStatusInTransit, stripe.PayoutStatusPending:
+		return payments.StatusPending
+	case stripe.PayoutStatusPaid:
+		return payments.StatusSucceeded
+	}
+
+	return payments.StatusOther
 }

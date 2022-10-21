@@ -21,7 +21,6 @@ var (
 	Commit    = "-"
 )
 
-//nolint:funlen // allow for cobra
 func rootCommand() *cobra.Command {
 	viper.SetDefault("version", Version)
 

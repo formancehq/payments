@@ -24,8 +24,6 @@ linters-settings:
     check-shadowing: true
   lll:
     line-length: 120
-  misspell:
-    locale: US
   nakedret:
     max-func-lines: 0
   tagliatelle:
@@ -76,13 +74,16 @@ linters:
     - gci # conflicts with gofumpt
     - goimports # conflicts with gofumpt
     - testpackage # Disabled by design
-    - ireturn # Disabled by design
     - wrapcheck # Disabled by design
     - exhaustivestruct # Disabled by design
     - exhaustruct # Disabled by design
     - exhaustive # Disabled by design
     - dupl # Disabled by design
     - godox # Disabled by design
+    - lll # Disabled by design
+    - funlen # Disabled by design
+    - misspell # Disabled by design
+    - ireturn # Disabled by design
     - gocritic # TODO: FIX. Seems to have issues with generics
     - gocognit # TODO: FIX
     - goerr113 # TODO: FIX

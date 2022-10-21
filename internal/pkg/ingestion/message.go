@@ -20,7 +20,7 @@ const (
 
 type EventMessage struct {
 	Date    time.Time `json:"date"`
-	App     string    `json:"payments"`
+	App     string    `json:"app"`
 	Version string    `json:"version"`
 	Type    string    `json:"type"`
 	Payload any       `json:"payload"`

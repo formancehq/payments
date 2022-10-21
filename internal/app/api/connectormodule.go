@@ -23,7 +23,6 @@ type connectorHandler struct {
 	Name    string
 }
 
-//nolint:ireturn // allow interface return
 func addConnector[
 	ConnectorConfig payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor,

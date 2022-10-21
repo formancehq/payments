@@ -57,7 +57,7 @@ func matchTransferStatus(status string) payments.Status {
 		return payments.StatusSucceeded
 	case "bounced_back", "funds_refunded":
 		return payments.StatusFailed
-	case "canceled":
+	case "cancelled":
 		return payments.StatusCancelled
 	}
 

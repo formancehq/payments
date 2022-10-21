@@ -36,7 +36,6 @@ const (
 	serviceName = "Payments"
 )
 
-//nolint:ireturn // allow interface return
 func HTTPModule() fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
