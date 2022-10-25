@@ -61,12 +61,12 @@ paths:
 
   '/connectors':
     get:
-      summary: Get all connectors
+      summary: Get all installed connectors
       operationId: getAllConnectors
-      description: Get all connectors
+      description: Get all installed connectors
       responses:
         200:
-          description: List of connectors
+          description: List of installed connectors
           content:
             application/json:
               schema:
