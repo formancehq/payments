@@ -1,7 +1,11 @@
 package payments
 
-type Connector[T ConnectorConfigObject] struct {
+type ConnectorBaseInfo struct {
 	Provider string `json:"provider" bson:"provider"`
 	Disabled bool   `json:"disabled" bson:"disabled"`
-	Config   T      `json:"config" bson:"config"`
+}
+
+type Connector[T ConnectorConfigObject] struct {
+	ConnectorBaseInfo
+	Config T `json:"config" bson:"config"`
 }

@@ -58,6 +58,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
+
+  '/connectors':
+    get:
+      summary: Get all connectors
+      operationId: getAllConnectors
+      description: Get all connectors
+      responses:
+        200:
+          description: List of connectors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListConnectorsResponse'
+
   '/connectors/{connector}':
     post:
       summary: Install connector
@@ -348,3 +362,23 @@ components:
           format: date-time
         raw:
           nullable: true
+
+    ListConnectorsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorBaseInfo'
+
+    ConnectorBaseInfo:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: stripe
+        disabled:
+          type: boolean
+          example: false

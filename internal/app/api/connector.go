@@ -85,6 +85,23 @@ func readTask[Config payments.ConnectorConfigObject,
 	}
 }
 
+func findAll[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := connectorManager.FindAll(context.Background())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		if err = json.NewEncoder(w).Encode(res); err != nil {
+			panic(err)
+		}
+	}
+}
+
 func uninstall[Config payments.ConnectorConfigObject,
 	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
 ) http.HandlerFunc {
