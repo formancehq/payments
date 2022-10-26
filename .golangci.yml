@@ -84,6 +84,7 @@ linters:
     - funlen # Disabled by design
     - misspell # Disabled by design
     - ireturn # Disabled by design
+    - varnamelen # Disabled by design
     - gocritic # TODO: FIX. Seems to have issues with generics
     - gocognit # TODO: FIX
     - goerr113 # TODO: FIX
