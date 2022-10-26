@@ -31,7 +31,7 @@ func taskGenerateFiles(config Config, fs fs) task.Task {
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-time.After(config.FileGenerationPeriod):
+			case <-time.After(config.FileGenerationPeriod.Duration()):
 				err := generateFile(config, fs)
 				if err != nil {
 					return err
