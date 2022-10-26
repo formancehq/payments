@@ -74,7 +74,7 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 					Referenced: elem.Referenced,
 					Provider:   i.provider,
 				})
-			if ret.Err() != nil && ret.Err() != mongo.ErrNoDocuments {
+			if ret.Err() != nil && errors.Is(ret.Err(), mongo.ErrNoDocuments) {
 				logger.Errorf("Error retrieving payment: %s", ret.Err())
 
 				return nil, fmt.Errorf("error retrieving payment: %w", ret.Err())
@@ -184,10 +184,10 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 			update,
 			options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
 		)
-		if err != nil {
-			logger.Errorf("Error updating payment: %s", err)
+		if ret.Err() != nil {
+			logger.Errorf("Error updating payment: %s", ret.Err())
 
-			return nil, fmt.Errorf("error updating payment: %w", err)
+			return nil, fmt.Errorf("error updating payment: %w", ret.Err())
 		}
 
 		payment := payments.Payment{}

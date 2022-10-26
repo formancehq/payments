@@ -3,7 +3,6 @@ package dummypay
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"time"
 )
 
@@ -22,7 +21,7 @@ type Config struct {
 // String returns a string representation of the configuration.
 func (cfg Config) String() string {
 	return fmt.Sprintf("directory: %s, filePollingPeriod: %s, fileGenerationPeriod: %s",
-		cfg.Directory, cfg.FilePollingPeriod, cfg.FileGenerationPeriod)
+		cfg.Directory, cfg.FilePollingPeriod.String(), cfg.FileGenerationPeriod.String())
 }
 
 // Validate validates the configuration.
@@ -49,6 +48,10 @@ func (cfg Config) Validate() error {
 
 type Duration time.Duration
 
+func (d *Duration) String() string {
+	return time.Duration(*d).String()
+}
+
 func (d *Duration) Duration() time.Duration {
 	return time.Duration(*d)
 }
@@ -58,15 +61,16 @@ func (d *Duration) MarshalJSON() ([]byte, error) {
 }
 
 func (d *Duration) UnmarshalJSON(b []byte) error {
-	var v interface{}
+	var durationValue interface{}
 
-	if err := json.Unmarshal(b, &v); err != nil {
+	if err := json.Unmarshal(b, &durationValue); err != nil {
 		return err
 	}
 
-	switch value := v.(type) {
+	switch value := durationValue.(type) {
 	case float64:
 		*d = Duration(time.Duration(value))
+
 		return nil
 	case string:
 		tmp, err := time.ParseDuration(value)
@@ -78,6 +82,6 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 
 		return nil
 	default:
-		return errors.New("invalid duration")
+		return ErrDurationInvalid
 	}
 }

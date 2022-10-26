@@ -42,13 +42,13 @@ func (p *Payment) MergeMetadata(metadata Metadata) MetadataChanges {
 	return changes
 }
 
-func (m Metadata) Equal(comparable Metadata) bool {
-	if len(m) != len(comparable) {
+func (m Metadata) Equal(comparableMetadata Metadata) bool {
+	if len(m) != len(comparableMetadata) {
 		return false
 	}
 
 	for key, value := range m {
-		if v, ok := comparable[key]; !ok || fmt.Sprint(v) != fmt.Sprint(value) {
+		if v, ok := comparableMetadata[key]; !ok || fmt.Sprint(v) != fmt.Sprint(value) {
 			return false
 		}
 	}

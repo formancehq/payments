@@ -14,4 +14,7 @@ var (
 
 	// ErrMissingTask is returned when the task is missing.
 	ErrMissingTask = errors.New("task is not implemented")
+
+	// ErrDurationInvalid is returned when the duration is invalid.
+	ErrDurationInvalid = errors.New("duration is invalid")
 )

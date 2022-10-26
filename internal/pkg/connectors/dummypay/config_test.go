@@ -14,8 +14,8 @@ func TestConfigString(t *testing.T) {
 
 	config := Config{
 		Directory:            "test",
-		FilePollingPeriod:    time.Second,
-		FileGenerationPeriod: time.Minute,
+		FilePollingPeriod:    Duration(time.Second),
+		FileGenerationPeriod: Duration(time.Minute),
 	}
 
 	assert.Equal(t, "directory: test, filePollingPeriod: 1s, fileGenerationPeriod: 1m0s", config.String())
