@@ -74,13 +74,13 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 					Referenced: elem.Referenced,
 					Provider:   i.provider,
 				})
-			if ret.Err() != nil && errors.Is(ret.Err(), mongo.ErrNoDocuments) {
+			if ret.Err() != nil && !errors.Is(ret.Err(), mongo.ErrNoDocuments) {
 				logger.Errorf("Error retrieving payment: %s", ret.Err())
 
 				return nil, fmt.Errorf("error retrieving payment: %w", ret.Err())
 			}
 
-			if ret.Err() == nil {
+			if ret != nil && ret.Err() == nil {
 				payment := payments.Payment{}
 
 				err := ret.Decode(&payment)
@@ -93,8 +93,6 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 				elem.Metadata = metadataChanges.After
 			}
 		}
-
-		var err error
 
 		switch {
 		case elem.Forward && elem.Adjustment != nil:
