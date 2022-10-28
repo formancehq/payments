@@ -4,16 +4,29 @@ on:
     types: [assigned, opened, synchronize, reopened]
 jobs:
   pr-style:
-    uses: numary/gh-workflows/.github/workflows/pr-style.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/pr-style.yml@main
 
   lint:
-    uses: numary/gh-workflows/.github/workflows/golang-lint.yml@main
+  # Temporary disabled due to outdated shared version
+  # uses: formancehq/gh-workflows/.github/workflows/golang-lint.yml@main
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.0
+          args: --verbose
 
   test:
-    uses: numary/gh-workflows/.github/workflows/golang-test.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/golang-test.yml@main
 
   build:
-    uses: numary/gh-workflows/.github/workflows/goreleaser-build.yml@main
+    uses: formancehq/gh-workflows/.github/workflows/goreleaser-build.yml@main
     needs:
       - pr-style
       - lint

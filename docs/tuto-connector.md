@@ -1,5 +1,7 @@
 # Tutorial connector
 
+_referenced in `/pkg/bridge/connectors/dummypay`_
+
 We are going to create a fake connector which read a directory.
 In this directory, a fake bank service will create files. 
 Each files contain a payin or a payout as a json object.
@@ -30,7 +32,7 @@ A connector has a name.
 This name is provided by the loader by the method Name().
 Also, each connector define a config object using generics which has to implement interface payments.ConnectorConfigObject.
 This interface only have a method Validate() error which is used by the code to validate an external config is valid before load the connector with it.
-Since, some properties of the config may have some optionnal, the loader is also in charge of configuring default values on it.
+Since, some properties of the config may have some optional, the loader is also in charge of configuring default values on it.
 This is done using the method ```ApplyDefaults(Config)```.
 
 The framework provide the capabilities to run tasks.
@@ -188,7 +190,7 @@ Basically this context provides two things :
 
 But, what is a task ?
 
-A task is like a process than the framework will handle for you. It is basically a simple function. 
+A task is like a process that the framework will handle for you. It is basically a simple function. 
 When installed, a connector has the opportunity to schedule some tasks and let the system handle them for him.
 A task has a descriptor.
 The descriptor must be immutable and represents a specific task in the system. It can be anything.
@@ -213,7 +215,7 @@ Add some logic on our connector :
 ```go
     ...
     WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
-        return ctx.Scheduler().Schedule("directory")
+        return ctx.Scheduler().Schedule("directory", true)
     }).
 	...
 ```
@@ -306,7 +308,8 @@ As expected, the task trigger an error because of non-existent /tmp/payments dir
 
 You can see the tasks on api too :
 ```bash
-# curl http://localhost:8080/connectors/example/tasks|jq
+curl http://localhost:8080/connectors/example/tasks | jq
+
 [
   {
     "provider": "example",
@@ -425,7 +428,8 @@ As you can see, this time the second task has been started and was terminated wi
 
 It should have created a payment on database. Let's check : 
 ```bash
-# curl http://localhost:8080/connectors/payments|jq 
+curl http://localhost:8080/payments | jq 
+
 {
   "data": [
     {
