@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/numary/payments/internal/pkg/payments"
-
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -13,7 +12,6 @@ import (
 )
 
 type ConnectorStore interface {
-	FindAll(ctx context.Context) ([]payments.ConnectorBaseInfo, error)
 	IsInstalled(ctx context.Context, name string) (bool, error)
 	Install(ctx context.Context, name string, config any) error
 	Uninstall(ctx context.Context, name string) error
@@ -36,10 +34,6 @@ func (i *InMemoryConnectorStore) Uninstall(ctx context.Context, name string) err
 	delete(i.disabled, name)
 
 	return nil
-}
-
-func (i *InMemoryConnectorStore) FindAll(_ context.Context) ([]payments.ConnectorBaseInfo, error) {
-	return []payments.ConnectorBaseInfo{}, nil
 }
 
 func (i *InMemoryConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {
@@ -135,20 +129,6 @@ func (m *MongodbConnectorStore) Uninstall(ctx context.Context, name string) erro
 
 		return err
 	})
-}
-
-func (m *MongodbConnectorStore) FindAll(ctx context.Context) ([]payments.ConnectorBaseInfo, error) {
-	cursor, err := m.db.Collection(payments.ConnectorsCollection).Find(ctx, map[string]any{})
-	if err != nil {
-		return []payments.ConnectorBaseInfo{}, errors.Wrap(err, "find all connectors")
-	}
-
-	var res []payments.ConnectorBaseInfo
-	if err = cursor.All(context.TODO(), &res); err != nil {
-		return []payments.ConnectorBaseInfo{}, errors.Wrap(err, "decoding all connectors")
-	}
-
-	return res, err
 }
 
 func (m *MongodbConnectorStore) IsInstalled(ctx context.Context, name string) (bool, error) {

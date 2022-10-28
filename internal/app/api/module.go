@@ -88,6 +88,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHa
 		authGroup.Use(sharedauth.Middleware(methods...))
 	}
 
+	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
 	for _, h := range handlers {

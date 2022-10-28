@@ -197,10 +197,6 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsEnabled(ctx contex
 	return l.store.IsEnabled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) FindAll(ctx context.Context) ([]payments.ConnectorBaseInfo, error) {
-	return l.store.FindAll(ctx)
-}
-
 func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsInstalled(ctx context.Context) (bool, error) {
 	return l.store.IsInstalled(ctx, l.loader.Name())
 }

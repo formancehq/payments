@@ -94,8 +94,6 @@ func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.
 ) *mux.Router {
 	r := mux.NewRouter()
 
-	r.Path("/").Methods(http.MethodGet).Handler(findAll(manager))
-
 	r.Path("/" + name).Methods(http.MethodPost).Handler(install(manager))
 
 	r.Path("/" + name + "/reset").Methods(http.MethodPost).Handler(reset(manager))

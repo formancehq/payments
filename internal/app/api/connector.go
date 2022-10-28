@@ -6,12 +6,12 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/integration"
-	"github.com/numary/payments/internal/pkg/payments"
-
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/internal/pkg/integration"
+	"github.com/numary/payments/internal/pkg/payments"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
@@ -27,9 +27,37 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func readConfig[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func readConnectorsHandler(db *mongo.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cursor, err := db.Collection(payments.ConnectorsCollection).
+			Find(r.Context(), map[string]any{})
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+		defer cursor.Close(r.Context())
+
+		res := make([]payments.ConnectorBaseInfo, 0)
+		if err = cursor.All(r.Context(), &res); err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(
+			sharedapi.BaseResponse[[]payments.ConnectorBaseInfo]{
+				Data: &res,
+			})
+		if err != nil {
+			handleServerError(w, r, err)
+
+			return
+		}
+	}
+}
+
+func readConfig[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config, err := connectorManager.ReadConfig(r.Context())
 		if err != nil {
@@ -45,9 +73,7 @@ func readConfig[Config payments.ConnectorConfigObject,
 	}
 }
 
-func listTasks[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func listTasks[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		tasks, err := connectorManager.ListTasksStates(r.Context())
 		if err != nil {
@@ -63,9 +89,7 @@ func listTasks[Config payments.ConnectorConfigObject,
 	}
 }
 
-func readTask[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func readTask[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var descriptor Descriptor
 
@@ -85,26 +109,7 @@ func readTask[Config payments.ConnectorConfigObject,
 	}
 }
 
-func findAll[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		res, err := connectorManager.FindAll(context.Background())
-		if err != nil {
-			handleError(w, r, err)
-
-			return
-		}
-
-		if err = json.NewEncoder(w).Encode(res); err != nil {
-			panic(err)
-		}
-	}
-}
-
-func uninstall[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func uninstall[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := connectorManager.Uninstall(r.Context())
 		if err != nil {
@@ -117,9 +122,7 @@ func uninstall[Config payments.ConnectorConfigObject,
 	}
 }
 
-func install[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func install[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		installed, err := connectorManager.IsInstalled(context.Background())
 		if err != nil {
@@ -155,9 +158,7 @@ func install[Config payments.ConnectorConfigObject,
 	}
 }
 
-func reset[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
+func reset[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor]) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		installed, err := connectorManager.IsInstalled(context.Background())
 		if err != nil {
