@@ -148,6 +148,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		return ingestion.BatchElement{}, false
 	}
 
+	if balanceTransaction.Source.Payout == nil {
+		return ingestion.BatchElement{}, false
+	}
+
 	formatAsset := func(cur stripe.Currency) string {
 		asset := strings.ToUpper(string(cur))
 
