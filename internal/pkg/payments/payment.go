@@ -105,6 +105,7 @@ type Payment struct {
 	Identifier  `bson:",inline"`
 	Data        `bson:",inline"`
 	Adjustments []Adjustment `json:"adjustments" bson:"adjustments"`
+	Metadata    Metadata     `json:"metadata" bson:"metadata"`
 }
 
 func (p Payment) HasInitialValue() bool {

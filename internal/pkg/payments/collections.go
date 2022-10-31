@@ -1,7 +1,8 @@
 package payments
 
 const (
-	Collection           = "Payments"
-	ConnectorsCollection = "Connectors"
-	TasksCollection      = "Tasks"
+	Collection                  = "Payments"
+	ConnectorsCollection        = "Connectors"
+	TasksCollection             = "Tasks"
+	MetadataChangelogCollection = "MetadataChangelog"
 )

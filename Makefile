@@ -7,3 +7,6 @@ lint:
 lint-fix:
 	golangci-lint run --fix
 
+run-tests:
+	go test -race -count=1 ./...
+

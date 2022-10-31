@@ -31,11 +31,11 @@ const (
 // ApplyDefaults applies default values to the configuration.
 func (l *Loader) ApplyDefaults(cfg Config) Config {
 	if cfg.FileGenerationPeriod == 0 {
-		cfg.FileGenerationPeriod = defaultFileGenerationPeriod
+		cfg.FileGenerationPeriod = Duration(defaultFileGenerationPeriod)
 	}
 
 	if cfg.FilePollingPeriod == 0 {
-		cfg.FilePollingPeriod = defaultFilePollingPeriod
+		cfg.FilePollingPeriod = Duration(defaultFilePollingPeriod)
 	}
 
 	return cfg

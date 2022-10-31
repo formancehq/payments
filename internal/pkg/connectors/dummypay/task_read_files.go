@@ -31,7 +31,7 @@ func taskReadFiles(config Config, fs fs) task.Task {
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-time.After(config.FilePollingPeriod):
+			case <-time.After(config.FilePollingPeriod.Duration()):
 				files, err := parseFilesToIngest(config, fs)
 				if err != nil {
 					return fmt.Errorf("error parsing files to ingest: %w", err)

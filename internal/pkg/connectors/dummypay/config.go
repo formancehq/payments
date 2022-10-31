@@ -1,6 +1,7 @@
 package dummypay
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -11,16 +12,16 @@ type Config struct {
 	Directory string `json:"directory" yaml:"directory" bson:"directory"`
 
 	// FilePollingPeriod is the period between file polling.
-	FilePollingPeriod time.Duration `json:"filePollingPeriod" yaml:"filePollingPeriod" bson:"filePollingPeriod"`
+	FilePollingPeriod Duration `json:"filePollingPeriod" yaml:"filePollingPeriod" bson:"filePollingPeriod"`
 
 	// FileGenerationPeriod is the period between file generation
-	FileGenerationPeriod time.Duration `json:"fileGenerationPeriod" yaml:"fileGenerationPeriod" bson:"fileGenerationPeriod"`
+	FileGenerationPeriod Duration `json:"fileGenerationPeriod" yaml:"fileGenerationPeriod" bson:"fileGenerationPeriod"`
 }
 
 // String returns a string representation of the configuration.
 func (cfg Config) String() string {
 	return fmt.Sprintf("directory: %s, filePollingPeriod: %s, fileGenerationPeriod: %s",
-		cfg.Directory, cfg.FilePollingPeriod, cfg.FileGenerationPeriod)
+		cfg.Directory, cfg.FilePollingPeriod.String(), cfg.FileGenerationPeriod.String())
 }
 
 // Validate validates the configuration.
@@ -43,4 +44,44 @@ func (cfg Config) Validate() error {
 	}
 
 	return nil
+}
+
+type Duration time.Duration
+
+func (d *Duration) String() string {
+	return time.Duration(*d).String()
+}
+
+func (d *Duration) Duration() time.Duration {
+	return time.Duration(*d)
+}
+
+func (d *Duration) MarshalJSON() ([]byte, error) {
+	return json.Marshal(time.Duration(*d).String())
+}
+
+func (d *Duration) UnmarshalJSON(b []byte) error {
+	var durationValue interface{}
+
+	if err := json.Unmarshal(b, &durationValue); err != nil {
+		return err
+	}
+
+	switch value := durationValue.(type) {
+	case float64:
+		*d = Duration(time.Duration(value))
+
+		return nil
+	case string:
+		tmp, err := time.ParseDuration(value)
+		if err != nil {
+			return err
+		}
+
+		*d = Duration(tmp)
+
+		return nil
+	default:
+		return ErrDurationInvalid
+	}
 }

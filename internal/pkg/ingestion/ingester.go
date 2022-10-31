@@ -20,6 +20,7 @@ type BatchElement struct {
 	Referenced payments.Referenced
 	Payment    *payments.Data
 	Adjustment *payments.Adjustment
+	Metadata   payments.Metadata
 	Forward    bool
 }
 
@@ -60,11 +61,38 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 
 		var update bson.M
 
-		if elem.Adjustment != nil && elem.Payment != nil {
+		if elem.Adjustment == nil && elem.Payment == nil {
 			return nil, errors.New("either adjustment or payment must be provided")
 		}
 
-		var err error
+		var metadataChanges payments.MetadataChanges
+
+		if elem.Payment != nil {
+			ret := i.db.Collection(payments.Collection).FindOne(
+				ctx,
+				payments.Identifier{
+					Referenced: elem.Referenced,
+					Provider:   i.provider,
+				})
+			if ret.Err() != nil && !errors.Is(ret.Err(), mongo.ErrNoDocuments) {
+				logger.Errorf("Error retrieving payment: %s", ret.Err())
+
+				return nil, fmt.Errorf("error retrieving payment: %w", ret.Err())
+			}
+
+			if ret != nil && ret.Err() == nil {
+				payment := payments.Payment{}
+
+				err := ret.Decode(&payment)
+				if err != nil {
+					return nil, err
+				}
+
+				metadataChanges = payment.MergeMetadata(elem.Metadata)
+
+				elem.Metadata = metadataChanges.After
+			}
+		}
 
 		switch {
 		case elem.Forward && elem.Adjustment != nil:
@@ -78,7 +106,7 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 				"$set": bson.M{
 					"status": elem.Adjustment.Status,
 					"raw":    elem.Adjustment.Raw,
-					"data":   elem.Adjustment.Date,
+					"date":   elem.Adjustment.Date,
 				},
 			}
 		case elem.Forward && elem.Payment != nil:
@@ -97,6 +125,7 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 							Raw:    elem.Payment.Raw,
 						},
 					},
+					Metadata: elem.Metadata,
 				},
 			}
 		case !elem.Forward && elem.Adjustment != nil:
@@ -164,6 +193,17 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 		err = ret.Decode(&payment)
 		if err != nil {
 			return nil, err
+		}
+
+		if metadataChanges.HasChanged() {
+			logger.WithFields(map[string]interface{}{
+				"metadata": payment.Metadata,
+			}).Debugf("Metadata changed")
+
+			_, err = i.db.Collection(payments.MetadataChangelogCollection).InsertOne(ctx, metadataChanges)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		allPayments = append(allPayments, payment)
