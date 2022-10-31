@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/numary/payments/internal/pkg/payments"
@@ -42,6 +43,12 @@ func taskGenerateFiles(config Config, fs fs) task.Task {
 }
 
 func generateFile(config Config, fs fs) error {
+	err := fs.Mkdir(config.Directory, 0o777) //nolint:gomnd
+	if err != nil && !os.IsExist(err) {
+		return fmt.Errorf(
+			"failed to create dummypay config directory '%s': %w", config.Directory, err)
+	}
+
 	key := fmt.Sprintf("%s-%d", generatedFilePrefix, time.Now().UnixNano())
 	fileKey := fmt.Sprintf("%s/%s.json", config.Directory, key)
 
