@@ -3,7 +3,6 @@ package ingestion
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
@@ -15,137 +14,34 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type PaymentBatchElement struct {
-	Referenced         payments.Referenced
-	Payment            *payments.Data
-	Adjustment         *payments.Adjustment
-	Metadata           payments.Metadata
-	AccountsReferences []string
-	Forward            bool
+type AccountBatchElement struct {
+	Reference string
+	Provider  string
+	Type      payments.AccountType
 }
 
-type PaymentBatch []PaymentBatchElement
+type AccountBatch []AccountBatchElement
 
-type IngesterFn func(ctx context.Context, batch PaymentBatch, commitState any) error
+type AccountIngesterFn func(ctx context.Context, batch AccountBatch, commitState any) error
 
-func (fn IngesterFn) IngestPayments(ctx context.Context, batch PaymentBatch, commitState any) error {
+func (fn AccountIngesterFn) IngestAccounts(ctx context.Context, batch AccountBatch, commitState any) error {
 	return fn(ctx, batch, commitState)
 }
 
-type referenced payments.Referenced
-
-func (i *DefaultIngester) processPaymentBatch(ctx context.Context, batch PaymentBatch) ([]payments.Payment, error) {
-	allPayments := make([]payments.Payment, 0)
+func (i *DefaultIngester) processAccountBatch(ctx context.Context, batch AccountBatch) ([]payments.Account, error) {
+	allAccounts := make([]payments.Account, 0)
 
 	for _, elem := range batch {
 		logger := i.logger.WithFields(map[string]any{
-			"id": referenced(elem.Referenced),
+			"id": elem.Reference,
 		})
 
-		var update bson.M
-
-		if elem.Adjustment == nil && elem.Payment == nil {
-			return nil, errors.New("either adjustment or payment must be provided")
-		}
-
-		var metadataChanges payments.MetadataChanges
-
-		if elem.Payment != nil {
-			ret := i.db.Collection(payments.Collection).FindOne(
-				ctx,
-				payments.Identifier{
-					Referenced: elem.Referenced,
-					Provider:   i.provider,
-				})
-			if ret.Err() != nil && !errors.Is(ret.Err(), mongo.ErrNoDocuments) {
-				logger.Errorf("Error retrieving payment: %s", ret.Err())
-
-				return nil, fmt.Errorf("error retrieving payment: %w", ret.Err())
-			}
-
-			if ret != nil && ret.Err() == nil {
-				payment := payments.Payment{}
-
-				err := ret.Decode(&payment)
-				if err != nil {
-					return nil, err
-				}
-
-				metadataChanges = payment.MergeMetadata(elem.Metadata)
-
-				elem.Metadata = metadataChanges.After
-			}
-		}
-
-		switch {
-		case elem.Forward && elem.Adjustment != nil:
-			update = bson.M{
-				"$push": bson.M{
-					"adjustments": bson.M{
-						"$each":     []any{elem.Adjustment},
-						"$position": 0,
-					},
-				},
-				"$set": bson.M{
-					"status": elem.Adjustment.Status,
-					"raw":    elem.Adjustment.Raw,
-					"date":   elem.Adjustment.Date,
-				},
-			}
-		case elem.Forward && elem.Payment != nil:
-			update = bson.M{
-				"$set": payments.Payment{
-					Identifier: payments.Identifier{
-						Referenced: elem.Referenced,
-						Provider:   i.provider,
-					},
-					Data: *elem.Payment,
-					Adjustments: []payments.Adjustment{
-						{
-							Status: elem.Payment.Status,
-							Amount: elem.Payment.InitialAmount,
-							Date:   elem.Payment.CreatedAt,
-							Raw:    elem.Payment.Raw,
-						},
-					},
-					AccountsReferences: elem.AccountsReferences,
-					Metadata:           elem.Metadata,
-				},
-			}
-		case !elem.Forward && elem.Adjustment != nil:
-			update = bson.M{
-				"$push": bson.M{
-					"adjustments": bson.M{
-						"$each": []any{elem.Adjustment},
-					},
-				},
-				"$setOnInsert": bson.M{
-					"status": elem.Adjustment.Status,
-				},
-			}
-		case !elem.Forward && elem.Payment != nil:
-			update = bson.M{
-				"$push": bson.M{
-					"adjustments": bson.M{
-						"$each": []any{payments.Adjustment{
-							Status: elem.Payment.Status,
-							Amount: elem.Payment.InitialAmount,
-							Date:   elem.Payment.CreatedAt,
-							Raw:    elem.Payment.Raw,
-						}},
-					},
-				},
-				"$set": bson.M{
-					"raw":           elem.Payment.Raw,
-					"createdAt":     elem.Payment.CreatedAt,
-					"scheme":        elem.Payment.Scheme,
-					"initialAmount": elem.Payment.InitialAmount,
-					"asset":         elem.Payment.Asset,
-				},
-				"$setOnInsert": bson.M{
-					"status": elem.Payment.Status,
-				},
-			}
+		update := bson.M{
+			"$set": payments.Account{
+				Reference: elem.Reference,
+				Provider:  i.provider,
+				Type:      elem.Type,
+			},
 		}
 
 		data, err := json.Marshal(update)
@@ -155,104 +51,74 @@ func (i *DefaultIngester) processPaymentBatch(ctx context.Context, batch Payment
 
 		logger.WithFields(map[string]interface{}{
 			"update": string(data),
-		}).Debugf("Update payment")
+		}).Debugf("Update account")
 
-		ret := i.db.Collection(payments.Collection).FindOneAndUpdate(
+		ret := i.db.Collection(payments.AccountsCollection).FindOneAndUpdate(
 			ctx,
-			payments.Identifier{
-				Referenced: elem.Referenced,
-				Provider:   i.provider,
+			payments.Account{
+				Reference: elem.Reference,
+				Provider:  i.provider,
+				Type:      elem.Type,
 			},
 			update,
 			options.FindOneAndUpdate().SetUpsert(true).SetReturnDocument(options.After),
 		)
 		if ret.Err() != nil {
-			logger.Errorf("Error updating payment: %s", ret.Err())
+			logger.Errorf("Error updating account: %s", ret.Err())
 
 			return nil, fmt.Errorf("error updating payment: %w", ret.Err())
 		}
 
-		payment := payments.Payment{}
+		account := payments.Account{}
 
-		err = ret.Decode(&payment)
+		err = ret.Decode(&account)
 		if err != nil {
 			return nil, err
 		}
 
-		if metadataChanges.HasChanged() {
-			logger.WithFields(map[string]interface{}{
-				"metadata": payment.Metadata,
-			}).Debugf("Metadata changed")
-
-			_, err = i.db.Collection(payments.MetadataChangelogCollection).InsertOne(ctx, metadataChanges)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		allPayments = append(allPayments, payment)
+		allAccounts = append(allAccounts, account)
 	}
 
-	return allPayments, nil
+	return allAccounts, nil
 }
 
-func filter[T any](objects []T, compareFn func(t T) bool) []T {
-	ret := make([]T, 0)
-
-	for _, o := range objects {
-		if compareFn(o) {
-			ret = append(ret, o)
-		}
-	}
-
-	return ret
-}
-
-func (i *DefaultIngester) IngestPayments(ctx context.Context, batch PaymentBatch, commitState any) error {
+func (i *DefaultIngester) IngestAccounts(ctx context.Context, batch AccountBatch) error {
 	startingAt := time.Now()
 
 	i.logger.WithFields(map[string]interface{}{
 		"size":       len(batch),
 		"startingAt": startingAt,
-	}).Debugf("Ingest batch")
+	}).Debugf("Ingest accounts batch")
 
 	err := i.db.Client().UseSession(ctx, func(ctx mongo.SessionContext) error {
-		var allPayments []payments.Payment
+		var allAccounts []payments.Account
+
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
 			var err error
 
-			allPayments, err = i.processPaymentBatch(ctx, batch)
+			allAccounts, err = i.processAccountBatch(ctx, batch)
 			if err != nil {
 				return nil, err
 			}
 
 			i.logger.Debugf("Update state")
 
-			_, err = i.db.Collection(payments.TasksCollection).UpdateOne(ctx, map[string]any{
-				"provider":   i.provider,
-				"descriptor": i.descriptor,
-			}, map[string]any{
-				"$set": map[string]any{
-					"state": commitState,
-				},
-			}, options.Update().SetUpsert(true))
-
 			return nil, err
 		})
-		allPayments = filter(allPayments, payments.Payment.HasInitialValue)
+		if err != nil {
+			return err
+		}
 
 		if i.publisher != nil {
-			for _, e := range allPayments {
-				i.publish(ctx, TopicPayments,
-					NewEventSavedPayment(
-						e.Computed()))
+			for _, e := range allAccounts {
+				i.publish(ctx, TopicPayments, NewEventSavedAccount(e))
 			}
 		}
 
 		return err
 	})
 	if err != nil {
-		sharedlogging.GetLogger(ctx).Errorf("Error ingesting batch: %s", err)
+		sharedlogging.GetLogger(ctx).Errorf("Error ingesting accounts batch: %s", err)
 
 		return err
 	}
@@ -263,7 +129,7 @@ func (i *DefaultIngester) IngestPayments(ctx context.Context, batch PaymentBatch
 		"size":    len(batch),
 		"endedAt": endedAt,
 		"latency": endedAt.Sub(startingAt).String(),
-	}).Debugf("Batch ingested")
+	}).Debugf("Accounts batch ingested")
 
 	return nil
 }

@@ -10,13 +10,12 @@ import (
 	"github.com/numary/payments/internal/pkg/payments"
 
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedpublish"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type BatchElement struct {
+type PaymentBatchElement struct {
 	Referenced payments.Referenced
 	Payment    *payments.Data
 	Adjustment *payments.Adjustment
@@ -24,34 +23,17 @@ type BatchElement struct {
 	Forward    bool
 }
 
-type Batch []BatchElement
+type PaymentBatch []PaymentBatchElement
 
-type Ingester interface {
-	Ingest(ctx context.Context, batch Batch, commitState any) error
-}
-type IngesterFn func(ctx context.Context, batch Batch, commitState any) error
+type IngesterFn func(ctx context.Context, batch PaymentBatch, commitState any) error
 
-func (fn IngesterFn) Ingest(ctx context.Context, batch Batch, commitState any) error {
+func (fn IngesterFn) IngestPayments(ctx context.Context, batch PaymentBatch, commitState any) error {
 	return fn(ctx, batch, commitState)
-}
-
-func NoOpIngester() IngesterFn {
-	return IngesterFn(func(ctx context.Context, batch Batch, commitState any) error {
-		return nil
-	})
-}
-
-type DefaultIngester struct {
-	db         *mongo.Database
-	logger     sharedlogging.Logger
-	provider   string
-	descriptor payments.TaskDescriptor
-	publisher  sharedpublish.Publisher
 }
 
 type referenced payments.Referenced
 
-func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]payments.Payment, error) {
+func (i *DefaultIngester) processPaymentBatch(ctx context.Context, batch PaymentBatch) ([]payments.Payment, error) {
 	allPayments := make([]payments.Payment, 0)
 
 	for _, elem := range batch {
@@ -212,7 +194,7 @@ func (i *DefaultIngester) processBatch(ctx context.Context, batch Batch) ([]paym
 	return allPayments, nil
 }
 
-func Filter[T any](objects []T, compareFn func(t T) bool) []T {
+func filter[T any](objects []T, compareFn func(t T) bool) []T {
 	ret := make([]T, 0)
 
 	for _, o := range objects {
@@ -224,7 +206,7 @@ func Filter[T any](objects []T, compareFn func(t T) bool) []T {
 	return ret
 }
 
-func (i *DefaultIngester) Ingest(ctx context.Context, batch Batch, commitState any) error {
+func (i *DefaultIngester) IngestPayments(ctx context.Context, batch PaymentBatch, commitState any) error {
 	startingAt := time.Now()
 
 	i.logger.WithFields(map[string]interface{}{
@@ -237,7 +219,7 @@ func (i *DefaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 		_, err := ctx.WithTransaction(ctx, func(ctx mongo.SessionContext) (interface{}, error) {
 			var err error
 
-			allPayments, err = i.processBatch(ctx, batch)
+			allPayments, err = i.processPaymentBatch(ctx, batch)
 			if err != nil {
 				return nil, err
 			}
@@ -255,13 +237,11 @@ func (i *DefaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 
 			return nil, err
 		})
-		allPayments = Filter(allPayments, payments.Payment.HasInitialValue)
+		allPayments = filter(allPayments, payments.Payment.HasInitialValue)
 
 		if i.publisher != nil {
 			for _, e := range allPayments {
-				i.publish(ctx, TopicPayments,
-					NewEventSavedPayment(
-						e.Computed()))
+				i.publish(ctx, TopicPayments, NewEventSavedPayment(e.Computed()))
 			}
 		}
 
@@ -282,20 +262,4 @@ func (i *DefaultIngester) Ingest(ctx context.Context, batch Batch, commitState a
 	}).Debugf("Batch ingested")
 
 	return nil
-}
-
-func NewDefaultIngester(
-	provider string,
-	descriptor payments.TaskDescriptor,
-	db *mongo.Database,
-	logger sharedlogging.Logger,
-	publisher sharedpublish.Publisher,
-) *DefaultIngester {
-	return &DefaultIngester{
-		provider:   provider,
-		descriptor: descriptor,
-		db:         db,
-		logger:     logger,
-		publisher:  publisher,
-	}
 }

@@ -5,4 +5,5 @@ const (
 	ConnectorsCollection        = "Connectors"
 	TasksCollection             = "Tasks"
 	MetadataChangelogCollection = "MetadataChangelog"
+	AccountsCollection          = "Accounts"
 )
