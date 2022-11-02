@@ -3,12 +3,13 @@ package stripe
 import (
 	"errors"
 	"fmt"
-	"time"
+
+	"github.com/numary/payments/internal/pkg/connectors"
 )
 
 type Config struct {
-	PollingPeriod  time.Duration `json:"pollingPeriod" yaml:"pollingPeriod" bson:"pollingPeriod"`
-	APIKey         string        `json:"apiKey" yaml:"apiKey" bson:"apiKey"`
+	PollingPeriod  connectors.Duration `json:"pollingPeriod" yaml:"pollingPeriod" bson:"pollingPeriod"`
+	APIKey         string              `json:"apiKey" yaml:"apiKey" bson:"apiKey"`
 	TimelineConfig `bson:",inline"`
 }
 

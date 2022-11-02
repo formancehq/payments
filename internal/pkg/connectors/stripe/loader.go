@@ -3,9 +3,9 @@ package stripe
 import (
 	"time"
 
-	"github.com/numary/payments/internal/pkg/integration"
-
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/internal/pkg/connectors"
+	"github.com/numary/payments/internal/pkg/integration"
 )
 
 type Loader struct{}
@@ -29,8 +29,8 @@ func (l *Loader) ApplyDefaults(cfg Config) Config {
 		cfg.PageSize = 10
 	}
 
-	if cfg.PollingPeriod == 0 {
-		cfg.PollingPeriod = 2 * time.Minute
+	if cfg.PollingPeriod.Duration == 0 {
+		cfg.PollingPeriod = connectors.Duration{Duration: 2 * time.Minute}
 	}
 
 	return cfg

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/internal/pkg/connectors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,8 +22,8 @@ func TestLoader(t *testing.T) {
 	assert.Equal(t, connectorName, loader.Name())
 	assert.Equal(t, 10, loader.AllowTasks())
 	assert.Equal(t, Config{
-		FilePollingPeriod:    10 * time.Second,
-		FileGenerationPeriod: 5 * time.Second,
+		FilePollingPeriod:    connectors.Duration{Duration: 10 * time.Second},
+		FileGenerationPeriod: connectors.Duration{Duration: 5 * time.Second},
 	}, loader.ApplyDefaults(config))
 
 	assert.EqualValues(t, newConnector(logger, config, newFS()), loader.Load(logger, config))

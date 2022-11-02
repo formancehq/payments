@@ -3,9 +3,8 @@ package dummypay
 import (
 	"time"
 
-	"github.com/numary/payments/internal/pkg/integration"
-
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/internal/pkg/integration"
 )
 
 type Loader struct{}
@@ -30,12 +29,12 @@ const (
 
 // ApplyDefaults applies default values to the configuration.
 func (l *Loader) ApplyDefaults(cfg Config) Config {
-	if cfg.FileGenerationPeriod == 0 {
-		cfg.FileGenerationPeriod = defaultFileGenerationPeriod
+	if cfg.FileGenerationPeriod.Duration == 0 {
+		cfg.FileGenerationPeriod.Duration = defaultFileGenerationPeriod
 	}
 
-	if cfg.FilePollingPeriod == 0 {
-		cfg.FilePollingPeriod = defaultFilePollingPeriod
+	if cfg.FilePollingPeriod.Duration == 0 {
+		cfg.FilePollingPeriod.Duration = defaultFilePollingPeriod
 	}
 
 	return cfg

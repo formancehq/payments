@@ -4,11 +4,10 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/internal/pkg/ingestion"
 	"github.com/numary/payments/internal/pkg/task"
 	"github.com/numary/payments/internal/pkg/writeonly"
-
-	"github.com/numary/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 )
@@ -64,7 +63,7 @@ func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logg
 				NewTimeline(NewDefaultClient(http.DefaultClient, config.APIKey, storage),
 					config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 			),
-			config.PollingPeriod,
+			config.PollingPeriod.Duration,
 		)
 
 		return runner.Run(ctx)
