@@ -25,12 +25,12 @@ func taskFetchTransactions(logger sharedlogging.Logger, client *client.Client, a
 			return err
 		}
 
-		batch := ingestion.Batch{}
+		batch := ingestion.PaymentBatch{}
 
 		for _, transaction := range transactions {
 			logger.Info(transaction)
 
-			batchElement := ingestion.BatchElement{
+			batchElement := ingestion.PaymentBatchElement{
 				Referenced: payments.Referenced{
 					Reference: transaction.ID,
 					Type:      matchTransactionType(transaction.Type),
@@ -48,7 +48,7 @@ func taskFetchTransactions(logger sharedlogging.Logger, client *client.Client, a
 			batch = append(batch, batchElement)
 		}
 
-		return ingester.Ingest(ctx, batch, struct{}{})
+		return ingester.IngestPayments(ctx, batch, struct{}{})
 	}
 }
 

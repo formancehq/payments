@@ -42,7 +42,7 @@ func TestIngester(t *testing.T) {
 			mtest.CreateSuccessResponse(), // Commit transaction
 		)
 
-		err := ingester.Ingest(context.Background(), Batch{
+		err := ingester.IngestPayments(context.Background(), PaymentBatch{
 			{
 				Referenced: payments.Referenced{
 					Reference: "p1",
