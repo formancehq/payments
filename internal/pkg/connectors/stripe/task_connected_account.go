@@ -15,7 +15,7 @@ import (
 func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester,
 	bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool,
 ) error {
-	batch := ingestion.Batch{}
+	batch := ingestion.PaymentBatch{}
 
 	for _, bt := range bts {
 		batchElement, handled := CreateBatchElement(bt, !tail)
@@ -37,7 +37,7 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 		"state": commitState,
 	}).Debugf("updating state")
 
-	err := ingester.Ingest(ctx, batch, commitState)
+	err := ingester.IngestPayments(ctx, batch, commitState)
 	if err != nil {
 		return err
 	}

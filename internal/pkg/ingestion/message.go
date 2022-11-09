@@ -16,6 +16,7 @@ const (
 	EventApp     = "payments"
 
 	EventTypeSavedPayment = "SAVED_PAYMENT"
+	EventTypeSavedAccount = "SAVED_ACCOUNT"
 )
 
 type EventMessage struct {
@@ -33,6 +34,16 @@ func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
 		Version: EventVersion,
 		Type:    EventTypeSavedPayment,
 		Payload: payment,
+	}
+}
+
+func NewEventSavedAccount(account payments.Account) EventMessage {
+	return EventMessage{
+		Date:    time.Now().UTC(),
+		App:     EventApp,
+		Version: EventVersion,
+		Type:    EventTypeSavedAccount,
+		Payload: account,
 	}
 }
 
