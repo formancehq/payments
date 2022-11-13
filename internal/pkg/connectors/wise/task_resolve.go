@@ -16,6 +16,7 @@ const (
 // TaskDescriptor is the definition of a task.
 type TaskDescriptor struct {
 	Name      string `json:"name" yaml:"name" bson:"name"`
+	Key       string `json:"key" yaml:"key" bson:"key"`
 	ProfileID uint64 `json:"profileID" yaml:"profileID" bson:"profileID"`
 }
 
@@ -23,7 +24,7 @@ func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinitio
 	client := newClient(config.APIKey)
 
 	return func(taskDefinition TaskDescriptor) task.Task {
-		switch taskDefinition.Name {
+		switch taskDefinition.Key {
 		case taskNameFetchProfiles:
 			return taskFetchProfiles(logger, client)
 		case taskNameFetchTransfers:
@@ -32,7 +33,7 @@ func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinitio
 
 		// This should never happen.
 		return func() error {
-			return fmt.Errorf("key '%s': %w", taskDefinition.Name, ErrMissingTask)
+			return fmt.Errorf("key '%s': %w", taskDefinition.Key, ErrMissingTask)
 		}
 	}
 }

@@ -17,7 +17,8 @@ const taskKeyReadFiles = "read-files"
 // newTaskReadFiles creates a new task descriptor for the taskReadFiles task.
 func newTaskReadFiles() TaskDescriptor {
 	return TaskDescriptor{
-		Key: taskKeyReadFiles,
+		Name: "Read Files from directory",
+		Key:  taskKeyReadFiles,
 	}
 }
 
