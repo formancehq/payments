@@ -7,7 +7,6 @@ on:
     - 'feat/**'
     - 'fix/**'
     - 'hotfix/**'
-    - 'num-**'
 
 jobs:
   build-push:
