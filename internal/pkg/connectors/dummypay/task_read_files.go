@@ -6,9 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/task"
-
 	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/payments/internal/pkg/task"
 	"github.com/spf13/afero"
 )
 
@@ -31,7 +30,7 @@ func taskReadFiles(config Config, fs fs) task.Task {
 			select {
 			case <-ctx.Done():
 				return nil
-			case <-time.After(config.FilePollingPeriod):
+			case <-time.After(config.FilePollingPeriod.Duration):
 				files, err := parseFilesToIngest(config, fs)
 				if err != nil {
 					return fmt.Errorf("error parsing files to ingest: %w", err)
