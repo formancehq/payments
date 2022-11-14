@@ -1,4 +1,5 @@
-//go:generate openapi-generator generate -i swagger.yml -g go -o ./pkg/paymentclient --additional-properties=packageName:ledgerclient --git-user-id=numary --git-repo-id=payments --additional-properties=isGoSubmodule=true --additional-properties=packageName=paymentclient -t ./gentpl
+//go:generate docker run --rm -w /local -v ${PWD}:/local openapitools/openapi-generator-cli:latest generate  -i ./swagger.yml -g go -o ./client --git-user-id=numary --git-repo-id=payments -p packageVersion=latest -p isGoSubmodule=true -p packageName=client
+//go:generate docker run --rm -w /local -v ${PWD}:/local cytopia/goimports -w -e ./client
 package main
 
 import "github.com/numary/payments/cmd"
