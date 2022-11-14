@@ -23,7 +23,8 @@ func taskFetchProfiles(logger sharedlogging.Logger, client *client) task.Task {
 			logger.Infof(fmt.Sprintf("scheduling fetch-transfers: %d", profile.ID))
 
 			def := TaskDescriptor{
-				Name:      taskNameFetchTransfers,
+				Name:      "Fetch transfers from client by profile",
+				Key:       taskNameFetchTransfers,
 				ProfileID: profile.ID,
 			}
 

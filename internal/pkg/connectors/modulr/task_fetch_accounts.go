@@ -25,7 +25,8 @@ func taskFetchAccounts(logger sharedlogging.Logger, client *client.Client) task.
 			logger.Infof("scheduling fetch-transactions: %s", account.ID)
 
 			transactionsTask := TaskDescriptor{
-				Name:      taskNameFetchTransactions,
+				Name:      "Fetch transactions from client by account",
+				Key:       taskNameFetchTransactions,
 				AccountID: account.ID,
 			}
 

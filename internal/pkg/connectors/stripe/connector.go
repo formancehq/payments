@@ -18,6 +18,7 @@ type Connector struct {
 
 func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
 	return ctx.Scheduler().Schedule(TaskDescriptor{
+		Name: "Main task to periodically fetch transactions",
 		Main: true,
 	}, false)
 }
