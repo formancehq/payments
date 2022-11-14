@@ -17,7 +17,8 @@ type Connector struct {
 
 func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
 	return ctx.Scheduler().Schedule(TaskDescriptor{
-		Name: taskNameFetchAccounts,
+		Name: "Fetch accounts from client",
+		Key:  taskNameFetchAccounts,
 	}, false)
 }
 
