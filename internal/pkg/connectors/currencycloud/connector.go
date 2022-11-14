@@ -24,7 +24,7 @@ func (c *Connector) Uninstall(ctx context.Context) error {
 }
 
 func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
-	return resolveTasks(c.logger, c.cfg)(descriptor)
+	return resolveTasks(c.logger, c.cfg)
 }
 
 var _ integration.Connector[TaskDescriptor] = &Connector{}

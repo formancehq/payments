@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 )
@@ -29,7 +30,7 @@ func (c *Client) buildEndpoint(path string, args ...interface{}) string {
 const devAPIEndpoint = "https://devapi.currencycloud.com"
 
 // NewClient creates a new client for the CurrencyCloud API.
-func NewClient(loginID, apiKey, endpoint string) (*Client, error) {
+func NewClient(ctx context.Context, loginID, apiKey, endpoint string) (*Client, error) {
 	if endpoint == "" {
 		endpoint = devAPIEndpoint
 	}
@@ -41,7 +42,7 @@ func NewClient(loginID, apiKey, endpoint string) (*Client, error) {
 		apiKey:     apiKey,
 	}
 
-	authToken, err := c.authenticate()
+	authToken, err := c.authenticate(ctx)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,7 @@
 package currencycloud
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/numary/payments/internal/pkg/connectors/currencycloud/client"
@@ -19,17 +20,17 @@ type TaskDescriptor struct {
 	Name string `json:"name" yaml:"name" bson:"name"`
 }
 
-func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinition TaskDescriptor) task.Task {
-	currencyCloudClient, err := client.NewClient(config.LoginID, config.APIKey, config.Endpoint)
-	if err != nil {
-		return func(taskDefinition TaskDescriptor) task.Task {
-			return func() error {
-				return fmt.Errorf("failed to initiate client: %w", err)
+func resolveTasks(logger sharedlogging.Logger, config Config) task.Task {
+	return func(ctx context.Context, taskDescriptor TaskDescriptor) task.Task {
+		currencyCloudClient, err := client.NewClient(ctx, config.LoginID, config.APIKey, config.Endpoint)
+		if err != nil {
+			return func(ctx context.Context, taskDefinition TaskDescriptor) task.Task {
+				return func() error {
+					return fmt.Errorf("failed to initiate client: %w", err)
+				}
 			}
 		}
-	}
 
-	return func(taskDescriptor TaskDescriptor) task.Task {
 		switch taskDescriptor.Name {
 		case taskNameFetchTransactions:
 			return taskFetchTransactions(logger, currencyCloudClient, config)

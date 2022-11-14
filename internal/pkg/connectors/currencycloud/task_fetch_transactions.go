@@ -45,14 +45,14 @@ func ingestTransactions(ctx context.Context, logger sharedlogging.Logger,
 
 		logger.Info("Fetching transactions")
 
-		transactions, nextPage, err := client.GetTransactions(page)
+		transactions, nextPage, err := client.GetTransactions(ctx, page)
 		if err != nil {
 			return err
 		}
 
 		page = nextPage
 
-		batch := ingestion.Batch{}
+		batch := ingestion.PaymentBatch{}
 
 		for _, transaction := range transactions {
 			logger.Info(transaction)
@@ -64,7 +64,7 @@ func ingestTransactions(ctx context.Context, logger sharedlogging.Logger,
 				return fmt.Errorf("failed to parse amount: %w", err)
 			}
 
-			batchElement := ingestion.BatchElement{
+			batchElement := ingestion.PaymentBatchElement{
 				Referenced: payments.Referenced{
 					Reference: transaction.ID,
 					Type:      matchTransactionType(transaction.Type),
@@ -81,7 +81,7 @@ func ingestTransactions(ctx context.Context, logger sharedlogging.Logger,
 			batch = append(batch, batchElement)
 		}
 
-		err = ingester.Ingest(ctx, batch, struct{}{})
+		err = ingester.IngestPayments(ctx, batch, struct{}{})
 		if err != nil {
 			return err
 		}

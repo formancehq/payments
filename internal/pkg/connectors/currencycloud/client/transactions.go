@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,12 +19,20 @@ type Transaction struct {
 	Amount string `json:"amount"`
 }
 
-func (c *Client) GetTransactions(page int) ([]Transaction, int, error) {
+func (c *Client) GetTransactions(ctx context.Context, page int) ([]Transaction, int, error) {
 	if page < 1 {
 		return nil, 0, fmt.Errorf("page must be greater than 0")
 	}
 
-	resp, err := c.httpClient.Get(c.buildEndpoint("v2/transactions/find?page=%d", page))
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		c.buildEndpoint("v2/transactions/find?page=%d", page), http.NoBody)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Add("Accept", "application/json")
+
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, 0, err
 	}
