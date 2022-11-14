@@ -21,7 +21,7 @@ type Config struct {
 // String returns a string representation of the configuration.
 func (cfg Config) String() string {
 	return fmt.Sprintf("directory: %s, filePollingPeriod: %s, fileGenerationPeriod: %s",
-		cfg.Directory, cfg.FilePollingPeriod, cfg.FileGenerationPeriod)
+		cfg.Directory, cfg.FilePollingPeriod.String(), cfg.FileGenerationPeriod.String())
 }
 
 // Validate validates the configuration.

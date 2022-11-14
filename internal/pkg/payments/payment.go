@@ -50,8 +50,9 @@ const (
 )
 
 type Referenced struct {
-	Reference string `json:"reference" bson:"reference"`
-	Type      string `json:"type" bson:"type"`
+	Reference string   `json:"reference" bson:"reference"`
+	Accounts  []string `json:"accounts" bson:"accounts"`
+	Type      string   `json:"type" bson:"type"`
 }
 
 type Identifier struct {
@@ -105,6 +106,7 @@ type Payment struct {
 	Identifier  `bson:",inline"`
 	Data        `bson:",inline"`
 	Adjustments []Adjustment `json:"adjustments" bson:"adjustments"`
+	Metadata    Metadata     `json:"metadata" bson:"metadata"`
 }
 
 func (p Payment) HasInitialValue() bool {

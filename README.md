@@ -1,6 +1,4 @@
-# Numary Payments [![test](https://github.com/numary/payments/actions/workflows/main.yml/badge.svg)](https://github.com/numary/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/numary/payments)](https://goreportcard.com/report/github.com/numary/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w)
-
-![Numary GitHub Header Illustration Monochrome](https://user-images.githubusercontent.com/1770991/134161854-03797c76-d580-4b15-b0cf-5f8ce0080efb.png)
+# Formance Payments [![test](https://github.com/numary/payments/actions/workflows/main.yml/badge.svg)](https://github.com/numary/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/numary/payments)](https://goreportcard.com/report/github.com/numary/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w)
 
 # Getting started
 

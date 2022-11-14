@@ -30,7 +30,7 @@ func taskIngest(config Config, descriptor TaskDescriptor, fs fs) task.Task {
 		}
 
 		// Ingest the payment into the system.
-		err = ingester.Ingest(ctx, ingestionPayload, struct{}{})
+		err = ingester.IngestPayments(ctx, ingestionPayload, struct{}{})
 		if err != nil {
 			return fmt.Errorf("failed to ingest file '%s': %w", descriptor.FileName, err)
 		}
@@ -39,7 +39,7 @@ func taskIngest(config Config, descriptor TaskDescriptor, fs fs) task.Task {
 	}
 }
 
-func parseIngestionPayload(config Config, descriptor TaskDescriptor, fs fs) (ingestion.Batch, error) {
+func parseIngestionPayload(config Config, descriptor TaskDescriptor, fs fs) (ingestion.PaymentBatch, error) {
 	// Open the file.
 	file, err := fs.Open(filepath.Join(config.Directory, descriptor.FileName))
 	if err != nil {
@@ -56,7 +56,7 @@ func parseIngestionPayload(config Config, descriptor TaskDescriptor, fs fs) (ing
 		return nil, fmt.Errorf("failed to decode file '%s': %w", descriptor.FileName, err)
 	}
 
-	ingestionPayload := ingestion.Batch{ingestion.BatchElement{
+	ingestionPayload := ingestion.PaymentBatch{ingestion.PaymentBatchElement{
 		Referenced: payments.Referenced{
 			Reference: paymentElement.Reference,
 			Type:      paymentElement.Type,

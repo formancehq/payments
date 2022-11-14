@@ -15,9 +15,9 @@ linters-settings:
       - performance
       - style
   cyclop:
-    max-complexity: 20
+    max-complexity: 30
   gocyclo:
-    min-complexity: 20
+    min-complexity: 30
   goimports:
     local-prefixes: github.com/numary/payments
   govet:

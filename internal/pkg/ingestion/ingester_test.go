@@ -26,6 +26,14 @@ func TestIngester(t *testing.T) {
 		ingester := NewDefaultIngester(provider, uuid.New(), mt.DB, sharedlogging.NewNoOpLogger(), nil)
 
 		mt.AddMockResponses(
+			mtest.CreateCursorResponse(1, "test.test", mtest.FirstBatch, bson.D{
+				{Key: "ok", Value: 1},
+				{Key: "value", Value: bson.D{}},
+			}),
+			bson.D{
+				{Key: "ok", Value: 1},
+				{Key: "value", Value: bson.D{}},
+			}, // Find payment update
 			bson.D{
 				{Key: "ok", Value: 1},
 				{Key: "value", Value: bson.D{}},
@@ -34,7 +42,7 @@ func TestIngester(t *testing.T) {
 			mtest.CreateSuccessResponse(), // Commit transaction
 		)
 
-		err := ingester.Ingest(context.Background(), Batch{
+		err := ingester.IngestPayments(context.Background(), PaymentBatch{
 			{
 				Referenced: payments.Referenced{
 					Reference: "p1",
@@ -51,6 +59,7 @@ func TestIngester(t *testing.T) {
 		}, State{
 			Counter: 1,
 		})
+
 		require.NoError(t, err)
 	})
 }
