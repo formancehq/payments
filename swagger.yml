@@ -40,9 +40,9 @@ paths:
   /payments/{paymentId}:
     get:
       summary: Returns a payment.
-      operationId: getPayment
       tags:
       - Payments
+      operationId: getPayment
       parameters:
       - name: paymentId
         in: path
@@ -58,11 +58,27 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
+
+  /connectors:
+    get:
+      summary: Get all installed connectors
+      tags:
+      - Payments
+      operationId: getAllConnectors
+      description: Get all installed connectors
+      responses:
+        200:
+          description: List of installed connectors
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListConnectorsResponse'
+
   /connectors/{connector}:
     post:
       summary: Install connector
       tags:
-        - Payments
+      - Payments
       operationId: installConnector
       description: Install connector
       parameters:
@@ -73,6 +89,9 @@ paths:
           type: string
           enum:
           - stripe
+          - dummypay
+          - wise
+          - modulr
         required: true
       requestBody:
         required: true
@@ -86,7 +105,7 @@ paths:
     delete:
       summary: Uninstall connector
       tags:
-        - Payments
+      - Payments
       operationId: uninstallConnector
       description: Uninstall  connector
       parameters:
@@ -105,7 +124,7 @@ paths:
     get:
       summary: Read connector config
       tags:
-        - Payments
+      - Payments
       operationId: readConnectorConfig
       description: Read connector config
       parameters:
@@ -128,7 +147,7 @@ paths:
     post:
       summary: Reset connector
       tags:
-        - Payments
+      - Payments
       operationId: resetConnector
       description: Reset connector. Will remove the connector and ALL PAYMENTS generated with it.
       parameters:
@@ -147,7 +166,7 @@ paths:
     get:
       summary: List connector tasks
       tags:
-        - Payments
+      - Payments
       operationId: listConnectorTasks
       description: List all tasks associated with this connector.
       parameters:
@@ -172,7 +191,7 @@ paths:
     get:
       summary: Read a specific task of the connector
       tags:
-        - Payments
+      - Payments
       operationId: getConnectorTask
       description: Get a specific task associated to the connector
       parameters:
@@ -203,6 +222,9 @@ components:
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
+      - $ref: '#/components/schemas/DummyPayConfig'
+      - $ref: '#/components/schemas/WiseConfig'
+      - $ref: '#/components/schemas/ModulrConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -213,9 +235,9 @@ components:
       properties:
         pollingPeriod:
           type: string
-          example: "60s"
+          example: '60s'
           description: The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
-          default: "120s"
+          default: '120s'
         apiKey:
           type: string
           example: XXX
@@ -244,7 +266,47 @@ components:
           description: The creation date of the more recent BalanceTransaction fetched from stripe for this account
         noMoreHistory:
           type: boolean
-          description: Indicate that there no more history to fetch on this account
+    DummyPayConfig:
+      type: object
+      required:
+      - directory
+      properties:
+        filePollingPeriod:
+          type: string
+          example: '60s'
+          description: The frequency at which the connector will try to fetch new payment objects from the directory
+          default: '10s'
+        fileGenerationPeriod:
+          type: string
+          example: '60s'
+          description: The frequency at which the connector will create new payment objects in the directory
+          default: '10s'
+        directory:
+          type: string
+          example: '/tmp/dummypay'
+    WiseConfig:
+      type: object
+      required:
+      - apiKey
+      properties:
+        apiKey:
+          type: string
+          example: 'XXX'
+    ModulrConfig:
+      type: object
+      required:
+      - apiKey
+      - apiSecret
+      properties:
+        apiKey:
+          type: string
+          example: 'XXX'
+        apiSecret:
+          type: string
+          example: 'XXX'
+        endpoint:
+          type: string
+          example: 'XXX'
     ListPaymentsResponse:
       type: object
       required:
@@ -314,3 +376,23 @@ components:
           format: date-time
         raw:
           nullable: true
+
+    ListConnectorsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConnectorBaseInfo'
+
+    ConnectorBaseInfo:
+      type: object
+      properties:
+        provider:
+          type: string
+          example: stripe
+        disabled:
+          type: boolean
+          example: false
