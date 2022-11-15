@@ -1,14 +1,14 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Payments API
   version: 1.0.0
 paths:
-  '/payments':
+  /payments:
     get:
       summary: Returns a list of payments.
       operationId: listPayments
       tags:
-      - payments
+      - Payments
       parameters:
       - name: limit
         in: query
@@ -37,12 +37,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListPaymentsResponse'
-  '/payments/{paymentId}':
+  /payments/{paymentId}:
     get:
       summary: Returns a payment.
       operationId: getPayment
       tags:
-      - payments
+      - Payments
       parameters:
       - name: paymentId
         in: path
@@ -58,23 +58,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
-
-  '/connectors':
-    get:
-      summary: Get all installed connectors
-      operationId: getAllConnectors
-      description: Get all installed connectors
-      responses:
-        200:
-          description: List of installed connectors
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ListConnectorsResponse'
-
-  '/connectors/{connector}':
+  /connectors/{connector}:
     post:
       summary: Install connector
+      tags:
+        - Payments
       operationId: installConnector
       description: Install connector
       parameters:
@@ -85,9 +73,6 @@ paths:
           type: string
           enum:
           - stripe
-          - dummypay
-          - wise
-          - modulr
         required: true
       requestBody:
         required: true
@@ -100,6 +85,8 @@ paths:
           description: Connector has been installed
     delete:
       summary: Uninstall connector
+      tags:
+        - Payments
       operationId: uninstallConnector
       description: Uninstall  connector
       parameters:
@@ -114,9 +101,11 @@ paths:
       responses:
         204:
           description: Connector has been uninstalled
-  '/connectors/{connector}/config':
+  /connectors/{connector}/config:
     get:
       summary: Read connector config
+      tags:
+        - Payments
       operationId: readConnectorConfig
       description: Read connector config
       parameters:
@@ -135,9 +124,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorConfig'
-  '/connectors/{connector}/reset':
+  /connectors/{connector}/reset:
     post:
       summary: Reset connector
+      tags:
+        - Payments
       operationId: resetConnector
       description: Reset connector. Will remove the connector and ALL PAYMENTS generated with it.
       parameters:
@@ -152,9 +143,11 @@ paths:
       responses:
         204:
           description: Connector has been reset
-  '/connectors/{connector}/tasks':
+  /connectors/{connector}/tasks:
     get:
       summary: List connector tasks
+      tags:
+        - Payments
       operationId: listConnectorTasks
       description: List all tasks associated with this connector.
       parameters:
@@ -175,9 +168,11 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ConnectorTask'
-  '/connectors/{connector}/tasks/{taskId}':
+  /connectors/{connector}/tasks/{taskId}:
     get:
       summary: Read a specific task of the connector
+      tags:
+        - Payments
       operationId: getConnectorTask
       description: Get a specific task associated to the connector
       parameters:
@@ -208,9 +203,6 @@ components:
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
-      - $ref: '#/components/schemas/DummyPayConfig'
-      - $ref: '#/components/schemas/WiseConfig'
-      - $ref: '#/components/schemas/ModulrConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -221,9 +213,9 @@ components:
       properties:
         pollingPeriod:
           type: string
-          example: '60s'
+          example: "60s"
           description: The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
-          default: '120s'
+          default: "120s"
         apiKey:
           type: string
           example: XXX
@@ -252,47 +244,7 @@ components:
           description: The creation date of the more recent BalanceTransaction fetched from stripe for this account
         noMoreHistory:
           type: boolean
-    DummyPayConfig:
-      type: object
-      required:
-      - directory
-      properties:
-        filePollingPeriod:
-          type: string
-          example: '60s'
-          description: The frequency at which the connector will try to fetch new payment objects from the directory
-          default: '10s'
-        fileGenerationPeriod:
-          type: string
-          example: '60s'
-          description: The frequency at which the connector will create new payment objects in the directory
-          default: '10s'
-        directory:
-          type: string
-          example: '/tmp/dummypay'
-    WiseConfig:
-      type: object
-      required:
-      - apiKey
-      properties:
-        apiKey:
-          type: string
-          example: 'XXX'
-    ModulrConfig:
-      type: object
-      required:
-      - apiKey
-      - apiSecret
-      properties:
-        apiKey:
-          type: string
-          example: 'XXX'
-        apiSecret:
-          type: string
-          example: 'XXX'
-        endpoint:
-          type: string
-          example: 'XXX'
+          description: Indicate that there no more history to fetch on this account
     ListPaymentsResponse:
       type: object
       required:
@@ -362,23 +314,3 @@ components:
           format: date-time
         raw:
           nullable: true
-
-    ListConnectorsResponse:
-      type: object
-      required:
-        - data
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ConnectorBaseInfo'
-
-    ConnectorBaseInfo:
-      type: object
-      properties:
-        provider:
-          type: string
-          example: stripe
-        disabled:
-          type: boolean
-          example: false
