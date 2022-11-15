@@ -88,6 +88,7 @@ paths:
           - dummypay
           - wise
           - modulr
+          - currencycloud
         required: true
       requestBody:
         required: true
@@ -211,6 +212,7 @@ components:
       - $ref: '#/components/schemas/DummyPayConfig'
       - $ref: '#/components/schemas/WiseConfig'
       - $ref: '#/components/schemas/ModulrConfig'
+      - $ref: '#/components/schemas/CurrencyCloudConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -293,6 +295,27 @@ components:
         endpoint:
           type: string
           example: 'XXX'
+    CurrencyCloudConfig:
+      type: object
+      required:
+      - apiKey
+      - loginID
+      properties:
+        apiKey:
+          type: string
+          example: 'XXX'
+        loginID:
+          type: string
+          example: 'XXX'
+          description: 'Username of the API Key holder'
+        pollingPeriod:
+          type: string
+          example: '60s'
+          description: The frequency at which the connector will fetch transactions
+        endpoint:
+          type: string
+          example: 'XXX'
+          description: 'The endpoint to use for the API. Defaults to https://devapi.currencycloud.com'
     ListPaymentsResponse:
       type: object
       required:
