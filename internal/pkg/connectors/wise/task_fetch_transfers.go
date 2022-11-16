@@ -23,12 +23,15 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 			return err
 		}
 
-		batch := ingestion.Batch{}
+		var (
+			accountBatch ingestion.AccountBatch
+			paymentBatch ingestion.PaymentBatch
+		)
 
 		for _, transfer := range transfers {
 			logger.Info(transfer)
 
-			batchElement := ingestion.BatchElement{
+			batchElement := ingestion.PaymentBatchElement{
 				Referenced: payments.Referenced{
 					Reference: fmt.Sprintf("%d", transfer.ID),
 					Type:      payments.TypeTransfer,
@@ -42,10 +45,41 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 				},
 			}
 
-			batch = append(batch, batchElement)
+			if transfer.SourceAccount != 0 {
+				ref := fmt.Sprintf("%d", transfer.SourceAccount)
+
+				accountBatch = append(accountBatch,
+					ingestion.AccountBatchElement{
+						Reference: ref,
+						Type:      payments.AccountTypeSource,
+					},
+				)
+
+				batchElement.Referenced.Accounts = append(batchElement.Referenced.Accounts, ref)
+			}
+
+			if transfer.TargetAccount != 0 {
+				ref := fmt.Sprintf("%d", transfer.TargetAccount)
+
+				accountBatch = append(accountBatch,
+					ingestion.AccountBatchElement{
+						Reference: ref,
+						Type:      payments.AccountTypeTarget,
+					},
+				)
+
+				batchElement.Referenced.Accounts = append(batchElement.Referenced.Accounts, ref)
+			}
+
+			paymentBatch = append(paymentBatch, batchElement)
 		}
 
-		return ingester.Ingest(ctx, batch, struct{}{})
+		err = ingester.IngestAccounts(ctx, accountBatch)
+		if err != nil {
+			return err
+		}
+
+		return ingester.IngestPayments(ctx, paymentBatch, struct{}{})
 	}
 }
 

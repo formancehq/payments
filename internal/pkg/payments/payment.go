@@ -50,8 +50,9 @@ const (
 )
 
 type Referenced struct {
-	Reference string `json:"reference" bson:"reference"`
-	Type      string `json:"type" bson:"type"`
+	Reference string   `json:"reference" bson:"reference"`
+	Accounts  []string `json:"accounts" bson:"accounts"`
+	Type      string   `json:"type" bson:"type"`
 }
 
 type Identifier struct {

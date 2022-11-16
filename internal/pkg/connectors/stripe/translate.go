@@ -127,7 +127,7 @@ func currencies() map[string]currency {
 	}
 }
 
-func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward bool) (ingestion.BatchElement, bool) {
+func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward bool) (ingestion.PaymentBatchElement, bool) {
 	var (
 		reference   payments.Referenced
 		paymentData *payments.Data
@@ -145,11 +145,11 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 	}()
 
 	if balanceTransaction.Source == nil {
-		return ingestion.BatchElement{}, false
+		return ingestion.PaymentBatchElement{}, false
 	}
 
 	if balanceTransaction.Source.Payout == nil {
-		return ingestion.BatchElement{}, false
+		return ingestion.PaymentBatchElement{}, false
 	}
 
 	formatAsset := func(cur stripe.Currency) string {
@@ -290,12 +290,12 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Raw:    balanceTransaction,
 		}
 	case "stripe_fee", "network_cost":
-		return ingestion.BatchElement{}, true
+		return ingestion.PaymentBatchElement{}, true
 	default:
-		return ingestion.BatchElement{}, false
+		return ingestion.PaymentBatchElement{}, false
 	}
 
-	return ingestion.BatchElement{
+	return ingestion.PaymentBatchElement{
 		Referenced: reference,
 		Payment:    paymentData,
 		Adjustment: adjustment,
