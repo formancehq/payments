@@ -211,6 +211,7 @@ components:
       - $ref: '#/components/schemas/DummyPayConfig'
       - $ref: '#/components/schemas/WiseConfig'
       - $ref: '#/components/schemas/ModulrConfig'
+      - $ref: '#/components/schemas/BankingCircleConfig'
     ConnectorTask:
       oneOf:
       - $ref: '#/components/schemas/StripeTask'
@@ -291,6 +292,26 @@ components:
           type: string
           example: 'XXX'
         endpoint:
+          type: string
+          example: 'XXX'
+    BankingCircleConfig:
+      type: object
+      required:
+      - username
+      - password
+      - endpoint
+      - authorizationEndpoint
+      properties:
+        username:
+          type: string
+          example: 'XXX'
+        password:
+          type: string
+          example: 'XXX'
+        endpoint:
+          type: string
+          example: 'XXX'
+        authorizationEndpoint:
           type: string
           example: 'XXX'
     ListPaymentsResponse:

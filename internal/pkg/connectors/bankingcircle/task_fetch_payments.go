@@ -3,16 +3,17 @@ package bankingcircle
 import (
 	"context"
 
+	"github.com/numary/payments/internal/pkg/ingestion"
+	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/numary/payments/internal/pkg/task"
+
 	"github.com/numary/go-libs/sharedlogging"
-	payments "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
-	"github.com/numary/payments/pkg/bridge/task"
 )
 
 func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 	return func(
 		ctx context.Context,
-		scheduler task.Scheduler[TaskDefinition],
+		scheduler task.Scheduler[TaskDescriptor],
 		ingester ingestion.Ingester,
 	) error {
 		paymentsList, err := client.getAllPayments()
@@ -22,20 +23,20 @@ func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 
 		batch := ingestion.Batch{}
 
-		for _, payment := range paymentsList {
-			logger.Info(payment)
+		for _, paymentEl := range paymentsList {
+			logger.Info(paymentEl)
 
 			batchElement := ingestion.BatchElement{
 				Referenced: payments.Referenced{
-					Reference: payment.TransactionReference,
-					Type:      matchPaymentType(payment.Classification),
+					Reference: paymentEl.TransactionReference,
+					Type:      matchPaymentType(paymentEl.Classification),
 				},
 				Payment: &payments.Data{
-					Status:        matchPaymentStatus(payment.Status),
+					Status:        matchPaymentStatus(paymentEl.Status),
 					Scheme:        payments.SchemeOther,
-					InitialAmount: int64(payment.Transfer.Amount.Amount * 100),
-					Asset:         payment.Transfer.Amount.Currency + "/2",
-					Raw:           payment,
+					InitialAmount: int64(paymentEl.Transfer.Amount.Amount * 100),
+					Asset:         paymentEl.Transfer.Amount.Currency + "/2",
+					Raw:           paymentEl,
 				},
 			}
 

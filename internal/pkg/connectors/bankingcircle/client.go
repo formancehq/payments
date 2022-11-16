@@ -69,13 +69,12 @@ func (c *client) login() error {
 		return fmt.Errorf("failed to read login response body: %w", err)
 	}
 
+	//nolint:tagliatelle // allow for client-side structures
 	type response struct {
 		AccessToken string `json:"access_token"`
 		ExpiresIn   int    `json:"expires_in"`
 	}
 
-	fmt.Println(resp.Status)
-	fmt.Println(string(responseBody))
 	var res response
 
 	if err = json.Unmarshal(responseBody, &res); err != nil {
@@ -96,6 +95,7 @@ func (c *client) ensureAccessTokenIsValid() error {
 	return c.login()
 }
 
+//nolint:tagliatelle // allow for client-side structures
 type payment struct {
 	PaymentID            string      `json:"paymentId"`
 	TransactionReference string      `json:"transactionReference"`
