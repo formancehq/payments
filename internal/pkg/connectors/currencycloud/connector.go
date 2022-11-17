@@ -1,15 +1,14 @@
-package stripe
+package currencycloud
 
 import (
 	"context"
 
+	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/internal/pkg/integration"
 	"github.com/numary/payments/internal/pkg/task"
-
-	"github.com/numary/go-libs/sharedlogging"
 )
 
-const connectorName = "stripe"
+const connectorName = "currencycloud"
 
 type Connector struct {
 	logger sharedlogging.Logger
@@ -17,10 +16,7 @@ type Connector struct {
 }
 
 func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
-	return ctx.Scheduler().Schedule(TaskDescriptor{
-		Name: "Main task to periodically fetch transactions",
-		Main: true,
-	}, false)
+	return ctx.Scheduler().Schedule(TaskDescriptor{Name: taskNameFetchTransactions}, true)
 }
 
 func (c *Connector) Uninstall(ctx context.Context) error {
@@ -28,11 +24,7 @@ func (c *Connector) Uninstall(ctx context.Context) error {
 }
 
 func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
-	if descriptor.Main {
-		return MainTask(c.cfg)
-	}
-
-	return ConnectedAccountTask(c.cfg, descriptor.Account)
+	return resolveTasks(c.logger, c.cfg)
 }
 
 var _ integration.Connector[TaskDescriptor] = &Connector{}

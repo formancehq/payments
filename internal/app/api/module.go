@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/numary/payments/internal/pkg/connectors/currencycloud"
+
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
@@ -65,6 +67,7 @@ func HTTPModule() fx.Option {
 		addConnector[modulr.Config, modulr.TaskDescriptor](modulr.NewLoader()),
 		addConnector[stripe.Config, stripe.TaskDescriptor](stripe.NewLoader()),
 		addConnector[wise.Config, wise.TaskDescriptor](wise.NewLoader()),
+		addConnector[currencycloud.Config, currencycloud.TaskDescriptor](currencycloud.NewLoader()),
 	)
 }
 

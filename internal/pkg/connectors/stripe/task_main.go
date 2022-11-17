@@ -36,6 +36,7 @@ func ingest(
 
 	for _, connectedAccount := range connectedAccounts {
 		err = scheduler.Schedule(TaskDescriptor{
+			Name:    "Fetch balance transactions for a specific connected account",
 			Account: connectedAccount,
 		}, true)
 		if err != nil && !errors.Is(err, task.ErrAlreadyScheduled) {

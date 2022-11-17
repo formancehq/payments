@@ -16,6 +16,7 @@ const taskKeyIngest = "ingest"
 // newTaskIngest returns a new task descriptor for the ingest task.
 func newTaskIngest(filePath string) TaskDescriptor {
 	return TaskDescriptor{
+		Name:     "Ingest payments from read files",
 		Key:      taskKeyIngest,
 		FileName: filePath,
 	}

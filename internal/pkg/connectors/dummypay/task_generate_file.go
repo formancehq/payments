@@ -21,7 +21,8 @@ const (
 // newTaskGenerateFiles returns a new task descriptor for the task that generates files.
 func newTaskGenerateFiles() TaskDescriptor {
 	return TaskDescriptor{
-		Key: taskKeyGenerateFiles,
+		Name: "Generate files into a directory",
+		Key:  taskKeyGenerateFiles,
 	}
 }
 

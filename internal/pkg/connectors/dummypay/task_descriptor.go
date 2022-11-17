@@ -11,8 +11,9 @@ type taskKey string
 
 // TaskDescriptor represents a task descriptor.
 type TaskDescriptor struct {
-	Key      taskKey
-	FileName string
+	Name     string  `json:"name" bson:"name" yaml:"name"`
+	Key      taskKey `json:"key" bson:"key" yaml:"key"`
+	FileName string  `json:"fileName" bson:"fileName" yaml:"fileName"`
 }
 
 // handleResolve resolves a task execution request based on the task descriptor.
