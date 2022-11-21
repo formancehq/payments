@@ -5,14 +5,13 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/numary/go-libs/sharedlogging"
+	"github.com/numary/go-libs/sharedpublish"
 	"github.com/numary/payments/internal/pkg/ingestion"
 	"github.com/numary/payments/internal/pkg/integration"
 	"github.com/numary/payments/internal/pkg/payments"
 	"github.com/numary/payments/internal/pkg/task"
 	"github.com/numary/payments/internal/pkg/writeonly"
-
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedpublish"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/fx"
@@ -23,9 +22,7 @@ type connectorHandler struct {
 	Name    string
 }
 
-func addConnector[
-	ConnectorConfig payments.ConnectorConfigObject,
-	TaskDescriptor payments.TaskDescriptor,
+func addConnector[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor,
 ](loader integration.Loader[ConnectorConfig, TaskDescriptor],
 ) fx.Option {
 	return fx.Options(
@@ -93,6 +90,8 @@ func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.
 	manager *integration.ConnectorManager[Config, Descriptor],
 ) *mux.Router {
 	r := mux.NewRouter()
+
+	r.Path("/").Methods(http.MethodGet).Handler(findAll(manager))
 
 	r.Path("/" + name).Methods(http.MethodPost).Handler(install(manager))
 

@@ -7,12 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/connectors/currencycloud"
-
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
 	"github.com/numary/go-libs/sharedauth"
 	sharedotlp "github.com/numary/go-libs/sharedotlp/pkg"
+	"github.com/numary/payments/internal/pkg/connectors/currencycloud"
 	"github.com/numary/payments/internal/pkg/connectors/dummypay"
 	"github.com/numary/payments/internal/pkg/connectors/modulr"
 	"github.com/numary/payments/internal/pkg/connectors/stripe"
@@ -91,7 +90,6 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHa
 		authGroup.Use(sharedauth.Middleware(methods...))
 	}
 
-	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
 	for _, h := range handlers {

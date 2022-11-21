@@ -11,7 +11,6 @@ import (
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/payments/internal/pkg/integration"
 	"github.com/numary/payments/internal/pkg/payments"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
@@ -79,6 +78,27 @@ func readTask[Config payments.ConnectorConfigObject,
 		}
 
 		err = json.NewEncoder(w).Encode(tasks)
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+func findAll[Config payments.ConnectorConfigObject,
+	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		res, err := connectorManager.FindAll(context.Background())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(
+			sharedapi.BaseResponse[[]payments.ConnectorBaseInfo]{
+				Data: &res,
+			})
 		if err != nil {
 			panic(err)
 		}
@@ -163,27 +183,5 @@ func reset[Config payments.ConnectorConfigObject,
 		}
 
 		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
-func readConnectorsHandler(db *mongo.Database) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		connectorStore := integration.NewMongoDBConnectorStore(db)
-		res, err := connectorStore.FindAll(r.Context())
-		if err != nil {
-			handleError(w, r, err)
-
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(
-			sharedapi.BaseResponse[[]payments.ConnectorBaseInfo]{
-				Data: &res,
-			})
-		if err != nil {
-			handleServerError(w, r, err)
-
-			return
-		}
 	}
 }
