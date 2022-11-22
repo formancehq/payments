@@ -1,8 +1,8 @@
 package integration
 
 import (
-	"github.com/numary/payments/internal/pkg/payments"
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/task"
 )
 
 type TaskSchedulerFactory[TaskDescriptor payments.TaskDescriptor] interface {

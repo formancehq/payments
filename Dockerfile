@@ -1,4 +1,4 @@
-FROM golang:1.19.2-bullseye AS builder
+FROM golang:1.19.3-bullseye AS builder
 
 RUN apt-get update && \
     apt-get install -y gcc-aarch64-linux-gnu gcc-x86-64-linux-gnu && \
@@ -12,7 +12,7 @@ ARG TARGETARCH
 ARG APP_SHA
 ARG VERSION
 
-WORKDIR /go/src/github.com/numary/payments
+WORKDIR /go/src/github.com/formancehq/payments
 
 # get deps first so it's cached
 COPY go.mod .
@@ -25,14 +25,14 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH \
     CC=$TARGETARCH-linux-gnu-gcc \
     go build -o bin/payments \
-    -ldflags="-X github.com/numary/payments/cmd.Version=${VERSION} \
-    -X github.com/numary/payments/cmd.BuildDate=$(date +%s) \
-    -X github.com/numary/payments/cmd.Commit=${APP_SHA}" ./
+    -ldflags="-X github.com/formancehq/payments/cmd.Version=${VERSION} \
+    -X github.com/formancehq/payments/cmd.BuildDate=$(date +%s) \
+    -X github.com/formancehq/payments/cmd.Commit=${APP_SHA}" ./
 
 FROM scratch
 
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY --from=builder /go/src/github.com/numary/payments/bin/payments /usr/local/bin/payments
+COPY --from=builder /go/src/github.com/formancehq/payments/bin/payments /usr/local/bin/payments
 
 EXPOSE 8080
 

@@ -3,9 +3,9 @@ package wise
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/task"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/internal/pkg/integration"
-	"github.com/numary/payments/internal/pkg/task"
 )
 
 const connectorName = "wise"

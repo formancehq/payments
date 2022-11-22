@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/writeonly"
+	"github.com/formancehq/payments/internal/pkg/writeonly"
 
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"

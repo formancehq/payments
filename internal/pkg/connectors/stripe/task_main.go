@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/task"
-	"github.com/numary/payments/internal/pkg/writeonly"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/writeonly"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/pkg/errors"

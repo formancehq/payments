@@ -4,8 +4,8 @@ import (
 	"strings"
 
 	"github.com/bombsimon/logrusr/v3"
-	"github.com/numary/payments/internal/app/api"
-	"github.com/numary/payments/internal/app/database"
+	"github.com/formancehq/payments/internal/app/api"
+	"github.com/formancehq/payments/internal/app/database"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 

@@ -4,12 +4,12 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/writeonly"
 	"github.com/gorilla/mux"
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/integration"
-	"github.com/numary/payments/internal/pkg/payments"
-	"github.com/numary/payments/internal/pkg/task"
-	"github.com/numary/payments/internal/pkg/writeonly"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedpublish"

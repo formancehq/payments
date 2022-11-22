@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/payments"
 
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
