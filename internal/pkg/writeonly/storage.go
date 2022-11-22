@@ -3,8 +3,8 @@ package writeonly
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/iancoleman/strcase"
-	"github.com/numary/payments/internal/pkg/payments"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 

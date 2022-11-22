@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/task"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/payments"
-	"github.com/numary/payments/internal/pkg/task"
 )
 
 func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID uint64) task.Task {

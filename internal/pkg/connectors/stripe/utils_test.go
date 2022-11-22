@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/fifo"
+	"github.com/formancehq/payments/internal/pkg/fifo"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"

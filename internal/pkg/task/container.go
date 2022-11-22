@@ -3,7 +3,7 @@ package task
 import (
 	"context"
 
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/payments"
 
 	"go.uber.org/dig"
 )

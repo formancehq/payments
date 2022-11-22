@@ -1,8 +1,8 @@
-# Formance Payments [![test](https://github.com/numary/payments/actions/workflows/main.yml/badge.svg)](https://github.com/numary/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/numary/payments)](https://goreportcard.com/report/github.com/numary/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w)
+# Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w)
 
 # Getting started
 
-Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/numary/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
+Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
 
 ```SHELL
 payments 

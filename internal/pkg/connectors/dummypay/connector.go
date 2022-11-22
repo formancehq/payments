@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/task"
 
 	"github.com/numary/go-libs/sharedlogging"
 )

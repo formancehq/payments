@@ -10,9 +10,9 @@ builds:
   - binary: payments
     id: payments
     ldflags:
-      - -X github.com/numary/payments/cmd.BuildDate={{ .Date }}
-      - -X github.com/numary/payments/cmd.Version={{ .Version }}
-      - -X github.com/numary/payments/cmd.Commit={{ .ShortCommit }}
+      - -X github.com/formancehq/payments/cmd.BuildDate={{ .Date }}
+      - -X github.com/formancehq/payments/cmd.Version={{ .Version }}
+      - -X github.com/formancehq/payments/cmd.Commit={{ .ShortCommit }}
       - -extldflags "-static"
     env:
       - CGO_ENABLED=0
@@ -68,7 +68,7 @@ changelog:
 release:
   prerelease: auto
   footer: |
-    **Full Changelog**: https://github.com/numary/payments/compare/{{ .PreviousTag }}...{{ .Tag }}
+    **Full Changelog**: https://github.com/formancehq/payments/compare/{{ .PreviousTag }}...{{ .Tag }}
     ## What to do next?
     - Read the [documentation](https://docs.formance.com/oss/payments/get-started/installation)
     - Join our [Discord server](https://discord.gg/xyHvcbzk4w)

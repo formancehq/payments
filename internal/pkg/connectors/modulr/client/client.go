@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/connectors/modulr/hmac"
+	"github.com/formancehq/payments/internal/pkg/connectors/modulr/hmac"
 )
 
 type apiTransport struct {

@@ -491,10 +491,10 @@ import (
 	"time"
 
 	"github.com/numary/go-libs/sharedlogging"
-	payments "github.com/numary/payments/pkg"
-	"github.com/numary/payments/pkg/bridge/ingestion"
-	"github.com/numary/payments/pkg/bridge/integration"
-	"github.com/numary/payments/pkg/bridge/task"
+	payments "github.com/formancehq/payments/pkg"
+	"github.com/formancehq/payments/pkg/bridge/ingestion"
+	"github.com/formancehq/payments/pkg/bridge/integration"
+	"github.com/formancehq/payments/pkg/bridge/task"
 )
 
 type (

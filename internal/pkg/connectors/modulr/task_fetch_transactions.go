@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/numary/payments/internal/pkg/connectors/modulr/client"
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/payments"
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/connectors/modulr/client"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/task"
 
 	"github.com/numary/go-libs/sharedlogging"
 )

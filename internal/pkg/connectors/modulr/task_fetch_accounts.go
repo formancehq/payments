@@ -3,8 +3,8 @@ package modulr
 import (
 	"context"
 
-	"github.com/numary/payments/internal/pkg/connectors/modulr/client"
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/connectors/modulr/client"
+	"github.com/formancehq/payments/internal/pkg/task"
 
 	"github.com/numary/go-libs/sharedlogging"
 )
