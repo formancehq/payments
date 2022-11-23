@@ -16,7 +16,7 @@ func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 		scheduler task.Scheduler[TaskDescriptor],
 		ingester ingestion.Ingester,
 	) error {
-		paymentsList, err := client.getAllPayments()
+		paymentsList, err := client.getAllPayments(ctx)
 		if err != nil {
 			return err
 		}

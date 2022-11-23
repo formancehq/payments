@@ -2,13 +2,11 @@ package stripe
 
 import (
 	"context"
-	"net/http"
 
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/pkg/ingestion"
 	"github.com/formancehq/payments/internal/pkg/task"
 	"github.com/formancehq/payments/internal/pkg/writeonly"
-
-	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 )
@@ -62,7 +60,7 @@ func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logg
 				) error {
 					return ingest(ctx, logger, scheduler, ingester, batch, commitState, tail)
 				}),
-				NewTimeline(NewDefaultClient(http.DefaultClient, config.APIKey, storage),
+				NewTimeline(NewDefaultClient(config.APIKey, storage),
 					config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 			),
 			config.PollingPeriod.Duration,
