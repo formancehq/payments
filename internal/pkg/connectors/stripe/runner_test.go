@@ -7,7 +7,7 @@ import (
 
 	"github.com/stripe/stripe-go/v72"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/stretchr/testify/require"
 )
 

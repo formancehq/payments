@@ -1,8 +1,8 @@
 package integration
 
 import (
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/pkg/payments"
-	"github.com/numary/go-libs/sharedlogging"
 )
 
 type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {

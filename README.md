@@ -5,14 +5,14 @@
 Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
 
 ```SHELL
-payments 
+payments
 ```
 
 # What is it?
 
 Basically, a framework.
 
-A framework to ingest payin and payout coming from different payment providers (PSP). 
+A framework to ingest payin and payout coming from different payment providers (PSP).
 
 The framework contains connectors. Each connector is basically a translator for a PSP.
 Translator, because the main role of a connector is to translate specific PSP payin/payout formats to a generalized format used at Formance.

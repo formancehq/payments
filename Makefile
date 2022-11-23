@@ -9,4 +9,3 @@ lint-fix:
 
 run-tests:
 	go test -race -count=1 ./...
-

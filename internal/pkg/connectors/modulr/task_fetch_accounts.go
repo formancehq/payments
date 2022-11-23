@@ -6,7 +6,7 @@ import (
 	"github.com/formancehq/payments/internal/pkg/connectors/modulr/client"
 	"github.com/formancehq/payments/internal/pkg/task"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 )
 
 func taskFetchAccounts(logger sharedlogging.Logger, client *client.Client) task.Task {

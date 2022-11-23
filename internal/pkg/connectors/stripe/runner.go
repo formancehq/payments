@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 )
 
 func NewRunner(

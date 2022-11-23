@@ -8,9 +8,10 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/integration"
 	"github.com/formancehq/payments/internal/pkg/payments"
+
+	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/gorilla/mux"
-	"github.com/numary/go-libs/sharedapi"
-	"github.com/numary/go-libs/sharedlogging"
 )
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {

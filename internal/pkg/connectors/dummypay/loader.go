@@ -3,9 +3,9 @@ package dummypay
 import (
 	"time"
 
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/pkg/connectors"
 	"github.com/formancehq/payments/internal/pkg/integration"
-	"github.com/numary/go-libs/sharedlogging"
 )
 
 type Loader struct{}

@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/pkg/task"
 	"github.com/formancehq/payments/internal/pkg/writeonly"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 )

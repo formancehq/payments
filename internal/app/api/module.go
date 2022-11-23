@@ -10,6 +10,11 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/connectors/bankingcircle"
 	"github.com/formancehq/payments/internal/pkg/connectors/currencycloud"
+
+	"github.com/formancehq/go-libs/oauth2/oauth2introspect"
+	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/sharedauth"
+	sharedotlp "github.com/formancehq/go-libs/sharedotlp/pkg"
 	"github.com/formancehq/payments/internal/pkg/connectors/dummypay"
 	"github.com/formancehq/payments/internal/pkg/connectors/modulr"
 	"github.com/formancehq/payments/internal/pkg/connectors/stripe"
@@ -17,10 +22,6 @@ import (
 	"github.com/formancehq/payments/internal/pkg/integration"
 	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/gorilla/mux"
-	"github.com/numary/go-libs/oauth2/oauth2introspect"
-	"github.com/numary/go-libs/sharedapi"
-	"github.com/numary/go-libs/sharedauth"
-	sharedotlp "github.com/numary/go-libs/sharedotlp/pkg"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"

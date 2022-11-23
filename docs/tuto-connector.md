@@ -3,7 +3,7 @@
 _referenced in `/pkg/bridge/connectors/dummypay`_
 
 We are going to create a fake connector which read a directory.
-In this directory, a fake bank service will create files. 
+In this directory, a fake bank service will create files.
 Each files contain a payin or a payout as a json object.
 
 First, to create a connector, we need a loader.
@@ -21,13 +21,13 @@ type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payme
 	// ApplyDefaults is used to fill default values of the provided configuration object.
 	ApplyDefaults(t ConnectorConfig) ConnectorConfig
 	// AllowTasks define how many task the connector can run
-	// If too many tasks are scheduled by the connector, 
+	// If too many tasks are scheduled by the connector,
 	// those will be set to pending state and restarted later when some other tasks will be terminated
 	AllowTasks() int
 }
 ```
 
-A connector has a name. 
+A connector has a name.
 
 This name is provided by the loader by the method Name().
 Also, each connector define a config object using generics which has to implement interface payments.ConnectorConfigObject.
@@ -62,7 +62,7 @@ For now, the ```Config``` and ```TaskDescriptor``` are just empty structs, we wi
 Also, we didn't define any logic on our connector.
 
 It's time to plug our connector on the core.
-Edit the file cmd/root.go and go at the end of the method HTTPModule(), you should find a code like this : 
+Edit the file cmd/root.go and go at the end of the method HTTPModule(), you should find a code like this :
 ```go
     ...
     cdi.ConnectorModule[stripe.Config, stripe.TaskDescriptor](
@@ -72,7 +72,7 @@ Edit the file cmd/root.go and go at the end of the method HTTPModule(), you shou
     ...
 ```
 
-You can add your connector bellow that : 
+You can add your connector bellow that :
 ```go
     ...
     cdi.ConnectorModule[example.Config, example.TaskDescriptor](
@@ -89,12 +89,12 @@ payments-payments-1  | time="2022-07-01T09:12:21Z" level=info msg="Not installed
 ```
 
 This indicates your connector is properly integrated.
-You can install it like this : 
+You can install it like this :
 ```bash
 curl http://localhost:8080/connectors/example -X POST
 ```
 
-The service will display something like this : 
+The service will display something like this :
 ```bash
 payments-payments-1  | time="2022-07-01T10:04:53Z" level=info msg="Install connector example" component=connector-manager config="{}" provider=example
 payments-payments-1  | time="2022-07-01T10:04:53Z" level=info msg="Connector installed" component=connector-manager provider=example
@@ -103,12 +103,12 @@ payments-payments-1  | time="2022-07-01T10:04:53Z" level=info msg="Connector ins
 Your connector was installed!
 It makes nothing but it is installed.
 
-Let's uninstall it before continue : 
+Let's uninstall it before continue :
 ```bash
 curl http://localhost:8080/connectors/example -X DELETE
 ```
 
-You should see something like this : 
+You should see something like this :
 ```bash
 payments-payments-1  | time="2022-07-01T10:06:16Z" level=info msg="Uninstalling connector" component=connector-manager provider=example
 payments-payments-1  | time="2022-07-01T10:06:16Z" level=info msg="Stopping scheduler..." component=scheduler provider=example
@@ -125,7 +125,7 @@ Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescript
 ```
 
 The Load function take a logger provided by the framework and a config, probably provided by the api endpoint.
-It has to return a Connector object. Here the interface : 
+It has to return a Connector object. Here the interface :
 ```go
 // Connector provide entry point to a payment provider
 type Connector[TaskDescriptor payments.TaskDescriptor any] interface {
@@ -139,9 +139,9 @@ type Connector[TaskDescriptor payments.TaskDescriptor any] interface {
 ```
 
 When you made ```curl http://localhost:8080/connectors/example -X POST```, the framework called the ```Install()``` method.
-When you made ```curl http://localhost:8080/connectors/example -X DELETE```, the framework called the ```Uninstall(ctx context.Context) error``` method. 
+When you made ```curl http://localhost:8080/connectors/example -X DELETE```, the framework called the ```Uninstall(ctx context.Context) error``` method.
 
-It's time to add some logic. We have to modify our loader but before let's add some property to our config : 
+It's time to add some logic. We have to modify our loader but before let's add some property to our config :
 ```go
 type (
 	Config struct {
@@ -165,7 +165,7 @@ var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").
 	WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 		return integration.NewConnectorBuilder[TaskDescriptor]().
 			WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
-				return errors.New("not implemented")				
+				return errors.New("not implemented")
 			}).
 			Build()
 	}).
@@ -184,24 +184,24 @@ type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
 }
 ```
 
-Basically this context provides two things : 
+Basically this context provides two things :
 * a ```context.Context``` : If the connector make long-running processing, it should listen on this context to abort if necessary.
 * a ```Scheduler[TaskDescriptor]```: A scheduler to run tasks
 
 But, what is a task ?
 
-A task is like a process that the framework will handle for you. It is basically a simple function. 
+A task is like a process that the framework will handle for you. It is basically a simple function.
 When installed, a connector has the opportunity to schedule some tasks and let the system handle them for him.
 A task has a descriptor.
 The descriptor must be immutable and represents a specific task in the system. It can be anything.
-A task also have a state. The state can change and the framework provides necessary apis to do that. We will come on that later. 
+A task also have a state. The state can change and the framework provides necessary apis to do that. We will come on that later.
 As the descriptor, the state is freely defined by the connector.
 
 In our case, the main task seems evident as we have to list the target repository.
 Secondary tasks will be defined to read each files present in the directory.
 We can define our task descriptor to a string. The value will be the file name in case of secondary tasks and a hardcoded value of "directory" for the main task.
 
-Before add the logic, let's modify our previously introduced task descriptor : 
+Before add the logic, let's modify our previously introduced task descriptor :
 ```go
 type (
     ...
@@ -229,7 +229,7 @@ This method is in charge of providing a ```task.Task``` instance given a descrip
 
 So, when calling ```ctx.Scheduler().Schedule("directory")```, the framework will call the ```Resolve``` method with "directory" as parameter.
 
-Let's implement the resolve method : 
+Let's implement the resolve method :
 ```go
     ...
     WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
@@ -238,25 +238,25 @@ Let's implement the resolve method :
     WithResolve(func(descriptor TaskDescriptor) task.Task {
         if descriptor == "directory" {
 			return func() {
-			    // TODO	
-            }   
+			    // TODO
+            }
         }
 		// Secondary tasks
 		return func() {
-		    // TODO	
-        }       
+		    // TODO
+        }
     }).
 	...
 ```
 
 Now, we have to implement the logic for each task.
 
-Let's start with the main task which read the directory : 
+Let's start with the main task which read the directory :
 ```go
     ...
     WithResolve(func(descriptor TaskDescriptor) task.Task {
         if descriptor == "directory" {
-            return func(ctx context.Context, logget sharedlogging.Logger, scheduler task.Scheduler) 
+            return func(ctx context.Context, logget sharedlogging.Logger, scheduler task.Scheduler)
                 for {
                     select {
                     case <-ctx.Done():
@@ -290,12 +290,12 @@ Let's start with the main task which read the directory :
 
 Let's test our implementation.
 
-Start the server as usual and issue a curl request to install the connector : 
+Start the server as usual and issue a curl request to install the connector :
 ```bash
 curl http://localhost:8080/connectors/example -X POST -d '{"directory": "/tmp/payments"}'
 ```
 
-Here we instruct the connector to watch the directory /tmp/payments. Check the app logs, you should see something like this : 
+Here we instruct the connector to watch the directory /tmp/payments. Check the app logs, you should see something like this :
 ```bash
 payments-payments-1  | time="2022-07-01T12:29:05Z" level=info msg="Install connector example" component=connector-manager config="{/tmp/payments}" provider=example
 payments-payments-1  | time="2022-07-01T12:29:05Z" level=info msg="Starting task..." component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
@@ -304,7 +304,7 @@ payments-payments-1  | time="2022-07-01T13:26:51Z" level=info msg="Opening direc
 payments-payments-1  | time="2022-07-01T13:26:51Z" level=error msg="Error opening directory '/tmp/payments': open /tmp/payments: no such file or directory" component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
 ```
 
-As expected, the task trigger an error because of non-existent /tmp/payments directory. 
+As expected, the task trigger an error because of non-existent /tmp/payments directory.
 
 You can see the tasks on api too :
 ```bash
@@ -330,18 +330,18 @@ Let's create the missing directory:
 docker compose exec payments mkdir /tmp/payments
 ```
 
-After a few seconds, you should see thoses logs on app : 
+After a few seconds, you should see thoses logs on app :
 ```bash
 payments-payments-1  | time="2022-07-01T13:29:21Z" level=info msg="Opening directory '/tmp/payments'..." component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
 payments-payments-1  | time="2022-07-01T13:29:21Z" level=info msg="Found 0 files" component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
 ```
 
-Ok, create a payin file : 
+Ok, create a payin file :
 ```bash
 docker compose cp docs/samples-payin.json payments:/tmp/payments/001.json
 ```
 
-You should see those lines on logs : 
+You should see those lines on logs :
 ```bash
 payments-payments-1  | time="2022-07-01T13:33:51Z" level=info msg="Opening directory '/tmp/payments'..." component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
 payments-payments-1  | time="2022-07-01T13:33:51Z" level=info msg="Found 1 files" component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
@@ -378,26 +378,26 @@ Again, you can view the tasks on the api :
 
 As you can see, as the first task is still active, the second is flagged as failed with an error message.
 
-It's time to implement the second task : 
+It's time to implement the second task :
 ```go
     ...
     file, err := os.Open(filepath.Join(config.Directory, string(descriptor)))
     if err != nil {
         return err
     }
-    
+
     type JsonPayment struct {
         payments.Data
         Reference string `json:"reference"`
         Type string `json:"type"`
     }
-    
+
     jsonPayment := &JsonPayment{}
     err = json.NewDecoder(file).Decode(jsonPayment)
     if err != nil {
         return err
     }
-    
+
     return ingester.Ingest(ctx, ingestion.Batch{
         {
             Referenced: payments.Referenced{
@@ -413,7 +413,7 @@ It's time to implement the second task :
 
 Now restart the service, uninstall the connector, and reinstall it.
 
-Here the logs : 
+Here the logs :
 ```bash
 payments-payments-1  | time="2022-07-01T14:25:20Z" level=info msg="Install connector example" component=connector-manager config="{/tmp/payments}" provider=example
 payments-payments-1  | time="2022-07-01T14:25:20Z" level=info msg="Starting task..." component=scheduler provider=example task-id="ImRpcmVjdG9yeSI="
@@ -426,9 +426,9 @@ payments-payments-1  | time="2022-07-01T14:25:30Z" level=info msg="Task terminat
 
 As you can see, this time the second task has been started and was terminated with success.
 
-It should have created a payment on database. Let's check : 
+It should have created a payment on database. Let's check :
 ```bash
-curl http://localhost:8080/payments | jq 
+curl http://localhost:8080/payments | jq
 
 {
   "data": [
@@ -459,7 +459,7 @@ curl http://localhost:8080/payments | jq
 
 The last important part is the ```Ingester```.
 
-In the code of the second task, you should have seen this part : 
+In the code of the second task, you should have seen this part :
 ```go
 return ingester.Ingest(ctx.Context(), ingestion.Batch{
     {
@@ -474,11 +474,11 @@ return ingester.Ingest(ctx.Context(), ingestion.Batch{
 ```
 The ingester is in charge of accepting payments from a task and an eventual state to be persisted.
 
-In our case, we don't alter the state, but we could if we want (we passed an empty struct). 
+In our case, we don't alter the state, but we could if we want (we passed an empty struct).
 
 If the connector is restarted, the task will be restarted with the previously state.
 
-The complete code : 
+The complete code :
 ```go
 package example
 
@@ -490,7 +490,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	payments "github.com/formancehq/payments/pkg"
 	"github.com/formancehq/payments/pkg/bridge/ingestion"
 	"github.com/formancehq/payments/pkg/bridge/integration"
