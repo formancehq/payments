@@ -17,11 +17,11 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 ) error {
 	batch := ingestion.PaymentBatch{}
 
-	for _, bt := range bts {
-		batchElement, handled := CreateBatchElement(bt, !tail)
+	for i := range bts {
+		batchElement, handled := CreateBatchElement(bts[i], !tail)
 
 		if !handled {
-			logger.Debugf("Balance transaction type not handled: %s", bt.Type)
+			logger.Debugf("Balance transaction type not handled: %s", bts[i].Type)
 
 			continue
 		}
