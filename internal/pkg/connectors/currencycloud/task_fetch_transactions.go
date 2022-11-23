@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/connectors/currencycloud/client"
+	"github.com/formancehq/payments/internal/pkg/connectors/currencycloud/client"
 
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/payments"
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/task"
 
 	"github.com/numary/go-libs/sharedlogging"
 )

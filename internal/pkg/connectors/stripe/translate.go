@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/payments"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stripe/stripe-go/v72"

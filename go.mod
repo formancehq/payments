@@ -1,4 +1,4 @@
-module github.com/numary/payments
+module github.com/formancehq/payments
 
 go 1.19
 

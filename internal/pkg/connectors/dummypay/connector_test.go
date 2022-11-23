@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/numary/payments/internal/pkg/payments"
-	task3 "github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/payments"
+	task3 "github.com/formancehq/payments/internal/pkg/task"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/stretchr/testify/assert"

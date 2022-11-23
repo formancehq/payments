@@ -3,7 +3,7 @@ package dummypay
 import (
 	"fmt"
 
-	"github.com/numary/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/task"
 )
 
 // taskKey defines a unique key of the task.

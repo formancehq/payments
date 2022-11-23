@@ -3,7 +3,7 @@ package stripe
 import (
 	"time"
 
-	"github.com/numary/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/integration"
 
 	"github.com/numary/go-libs/sharedlogging"
 )

@@ -6,8 +6,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/integration"
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/payments"
 
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
