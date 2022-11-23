@@ -3,9 +3,9 @@ package stripe
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/pkg/connectors"
+	"github.com/formancehq/payments/internal/pkg/integration"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/internal/pkg/connectors"
-	"github.com/numary/payments/internal/pkg/integration"
 )
 
 type Loader struct{}

@@ -2,7 +2,7 @@
 //go:generate docker run --rm -w /local -v ${PWD}:/local cytopia/goimports -w -e ./client
 package main
 
-import "github.com/numary/payments/cmd"
+import "github.com/formancehq/payments/cmd"
 
 func main() {
 	cmd.Execute()

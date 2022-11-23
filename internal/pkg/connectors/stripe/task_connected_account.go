@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/task"
-	"github.com/numary/payments/internal/pkg/writeonly"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/task"
+	"github.com/formancehq/payments/internal/pkg/writeonly"
 
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/stripe/stripe-go/v72"
@@ -17,11 +17,11 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 ) error {
 	batch := ingestion.PaymentBatch{}
 
-	for _, bt := range bts {
-		batchElement, handled := CreateBatchElement(bt, !tail)
+	for i := range bts {
+		batchElement, handled := CreateBatchElement(bts[i], !tail)
 
 		if !handled {
-			logger.Debugf("Balance transaction type not handled: %s", bt.Type)
+			logger.Debugf("Balance transaction type not handled: %s", bts[i].Type)
 
 			continue
 		}

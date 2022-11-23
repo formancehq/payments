@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/numary/payments/internal/pkg/ingestion"
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/ingestion"
+	"github.com/formancehq/payments/internal/pkg/payments"
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/stripe/stripe-go/v72"
@@ -148,7 +148,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		return ingestion.PaymentBatchElement{}, false
 	}
 
-	if balanceTransaction.Source.Payout == nil {
+	if balanceTransaction.Source.Payout == nil && balanceTransaction.Source.Charge == nil {
 		return ingestion.PaymentBatchElement{}, false
 	}
 
@@ -167,10 +167,8 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		return fmt.Sprintf("%s/%d", asset, def.decimals)
 	}
 
-	payoutStatus := convertPayoutStatus(balanceTransaction.Source.Payout.Status)
-
 	switch balanceTransaction.Type {
-	case "charge":
+	case stripe.BalanceTransactionTypeCharge:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Charge.ID,
 			Type:      payments.TypePayIn,
@@ -183,21 +181,21 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Scheme:        payments.Scheme(balanceTransaction.Source.Charge.PaymentMethodDetails.Card.Brand),
 			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
 		}
-	case "payout":
+	case stripe.BalanceTransactionTypePayout:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Payout.ID,
 			Type:      payments.TypePayout,
 		}
 		paymentData = &payments.Data{
-			Status:        payoutStatus,
+			Status:        convertPayoutStatus(balanceTransaction.Source.Payout.Status),
 			InitialAmount: balanceTransaction.Source.Payout.Amount,
 			Raw:           balanceTransaction,
 			Asset:         formatAsset(balanceTransaction.Source.Payout.Currency),
 			Scheme: func() payments.Scheme {
 				switch balanceTransaction.Source.Payout.Type {
-				case "bank_account":
+				case stripe.PayoutTypeBank:
 					return payments.SchemeSepaCredit
-				case "card":
+				case stripe.PayoutTypeCard:
 					return payments.Scheme(balanceTransaction.Source.Payout.Card.Brand)
 				}
 
@@ -205,8 +203,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			}(),
 			CreatedAt: time.Unix(balanceTransaction.Created, 0),
 		}
-
-	case "transfer":
+	case stripe.BalanceTransactionTypeTransfer:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Transfer.ID,
 			Type:      payments.TypePayout,
@@ -219,10 +216,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
 		}
-	case "refund":
+	case stripe.BalanceTransactionTypeRefund:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Refund.Charge.ID,
-			Type:      payments.TypePayIn,
+			Type:      payments.TypePayout,
 		}
 		adjustment = &payments.Adjustment{
 			Status: payments.StatusSucceeded,
@@ -230,7 +227,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Date:   time.Unix(balanceTransaction.Created, 0),
 			Raw:    balanceTransaction,
 		}
-	case "payment":
+	case stripe.BalanceTransactionTypePayment:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Charge.ID,
 			Type:      payments.TypePayIn,
@@ -243,34 +240,34 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Scheme:        payments.SchemeOther,
 			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
 		}
-	case "payout_cancel":
+	case stripe.BalanceTransactionTypePayoutCancel:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Payout.ID,
 			Type:      payments.TypePayout,
 		}
 		adjustment = &payments.Adjustment{
-			Status:   payoutStatus,
+			Status:   convertPayoutStatus(balanceTransaction.Source.Payout.Status),
 			Amount:   0,
 			Date:     time.Unix(balanceTransaction.Created, 0),
 			Raw:      balanceTransaction,
 			Absolute: true,
 		}
-	case "payout_failure":
+	case stripe.BalanceTransactionTypePayoutFailure:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Payout.ID,
 			Type:      payments.TypePayIn,
 		}
 		adjustment = &payments.Adjustment{
-			Status:   payoutStatus,
+			Status:   convertPayoutStatus(balanceTransaction.Source.Payout.Status),
 			Amount:   0,
 			Date:     time.Unix(balanceTransaction.Created, 0),
 			Raw:      balanceTransaction,
 			Absolute: true,
 		}
-	case "payment_refund":
+	case stripe.BalanceTransactionTypePaymentRefund:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Refund.Charge.ID,
-			Type:      payments.TypePayIn,
+			Type:      payments.TypePayout,
 		}
 		adjustment = &payments.Adjustment{
 			Status: payments.StatusSucceeded,
@@ -278,10 +275,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Date:   time.Unix(balanceTransaction.Created, 0),
 			Raw:    balanceTransaction,
 		}
-	case "adjustment":
+	case stripe.BalanceTransactionTypeAdjustment:
 		reference = payments.Referenced{
 			Reference: balanceTransaction.Source.Dispute.Charge.ID,
-			Type:      payments.TypePayIn,
+			Type:      payments.TypePayout,
 		}
 		adjustment = &payments.Adjustment{
 			Status: payments.StatusCancelled,
@@ -289,7 +286,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Date:   time.Unix(balanceTransaction.Created, 0),
 			Raw:    balanceTransaction,
 		}
-	case "stripe_fee", "network_cost":
+	case stripe.BalanceTransactionTypeStripeFee:
 		return ingestion.PaymentBatchElement{}, true
 	default:
 		return ingestion.PaymentBatchElement{}, false

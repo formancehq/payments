@@ -3,24 +3,25 @@ package cmd
 import (
 	"strings"
 
+	"github.com/bombsimon/logrusr/v3"
+	"github.com/formancehq/payments/internal/app/api"
+	"github.com/formancehq/payments/internal/app/database"
+	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel"
+
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/bombsimon/logrusr/v3"
 	"github.com/numary/go-libs/sharedlogging"
 	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
 	"github.com/numary/go-libs/sharedotlp/pkg/sharedotlptraces"
 	"github.com/numary/go-libs/sharedpublish"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
-	"github.com/numary/payments/internal/app/api"
-	"github.com/numary/payments/internal/app/database"
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/uptrace/opentelemetry-go-extra/otellogrus"
 	"github.com/xdg-go/scram"
-	"go.opentelemetry.io/otel"
 	"go.uber.org/fx"
 )
 

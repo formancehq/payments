@@ -3,7 +3,7 @@ package dummypay
 import (
 	"fmt"
 
-	"github.com/numary/payments/internal/pkg/connectors"
+	"github.com/formancehq/payments/internal/pkg/connectors"
 )
 
 // Config is the configuration for the dummy payment connector.

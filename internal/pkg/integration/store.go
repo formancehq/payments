@@ -4,7 +4,7 @@ import (
 	"context"
 	"reflect"
 
-	"github.com/numary/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"

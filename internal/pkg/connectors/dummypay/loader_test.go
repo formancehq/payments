@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/pkg/connectors"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/internal/pkg/connectors"
 	"github.com/stretchr/testify/assert"
 )
 

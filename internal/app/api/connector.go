@@ -6,11 +6,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/formancehq/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/payments/internal/pkg/integration"
-	"github.com/numary/payments/internal/pkg/payments"
 )
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {

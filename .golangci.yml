@@ -19,7 +19,7 @@ linters-settings:
   gocyclo:
     min-complexity: 30
   goimports:
-    local-prefixes: github.com/numary/payments
+    local-prefixes: github.com/formancehq/payments
   govet:
     check-shadowing: true
   lll:

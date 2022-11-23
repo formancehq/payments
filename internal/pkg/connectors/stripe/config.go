@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/numary/payments/internal/pkg/connectors"
+	"github.com/formancehq/payments/internal/pkg/connectors"
 )
 
 type Config struct {
