@@ -21,7 +21,7 @@ var (
 	Commit    = "-"
 )
 
-func rootCommand() *cobra.Command {
+func NewRootCommand() *cobra.Command {
 	viper.SetDefault("version", Version)
 
 	root := &cobra.Command{
@@ -89,7 +89,7 @@ func rootCommand() *cobra.Command {
 }
 
 func Execute() {
-	if err := rootCommand().Execute(); err != nil {
+	if err := NewRootCommand().Execute(); err != nil {
 		if _, err = fmt.Fprintln(os.Stderr, err); err != nil {
 			panic(err)
 		}
