@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/formancehq/payments/internal/pkg/payments"
-
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -143,8 +142,8 @@ func (m *MongodbConnectorStore) FindAll(ctx context.Context) ([]payments.Connect
 		return []payments.ConnectorBaseInfo{}, errors.Wrap(err, "find all connectors")
 	}
 
-	var res []payments.ConnectorBaseInfo
-	if err = cursor.All(context.TODO(), &res); err != nil {
+	res := []payments.ConnectorBaseInfo{}
+	if err = cursor.All(ctx, &res); err != nil {
 		return []payments.ConnectorBaseInfo{}, errors.Wrap(err, "decoding all connectors")
 	}
 

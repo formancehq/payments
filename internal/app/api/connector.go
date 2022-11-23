@@ -8,7 +8,6 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/integration"
 	"github.com/formancehq/payments/internal/pkg/payments"
-
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedlogging"
@@ -80,23 +79,6 @@ func readTask[Config payments.ConnectorConfigObject,
 
 		err = json.NewEncoder(w).Encode(tasks)
 		if err != nil {
-			panic(err)
-		}
-	}
-}
-
-func findAll[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
-) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		res, err := connectorManager.FindAll(context.Background())
-		if err != nil {
-			handleError(w, r, err)
-
-			return
-		}
-
-		if err = json.NewEncoder(w).Encode(res); err != nil {
 			panic(err)
 		}
 	}

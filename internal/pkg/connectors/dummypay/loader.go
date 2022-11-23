@@ -3,8 +3,8 @@ package dummypay
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/pkg/connectors"
 	"github.com/formancehq/payments/internal/pkg/integration"
-
 	"github.com/numary/go-libs/sharedlogging"
 )
 
@@ -30,12 +30,12 @@ const (
 
 // ApplyDefaults applies default values to the configuration.
 func (l *Loader) ApplyDefaults(cfg Config) Config {
-	if cfg.FileGenerationPeriod == 0 {
-		cfg.FileGenerationPeriod = Duration(defaultFileGenerationPeriod)
+	if cfg.FileGenerationPeriod.Duration == 0 {
+		cfg.FileGenerationPeriod = connectors.Duration{Duration: defaultFileGenerationPeriod}
 	}
 
-	if cfg.FilePollingPeriod == 0 {
-		cfg.FilePollingPeriod = Duration(defaultFilePollingPeriod)
+	if cfg.FilePollingPeriod.Duration == 0 {
+		cfg.FilePollingPeriod = connectors.Duration{Duration: defaultFilePollingPeriod}
 	}
 
 	return cfg

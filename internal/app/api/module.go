@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"runtime/debug"
 	"strings"
@@ -9,13 +10,15 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/connectors/bankingcircle"
 	"github.com/formancehq/payments/internal/pkg/connectors/currencycloud"
-
 	"github.com/formancehq/payments/internal/pkg/connectors/dummypay"
 	"github.com/formancehq/payments/internal/pkg/connectors/modulr"
 	"github.com/formancehq/payments/internal/pkg/connectors/stripe"
 	"github.com/formancehq/payments/internal/pkg/connectors/wise"
+	"github.com/formancehq/payments/internal/pkg/integration"
+	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/gorilla/mux"
 	"github.com/numary/go-libs/oauth2/oauth2introspect"
+	"github.com/numary/go-libs/sharedapi"
 	"github.com/numary/go-libs/sharedauth"
 	sharedotlp "github.com/numary/go-libs/sharedotlp/pkg"
 	"github.com/rs/cors"
@@ -93,6 +96,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHa
 		authGroup.Use(sharedauth.Middleware(methods...))
 	}
 
+	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
 	for _, h := range handlers {
@@ -157,4 +161,24 @@ func sharedAuthMethods() []sharedauth.Method {
 	}
 
 	return methods
+}
+
+func readConnectorsHandler(db *mongo.Database) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		connectorStore := integration.NewMongoDBConnectorStore(db)
+		res, err := connectorStore.FindAll(r.Context())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		err = json.NewEncoder(w).Encode(
+			sharedapi.BaseResponse[[]payments.ConnectorBaseInfo]{
+				Data: &res,
+			})
+		if err != nil {
+			panic(err)
+		}
+	}
 }

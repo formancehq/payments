@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/payments/internal/pkg/connectors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,8 +15,8 @@ func TestConfigString(t *testing.T) {
 
 	config := Config{
 		Directory:            "test",
-		FilePollingPeriod:    Duration(time.Second),
-		FileGenerationPeriod: Duration(time.Minute),
+		FilePollingPeriod:    connectors.Duration{Duration: time.Second},
+		FileGenerationPeriod: connectors.Duration{Duration: time.Minute},
 	}
 
 	assert.Equal(t, "directory: test, filePollingPeriod: 1s, fileGenerationPeriod: 1m0s", config.String())
@@ -43,15 +44,15 @@ func TestConfigValidate(t *testing.T) {
 	config.Directory = userHomeDir
 
 	// fail on invalid file polling period
-	config.FilePollingPeriod = -1
+	config.FilePollingPeriod.Duration = -1
 	assert.ErrorIs(t, config.Validate(), ErrFilePollingPeriodInvalid)
 
 	// fail on invalid file generation period
-	config.FilePollingPeriod = 1
-	config.FileGenerationPeriod = -1
+	config.FilePollingPeriod.Duration = 1
+	config.FileGenerationPeriod.Duration = -1
 	assert.ErrorIs(t, config.Validate(), ErrFileGenerationPeriodInvalid)
 
 	// success
-	config.FileGenerationPeriod = 1
+	config.FileGenerationPeriod.Duration = 1
 	assert.NoError(t, config.Validate())
 }

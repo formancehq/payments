@@ -65,7 +65,7 @@ func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logg
 				NewTimeline(NewDefaultClient(http.DefaultClient, config.APIKey, storage),
 					config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 			),
-			config.PollingPeriod,
+			config.PollingPeriod.Duration,
 		)
 
 		return runner.Run(ctx)

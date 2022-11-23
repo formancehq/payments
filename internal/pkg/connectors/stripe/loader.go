@@ -3,8 +3,8 @@ package stripe
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/pkg/connectors"
 	"github.com/formancehq/payments/internal/pkg/integration"
-
 	"github.com/numary/go-libs/sharedlogging"
 )
 
@@ -29,8 +29,8 @@ func (l *Loader) ApplyDefaults(cfg Config) Config {
 		cfg.PageSize = 10
 	}
 
-	if cfg.PollingPeriod == 0 {
-		cfg.PollingPeriod = 2 * time.Minute
+	if cfg.PollingPeriod.Duration == 0 {
+		cfg.PollingPeriod = connectors.Duration{Duration: 2 * time.Minute}
 	}
 
 	return cfg
