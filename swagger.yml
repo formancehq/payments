@@ -58,7 +58,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
-
   /connectors:
     get:
       summary: Get all installed connectors
@@ -73,7 +72,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListConnectorsResponse'
-
+  /connectors/configs:
+    get:
+      summary: Get all available connectors configs
+      tags:
+      - Payments
+      operationId: getAllConnectorsConfigs
+      description: Get all available connectors configs
+      responses:
+        200:
+          description: List of available connectors configs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListConnectorsConfigsResponse'
   /connectors/{connector}:
     post:
       summary: Install connector

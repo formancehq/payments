@@ -3,6 +3,8 @@ package currencycloud
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/formancehq/payments/internal/pkg/configtemplate"
 )
 
 type Config struct {
@@ -66,4 +68,15 @@ func (d *Duration) UnmarshalJSON(b []byte) error {
 	default:
 		return ErrDurationInvalid
 	}
+}
+
+func (c Config) BuildTemplate() (string, configtemplate.Config) {
+	cfg := configtemplate.NewConfig()
+
+	cfg.AddParameter("loginID", configtemplate.TypeString, true)
+	cfg.AddParameter("apiKey", configtemplate.TypeString, true)
+	cfg.AddParameter("endpoint", configtemplate.TypeString, false)
+	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, true)
+
+	return connectorName, cfg
 }
