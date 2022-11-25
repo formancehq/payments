@@ -7,11 +7,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/payments/internal/pkg/payments"
-
 	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/pkg/errors"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var (
@@ -202,9 +204,12 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		return ErrUnableToResolve
 	}
 
-	// TODO: Check task using reflection
-
 	ctx, cancel := context.WithCancel(context.Background())
+	ctx, span := otel.Tracer("com.formance.payments").Start(ctx, "Task", trace.WithAttributes(
+		attribute.String("id", taskID),
+		attribute.String("connector", s.provider),
+	))
+
 	holder := &taskHolder[TaskDescriptor]{
 		cancel:     cancel,
 		logger:     logger,
@@ -269,6 +274,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 		logger.Infof("Starting task...")
 
 		defer func() {
+			defer span.End()
 			defer s.deleteTask(holder)
 
 			if e := recover(); e != nil {

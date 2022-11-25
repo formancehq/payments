@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
+	"go.opentelemetry.io/contrib/instrumentation/go.mongodb.org/mongo-driver/mongo/otelmongo"
 	"go.uber.org/fx"
 )
 
@@ -22,6 +23,7 @@ func MongoModule(uri string, dbName string) fx.Option {
 			reg := bson.NewRegistryBuilder().RegisterTypeMapEntry(bsontype.EmbeddedDocument, tM).Build()
 
 			return options.Client().
+				SetMonitor(otelmongo.NewMonitor()).
 				SetRegistry(reg).
 				ApplyURI(uri)
 		}),

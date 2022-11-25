@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/pkg/writeonly"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
@@ -51,12 +52,10 @@ func (d *DefaultClient) ForAccount(account string) Client {
 func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 	options ...ClientOption,
 ) ([]*stripe.BalanceTransaction, bool, error) {
-	req, err := http.NewRequest(http.MethodGet, balanceTransactionsEndpoint, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, balanceTransactionsEndpoint, nil)
 	if err != nil {
 		return nil, false, errors.Wrap(err, "creating http request")
 	}
-
-	req = req.WithContext(ctx)
 
 	for _, opt := range options {
 		opt.apply(req)
@@ -127,9 +126,15 @@ func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 	return asBalanceTransactions, rsp.HasMore, nil
 }
 
-func NewDefaultClient(httpClient *http.Client, apiKey string, storage writeonly.Storage) *DefaultClient {
+func newHTTPClient() *http.Client {
+	return &http.Client{
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+	}
+}
+
+func NewDefaultClient(apiKey string, storage writeonly.Storage) *DefaultClient {
 	return &DefaultClient{
-		httpClient: httpClient,
+		httpClient: newHTTPClient(),
 		apiKey:     apiKey,
 		storage:    storage,
 	}

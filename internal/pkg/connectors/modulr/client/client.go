@@ -5,17 +5,19 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/pkg/connectors/modulr/hmac"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type apiTransport struct {
-	apiKey  string
-	headers map[string]string
+	apiKey     string
+	headers    map[string]string
+	underlying http.RoundTripper
 }
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Authorization", t.apiKey)
 
-	return http.DefaultTransport.RoundTrip(req)
+	return t.underlying.RoundTrip(req)
 }
 
 type responseWrapper[t any] struct {
@@ -50,8 +52,9 @@ func NewClient(apiKey, apiSecret, endpoint string) (*Client, error) {
 	return &Client{
 		httpClient: &http.Client{
 			Transport: &apiTransport{
-				headers: headers,
-				apiKey:  apiKey,
+				headers:    headers,
+				apiKey:     apiKey,
+				underlying: otelhttp.NewTransport(http.DefaultTransport),
 			},
 		},
 		endpoint: endpoint,

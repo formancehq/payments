@@ -1,6 +1,7 @@
 package bankingcircle
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/sharedlogging"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type client struct {
@@ -25,9 +27,16 @@ type client struct {
 	accessTokenExpiresAt time.Time
 }
 
+func newHTTPClient() *http.Client {
+	return &http.Client{
+		Timeout:   10 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+	}
+}
+
 func newClient(username, password, endpoint, authorizationEndpoint string, logger sharedlogging.Logger) (*client, error) {
 	c := &client{
-		httpClient: &http.Client{Timeout: 10 * time.Second},
+		httpClient: newHTTPClient(),
 
 		username:              username,
 		password:              password,
@@ -37,15 +46,16 @@ func newClient(username, password, endpoint, authorizationEndpoint string, logge
 		logger: logger,
 	}
 
-	if err := c.login(); err != nil {
+	if err := c.login(context.TODO()); err != nil {
 		return nil, err
 	}
 
 	return c, nil
 }
 
-func (c *client) login() error {
-	req, err := http.NewRequest(http.MethodGet, c.authorizationEndpoint+"/api/v1/authorizations/authorize", http.NoBody)
+func (c *client) login(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
+		c.authorizationEndpoint+"/api/v1/authorizations/authorize", http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to create login request: %w", err)
 	}
@@ -87,12 +97,12 @@ func (c *client) login() error {
 	return nil
 }
 
-func (c *client) ensureAccessTokenIsValid() error {
+func (c *client) ensureAccessTokenIsValid(ctx context.Context) error {
 	if c.accessTokenExpiresAt.After(time.Now()) {
 		return nil
 	}
 
-	return c.login()
+	return c.login(ctx)
 }
 
 //nolint:tagliatelle // allow for client-side structures
@@ -164,11 +174,11 @@ type payment struct {
 	} `json:"creditorInformation"`
 }
 
-func (c *client) getAllPayments() ([]*payment, error) {
+func (c *client) getAllPayments(ctx context.Context) ([]*payment, error) {
 	var payments []*payment
 
 	for page := 0; ; page++ {
-		pagedPayments, err := c.getPayments(page)
+		pagedPayments, err := c.getPayments(ctx, page)
 		if err != nil {
 			return nil, err
 		}
@@ -183,12 +193,12 @@ func (c *client) getAllPayments() ([]*payment, error) {
 	return payments, nil
 }
 
-func (c *client) getPayments(page int) ([]*payment, error) {
-	if err := c.ensureAccessTokenIsValid(); err != nil {
+func (c *client) getPayments(ctx context.Context, page int) ([]*payment, error) {
+	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(http.MethodGet, c.endpoint+"/api/v1/payments/singles", http.NoBody)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v1/payments/singles", http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create login request: %w", err)
 	}
