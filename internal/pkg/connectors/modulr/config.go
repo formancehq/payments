@@ -1,5 +1,7 @@
 package modulr
 
+import "github.com/formancehq/payments/internal/pkg/configtemplate"
+
 type Config struct {
 	APIKey    string `json:"apiKey" bson:"apiKey"`
 	APISecret string `json:"apiSecret" bson:"apiSecret"`
@@ -16,4 +18,14 @@ func (c Config) Validate() error {
 	}
 
 	return nil
+}
+
+func (c Config) BuildTemplate() (string, configtemplate.Config) {
+	cfg := configtemplate.NewConfig()
+
+	cfg.AddParameter("apiKey", configtemplate.TypeString, true)
+	cfg.AddParameter("apiSecret", configtemplate.TypeString, true)
+	cfg.AddParameter("endpoint", configtemplate.TypeString, false)
+
+	return connectorName, cfg
 }

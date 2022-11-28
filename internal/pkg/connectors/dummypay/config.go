@@ -3,6 +3,8 @@ package dummypay
 import (
 	"fmt"
 
+	"github.com/formancehq/payments/internal/pkg/configtemplate"
+
 	"github.com/formancehq/payments/internal/pkg/connectors"
 )
 
@@ -19,29 +21,39 @@ type Config struct {
 }
 
 // String returns a string representation of the configuration.
-func (cfg Config) String() string {
+func (c Config) String() string {
 	return fmt.Sprintf("directory: %s, filePollingPeriod: %s, fileGenerationPeriod: %s",
-		cfg.Directory, cfg.FilePollingPeriod.String(), cfg.FileGenerationPeriod.String())
+		c.Directory, c.FilePollingPeriod.String(), c.FileGenerationPeriod.String())
 }
 
 // Validate validates the configuration.
-func (cfg Config) Validate() error {
+func (c Config) Validate() error {
 	// require directory path to be present
-	if cfg.Directory == "" {
+	if c.Directory == "" {
 		return ErrMissingDirectory
 	}
 
 	// check if file polling period is set properly
-	if cfg.FilePollingPeriod.Duration <= 0 {
+	if c.FilePollingPeriod.Duration <= 0 {
 		return fmt.Errorf("filePollingPeriod must be greater than 0: %w",
 			ErrFilePollingPeriodInvalid)
 	}
 
 	// check if file generation period is set properly
-	if cfg.FileGenerationPeriod.Duration <= 0 {
+	if c.FileGenerationPeriod.Duration <= 0 {
 		return fmt.Errorf("fileGenerationPeriod must be greater than 0: %w",
 			ErrFileGenerationPeriodInvalid)
 	}
 
 	return nil
+}
+
+func (c Config) BuildTemplate() (string, configtemplate.Config) {
+	cfg := configtemplate.NewConfig()
+
+	cfg.AddParameter("directory", configtemplate.TypeString, true)
+	cfg.AddParameter("filePollingPeriod", configtemplate.TypeDurationNs, true)
+	cfg.AddParameter("fileGenerationPeriod", configtemplate.TypeDurationNs, false)
+
+	return connectorName, cfg
 }

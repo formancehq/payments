@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/formancehq/payments/internal/pkg/configtemplate"
+
 	"github.com/formancehq/payments/internal/pkg/connectors"
 )
 
@@ -27,4 +29,14 @@ func (c Config) Validate() error {
 
 type TimelineConfig struct {
 	PageSize uint64 `json:"pageSize" yaml:"pageSize" bson:"pageSize"`
+}
+
+func (c Config) BuildTemplate() (string, configtemplate.Config) {
+	cfg := configtemplate.NewConfig()
+
+	cfg.AddParameter("apiKey", configtemplate.TypeString, true)
+	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, false)
+	cfg.AddParameter("pageSize", configtemplate.TypeDurationUnsignedInteger, false)
+
+	return connectorName, cfg
 }

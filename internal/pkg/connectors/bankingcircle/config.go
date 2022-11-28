@@ -1,5 +1,7 @@
 package bankingcircle
 
+import "github.com/formancehq/payments/internal/pkg/configtemplate"
+
 type Config struct {
 	Username              string `json:"username" yaml:"username" bson:"username"`
 	Password              string `json:"password" yaml:"password" bson:"password"`
@@ -25,4 +27,15 @@ func (c Config) Validate() error {
 	}
 
 	return nil
+}
+
+func (c Config) BuildTemplate() (string, configtemplate.Config) {
+	cfg := configtemplate.NewConfig()
+
+	cfg.AddParameter("username", configtemplate.TypeString, true)
+	cfg.AddParameter("password", configtemplate.TypeString, true)
+	cfg.AddParameter("endpoint", configtemplate.TypeString, true)
+	cfg.AddParameter("authorizationEndpoint", configtemplate.TypeString, true)
+
+	return connectorName, cfg
 }

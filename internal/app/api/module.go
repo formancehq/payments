@@ -99,6 +99,8 @@ func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHa
 	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
+	connectorGroup.Path("/configs").Handler(connectorConfigsHandler())
+
 	for _, h := range handlers {
 		connectorGroup.PathPrefix("/" + h.Name).Handler(
 			http.StripPrefix("/connectors", h.Handler),
