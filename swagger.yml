@@ -443,6 +443,20 @@ components:
           items:
             $ref: '#/components/schemas/ConnectorBaseInfo'
 
+    ListConnectorsConfigsResponse:
+      type: object
+      properties:
+        connector:
+          type: object
+          properties:
+            key:
+              type: object
+              properties:
+                datatype:
+                  type: string
+                required:
+                  type: boolean
+
     ConnectorBaseInfo:
       type: object
       properties:
