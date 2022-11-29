@@ -3,7 +3,7 @@ package stripe
 import (
 	"context"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 	"golang.org/x/sync/semaphore"

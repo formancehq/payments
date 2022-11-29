@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/formancehq/payments/internal/pkg/task"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 )
 
 func taskFetchTransactions(logger sharedlogging.Logger, client *client.Client, accountID string) task.Task {

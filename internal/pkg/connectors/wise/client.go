@@ -6,18 +6,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 const apiEndpoint = "https://api.wise.com"
 
 type apiTransport struct {
-	APIKey string
+	APIKey     string
+	underlying http.RoundTripper
 }
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.APIKey))
 
-	return http.DefaultTransport.RoundTrip(req)
+	return t.underlying.RoundTrip(req)
 }
 
 type client struct {
@@ -77,14 +80,14 @@ func (w *client) getProfiles() ([]profile, error) {
 	return profiles, nil
 }
 
-func (w *client) getTransfers(profile *profile) ([]transfer, error) {
+func (w *client) getTransfers(ctx context.Context, profile *profile) ([]transfer, error) {
 	var transfers []transfer
 
 	limit := 10
 	offset := 0
 
 	for {
-		req, err := http.NewRequestWithContext(context.TODO(),
+		req, err := http.NewRequestWithContext(ctx,
 			http.MethodGet, w.endpoint("v1/transfers"), http.NoBody)
 		if err != nil {
 			return transfers, err
@@ -134,7 +137,8 @@ func (w *client) getTransfers(profile *profile) ([]transfer, error) {
 func newClient(apiKey string) *client {
 	httpClient := &http.Client{
 		Transport: &apiTransport{
-			APIKey: apiKey,
+			APIKey:     apiKey,
+			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
 

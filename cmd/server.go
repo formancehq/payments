@@ -11,12 +11,12 @@ import (
 
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
-	"github.com/numary/go-libs/sharedotlp/pkg/sharedotlptraces"
-	"github.com/numary/go-libs/sharedpublish"
-	"github.com/numary/go-libs/sharedpublish/sharedpublishhttp"
-	"github.com/numary/go-libs/sharedpublish/sharedpublishkafka"
+	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging/sharedlogginglogrus"
+	"github.com/formancehq/go-libs/sharedotlp/pkg/sharedotlptraces"
+	"github.com/formancehq/go-libs/sharedpublish"
+	"github.com/formancehq/go-libs/sharedpublish/sharedpublishhttp"
+	"github.com/formancehq/go-libs/sharedpublish/sharedpublishkafka"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -83,15 +83,7 @@ func runServer(cmd *cobra.Command, args []string) error {
 	}
 
 	options = append(options, databaseOptions)
-
-	options = append(options, sharedotlptraces.TracesModule(sharedotlptraces.ModuleConfig{
-		Exporter: viper.GetString(otelTracesExporterFlag),
-		OTLPConfig: &sharedotlptraces.OTLPConfig{
-			Mode:     viper.GetString(otelTracesExporterOTLPModeFlag),
-			Endpoint: viper.GetString(otelTracesExporterOTLPEndpointFlag),
-			Insecure: viper.GetBool(otelTracesExporterOTLPInsecureFlag),
-		},
-	}))
+	options = append(options, sharedotlptraces.CLITracesModule(viper.GetViper()))
 
 	options = append(options,
 		fx.Provide(fx.Annotate(func(p message.Publisher) *sharedpublish.TopicMapperPublisher {

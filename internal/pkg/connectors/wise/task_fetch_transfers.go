@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/pkg/ingestion"
 	"github.com/formancehq/payments/internal/pkg/payments"
 	"github.com/formancehq/payments/internal/pkg/task"
-	"github.com/numary/go-libs/sharedlogging"
 )
 
 func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID uint64) task.Task {
@@ -16,7 +16,7 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 		scheduler task.Scheduler[TaskDescriptor],
 		ingester ingestion.Ingester,
 	) error {
-		transfers, err := client.getTransfers(&profile{
+		transfers, err := client.getTransfers(ctx, &profile{
 			ID: profileID,
 		})
 		if err != nil {

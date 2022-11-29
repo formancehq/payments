@@ -13,8 +13,8 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/fifo"
 
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedlogging/sharedlogginglogrus"
+	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging/sharedlogginglogrus"
 	"github.com/sirupsen/logrus"
 	"github.com/stripe/stripe-go/v72"
 )

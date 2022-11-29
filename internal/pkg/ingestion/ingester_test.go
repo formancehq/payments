@@ -7,7 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/pkg/payments"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/pborman/uuid"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"

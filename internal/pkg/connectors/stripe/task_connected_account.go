@@ -2,13 +2,12 @@ package stripe
 
 import (
 	"context"
-	"net/http"
 
 	"github.com/formancehq/payments/internal/pkg/ingestion"
 	"github.com/formancehq/payments/internal/pkg/task"
 	"github.com/formancehq/payments/internal/pkg/writeonly"
 
-	"github.com/numary/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/stripe/stripe-go/v72"
 )
 
@@ -57,7 +56,7 @@ func ConnectedAccountTask(config Config, account string) func(ctx context.Contex
 			IngesterFn(func(ctx context.Context, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 				return ingestBatch(ctx, logger, ingester, bts, commitState, tail)
 			}),
-			NewTimeline(NewDefaultClient(http.DefaultClient, config.APIKey, storage).
+			NewTimeline(NewDefaultClient(config.APIKey, storage).
 				ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 		)
 

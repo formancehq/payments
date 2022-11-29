@@ -11,8 +11,8 @@ import (
 	"github.com/formancehq/payments/internal/pkg/writeonly"
 	"github.com/gorilla/mux"
 
-	"github.com/numary/go-libs/sharedlogging"
-	"github.com/numary/go-libs/sharedpublish"
+	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/go-libs/sharedpublish"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/dig"
 	"go.uber.org/fx"
