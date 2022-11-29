@@ -445,13 +445,17 @@ components:
 
     ListConnectorsConfigsResponse:
       type: object
-      required:
-        - data
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ConnectorBaseInfo'
+        connector:
+          type: object
+          properties:
+            key:
+              type: object
+              properties:
+                datatype:
+                  type: string
+                required:
+                  type: boolean
 
     ConnectorBaseInfo:
       type: object
