@@ -77,7 +77,7 @@ func handleStripeTransfers(db *mongo.Database) http.HandlerFunc {
 
 		params := &stripe.TransferParams{
 			Amount:      stripe.Int64(transferRequest.Amount),
-			Currency:    stripe.String(transferRequest.Currency),
+			Currency:    stripe.String(transferRequest.currency),
 			Destination: stripe.String(transferRequest.Destination),
 		}
 
