@@ -9,8 +9,8 @@ import (
 	"github.com/formancehq/go-libs/sharedlogging"
 )
 
-// connectorName is the name of the connector.
-const connectorName = "dummypay"
+// Name is the name of the connector.
+const Name = "dummypay"
 
 // Connector is the connector for the dummy payment connector.
 type Connector struct {

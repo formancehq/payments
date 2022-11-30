@@ -6,11 +6,11 @@ import (
 	"github.com/formancehq/payments/internal/pkg/task"
 )
 
-const connectorName = "bankingcircle"
+const Name = "bankingcircle"
 
 // NewLoader creates a new loader.
 func NewLoader() integration.Loader[Config, TaskDescriptor] {
-	loader := integration.NewLoaderBuilder[Config, TaskDescriptor](connectorName).
+	loader := integration.NewLoaderBuilder[Config, TaskDescriptor](Name).
 		WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
 			return integration.NewConnectorBuilder[TaskDescriptor]().
 				WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {

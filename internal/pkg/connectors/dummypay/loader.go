@@ -12,7 +12,7 @@ type Loader struct{}
 
 // Name returns the name of the connector.
 func (l *Loader) Name() string {
-	return connectorName
+	return Name
 }
 
 // AllowTasks returns the amount of tasks that are allowed to be scheduled.

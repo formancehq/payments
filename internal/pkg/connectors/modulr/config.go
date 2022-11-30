@@ -27,5 +27,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("apiSecret", configtemplate.TypeString, true)
 	cfg.AddParameter("endpoint", configtemplate.TypeString, false)
 
-	return connectorName, cfg
+	return Name, cfg
 }
