@@ -18,9 +18,11 @@ import (
 
 type stripeTransferRequest struct {
 	Amount      int64             `json:"amount"`
-	Currency    string            `json:"currency"`
+	Asset       string            `json:"asset"`
 	Destination string            `json:"destination"`
 	Metadata    map[string]string `json:"metadata"`
+
+	currency string
 }
 
 func (req *stripeTransferRequest) validate() error {
@@ -28,9 +30,15 @@ func (req *stripeTransferRequest) validate() error {
 		return errors.New("amount must be greater than 0")
 	}
 
-	if req.Currency == "" {
-		return errors.New("currency is required")
+	if req.Asset == "" {
+		return errors.New("asset is required")
 	}
+
+	if req.Asset != "USD/2" && req.Asset != "EUR/2" {
+		return errors.New("asset must be USD/2 or EUR/2")
+	}
+
+	req.currency = req.Asset[:3]
 
 	if req.Destination == "" {
 		return errors.New("destination is required")

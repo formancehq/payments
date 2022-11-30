@@ -489,7 +489,7 @@ components:
         amount:
           type: integer
           example: 100
-        currency:
+        asset:
           type: string
           example: USD
         destination:
