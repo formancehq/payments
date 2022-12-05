@@ -55,5 +55,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("filePollingPeriod", configtemplate.TypeDurationNs, true)
 	cfg.AddParameter("fileGenerationPeriod", configtemplate.TypeDurationNs, false)
 
-	return connectorName, cfg
+	return Name, cfg
 }

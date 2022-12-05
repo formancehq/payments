@@ -37,5 +37,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("endpoint", configtemplate.TypeString, true)
 	cfg.AddParameter("authorizationEndpoint", configtemplate.TypeString, true)
 
-	return connectorName, cfg
+	return Name, cfg
 }

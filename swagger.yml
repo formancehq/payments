@@ -37,7 +37,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListPaymentsResponse'
-  /payments/{paymentId}:
+  '/payments/{paymentId}':
     get:
       summary: Returns a payment.
       tags:
@@ -86,7 +86,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListConnectorsConfigsResponse'
-  /connectors/{connector}:
+  '/connectors/{connector}':
     post:
       summary: Install connector
       tags:
@@ -133,7 +133,7 @@ paths:
       responses:
         204:
           description: Connector has been uninstalled
-  /connectors/{connector}/config:
+  '/connectors/{connector}/config':
     get:
       summary: Read connector config
       tags:
@@ -156,7 +156,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorConfig'
-  /connectors/{connector}/reset:
+  '/connectors/{connector}/reset':
     post:
       summary: Reset connector
       tags:
@@ -175,7 +175,7 @@ paths:
       responses:
         204:
           description: Connector has been reset
-  /connectors/{connector}/tasks:
+  '/connectors/{connector}/tasks':
     get:
       summary: List connector tasks
       tags:
@@ -200,7 +200,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ConnectorTask'
-  /connectors/{connector}/tasks/{taskId}:
+  '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
       tags:
@@ -230,6 +230,22 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorTask'
+  /connectors/stripe/transfer:
+    post:
+      summary: Transfer funds between Stripe accounts
+      tags:
+      - Payments
+      operationId: connectorsStripeTransfer
+      description: Execute a transfer between two Stripe accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StripeTransferRequest'
+      responses:
+        200:
+          description: Transfer has been executed
 components:
   schemas:
     ConnectorConfig:
@@ -466,3 +482,23 @@ components:
         disabled:
           type: boolean
           example: false
+
+    StripeTransferRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          example: 100
+        asset:
+          type: string
+          example: USD
+        destination:
+          type: string
+          example: acct_1Gqj58KZcSIg2N2q
+        metadata:
+          type: object
+          description: |
+            A set of key/value pairs that you can attach to a transfer object.
+            It can be useful for storing additional information about the transfer in a structured format.
+          example:
+            order_id: '6735'

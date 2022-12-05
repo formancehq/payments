@@ -38,5 +38,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, false)
 	cfg.AddParameter("pageSize", configtemplate.TypeDurationUnsignedInteger, false)
 
-	return connectorName, cfg
+	return Name, cfg
 }

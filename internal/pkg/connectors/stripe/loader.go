@@ -17,7 +17,7 @@ func (l *Loader) AllowTasks() int {
 }
 
 func (l *Loader) Name() string {
-	return connectorName
+	return Name
 }
 
 func (l *Loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {

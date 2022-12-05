@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/go-libs/sharedlogging"
 )
 
-const connectorName = "stripe"
+const Name = "stripe"
 
 type Connector struct {
 	logger sharedlogging.Logger

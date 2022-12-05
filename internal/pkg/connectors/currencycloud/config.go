@@ -78,5 +78,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("endpoint", configtemplate.TypeString, false)
 	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, true)
 
-	return connectorName, cfg
+	return Name, cfg
 }

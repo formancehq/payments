@@ -42,6 +42,14 @@ type DefaultClient struct {
 	storage       writeonly.Storage
 }
 
+func NewDefaultClient(apiKey string, storage writeonly.Storage) *DefaultClient {
+	return &DefaultClient{
+		httpClient: newHTTPClient(),
+		apiKey:     apiKey,
+		storage:    storage,
+	}
+}
+
 func (d *DefaultClient) ForAccount(account string) Client {
 	cp := *d
 	cp.stripeAccount = account
@@ -129,14 +137,6 @@ func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 func newHTTPClient() *http.Client {
 	return &http.Client{
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
-	}
-}
-
-func NewDefaultClient(apiKey string, storage writeonly.Storage) *DefaultClient {
-	return &DefaultClient{
-		httpClient: newHTTPClient(),
-		apiKey:     apiKey,
-		storage:    storage,
 	}
 }
 

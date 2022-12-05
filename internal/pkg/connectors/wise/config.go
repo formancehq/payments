@@ -19,5 +19,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 
 	cfg.AddParameter("apiKey", configtemplate.TypeString, true)
 
-	return connectorName, cfg
+	return Name, cfg
 }

@@ -26,7 +26,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 	"go.uber.org/fx"
 )
 
@@ -75,42 +74,6 @@ func HTTPModule() fx.Option {
 		addConnector[currencycloud.Config, currencycloud.TaskDescriptor](currencycloud.NewLoader()),
 		addConnector[bankingcircle.Config, bankingcircle.TaskDescriptor](bankingcircle.NewLoader()),
 	)
-}
-
-func httpRouter(db *mongo.Database, client *mongo.Client, handlers []connectorHandler) (*mux.Router, error) {
-	rootMux := mux.NewRouter()
-
-	if viper.GetBool(otelTracesFlag) {
-		rootMux.Use(otelmux.Middleware(serviceName))
-	}
-
-	rootMux.Use(recoveryHandler(httpRecoveryFunc))
-	rootMux.Use(httpCorsHandler())
-	rootMux.Use(httpServeFunc)
-
-	rootMux.Path("/_health").Handler(healthHandler(client))
-	rootMux.Path("/_live").Handler(liveHandler())
-
-	authGroup := rootMux.Name("authenticated").Subrouter()
-
-	if methods := sharedAuthMethods(); len(methods) > 0 {
-		authGroup.Use(sharedauth.Middleware(methods...))
-	}
-
-	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
-	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
-
-	connectorGroup.Path("/configs").Handler(connectorConfigsHandler())
-
-	for _, h := range handlers {
-		connectorGroup.PathPrefix("/" + h.Name).Handler(
-			http.StripPrefix("/connectors", h.Handler),
-		)
-	}
-
-	authGroup.PathPrefix("/").Handler(paymentsRouter(db))
-
-	return rootMux, nil
 }
 
 func httpRecoveryFunc(ctx context.Context, e interface{}) {

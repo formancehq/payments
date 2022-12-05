@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/pkg/task"
 )
 
-const connectorName = "currencycloud"
+const Name = "currencycloud"
 
 type Connector struct {
 	logger sharedlogging.Logger
