@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
@@ -49,16 +48,19 @@ func (req *stripeTransferRequest) validate() error {
 
 func handleStripeTransfers(db *mongo.Database) http.HandlerFunc {
 	connectorStore := integration.NewMongoDBConnectorStore(db)
-	var cfg stripeConnector.Config
-
-	err := connectorStore.ReadConfig(context.Background(), stripeConnector.Name, &cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	stripe.Key = cfg.APIKey
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		var cfg stripeConnector.Config
+
+		err := connectorStore.ReadConfig(r.Context(), stripeConnector.Name, &cfg)
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		stripe.Key = cfg.APIKey
+
 		var transferRequest stripeTransferRequest
 
 		err = json.NewDecoder(r.Body).Decode(&transferRequest)
@@ -76,6 +78,9 @@ func handleStripeTransfers(db *mongo.Database) http.HandlerFunc {
 		}
 
 		params := &stripe.TransferParams{
+			Params: stripe.Params{
+				Context: r.Context(),
+			},
 			Amount:      stripe.Int64(transferRequest.Amount),
 			Currency:    stripe.String(transferRequest.currency),
 			Destination: stripe.String(transferRequest.Destination),
