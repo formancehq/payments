@@ -14,32 +14,32 @@ import (
 	"encoding/json"
 )
 
-// ListPaymentsResponse struct for ListPaymentsResponse
-type ListPaymentsResponse struct {
+// ListConnectorsResponse struct for ListConnectorsResponse
+type ListConnectorsResponse struct {
 	Data interface{} `json:"data"`
 }
 
-// NewListPaymentsResponse instantiates a new ListPaymentsResponse object
+// NewListConnectorsResponse instantiates a new ListConnectorsResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListPaymentsResponse(data interface{}) *ListPaymentsResponse {
-	this := ListPaymentsResponse{}
+func NewListConnectorsResponse(data interface{}) *ListConnectorsResponse {
+	this := ListConnectorsResponse{}
 	this.Data = data
 	return &this
 }
 
-// NewListPaymentsResponseWithDefaults instantiates a new ListPaymentsResponse object
+// NewListConnectorsResponseWithDefaults instantiates a new ListConnectorsResponse object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewListPaymentsResponseWithDefaults() *ListPaymentsResponse {
-	this := ListPaymentsResponse{}
+func NewListConnectorsResponseWithDefaults() *ListConnectorsResponse {
+	this := ListConnectorsResponse{}
 	return &this
 }
 
 // GetData returns the Data field value
 // If the value is explicit nil, the zero value for interface{} will be returned
-func (o *ListPaymentsResponse) GetData() interface{} {
+func (o *ListConnectorsResponse) GetData() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -51,7 +51,7 @@ func (o *ListPaymentsResponse) GetData() interface{} {
 // GetDataOk returns a tuple with the Data field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ListPaymentsResponse) GetDataOk() (*interface{}, bool) {
+func (o *ListConnectorsResponse) GetDataOk() (*interface{}, bool) {
 	if o == nil || isNil(o.Data) {
 		return nil, false
 	}
@@ -59,11 +59,11 @@ func (o *ListPaymentsResponse) GetDataOk() (*interface{}, bool) {
 }
 
 // SetData sets field value
-func (o *ListPaymentsResponse) SetData(v interface{}) {
+func (o *ListConnectorsResponse) SetData(v interface{}) {
 	o.Data = v
 }
 
-func (o ListPaymentsResponse) MarshalJSON() ([]byte, error) {
+func (o ListConnectorsResponse) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Data != nil {
 		toSerialize["data"] = o.Data
@@ -71,38 +71,38 @@ func (o ListPaymentsResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableListPaymentsResponse struct {
-	value *ListPaymentsResponse
+type NullableListConnectorsResponse struct {
+	value *ListConnectorsResponse
 	isSet bool
 }
 
-func (v NullableListPaymentsResponse) Get() *ListPaymentsResponse {
+func (v NullableListConnectorsResponse) Get() *ListConnectorsResponse {
 	return v.value
 }
 
-func (v *NullableListPaymentsResponse) Set(val *ListPaymentsResponse) {
+func (v *NullableListConnectorsResponse) Set(val *ListConnectorsResponse) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableListPaymentsResponse) IsSet() bool {
+func (v NullableListConnectorsResponse) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableListPaymentsResponse) Unset() {
+func (v *NullableListConnectorsResponse) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableListPaymentsResponse(val *ListPaymentsResponse) *NullableListPaymentsResponse {
-	return &NullableListPaymentsResponse{value: val, isSet: true}
+func NewNullableListConnectorsResponse(val *ListConnectorsResponse) *NullableListConnectorsResponse {
+	return &NullableListConnectorsResponse{value: val, isSet: true}
 }
 
-func (v NullableListPaymentsResponse) MarshalJSON() ([]byte, error) {
+func (v NullableListConnectorsResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableListPaymentsResponse) UnmarshalJSON(src []byte) error {
+func (v *NullableListConnectorsResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
