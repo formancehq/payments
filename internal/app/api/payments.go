@@ -1,66 +1,48 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
-	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/app/storage"
+	"github.com/formancehq/payments/internal/app/storage/models"
+
+	"github.com/formancehq/payments/internal/app/payments"
 
 	"github.com/formancehq/go-libs/sharedapi"
-	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 const (
 	maxPerPage = 100
 )
 
-func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
-	w.WriteHeader(http.StatusInternalServerError)
-	sharedlogging.GetLogger(r.Context()).Error(err)
-	// TODO: Opentracing
-	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
-		ErrorCode:    "INTERNAL",
-		ErrorMessage: err.Error(),
-	})
-	if err != nil {
-		panic(err)
-	}
+type listPaymentsRepository interface {
+	ListPayments(ctx context.Context, sort storage.Sorter, pagination storage.Paginator) ([]*models.Payment, error)
 }
 
-func handleValidationError(w http.ResponseWriter, r *http.Request, err error) {
-	w.WriteHeader(http.StatusBadRequest)
-	sharedlogging.GetLogger(r.Context()).Error(err)
-	// TODO: Opentracing
-	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
-		ErrorCode:    "VALIDATION",
-		ErrorMessage: err.Error(),
-	})
-	if err != nil {
-		panic(err)
-	}
-}
-
-func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
+func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pipeline := make([]map[string]any, 0)
+		w.Header().Set("Content-Type", "application/json")
+
+		var sorter storage.Sorter
 
 		if sortParams := r.URL.Query()["sort"]; sortParams != nil {
-			sort := bson.M{}
-
 			for _, s := range sortParams {
 				parts := strings.SplitN(s, ":", 2)
-				desc := false
+
+				var order storage.SortOrder
 
 				if len(parts) > 1 {
 					switch parts[1] {
 					case "asc", "ASC":
+						order = storage.SortOrderAsc
 					case "dsc", "desc", "DSC", "DESC":
-						desc = true
+						order = storage.SortOrderDesc
 					default:
 						handleValidationError(w, r, errors.New("sort order not well specified, got "+parts[1]))
 
@@ -68,37 +50,20 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 					}
 				}
 
-				key := parts[0]
-				if key == "id" {
-					key = "_id"
-				}
+				column := parts[0]
 
-				sort[key] = func() int {
-					if desc {
-						return -1
-					}
-
-					return 1
-				}()
+				sorter.Add(column, order)
 			}
-
-			pipeline = append(pipeline, map[string]any{"$sort": sort})
 		}
 
-		skip, err := integerWithDefault(r, "skip", 0)
+		skip, err := unsignedIntegerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleValidationError(w, r, err)
 
 			return
 		}
 
-		if skip != 0 {
-			pipeline = append(pipeline, map[string]any{
-				"$skip": skip,
-			})
-		}
-
-		limit, err := integerWithDefault(r, "limit", maxPerPage)
+		limit, err := unsignedIntegerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
 			handleValidationError(w, r, err)
 
@@ -109,32 +74,48 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 			limit = maxPerPage
 		}
 
-		if limit != 0 {
-			pipeline = append(pipeline, map[string]any{
-				"$limit": limit,
-			})
-		}
-
-		cursor, err := db.Collection(payments.Collection).Aggregate(r.Context(), pipeline)
+		ret, err := repo.ListPayments(r.Context(), sorter, storage.Paginate(skip, limit))
 		if err != nil {
 			handleServerError(w, r, err)
 
 			return
 		}
 
-		defer cursor.Close(r.Context())
+		data := make([]*payments.Payment, len(ret))
 
-		ret := make([]payments.Payment, 0)
+		for i := range ret {
+			data[i] = &payments.Payment{
+				Identifier: payments.Identifier{
+					Referenced: payments.Referenced{
+						Reference: ret[i].Reference,
+						Type:      ret[i].Type.String(),
+					},
+					Provider: ret[i].Connector.Provider.String(),
+				},
+				Data: payments.Data{
+					Status:        payments.Status(ret[i].Status),
+					InitialAmount: ret[i].Amount,
+					Scheme:        payments.Scheme(ret[i].Scheme),
+					Asset:         ret[i].Asset.String(),
+					CreatedAt:     ret[i].CreatedAt,
+					Raw:           ret[i].RawData,
+				},
+			}
 
-		err = cursor.All(r.Context(), &ret)
-		if err != nil {
-			handleServerError(w, r, err)
-
-			return
+			for adjustmentIdx := range ret[i].Adjustments {
+				data[i].Adjustments = append(data[i].Adjustments,
+					payments.Adjustment{
+						Status:   payments.Status(ret[i].Adjustments[adjustmentIdx].Status),
+						Amount:   ret[i].Adjustments[adjustmentIdx].Amount,
+						Date:     ret[i].Adjustments[adjustmentIdx].CreatedAt,
+						Raw:      ret[i].Adjustments[adjustmentIdx].RawData,
+						Absolute: ret[i].Adjustments[adjustmentIdx].Absolute,
+					})
+			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]payments.Payment]{
-			Data: &ret,
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]*payments.Payment]{
+			Data: &data,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
@@ -144,8 +125,14 @@ func listPaymentsHandler(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
+type readPaymentRepository interface {
+	GetPayment(ctx context.Context, reference string) (*models.Payment, error)
+}
+
+func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		paymentID := mux.Vars(r)["paymentID"]
 
 		identifier, err := payments.IdentifierFromString(paymentID)
@@ -155,30 +142,44 @@ func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
 			return
 		}
 
-		ret := db.Collection(payments.Collection).FindOne(r.Context(), identifier)
-		if ret.Err() != nil {
-			if errors.Is(ret.Err(), mongo.ErrNoDocuments) {
-				w.WriteHeader(http.StatusNotFound)
-
-				return
-			}
-
-			handleServerError(w, r, ret.Err())
-
-			return
-		}
-
-		payment := &payments.Payment{}
-
-		err = ret.Decode(payment)
+		payment, err := repo.GetPayment(r.Context(), identifier.Reference)
 		if err != nil {
 			handleServerError(w, r, err)
 
 			return
 		}
 
+		data := payments.Payment{
+			Identifier: payments.Identifier{
+				Referenced: payments.Referenced{
+					Reference: payment.Reference,
+					Type:      payment.Type.String(),
+				},
+				Provider: payment.Connector.Provider.String(),
+			},
+			Data: payments.Data{
+				Status:        payments.Status(payment.Status),
+				InitialAmount: payment.Amount,
+				Scheme:        payments.Scheme(payment.Scheme),
+				Asset:         payment.Asset.String(),
+				CreatedAt:     payment.CreatedAt,
+				Raw:           payment.RawData,
+			},
+		}
+
+		for i := range payment.Adjustments {
+			data.Adjustments = append(data.Adjustments,
+				payments.Adjustment{
+					Status:   payments.Status(payment.Adjustments[i].Status),
+					Amount:   payment.Adjustments[i].Amount,
+					Date:     payment.Adjustments[i].CreatedAt,
+					Raw:      payment.Adjustments[i].RawData,
+					Absolute: payment.Adjustments[i].Absolute,
+				})
+		}
+
 		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
-			Data: payment,
+			Data: &data,
 		})
 		if err != nil {
 			handleServerError(w, r, err)
@@ -188,16 +189,28 @@ func readPaymentHandler(db *mongo.Database) http.HandlerFunc {
 	}
 }
 
-func paymentsRouter(db *mongo.Database) *mux.Router {
-	router := mux.NewRouter()
-	router.Use(func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			h.ServeHTTP(w, r)
-		})
-	})
-	router.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(db))
-	router.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(db))
+func integer(r *http.Request, key string) (int64, bool, error) {
+	if value := r.URL.Query().Get(key); value != "" {
+		ret, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return 0, false, err
+		}
 
-	return router
+		return ret, true, nil
+	}
+
+	return 0, false, nil
+}
+
+func unsignedIntegerWithDefault(r *http.Request, key string, def uint) (uint, error) {
+	value, ok, err := integer(r, key)
+	if err != nil {
+		return 0, err
+	}
+
+	if !ok || value < 0 {
+		return def, nil
+	}
+
+	return uint(value), nil
 }

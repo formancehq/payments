@@ -5,7 +5,7 @@ import (
 
 	"github.com/bombsimon/logrusr/v3"
 	"github.com/formancehq/payments/internal/app/api"
-	"github.com/formancehq/payments/internal/app/database"
+	"github.com/formancehq/payments/internal/app/storage"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 
@@ -27,34 +27,27 @@ import (
 
 //nolint:gosec // false positive
 const (
-	mongodbURIFlag                       = "mongodb-uri"
-	mongodbDatabaseFlag                  = "mongodb-database"
-	otelTracesFlag                       = "otel-traces"
-	otelTracesExporterFlag               = "otel-traces-exporter"
-	otelTracesExporterJaegerEndpointFlag = "otel-traces-exporter-jaeger-endpoint"
-	otelTracesExporterJaegerUserFlag     = "otel-traces-exporter-jaeger-user"
-	otelTracesExporterJaegerPasswordFlag = "otel-traces-exporter-jaeger-password"
-	otelTracesExporterOTLPModeFlag       = "otel-traces-exporter-otlp-mode"
-	otelTracesExporterOTLPEndpointFlag   = "otel-traces-exporter-otlp-endpoint"
-	otelTracesExporterOTLPInsecureFlag   = "otel-traces-exporter-otlp-insecure"
-	envFlag                              = "env"
-	publisherKafkaEnabledFlag            = "publisher-kafka-enabled"
-	publisherKafkaBrokerFlag             = "publisher-kafka-broker"
-	publisherKafkaSASLEnabled            = "publisher-kafka-sasl-enabled"
-	publisherKafkaSASLUsername           = "publisher-kafka-sasl-username"
-	publisherKafkaSASLPassword           = "publisher-kafka-sasl-password"
-	publisherKafkaSASLMechanism          = "publisher-kafka-sasl-mechanism"
-	publisherKafkaSASLScramSHASize       = "publisher-kafka-sasl-scram-sha-size"
-	publisherKafkaTLSEnabled             = "publisher-kafka-tls-enabled"
-	publisherTopicMappingFlag            = "publisher-topic-mapping"
-	publisherHTTPEnabledFlag             = "publisher-http-enabled"
-	authBasicEnabledFlag                 = "auth-basic-enabled"
-	authBasicCredentialsFlag             = "auth-basic-credentials"
-	authBearerEnabledFlag                = "auth-bearer-enabled"
-	authBearerIntrospectURLFlag          = "auth-bearer-introspect-url"
-	authBearerAudienceFlag               = "auth-bearer-audience"
-	authBearerAudiencesWildcardFlag      = "auth-bearer-audiences-wildcard"
-	authBearerUseScopesFlag              = "auth-bearer-use-scopes"
+	postgresURIFlag                 = "postgres-uri"
+	postgresDatabaseName            = "postgres-database-name"
+	otelTracesFlag                  = "otel-traces"
+	envFlag                         = "env"
+	publisherKafkaEnabledFlag       = "publisher-kafka-enabled"
+	publisherKafkaBrokerFlag        = "publisher-kafka-broker"
+	publisherKafkaSASLEnabled       = "publisher-kafka-sasl-enabled"
+	publisherKafkaSASLUsername      = "publisher-kafka-sasl-username"
+	publisherKafkaSASLPassword      = "publisher-kafka-sasl-password"
+	publisherKafkaSASLMechanism     = "publisher-kafka-sasl-mechanism"
+	publisherKafkaSASLScramSHASize  = "publisher-kafka-sasl-scram-sha-size"
+	publisherKafkaTLSEnabled        = "publisher-kafka-tls-enabled"
+	publisherTopicMappingFlag       = "publisher-topic-mapping"
+	publisherHTTPEnabledFlag        = "publisher-http-enabled"
+	authBasicEnabledFlag            = "auth-basic-enabled"
+	authBasicCredentialsFlag        = "auth-basic-credentials"
+	authBearerEnabledFlag           = "auth-bearer-enabled"
+	authBearerIntrospectURLFlag     = "auth-bearer-introspect-url"
+	authBearerAudienceFlag          = "auth-bearer-audience"
+	authBearerAudiencesWildcardFlag = "auth-bearer-audiences-wildcard"
+	authBearerUseScopesFlag         = "auth-bearer-use-scopes"
 
 	serviceName = "Payments"
 )
@@ -156,17 +149,17 @@ func setLogger() {
 }
 
 func prepareDatabaseOptions() (fx.Option, error) {
-	mongodbURI := viper.GetString(mongodbURIFlag)
-	if mongodbURI == "" {
-		return nil, errors.New("missing mongodb uri")
+	postgresURI := viper.GetString(postgresURIFlag)
+	if postgresURI == "" {
+		return nil, errors.New("missing postgres uri")
 	}
 
-	mongodbDatabase := viper.GetString(mongodbDatabaseFlag)
-	if mongodbDatabase == "" {
-		return nil, errors.New("missing mongodb database name")
+	postgresDBName := viper.GetString(postgresDatabaseName)
+	if postgresDBName == "" {
+		return nil, errors.New("missing postgres DB name")
 	}
 
-	return database.MongoModule(mongodbURI, mongodbDatabase), nil
+	return storage.Module(postgresURI, postgresDBName), nil
 }
 
 func topicsMapping() map[string]string {

@@ -99,6 +99,11 @@ issues:
         - goerr113
         - varnamelen
 
+    - path: internal/app/storage/migrations/
+      linters:
+        - gochecknoinits
+        - varnamelen
+
     - linters:
       - nolintlint
       text: "should be written without leading space"

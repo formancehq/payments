@@ -8,24 +8,23 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/payments/internal/pkg/connectors/bankingcircle"
-	"github.com/formancehq/payments/internal/pkg/connectors/currencycloud"
+	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/sharedlogging"
+
+	"github.com/formancehq/payments/internal/app/connectors/bankingcircle"
+	"github.com/formancehq/payments/internal/app/connectors/currencycloud"
 
 	"github.com/formancehq/go-libs/oauth2/oauth2introspect"
-	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/go-libs/sharedauth"
 	sharedotlp "github.com/formancehq/go-libs/sharedotlp/pkg"
-	"github.com/formancehq/payments/internal/pkg/connectors/dummypay"
-	"github.com/formancehq/payments/internal/pkg/connectors/modulr"
-	"github.com/formancehq/payments/internal/pkg/connectors/stripe"
-	"github.com/formancehq/payments/internal/pkg/connectors/wise"
-	"github.com/formancehq/payments/internal/pkg/integration"
-	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/app/connectors/dummypay"
+	"github.com/formancehq/payments/internal/app/connectors/modulr"
+	"github.com/formancehq/payments/internal/app/connectors/stripe"
+	"github.com/formancehq/payments/internal/app/connectors/wise"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.uber.org/fx"
 )
 
@@ -129,22 +128,28 @@ func sharedAuthMethods() []sharedauth.Method {
 	return methods
 }
 
-func readConnectorsHandler(db *mongo.Database) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		connectorStore := integration.NewMongoDBConnectorStore(db)
-		res, err := connectorStore.FindAll(r.Context())
-		if err != nil {
-			handleError(w, r, err)
+func handleServerError(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+	sharedlogging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
+	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode:    "INTERNAL",
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
-			return
-		}
-
-		err = json.NewEncoder(w).Encode(
-			sharedapi.BaseResponse[[]payments.ConnectorBaseInfo]{
-				Data: &res,
-			})
-		if err != nil {
-			panic(err)
-		}
+func handleValidationError(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusBadRequest)
+	sharedlogging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
+	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode:    "VALIDATION",
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
 	}
 }
