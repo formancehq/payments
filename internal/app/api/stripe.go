@@ -1,16 +1,15 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/pkg/integration"
-
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/formancehq/payments/internal/app/storage/models"
 
 	"github.com/pkg/errors"
 
-	stripeConnector "github.com/formancehq/payments/internal/pkg/connectors/stripe"
+	stripeConnector "github.com/formancehq/payments/internal/app/connectors/stripe"
 	"github.com/stripe/stripe-go/v72"
 	"github.com/stripe/stripe-go/v72/transfer"
 )
@@ -46,14 +45,15 @@ func (req *stripeTransferRequest) validate() error {
 	return nil
 }
 
-func handleStripeTransfers(db *mongo.Database) http.HandlerFunc {
-	connectorStore := integration.NewMongoDBConnectorStore(db)
+type stripeTransfersRepository interface {
+	GetConfig(ctx context.Context, connectorName models.ConnectorProvider, cfg any) error
+}
 
+func handleStripeTransfers(repo stripeTransfersRepository) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var cfg stripeConnector.Config
 
-		err := connectorStore.ReadConfig(r.Context(), stripeConnector.Name, &cfg)
-		if err != nil {
+		if err := repo.GetConfig(r.Context(), stripeConnector.Name, &cfg); err != nil {
 			handleError(w, r, err)
 
 			return
@@ -63,7 +63,7 @@ func handleStripeTransfers(db *mongo.Database) http.HandlerFunc {
 
 		var transferRequest stripeTransferRequest
 
-		err = json.NewDecoder(r.Body).Decode(&transferRequest)
+		err := json.NewDecoder(r.Body).Decode(&transferRequest)
 		if err != nil {
 			handleError(w, r, err)
 

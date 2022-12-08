@@ -6,8 +6,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/pkg/integration"
-	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/app/integration"
+	"github.com/formancehq/payments/internal/app/payments"
 
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/go-libs/sharedlogging"

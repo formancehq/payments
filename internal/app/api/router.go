@@ -3,17 +3,18 @@ package api
 import (
 	"net/http"
 
-	"github.com/formancehq/payments/internal/pkg/integration"
-	"github.com/formancehq/payments/internal/pkg/payments"
+	"github.com/formancehq/payments/internal/app/storage"
+
+	"github.com/formancehq/payments/internal/app/integration"
+	"github.com/formancehq/payments/internal/app/payments"
 
 	"github.com/formancehq/go-libs/sharedauth"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
-	"go.mongodb.org/mongo-driver/mongo"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 )
 
-func httpRouter(db *mongo.Database, client *mongo.Client, connectorHandlers []connectorHandler) (*mux.Router, error) {
+func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*mux.Router, error) {
 	rootMux := mux.NewRouter()
 
 	if viper.GetBool(otelTracesFlag) {
@@ -24,7 +25,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, connectorHandlers []co
 	rootMux.Use(httpCorsHandler())
 	rootMux.Use(httpServeFunc)
 
-	rootMux.Path("/_health").Handler(healthHandler(client))
+	rootMux.Path("/_health").Handler(healthHandler(store))
 	rootMux.Path("/_live").Handler(liveHandler())
 
 	authGroup := rootMux.Name("authenticated").Subrouter()
@@ -33,7 +34,7 @@ func httpRouter(db *mongo.Database, client *mongo.Client, connectorHandlers []co
 		authGroup.Use(sharedauth.Middleware(methods...))
 	}
 
-	authGroup.HandleFunc("/connectors", readConnectorsHandler(db))
+	authGroup.HandleFunc("/connectors", readConnectorsHandler(store))
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
 	connectorGroup.Path("/configs").Handler(connectorConfigsHandler())
@@ -44,12 +45,13 @@ func httpRouter(db *mongo.Database, client *mongo.Client, connectorHandlers []co
 		)
 	}
 
+	authGroup.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(store))
+	authGroup.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(store))
+
 	// TODO: It's not ideal to define it explicitly here
 	// Refactor it when refactoring the HTTP lib.
 	connectorGroup.Path("/stripe/transfers").Methods(http.MethodPost).
-		Handler(handleStripeTransfers(db))
-
-	authGroup.PathPrefix("/").Handler(paymentsRouter(db))
+		Handler(handleStripeTransfers(store))
 
 	return rootMux, nil
 }
