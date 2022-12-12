@@ -18,7 +18,9 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(uri, dbName string) fx.Option {
+const dbName = "paymentsDB"
+
+func Module(uri string) fx.Option {
 	return fx.Options(
 		fx.Provide(func() (*pgx.ConnConfig, error) {
 			config, err := pgx.ParseConfig(uri)

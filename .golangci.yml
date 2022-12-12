@@ -99,7 +99,7 @@ issues:
         - goerr113
         - varnamelen
 
-    - path: internal/app/storage/migrations/
+    - path: internal/app/migrations/
       linters:
         - gochecknoinits
         - varnamelen
