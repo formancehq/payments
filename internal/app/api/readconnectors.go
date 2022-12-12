@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/app/storage/models"
+	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/payments/internal/app/payments"

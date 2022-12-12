@@ -5,7 +5,7 @@ import (
 	"log"
 
 	// allow blank import to initiate migrations.
-	_ "github.com/formancehq/payments/internal/app/storage/migrations"
+	_ "github.com/formancehq/payments/internal/app/migrations"
 	_ "github.com/lib/pq"
 
 	"github.com/pressly/goose/v3"

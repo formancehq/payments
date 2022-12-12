@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/app/storage/models"
+	"github.com/formancehq/payments/internal/app/models"
 )
 
 func (s *Storage) ListPayments(ctx context.Context, sort Sorter, pagination Paginator) ([]*models.Payment, error) {
