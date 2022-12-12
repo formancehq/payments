@@ -202,7 +202,7 @@ func integer(r *http.Request, key string) (int64, bool, error) {
 	return 0, false, nil
 }
 
-func unsignedIntegerWithDefault(r *http.Request, key string, def uint) (uint, error) {
+func unsignedIntegerWithDefault(r *http.Request, key string, def uint64) (uint64, error) {
 	value, ok, err := integer(r, key)
 	if err != nil {
 		return 0, err
@@ -212,5 +212,5 @@ func unsignedIntegerWithDefault(r *http.Request, key string, def uint) (uint, er
 		return def, nil
 	}
 
-	return uint(value), nil
+	return uint64(value), nil
 }
