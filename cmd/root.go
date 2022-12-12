@@ -46,7 +46,6 @@ func rootCommand() *cobra.Command {
 
 	server.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 	server.Flags().String(postgresURIFlag, "postgres://localhost/payments", "PostgreSQL DB address")
-	server.Flags().String(postgresDatabaseName, "payments", "PostgreSQL database name")
 	server.Flags().String(envFlag, "local", "Environment")
 	server.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	server.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/spf13/viper"
+
 	// allow blank import to initiate migrations.
 	_ "github.com/formancehq/payments/internal/app/migrations"
 	_ "github.com/lib/pq"
@@ -37,7 +39,11 @@ Commands:
 */
 
 func runMigrate(cmd *cobra.Command, args []string) error {
-	postgresURI := cmd.Flag(postgresURIFlag).Value.String()
+	postgresURI := viper.GetString(postgresURIFlag)
+	if postgresURI == "" {
+		postgresURI = cmd.Flag(postgresURIFlag).Value.String()
+	}
+
 	if postgresURI == "" {
 		return fmt.Errorf("postgres uri is not set")
 	}

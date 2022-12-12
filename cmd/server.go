@@ -28,7 +28,6 @@ import (
 //nolint:gosec // false positive
 const (
 	postgresURIFlag                 = "postgres-uri"
-	postgresDatabaseName            = "postgres-database-name"
 	otelTracesFlag                  = "otel-traces"
 	envFlag                         = "env"
 	publisherKafkaEnabledFlag       = "publisher-kafka-enabled"
@@ -154,12 +153,7 @@ func prepareDatabaseOptions() (fx.Option, error) {
 		return nil, errors.New("missing postgres uri")
 	}
 
-	postgresDBName := viper.GetString(postgresDatabaseName)
-	if postgresDBName == "" {
-		return nil, errors.New("missing postgres DB name")
-	}
-
-	return storage.Module(postgresURI, postgresDBName), nil
+	return storage.Module(postgresURI), nil
 }
 
 func topicsMapping() map[string]string {
