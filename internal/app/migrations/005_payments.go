@@ -9,6 +9,9 @@ import (
 func init() {
 	up := func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
+				CREATE TYPE payment_type AS ENUM ('PAY-IN', 'PAYOUT', 'TRANSFER', 'OTHER');
+				CREATE TYPE payment_status AS ENUM ('SUCCEEDED', 'CANCELLED', 'FAILED', 'PENDING', 'OTHER');;
+
 				CREATE TABLE payments.adjustment (
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
 					payment_id uuid  NOT NULL,
@@ -36,9 +39,6 @@ func init() {
 					value text  NOT NULL,
 					CONSTRAINT metadata_pk PRIMARY KEY (payment_id,key)
 				);
-
-				CREATE TYPE payment_type AS ENUM ('PAY-IN', 'PAYOUT', 'TRANSFER', 'OTHER');
-				CREATE TYPE payment_status AS ENUM ('SUCCEEDED', 'CANCELLED', 'FAILED', 'PENDING', 'OTHER');;
 
 				CREATE TABLE payments.payment (
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
