@@ -1,6 +1,6 @@
 package payments
 
-import "github.com/formancehq/payments/internal/app/storage/models"
+import "github.com/formancehq/payments/internal/app/models"
 
 type ConnectorBaseInfo struct {
 	Provider models.ConnectorProvider `json:"provider" bson:"provider"`

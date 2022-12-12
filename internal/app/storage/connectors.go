@@ -3,7 +3,7 @@ package storage
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/app/storage/models"
+	"github.com/formancehq/payments/internal/app/models"
 )
 
 func (s *Storage) ListConnectors(ctx context.Context) ([]*models.Connector, error) {

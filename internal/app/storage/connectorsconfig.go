@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/app/storage/models"
+	"github.com/formancehq/payments/internal/app/models"
 )
 
 func (s *Storage) GetConfig(ctx context.Context, connectorProvider models.ConnectorProvider, destination any) error {

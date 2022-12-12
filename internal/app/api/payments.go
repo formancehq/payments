@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/storage"
-	"github.com/formancehq/payments/internal/app/storage/models"
 
 	"github.com/formancehq/payments/internal/app/payments"
 
