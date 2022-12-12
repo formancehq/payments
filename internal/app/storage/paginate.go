@@ -3,11 +3,11 @@ package storage
 import "github.com/uptrace/bun"
 
 type Paginator struct {
-	offset uint
-	limit  uint
+	offset uint64
+	limit  uint64
 }
 
-func Paginate(offset, limit uint) Paginator {
+func Paginate(offset, limit uint64) Paginator {
 	return Paginator{offset, limit}
 }
 
