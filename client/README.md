@@ -22,7 +22,7 @@ go get golang.org/x/net/context
 Put the package under your project folder and add the following in import:
 
 ```golang
-import client "github.com/formancehq/payments/client"
+import client "github.com/numary/payments/client"
 ```
 
 To use a proxy, set the environment variable `HTTP_PROXY`:
@@ -78,25 +78,38 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**GetConnectorTask**](docs/DefaultApi.md#getconnectortask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
-*DefaultApi* | [**InstallConnector**](docs/DefaultApi.md#installconnector) | **Post** /connectors/{connector} | Install connector
-*DefaultApi* | [**ListConnectorTasks**](docs/DefaultApi.md#listconnectortasks) | **Get** /connectors/{connector}/tasks | List connector tasks
-*DefaultApi* | [**ReadConnectorConfig**](docs/DefaultApi.md#readconnectorconfig) | **Get** /connectors/{connector}/config | Read connector config
-*DefaultApi* | [**ResetConnector**](docs/DefaultApi.md#resetconnector) | **Post** /connectors/{connector}/reset | Reset connector
-*DefaultApi* | [**UninstallConnector**](docs/DefaultApi.md#uninstallconnector) | **Delete** /connectors/{connector} | Uninstall connector
+*PaymentsApi* | [**ConnectorsStripeTransfer**](docs/PaymentsApi.md#connectorsstripetransfer) | **Post** /connectors/stripe/transfer | Transfer funds between Stripe accounts
+*PaymentsApi* | [**GetAllConnectors**](docs/PaymentsApi.md#getallconnectors) | **Get** /connectors | Get all installed connectors
+*PaymentsApi* | [**GetAllConnectorsConfigs**](docs/PaymentsApi.md#getallconnectorsconfigs) | **Get** /connectors/configs | Get all available connectors configs
+*PaymentsApi* | [**GetConnectorTask**](docs/PaymentsApi.md#getconnectortask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
 *PaymentsApi* | [**GetPayment**](docs/PaymentsApi.md#getpayment) | **Get** /payments/{paymentId} | Returns a payment.
+*PaymentsApi* | [**InstallConnector**](docs/PaymentsApi.md#installconnector) | **Post** /connectors/{connector} | Install connector
+*PaymentsApi* | [**ListConnectorTasks**](docs/PaymentsApi.md#listconnectortasks) | **Get** /connectors/{connector}/tasks | List connector tasks
 *PaymentsApi* | [**ListPayments**](docs/PaymentsApi.md#listpayments) | **Get** /payments | Returns a list of payments.
+*PaymentsApi* | [**ReadConnectorConfig**](docs/PaymentsApi.md#readconnectorconfig) | **Get** /connectors/{connector}/config | Read connector config
+*PaymentsApi* | [**ResetConnector**](docs/PaymentsApi.md#resetconnector) | **Post** /connectors/{connector}/reset | Reset connector
+*PaymentsApi* | [**UninstallConnector**](docs/PaymentsApi.md#uninstallconnector) | **Delete** /connectors/{connector} | Uninstall connector
 
 
 ## Documentation For Models
 
- - [ConnectorConfig](docs/ConnectorConfig.md)
- - [ConnectorTask](docs/ConnectorTask.md)
+ - [BankingCircleConfig](docs/BankingCircleConfig.md)
+ - [ConnectorBaseInfo](docs/ConnectorBaseInfo.md)
+ - [ConnectorTaskBase](docs/ConnectorTaskBase.md)
+ - [CurrencyCloudConfig](docs/CurrencyCloudConfig.md)
+ - [DummyPayConfig](docs/DummyPayConfig.md)
  - [GetPaymentResponse](docs/GetPaymentResponse.md)
+ - [ListConnectorsConfigsResponse](docs/ListConnectorsConfigsResponse.md)
+ - [ListConnectorsConfigsResponseConnector](docs/ListConnectorsConfigsResponseConnector.md)
+ - [ListConnectorsConfigsResponseConnectorKey](docs/ListConnectorsConfigsResponseConnectorKey.md)
+ - [ListConnectorsResponse](docs/ListConnectorsResponse.md)
  - [ListPaymentsResponse](docs/ListPaymentsResponse.md)
+ - [ModulrConfig](docs/ModulrConfig.md)
  - [Payment](docs/Payment.md)
  - [StripeConfig](docs/StripeConfig.md)
  - [StripeTask](docs/StripeTask.md)
+ - [StripeTransferRequest](docs/StripeTransferRequest.md)
+ - [WiseConfig](docs/WiseConfig.md)
 
 
 ## Documentation For Authorization

@@ -1,4 +1,4 @@
-module github.com/formancehq/payments/client
+module github.com/numary/payments/client
 
 go 1.13
 

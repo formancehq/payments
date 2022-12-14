@@ -199,7 +199,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ConnectorTask'
+                  oneOf:
+                    - $ref: '#/components/schemas/TaskDescriptorStripe'
+                    - $ref: '#/components/schemas/TaskDescriptorWise'
+                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                    - $ref: '#/components/schemas/TaskDescriptorModulr'
+                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
   '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
@@ -229,7 +235,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorTask'
+                oneOf:
+                    - $ref: '#/components/schemas/TaskDescriptorStripe'
+                    - $ref: '#/components/schemas/TaskDescriptorWise'
+                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                    - $ref: '#/components/schemas/TaskDescriptorModulr'
+                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
   /connectors/stripe/transfer:
     post:
       summary: Transfer funds between Stripe accounts
@@ -256,9 +268,7 @@ components:
       - $ref: '#/components/schemas/ModulrConfig'
       - $ref: '#/components/schemas/CurrencyCloudConfig'
       - $ref: '#/components/schemas/BankingCircleConfig'
-    ConnectorTask:
-      oneOf:
-      - $ref: '#/components/schemas/StripeTask'
+
     StripeConfig:
       type: object
       required:
@@ -502,3 +512,113 @@ components:
             It can be useful for storing additional information about the transfer in a structured format.
           example:
             order_id: '6735'
+
+    ConnectorTaskBase:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: {}
+
+    TaskDescriptorStripe:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                main:
+                  type: boolean
+                account:
+                  type: string
+    TaskDescriptorWise:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                profileID:
+                  type: integer
+    TaskDescriptorModulr:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                accountID:
+                  type: string
+    TaskDescriptorDummyPay:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                fileName:
+                  type: string
+    TaskDescriptorCurrencyCloud:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+    TaskDescriptorBankingCircle:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string

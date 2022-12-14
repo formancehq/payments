@@ -12,20 +12,19 @@ package client
 
 import (
 	"encoding/json"
-	"time"
 )
 
 // Payment struct for Payment
 type Payment struct {
-	Provider  string      `json:"provider"`
-	Reference *string     `json:"reference,omitempty"`
-	Scheme    string      `json:"scheme"`
-	Status    string      `json:"status"`
-	Type      string      `json:"type"`
-	Id        string      `json:"id"`
-	Amount    int32       `json:"amount"`
-	Asset     string      `json:"asset"`
-	Date      time.Time   `json:"date"`
+	Provider  interface{} `json:"provider"`
+	Reference interface{} `json:"reference,omitempty"`
+	Scheme    interface{} `json:"scheme"`
+	Status    interface{} `json:"status"`
+	Type      interface{} `json:"type"`
+	Id        interface{} `json:"id"`
+	Amount    interface{} `json:"amount"`
+	Asset     interface{} `json:"asset"`
+	Date      interface{} `json:"date"`
 	Raw       interface{} `json:"raw,omitempty"`
 }
 
@@ -33,7 +32,7 @@ type Payment struct {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewPayment(provider string, scheme string, status string, type_ string, id string, amount int32, asset string, date time.Time) *Payment {
+func NewPayment(provider interface{}, scheme interface{}, status interface{}, type_ interface{}, id interface{}, amount interface{}, asset interface{}, date interface{}) *Payment {
 	this := Payment{}
 	this.Provider = provider
 	this.Scheme = scheme
@@ -55,9 +54,10 @@ func NewPaymentWithDefaults() *Payment {
 }
 
 // GetProvider returns the Provider field value
-func (o *Payment) GetProvider() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetProvider() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -66,54 +66,57 @@ func (o *Payment) GetProvider() string {
 
 // GetProviderOk returns a tuple with the Provider field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetProviderOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetProviderOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Provider) {
 		return nil, false
 	}
 	return &o.Provider, true
 }
 
 // SetProvider sets field value
-func (o *Payment) SetProvider(v string) {
+func (o *Payment) SetProvider(v interface{}) {
 	o.Provider = v
 }
 
-// GetReference returns the Reference field value if set, zero value otherwise.
-func (o *Payment) GetReference() string {
-	if o == nil || o.Reference == nil {
-		var ret string
+// GetReference returns the Reference field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *Payment) GetReference() interface{} {
+	if o == nil {
+		var ret interface{}
 		return ret
 	}
-	return *o.Reference
+	return o.Reference
 }
 
 // GetReferenceOk returns a tuple with the Reference field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *Payment) GetReferenceOk() (*string, bool) {
-	if o == nil || o.Reference == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetReferenceOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Reference) {
 		return nil, false
 	}
-	return o.Reference, true
+	return &o.Reference, true
 }
 
 // HasReference returns a boolean if a field has been set.
 func (o *Payment) HasReference() bool {
-	if o != nil && o.Reference != nil {
+	if o != nil && isNil(o.Reference) {
 		return true
 	}
 
 	return false
 }
 
-// SetReference gets a reference to the given string and assigns it to the Reference field.
-func (o *Payment) SetReference(v string) {
-	o.Reference = &v
+// SetReference gets a reference to the given interface{} and assigns it to the Reference field.
+func (o *Payment) SetReference(v interface{}) {
+	o.Reference = v
 }
 
 // GetScheme returns the Scheme field value
-func (o *Payment) GetScheme() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetScheme() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -122,22 +125,24 @@ func (o *Payment) GetScheme() string {
 
 // GetSchemeOk returns a tuple with the Scheme field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetSchemeOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetSchemeOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Scheme) {
 		return nil, false
 	}
 	return &o.Scheme, true
 }
 
 // SetScheme sets field value
-func (o *Payment) SetScheme(v string) {
+func (o *Payment) SetScheme(v interface{}) {
 	o.Scheme = v
 }
 
 // GetStatus returns the Status field value
-func (o *Payment) GetStatus() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetStatus() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -146,22 +151,24 @@ func (o *Payment) GetStatus() string {
 
 // GetStatusOk returns a tuple with the Status field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetStatusOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetStatusOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Status) {
 		return nil, false
 	}
 	return &o.Status, true
 }
 
 // SetStatus sets field value
-func (o *Payment) SetStatus(v string) {
+func (o *Payment) SetStatus(v interface{}) {
 	o.Status = v
 }
 
 // GetType returns the Type field value
-func (o *Payment) GetType() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetType() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -170,22 +177,24 @@ func (o *Payment) GetType() string {
 
 // GetTypeOk returns a tuple with the Type field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetTypeOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetTypeOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Type) {
 		return nil, false
 	}
 	return &o.Type, true
 }
 
 // SetType sets field value
-func (o *Payment) SetType(v string) {
+func (o *Payment) SetType(v interface{}) {
 	o.Type = v
 }
 
 // GetId returns the Id field value
-func (o *Payment) GetId() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetId() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -194,22 +203,24 @@ func (o *Payment) GetId() string {
 
 // GetIdOk returns a tuple with the Id field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetIdOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetIdOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Id) {
 		return nil, false
 	}
 	return &o.Id, true
 }
 
 // SetId sets field value
-func (o *Payment) SetId(v string) {
+func (o *Payment) SetId(v interface{}) {
 	o.Id = v
 }
 
 // GetAmount returns the Amount field value
-func (o *Payment) GetAmount() int32 {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetAmount() interface{} {
 	if o == nil {
-		var ret int32
+		var ret interface{}
 		return ret
 	}
 
@@ -218,22 +229,24 @@ func (o *Payment) GetAmount() int32 {
 
 // GetAmountOk returns a tuple with the Amount field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetAmountOk() (*int32, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetAmountOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Amount) {
 		return nil, false
 	}
 	return &o.Amount, true
 }
 
 // SetAmount sets field value
-func (o *Payment) SetAmount(v int32) {
+func (o *Payment) SetAmount(v interface{}) {
 	o.Amount = v
 }
 
 // GetAsset returns the Asset field value
-func (o *Payment) GetAsset() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetAsset() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -242,22 +255,24 @@ func (o *Payment) GetAsset() string {
 
 // GetAssetOk returns a tuple with the Asset field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetAssetOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetAssetOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Asset) {
 		return nil, false
 	}
 	return &o.Asset, true
 }
 
 // SetAsset sets field value
-func (o *Payment) SetAsset(v string) {
+func (o *Payment) SetAsset(v interface{}) {
 	o.Asset = v
 }
 
 // GetDate returns the Date field value
-func (o *Payment) GetDate() time.Time {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *Payment) GetDate() interface{} {
 	if o == nil {
-		var ret time.Time
+		var ret interface{}
 		return ret
 	}
 
@@ -266,15 +281,16 @@ func (o *Payment) GetDate() time.Time {
 
 // GetDateOk returns a tuple with the Date field value
 // and a boolean to check if the value has been set.
-func (o *Payment) GetDateOk() (*time.Time, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *Payment) GetDateOk() (*interface{}, bool) {
+	if o == nil || isNil(o.Date) {
 		return nil, false
 	}
 	return &o.Date, true
 }
 
 // SetDate sets field value
-func (o *Payment) SetDate(v time.Time) {
+func (o *Payment) SetDate(v interface{}) {
 	o.Date = v
 }
 
@@ -291,7 +307,7 @@ func (o *Payment) GetRaw() interface{} {
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
 func (o *Payment) GetRawOk() (*interface{}, bool) {
-	if o == nil || o.Raw == nil {
+	if o == nil || isNil(o.Raw) {
 		return nil, false
 	}
 	return &o.Raw, true
@@ -299,7 +315,7 @@ func (o *Payment) GetRawOk() (*interface{}, bool) {
 
 // HasRaw returns a boolean if a field has been set.
 func (o *Payment) HasRaw() bool {
-	if o != nil && o.Raw != nil {
+	if o != nil && isNil(o.Raw) {
 		return true
 	}
 
@@ -313,31 +329,31 @@ func (o *Payment) SetRaw(v interface{}) {
 
 func (o Payment) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
-	if true {
+	if o.Provider != nil {
 		toSerialize["provider"] = o.Provider
 	}
 	if o.Reference != nil {
 		toSerialize["reference"] = o.Reference
 	}
-	if true {
+	if o.Scheme != nil {
 		toSerialize["scheme"] = o.Scheme
 	}
-	if true {
+	if o.Status != nil {
 		toSerialize["status"] = o.Status
 	}
-	if true {
+	if o.Type != nil {
 		toSerialize["type"] = o.Type
 	}
-	if true {
+	if o.Id != nil {
 		toSerialize["id"] = o.Id
 	}
-	if true {
+	if o.Amount != nil {
 		toSerialize["amount"] = o.Amount
 	}
-	if true {
+	if o.Asset != nil {
 		toSerialize["asset"] = o.Asset
 	}
-	if true {
+	if o.Date != nil {
 		toSerialize["date"] = o.Date
 	}
 	if o.Raw != nil {
