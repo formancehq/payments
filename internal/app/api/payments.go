@@ -92,14 +92,14 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 			}
 		}
 
-		skip, err := unsignedIntegerWithDefault(r, "skip", 0)
+		skip, err := integerWithDefault(r, "skip", 0)
 		if err != nil {
 			handleValidationError(w, r, err)
 
 			return
 		}
 
-		limit, err := unsignedIntegerWithDefault(r, "limit", maxPerPage)
+		limit, err := integerWithDefault(r, "limit", maxPerPage)
 		if err != nil {
 			handleValidationError(w, r, err)
 
@@ -248,20 +248,20 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 	}
 }
 
-func integer(r *http.Request, key string) (int64, bool, error) {
+func integer(r *http.Request, key string) (int, bool, error) {
 	if value := r.URL.Query().Get(key); value != "" {
-		ret, err := strconv.ParseInt(value, 10, 64)
+		ret, err := strconv.ParseInt(value, 10, 32)
 		if err != nil {
 			return 0, false, err
 		}
 
-		return ret, true, nil
+		return int(ret), true, nil
 	}
 
 	return 0, false, nil
 }
 
-func unsignedIntegerWithDefault(r *http.Request, key string, def uint64) (uint64, error) {
+func integerWithDefault(r *http.Request, key string, def int) (int, error) {
 	value, ok, err := integer(r, key)
 	if err != nil {
 		return 0, err
@@ -271,5 +271,5 @@ func unsignedIntegerWithDefault(r *http.Request, key string, def uint64) (uint64
 		return def, nil
 	}
 
-	return uint64(value), nil
+	return value, nil
 }
