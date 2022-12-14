@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -11,9 +12,9 @@ import (
 type Payment struct {
 	bun.BaseModel `bun:"payments.payment"`
 
-	ID          uuid.UUID
-	ConnectorID uuid.UUID
-	CreatedAt   time.Time
+	ID          uuid.UUID `bun:",pk,nullzero"`
+	ConnectorID uuid.UUID `bun:",nullzero"`
+	CreatedAt   time.Time `bun:",nullzero"`
 	Reference   string
 	Amount      int64
 	Type        PaymentType
@@ -21,9 +22,9 @@ type Payment struct {
 	Scheme      PaymentScheme
 	Asset       PaymentAsset
 
-	RawData any
+	RawData json.RawMessage
 
-	AccountID uuid.UUID
+	AccountID uuid.UUID `bun:",nullzero"`
 
 	Account     *Account      `bun:"rel:has-one,join:account_id=id"`
 	Adjustments []*Adjustment `bun:"rel:has-many,join:id=payment_id"`
@@ -51,6 +52,31 @@ const (
 	PaymentStatusCancelled PaymentStatus = "CANCELLED"
 	PaymentStatusFailed    PaymentStatus = "FAILED"
 	PaymentStatusOther     PaymentStatus = "OTHER"
+)
+
+const (
+	PaymentSchemeUnknown PaymentScheme = "unknown"
+	PaymentSchemeOther   PaymentScheme = "other"
+
+	PaymentSchemeCardVisa       PaymentScheme = "visa"
+	PaymentSchemeCardMasterCard PaymentScheme = "mastercard"
+	PaymentSchemeCardAmex       PaymentScheme = "amex"
+	PaymentSchemeCardDiners     PaymentScheme = "diners"
+	PaymentSchemeCardDiscover   PaymentScheme = "discover"
+	PaymentSchemeCardJCB        PaymentScheme = "jcb"
+	PaymentSchemeCardUnionPay   PaymentScheme = "unionpay"
+
+	PaymentSchemeSepaDebit  PaymentScheme = "sepa debit"
+	PaymentSchemeSepaCredit PaymentScheme = "sepa credit"
+	PaymentSchemeSepa       PaymentScheme = "sepa"
+
+	PaymentSchemeApplePay  PaymentScheme = "apple pay"
+	PaymentSchemeGooglePay PaymentScheme = "google pay"
+
+	PaymentSchemeA2A      PaymentScheme = "a2a"
+	PaymentSchemeACHDebit PaymentScheme = "ach debit"
+	PaymentSchemeACH      PaymentScheme = "ach"
+	PaymentSchemeRTP      PaymentScheme = "rtp"
 )
 
 func (t PaymentType) String() string {

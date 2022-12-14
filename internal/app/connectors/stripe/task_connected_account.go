@@ -3,11 +3,9 @@ package stripe
 import (
 	"context"
 
+	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/ingestion"
 	"github.com/formancehq/payments/internal/app/task"
-	"github.com/formancehq/payments/internal/pkg/writeonly"
-
-	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/stripe/stripe-go/v72"
 )
 
@@ -45,9 +43,9 @@ func ingestBatch(ctx context.Context, logger sharedlogging.Logger, ingester inge
 }
 
 func ConnectedAccountTask(config Config, account string) func(ctx context.Context, logger sharedlogging.Logger,
-	ingester ingestion.Ingester, resolver task.StateResolver, storage writeonly.Storage) error {
+	ingester ingestion.Ingester, resolver task.StateResolver) error {
 	return func(ctx context.Context, logger sharedlogging.Logger, ingester ingestion.Ingester,
-		resolver task.StateResolver, storage writeonly.Storage,
+		resolver task.StateResolver,
 	) error {
 		logger.Infof("Create new trigger")
 
@@ -56,7 +54,7 @@ func ConnectedAccountTask(config Config, account string) func(ctx context.Contex
 			IngesterFn(func(ctx context.Context, bts []*stripe.BalanceTransaction, commitState TimelineState, tail bool) error {
 				return ingestBatch(ctx, logger, ingester, bts, commitState, tail)
 			}),
-			NewTimeline(NewDefaultClient(config.APIKey, storage).
+			NewTimeline(NewDefaultClient(config.APIKey).
 				ForAccount(account), config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 		)
 

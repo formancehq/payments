@@ -2,12 +2,14 @@ package modulr
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/connectors/modulr/client"
 	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -30,18 +32,20 @@ func taskFetchTransactions(logger sharedlogging.Logger, client *client.Client, a
 		for _, transaction := range transactions {
 			logger.Info(transaction)
 
+			rawData, err := json.Marshal(transaction)
+			if err != nil {
+				return fmt.Errorf("failed to marshal transaction: %w", err)
+			}
+
 			batchElement := ingestion.PaymentBatchElement{
-				Referenced: payments.Referenced{
+				Payment: &models.Payment{
 					Reference: transaction.ID,
 					Type:      matchTransactionType(transaction.Type),
-				},
-				Payment: &payments.Data{
-					// API only retrieves successful payments
-					Status:        payments.StatusSucceeded,
-					Scheme:        payments.SchemeOther,
-					InitialAmount: int64(transaction.Amount * 100),
-					Asset:         fmt.Sprintf("%s/2", transaction.Account.Currency),
-					Raw:           transaction,
+					Status:    models.PaymentStatusSucceeded,
+					Scheme:    models.PaymentSchemeOther,
+					Amount:    int64(transaction.Amount * 100),
+					Asset:     models.PaymentAsset(fmt.Sprintf("%s/2", transaction.Account.Currency)),
+					RawData:   rawData,
 				},
 			}
 
@@ -52,21 +56,21 @@ func taskFetchTransactions(logger sharedlogging.Logger, client *client.Client, a
 	}
 }
 
-func matchTransactionType(transactionType string) string {
+func matchTransactionType(transactionType string) models.PaymentType {
 	if transactionType == "PI_REV" ||
 		transactionType == "PO_REV" ||
 		transactionType == "ADHOC" ||
 		transactionType == "INT_INTERC" {
-		return payments.TypeOther
+		return models.PaymentTypeOther
 	}
 
 	if strings.HasPrefix(transactionType, "PI_") {
-		return payments.TypePayIn
+		return models.PaymentTypePayIn
 	}
 
 	if strings.HasPrefix(transactionType, "PO_") {
-		return payments.TypePayout
+		return models.PaymentTypePayOut
 	}
 
-	return payments.TypeOther
+	return models.PaymentTypeOther
 }

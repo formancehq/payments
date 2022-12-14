@@ -3,13 +3,15 @@ package stripe
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
 )
 
-const Name = "stripe"
+const Name = models.ConnectorProviderStripe
 
 type Connector struct {
 	logger sharedlogging.Logger

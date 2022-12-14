@@ -2,9 +2,12 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/payments/internal/app/payments"
 
@@ -14,16 +17,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore[TaskDescriptor],
-	provider string, descriptor TaskDescriptor, expectedStatus payments.TaskStatus, errString string,
+func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
+	provider models.ConnectorProvider, descriptor TaskDescriptor, expectedStatus models.TaskStatus, errString string,
 ) func() bool {
 	return func() bool {
-		status, err, ok := store.Result(provider, descriptor)
+		taskDescriptor, err := json.Marshal(descriptor)
+		if err != nil {
+			return false
+		}
+
+		status, resultErr, ok := store.Result(provider, taskDescriptor)
 		if !ok {
 			return false
 		}
 
-		if err != errString {
+		if resultErr != errString {
 			return false
 		}
 
@@ -31,28 +39,28 @@ func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *InM
 	}
 }
 
-func TaskTerminated[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore[TaskDescriptor],
-	provider string, descriptor TaskDescriptor,
+func TaskTerminated[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
+	provider models.ConnectorProvider, descriptor TaskDescriptor,
 ) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusTerminated, "")
+	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusTerminated, "")
 }
 
-func TaskFailed[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore[TaskDescriptor],
-	provider string, descriptor TaskDescriptor, errStr string,
+func TaskFailed[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
+	provider models.ConnectorProvider, descriptor TaskDescriptor, errStr string,
 ) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusFailed, errStr)
+	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusFailed, errStr)
 }
 
-func TaskPending[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore[TaskDescriptor],
-	provider string, descriptor TaskDescriptor,
+func TaskPending[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
+	provider models.ConnectorProvider, descriptor TaskDescriptor,
 ) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusPending, "")
+	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusPending, "")
 }
 
-func TaskActive[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore[TaskDescriptor],
-	provider string, descriptor TaskDescriptor,
+func TaskActive[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
+	provider models.ConnectorProvider, descriptor TaskDescriptor,
 ) func() bool {
-	return TaskTerminatedWithStatus(store, provider, descriptor, payments.TaskStatusActive, "")
+	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusActive, "")
 }
 
 func TestTaskScheduler(t *testing.T) {
@@ -68,8 +76,8 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Nominal", func(t *testing.T) {
 		t.Parallel()
 
-		store := NewInMemoryStore[string]()
-		provider := uuid.New()
+		store := NewInMemoryStore()
+		provider := models.ConnectorProvider(uuid.New())
 		done := make(chan struct{})
 
 		scheduler := NewDefaultScheduler[string](provider, logger, store,
@@ -96,8 +104,8 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Duplicate task", func(t *testing.T) {
 		t.Parallel()
 
-		store := NewInMemoryStore[string]()
-		provider := uuid.New()
+		store := NewInMemoryStore()
+		provider := models.ConnectorProvider(uuid.New())
 		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
 			ResolverFn[string](func(descriptor string) Task {
 				return func(ctx context.Context) error {
@@ -119,8 +127,8 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		t.Parallel()
 
-		provider := uuid.New()
-		store := NewInMemoryStore[string]()
+		provider := models.ConnectorProvider(uuid.New())
+		store := NewInMemoryStore()
 		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
 			ResolverFn[string](func(descriptor string) Task {
 				return func() error {
@@ -138,8 +146,8 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Pending", func(t *testing.T) {
 		t.Parallel()
 
-		provider := uuid.New()
-		store := NewInMemoryStore[string]()
+		provider := models.ConnectorProvider(uuid.New())
+		store := NewInMemoryStore()
 		descriptor1 := uuid.New()
 		descriptor2 := uuid.New()
 
@@ -185,8 +193,8 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Stop scheduler", func(t *testing.T) {
 		t.Parallel()
 
-		provider := uuid.New()
-		store := NewInMemoryStore[string]()
+		provider := models.ConnectorProvider(uuid.New())
+		store := NewInMemoryStore()
 		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
 			ResolverFn[string](func(descriptor string) Task {
 				switch descriptor {

@@ -3,6 +3,7 @@ package modulr
 import (
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/integration"
+	"github.com/formancehq/payments/internal/app/models"
 )
 
 type Loader struct{}
@@ -13,7 +14,7 @@ func (l *Loader) AllowTasks() int {
 	return allowedTasks
 }
 
-func (l *Loader) Name() string {
+func (l *Loader) Name() models.ConnectorProvider {
 	return Name
 }
 

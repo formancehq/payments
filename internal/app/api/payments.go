@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/storage"
-
-	"github.com/formancehq/payments/internal/app/payments"
 
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/gorilla/mux"
@@ -23,6 +24,41 @@ const (
 
 type listPaymentsRepository interface {
 	ListPayments(ctx context.Context, sort storage.Sorter, pagination storage.Paginator) ([]*models.Payment, error)
+}
+
+type paymentResponse struct {
+	ID            string                   `json:"id"`
+	Reference     string                   `json:"reference"`
+	AccountID     string                   `json:"accountID"`
+	Type          string                   `json:"type"`
+	Provider      models.ConnectorProvider `json:"provider"`
+	Status        models.PaymentStatus     `json:"status"`
+	InitialAmount int64                    `json:"initialAmount"`
+	Scheme        models.PaymentScheme     `json:"scheme"`
+	Asset         string                   `json:"asset"`
+	CreatedAt     time.Time                `json:"createdAt"`
+	Raw           interface{}              `json:"raw"`
+	Adjustments   []paymentAdjustment      `json:"adjustments"`
+	Metadata      []paymentMetadata        `json:"metadata"`
+}
+
+type paymentMetadata struct {
+	Key       string                     `json:"key"`
+	Value     string                     `json:"value:"`
+	Changelog []paymentMetadataChangelog `json:"changelog"`
+}
+
+type paymentMetadataChangelog struct {
+	Timestamp string `json:"timestamp"`
+	Value     string `json:"value"`
+}
+
+type paymentAdjustment struct {
+	Status   models.PaymentStatus `json:"status" bson:"status"`
+	Amount   int64                `json:"amount" bson:"amount"`
+	Date     time.Time            `json:"date" bson:"date"`
+	Raw      interface{}          `json:"raw" bson:"raw"`
+	Absolute bool                 `json:"absolute" bson:"absolute"`
 }
 
 func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
@@ -81,40 +117,55 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 			return
 		}
 
-		data := make([]*payments.Payment, len(ret))
+		data := make([]*paymentResponse, len(ret))
 
 		for i := range ret {
-			data[i] = &payments.Payment{
-				Identifier: payments.Identifier{
-					Referenced: payments.Referenced{
-						Reference: ret[i].Reference,
-						Type:      ret[i].Type.String(),
-					},
-					Provider: ret[i].Connector.Provider.String(),
-				},
-				Data: payments.Data{
-					Status:        payments.Status(ret[i].Status),
-					InitialAmount: ret[i].Amount,
-					Scheme:        payments.Scheme(ret[i].Scheme),
-					Asset:         ret[i].Asset.String(),
-					CreatedAt:     ret[i].CreatedAt,
-					Raw:           ret[i].RawData,
-				},
+			data[i] = &paymentResponse{
+				ID:            ret[i].ID.String(),
+				Reference:     ret[i].Reference,
+				Type:          ret[i].Type.String(),
+				Provider:      ret[i].Connector.Provider,
+				Status:        ret[i].Status,
+				InitialAmount: ret[i].Amount,
+				Scheme:        ret[i].Scheme,
+				Asset:         ret[i].Asset.String(),
+				CreatedAt:     ret[i].CreatedAt,
+				Raw:           ret[i].RawData,
+			}
+
+			if ret[i].AccountID != uuid.Nil {
+				data[i].AccountID = ret[i].AccountID.String()
 			}
 
 			for adjustmentIdx := range ret[i].Adjustments {
 				data[i].Adjustments = append(data[i].Adjustments,
-					payments.Adjustment{
-						Status:   payments.Status(ret[i].Adjustments[adjustmentIdx].Status),
+					paymentAdjustment{
+						Status:   ret[i].Adjustments[adjustmentIdx].Status,
 						Amount:   ret[i].Adjustments[adjustmentIdx].Amount,
 						Date:     ret[i].Adjustments[adjustmentIdx].CreatedAt,
 						Raw:      ret[i].Adjustments[adjustmentIdx].RawData,
 						Absolute: ret[i].Adjustments[adjustmentIdx].Absolute,
 					})
 			}
+
+			for metadataIDx := range ret[i].Metadata {
+				data[i].Metadata = append(data[i].Metadata,
+					paymentMetadata{
+						Key:   ret[i].Metadata[metadataIDx].Key,
+						Value: ret[i].Metadata[metadataIDx].Value,
+					})
+
+				for changelogIdx := range ret[i].Metadata[metadataIDx].Changelog {
+					data[i].Metadata[metadataIDx].Changelog = append(data[i].Metadata[metadataIDx].Changelog,
+						paymentMetadataChangelog{
+							Timestamp: ret[i].Metadata[metadataIDx].Changelog[changelogIdx].CreatedAt.Format(time.RFC3339),
+							Value:     ret[i].Metadata[metadataIDx].Changelog[changelogIdx].Value,
+						})
+				}
+			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]*payments.Payment]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]*paymentResponse]{
 			Data: &data,
 		})
 		if err != nil {
@@ -126,7 +177,7 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 }
 
 type readPaymentRepository interface {
-	GetPayment(ctx context.Context, reference string) (*models.Payment, error)
+	GetPayment(ctx context.Context, id string) (*models.Payment, error)
 }
 
 func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
@@ -135,42 +186,34 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 
 		paymentID := mux.Vars(r)["paymentID"]
 
-		identifier, err := payments.IdentifierFromString(paymentID)
-		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
-
-			return
-		}
-
-		payment, err := repo.GetPayment(r.Context(), identifier.Reference)
+		payment, err := repo.GetPayment(r.Context(), paymentID)
 		if err != nil {
 			handleServerError(w, r, err)
 
 			return
 		}
 
-		data := payments.Payment{
-			Identifier: payments.Identifier{
-				Referenced: payments.Referenced{
-					Reference: payment.Reference,
-					Type:      payment.Type.String(),
-				},
-				Provider: payment.Connector.Provider.String(),
-			},
-			Data: payments.Data{
-				Status:        payments.Status(payment.Status),
-				InitialAmount: payment.Amount,
-				Scheme:        payments.Scheme(payment.Scheme),
-				Asset:         payment.Asset.String(),
-				CreatedAt:     payment.CreatedAt,
-				Raw:           payment.RawData,
-			},
+		data := paymentResponse{
+			ID:            payment.ID.String(),
+			Reference:     payment.Reference,
+			Type:          payment.Type.String(),
+			Provider:      payment.Connector.Provider,
+			Status:        payment.Status,
+			InitialAmount: payment.Amount,
+			Scheme:        payment.Scheme,
+			Asset:         payment.Asset.String(),
+			CreatedAt:     payment.CreatedAt,
+			Raw:           payment.RawData,
+		}
+
+		if payment.AccountID != uuid.Nil {
+			data.AccountID = payment.AccountID.String()
 		}
 
 		for i := range payment.Adjustments {
 			data.Adjustments = append(data.Adjustments,
-				payments.Adjustment{
-					Status:   payments.Status(payment.Adjustments[i].Status),
+				paymentAdjustment{
+					Status:   payment.Adjustments[i].Status,
 					Amount:   payment.Adjustments[i].Amount,
 					Date:     payment.Adjustments[i].CreatedAt,
 					Raw:      payment.Adjustments[i].RawData,
@@ -178,7 +221,23 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 				})
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[payments.Payment]{
+		for metadataIDx := range payment.Metadata {
+			data.Metadata = append(data.Metadata,
+				paymentMetadata{
+					Key:   payment.Metadata[metadataIDx].Key,
+					Value: payment.Metadata[metadataIDx].Value,
+				})
+
+			for changelogIdx := range payment.Metadata[metadataIDx].Changelog {
+				data.Metadata[metadataIDx].Changelog = append(data.Metadata[metadataIDx].Changelog,
+					paymentMetadataChangelog{
+						Timestamp: payment.Metadata[metadataIDx].Changelog[changelogIdx].CreatedAt.Format(time.RFC3339),
+						Value:     payment.Metadata[metadataIDx].Changelog[changelogIdx].Value,
+					})
+			}
+		}
+
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[paymentResponse]{
 			Data: &data,
 		})
 		if err != nil {

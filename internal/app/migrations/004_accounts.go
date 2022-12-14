@@ -14,7 +14,7 @@ func init() {
 				CREATE TABLE accounts.account (
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
 					created_at timestamp with time zone  NOT NULL DEFAULT NOW() CHECK (created_at<=NOW()),
-					reference text  NOT NULL,
+					reference text  NOT NULL UNIQUE,
 					provider text  NOT NULL,
 					type account_type  NOT NULL,
 					CONSTRAINT account_pk PRIMARY KEY (id)

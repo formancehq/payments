@@ -3,6 +3,8 @@ package api
 import (
 	"net/http"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/formancehq/payments/internal/app/integration"
@@ -40,7 +42,7 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 	connectorGroup.Path("/configs").Handler(connectorConfigsHandler())
 
 	for _, h := range connectorHandlers {
-		connectorGroup.PathPrefix("/" + h.Name).Handler(
+		connectorGroup.PathPrefix("/" + h.Provider.String()).Handler(
 			http.StripPrefix("/connectors", h.Handler),
 		)
 	}
@@ -57,22 +59,22 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 }
 
 func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](
-	name string,
+	provider models.ConnectorProvider,
 	manager *integration.ConnectorManager[Config, Descriptor],
 ) *mux.Router {
 	r := mux.NewRouter()
 
-	r.Path("/" + name).Methods(http.MethodPost).Handler(install(manager))
+	r.Path("/" + provider.String()).Methods(http.MethodPost).Handler(install(manager))
 
-	r.Path("/" + name + "/reset").Methods(http.MethodPost).Handler(reset(manager))
+	r.Path("/" + provider.String() + "/reset").Methods(http.MethodPost).Handler(reset(manager))
 
-	r.Path("/" + name).Methods(http.MethodDelete).Handler(uninstall(manager))
+	r.Path("/" + provider.String()).Methods(http.MethodDelete).Handler(uninstall(manager))
 
-	r.Path("/" + name + "/config").Methods(http.MethodGet).Handler(readConfig(manager))
+	r.Path("/" + provider.String() + "/config").Methods(http.MethodGet).Handler(readConfig(manager))
 
-	r.Path("/" + name + "/tasks").Methods(http.MethodGet).Handler(listTasks(manager))
+	r.Path("/" + provider.String() + "/tasks").Methods(http.MethodGet).Handler(listTasks(manager))
 
-	r.Path("/" + name + "/tasks/{taskID}").Methods(http.MethodGet).Handler(readTask(manager))
+	r.Path("/" + provider.String() + "/tasks/{taskID}").Methods(http.MethodGet).Handler(readTask(manager))
 
 	return r
 }

@@ -1,6 +1,7 @@
 package dummypay
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/pkg/configtemplate"
@@ -24,6 +25,10 @@ type Config struct {
 func (c Config) String() string {
 	return fmt.Sprintf("directory: %s, filePollingPeriod: %s, fileGenerationPeriod: %s",
 		c.Directory, c.FilePollingPeriod.String(), c.FileGenerationPeriod.String())
+}
+
+func (c Config) Marshal() ([]byte, error) {
+	return json.Marshal(c)
 }
 
 // Validate validates the configuration.
@@ -55,5 +60,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("filePollingPeriod", configtemplate.TypeDurationNs, true)
 	cfg.AddParameter("fileGenerationPeriod", configtemplate.TypeDurationNs, false)
 
-	return Name, cfg
+	return Name.String(), cfg
 }

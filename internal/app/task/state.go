@@ -3,6 +3,8 @@ package task
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/storage"
+
 	"github.com/pkg/errors"
 )
 
@@ -26,7 +28,7 @@ func ResolveTo[State any](ctx context.Context, resolver StateResolver, to *State
 
 func MustResolveTo[State any](ctx context.Context, resolver StateResolver, to State) State {
 	state, err := ResolveTo[State](ctx, resolver, &to)
-	if errors.Is(err, ErrNotFound) {
+	if errors.Is(err, storage.ErrNotFound) {
 		return to
 	}
 

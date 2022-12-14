@@ -2,14 +2,16 @@ package currencycloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/connectors/currencycloud/client"
 
 	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -64,17 +66,22 @@ func ingestTransactions(ctx context.Context, logger sharedlogging.Logger,
 				return fmt.Errorf("failed to parse amount: %w", err)
 			}
 
+			var rawData json.RawMessage
+
+			rawData, err = json.Marshal(transaction)
+			if err != nil {
+				return fmt.Errorf("failed to marshal transaction: %w", err)
+			}
+
 			batchElement := ingestion.PaymentBatchElement{
-				Referenced: payments.Referenced{
+				Payment: &models.Payment{
 					Reference: transaction.ID,
 					Type:      matchTransactionType(transaction.Type),
-				},
-				Payment: &payments.Data{
-					Status:        matchTransactionStatus(transaction.Status),
-					Scheme:        payments.SchemeOther,
-					InitialAmount: int64(amount * 100),
-					Asset:         fmt.Sprintf("%s/2", transaction.Currency),
-					Raw:           transaction,
+					Status:    matchTransactionStatus(transaction.Status),
+					Scheme:    models.PaymentSchemeOther,
+					Amount:    int64(amount * 100),
+					Asset:     models.PaymentAsset(fmt.Sprintf("%s/2", transaction.Currency)),
+					RawData:   rawData,
 				},
 			}
 
@@ -90,26 +97,26 @@ func ingestTransactions(ctx context.Context, logger sharedlogging.Logger,
 	return nil
 }
 
-func matchTransactionType(transactionType string) string {
+func matchTransactionType(transactionType string) models.PaymentType {
 	switch transactionType {
 	case "credit":
-		return payments.TypePayout
+		return models.PaymentTypePayOut
 	case "debit":
-		return payments.TypePayIn
+		return models.PaymentTypePayIn
 	}
 
-	return payments.TypeOther
+	return models.PaymentTypeOther
 }
 
-func matchTransactionStatus(transactionStatus string) payments.Status {
+func matchTransactionStatus(transactionStatus string) models.PaymentStatus {
 	switch transactionStatus {
 	case "completed":
-		return payments.StatusSucceeded
+		return models.PaymentStatusSucceeded
 	case "pending":
-		return payments.StatusPending
+		return models.PaymentStatusPending
 	case "deleted":
-		return payments.StatusFailed
+		return models.PaymentStatusFailed
 	}
 
-	return payments.TypeOther
+	return models.PaymentStatusOther
 }

@@ -27,6 +27,7 @@ func init() {
 				ALTER TABLE tasks.task ADD CONSTRAINT task_connector
 					FOREIGN KEY (connector_id)
 					REFERENCES connectors.connector (id)  
+					ON DELETE CASCADE
 					NOT DEFERRABLE 
 					INITIALLY IMMEDIATE
 				;

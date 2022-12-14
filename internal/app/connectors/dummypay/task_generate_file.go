@@ -8,7 +8,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/formancehq/payments/internal/app/payments"
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/task"
 )
 
@@ -59,7 +60,7 @@ func generateFile(config Config, fs fs) error {
 	paymentObj.Reference = key
 	paymentObj.Type = generateRandomType()
 	paymentObj.Status = generateRandomStatus()
-	paymentObj.InitialAmount = int64(generateRandomNumber())
+	paymentObj.Amount = int64(generateRandomNumber())
 	paymentObj.Asset = asset
 	paymentObj.Scheme = generateRandomScheme()
 
@@ -102,59 +103,59 @@ func generateRandomNumber() int {
 }
 
 // generateRandomType generates a random payment type.
-func generateRandomType() string {
+func generateRandomType() models.PaymentType {
 	// 50% chance.
-	paymentType := payments.TypePayIn
+	paymentType := models.PaymentTypePayIn
 
 	// 50% chance.
 	if generateRandomNumber() > nMax/2 {
-		paymentType = payments.TypePayout
+		paymentType = models.PaymentTypePayOut
 	}
 
 	return paymentType
 }
 
 // generateRandomStatus generates a random payment status.
-func generateRandomStatus() payments.Status {
+func generateRandomStatus() models.PaymentStatus {
 	// ~50% chance.
-	paymentStatus := payments.StatusSucceeded
+	paymentStatus := models.PaymentStatusSucceeded
 
 	num := generateRandomNumber()
 
 	switch {
 	case num < nMax/4: // 25% chance
-		paymentStatus = payments.StatusPending
+		paymentStatus = models.PaymentStatusPending
 	case num < nMax/3: // ~9% chance
-		paymentStatus = payments.StatusFailed
+		paymentStatus = models.PaymentStatusFailed
 	case num < nMax/2: // ~16% chance
-		paymentStatus = payments.StatusCancelled
+		paymentStatus = models.PaymentStatusCancelled
 	}
 
 	return paymentStatus
 }
 
 // generateRandomScheme generates a random payment scheme.
-func generateRandomScheme() payments.Scheme {
+func generateRandomScheme() models.PaymentScheme {
 	num := generateRandomNumber() / 1000 //nolint:gomnd // allow for random number
 
-	paymentScheme := payments.SchemeCardMasterCard
+	paymentScheme := models.PaymentSchemeCardMasterCard
 
-	availableSchemes := []payments.Scheme{
-		payments.SchemeCardMasterCard,
-		payments.SchemeCardVisa,
-		payments.SchemeCardDiscover,
-		payments.SchemeCardJCB,
-		payments.SchemeCardUnionPay,
-		payments.SchemeCardAmex,
-		payments.SchemeCardDiners,
-		payments.SchemeSepaDebit,
-		payments.SchemeSepaCredit,
-		payments.SchemeApplePay,
-		payments.SchemeGooglePay,
-		payments.SchemeA2A,
-		payments.SchemeACHDebit,
-		payments.SchemeACH,
-		payments.SchemeRTP,
+	availableSchemes := []models.PaymentScheme{
+		models.PaymentSchemeCardMasterCard,
+		models.PaymentSchemeCardVisa,
+		models.PaymentSchemeCardDiscover,
+		models.PaymentSchemeCardJCB,
+		models.PaymentSchemeCardUnionPay,
+		models.PaymentSchemeCardAmex,
+		models.PaymentSchemeCardDiners,
+		models.PaymentSchemeSepaDebit,
+		models.PaymentSchemeSepaCredit,
+		models.PaymentSchemeApplePay,
+		models.PaymentSchemeGooglePay,
+		models.PaymentSchemeA2A,
+		models.PaymentSchemeACHDebit,
+		models.PaymentSchemeACH,
+		models.PaymentSchemeRTP,
 	}
 
 	if num < len(availableSchemes) {

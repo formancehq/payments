@@ -6,7 +6,6 @@ import (
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/ingestion"
 	"github.com/formancehq/payments/internal/app/task"
-	"github.com/formancehq/payments/internal/pkg/writeonly"
 	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v72"
 )
@@ -47,9 +46,9 @@ func ingest(
 }
 
 func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-	scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester, storage writeonly.Storage) error {
+	scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester) error {
 	return func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-		scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester, storage writeonly.Storage,
+		scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester,
 	) error {
 		runner := NewRunner(
 			logger,
@@ -60,7 +59,7 @@ func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logg
 				) error {
 					return ingest(ctx, logger, scheduler, ingester, batch, commitState, tail)
 				}),
-				NewTimeline(NewDefaultClient(config.APIKey, storage),
+				NewTimeline(NewDefaultClient(config.APIKey),
 					config.TimelineConfig, task.MustResolveTo(ctx, resolver, TimelineState{})),
 			),
 			config.PollingPeriod.Duration,

@@ -2,9 +2,11 @@ package bankingcircle
 
 import (
 	"context"
+	"encoding/json"
+
+	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -26,17 +28,20 @@ func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 		for _, paymentEl := range paymentsList {
 			logger.Info(paymentEl)
 
+			raw, err := json.Marshal(paymentEl)
+			if err != nil {
+				return err
+			}
+
 			batchElement := ingestion.PaymentBatchElement{
-				Referenced: payments.Referenced{
+				Payment: &models.Payment{
 					Reference: paymentEl.TransactionReference,
 					Type:      matchPaymentType(paymentEl.Classification),
-				},
-				Payment: &payments.Data{
-					Status:        matchPaymentStatus(paymentEl.Status),
-					Scheme:        payments.SchemeOther,
-					InitialAmount: int64(paymentEl.Transfer.Amount.Amount * 100),
-					Asset:         paymentEl.Transfer.Amount.Currency + "/2",
-					Raw:           paymentEl,
+					Status:    matchPaymentStatus(paymentEl.Status),
+					Scheme:    models.PaymentSchemeOther,
+					Amount:    int64(paymentEl.Transfer.Amount.Amount * 100),
+					Asset:     models.PaymentAsset(paymentEl.Transfer.Amount.Currency + "/2"),
+					RawData:   raw,
 				},
 			}
 
@@ -47,29 +52,29 @@ func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 	}
 }
 
-func matchPaymentStatus(paymentStatus string) payments.Status {
+func matchPaymentStatus(paymentStatus string) models.PaymentStatus {
 	switch paymentStatus {
 	case "Processed":
-		return payments.StatusSucceeded
+		return models.PaymentStatusSucceeded
 	// On MissingFunding - the payment is still in progress.
 	// If there will be funds available within 10 days - the payment will be processed.
 	// Otherwise - it will be cancelled.
 	case "PendingProcessing", "MissingFunding":
-		return payments.StatusPending
+		return models.PaymentStatusPending
 	case "Rejected", "Cancelled", "Reversed", "Returned":
-		return payments.StatusFailed
+		return models.PaymentStatusFailed
 	}
 
-	return payments.TypeOther
+	return models.PaymentStatusOther
 }
 
-func matchPaymentType(paymentType string) string {
+func matchPaymentType(paymentType string) models.PaymentType {
 	switch paymentType {
 	case "Incoming":
-		return payments.TypePayIn
+		return models.PaymentTypePayIn
 	case "Outgoing":
-		return payments.TypePayout
+		return models.PaymentTypePayOut
 	}
 
-	return payments.TypeOther
+	return models.PaymentTypeOther
 }

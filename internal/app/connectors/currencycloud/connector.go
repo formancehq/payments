@@ -3,12 +3,14 @@ package currencycloud
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
-const Name = "currencycloud"
+const Name = models.ConnectorProviderCurrencyCloud
 
 type Connector struct {
 	logger sharedlogging.Logger

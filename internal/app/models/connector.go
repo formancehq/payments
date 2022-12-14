@@ -1,6 +1,9 @@
 package models
 
 import (
+	"encoding/json"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -11,13 +14,13 @@ import (
 type Connector struct {
 	bun.BaseModel `bun:"connectors.connector"`
 
-	ID        uuid.UUID
-	CreatedAt time.Time
+	ID        uuid.UUID `bun:",pk,nullzero"`
+	CreatedAt time.Time `bun:",nullzero"`
 	Provider  ConnectorProvider
 	Enabled   bool
 
 	// TODO: Enable DB-level encryption
-	Config any
+	Config json.RawMessage
 
 	Tasks    []*Task    `bun:"rel:has-many,join:id=connector_id"`
 	Payments []*Payment `bun:"rel:has-many,join:id=connector_id"`
@@ -35,5 +38,18 @@ const (
 )
 
 func (p ConnectorProvider) String() string {
-	return string(p)
+	return strings.ToLower(string(p))
+}
+
+func (c Connector) ParseConfig(to interface{}) error {
+	if c.Config == nil {
+		return nil
+	}
+
+	err := json.Unmarshal(c.Config, to)
+	if err != nil {
+		return fmt.Errorf("failed to parse config (%s): %w", string(c.Config), err)
+	}
+
+	return nil
 }

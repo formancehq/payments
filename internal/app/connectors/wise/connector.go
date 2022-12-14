@@ -3,12 +3,14 @@ package wise
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
-const Name = "wise"
+const Name = models.ConnectorProviderWise
 
 type Connector struct {
 	logger sharedlogging.Logger

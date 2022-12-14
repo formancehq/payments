@@ -11,9 +11,9 @@ import (
 type Adjustment struct {
 	bun.BaseModel `bun:"payments.adjustment"`
 
-	ID        uuid.UUID
-	PaymentID uuid.UUID
-	CreatedAt time.Time
+	ID        uuid.UUID `bun:",pk,nullzero"`
+	PaymentID uuid.UUID `bun:",pk,nullzero"`
+	CreatedAt time.Time `bun:",nullzero"`
 	Amount    int64
 	Status    PaymentStatus
 	Absolute  bool

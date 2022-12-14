@@ -1,6 +1,7 @@
 package stripe
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -27,6 +28,10 @@ func (c Config) Validate() error {
 	return nil
 }
 
+func (c Config) Marshal() ([]byte, error) {
+	return json.Marshal(c)
+}
+
 type TimelineConfig struct {
 	PageSize uint64 `json:"pageSize" yaml:"pageSize" bson:"pageSize"`
 }
@@ -38,5 +43,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, false)
 	cfg.AddParameter("pageSize", configtemplate.TypeDurationUnsignedInteger, false)
 
-	return Name, cfg
+	return Name.String(), cfg
 }

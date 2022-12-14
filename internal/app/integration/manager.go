@@ -3,6 +3,8 @@ package integration
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
@@ -24,7 +26,7 @@ type ConnectorManager[
 	logger           sharedlogging.Logger
 	loader           Loader[Config, TaskDescriptor]
 	connector        Connector[TaskDescriptor]
-	store            ConnectorStore
+	store            Repository
 	schedulerFactory TaskSchedulerFactory[TaskDescriptor]
 	scheduler        *task.DefaultTaskScheduler[TaskDescriptor]
 }
@@ -45,7 +47,12 @@ func (l *ConnectorManager[ConnectorConfig,
 ) (*ConnectorConfig, error) {
 	var config ConnectorConfig
 
-	err := l.store.ReadConfig(ctx, l.loader.Name(), &config)
+	connector, err := l.store.GetConnector(ctx, l.loader.Name())
+	if err != nil {
+		return &config, err
+	}
+
+	err = connector.ParseConfig(&config)
 	if err != nil {
 		return &config, err
 	}
@@ -86,15 +93,20 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.
 
 	l.load(config)
 
+	cfg, err := config.Marshal()
+	if err != nil {
+		return err
+	}
+
+	err = l.store.Install(ctx, l.loader.Name(), cfg)
+	if err != nil {
+		return err
+	}
+
 	err = l.connector.Install(task.NewConnectorContext[TaskDescriptor](context.Background(), l.scheduler))
 	if err != nil {
 		l.logger.Errorf("Error starting connector: %s", err)
 
-		return err
-	}
-
-	err = l.store.Install(ctx, l.loader.Name(), config)
-	if err != nil {
 		return err
 	}
 
@@ -197,7 +209,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsEnabled(ctx contex
 	return l.store.IsEnabled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) FindAll(ctx context.Context) ([]payments.ConnectorBaseInfo, error) {
+func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) FindAll(ctx context.Context) ([]models.Connector, error) {
 	return l.store.FindAll(ctx)
 }
 
@@ -207,13 +219,13 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsInstalled(ctx cont
 
 func (l *ConnectorManager[ConnectorConfig,
 	TaskDescriptor]) ListTasksStates(ctx context.Context,
-) ([]payments.TaskState[TaskDescriptor], error) {
+) ([]models.Task, error) {
 	return l.scheduler.ListTasks(ctx)
 }
 
 func (l *ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context,
 	descriptor TaskDescriptor,
-) (*payments.TaskState[TaskDescriptor], error) {
+) (*models.Task, error) {
 	return l.scheduler.ReadTask(ctx, descriptor)
 }
 
@@ -236,7 +248,7 @@ func NewConnectorManager[
 	TaskDescriptor payments.TaskDescriptor,
 ](
 	logger sharedlogging.Logger,
-	store ConnectorStore,
+	store Repository,
 	loader Loader[ConnectorConfig, TaskDescriptor],
 	schedulerFactory TaskSchedulerFactory[TaskDescriptor],
 ) *ConnectorManager[ConnectorConfig, TaskDescriptor] {

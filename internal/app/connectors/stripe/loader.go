@@ -3,6 +3,8 @@ package stripe
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/connectors"
 	"github.com/formancehq/payments/internal/app/integration"
@@ -16,7 +18,7 @@ func (l *Loader) AllowTasks() int {
 	return allowedTasks
 }
 
-func (l *Loader) Name() string {
+func (l *Loader) Name() models.ConnectorProvider {
 	return Name
 }
 
