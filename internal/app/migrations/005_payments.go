@@ -16,20 +16,12 @@ func init() {
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
 					payment_id uuid  NOT NULL,
 					created_at timestamp with time zone  NOT NULL DEFAULT NOW() CHECK (created_at<=NOW()),
-					amount bigint NOT NULL DEFAULT 0 CHECK (amount>0),
+					amount bigint NOT NULL DEFAULT 0,
+					reference text  NOT NULL UNIQUE,
 					status payment_status  NOT NULL,
 					absolute boolean  NOT NULL DEFAULT FALSE,
-					raw_data json  NULL,
+					raw_data json NULL,
 					CONSTRAINT adjustment_pk PRIMARY KEY (id)
-				);
-
-				CREATE TABLE payments.metadata_changelog (
-					payment_id uuid  NOT NULL,
-					created_at timestamp with time zone  NOT NULL DEFAULT NOW() CHECK (created_at<=NOW()),
-					key text  NOT NULL,
-					value_before text  NOT NULL,
-					value_after text  NOT NULL,
-					CONSTRAINT metadata_changelog_pk PRIMARY KEY (payment_id,key)
 				);
 
 				CREATE TABLE payments.metadata (
@@ -37,18 +29,19 @@ func init() {
 					created_at timestamp with time zone  NOT NULL DEFAULT NOW() CHECK (created_at<=NOW()),
 					key text  NOT NULL,
 					value text  NOT NULL,
+					changelog jsonb NOT NULL,
 					CONSTRAINT metadata_pk PRIMARY KEY (payment_id,key)
 				);
 
 				CREATE TABLE payments.payment (
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
 					connector_id uuid  NOT NULL,
-					account_id uuid  NOT NULL,
+					account_id uuid DEFAULT NULL,
 					created_at timestamp with time zone  NOT NULL DEFAULT NOW() CHECK (created_at<=NOW()),
-					reference text  NOT NULL,
+					reference text  NOT NULL UNIQUE,
 					type payment_type  NOT NULL,
 					status payment_status  NOT NULL,
-					amount bigint NOT NULL DEFAULT 0 CHECK (amount>0),
+					amount bigint NOT NULL DEFAULT 0,
 					raw_data json  NULL,
 					scheme text  NOT NULL,
 					asset text  NOT NULL,
@@ -58,13 +51,7 @@ func init() {
 				ALTER TABLE payments.adjustment ADD CONSTRAINT adjustment_payment
 					FOREIGN KEY (payment_id)
 					REFERENCES payments.payment (id)  
-					NOT DEFERRABLE 
-					INITIALLY IMMEDIATE
-				;
-
-				ALTER TABLE payments.metadata_changelog ADD CONSTRAINT metadata_changelog_metadata
-					FOREIGN KEY (payment_id, key)
-					REFERENCES payments.metadata (payment_id, key)  
+					ON DELETE CASCADE
 					NOT DEFERRABLE 
 					INITIALLY IMMEDIATE
 				;
@@ -72,6 +59,7 @@ func init() {
 				ALTER TABLE payments.metadata ADD CONSTRAINT metadata_payment
 					FOREIGN KEY (payment_id)
 					REFERENCES payments.payment (id)  
+					ON DELETE CASCADE
 					NOT DEFERRABLE 
 					INITIALLY IMMEDIATE
 				;
@@ -79,6 +67,7 @@ func init() {
 				ALTER TABLE payments.payment ADD CONSTRAINT payment_account
 					FOREIGN KEY (account_id)
 					REFERENCES accounts.account (id)  
+					ON DELETE CASCADE
 					NOT DEFERRABLE 
 					INITIALLY IMMEDIATE
 				;
@@ -86,6 +75,7 @@ func init() {
 				ALTER TABLE payments.payment ADD CONSTRAINT payment_connector
 					FOREIGN KEY (connector_id)
 					REFERENCES connectors.connector (id)  
+					ON DELETE CASCADE
 					NOT DEFERRABLE 
 					INITIALLY IMMEDIATE
 				;
@@ -100,7 +90,6 @@ func init() {
 	down := func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
 				DROP TABLE payments.adjustment;
-				DROP TABLE payments.metadata_changelog;
 				DROP TABLE payments.metadata;
 				DROP TABLE payments.payment;
 				DROP TYPE payment_type;

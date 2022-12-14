@@ -1,0 +1,177 @@
+package task
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/formancehq/payments/internal/app/storage"
+
+	"github.com/formancehq/payments/internal/app/models"
+
+	"github.com/formancehq/payments/internal/app/payments"
+)
+
+type InMemoryStore struct {
+	statuses map[string]models.TaskStatus
+	created  map[string]time.Time
+	errors   map[string]string
+}
+
+func (s *InMemoryStore) GetTask(ctx context.Context, provider models.ConnectorProvider,
+	descriptor json.RawMessage,
+) (*models.Task, error) {
+	id := payments.IDFromDescriptor(descriptor)
+
+	status, ok := s.statuses[id]
+	if !ok {
+		return nil, storage.ErrNotFound
+	}
+
+	return &models.Task{
+		Descriptor: descriptor,
+		Status:     status,
+		Error:      s.errors[id],
+		State:      nil,
+		CreatedAt:  s.created[id],
+	}, nil
+}
+
+func (s *InMemoryStore) ListTasks(ctx context.Context,
+	provider models.ConnectorProvider,
+) ([]models.Task, error) {
+	ret := make([]models.Task, 0)
+
+	for id, status := range s.statuses {
+		if !strings.HasPrefix(id, fmt.Sprintf("%s/", provider)) {
+			continue
+		}
+
+		var descriptor json.RawMessage
+
+		ret = append(ret, models.Task{
+			Descriptor: descriptor,
+			Status:     status,
+			Error:      s.errors[id],
+			State:      nil,
+			CreatedAt:  s.created[id],
+		})
+	}
+
+	return ret, nil
+}
+
+func (s *InMemoryStore) ReadOldestPendingTask(ctx context.Context,
+	provider models.ConnectorProvider,
+) (*models.Task, error) {
+	var (
+		oldestDate time.Time
+		oldestID   string
+	)
+
+	for id, status := range s.statuses {
+		if status != models.TaskStatusPending {
+			continue
+		}
+
+		if oldestDate.IsZero() || s.created[id].Before(oldestDate) {
+			oldestDate = s.created[id]
+			oldestID = id
+		}
+	}
+
+	if oldestDate.IsZero() {
+		return nil, storage.ErrNotFound
+	}
+
+	descriptorStr := strings.Split(oldestID, "/")[1]
+
+	var descriptor json.RawMessage
+
+	payments.DescriptorFromID(descriptorStr, &descriptor)
+
+	return &models.Task{
+		Descriptor: descriptor,
+		Status:     models.TaskStatusPending,
+		State:      nil,
+		CreatedAt:  s.created[oldestID],
+	}, nil
+}
+
+func (s *InMemoryStore) ListTasksByStatus(ctx context.Context,
+	provider models.ConnectorProvider, taskStatus models.TaskStatus,
+) ([]models.Task, error) {
+	all, err := s.ListTasks(ctx, provider)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]models.Task, 0)
+
+	for _, v := range all {
+		if v.Status != taskStatus {
+			continue
+		}
+
+		ret = append(ret, v)
+	}
+
+	return ret, nil
+}
+
+func (s *InMemoryStore) FindAndUpsertTask(ctx context.Context,
+	provider models.ConnectorProvider, descriptor json.RawMessage, status models.TaskStatus, taskErr string,
+) (*models.Task, error) {
+	err := s.UpdateTaskStatus(ctx, provider, descriptor, status, taskErr)
+	if err != nil {
+		return nil, err
+	}
+
+	return &models.Task{
+		Descriptor: descriptor,
+		Status:     status,
+		Error:      taskErr,
+		State:      nil,
+	}, nil
+}
+
+func (s *InMemoryStore) UpdateTaskStatus(ctx context.Context, provider models.ConnectorProvider,
+	descriptor json.RawMessage, status models.TaskStatus, err string,
+) error {
+	taskID := payments.IDFromDescriptor(descriptor)
+	key := fmt.Sprintf("%s/%s", provider, taskID)
+	s.statuses[key] = status
+
+	s.errors[key] = err
+	if _, ok := s.created[key]; !ok {
+		s.created[key] = time.Now()
+	}
+
+	return nil
+}
+
+func (s *InMemoryStore) Result(provider models.ConnectorProvider,
+	descriptor json.RawMessage,
+) (models.TaskStatus, string, bool) {
+	taskID := payments.IDFromDescriptor(descriptor)
+	key := fmt.Sprintf("%s/%s", provider, taskID)
+
+	status, ok := s.statuses[key]
+	if !ok {
+		return "", "", false
+	}
+
+	return status, s.errors[key], true
+}
+
+func NewInMemoryStore() *InMemoryStore {
+	return &InMemoryStore{
+		statuses: make(map[string]models.TaskStatus),
+		errors:   make(map[string]string),
+		created:  make(map[string]time.Time),
+	}
+}
+
+var _ Repository = &InMemoryStore{}

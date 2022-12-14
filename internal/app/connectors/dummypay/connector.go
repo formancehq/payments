@@ -4,13 +4,15 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
 )
 
 // Name is the name of the connector.
-const Name = "dummypay"
+const Name = models.ConnectorProviderDummyPay
 
 // Connector is the connector for the dummy payment connector.
 type Connector struct {

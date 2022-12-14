@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
@@ -58,12 +58,16 @@ func parseIngestionPayload(config Config, descriptor TaskDescriptor, fs fs) (ing
 	}
 
 	ingestionPayload := ingestion.PaymentBatch{ingestion.PaymentBatchElement{
-		Referenced: payments.Referenced{
+		Payment: &models.Payment{
 			Reference: paymentElement.Reference,
+			Amount:    paymentElement.Amount,
 			Type:      paymentElement.Type,
+			Status:    paymentElement.Status,
+			Scheme:    paymentElement.Scheme,
+			Asset:     paymentElement.Asset,
+			RawData:   paymentElement.RawData,
 		},
-		Payment: &paymentElement.Data,
-		Forward: true,
+		Update: true,
 	}}
 
 	return ingestionPayload, nil

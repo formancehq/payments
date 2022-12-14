@@ -4,19 +4,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/formancehq/payments/internal/app/payments"
+	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedlogging"
 )
 
 const (
 	TopicPayments = "payments"
+	TopicAccounts = "payments"
 
 	EventVersion = "v1"
 	EventApp     = "payments"
 
-	EventTypeSavedPayment = "SAVED_PAYMENT"
-	EventTypeSavedAccount = "SAVED_ACCOUNT"
+	EventTypeSavedPayments = "SAVED_PAYMENTS"
+	EventTypeSavedAccounts = "SAVED_ACCOUNTS"
 )
 
 type EventMessage struct {
@@ -27,23 +28,23 @@ type EventMessage struct {
 	Payload any       `json:"payload"`
 }
 
-func NewEventSavedPayment(payment payments.SavedPayment) EventMessage {
+func NewEventSavedPayments(payments []*models.Payment) EventMessage {
 	return EventMessage{
 		Date:    time.Now().UTC(),
 		App:     EventApp,
 		Version: EventVersion,
-		Type:    EventTypeSavedPayment,
-		Payload: payment,
+		Type:    EventTypeSavedPayments,
+		Payload: payments,
 	}
 }
 
-func NewEventSavedAccount(account payments.Account) EventMessage {
+func NewEventSavedAccounts(accounts []models.Account) EventMessage {
 	return EventMessage{
 		Date:    time.Now().UTC(),
 		App:     EventApp,
 		Version: EventVersion,
-		Type:    EventTypeSavedAccount,
-		Payload: account,
+		Type:    EventTypeSavedAccounts,
+		Payload: accounts,
 	}
 }
 

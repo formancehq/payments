@@ -3,6 +3,8 @@ package dummypay
 import (
 	"time"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/connectors"
 	"github.com/formancehq/payments/internal/app/integration"
@@ -11,7 +13,7 @@ import (
 type Loader struct{}
 
 // Name returns the name of the connector.
-func (l *Loader) Name() string {
+func (l *Loader) Name() models.ConnectorProvider {
 	return Name
 }
 

@@ -2,11 +2,13 @@ package wise
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+
+	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
@@ -23,6 +25,12 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 			return err
 		}
 
+		if len(transfers) == 0 {
+			logger.Info("No transfers found")
+
+			return nil
+		}
+
 		var (
 			accountBatch ingestion.AccountBatch
 			paymentBatch ingestion.PaymentBatch
@@ -31,17 +39,22 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 		for _, transfer := range transfers {
 			logger.Info(transfer)
 
+			var rawData json.RawMessage
+
+			rawData, err = json.Marshal(transfer)
+			if err != nil {
+				return fmt.Errorf("failed to marshal transfer: %w", err)
+			}
+
 			batchElement := ingestion.PaymentBatchElement{
-				Referenced: payments.Referenced{
+				Payment: &models.Payment{
 					Reference: fmt.Sprintf("%d", transfer.ID),
-					Type:      payments.TypeTransfer,
-				},
-				Payment: &payments.Data{
-					Status:        matchTransferStatus(transfer.Status),
-					Scheme:        payments.SchemeOther,
-					InitialAmount: int64(transfer.TargetValue * 100),
-					Asset:         fmt.Sprintf("%s/2", transfer.TargetCurrency),
-					Raw:           transfer,
+					Type:      models.PaymentTypeTransfer,
+					Status:    matchTransferStatus(transfer.Status),
+					Scheme:    models.PaymentSchemeOther,
+					Amount:    int64(transfer.TargetValue * 100),
+					Asset:     models.PaymentAsset(fmt.Sprintf("%s/2", transfer.TargetCurrency)),
+					RawData:   rawData,
 				},
 			}
 
@@ -51,11 +64,11 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 				accountBatch = append(accountBatch,
 					ingestion.AccountBatchElement{
 						Reference: ref,
-						Type:      payments.AccountTypeSource,
+						Type:      models.AccountTypeSource,
 					},
 				)
 
-				batchElement.Referenced.Accounts = append(batchElement.Referenced.Accounts, ref)
+				batchElement.Payment.Account = &models.Account{Reference: ref}
 			}
 
 			if transfer.TargetAccount != 0 {
@@ -64,36 +77,38 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 				accountBatch = append(accountBatch,
 					ingestion.AccountBatchElement{
 						Reference: ref,
-						Type:      payments.AccountTypeTarget,
+						Type:      models.AccountTypeTarget,
 					},
 				)
 
-				batchElement.Referenced.Accounts = append(batchElement.Referenced.Accounts, ref)
+				batchElement.Payment.Account = &models.Account{Reference: ref}
 			}
 
 			paymentBatch = append(paymentBatch, batchElement)
 		}
 
-		err = ingester.IngestAccounts(ctx, accountBatch)
-		if err != nil {
-			return err
+		if len(accountBatch) > 0 {
+			err = ingester.IngestAccounts(ctx, accountBatch)
+			if err != nil {
+				return err
+			}
 		}
 
 		return ingester.IngestPayments(ctx, paymentBatch, struct{}{})
 	}
 }
 
-func matchTransferStatus(status string) payments.Status {
+func matchTransferStatus(status string) models.PaymentStatus {
 	switch status {
 	case "incoming_payment_waiting", "processing":
-		return payments.StatusPending
+		return models.PaymentStatusPending
 	case "funds_converted", "outgoing_payment_sent":
-		return payments.StatusSucceeded
+		return models.PaymentStatusSucceeded
 	case "bounced_back", "funds_refunded":
-		return payments.StatusFailed
+		return models.PaymentStatusFailed
 	case "cancelled":
-		return payments.StatusCancelled
+		return models.PaymentStatusCancelled
 	}
 
-	return payments.StatusOther
+	return models.PaymentStatusOther
 }

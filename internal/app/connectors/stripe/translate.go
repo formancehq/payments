@@ -1,16 +1,16 @@
 package stripe
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"runtime/debug"
 	"strings"
 	"time"
 
-	"github.com/formancehq/payments/internal/app/ingestion"
-	"github.com/formancehq/payments/internal/app/payments"
-
 	"github.com/davecgh/go-spew/spew"
+	"github.com/formancehq/payments/internal/app/ingestion"
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/stripe/stripe-go/v72"
 )
 
@@ -128,11 +128,9 @@ func currencies() map[string]currency {
 }
 
 func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward bool) (ingestion.PaymentBatchElement, bool) {
-	var (
-		reference   payments.Referenced
-		paymentData *payments.Data
-		adjustment  *payments.Adjustment
-	)
+	var payment models.Payment // reference   payments.Referenced
+	// paymentData *payments.Data
+	// adjustment  *payments.Adjustment
 
 	defer func() {
 		// DEBUG
@@ -152,139 +150,144 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		return ingestion.PaymentBatchElement{}, false
 	}
 
-	formatAsset := func(cur stripe.Currency) string {
+	formatAsset := func(cur stripe.Currency) models.PaymentAsset {
 		asset := strings.ToUpper(string(cur))
 
 		def, ok := currencies()[asset]
 		if !ok {
-			return asset
+			return models.PaymentAsset(asset)
 		}
 
 		if def.decimals == 0 {
-			return asset
+			return models.PaymentAsset(asset)
 		}
 
-		return fmt.Sprintf("%s/%d", asset, def.decimals)
+		return models.PaymentAsset(fmt.Sprintf("%s/%d", asset, def.decimals))
+	}
+
+	rawData, err := json.Marshal(balanceTransaction)
+	if err != nil {
+		return ingestion.PaymentBatchElement{}, false
 	}
 
 	switch balanceTransaction.Type {
 	case stripe.BalanceTransactionTypeCharge:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Charge.ID,
-			Type:      payments.TypePayIn,
-		}
-		paymentData = &payments.Data{
-			Status:        payments.StatusSucceeded,
-			InitialAmount: balanceTransaction.Source.Charge.Amount,
-			Asset:         formatAsset(balanceTransaction.Source.Charge.Currency),
-			Raw:           balanceTransaction,
-			Scheme:        payments.Scheme(balanceTransaction.Source.Charge.PaymentMethodDetails.Card.Brand),
-			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
+			Type:      models.PaymentTypePayIn,
+			Status:    models.PaymentStatusSucceeded,
+			Amount:    balanceTransaction.Source.Charge.Amount,
+			Asset:     formatAsset(balanceTransaction.Source.Charge.Currency),
+			RawData:   rawData,
+			Scheme:    models.PaymentScheme(balanceTransaction.Source.Charge.PaymentMethodDetails.Card.Brand),
+			CreatedAt: time.Unix(balanceTransaction.Created, 0),
 		}
 	case stripe.BalanceTransactionTypePayout:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Payout.ID,
-			Type:      payments.TypePayout,
-		}
-		paymentData = &payments.Data{
-			Status:        convertPayoutStatus(balanceTransaction.Source.Payout.Status),
-			InitialAmount: balanceTransaction.Source.Payout.Amount,
-			Raw:           balanceTransaction,
-			Asset:         formatAsset(balanceTransaction.Source.Payout.Currency),
-			Scheme: func() payments.Scheme {
+			Type:      models.PaymentTypePayOut,
+			Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
+			Amount:    balanceTransaction.Source.Payout.Amount,
+			RawData:   rawData,
+			Asset:     formatAsset(balanceTransaction.Source.Payout.Currency),
+			Scheme: func() models.PaymentScheme {
 				switch balanceTransaction.Source.Payout.Type {
 				case stripe.PayoutTypeBank:
-					return payments.SchemeSepaCredit
+					return models.PaymentSchemeSepaCredit
 				case stripe.PayoutTypeCard:
-					return payments.Scheme(balanceTransaction.Source.Payout.Card.Brand)
+					return models.PaymentScheme(balanceTransaction.Source.Payout.Card.Brand)
 				}
 
-				return payments.SchemeUnknown
+				return models.PaymentSchemeUnknown
 			}(),
 			CreatedAt: time.Unix(balanceTransaction.Created, 0),
 		}
 	case stripe.BalanceTransactionTypeTransfer:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Transfer.ID,
-			Type:      payments.TypePayout,
-		}
-		paymentData = &payments.Data{
-			Status:        payments.StatusSucceeded,
-			InitialAmount: balanceTransaction.Source.Transfer.Amount,
-			Raw:           balanceTransaction,
-			Asset:         formatAsset(balanceTransaction.Source.Transfer.Currency),
-			Scheme:        payments.SchemeOther,
-			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
+			Type:      models.PaymentTypePayOut,
+			Status:    models.PaymentStatusSucceeded,
+			Amount:    balanceTransaction.Source.Transfer.Amount,
+			RawData:   rawData,
+			Asset:     formatAsset(balanceTransaction.Source.Transfer.Currency),
+			Scheme:    models.PaymentSchemeOther,
+			CreatedAt: time.Unix(balanceTransaction.Created, 0),
 		}
 	case stripe.BalanceTransactionTypeRefund:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Refund.Charge.ID,
-			Type:      payments.TypePayout,
-		}
-		adjustment = &payments.Adjustment{
-			Status: payments.StatusSucceeded,
-			Amount: balanceTransaction.Amount,
-			Date:   time.Unix(balanceTransaction.Created, 0),
-			Raw:    balanceTransaction,
+			Type:      models.PaymentTypePayOut,
+			Adjustments: []*models.Adjustment{
+				{
+					Status:    models.PaymentStatusSucceeded,
+					Amount:    balanceTransaction.Amount,
+					CreatedAt: time.Unix(balanceTransaction.Created, 0),
+					RawData:   rawData,
+				},
+			},
 		}
 	case stripe.BalanceTransactionTypePayment:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Charge.ID,
-			Type:      payments.TypePayIn,
-		}
-		paymentData = &payments.Data{
-			Status:        payments.StatusSucceeded,
-			InitialAmount: balanceTransaction.Source.Charge.Amount,
-			Raw:           balanceTransaction,
-			Asset:         formatAsset(balanceTransaction.Source.Charge.Currency),
-			Scheme:        payments.SchemeOther,
-			CreatedAt:     time.Unix(balanceTransaction.Created, 0),
+			Type:      models.PaymentTypePayIn,
+			Status:    models.PaymentStatusSucceeded,
+			Amount:    balanceTransaction.Source.Charge.Amount,
+			RawData:   rawData,
+			Asset:     formatAsset(balanceTransaction.Source.Charge.Currency),
+			Scheme:    models.PaymentSchemeOther,
+			CreatedAt: time.Unix(balanceTransaction.Created, 0),
 		}
 	case stripe.BalanceTransactionTypePayoutCancel:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Payout.ID,
-			Type:      payments.TypePayout,
-		}
-		adjustment = &payments.Adjustment{
-			Status:   convertPayoutStatus(balanceTransaction.Source.Payout.Status),
-			Amount:   0,
-			Date:     time.Unix(balanceTransaction.Created, 0),
-			Raw:      balanceTransaction,
-			Absolute: true,
+			Type:      models.PaymentTypePayOut,
+			Adjustments: []*models.Adjustment{
+				{
+					Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
+					CreatedAt: time.Unix(balanceTransaction.Created, 0),
+					RawData:   rawData,
+					Absolute:  true,
+				},
+			},
 		}
 	case stripe.BalanceTransactionTypePayoutFailure:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Payout.ID,
-			Type:      payments.TypePayIn,
-		}
-		adjustment = &payments.Adjustment{
-			Status:   convertPayoutStatus(balanceTransaction.Source.Payout.Status),
-			Amount:   0,
-			Date:     time.Unix(balanceTransaction.Created, 0),
-			Raw:      balanceTransaction,
-			Absolute: true,
+			Type:      models.PaymentTypePayIn,
+			Adjustments: []*models.Adjustment{
+				{
+					Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
+					CreatedAt: time.Unix(balanceTransaction.Created, 0),
+					RawData:   rawData,
+					Absolute:  true,
+				},
+			},
 		}
 	case stripe.BalanceTransactionTypePaymentRefund:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Refund.Charge.ID,
-			Type:      payments.TypePayout,
-		}
-		adjustment = &payments.Adjustment{
-			Status: payments.StatusSucceeded,
-			Amount: balanceTransaction.Amount,
-			Date:   time.Unix(balanceTransaction.Created, 0),
-			Raw:    balanceTransaction,
+			Type:      models.PaymentTypePayOut,
+			Adjustments: []*models.Adjustment{
+				{
+					Status:    models.PaymentStatusSucceeded,
+					Amount:    balanceTransaction.Amount,
+					CreatedAt: time.Unix(balanceTransaction.Created, 0),
+					RawData:   rawData,
+				},
+			},
 		}
 	case stripe.BalanceTransactionTypeAdjustment:
-		reference = payments.Referenced{
+		payment = models.Payment{
 			Reference: balanceTransaction.Source.Dispute.Charge.ID,
-			Type:      payments.TypePayout,
-		}
-		adjustment = &payments.Adjustment{
-			Status: payments.StatusCancelled,
-			Amount: balanceTransaction.Amount,
-			Date:   time.Unix(balanceTransaction.Created, 0),
-			Raw:    balanceTransaction,
+			Type:      models.PaymentTypePayOut,
+			Adjustments: []*models.Adjustment{
+				{
+					Status:    models.PaymentStatusCancelled,
+					Amount:    balanceTransaction.Amount,
+					CreatedAt: time.Unix(balanceTransaction.Created, 0),
+					RawData:   rawData,
+				},
+			},
 		}
 	case stripe.BalanceTransactionTypeStripeFee:
 		return ingestion.PaymentBatchElement{}, true
@@ -293,24 +296,22 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 	}
 
 	return ingestion.PaymentBatchElement{
-		Referenced: reference,
-		Payment:    paymentData,
-		Adjustment: adjustment,
-		Forward:    forward,
+		Payment: &payment,
+		Update:  forward,
 	}, true
 }
 
-func convertPayoutStatus(status stripe.PayoutStatus) payments.Status {
+func convertPayoutStatus(status stripe.PayoutStatus) models.PaymentStatus {
 	switch status {
 	case stripe.PayoutStatusCanceled:
-		return payments.StatusCancelled
+		return models.PaymentStatusCancelled
 	case stripe.PayoutStatusFailed:
-		return payments.StatusFailed
+		return models.PaymentStatusFailed
 	case stripe.PayoutStatusInTransit, stripe.PayoutStatusPending:
-		return payments.StatusPending
+		return models.PaymentStatusPending
 	case stripe.PayoutStatusPaid:
-		return payments.StatusSucceeded
+		return models.PaymentStatusSucceeded
 	}
 
-	return payments.StatusOther
+	return models.PaymentStatusOther
 }

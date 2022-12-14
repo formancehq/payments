@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 
@@ -26,10 +28,10 @@ func ChanClosed[T any](ch chan T) bool {
 type testContext[ConnectorConfig payments.ConnectorConfigObject,
 	TaskDescriptor payments.TaskDescriptor] struct {
 	manager        *ConnectorManager[ConnectorConfig, TaskDescriptor]
-	taskStore      task.Store[TaskDescriptor]
-	connectorStore ConnectorStore
+	taskStore      task.Repository
+	connectorStore Repository
 	loader         Loader[ConnectorConfig, TaskDescriptor]
-	provider       string
+	provider       models.ConnectorProvider
 }
 
 func withManager[ConnectorConfig payments.ConnectorConfigObject,
@@ -42,9 +44,9 @@ func withManager[ConnectorConfig payments.ConnectorConfigObject,
 	}
 
 	logger := sharedlogginglogrus.New(l)
-	taskStore := task.NewInMemoryStore[TaskDescriptor]()
+	taskStore := task.NewInMemoryStore()
 	managerStore := NewInMemoryStore()
-	provider := uuid.New()
+	provider := models.ConnectorProvider(uuid.New())
 	schedulerFactory := TaskSchedulerFactoryFn[TaskDescriptor](func(resolver task.Resolver[TaskDescriptor],
 		maxTasks int,
 	) *task.DefaultTaskScheduler[TaskDescriptor] {
@@ -178,7 +180,10 @@ func TestRestoreEnabledConnector(t *testing.T) {
 
 	builder := NewConnectorBuilder[any]()
 	withManager(builder, func(tc *testContext[payments.EmptyConnectorConfig, any]) {
-		err := tc.connectorStore.Install(context.Background(), tc.loader.Name(), payments.EmptyConnectorConfig{})
+		cfg, err := payments.EmptyConnectorConfig{}.Marshal()
+		require.NoError(t, err)
+
+		err = tc.connectorStore.Install(context.Background(), tc.loader.Name(), cfg)
 		require.NoError(t, err)
 
 		err = tc.manager.Restore(context.Background())

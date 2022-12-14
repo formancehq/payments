@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/pkg/writeonly"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/pkg/errors"
@@ -39,14 +38,12 @@ type DefaultClient struct {
 	httpClient    *http.Client
 	apiKey        string
 	stripeAccount string
-	storage       writeonly.Storage
 }
 
-func NewDefaultClient(apiKey string, storage writeonly.Storage) *DefaultClient {
+func NewDefaultClient(apiKey string) *DefaultClient {
 	return &DefaultClient{
 		httpClient: newHTTPClient(),
 		apiKey:     apiKey,
-		storage:    storage,
 	}
 }
 
@@ -103,18 +100,7 @@ func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 	asBalanceTransactions := make([]*stripe.BalanceTransaction, 0)
 
 	if len(rsp.Data) > 0 {
-		asMaps := make([]any, 0)
-
 		for _, data := range rsp.Data {
-			asMap := make(map[string]interface{})
-
-			err = json.Unmarshal(data, &asMap)
-			if err != nil {
-				return nil, false, err
-			}
-
-			asMaps = append(asMaps, asMap)
-
 			asBalanceTransaction := &stripe.BalanceTransaction{}
 
 			err = json.Unmarshal(data, &asBalanceTransaction)
@@ -123,11 +109,6 @@ func (d *DefaultClient) BalanceTransactions(ctx context.Context,
 			}
 
 			asBalanceTransactions = append(asBalanceTransactions, asBalanceTransaction)
-		}
-
-		err = d.storage.Write(ctx, asMaps...)
-		if err != nil {
-			return nil, false, err
 		}
 	}
 

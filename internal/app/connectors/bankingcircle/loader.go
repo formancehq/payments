@@ -3,10 +3,11 @@ package bankingcircle
 import (
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/integration"
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
-const Name = "bankingcircle"
+const Name = models.ConnectorProviderBankingCircle
 
 // NewLoader creates a new loader.
 func NewLoader() integration.Loader[Config, TaskDescriptor] {

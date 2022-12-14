@@ -11,24 +11,16 @@ import (
 type Metadata struct {
 	bun.BaseModel `bun:"payments.metadata"`
 
-	PaymentID uuid.UUID
-	CreatedAt time.Time
-	Key       string
+	PaymentID uuid.UUID `bun:",pk,nullzero"`
+	CreatedAt time.Time `bun:",nullzero"`
+	Key       string    `bun:",pk,nullzero"`
 	Value     string
 
-	Changelog []*MetadataChangelog `bun:"rel:has-many,join:payment_id=payment_id,join:key=key"`
-	Payment   *Payment             `bun:"rel:has-one,join:payment_id=id"`
+	Changelog []MetadataChangelog `bun:",pk,nullzero"`
+	Payment   *Payment            `bun:"rel:has-one,join:payment_id=id"`
 }
 
 type MetadataChangelog struct {
-	bun.BaseModel `bun:"payments.metadata_changelog"`
-
-	PaymentID   uuid.UUID
-	CreatedAt   time.Time
-	Key         string
-	ValueBefore string
-	ValueAfter  string
-
-	Metadata *Metadata `bun:"rel:has-one,join:payment_id=payment_id,join:key=key"`
-	Payment  *Payment  `bun:"rel:has-one,join:payment_id=id"`
+	CreatedAt time.Time
+	Value     string
 }

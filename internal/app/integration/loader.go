@@ -2,11 +2,12 @@ package integration
 
 import (
 	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/payments"
 )
 
 type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {
-	Name() string
+	Name() models.ConnectorProvider
 	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 
 	// ApplyDefaults is used to fill default values of the provided configuration object
@@ -21,7 +22,7 @@ type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payme
 type LoaderBuilder[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
 	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
-	name          string
+	name          models.ConnectorProvider
 	allowedTasks  int
 }
 
@@ -59,7 +60,7 @@ func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) Build() *BuiltLoader[Co
 }
 
 func NewLoaderBuilder[ConnectorConfig payments.ConnectorConfigObject,
-	TaskDescriptor payments.TaskDescriptor](name string,
+	TaskDescriptor payments.TaskDescriptor](name models.ConnectorProvider,
 ) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
 	return &LoaderBuilder[ConnectorConfig, TaskDescriptor]{
 		name: name,
@@ -69,7 +70,7 @@ func NewLoaderBuilder[ConnectorConfig payments.ConnectorConfigObject,
 type BuiltLoader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
 	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
-	name          string
+	name          models.ConnectorProvider
 	allowedTasks  int
 }
 
@@ -77,7 +78,7 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) AllowTasks() int {
 	return b.allowedTasks
 }
 
-func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Name() string {
+func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Name() models.ConnectorProvider {
 	return b.name
 }
 

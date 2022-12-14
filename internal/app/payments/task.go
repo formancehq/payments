@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/gibson042/canonicaljson-go"
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -20,12 +22,12 @@ const (
 )
 
 type TaskState[Descriptor TaskDescriptor] struct {
-	Provider   string     `json:"provider" bson:"provider"`
-	Descriptor Descriptor `json:"descriptor" bson:"descriptor"`
-	CreatedAt  time.Time  `json:"createdAt" bson:"createdAt"`
-	Status     TaskStatus `json:"status" bson:"status"`
-	Error      string     `json:"error" bson:"error"`
-	State      bson.Raw   `json:"state" bson:"state"`
+	Provider   models.ConnectorProvider `json:"provider" bson:"provider"`
+	Descriptor Descriptor               `json:"descriptor" bson:"descriptor"`
+	CreatedAt  time.Time                `json:"createdAt" bson:"createdAt"`
+	Status     TaskStatus               `json:"status" bson:"status"`
+	Error      string                   `json:"error" bson:"error"`
+	State      bson.Raw                 `json:"state" bson:"state"`
 }
 
 type taskState[Descriptor any] TaskState[Descriptor]

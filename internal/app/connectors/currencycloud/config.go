@@ -30,6 +30,10 @@ func (c Config) Validate() error {
 	return nil
 }
 
+func (c Config) Marshal() ([]byte, error) {
+	return json.Marshal(c)
+}
+
 type Duration time.Duration
 
 func (d *Duration) String() string {
@@ -78,5 +82,5 @@ func (c Config) BuildTemplate() (string, configtemplate.Config) {
 	cfg.AddParameter("endpoint", configtemplate.TypeString, false)
 	cfg.AddParameter("pollingPeriod", configtemplate.TypeDurationNs, true)
 
-	return Name, cfg
+	return Name.String(), cfg
 }

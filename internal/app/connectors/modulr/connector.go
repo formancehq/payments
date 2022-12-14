@@ -3,12 +3,14 @@ package modulr
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
-const Name = "modulr"
+const Name = models.ConnectorProviderModulr
 
 type Connector struct {
 	logger sharedlogging.Logger

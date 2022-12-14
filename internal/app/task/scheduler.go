@@ -2,15 +2,19 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"runtime/debug"
 	"sync"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/storage"
+
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -26,16 +30,16 @@ type Scheduler[TaskDescriptor payments.TaskDescriptor] interface {
 }
 
 type taskHolder[TaskDescriptor payments.TaskDescriptor] struct {
-	descriptor TaskDescriptor
+	descriptor json.RawMessage
 	cancel     func()
 	logger     sharedlogging.Logger
 	stopChan   StopChan
 }
 
 type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
-	provider         string
+	provider         models.ConnectorProvider
 	logger           sharedlogging.Logger
-	store            Store[TaskDescriptor]
+	store            Repository
 	containerFactory ContainerFactory
 	tasks            map[string]*taskHolder[TaskDescriptor]
 	mu               sync.Mutex
@@ -45,14 +49,19 @@ type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context,
-) ([]payments.TaskState[TaskDescriptor], error) {
-	return s.store.ListTaskStates(ctx, s.provider)
+) ([]models.Task, error) {
+	return s.store.ListTasks(ctx, s.provider)
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context,
 	descriptor TaskDescriptor,
-) (*payments.TaskState[TaskDescriptor], error) {
-	return s.store.ReadTaskState(ctx, s.provider, descriptor)
+) (*models.Task, error) {
+	taskDescriptor, err := json.Marshal(descriptor)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.store.GetTask(ctx, s.provider, taskDescriptor)
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescriptor, restart bool) error {
@@ -65,7 +74,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 	}
 
 	if !restart {
-		_, err := s.store.ReadTaskState(context.Background(), s.provider, descriptor)
+		_, err := s.ReadTask(context.Background(), descriptor)
 		if err == nil {
 			return nil
 		}
@@ -80,7 +89,12 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 		return nil
 	}
 
-	if err := s.startTask(descriptor); err != nil {
+	taskDescriptor, err := json.Marshal(descriptor)
+	if err != nil {
+		return err
+	}
+
+	if err := s.startTask(taskDescriptor); err != nil {
 		return errors.Wrap(err, "starting task")
 	}
 
@@ -117,13 +131,13 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Shutdown(ctx context.Context) err
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) Restore(ctx context.Context) error {
-	states, err := s.store.ListTaskStatesByStatus(ctx, s.provider, payments.TaskStatusActive)
+	tasks, err := s.store.ListTasksByStatus(ctx, s.provider, models.TaskStatusActive)
 	if err != nil {
 		return err
 	}
 
-	for _, state := range states {
-		err = s.startTask(state.Descriptor)
+	for _, task := range tasks {
+		err = s.startTask(task.Descriptor)
 		if err != nil {
 			return err
 		}
@@ -146,7 +160,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) registerTaskError(ctx context.Con
 
 	holder.logger.Errorf("Task terminated with error: %s", taskErr)
 
-	err := s.store.UpdateTaskStatus(ctx, s.provider, holder.descriptor, payments.TaskStatusFailed, taskError)
+	err := s.store.UpdateTaskStatus(ctx, s.provider, holder.descriptor, models.TaskStatusFailed, taskError)
 	if err != nil {
 		holder.logger.Error("Error updating task status: %s", taskError)
 	}
@@ -163,7 +177,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 	oldestPendingTask, err := s.store.ReadOldestPendingTask(context.Background(), s.provider)
 	if err != nil {
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, storage.ErrNotFound) {
 			return
 		}
 
@@ -172,7 +186,16 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 		return
 	}
 
-	p := s.resolver.Resolve(oldestPendingTask.Descriptor)
+	var descriptor TaskDescriptor
+
+	err = json.Unmarshal(oldestPendingTask.Descriptor, &descriptor)
+	if err != nil {
+		sharedlogging.Error(err)
+
+		return
+	}
+
+	p := s.resolver.Resolve(descriptor)
 	if p == nil {
 		sharedlogging.Errorf("unable to resolve task")
 
@@ -187,27 +210,33 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 type StopChan chan chan struct{}
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescriptor) error {
-	paymentState, err := s.store.FindTaskAndUpdateStatus(context.Background(), s.provider, descriptor,
-		payments.TaskStatusActive, "")
+func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMessage) error {
+	task, err := s.store.FindAndUpsertTask(context.Background(), s.provider, descriptor,
+		models.TaskStatusActive, "")
 	if err != nil {
 		return errors.Wrap(err, "finding task and update")
 	}
 
-	taskID := payments.IDFromDescriptor(descriptor)
 	logger := s.logger.WithFields(map[string]interface{}{
-		"task-id": taskID,
+		"task-id": task.ID,
 	})
 
-	task := s.resolver.Resolve(descriptor)
-	if task == nil {
+	var taskDescriptor TaskDescriptor
+
+	err = json.Unmarshal(task.Descriptor, &taskDescriptor)
+	if err != nil {
+		return err
+	}
+
+	taskResolver := s.resolver.Resolve(taskDescriptor)
+	if taskResolver == nil {
 		return ErrUnableToResolve
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	ctx, span := otel.Tracer("com.formance.payments").Start(ctx, "Task", trace.WithAttributes(
-		attribute.String("id", taskID),
-		attribute.String("connector", s.provider),
+		attribute.Stringer("id", task.ID),
+		attribute.Stringer("connector", s.provider),
 	))
 
 	holder := &taskHolder[TaskDescriptor]{
@@ -257,11 +286,11 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 
 	err = container.Provide(func() StateResolver {
 		return StateResolverFn(func(ctx context.Context, v any) error {
-			if paymentState.State == nil || len(paymentState.State) == 0 {
+			if task.State == nil || len(task.State) == 0 {
 				return nil
 			}
 
-			return bson.Unmarshal(paymentState.State, v)
+			return json.Unmarshal(task.State, v)
 		})
 	})
 	if err != nil {
@@ -285,16 +314,17 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor TaskDescript
 			}
 		}()
 
-		err := container.Invoke(task)
+		err = container.Invoke(taskResolver)
 		if err != nil {
 			s.registerTaskError(ctx, holder, err)
+			debug.PrintStack()
 
 			return
 		}
 
 		logger.Infof("Task terminated with success")
 
-		err = s.store.UpdateTaskStatus(ctx, s.provider, descriptor, payments.TaskStatusTerminated, "")
+		err = s.store.UpdateTaskStatus(ctx, s.provider, descriptor, models.TaskStatusTerminated, "")
 		if err != nil {
 			logger.Error("Error updating task status: %s", err)
 		}
@@ -308,16 +338,21 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) stackTask(descriptor TaskDescript
 		"descriptor": descriptor,
 	}).Infof("Stacking task")
 
+	taskDescriptor, err := json.Marshal(descriptor)
+	if err != nil {
+		return err
+	}
+
 	return s.store.UpdateTaskStatus(
-		context.Background(), s.provider, descriptor, payments.TaskStatusPending, "")
+		context.Background(), s.provider, taskDescriptor, models.TaskStatusPending, "")
 }
 
 var _ Scheduler[struct{}] = &DefaultTaskScheduler[struct{}]{}
 
 func NewDefaultScheduler[TaskDescriptor payments.TaskDescriptor](
-	provider string,
+	provider models.ConnectorProvider,
 	logger sharedlogging.Logger,
-	store Store[TaskDescriptor],
+	store Repository,
 	containerFactory ContainerFactory,
 	resolver Resolver[TaskDescriptor],
 	maxTasks int,
