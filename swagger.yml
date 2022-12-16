@@ -4,6 +4,17 @@ info:
   version: "PAYMENTS_VERSION"
 
 paths:
+  /_info:
+    get:
+      summary: Get server info
+      operationId: getServerInfo
+      responses:
+        200:
+          description: Server information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerInfo'
   /payments:
     get:
       summary: List payments
@@ -986,3 +997,10 @@ components:
           description: The creation date of the more recent BalanceTransaction fetched from stripe for this account
         noMoreHistory:
           type: boolean
+    ServerInfo:
+      type: object
+      required:
+      - version
+      properties:
+        version:
+          type: string

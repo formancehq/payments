@@ -67,7 +67,7 @@ func HTTPModule(serviceInfo api.ServiceInfo) fx.Option {
 			})
 		}),
 		fx.Supply(serviceInfo),
-		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, `group:"connectorHandlers"`))),
+		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
 		addConnector[dummypay.Config](dummypay.NewLoader()),
 		addConnector[modulr.Config](modulr.NewLoader()),
 		addConnector[stripe.Config](stripe.NewLoader()),
