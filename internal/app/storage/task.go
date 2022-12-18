@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/google/uuid"
+
 	"github.com/pkg/errors"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -47,7 +49,7 @@ func (s *Storage) UpdateTaskState(ctx context.Context, provider models.Connector
 }
 
 func (s *Storage) FindAndUpsertTask(ctx context.Context, provider models.ConnectorProvider, descriptor json.RawMessage, status models.TaskStatus, taskErr string) (*models.Task, error) {
-	_, err := s.GetTask(ctx, provider, descriptor)
+	_, err := s.GetTaskByDescriptor(ctx, provider, descriptor)
 	if err != nil && !errors.Is(err, ErrNotFound) {
 		return nil, e("failed to get task", err)
 	}
@@ -64,7 +66,7 @@ func (s *Storage) FindAndUpsertTask(ctx context.Context, provider models.Connect
 		}
 	}
 
-	return s.GetTask(ctx, provider, descriptor)
+	return s.GetTaskByDescriptor(ctx, provider, descriptor)
 }
 
 func (s *Storage) CreateTask(ctx context.Context, provider models.ConnectorProvider, descriptor json.RawMessage, status models.TaskStatus) error {
@@ -143,7 +145,20 @@ func (s *Storage) ReadOldestPendingTask(ctx context.Context, provider models.Con
 	return &task, nil
 }
 
-func (s *Storage) GetTask(ctx context.Context, provider models.ConnectorProvider, descriptor json.RawMessage) (*models.Task, error) {
+func (s *Storage) GetTask(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+	var task models.Task
+
+	err := s.db.NewSelect().Model(&task).
+		Where("id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get task", err)
+	}
+
+	return &task, nil
+}
+
+func (s *Storage) GetTaskByDescriptor(ctx context.Context, provider models.ConnectorProvider, descriptor json.RawMessage) (*models.Task, error) {
 	connector, err := s.GetConnector(ctx, provider)
 	if err != nil {
 		return nil, e("failed to get connector", err)

@@ -3,6 +3,8 @@ package integration
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -223,10 +225,8 @@ func (l *ConnectorManager[ConnectorConfig,
 	return l.scheduler.ListTasks(ctx)
 }
 
-func (l *ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context,
-	descriptor TaskDescriptor,
-) (*models.Task, error) {
-	return l.scheduler.ReadTask(ctx, descriptor)
+func (l *ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
+	return l.scheduler.ReadTask(ctx, taskID)
 }
 
 func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Reset(ctx context.Context) error {
