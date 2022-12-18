@@ -11,21 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-type TaskStatus string
-
-const (
-	TaskStatusStopped    TaskStatus = "stopped"
-	TaskStatusPending    TaskStatus = "pending"
-	TaskStatusActive     TaskStatus = "active"
-	TaskStatusTerminated TaskStatus = "terminated"
-	TaskStatusFailed     TaskStatus = "failed"
-)
-
 type TaskState[Descriptor TaskDescriptor] struct {
 	Provider   models.ConnectorProvider `json:"provider" bson:"provider"`
 	Descriptor Descriptor               `json:"descriptor" bson:"descriptor"`
 	CreatedAt  time.Time                `json:"createdAt" bson:"createdAt"`
-	Status     TaskStatus               `json:"status" bson:"status"`
+	Status     models.TaskStatus        `json:"status" bson:"status"`
 	Error      string                   `json:"error" bson:"error"`
 	State      bson.Raw                 `json:"state" bson:"state"`
 }
