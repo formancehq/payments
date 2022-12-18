@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -15,12 +17,22 @@ import (
 )
 
 type InMemoryStore struct {
+	tasks    map[uuid.UUID]models.Task
 	statuses map[string]models.TaskStatus
 	created  map[string]time.Time
 	errors   map[string]string
 }
 
-func (s *InMemoryStore) GetTask(ctx context.Context, provider models.ConnectorProvider,
+func (s *InMemoryStore) GetTask(ctx context.Context, id uuid.UUID) (*models.Task, error) {
+	task, ok := s.tasks[id]
+	if !ok {
+		return nil, storage.ErrNotFound
+	}
+
+	return &task, nil
+}
+
+func (s *InMemoryStore) GetTaskByDescriptor(ctx context.Context, provider models.ConnectorProvider,
 	descriptor json.RawMessage,
 ) (*models.Task, error) {
 	id := payments.IDFromDescriptor(descriptor)

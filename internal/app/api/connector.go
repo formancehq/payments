@@ -5,17 +5,38 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/formancehq/payments/internal/app/models"
+
+	"github.com/gorilla/mux"
 
 	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/formancehq/payments/internal/app/payments"
 
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/go-libs/sharedlogging"
-	"github.com/gorilla/mux"
 )
+
+func handleErrorBadRequest(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusBadRequest)
+
+	sharedlogging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
+	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
+		ErrorCode:    http.StatusText(http.StatusBadRequest),
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	w.WriteHeader(http.StatusInternalServerError)
+
 	sharedlogging.GetLogger(r.Context()).Error(err)
 	// TODO: Opentracing
 	err = json.NewEncoder(w).Encode(sharedapi.ErrorResponse{
@@ -45,6 +66,17 @@ func readConfig[Config payments.ConnectorConfigObject,
 	}
 }
 
+type listTasksResponseElement struct {
+	ID          string                  `json:"id"`
+	ConnectorID string                  `json:"connectorID"`
+	CreatedAt   string                  `json:"createdAt"`
+	UpdatedAt   string                  `json:"updatedAt"`
+	Descriptor  payments.TaskDescriptor `json:"descriptor"`
+	Status      models.TaskStatus       `json:"status"`
+	State       json.RawMessage         `json:"state"`
+	Error       string                  `json:"error"`
+}
+
 func listTasks[Config payments.ConnectorConfigObject,
 	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
 ) http.HandlerFunc {
@@ -56,7 +88,21 @@ func listTasks[Config payments.ConnectorConfigObject,
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(tasks)
+		response := make([]listTasksResponseElement, len(tasks))
+		for i, task := range tasks {
+			response[i] = listTasksResponseElement{
+				ID:          task.ID.String(),
+				ConnectorID: task.ConnectorID.String(),
+				CreatedAt:   task.CreatedAt.Format(time.RFC3339),
+				UpdatedAt:   task.UpdatedAt.Format(time.RFC3339),
+				Descriptor:  task.Descriptor,
+				Status:      task.Status,
+				State:       task.State,
+				Error:       task.Error,
+			}
+		}
+
+		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			panic(err)
 		}
@@ -67,18 +113,32 @@ func readTask[Config payments.ConnectorConfigObject,
 	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var descriptor Descriptor
+		taskID, err := uuid.Parse(mux.Vars(r)["taskID"])
+		if err != nil {
+			handleErrorBadRequest(w, r, err)
 
-		payments.DescriptorFromID(mux.Vars(r)["taskID"], &descriptor)
+			return
+		}
 
-		tasks, err := connectorManager.ReadTaskState(r.Context(), descriptor)
+		task, err := connectorManager.ReadTaskState(r.Context(), taskID)
 		if err != nil {
 			handleError(w, r, err)
 
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(tasks)
+		response := listTasksResponseElement{
+			ID:          task.ID.String(),
+			ConnectorID: task.ConnectorID.String(),
+			CreatedAt:   task.CreatedAt.Format(time.RFC3339),
+			UpdatedAt:   task.UpdatedAt.Format(time.RFC3339),
+			Descriptor:  task.Descriptor,
+			Status:      task.Status,
+			State:       task.State,
+			Error:       task.Error,
+		}
+
+		err = json.NewEncoder(w).Encode(response)
 		if err != nil {
 			panic(err)
 		}

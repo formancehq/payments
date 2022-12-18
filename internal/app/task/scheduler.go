@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -53,7 +55,11 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context,
 	return s.store.ListTasks(ctx, s.provider)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context,
+func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
+	return s.store.GetTask(ctx, taskID)
+}
+
+func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTaskByDescriptor(ctx context.Context,
 	descriptor TaskDescriptor,
 ) (*models.Task, error) {
 	taskDescriptor, err := json.Marshal(descriptor)
@@ -61,7 +67,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context,
 		return nil, err
 	}
 
-	return s.store.GetTask(ctx, s.provider, taskDescriptor)
+	return s.store.GetTaskByDescriptor(ctx, s.provider, taskDescriptor)
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescriptor, restart bool) error {
@@ -74,7 +80,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 	}
 
 	if !restart {
-		_, err := s.ReadTask(context.Background(), descriptor)
+		_, err := s.ReadTaskByDescriptor(context.Background(), descriptor)
 		if err == nil {
 			return nil
 		}
