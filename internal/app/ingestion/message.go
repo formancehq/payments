@@ -52,7 +52,7 @@ type paymentAdjustmentMessagePayload struct {
 	Absolute bool                 `json:"absolute"`
 }
 
-func NewEventSavedPayments(payments []*models.Payment) EventMessage {
+func NewEventSavedPayments(payments []*models.Payment, provider models.ConnectorProvider) EventMessage {
 	payload := make([]paymentMessagePayload, len(payments))
 
 	for paymentIdx, payment := range payments {
@@ -68,10 +68,7 @@ func NewEventSavedPayments(payments []*models.Payment) EventMessage {
 			CreatedAt:     payment.CreatedAt,
 			Raw:           payment.RawData,
 			Amount:        payment.Amount,
-		}
-
-		if payment.Account != nil {
-			payload[paymentIdx].Provider = payment.Account.Provider
+			Provider:      provider.String(),
 		}
 
 		for _, adjustment := range payment.Adjustments {

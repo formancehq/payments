@@ -62,7 +62,7 @@ func (i *DefaultIngester) IngestPayments(ctx context.Context, batch PaymentBatch
 		return fmt.Errorf("error updating task state: %w", err)
 	}
 
-	i.publish(ctx, TopicPayments, NewEventSavedPayments(allPayments))
+	i.publish(ctx, TopicPayments, NewEventSavedPayments(allPayments, i.provider))
 
 	endedAt := time.Now()
 
