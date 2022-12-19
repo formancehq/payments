@@ -29,17 +29,18 @@ type EventMessage struct {
 }
 
 type paymentMessagePayload struct {
-	ID            string               `json:"id"`
-	Reference     string               `json:"reference"`
-	Type          models.PaymentType   `json:"type"`
-	Provider      string               `json:"provider"`
-	Status        models.PaymentStatus `json:"status"`
-	InitialAmount int64                `json:"initialAmount"`
-	Scheme        models.PaymentScheme `json:"scheme"`
-	Asset         models.PaymentAsset  `json:"asset"`
-	CreatedAt     time.Time            `json:"createdAt"`
-	Raw           interface{}          `json:"raw"`
-	Amount        int64                `json:"amount"`
+	ID        string               `json:"id"`
+	Reference string               `json:"reference"`
+	CreatedAt time.Time            `json:"createdAt"`
+	Provider  string               `json:"provider"`
+	Type      models.PaymentType   `json:"type"`
+	Status    models.PaymentStatus `json:"status"`
+	Scheme    models.PaymentScheme `json:"scheme"`
+	Asset     models.PaymentAsset  `json:"asset"`
+
+	// TODO: Remove 'initialAmount' once frontend has switched to 'amount
+	InitialAmount int64 `json:"initialAmount"`
+	Amount        int64 `json:"amount"`
 }
 
 func NewEventSavedPayments(payment *models.Payment, provider models.ConnectorProvider) EventMessage {
@@ -52,7 +53,6 @@ func NewEventSavedPayments(payment *models.Payment, provider models.ConnectorPro
 		Scheme:        payment.Scheme,
 		Asset:         payment.Asset,
 		CreatedAt:     payment.CreatedAt,
-		Raw:           payment.RawData,
 		Amount:        payment.Amount,
 		Provider:      provider.String(),
 	}
