@@ -29,26 +29,17 @@ type EventMessage struct {
 }
 
 type paymentMessagePayload struct {
-	ID            string                            `json:"id"`
-	Reference     string                            `json:"reference"`
-	Type          models.PaymentType                `json:"type"`
-	Provider      string                            `json:"provider"`
-	Status        models.PaymentStatus              `json:"status"`
-	InitialAmount int64                             `json:"initialAmount"`
-	Scheme        models.PaymentScheme              `json:"scheme"`
-	Asset         models.PaymentAsset               `json:"asset"`
-	CreatedAt     time.Time                         `json:"createdAt"`
-	Raw           interface{}                       `json:"raw"`
-	Amount        int64                             `json:"amount"`
-	Adjustments   []paymentAdjustmentMessagePayload `json:"adjustments"`
-}
-
-type paymentAdjustmentMessagePayload struct {
-	Status   models.PaymentStatus `json:"status"`
-	Amount   int64                `json:"amount"`
-	Date     time.Time            `json:"date"`
-	Raw      interface{}          `json:"raw"`
-	Absolute bool                 `json:"absolute"`
+	ID            string               `json:"id"`
+	Reference     string               `json:"reference"`
+	Type          models.PaymentType   `json:"type"`
+	Provider      string               `json:"provider"`
+	Status        models.PaymentStatus `json:"status"`
+	InitialAmount int64                `json:"initialAmount"`
+	Scheme        models.PaymentScheme `json:"scheme"`
+	Asset         models.PaymentAsset  `json:"asset"`
+	CreatedAt     time.Time            `json:"createdAt"`
+	Raw           interface{}          `json:"raw"`
+	Amount        int64                `json:"amount"`
 }
 
 func NewEventSavedPayments(payment *models.Payment, provider models.ConnectorProvider) EventMessage {
@@ -64,17 +55,6 @@ func NewEventSavedPayments(payment *models.Payment, provider models.ConnectorPro
 		Raw:           payment.RawData,
 		Amount:        payment.Amount,
 		Provider:      provider.String(),
-	}
-
-	for _, adjustment := range payment.Adjustments {
-		payload.Adjustments = append(payload.Adjustments,
-			paymentAdjustmentMessagePayload{
-				Status:   adjustment.Status,
-				Amount:   adjustment.Amount,
-				Date:     adjustment.CreatedAt,
-				Raw:      adjustment.RawData,
-				Absolute: adjustment.Absolute,
-			})
 	}
 
 	return EventMessage{
