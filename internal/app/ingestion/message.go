@@ -31,7 +31,6 @@ type EventMessage struct {
 type paymentMessagePayload struct {
 	ID            string                            `json:"id"`
 	Reference     string                            `json:"reference"`
-	Accounts      interface{}                       `json:"accounts"`
 	Type          models.PaymentType                `json:"type"`
 	Provider      string                            `json:"provider"`
 	Status        models.PaymentStatus              `json:"status"`
@@ -52,34 +51,30 @@ type paymentAdjustmentMessagePayload struct {
 	Absolute bool                 `json:"absolute"`
 }
 
-func NewEventSavedPayments(payments []*models.Payment, provider models.ConnectorProvider) EventMessage {
-	payload := make([]paymentMessagePayload, len(payments))
+func NewEventSavedPayments(payment *models.Payment, provider models.ConnectorProvider) EventMessage {
+	payload := paymentMessagePayload{
+		ID:            payment.ID.String(),
+		Reference:     payment.Reference,
+		Type:          payment.Type,
+		Status:        payment.Status,
+		InitialAmount: payment.Amount,
+		Scheme:        payment.Scheme,
+		Asset:         payment.Asset,
+		CreatedAt:     payment.CreatedAt,
+		Raw:           payment.RawData,
+		Amount:        payment.Amount,
+		Provider:      provider.String(),
+	}
 
-	for paymentIdx, payment := range payments {
-		payload[paymentIdx] = paymentMessagePayload{
-			ID:            payment.ID.String(),
-			Reference:     payment.Reference,
-			Accounts:      payment.Account,
-			Type:          payment.Type,
-			Status:        payment.Status,
-			InitialAmount: payment.Amount,
-			Scheme:        payment.Scheme,
-			Asset:         payment.Asset,
-			CreatedAt:     payment.CreatedAt,
-			Raw:           payment.RawData,
-			Amount:        payment.Amount,
-			Provider:      provider.String(),
-		}
-
-		for _, adjustment := range payment.Adjustments {
-			payload[paymentIdx].Adjustments = append(payload[paymentIdx].Adjustments, paymentAdjustmentMessagePayload{
+	for _, adjustment := range payment.Adjustments {
+		payload.Adjustments = append(payload.Adjustments,
+			paymentAdjustmentMessagePayload{
 				Status:   adjustment.Status,
 				Amount:   adjustment.Amount,
 				Date:     adjustment.CreatedAt,
 				Raw:      adjustment.RawData,
 				Absolute: adjustment.Absolute,
 			})
-		}
 	}
 
 	return EventMessage{
