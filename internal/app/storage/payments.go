@@ -35,19 +35,20 @@ func (s *Storage) ListPayments(ctx context.Context, sort Sorter, pagination Pagi
 }
 
 func (s *Storage) GetPayment(ctx context.Context, id string) (*models.Payment, error) {
-	var payment *models.Payment
+	var payment models.Payment
 
-	err := s.db.NewSelect().Model(payment).
+	err := s.db.NewSelect().
+		Model(&payment).
 		Relation("Connector").
 		Relation("Metadata").
 		Relation("Adjustments").
-		Where("id = ?", id).
+		Where("payment.id = ?", id).
 		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get payment %s: %w", id, err)
 	}
 
-	return payment, nil
+	return &payment, nil
 }
 
 func (s *Storage) UpsertPayments(ctx context.Context, provider models.ConnectorProvider, payments []*models.Payment) error {
