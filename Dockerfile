@@ -15,12 +15,9 @@ ARG VERSION
 WORKDIR /go/src/github.com/formancehq/payments
 
 # get deps first so it's cached
-COPY go.mod .
-COPY go.sum .
-
-RUN go mod download
-
 COPY . .
+
+RUN go mod vendor
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH \
     CC=$TARGETARCH-linux-gnu-gcc \
