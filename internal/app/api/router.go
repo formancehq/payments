@@ -43,8 +43,10 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 
 	for _, h := range connectorHandlers {
 		connectorGroup.PathPrefix("/" + h.Provider.String()).Handler(
-			http.StripPrefix("/connectors", h.Handler),
-		)
+			http.StripPrefix("/connectors", h.Handler))
+
+		connectorGroup.PathPrefix("/" + h.Provider.StringLower()).Handler(
+			http.StripPrefix("/connectors", h.Handler))
 	}
 
 	authGroup.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(store))
@@ -64,17 +66,18 @@ func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.
 ) *mux.Router {
 	r := mux.NewRouter()
 
-	r.Path("/" + provider.String()).Methods(http.MethodPost).Handler(install(manager))
-
-	r.Path("/" + provider.String() + "/reset").Methods(http.MethodPost).Handler(reset(manager))
-
-	r.Path("/" + provider.String()).Methods(http.MethodDelete).Handler(uninstall(manager))
-
-	r.Path("/" + provider.String() + "/config").Methods(http.MethodGet).Handler(readConfig(manager))
-
-	r.Path("/" + provider.String() + "/tasks").Methods(http.MethodGet).Handler(listTasks(manager))
-
-	r.Path("/" + provider.String() + "/tasks/{taskID}").Methods(http.MethodGet).Handler(readTask(manager))
+	addRoute(r, provider, "", http.MethodPost, install(manager))
+	addRoute(r, provider, "", http.MethodDelete, uninstall(manager))
+	addRoute(r, provider, "/config", http.MethodGet, readConfig(manager))
+	addRoute(r, provider, "/reset", http.MethodPost, reset(manager))
+	addRoute(r, provider, "/tasks", http.MethodGet, listTasks(manager))
+	addRoute(r, provider, "/tasks/{taskID}", http.MethodGet, readTask(manager))
 
 	return r
+}
+
+func addRoute(r *mux.Router, provider models.ConnectorProvider, path string, method string, handler http.Handler) {
+	r.Path("/" + provider.String() + path).Methods(method).Handler(handler)
+
+	r.Path("/" + provider.StringLower() + path).Methods(method).Handler(handler)
 }

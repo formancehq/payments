@@ -219,6 +219,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Type:      models.PaymentTypePayOut,
 			Adjustments: []*models.Adjustment{
 				{
+					Reference: balanceTransaction.Source.Refund.Charge.ID,
 					Status:    models.PaymentStatusSucceeded,
 					Amount:    balanceTransaction.Amount,
 					CreatedAt: time.Unix(balanceTransaction.Created, 0),
@@ -241,8 +242,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		payment = models.Payment{
 			Reference: balanceTransaction.Source.Payout.ID,
 			Type:      models.PaymentTypePayOut,
+			Status:    models.PaymentStatusFailed,
 			Adjustments: []*models.Adjustment{
 				{
+					Reference: balanceTransaction.Source.Payout.ID,
 					Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
 					CreatedAt: time.Unix(balanceTransaction.Created, 0),
 					RawData:   rawData,
@@ -254,8 +257,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		payment = models.Payment{
 			Reference: balanceTransaction.Source.Payout.ID,
 			Type:      models.PaymentTypePayIn,
+			Status:    models.PaymentStatusFailed,
 			Adjustments: []*models.Adjustment{
 				{
+					Reference: balanceTransaction.Source.Payout.ID,
 					Status:    convertPayoutStatus(balanceTransaction.Source.Payout.Status),
 					CreatedAt: time.Unix(balanceTransaction.Created, 0),
 					RawData:   rawData,
@@ -267,8 +272,10 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 		payment = models.Payment{
 			Reference: balanceTransaction.Source.Refund.Charge.ID,
 			Type:      models.PaymentTypePayOut,
+			Status:    models.PaymentStatusSucceeded,
 			Adjustments: []*models.Adjustment{
 				{
+					Reference: balanceTransaction.Source.Refund.Charge.ID,
 					Status:    models.PaymentStatusSucceeded,
 					Amount:    balanceTransaction.Amount,
 					CreatedAt: time.Unix(balanceTransaction.Created, 0),
@@ -282,6 +289,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			Type:      models.PaymentTypePayOut,
 			Adjustments: []*models.Adjustment{
 				{
+					Reference: balanceTransaction.Source.Dispute.Charge.ID,
 					Status:    models.PaymentStatusCancelled,
 					Amount:    balanceTransaction.Amount,
 					CreatedAt: time.Unix(balanceTransaction.Created, 0),
@@ -290,7 +298,7 @@ func CreateBatchElement(balanceTransaction *stripe.BalanceTransaction, forward b
 			},
 		}
 	case stripe.BalanceTransactionTypeStripeFee:
-		return ingestion.PaymentBatchElement{}, true
+		return ingestion.PaymentBatchElement{}, false
 	default:
 		return ingestion.PaymentBatchElement{}, false
 	}

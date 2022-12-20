@@ -105,6 +105,10 @@ func (s *Storage) UpsertPayments(ctx context.Context, provider models.ConnectorP
 
 	for i := range payments {
 		for _, adjustment := range payments[i].Adjustments {
+			if adjustment.Reference == "" {
+				continue
+			}
+
 			adjustment.PaymentID = payments[i].ID
 
 			adjustments = append(adjustments, adjustment)

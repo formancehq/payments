@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -38,6 +39,10 @@ const (
 
 func (p ConnectorProvider) String() string {
 	return string(p)
+}
+
+func (p ConnectorProvider) StringLower() string {
+	return strings.ToLower(string(p))
 }
 
 func (c Connector) ParseConfig(to interface{}) error {
