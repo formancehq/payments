@@ -131,6 +131,7 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 				Asset:         ret[i].Asset.String(),
 				CreatedAt:     ret[i].CreatedAt,
 				Raw:           ret[i].RawData,
+				Adjustments:   make([]paymentAdjustment, len(ret[i].Adjustments)),
 			}
 
 			if ret[i].AccountID != uuid.Nil {
@@ -138,14 +139,13 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 			}
 
 			for adjustmentIdx := range ret[i].Adjustments {
-				data[i].Adjustments = append(data[i].Adjustments,
-					paymentAdjustment{
-						Status:   ret[i].Adjustments[adjustmentIdx].Status,
-						Amount:   ret[i].Adjustments[adjustmentIdx].Amount,
-						Date:     ret[i].Adjustments[adjustmentIdx].CreatedAt,
-						Raw:      ret[i].Adjustments[adjustmentIdx].RawData,
-						Absolute: ret[i].Adjustments[adjustmentIdx].Absolute,
-					})
+				data[i].Adjustments[adjustmentIdx] = paymentAdjustment{
+					Status:   ret[i].Adjustments[adjustmentIdx].Status,
+					Amount:   ret[i].Adjustments[adjustmentIdx].Amount,
+					Date:     ret[i].Adjustments[adjustmentIdx].CreatedAt,
+					Raw:      ret[i].Adjustments[adjustmentIdx].RawData,
+					Absolute: ret[i].Adjustments[adjustmentIdx].Absolute,
+				}
 			}
 
 			for metadataIDx := range ret[i].Metadata {
@@ -204,6 +204,8 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 			Asset:         payment.Asset.String(),
 			CreatedAt:     payment.CreatedAt,
 			Raw:           payment.RawData,
+			Adjustments:   make([]paymentAdjustment, len(payment.Adjustments)),
+			Metadata:      make([]paymentMetadata, len(payment.Metadata)),
 		}
 
 		if payment.AccountID != uuid.Nil {
@@ -211,14 +213,13 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 		}
 
 		for i := range payment.Adjustments {
-			data.Adjustments = append(data.Adjustments,
-				paymentAdjustment{
-					Status:   payment.Adjustments[i].Status,
-					Amount:   payment.Adjustments[i].Amount,
-					Date:     payment.Adjustments[i].CreatedAt,
-					Raw:      payment.Adjustments[i].RawData,
-					Absolute: payment.Adjustments[i].Absolute,
-				})
+			data.Adjustments[i] = paymentAdjustment{
+				Status:   payment.Adjustments[i].Status,
+				Amount:   payment.Adjustments[i].Amount,
+				Date:     payment.Adjustments[i].CreatedAt,
+				Raw:      payment.Adjustments[i].RawData,
+				Absolute: payment.Adjustments[i].Absolute,
+			}
 		}
 
 		for metadataIDx := range payment.Metadata {
