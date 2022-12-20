@@ -35,12 +35,17 @@ func rootCommand() *cobra.Command {
 	root.AddCommand(version)
 
 	server := newServer()
-	root.AddCommand(server)
+	root.AddCommand(newServer())
+
+	migrate := newMigrate()
+	root.AddCommand(migrate)
 
 	root.PersistentFlags().Bool(debugFlag, false, "Debug mode")
+
+	migrate.Flags().String(postgresURIFlag, "postgres://localhost/payments", "PostgreSQL DB address")
+
 	server.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-	server.Flags().String(mongodbURIFlag, "mongodb://localhost:27017", "MongoDB address")
-	server.Flags().String(mongodbDatabaseFlag, "payments", "MongoDB database name")
+	server.Flags().String(postgresURIFlag, "postgres://localhost/payments", "PostgreSQL DB address")
 	server.Flags().String(envFlag, "local", "Environment")
 	server.Flags().Bool(publisherKafkaEnabledFlag, false, "Publish write events to kafka")
 	server.Flags().StringSlice(publisherKafkaBrokerFlag, []string{}, "Kafka address is kafka enabled")

@@ -98,13 +98,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
-          - dummypay
-          - wise
-          - modulr
-          - currencycloud
+          $ref: '#/components/schemas/Connectors'
         required: true
       requestBody:
         required: true
@@ -126,9 +120,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         204:
@@ -145,9 +137,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         200:
@@ -168,9 +158,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         204:
@@ -187,9 +175,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         200:
@@ -218,9 +204,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       - name: taskId
         description: The task id
@@ -260,6 +244,16 @@ paths:
           description: Transfer has been executed
 components:
   schemas:
+    Connectors:
+      type: string
+      enum:
+        - STRIPE
+        - DUMMY-PAY
+        - SIE
+        - MODULR
+        - CURRENCY-CLOUD
+        - BANKING-CIRCLE
+
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
