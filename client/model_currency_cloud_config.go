@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the CurrencyCloudConfig type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &CurrencyCloudConfig{}
-
 // CurrencyCloudConfig struct for CurrencyCloudConfig
 type CurrencyCloudConfig struct {
 	ApiKey interface{} `json:"apiKey"`
@@ -166,14 +163,6 @@ func (o *CurrencyCloudConfig) SetEndpoint(v interface{}) {
 }
 
 func (o CurrencyCloudConfig) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o CurrencyCloudConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.ApiKey != nil {
 		toSerialize["apiKey"] = o.ApiKey
@@ -187,7 +176,7 @@ func (o CurrencyCloudConfig) ToMap() (map[string]interface{}, error) {
 	if o.Endpoint != nil {
 		toSerialize["endpoint"] = o.Endpoint
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableCurrencyCloudConfig struct {

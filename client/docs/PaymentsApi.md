@@ -4,6 +4,7 @@ All URIs are relative to *http://localhost*
 
 Method | HTTP request | Description
 ------------- | ------------- | -------------
+[**ConnectorsStripeTransfer**](PaymentsApi.md#ConnectorsStripeTransfer) | **Post** /connectors/stripe/transfer | Transfer funds between Stripe accounts
 [**GetAllConnectors**](PaymentsApi.md#GetAllConnectors) | **Get** /connectors | Get all installed connectors
 [**GetAllConnectorsConfigs**](PaymentsApi.md#GetAllConnectorsConfigs) | **Get** /connectors/configs | Get all available connectors configs
 [**GetConnectorTask**](PaymentsApi.md#GetConnectorTask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
@@ -15,6 +16,70 @@ Method | HTTP request | Description
 [**ResetConnector**](PaymentsApi.md#ResetConnector) | **Post** /connectors/{connector}/reset | Reset connector
 [**UninstallConnector**](PaymentsApi.md#UninstallConnector) | **Delete** /connectors/{connector} | Uninstall connector
 
+
+
+## ConnectorsStripeTransfer
+
+> ConnectorsStripeTransfer(ctx).StripeTransferRequest(stripeTransferRequest).Execute()
+
+Transfer funds between Stripe accounts
+
+
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    stripeTransferRequest := *openapiclient.NewStripeTransferRequest() // StripeTransferRequest | 
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.PaymentsApi.ConnectorsStripeTransfer(context.Background()).StripeTransferRequest(stripeTransferRequest).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.ConnectorsStripeTransfer``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiConnectorsStripeTransferRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **stripeTransferRequest** | [**StripeTransferRequest**](StripeTransferRequest.md) |  | 
+
+### Return type
+
+ (empty response body)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: application/json
+- **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
 
 
 ## GetAllConnectors
@@ -80,7 +145,7 @@ No authorization required
 
 ## GetAllConnectorsConfigs
 
-> interface{} GetAllConnectorsConfigs(ctx).Execute()
+> ListConnectorsConfigsResponse GetAllConnectorsConfigs(ctx).Execute()
 
 Get all available connectors configs
 
@@ -107,7 +172,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.GetAllConnectorsConfigs``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetAllConnectorsConfigs`: interface{}
+    // response from `GetAllConnectorsConfigs`: ListConnectorsConfigsResponse
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.GetAllConnectorsConfigs`: %v\n", resp)
 }
 ```
@@ -123,7 +188,7 @@ Other parameters are passed through a pointer to a apiGetAllConnectorsConfigsReq
 
 ### Return type
 
-**interface{}**
+[**ListConnectorsConfigsResponse**](ListConnectorsConfigsResponse.md)
 
 ### Authorization
 
@@ -160,7 +225,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
     taskId := TODO // interface{} | The task id
 
     configuration := openapiclient.NewConfiguration()
@@ -181,7 +246,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 **taskId** | [**interface{}**](.md) | The task id | 
 
 ### Other Parameters
@@ -301,7 +366,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
     body := interface{}(987) // interface{} | 
 
     configuration := openapiclient.NewConfiguration()
@@ -320,7 +385,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -371,7 +436,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -391,7 +456,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -509,7 +574,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -529,7 +594,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -579,7 +644,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -597,7 +662,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -647,7 +712,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -665,7 +730,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 

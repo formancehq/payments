@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ConnectorBaseInfo type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ConnectorBaseInfo{}
-
 // ConnectorBaseInfo struct for ConnectorBaseInfo
 type ConnectorBaseInfo struct {
 	Provider interface{} `json:"provider,omitempty"`
@@ -107,14 +104,6 @@ func (o *ConnectorBaseInfo) SetDisabled(v interface{}) {
 }
 
 func (o ConnectorBaseInfo) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o ConnectorBaseInfo) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Provider != nil {
 		toSerialize["provider"] = o.Provider
@@ -122,7 +111,7 @@ func (o ConnectorBaseInfo) ToMap() (map[string]interface{}, error) {
 	if o.Disabled != nil {
 		toSerialize["disabled"] = o.Disabled
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableConnectorBaseInfo struct {

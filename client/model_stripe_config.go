@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the StripeConfig type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &StripeConfig{}
-
 // StripeConfig struct for StripeConfig
 type StripeConfig struct {
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
@@ -137,14 +134,6 @@ func (o *StripeConfig) SetPageSize(v interface{}) {
 }
 
 func (o StripeConfig) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o StripeConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.PollingPeriod != nil {
 		toSerialize["pollingPeriod"] = o.PollingPeriod
@@ -155,7 +144,7 @@ func (o StripeConfig) ToMap() (map[string]interface{}, error) {
 	if o.PageSize != nil {
 		toSerialize["pageSize"] = o.PageSize
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableStripeConfig struct {

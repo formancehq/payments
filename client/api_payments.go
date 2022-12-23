@@ -22,6 +22,105 @@ import (
 // PaymentsApiService PaymentsApi service
 type PaymentsApiService service
 
+type ApiConnectorsStripeTransferRequest struct {
+	ctx                   context.Context
+	ApiService            *PaymentsApiService
+	stripeTransferRequest *StripeTransferRequest
+}
+
+func (r ApiConnectorsStripeTransferRequest) StripeTransferRequest(stripeTransferRequest StripeTransferRequest) ApiConnectorsStripeTransferRequest {
+	r.stripeTransferRequest = &stripeTransferRequest
+	return r
+}
+
+func (r ApiConnectorsStripeTransferRequest) Execute() (*http.Response, error) {
+	return r.ApiService.ConnectorsStripeTransferExecute(r)
+}
+
+/*
+ConnectorsStripeTransfer Transfer funds between Stripe accounts
+
+Execute a transfer between two Stripe accounts
+
+ @param ctx context.Context - for authentication, logging, cancellation, deadlines, tracing, etc. Passed from http.Request or context.Background().
+ @return ApiConnectorsStripeTransferRequest
+*/
+func (a *PaymentsApiService) ConnectorsStripeTransfer(ctx context.Context) ApiConnectorsStripeTransferRequest {
+	return ApiConnectorsStripeTransferRequest{
+		ApiService: a,
+		ctx:        ctx,
+	}
+}
+
+// Execute executes the request
+func (a *PaymentsApiService) ConnectorsStripeTransferExecute(r ApiConnectorsStripeTransferRequest) (*http.Response, error) {
+	var (
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
+	)
+
+	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ConnectorsStripeTransfer")
+	if err != nil {
+		return nil, &GenericOpenAPIError{error: err.Error()}
+	}
+
+	localVarPath := localBasePath + "/connectors/stripe/transfer"
+
+	localVarHeaderParams := make(map[string]string)
+	localVarQueryParams := url.Values{}
+	localVarFormParams := url.Values{}
+	if r.stripeTransferRequest == nil {
+		return nil, reportError("stripeTransferRequest is required and must be specified")
+	}
+
+	// to determine the Content-Type header
+	localVarHTTPContentTypes := []string{"application/json"}
+
+	// set Content-Type header
+	localVarHTTPContentType := selectHeaderContentType(localVarHTTPContentTypes)
+	if localVarHTTPContentType != "" {
+		localVarHeaderParams["Content-Type"] = localVarHTTPContentType
+	}
+
+	// to determine the Accept header
+	localVarHTTPHeaderAccepts := []string{}
+
+	// set Accept header
+	localVarHTTPHeaderAccept := selectHeaderAccept(localVarHTTPHeaderAccepts)
+	if localVarHTTPHeaderAccept != "" {
+		localVarHeaderParams["Accept"] = localVarHTTPHeaderAccept
+	}
+	// body params
+	localVarPostBody = r.stripeTransferRequest
+	req, err := a.client.prepareRequest(r.ctx, localVarPath, localVarHTTPMethod, localVarPostBody, localVarHeaderParams, localVarQueryParams, localVarFormParams, formFiles)
+	if err != nil {
+		return nil, err
+	}
+
+	localVarHTTPResponse, err := a.client.callAPI(req)
+	if err != nil || localVarHTTPResponse == nil {
+		return localVarHTTPResponse, err
+	}
+
+	localVarBody, err := ioutil.ReadAll(localVarHTTPResponse.Body)
+	localVarHTTPResponse.Body.Close()
+	localVarHTTPResponse.Body = ioutil.NopCloser(bytes.NewBuffer(localVarBody))
+	if err != nil {
+		return localVarHTTPResponse, err
+	}
+
+	if localVarHTTPResponse.StatusCode >= 300 {
+		newErr := &GenericOpenAPIError{
+			body:  localVarBody,
+			error: localVarHTTPResponse.Status,
+		}
+		return localVarHTTPResponse, newErr
+	}
+
+	return localVarHTTPResponse, nil
+}
+
 type ApiGetAllConnectorsRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
@@ -126,7 +225,7 @@ type ApiGetAllConnectorsConfigsRequest struct {
 	ApiService *PaymentsApiService
 }
 
-func (r ApiGetAllConnectorsConfigsRequest) Execute() (interface{}, *http.Response, error) {
+func (r ApiGetAllConnectorsConfigsRequest) Execute() (*ListConnectorsConfigsResponse, *http.Response, error) {
 	return r.ApiService.GetAllConnectorsConfigsExecute(r)
 }
 
@@ -146,13 +245,13 @@ func (a *PaymentsApiService) GetAllConnectorsConfigs(ctx context.Context) ApiGet
 }
 
 // Execute executes the request
-//  @return interface{}
-func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnectorsConfigsRequest) (interface{}, *http.Response, error) {
+//  @return ListConnectorsConfigsResponse
+func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnectorsConfigsRequest) (*ListConnectorsConfigsResponse, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue interface{}
+		localVarReturnValue *ListConnectorsConfigsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetAllConnectorsConfigs")
@@ -223,7 +322,7 @@ func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnector
 type ApiGetConnectorTaskRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 	taskId     interface{}
 }
 
@@ -241,7 +340,7 @@ Get a specific task associated to the connector
  @param taskId The task id
  @return ApiGetConnectorTaskRequest
 */
-func (a *PaymentsApiService) GetConnectorTask(ctx context.Context, connector interface{}, taskId interface{}) ApiGetConnectorTaskRequest {
+func (a *PaymentsApiService) GetConnectorTask(ctx context.Context, connector Connectors, taskId interface{}) ApiGetConnectorTaskRequest {
 	return ApiGetConnectorTaskRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -266,8 +365,8 @@ func (a *PaymentsApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskReques
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}/tasks/{taskId}"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
-	localVarPath = strings.Replace(localVarPath, "{"+"taskId"+"}", url.PathEscape(parameterValueToString(r.taskId, "taskId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"taskId"+"}", url.PathEscape(parameterToString(r.taskId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -368,7 +467,7 @@ func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment
 	}
 
 	localVarPath := localBasePath + "/payments/{paymentId}"
-	localVarPath = strings.Replace(localVarPath, "{"+"paymentId"+"}", url.PathEscape(parameterValueToString(r.paymentId, "paymentId")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"paymentId"+"}", url.PathEscape(parameterToString(r.paymentId, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -431,7 +530,7 @@ func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment
 type ApiInstallConnectorRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 	body       *interface{}
 }
 
@@ -453,7 +552,7 @@ Install connector
  @param connector The connector code
  @return ApiInstallConnectorRequest
 */
-func (a *PaymentsApiService) InstallConnector(ctx context.Context, connector interface{}) ApiInstallConnectorRequest {
+func (a *PaymentsApiService) InstallConnector(ctx context.Context, connector Connectors) ApiInstallConnectorRequest {
 	return ApiInstallConnectorRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -475,7 +574,7 @@ func (a *PaymentsApiService) InstallConnectorExecute(r ApiInstallConnectorReques
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -534,7 +633,7 @@ func (a *PaymentsApiService) InstallConnectorExecute(r ApiInstallConnectorReques
 type ApiListConnectorTasksRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 }
 
 func (r ApiListConnectorTasksRequest) Execute() (interface{}, *http.Response, error) {
@@ -550,7 +649,7 @@ List all tasks associated with this connector.
  @param connector The connector code
  @return ApiListConnectorTasksRequest
 */
-func (a *PaymentsApiService) ListConnectorTasks(ctx context.Context, connector interface{}) ApiListConnectorTasksRequest {
+func (a *PaymentsApiService) ListConnectorTasks(ctx context.Context, connector Connectors) ApiListConnectorTasksRequest {
 	return ApiListConnectorTasksRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -574,7 +673,7 @@ func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRe
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}/tasks"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -699,13 +798,13 @@ func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*Lis
 	localVarFormParams := url.Values{}
 
 	if r.limit != nil {
-		parameterAddToQuery(localVarQueryParams, "limit", r.limit, "")
+		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
 	}
 	if r.skip != nil {
-		parameterAddToQuery(localVarQueryParams, "skip", r.skip, "")
+		localVarQueryParams.Add("skip", parameterToString(*r.skip, ""))
 	}
 	if r.sort != nil {
-		parameterAddToQuery(localVarQueryParams, "sort", r.sort, "")
+		localVarQueryParams.Add("sort", parameterToString(*r.sort, ""))
 	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
@@ -764,7 +863,7 @@ func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*Lis
 type ApiReadConnectorConfigRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 }
 
 func (r ApiReadConnectorConfigRequest) Execute() (interface{}, *http.Response, error) {
@@ -780,7 +879,7 @@ Read connector config
  @param connector The connector code
  @return ApiReadConnectorConfigRequest
 */
-func (a *PaymentsApiService) ReadConnectorConfig(ctx context.Context, connector interface{}) ApiReadConnectorConfigRequest {
+func (a *PaymentsApiService) ReadConnectorConfig(ctx context.Context, connector Connectors) ApiReadConnectorConfigRequest {
 	return ApiReadConnectorConfigRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -804,7 +903,7 @@ func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfig
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}/config"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -867,7 +966,7 @@ func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfig
 type ApiResetConnectorRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 }
 
 func (r ApiResetConnectorRequest) Execute() (*http.Response, error) {
@@ -883,7 +982,7 @@ Reset connector. Will remove the connector and ALL PAYMENTS generated with it.
  @param connector The connector code
  @return ApiResetConnectorRequest
 */
-func (a *PaymentsApiService) ResetConnector(ctx context.Context, connector interface{}) ApiResetConnectorRequest {
+func (a *PaymentsApiService) ResetConnector(ctx context.Context, connector Connectors) ApiResetConnectorRequest {
 	return ApiResetConnectorRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -905,7 +1004,7 @@ func (a *PaymentsApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}/reset"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}
@@ -959,7 +1058,7 @@ func (a *PaymentsApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (
 type ApiUninstallConnectorRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector  interface{}
+	connector  Connectors
 }
 
 func (r ApiUninstallConnectorRequest) Execute() (*http.Response, error) {
@@ -975,7 +1074,7 @@ Uninstall  connector
  @param connector The connector code
  @return ApiUninstallConnectorRequest
 */
-func (a *PaymentsApiService) UninstallConnector(ctx context.Context, connector interface{}) ApiUninstallConnectorRequest {
+func (a *PaymentsApiService) UninstallConnector(ctx context.Context, connector Connectors) ApiUninstallConnectorRequest {
 	return ApiUninstallConnectorRequest{
 		ApiService: a,
 		ctx:        ctx,
@@ -997,7 +1096,7 @@ func (a *PaymentsApiService) UninstallConnectorExecute(r ApiUninstallConnectorRe
 	}
 
 	localVarPath := localBasePath + "/connectors/{connector}"
-	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterValueToString(r.connector, "connector")), -1)
+	localVarPath = strings.Replace(localVarPath, "{"+"connector"+"}", url.PathEscape(parameterToString(r.connector, "")), -1)
 
 	localVarHeaderParams := make(map[string]string)
 	localVarQueryParams := url.Values{}

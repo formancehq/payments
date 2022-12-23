@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the BankingCircleConfig type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &BankingCircleConfig{}
-
 // BankingCircleConfig struct for BankingCircleConfig
 type BankingCircleConfig struct {
 	Username              interface{} `json:"username"`
@@ -151,14 +148,6 @@ func (o *BankingCircleConfig) SetAuthorizationEndpoint(v interface{}) {
 }
 
 func (o BankingCircleConfig) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o BankingCircleConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Username != nil {
 		toSerialize["username"] = o.Username
@@ -172,7 +161,7 @@ func (o BankingCircleConfig) ToMap() (map[string]interface{}, error) {
 	if o.AuthorizationEndpoint != nil {
 		toSerialize["authorizationEndpoint"] = o.AuthorizationEndpoint
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableBankingCircleConfig struct {

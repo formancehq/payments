@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the DummyPayConfig type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &DummyPayConfig{}
-
 // DummyPayConfig struct for DummyPayConfig
 type DummyPayConfig struct {
 	// The frequency at which the connector will try to fetch new payment objects from the directory
@@ -137,14 +134,6 @@ func (o *DummyPayConfig) SetDirectory(v interface{}) {
 }
 
 func (o DummyPayConfig) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o DummyPayConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.FilePollingPeriod != nil {
 		toSerialize["filePollingPeriod"] = o.FilePollingPeriod
@@ -155,7 +144,7 @@ func (o DummyPayConfig) ToMap() (map[string]interface{}, error) {
 	if o.Directory != nil {
 		toSerialize["directory"] = o.Directory
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableDummyPayConfig struct {

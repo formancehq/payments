@@ -32,13 +32,13 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"golang.org/x/oauth2"
 )
 
 var (
-	jsonCheck       = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?json)`)
-	xmlCheck        = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
-	queryParamSplit = regexp.MustCompile(`(^|&)([^&]+)`)
-	queryDescape    = strings.NewReplacer("%5B", "[", "%5D", "]")
+	jsonCheck = regexp.MustCompile(`(?i:(?:application|text)/(?:vnd\.[^;]+\+)?json)`)
+	xmlCheck  = regexp.MustCompile(`(?i:(?:application|text)/xml)`)
 )
 
 // APIClient manages communication with the Payments API API v1.0.0
@@ -125,101 +125,28 @@ func typeCheckParameter(obj interface{}, expected string, name string) error {
 	return nil
 }
 
-func parameterValueToString(obj interface{}, key string) string {
-	if reflect.TypeOf(obj).Kind() != reflect.Ptr {
-		return fmt.Sprintf("%v", obj)
-	}
-	var param, ok = obj.(MappedNullable)
-	if !ok {
-		return ""
-	}
-	dataMap, err := param.ToMap()
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("%v", dataMap[key])
-}
+// parameterToString convert interface{} parameters to string, using a delimiter if format is provided.
+func parameterToString(obj interface{}, collectionFormat string) string {
+	var delimiter string
 
-// parameterAddToQuery adds the provided object to the url query supporting deep object syntax
-func parameterAddToQuery(queryParams interface{}, keyPrefix string, obj interface{}, collectionType string) {
-	var v = reflect.ValueOf(obj)
-	var value = ""
-	if v == reflect.ValueOf(nil) {
-		value = "null"
-	} else {
-		switch v.Kind() {
-		case reflect.Invalid:
-			value = "invalid"
-
-		case reflect.Struct:
-			if t, ok := obj.(MappedNullable); ok {
-				dataMap, err := t.ToMap()
-				if err != nil {
-					return
-				}
-				parameterAddToQuery(queryParams, keyPrefix, dataMap, collectionType)
-				return
-			}
-			if t, ok := obj.(time.Time); ok {
-				parameterAddToQuery(queryParams, keyPrefix, t.Format(time.RFC3339), collectionType)
-				return
-			}
-			value = v.Type().String() + " value"
-		case reflect.Slice:
-			var indValue = reflect.ValueOf(obj)
-			if indValue == reflect.ValueOf(nil) {
-				return
-			}
-			var lenIndValue = indValue.Len()
-			for i := 0; i < lenIndValue; i++ {
-				var arrayValue = indValue.Index(i)
-				parameterAddToQuery(queryParams, keyPrefix, arrayValue.Interface(), collectionType)
-			}
-			return
-
-		case reflect.Map:
-			var indValue = reflect.ValueOf(obj)
-			if indValue == reflect.ValueOf(nil) {
-				return
-			}
-			iter := indValue.MapRange()
-			for iter.Next() {
-				k, v := iter.Key(), iter.Value()
-				parameterAddToQuery(queryParams, fmt.Sprintf("%s[%s]", keyPrefix, k.String()), v.Interface(), collectionType)
-			}
-			return
-
-		case reflect.Interface:
-			fallthrough
-		case reflect.Ptr:
-			parameterAddToQuery(queryParams, keyPrefix, v.Elem().Interface(), collectionType)
-			return
-
-		case reflect.Int, reflect.Int8, reflect.Int16,
-			reflect.Int32, reflect.Int64:
-			value = strconv.FormatInt(v.Int(), 10)
-		case reflect.Uint, reflect.Uint8, reflect.Uint16,
-			reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-			value = strconv.FormatUint(v.Uint(), 10)
-		case reflect.Float32, reflect.Float64:
-			value = strconv.FormatFloat(v.Float(), 'g', -1, 32)
-		case reflect.Bool:
-			value = strconv.FormatBool(v.Bool())
-		case reflect.String:
-			value = v.String()
-		default:
-			value = v.Type().String() + " value"
-		}
+	switch collectionFormat {
+	case "pipes":
+		delimiter = "|"
+	case "ssv":
+		delimiter = " "
+	case "tsv":
+		delimiter = "\t"
+	case "csv":
+		delimiter = ","
 	}
 
-	switch valuesMap := queryParams.(type) {
-	case url.Values:
-		valuesMap.Add(keyPrefix, value)
-		break
-	case map[string]string:
-		valuesMap[keyPrefix] = value
-		break
+	if reflect.TypeOf(obj).Kind() == reflect.Slice {
+		return strings.Trim(strings.Replace(fmt.Sprint(obj), " ", delimiter, -1), "[]")
+	} else if t, ok := obj.(time.Time); ok {
+		return t.Format(time.RFC3339)
 	}
+
+	return fmt.Sprintf("%v", obj)
 }
 
 // helper for converting interface{} parameters to json strings
@@ -371,11 +298,7 @@ func (c *APIClient) prepareRequest(
 	}
 
 	// Encode the parameters.
-	url.RawQuery = queryParamSplit.ReplaceAllStringFunc(query.Encode(), func(s string) string {
-		pieces := strings.Split(s, "=")
-		pieces[0] = queryDescape.Replace(pieces[0])
-		return strings.Join(pieces, "=")
-	})
+	url.RawQuery = query.Encode()
 
 	// Generate a new request
 	if body != nil {
@@ -405,6 +328,27 @@ func (c *APIClient) prepareRequest(
 
 		// Walk through any authentication.
 
+		// OAuth2 authentication
+		if tok, ok := ctx.Value(ContextOAuth2).(oauth2.TokenSource); ok {
+			// We were able to grab an oauth2 token from the context
+			var latestToken *oauth2.Token
+			if latestToken, err = tok.Token(); err != nil {
+				return nil, err
+			}
+
+			latestToken.SetAuthHeader(localVarRequest)
+		}
+
+		// Basic HTTP Authentication
+		if auth, ok := ctx.Value(ContextBasicAuth).(BasicAuth); ok {
+			localVarRequest.SetBasicAuth(auth.UserName, auth.Password)
+		}
+
+		// AccessToken Authentication
+		if auth, ok := ctx.Value(ContextAccessToken).(string); ok {
+			localVarRequest.Header.Add("Authorization", "Bearer "+auth)
+		}
+
 	}
 
 	for header, value := range c.cfg.DefaultHeader {
@@ -420,18 +364,6 @@ func (c *APIClient) decode(v interface{}, b []byte, contentType string) (err err
 	if s, ok := v.(*string); ok {
 		*s = string(b)
 		return nil
-	}
-	if f, ok := v.(*os.File); ok {
-		f, err = ioutil.TempFile("", "HttpClientFile")
-		if err != nil {
-			return
-		}
-		_, err = f.Write(b)
-		if err != nil {
-			return
-		}
-		_, err = f.Seek(0, io.SeekStart)
-		return
 	}
 	if f, ok := v.(**os.File); ok {
 		*f, err = ioutil.TempFile("", "HttpClientFile")
@@ -508,8 +440,8 @@ func setBody(body interface{}, contentType string) (bodyBuf *bytes.Buffer, err e
 
 	if reader, ok := body.(io.Reader); ok {
 		_, err = bodyBuf.ReadFrom(reader)
-	} else if fp, ok := body.(*os.File); ok {
-		_, err = bodyBuf.ReadFrom(fp)
+	} else if fp, ok := body.(**os.File); ok {
+		_, err = bodyBuf.ReadFrom(*fp)
 	} else if b, ok := body.([]byte); ok {
 		_, err = bodyBuf.Write(b)
 	} else if s, ok := body.(string); ok {
@@ -632,6 +564,7 @@ func (e GenericOpenAPIError) Model() interface{} {
 
 // format error message using title and detail when model implements rfc7807
 func formatErrorMessage(status string, v interface{}) string {
+
 	str := ""
 	metaValue := reflect.ValueOf(v).Elem()
 
@@ -646,5 +579,5 @@ func formatErrorMessage(status string, v interface{}) string {
 	}
 
 	// status title (detail)
-	return strings.TrimSpace(fmt.Sprintf("%s %s", status, str))
+	return fmt.Sprintf("%s %s", status, str)
 }

@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the Payment type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &Payment{}
-
 // Payment struct for Payment
 type Payment struct {
 	Provider  interface{} `json:"provider"`
@@ -331,14 +328,6 @@ func (o *Payment) SetRaw(v interface{}) {
 }
 
 func (o Payment) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o Payment) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Provider != nil {
 		toSerialize["provider"] = o.Provider
@@ -370,7 +359,7 @@ func (o Payment) ToMap() (map[string]interface{}, error) {
 	if o.Raw != nil {
 		toSerialize["raw"] = o.Raw
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullablePayment struct {

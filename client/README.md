@@ -15,6 +15,7 @@ Install the following dependencies:
 
 ```shell
 go get github.com/stretchr/testify/assert
+go get golang.org/x/oauth2
 go get golang.org/x/net/context
 ```
 
@@ -77,6 +78,7 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
+*PaymentsApi* | [**ConnectorsStripeTransfer**](docs/PaymentsApi.md#connectorsstripetransfer) | **Post** /connectors/stripe/transfer | Transfer funds between Stripe accounts
 *PaymentsApi* | [**GetAllConnectors**](docs/PaymentsApi.md#getallconnectors) | **Get** /connectors | Get all installed connectors
 *PaymentsApi* | [**GetAllConnectorsConfigs**](docs/PaymentsApi.md#getallconnectorsconfigs) | **Get** /connectors/configs | Get all available connectors configs
 *PaymentsApi* | [**GetConnectorTask**](docs/PaymentsApi.md#getconnectortask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
@@ -93,15 +95,21 @@ Class | Method | HTTP request | Description
 
  - [BankingCircleConfig](docs/BankingCircleConfig.md)
  - [ConnectorBaseInfo](docs/ConnectorBaseInfo.md)
+ - [ConnectorTaskBase](docs/ConnectorTaskBase.md)
+ - [Connectors](docs/Connectors.md)
  - [CurrencyCloudConfig](docs/CurrencyCloudConfig.md)
  - [DummyPayConfig](docs/DummyPayConfig.md)
  - [GetPaymentResponse](docs/GetPaymentResponse.md)
+ - [ListConnectorsConfigsResponse](docs/ListConnectorsConfigsResponse.md)
+ - [ListConnectorsConfigsResponseConnector](docs/ListConnectorsConfigsResponseConnector.md)
+ - [ListConnectorsConfigsResponseConnectorKey](docs/ListConnectorsConfigsResponseConnectorKey.md)
  - [ListConnectorsResponse](docs/ListConnectorsResponse.md)
  - [ListPaymentsResponse](docs/ListPaymentsResponse.md)
  - [ModulrConfig](docs/ModulrConfig.md)
  - [Payment](docs/Payment.md)
  - [StripeConfig](docs/StripeConfig.md)
  - [StripeTask](docs/StripeTask.md)
+ - [StripeTransferRequest](docs/StripeTransferRequest.md)
  - [WiseConfig](docs/WiseConfig.md)
 
 

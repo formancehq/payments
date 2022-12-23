@@ -91,7 +91,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorConfig'
+                $ref: '#/components/schemas/ListConnectorsConfigsResponse'
           description: List of available connectors configs
       summary: Get all available connectors configs
       tags:
@@ -107,8 +107,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "204":
@@ -126,12 +125,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
-          - dummypay
-          - wise
-          - modulr
-          - currencycloud
+          $ref: '#/components/schemas/Connectors'
         style: simple
       requestBody:
         content:
@@ -156,8 +150,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "200":
@@ -181,8 +174,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "204":
@@ -201,8 +193,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "200":
@@ -210,7 +201,13 @@ paths:
             application/json:
               schema:
                 items:
-                  $ref: '#/components/schemas/ConnectorTask'
+                  oneOf:
+                  - $ref: '#/components/schemas/TaskDescriptorStripe'
+                  - $ref: '#/components/schemas/TaskDescriptorWise'
+                  - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                  - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                  - $ref: '#/components/schemas/TaskDescriptorModulr'
+                  - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
           description: Task list
       summary: List connector tasks
       tags:
@@ -226,8 +223,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       - description: The task id
         example: task1
@@ -242,13 +238,43 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorTask'
+                oneOf:
+                - $ref: '#/components/schemas/TaskDescriptorStripe'
+                - $ref: '#/components/schemas/TaskDescriptorWise'
+                - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                - $ref: '#/components/schemas/TaskDescriptorModulr'
+                - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
           description: The specified task
       summary: Read a specific task of the connector
       tags:
       - Payments
+  /connectors/stripe/transfer:
+    post:
+      description: Execute a transfer between two Stripe accounts
+      operationId: connectorsStripeTransfer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StripeTransferRequest'
+        required: true
+      responses:
+        "200":
+          description: Transfer has been executed
+      summary: Transfer funds between Stripe accounts
+      tags:
+      - Payments
 components:
   schemas:
+    Connectors:
+      enum:
+      - STRIPE
+      - DUMMY-PAY
+      - SIE
+      - MODULR
+      - CURRENCY-CLOUD
+      - BANKING-CIRCLE
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
@@ -257,9 +283,6 @@ components:
       - $ref: '#/components/schemas/ModulrConfig'
       - $ref: '#/components/schemas/CurrencyCloudConfig'
       - $ref: '#/components/schemas/BankingCircleConfig'
-    ConnectorTask:
-      oneOf:
-      - $ref: '#/components/schemas/StripeTask'
     StripeConfig:
       properties:
         pollingPeriod:
@@ -435,9 +458,128 @@ components:
             $ref: '#/components/schemas/ConnectorBaseInfo'
       required:
       - data
+    ListConnectorsConfigsResponse:
+      example:
+        connector:
+          key:
+            datatype: ""
+            required: ""
+      properties:
+        connector:
+          $ref: '#/components/schemas/ListConnectorsConfigsResponse_connector'
     ConnectorBaseInfo:
       properties:
         provider:
           example: stripe
         disabled:
           example: false
+    StripeTransferRequest:
+      example:
+        amount: 100
+        metadata:
+          order_id: "6735"
+        destination: acct_1Gqj58KZcSIg2N2q
+        asset: USD
+      properties:
+        amount:
+          example: 100
+        asset:
+          example: USD
+        destination:
+          example: acct_1Gqj58KZcSIg2N2q
+        metadata:
+          description: |
+            A set of key/value pairs that you can attach to a transfer object.
+            It can be useful for storing additional information about the transfer in a structured format.
+          example:
+            order_id: "6735"
+    ConnectorTaskBase:
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+    TaskDescriptorStripe:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+              main: {}
+              account: {}
+    TaskDescriptorWise:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+              key: {}
+              profileID: {}
+    TaskDescriptorModulr:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+              key: {}
+              accountID: {}
+    TaskDescriptorDummyPay:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+              key: {}
+              fileName: {}
+    TaskDescriptorCurrencyCloud:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+    TaskDescriptorBankingCircle:
+      allOf:
+      - $ref: '#/components/schemas/ConnectorTaskBase'
+      - properties:
+          descriptor:
+            properties:
+              name: {}
+              key: {}
+    ListConnectorsConfigsResponse_connector_key:
+      example:
+        datatype: ""
+        required: ""
+      properties:
+        datatype: {}
+        required: {}
+    ListConnectorsConfigsResponse_connector:
+      example:
+        key:
+          datatype: ""
+          required: ""
+      properties:
+        key:
+          $ref: '#/components/schemas/ListConnectorsConfigsResponse_connector_key'

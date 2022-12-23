@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the ListPaymentsResponse type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &ListPaymentsResponse{}
-
 // ListPaymentsResponse struct for ListPaymentsResponse
 type ListPaymentsResponse struct {
 	Data interface{} `json:"data"`
@@ -67,19 +64,11 @@ func (o *ListPaymentsResponse) SetData(v interface{}) {
 }
 
 func (o ListPaymentsResponse) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o ListPaymentsResponse) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Data != nil {
 		toSerialize["data"] = o.Data
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableListPaymentsResponse struct {

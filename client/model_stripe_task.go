@@ -14,9 +14,6 @@ import (
 	"encoding/json"
 )
 
-// checks if the StripeTask type satisfies the MappedNullable interface at compile time
-var _ MappedNullable = &StripeTask{}
-
 // StripeTask struct for StripeTask
 type StripeTask struct {
 	// The id of the oldest BalanceTransaction fetched from stripe for this account
@@ -213,14 +210,6 @@ func (o *StripeTask) SetNoMoreHistory(v interface{}) {
 }
 
 func (o StripeTask) MarshalJSON() ([]byte, error) {
-	toSerialize, err := o.ToMap()
-	if err != nil {
-		return []byte{}, err
-	}
-	return json.Marshal(toSerialize)
-}
-
-func (o StripeTask) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.OldestId != nil {
 		toSerialize["oldestId"] = o.OldestId
@@ -237,7 +226,7 @@ func (o StripeTask) ToMap() (map[string]interface{}, error) {
 	if o.NoMoreHistory != nil {
 		toSerialize["noMoreHistory"] = o.NoMoreHistory
 	}
-	return toSerialize, nil
+	return json.Marshal(toSerialize)
 }
 
 type NullableStripeTask struct {
