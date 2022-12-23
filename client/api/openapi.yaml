@@ -107,8 +107,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "204":
@@ -126,12 +125,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
-          - dummypay
-          - wise
-          - modulr
-          - currencycloud
+          $ref: '#/components/schemas/Connectors'
         style: simple
       requestBody:
         content:
@@ -156,8 +150,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "200":
@@ -181,8 +174,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "204":
@@ -201,8 +193,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       responses:
         "200":
@@ -232,8 +223,7 @@ paths:
         name: connector
         required: true
         schema:
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         style: simple
       - description: The task id
         example: task1
@@ -277,6 +267,14 @@ paths:
       - Payments
 components:
   schemas:
+    Connectors:
+      enum:
+      - STRIPE
+      - DUMMY-PAY
+      - SIE
+      - MODULR
+      - CURRENCY-CLOUD
+      - BANKING-CIRCLE
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'

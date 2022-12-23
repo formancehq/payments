@@ -225,7 +225,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
     taskId := TODO // interface{} | The task id
 
     configuration := openapiclient.NewConfiguration()
@@ -246,7 +246,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 **taskId** | [**interface{}**](.md) | The task id | 
 
 ### Other Parameters
@@ -366,7 +366,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
     body := interface{}(987) // interface{} | 
 
     configuration := openapiclient.NewConfiguration()
@@ -385,7 +385,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -436,7 +436,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -456,7 +456,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -574,7 +574,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -594,7 +594,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -644,7 +644,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -662,7 +662,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
@@ -712,7 +712,7 @@ import (
 )
 
 func main() {
-    connector := TODO // interface{} | The connector code
+    connector := *openapiclient.NewConnectors() // Connectors | The connector code
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
@@ -730,7 +730,7 @@ func main() {
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 **ctx** | **context.Context** | context for authentication, logging, cancellation, deadlines, tracing, etc.
-**connector** | [**interface{}**](.md) | The connector code | 
+**connector** | [**Connectors**](.md) | The connector code | 
 
 ### Other Parameters
 
