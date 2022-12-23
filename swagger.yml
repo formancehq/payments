@@ -37,7 +37,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ListPaymentsResponse'
-  /payments/{paymentId}:
+  '/payments/{paymentId}':
     get:
       summary: Returns a payment.
       tags:
@@ -85,8 +85,8 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorConfig'
-  /connectors/{connector}:
+                $ref: '#/components/schemas/ListConnectorsConfigsResponse'
+  '/connectors/{connector}':
     post:
       summary: Install connector
       tags:
@@ -98,13 +98,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
-          - dummypay
-          - wise
-          - modulr
-          - currencycloud
+          $ref: '#/components/schemas/Connectors'
         required: true
       requestBody:
         required: true
@@ -126,14 +120,12 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         204:
           description: Connector has been uninstalled
-  /connectors/{connector}/config:
+  '/connectors/{connector}/config':
     get:
       summary: Read connector config
       tags:
@@ -145,9 +137,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         200:
@@ -156,7 +146,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConnectorConfig'
-  /connectors/{connector}/reset:
+  '/connectors/{connector}/reset':
     post:
       summary: Reset connector
       tags:
@@ -168,14 +158,12 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         204:
           description: Connector has been reset
-  /connectors/{connector}/tasks:
+  '/connectors/{connector}/tasks':
     get:
       summary: List connector tasks
       tags:
@@ -187,9 +175,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       responses:
         200:
@@ -199,8 +185,14 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/ConnectorTask'
-  /connectors/{connector}/tasks/{taskId}:
+                  oneOf:
+                    - $ref: '#/components/schemas/TaskDescriptorStripe'
+                    - $ref: '#/components/schemas/TaskDescriptorWise'
+                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                    - $ref: '#/components/schemas/TaskDescriptorModulr'
+                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+  '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
       tags:
@@ -212,9 +204,7 @@ paths:
         description: The connector code
         in: path
         schema:
-          type: string
-          enum:
-          - stripe
+          $ref: '#/components/schemas/Connectors'
         required: true
       - name: taskId
         description: The task id
@@ -229,9 +219,41 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorTask'
+                oneOf:
+                    - $ref: '#/components/schemas/TaskDescriptorStripe'
+                    - $ref: '#/components/schemas/TaskDescriptorWise'
+                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                    - $ref: '#/components/schemas/TaskDescriptorModulr'
+                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+  /connectors/stripe/transfer:
+    post:
+      summary: Transfer funds between Stripe accounts
+      tags:
+      - Payments
+      operationId: connectorsStripeTransfer
+      description: Execute a transfer between two Stripe accounts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StripeTransferRequest'
+      responses:
+        200:
+          description: Transfer has been executed
 components:
   schemas:
+    Connectors:
+      type: string
+      enum:
+        - STRIPE
+        - DUMMY-PAY
+        - SIE
+        - MODULR
+        - CURRENCY-CLOUD
+        - BANKING-CIRCLE
+
     ConnectorConfig:
       oneOf:
       - $ref: '#/components/schemas/StripeConfig'
@@ -240,9 +262,7 @@ components:
       - $ref: '#/components/schemas/ModulrConfig'
       - $ref: '#/components/schemas/CurrencyCloudConfig'
       - $ref: '#/components/schemas/BankingCircleConfig'
-    ConnectorTask:
-      oneOf:
-      - $ref: '#/components/schemas/StripeTask'
+
     StripeConfig:
       type: object
       required:
@@ -443,6 +463,20 @@ components:
           items:
             $ref: '#/components/schemas/ConnectorBaseInfo'
 
+    ListConnectorsConfigsResponse:
+      type: object
+      properties:
+        connector:
+          type: object
+          properties:
+            key:
+              type: object
+              properties:
+                datatype:
+                  type: string
+                required:
+                  type: boolean
+
     ConnectorBaseInfo:
       type: object
       properties:
@@ -452,3 +486,133 @@ components:
         disabled:
           type: boolean
           example: false
+
+    StripeTransferRequest:
+      type: object
+      properties:
+        amount:
+          type: integer
+          example: 100
+        asset:
+          type: string
+          example: USD
+        destination:
+          type: string
+          example: acct_1Gqj58KZcSIg2N2q
+        metadata:
+          type: object
+          description: |
+            A set of key/value pairs that you can attach to a transfer object.
+            It can be useful for storing additional information about the transfer in a structured format.
+          example:
+            order_id: '6735'
+
+    ConnectorTaskBase:
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: {}
+
+    TaskDescriptorStripe:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                main:
+                  type: boolean
+                account:
+                  type: string
+    TaskDescriptorWise:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                profileID:
+                  type: integer
+    TaskDescriptorModulr:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                accountID:
+                  type: string
+    TaskDescriptorDummyPay:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string
+                fileName:
+                  type: string
+    TaskDescriptorCurrencyCloud:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+    TaskDescriptorBankingCircle:
+      allOf:
+        - $ref: '#/components/schemas/ConnectorTaskBase'
+        - type: object
+          properties:
+            descriptor:
+              type: object
+              properties:
+                name:
+                  type: string
+                key:
+                  type: string

@@ -5,9 +5,6 @@ RUN apt-get update && \
     ln -s /usr/bin/aarch64-linux-gnu-gcc /usr/bin/arm64-linux-gnu-gcc  && \
     ln -s /usr/bin/x86_64-linux-gnu-gcc /usr/bin/amd64-linux-gnu-gcc
 
-# 1. Precompile the entire go standard library into the first Docker cache layer: useful for other projects too!
-RUN CGO_ENABLED=0 GOOS=linux go install -v -installsuffix cgo -a std
-
 ARG TARGETARCH
 ARG APP_SHA
 ARG VERSION
@@ -15,12 +12,9 @@ ARG VERSION
 WORKDIR /go/src/github.com/formancehq/payments
 
 # get deps first so it's cached
-COPY go.mod .
-COPY go.sum .
-
-RUN go mod download
-
 COPY . .
+
+RUN go mod vendor
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=$TARGETARCH \
     CC=$TARGETARCH-linux-gnu-gcc \
