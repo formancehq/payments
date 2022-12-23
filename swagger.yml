@@ -507,7 +507,7 @@ components:
           example:
             order_id: '6735'
 
-    ConnectorTaskBase:
+    TaskDescriptorStripe:
       type: object
       properties:
         provider:
@@ -536,83 +536,202 @@ components:
         state:
           type: object
           description: The task state
-          example: {}
-
-    TaskDescriptorStripe:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
-                main:
-                  type: boolean
-                account:
-                  type: string
+            name:
+              type: string
+            main:
+              type: boolean
+            account:
+              type: string
     TaskDescriptorWise:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
-                key:
-                  type: string
-                profileID:
-                  type: integer
+            name:
+              type: string
+            key:
+              type: string
+            profileID:
+              type: integer
     TaskDescriptorModulr:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
-                key:
-                  type: string
-                accountID:
-                  type: string
+            name:
+              type: string
+            key:
+              type: string
+            accountID:
+              type: string
     TaskDescriptorDummyPay:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
-                key:
-                  type: string
-                fileName:
-                  type: string
+            name:
+              type: string
+            key:
+              type: string
+            fileName:
+              type: string
     TaskDescriptorCurrencyCloud:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
+            name:
+              type: string
     TaskDescriptorBankingCircle:
-      allOf:
-        - $ref: '#/components/schemas/ConnectorTaskBase'
-        - type: object
+      type: object
+      properties:
+        provider:
+          type: string
+          description: The connector code
+          example: stripe
+        createdAt:
+          type: string
+          format: date-time
+          description: The date when the task was created
+          example: '2020-01-01T00:00:00.000Z'
+        status:
+          type: string
+          description: The task status
+          example: stopped
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+        error:
+          type: string
+          description: The error message if the task failed
+          example: 'Error: Something went wrong'
+        state:
+          type: object
+          description: The task state
+          example: { }
+        descriptor:
+          type: object
           properties:
-            descriptor:
-              type: object
-              properties:
-                name:
-                  type: string
-                key:
-                  type: string
+            name:
+              type: string
+            key:
+              type: string
