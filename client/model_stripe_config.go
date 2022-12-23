@@ -14,26 +14,25 @@ import (
 	"encoding/json"
 )
 
+// checks if the StripeConfig type satisfies the MappedNullable interface at compile time
+var _ MappedNullable = &StripeConfig{}
+
 // StripeConfig struct for StripeConfig
 type StripeConfig struct {
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
-	PollingPeriod *string `json:"pollingPeriod,omitempty"`
-	ApiKey        string  `json:"apiKey"`
-	// Number of BalanceTransaction to fetch at each polling interval.
-	PageSize *float32 `json:"pageSize,omitempty"`
+	PollingPeriod interface{} `json:"pollingPeriod,omitempty"`
+	ApiKey interface{} `json:"apiKey"`
+	// Number of BalanceTransaction to fetch at each polling interval. 
+	PageSize interface{} `json:"pageSize,omitempty"`
 }
 
 // NewStripeConfig instantiates a new StripeConfig object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewStripeConfig(apiKey string) *StripeConfig {
+func NewStripeConfig(apiKey interface{}) *StripeConfig {
 	this := StripeConfig{}
-	var pollingPeriod string = "120s"
-	this.PollingPeriod = &pollingPeriod
 	this.ApiKey = apiKey
-	var pageSize float32 = 10
-	this.PageSize = &pageSize
 	return &this
 }
 
@@ -42,49 +41,47 @@ func NewStripeConfig(apiKey string) *StripeConfig {
 // but it doesn't guarantee that properties required by API are set
 func NewStripeConfigWithDefaults() *StripeConfig {
 	this := StripeConfig{}
-	var pollingPeriod string = "120s"
-	this.PollingPeriod = &pollingPeriod
-	var pageSize float32 = 10
-	this.PageSize = &pageSize
 	return &this
 }
 
-// GetPollingPeriod returns the PollingPeriod field value if set, zero value otherwise.
-func (o *StripeConfig) GetPollingPeriod() string {
-	if o == nil || o.PollingPeriod == nil {
-		var ret string
+// GetPollingPeriod returns the PollingPeriod field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *StripeConfig) GetPollingPeriod() interface{} {
+	if o == nil {
+		var ret interface{}
 		return ret
 	}
-	return *o.PollingPeriod
+	return o.PollingPeriod
 }
 
 // GetPollingPeriodOk returns a tuple with the PollingPeriod field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *StripeConfig) GetPollingPeriodOk() (*string, bool) {
-	if o == nil || o.PollingPeriod == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StripeConfig) GetPollingPeriodOk() (*interface{}, bool) {
+	if o == nil || isNil(o.PollingPeriod) {
 		return nil, false
 	}
-	return o.PollingPeriod, true
+	return &o.PollingPeriod, true
 }
 
 // HasPollingPeriod returns a boolean if a field has been set.
 func (o *StripeConfig) HasPollingPeriod() bool {
-	if o != nil && o.PollingPeriod != nil {
+	if o != nil && isNil(o.PollingPeriod) {
 		return true
 	}
 
 	return false
 }
 
-// SetPollingPeriod gets a reference to the given string and assigns it to the PollingPeriod field.
-func (o *StripeConfig) SetPollingPeriod(v string) {
-	o.PollingPeriod = &v
+// SetPollingPeriod gets a reference to the given interface{} and assigns it to the PollingPeriod field.
+func (o *StripeConfig) SetPollingPeriod(v interface{}) {
+	o.PollingPeriod = v
 }
 
 // GetApiKey returns the ApiKey field value
-func (o *StripeConfig) GetApiKey() string {
+// If the value is explicit nil, the zero value for interface{} will be returned
+func (o *StripeConfig) GetApiKey() interface{} {
 	if o == nil {
-		var ret string
+		var ret interface{}
 		return ret
 	}
 
@@ -93,62 +90,72 @@ func (o *StripeConfig) GetApiKey() string {
 
 // GetApiKeyOk returns a tuple with the ApiKey field value
 // and a boolean to check if the value has been set.
-func (o *StripeConfig) GetApiKeyOk() (*string, bool) {
-	if o == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StripeConfig) GetApiKeyOk() (*interface{}, bool) {
+	if o == nil || isNil(o.ApiKey) {
 		return nil, false
 	}
 	return &o.ApiKey, true
 }
 
 // SetApiKey sets field value
-func (o *StripeConfig) SetApiKey(v string) {
+func (o *StripeConfig) SetApiKey(v interface{}) {
 	o.ApiKey = v
 }
 
-// GetPageSize returns the PageSize field value if set, zero value otherwise.
-func (o *StripeConfig) GetPageSize() float32 {
-	if o == nil || o.PageSize == nil {
-		var ret float32
+// GetPageSize returns the PageSize field value if set, zero value otherwise (both if not set or set to explicit null).
+func (o *StripeConfig) GetPageSize() interface{} {
+	if o == nil {
+		var ret interface{}
 		return ret
 	}
-	return *o.PageSize
+	return o.PageSize
 }
 
 // GetPageSizeOk returns a tuple with the PageSize field value if set, nil otherwise
 // and a boolean to check if the value has been set.
-func (o *StripeConfig) GetPageSizeOk() (*float32, bool) {
-	if o == nil || o.PageSize == nil {
+// NOTE: If the value is an explicit nil, `nil, true` will be returned
+func (o *StripeConfig) GetPageSizeOk() (*interface{}, bool) {
+	if o == nil || isNil(o.PageSize) {
 		return nil, false
 	}
-	return o.PageSize, true
+	return &o.PageSize, true
 }
 
 // HasPageSize returns a boolean if a field has been set.
 func (o *StripeConfig) HasPageSize() bool {
-	if o != nil && o.PageSize != nil {
+	if o != nil && isNil(o.PageSize) {
 		return true
 	}
 
 	return false
 }
 
-// SetPageSize gets a reference to the given float32 and assigns it to the PageSize field.
-func (o *StripeConfig) SetPageSize(v float32) {
-	o.PageSize = &v
+// SetPageSize gets a reference to the given interface{} and assigns it to the PageSize field.
+func (o *StripeConfig) SetPageSize(v interface{}) {
+	o.PageSize = v
 }
 
 func (o StripeConfig) MarshalJSON() ([]byte, error) {
+	toSerialize,err := o.ToMap()
+	if err != nil {
+		return []byte{}, err
+	}
+	return json.Marshal(toSerialize)
+}
+
+func (o StripeConfig) ToMap() (map[string]interface{}, error) {
 	toSerialize := map[string]interface{}{}
 	if o.PollingPeriod != nil {
 		toSerialize["pollingPeriod"] = o.PollingPeriod
 	}
-	if true {
+	if o.ApiKey != nil {
 		toSerialize["apiKey"] = o.ApiKey
 	}
 	if o.PageSize != nil {
 		toSerialize["pageSize"] = o.PageSize
 	}
-	return json.Marshal(toSerialize)
+	return toSerialize, nil
 }
 
 type NullableStripeConfig struct {
@@ -186,3 +193,5 @@ func (v *NullableStripeConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
+
+
