@@ -19,16 +19,16 @@ var _ MappedNullable = &Payment{}
 
 // Payment struct for Payment
 type Payment struct {
-	Provider interface{} `json:"provider"`
+	Provider  interface{} `json:"provider"`
 	Reference interface{} `json:"reference,omitempty"`
-	Scheme interface{} `json:"scheme"`
-	Status interface{} `json:"status"`
-	Type interface{} `json:"type"`
-	Id interface{} `json:"id"`
-	Amount interface{} `json:"amount"`
-	Asset interface{} `json:"asset"`
-	Date interface{} `json:"date"`
-	Raw interface{} `json:"raw,omitempty"`
+	Scheme    interface{} `json:"scheme"`
+	Status    interface{} `json:"status"`
+	Type      interface{} `json:"type"`
+	Id        interface{} `json:"id"`
+	Amount    interface{} `json:"amount"`
+	Asset     interface{} `json:"asset"`
+	Date      interface{} `json:"date"`
+	Raw       interface{} `json:"raw,omitempty"`
 }
 
 // NewPayment instantiates a new Payment object
@@ -331,7 +331,7 @@ func (o *Payment) SetRaw(v interface{}) {
 }
 
 func (o Payment) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -408,5 +408,3 @@ func (v *NullablePayment) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -23,7 +23,7 @@ type DummyPayConfig struct {
 	FilePollingPeriod interface{} `json:"filePollingPeriod,omitempty"`
 	// The frequency at which the connector will create new payment objects in the directory
 	FileGenerationPeriod interface{} `json:"fileGenerationPeriod,omitempty"`
-	Directory interface{} `json:"directory"`
+	Directory            interface{} `json:"directory"`
 }
 
 // NewDummyPayConfig instantiates a new DummyPayConfig object
@@ -137,7 +137,7 @@ func (o *DummyPayConfig) SetDirectory(v interface{}) {
 }
 
 func (o DummyPayConfig) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -193,5 +193,3 @@ func (v *NullableDummyPayConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

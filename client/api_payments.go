@@ -19,12 +19,11 @@ import (
 	"strings"
 )
 
-
 // PaymentsApiService PaymentsApi service
 type PaymentsApiService service
 
 type ApiGetAllConnectorsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
 }
 
@@ -43,7 +42,7 @@ Get all installed connectors
 func (a *PaymentsApiService) GetAllConnectors(ctx context.Context) ApiGetAllConnectorsRequest {
 	return ApiGetAllConnectorsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
@@ -51,10 +50,10 @@ func (a *PaymentsApiService) GetAllConnectors(ctx context.Context) ApiGetAllConn
 //  @return ListConnectorsResponse
 func (a *PaymentsApiService) GetAllConnectorsExecute(r ApiGetAllConnectorsRequest) (*ListConnectorsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *ListConnectorsResponse
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *ListConnectorsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetAllConnectors")
@@ -123,7 +122,7 @@ func (a *PaymentsApiService) GetAllConnectorsExecute(r ApiGetAllConnectorsReques
 }
 
 type ApiGetAllConnectorsConfigsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
 }
 
@@ -142,7 +141,7 @@ Get all available connectors configs
 func (a *PaymentsApiService) GetAllConnectorsConfigs(ctx context.Context) ApiGetAllConnectorsConfigsRequest {
 	return ApiGetAllConnectorsConfigsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
@@ -150,10 +149,10 @@ func (a *PaymentsApiService) GetAllConnectorsConfigs(ctx context.Context) ApiGet
 //  @return interface{}
 func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnectorsConfigsRequest) (interface{}, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  interface{}
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue interface{}
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetAllConnectorsConfigs")
@@ -222,10 +221,10 @@ func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnector
 }
 
 type ApiGetConnectorTaskRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
-	taskId interface{}
+	connector  interface{}
+	taskId     interface{}
 }
 
 func (r ApiGetConnectorTaskRequest) Execute() (interface{}, *http.Response, error) {
@@ -245,9 +244,9 @@ Get a specific task associated to the connector
 func (a *PaymentsApiService) GetConnectorTask(ctx context.Context, connector interface{}, taskId interface{}) ApiGetConnectorTaskRequest {
 	return ApiGetConnectorTaskRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
-		taskId: taskId,
+		ctx:        ctx,
+		connector:  connector,
+		taskId:     taskId,
 	}
 }
 
@@ -255,10 +254,10 @@ func (a *PaymentsApiService) GetConnectorTask(ctx context.Context, connector int
 //  @return interface{}
 func (a *PaymentsApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskRequest) (interface{}, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  interface{}
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue interface{}
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetConnectorTask")
@@ -329,9 +328,9 @@ func (a *PaymentsApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskReques
 }
 
 type ApiGetPaymentRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	paymentId interface{}
+	paymentId  interface{}
 }
 
 func (r ApiGetPaymentRequest) Execute() (*Payment, *http.Response, error) {
@@ -348,8 +347,8 @@ GetPayment Returns a payment.
 func (a *PaymentsApiService) GetPayment(ctx context.Context, paymentId interface{}) ApiGetPaymentRequest {
 	return ApiGetPaymentRequest{
 		ApiService: a,
-		ctx: ctx,
-		paymentId: paymentId,
+		ctx:        ctx,
+		paymentId:  paymentId,
 	}
 }
 
@@ -357,10 +356,10 @@ func (a *PaymentsApiService) GetPayment(ctx context.Context, paymentId interface
 //  @return Payment
 func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *Payment
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *Payment
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetPayment")
@@ -430,10 +429,10 @@ func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment
 }
 
 type ApiInstallConnectorRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
-	body *interface{}
+	connector  interface{}
+	body       *interface{}
 }
 
 func (r ApiInstallConnectorRequest) Body(body interface{}) ApiInstallConnectorRequest {
@@ -457,17 +456,17 @@ Install connector
 func (a *PaymentsApiService) InstallConnector(ctx context.Context, connector interface{}) ApiInstallConnectorRequest {
 	return ApiInstallConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *PaymentsApiService) InstallConnectorExecute(r ApiInstallConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.InstallConnector")
@@ -533,9 +532,9 @@ func (a *PaymentsApiService) InstallConnectorExecute(r ApiInstallConnectorReques
 }
 
 type ApiListConnectorTasksRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
+	connector  interface{}
 }
 
 func (r ApiListConnectorTasksRequest) Execute() (interface{}, *http.Response, error) {
@@ -554,8 +553,8 @@ List all tasks associated with this connector.
 func (a *PaymentsApiService) ListConnectorTasks(ctx context.Context, connector interface{}) ApiListConnectorTasksRequest {
 	return ApiListConnectorTasksRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
@@ -563,10 +562,10 @@ func (a *PaymentsApiService) ListConnectorTasks(ctx context.Context, connector i
 //  @return interface{}
 func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRequest) (interface{}, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  interface{}
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue interface{}
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ListConnectorTasks")
@@ -636,11 +635,11 @@ func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRe
 }
 
 type ApiListPaymentsRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	limit *interface{}
-	skip *interface{}
-	sort *interface{}
+	limit      *interface{}
+	skip       *interface{}
+	sort       *interface{}
 }
 
 // Limit the number of payments to return, pagination can be achieved in conjunction with &#39;skip&#39; parameter.
@@ -674,7 +673,7 @@ ListPayments Returns a list of payments.
 func (a *PaymentsApiService) ListPayments(ctx context.Context) ApiListPaymentsRequest {
 	return ApiListPaymentsRequest{
 		ApiService: a,
-		ctx: ctx,
+		ctx:        ctx,
 	}
 }
 
@@ -682,10 +681,10 @@ func (a *PaymentsApiService) ListPayments(ctx context.Context) ApiListPaymentsRe
 //  @return ListPaymentsResponse
 func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*ListPaymentsResponse, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  *ListPaymentsResponse
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue *ListPaymentsResponse
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ListPayments")
@@ -763,9 +762,9 @@ func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*Lis
 }
 
 type ApiReadConnectorConfigRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
+	connector  interface{}
 }
 
 func (r ApiReadConnectorConfigRequest) Execute() (interface{}, *http.Response, error) {
@@ -784,8 +783,8 @@ Read connector config
 func (a *PaymentsApiService) ReadConnectorConfig(ctx context.Context, connector interface{}) ApiReadConnectorConfigRequest {
 	return ApiReadConnectorConfigRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
@@ -793,10 +792,10 @@ func (a *PaymentsApiService) ReadConnectorConfig(ctx context.Context, connector 
 //  @return interface{}
 func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfigRequest) (interface{}, *http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodGet
-		localVarPostBody     interface{}
-		formFiles            []formFile
-		localVarReturnValue  interface{}
+		localVarHTTPMethod  = http.MethodGet
+		localVarPostBody    interface{}
+		formFiles           []formFile
+		localVarReturnValue interface{}
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ReadConnectorConfig")
@@ -866,9 +865,9 @@ func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfig
 }
 
 type ApiResetConnectorRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
+	connector  interface{}
 }
 
 func (r ApiResetConnectorRequest) Execute() (*http.Response, error) {
@@ -887,17 +886,17 @@ Reset connector. Will remove the connector and ALL PAYMENTS generated with it.
 func (a *PaymentsApiService) ResetConnector(ctx context.Context, connector interface{}) ApiResetConnectorRequest {
 	return ApiResetConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *PaymentsApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodPost
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodPost
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ResetConnector")
@@ -958,9 +957,9 @@ func (a *PaymentsApiService) ResetConnectorExecute(r ApiResetConnectorRequest) (
 }
 
 type ApiUninstallConnectorRequest struct {
-	ctx context.Context
+	ctx        context.Context
 	ApiService *PaymentsApiService
-	connector interface{}
+	connector  interface{}
 }
 
 func (r ApiUninstallConnectorRequest) Execute() (*http.Response, error) {
@@ -979,17 +978,17 @@ Uninstall  connector
 func (a *PaymentsApiService) UninstallConnector(ctx context.Context, connector interface{}) ApiUninstallConnectorRequest {
 	return ApiUninstallConnectorRequest{
 		ApiService: a,
-		ctx: ctx,
-		connector: connector,
+		ctx:        ctx,
+		connector:  connector,
 	}
 }
 
 // Execute executes the request
 func (a *PaymentsApiService) UninstallConnectorExecute(r ApiUninstallConnectorRequest) (*http.Response, error) {
 	var (
-		localVarHTTPMethod   = http.MethodDelete
-		localVarPostBody     interface{}
-		formFiles            []formFile
+		localVarHTTPMethod = http.MethodDelete
+		localVarPostBody   interface{}
+		formFiles          []formFile
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.UninstallConnector")

@@ -21,8 +21,8 @@ var _ MappedNullable = &StripeConfig{}
 type StripeConfig struct {
 	// The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe api
 	PollingPeriod interface{} `json:"pollingPeriod,omitempty"`
-	ApiKey interface{} `json:"apiKey"`
-	// Number of BalanceTransaction to fetch at each polling interval. 
+	ApiKey        interface{} `json:"apiKey"`
+	// Number of BalanceTransaction to fetch at each polling interval.
 	PageSize interface{} `json:"pageSize,omitempty"`
 }
 
@@ -137,7 +137,7 @@ func (o *StripeConfig) SetPageSize(v interface{}) {
 }
 
 func (o StripeConfig) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -193,5 +193,3 @@ func (v *NullableStripeConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

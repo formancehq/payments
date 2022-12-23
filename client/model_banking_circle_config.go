@@ -19,9 +19,9 @@ var _ MappedNullable = &BankingCircleConfig{}
 
 // BankingCircleConfig struct for BankingCircleConfig
 type BankingCircleConfig struct {
-	Username interface{} `json:"username"`
-	Password interface{} `json:"password"`
-	Endpoint interface{} `json:"endpoint"`
+	Username              interface{} `json:"username"`
+	Password              interface{} `json:"password"`
+	Endpoint              interface{} `json:"endpoint"`
 	AuthorizationEndpoint interface{} `json:"authorizationEndpoint"`
 }
 
@@ -151,7 +151,7 @@ func (o *BankingCircleConfig) SetAuthorizationEndpoint(v interface{}) {
 }
 
 func (o BankingCircleConfig) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -210,5 +210,3 @@ func (v *NullableBankingCircleConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

@@ -27,7 +27,7 @@ type StripeTask struct {
 	MoreRecentId interface{} `json:"moreRecentId,omitempty"`
 	// The creation date of the more recent BalanceTransaction fetched from stripe for this account
 	MoreRecentDate interface{} `json:"moreRecentDate,omitempty"`
-	NoMoreHistory interface{} `json:"noMoreHistory,omitempty"`
+	NoMoreHistory  interface{} `json:"noMoreHistory,omitempty"`
 }
 
 // NewStripeTask instantiates a new StripeTask object
@@ -213,7 +213,7 @@ func (o *StripeTask) SetNoMoreHistory(v interface{}) {
 }
 
 func (o StripeTask) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -275,5 +275,3 @@ func (v *NullableStripeTask) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-

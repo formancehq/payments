@@ -19,9 +19,9 @@ var _ MappedNullable = &ModulrConfig{}
 
 // ModulrConfig struct for ModulrConfig
 type ModulrConfig struct {
-	ApiKey interface{} `json:"apiKey"`
+	ApiKey    interface{} `json:"apiKey"`
 	ApiSecret interface{} `json:"apiSecret"`
-	Endpoint interface{} `json:"endpoint,omitempty"`
+	Endpoint  interface{} `json:"endpoint,omitempty"`
 }
 
 // NewModulrConfig instantiates a new ModulrConfig object
@@ -129,7 +129,7 @@ func (o *ModulrConfig) SetEndpoint(v interface{}) {
 }
 
 func (o ModulrConfig) MarshalJSON() ([]byte, error) {
-	toSerialize,err := o.ToMap()
+	toSerialize, err := o.ToMap()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -185,5 +185,3 @@ func (v *NullableModulrConfig) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }
-
-
