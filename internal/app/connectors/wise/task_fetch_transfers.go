@@ -48,6 +48,7 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 
 			batchElement := ingestion.PaymentBatchElement{
 				Payment: &models.Payment{
+					CreatedAt: transfer.createdAt,
 					Reference: fmt.Sprintf("%d", transfer.ID),
 					Type:      models.PaymentTypeTransfer,
 					Status:    matchTransferStatus(transfer.Status),
