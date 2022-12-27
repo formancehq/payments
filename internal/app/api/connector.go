@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/storage"
+
 	"github.com/google/uuid"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -81,7 +83,25 @@ func listTasks[Config payments.ConnectorConfigObject,
 	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tasks, err := connectorManager.ListTasksStates(r.Context())
+		skip, err := integerWithDefault(r, "skip", 0)
+		if err != nil {
+			handleValidationError(w, r, err)
+
+			return
+		}
+
+		limit, err := integerWithDefault(r, "limit", maxPerPage)
+		if err != nil {
+			handleValidationError(w, r, err)
+
+			return
+		}
+
+		if limit > maxPerPage {
+			limit = maxPerPage
+		}
+
+		tasks, err := connectorManager.ListTasksStates(r.Context(), storage.Paginate(skip, limit))
 		if err != nil {
 			handleError(w, r, err)
 
