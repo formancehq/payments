@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -51,6 +52,32 @@ type transfer struct {
 	} `json:"details"`
 	Rate float64 `json:"rate"`
 	User uint64  `json:"user"`
+
+	createdAt time.Time
+}
+
+func (t *transfer) UnmarshalJSON(data []byte) error {
+	type Alias transfer
+
+	aux := &struct {
+		Created string `json:"created"`
+		*Alias
+	}{
+		Alias: (*Alias)(t),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	var err error
+
+	t.createdAt, err = time.Parse("2006-01-02 15:04:05", aux.Created)
+	if err != nil {
+		return fmt.Errorf("failed to parse created time: %w", err)
+	}
+
+	return nil
 }
 
 func (w *client) endpoint(path string) string {
