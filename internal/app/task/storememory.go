@@ -53,6 +53,7 @@ func (s *InMemoryStore) GetTaskByDescriptor(ctx context.Context, provider models
 
 func (s *InMemoryStore) ListTasks(ctx context.Context,
 	provider models.ConnectorProvider,
+	pagination storage.Paginator,
 ) ([]models.Task, error) {
 	ret := make([]models.Task, 0)
 
@@ -115,7 +116,7 @@ func (s *InMemoryStore) ReadOldestPendingTask(ctx context.Context,
 func (s *InMemoryStore) ListTasksByStatus(ctx context.Context,
 	provider models.ConnectorProvider, taskStatus models.TaskStatus,
 ) ([]models.Task, error) {
-	all, err := s.ListTasks(ctx, provider)
+	all, err := s.ListTasks(ctx, provider, storage.Paginate(0, 0))
 	if err != nil {
 		return nil, err
 	}

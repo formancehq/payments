@@ -106,7 +106,7 @@ func (s *Storage) ListTasksByStatus(ctx context.Context, provider models.Connect
 	return tasks, nil
 }
 
-func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvider) ([]models.Task, error) {
+func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvider, pagination Paginator) ([]models.Task, error) {
 	connector, err := s.GetConnector(ctx, provider)
 	if err != nil {
 		return nil, e("failed to get connector", err)
@@ -114,9 +114,12 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 
 	var tasks []models.Task
 
-	err = s.db.NewSelect().Model(&tasks).
-		Where("connector_id = ?", connector.ID).
-		Scan(ctx)
+	q := s.db.NewSelect().Model(&tasks).
+		Where("connector_id = ?", connector.ID)
+
+	pagination.apply(q)
+
+	err = q.Scan(ctx)
 	if err != nil {
 		return nil, e("failed to get tasks", err)
 	}

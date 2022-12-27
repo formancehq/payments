@@ -51,8 +51,9 @@ type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context,
+	pagination storage.Paginator,
 ) ([]models.Task, error) {
-	return s.store.ListTasks(ctx, s.provider)
+	return s.store.ListTasks(ctx, s.provider, pagination)
 }
 
 func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {

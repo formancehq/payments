@@ -3,6 +3,8 @@ package integration
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/storage"
+
 	"github.com/google/uuid"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -220,9 +222,9 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsInstalled(ctx cont
 }
 
 func (l *ConnectorManager[ConnectorConfig,
-	TaskDescriptor]) ListTasksStates(ctx context.Context,
+	TaskDescriptor]) ListTasksStates(ctx context.Context, pagination storage.Paginator,
 ) ([]models.Task, error) {
-	return l.scheduler.ListTasks(ctx)
+	return l.scheduler.ListTasks(ctx, pagination)
 }
 
 func (l *ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
