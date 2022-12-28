@@ -19,12 +19,19 @@ func (s *Storage) ListConnectors(ctx context.Context) ([]*models.Connector, erro
 }
 
 func (s *Storage) GetConfig(ctx context.Context, connectorProvider models.ConnectorProvider, destination any) error {
-	err := s.db.NewSelect().Model(&models.Connector{}).
+	var connector models.Connector
+
+	err := s.db.NewSelect().Model(&connector).
 		Column("config").
 		Where("provider = ?", connectorProvider).
-		Scan(ctx, destination)
+		Scan(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get config for connector %s: %w", connectorProvider, err)
+	}
+
+	err = json.Unmarshal(connector.Config, destination)
+	if err != nil {
+		return fmt.Errorf("failed to unmarshal config for connector %s: %w", connectorProvider, err)
 	}
 
 	return nil
