@@ -36,10 +36,19 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 		authGroup.Use(sharedauth.Middleware(methods...))
 	}
 
+	authGroup.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(store))
+	authGroup.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(store))
+
 	authGroup.HandleFunc("/connectors", readConnectorsHandler(store))
+
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
 
 	connectorGroup.Path("/configs").Handler(connectorConfigsHandler())
+
+	// TODO: It's not ideal to define it explicitly here
+	// Refactor it when refactoring the HTTP lib.
+	connectorGroup.Path("/stripe/transfers").Methods(http.MethodPost).
+		Handler(handleStripeTransfers(store))
 
 	for _, h := range connectorHandlers {
 		connectorGroup.PathPrefix("/" + h.Provider.String()).Handler(
@@ -48,14 +57,6 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 		connectorGroup.PathPrefix("/" + h.Provider.StringLower()).Handler(
 			http.StripPrefix("/connectors", h.Handler))
 	}
-
-	authGroup.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(store))
-	authGroup.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(store))
-
-	// TODO: It's not ideal to define it explicitly here
-	// Refactor it when refactoring the HTTP lib.
-	connectorGroup.Path("/stripe/transfers").Methods(http.MethodPost).
-		Handler(handleStripeTransfers(store))
 
 	return rootMux, nil
 }
