@@ -8,11 +8,18 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedapi"
-	"github.com/formancehq/payments/internal/app/payments"
 )
 
 type readConnectorsRepository interface {
 	ListConnectors(ctx context.Context) ([]*models.Connector, error)
+}
+
+type readConnectorsResponseElement struct {
+	Provider models.ConnectorProvider `json:"provider" bson:"provider"`
+	Enabled  bool                     `json:"enabled" bson:"enabled"`
+
+	// TODO: remove disabled field when frontend switches to using enabled
+	Disabled bool `json:"disabled" bson:"disabled"`
 }
 
 func readConnectorsHandler(repo readConnectorsRepository) http.HandlerFunc {
@@ -24,17 +31,18 @@ func readConnectorsHandler(repo readConnectorsRepository) http.HandlerFunc {
 			return
 		}
 
-		data := make([]*payments.ConnectorBaseInfo, len(res))
+		data := make([]readConnectorsResponseElement, len(res))
 
 		for i := range res {
-			data[i] = &payments.ConnectorBaseInfo{
+			data[i] = readConnectorsResponseElement{
 				Provider: res[i].Provider,
-				Disabled: res[i].Enabled,
+				Enabled:  res[i].Enabled,
+				Disabled: !res[i].Enabled,
 			}
 		}
 
 		err = json.NewEncoder(w).Encode(
-			sharedapi.BaseResponse[[]*payments.ConnectorBaseInfo]{
+			sharedapi.BaseResponse[[]readConnectorsResponseElement]{
 				Data: &data,
 			})
 		if err != nil {
