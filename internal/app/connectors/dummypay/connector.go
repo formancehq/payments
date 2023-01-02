@@ -23,12 +23,22 @@ type Connector struct {
 
 // Install executes post-installation steps to read and generate files.
 // It is called after the connector is installed.
-func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
-	if err := ctx.Scheduler().Schedule(newTaskReadFiles(), true); err != nil {
+func (c *Connector) Install(ctx task.ConnectorContext) error {
+	readFilesDescriptor, err := models.EncodeTaskDescriptor(newTaskReadFiles())
+	if err != nil {
+		return fmt.Errorf("failed to create read files task descriptor: %w", err)
+	}
+
+	if err = ctx.Scheduler().Schedule(readFilesDescriptor, true); err != nil {
 		return fmt.Errorf("failed to schedule task to read files: %w", err)
 	}
 
-	if err := ctx.Scheduler().Schedule(newTaskGenerateFiles(), true); err != nil {
+	generateFilesDescriptor, err := models.EncodeTaskDescriptor(newTaskGenerateFiles())
+	if err != nil {
+		return fmt.Errorf("failed to create generate files task descriptor: %w", err)
+	}
+
+	if err = ctx.Scheduler().Schedule(generateFilesDescriptor, true); err != nil {
 		return fmt.Errorf("failed to schedule task to generate files: %w", err)
 	}
 
@@ -49,10 +59,15 @@ func (c *Connector) Uninstall(ctx context.Context) error {
 }
 
 // Resolve resolves a task execution request based on the task descriptor.
-func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
-	c.logger.Infof("Executing '%s' task...", descriptor.Key)
+func (c *Connector) Resolve(descriptor models.TaskDescriptor) task.Task {
+	taskDescriptor, err := models.DecodeTaskDescriptor[TaskDescriptor](descriptor)
+	if err != nil {
+		panic(err)
+	}
 
-	return handleResolve(c.cfg, descriptor, c.fs)
+	c.logger.Infof("Executing '%s' task...", taskDescriptor.Key)
+
+	return handleResolve(c.cfg, taskDescriptor, c.fs)
 }
 
 func newConnector(logger sharedlogging.Logger, cfg Config, fs fs) *Connector {

@@ -3,53 +3,50 @@ package integration
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/app/payments"
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/task"
 )
 
 // Connector provide entry point to a payment provider.
-type Connector[TaskDescriptor payments.TaskDescriptor] interface {
+type Connector interface {
 	// Install is used to start the connector. The implementation if in charge of scheduling all required resources.
-	Install(ctx task.ConnectorContext[TaskDescriptor]) error
+	Install(ctx task.ConnectorContext) error
 	// Uninstall is used to uninstall the connector. It has to close all related resources opened by the connector.
 	Uninstall(ctx context.Context) error
 	// Resolve is used to recover state of a failed or restarted task
-	Resolve(descriptor TaskDescriptor) task.Task
+	Resolve(descriptor models.TaskDescriptor) task.Task
 }
 
-type ConnectorBuilder[TaskDescriptor payments.TaskDescriptor] struct {
+type ConnectorBuilder struct {
 	name      string
 	uninstall func(ctx context.Context) error
-	resolve   func(descriptor TaskDescriptor) task.Task
-	install   func(ctx task.ConnectorContext[TaskDescriptor]) error
+	resolve   func(descriptor models.TaskDescriptor) task.Task
+	install   func(ctx task.ConnectorContext) error
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithUninstall(
+func (b *ConnectorBuilder) WithUninstall(
 	uninstallFunction func(ctx context.Context) error,
-) *ConnectorBuilder[TaskDescriptor] {
+) *ConnectorBuilder {
 	b.uninstall = uninstallFunction
 
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithResolve(
-	resolveFunction func(name TaskDescriptor) task.Task,
-) *ConnectorBuilder[TaskDescriptor] {
+func (b *ConnectorBuilder) WithResolve(resolveFunction func(name models.TaskDescriptor) task.Task) *ConnectorBuilder {
 	b.resolve = resolveFunction
 
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) WithInstall(
-	installFunction func(ctx task.ConnectorContext[TaskDescriptor]) error,
-) *ConnectorBuilder[TaskDescriptor] {
+func (b *ConnectorBuilder) WithInstall(installFunction func(ctx task.ConnectorContext) error) *ConnectorBuilder {
 	b.install = installFunction
 
 	return b
 }
 
-func (b *ConnectorBuilder[TaskDescriptor]) Build() Connector[TaskDescriptor] {
-	return &BuiltConnector[TaskDescriptor]{
+func (b *ConnectorBuilder) Build() Connector {
+	return &BuiltConnector{
 		name:      b.name,
 		uninstall: b.uninstall,
 		resolve:   b.resolve,
@@ -57,22 +54,22 @@ func (b *ConnectorBuilder[TaskDescriptor]) Build() Connector[TaskDescriptor] {
 	}
 }
 
-func NewConnectorBuilder[TaskDescriptor payments.TaskDescriptor]() *ConnectorBuilder[TaskDescriptor] {
-	return &ConnectorBuilder[TaskDescriptor]{}
+func NewConnectorBuilder() *ConnectorBuilder {
+	return &ConnectorBuilder{}
 }
 
-type BuiltConnector[TaskDescriptor payments.TaskDescriptor] struct {
+type BuiltConnector struct {
 	name      string
 	uninstall func(ctx context.Context) error
-	resolve   func(name TaskDescriptor) task.Task
-	install   func(ctx task.ConnectorContext[TaskDescriptor]) error
+	resolve   func(name models.TaskDescriptor) task.Task
+	install   func(ctx task.ConnectorContext) error
 }
 
-func (b *BuiltConnector[TaskDescriptor]) Name() string {
+func (b *BuiltConnector) Name() string {
 	return b.name
 }
 
-func (b *BuiltConnector[TaskDescriptor]) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
+func (b *BuiltConnector) Install(ctx task.ConnectorContext) error {
 	if b.install != nil {
 		return b.install(ctx)
 	}
@@ -80,7 +77,7 @@ func (b *BuiltConnector[TaskDescriptor]) Install(ctx task.ConnectorContext[TaskD
 	return nil
 }
 
-func (b *BuiltConnector[TaskDescriptor]) Uninstall(ctx context.Context) error {
+func (b *BuiltConnector) Uninstall(ctx context.Context) error {
 	if b.uninstall != nil {
 		return b.uninstall(ctx)
 	}
@@ -88,7 +85,7 @@ func (b *BuiltConnector[TaskDescriptor]) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-func (b *BuiltConnector[TaskDescriptor]) Resolve(name TaskDescriptor) task.Task {
+func (b *BuiltConnector) Resolve(name models.TaskDescriptor) task.Task {
 	if b.resolve != nil {
 		return b.resolve(name)
 	}
@@ -96,4 +93,4 @@ func (b *BuiltConnector[TaskDescriptor]) Resolve(name TaskDescriptor) task.Task 
 	return nil
 }
 
-var _ Connector[struct{}] = &BuiltConnector[struct{}]{}
+var _ Connector = &BuiltConnector{}

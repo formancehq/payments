@@ -144,7 +144,7 @@ func (e *HTTPExpect[REQUEST, RESPONSE]) RespondsWith(statusCode int,
 	return e
 }
 
-func Expect[REQUEST any, RESPONSE any](mock *httpMock) *HTTPExpect[REQUEST, RESPONSE] {
+func Expect[REQUEST, RESPONSE any](mock *httpMock) *HTTPExpect[REQUEST, RESPONSE] {
 	expectations := &HTTPExpect[REQUEST, RESPONSE]{
 		queryParams: map[string]any{},
 	}

@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/task"
 	"github.com/spf13/afero"
@@ -25,7 +27,7 @@ func newTaskReadFiles() TaskDescriptor {
 // Only reads files with the generatedFilePrefix in their name.
 func taskReadFiles(config Config, fs fs) task.Task {
 	return func(ctx context.Context, logger sharedlogging.Logger,
-		scheduler task.Scheduler[TaskDescriptor],
+		scheduler task.Scheduler,
 	) error {
 		for {
 			select {
@@ -38,8 +40,13 @@ func taskReadFiles(config Config, fs fs) task.Task {
 				}
 
 				for _, file := range files {
+					descriptor, err := models.EncodeTaskDescriptor(newTaskIngest(file))
+					if err != nil {
+						return err
+					}
+
 					// schedule a task to ingest the file into the payments system.
-					err = scheduler.Schedule(newTaskIngest(file), true)
+					err = scheduler.Schedule(descriptor, true)
 					if err != nil {
 						return fmt.Errorf("failed to schedule task to ingest file '%s': %w", file, err)
 					}

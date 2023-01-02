@@ -2,32 +2,28 @@ package task
 
 import (
 	"context"
-
-	"github.com/formancehq/payments/internal/app/payments"
 )
 
-type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
+type ConnectorContext interface {
 	Context() context.Context
-	Scheduler() Scheduler[TaskDescriptor]
+	Scheduler() Scheduler
 }
 
-type ConnectorCtx[TaskDescriptor payments.TaskDescriptor] struct {
+type ConnectorCtx struct {
 	ctx       context.Context
-	scheduler Scheduler[TaskDescriptor]
+	scheduler Scheduler
 }
 
-func (ctx *ConnectorCtx[TaskDescriptor]) Context() context.Context {
+func (ctx *ConnectorCtx) Context() context.Context {
 	return ctx.ctx
 }
 
-func (ctx *ConnectorCtx[TaskDescriptor]) Scheduler() Scheduler[TaskDescriptor] {
+func (ctx *ConnectorCtx) Scheduler() Scheduler {
 	return ctx.scheduler
 }
 
-func NewConnectorContext[TaskDescriptor payments.TaskDescriptor](ctx context.Context,
-	scheduler Scheduler[TaskDescriptor],
-) *ConnectorCtx[TaskDescriptor] {
-	return &ConnectorCtx[TaskDescriptor]{
+func NewConnectorContext(ctx context.Context, scheduler Scheduler) *ConnectorCtx {
+	return &ConnectorCtx{
 		ctx:       ctx,
 		scheduler: scheduler,
 	}

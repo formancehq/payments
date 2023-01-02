@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedlogging"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 	"github.com/pkg/errors"
 )
@@ -23,19 +22,16 @@ var (
 	ErrAlreadyRunning   = errors.New("already running")
 )
 
-type ConnectorManager[
-	Config payments.ConnectorConfigObject,
-	TaskDescriptor payments.TaskDescriptor,
-] struct {
+type ConnectorManager[Config models.ConnectorConfigObject] struct {
 	logger           sharedlogging.Logger
-	loader           Loader[Config, TaskDescriptor]
-	connector        Connector[TaskDescriptor]
+	loader           Loader[Config]
+	connector        Connector
 	store            Repository
-	schedulerFactory TaskSchedulerFactory[TaskDescriptor]
-	scheduler        *task.DefaultTaskScheduler[TaskDescriptor]
+	schedulerFactory TaskSchedulerFactory
+	scheduler        *task.DefaultTaskScheduler
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Enable(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig]) Enable(ctx context.Context) error {
 	l.logger.Info("Enabling connector")
 
 	err := l.store.Enable(ctx, l.loader.Name())
@@ -46,8 +42,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Enable(ctx context.C
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig,
-	TaskDescriptor]) ReadConfig(ctx context.Context,
+func (l *ConnectorManager[ConnectorConfig]) ReadConfig(ctx context.Context,
 ) (*ConnectorConfig, error) {
 	var config ConnectorConfig
 
@@ -66,12 +61,12 @@ func (l *ConnectorManager[ConnectorConfig,
 	return &config, nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) load(config ConnectorConfig) {
+func (l *ConnectorManager[ConnectorConfig]) load(config ConnectorConfig) {
 	l.connector = l.loader.Load(l.logger, config)
 	l.scheduler = l.schedulerFactory.Make(l.connector, l.loader.AllowTasks())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.Context, config ConnectorConfig) error {
+func (l *ConnectorManager[ConnectorConfig]) Install(ctx context.Context, config ConnectorConfig) error {
 	l.logger.WithFields(map[string]interface{}{
 		"config": config,
 	}).Infof("Install connector %s", l.loader.Name())
@@ -107,7 +102,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.
 		return err
 	}
 
-	err = l.connector.Install(task.NewConnectorContext[TaskDescriptor](context.Background(), l.scheduler))
+	err = l.connector.Install(task.NewConnectorContext(context.Background(), l.scheduler))
 	if err != nil {
 		l.logger.Errorf("Error starting connector: %s", err)
 
@@ -119,7 +114,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Install(ctx context.
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Uninstall(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig]) Uninstall(ctx context.Context) error {
 	l.logger.Infof("Uninstalling connector")
 
 	isInstalled, err := l.IsInstalled(ctx)
@@ -155,7 +150,7 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Uninstall(ctx contex
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Restore(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig]) Restore(ctx context.Context) error {
 	l.logger.Info("Restoring state")
 
 	installed, err := l.IsInstalled(ctx)
@@ -203,35 +198,34 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Restore(ctx context.
 	return nil
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Disable(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig]) Disable(ctx context.Context) error {
 	l.logger.Info("Disabling connector")
 
 	return l.store.Disable(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsEnabled(ctx context.Context) (bool, error) {
+func (l *ConnectorManager[ConnectorConfig]) IsEnabled(ctx context.Context) (bool, error) {
 	return l.store.IsEnabled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) FindAll(ctx context.Context) ([]models.Connector, error) {
+func (l *ConnectorManager[ConnectorConfig]) FindAll(ctx context.Context) ([]models.Connector, error) {
 	return l.store.FindAll(ctx)
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) IsInstalled(ctx context.Context) (bool, error) {
+func (l *ConnectorManager[ConnectorConfig]) IsInstalled(ctx context.Context) (bool, error) {
 	return l.store.IsInstalled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig,
-	TaskDescriptor]) ListTasksStates(ctx context.Context, pagination storage.Paginator,
+func (l *ConnectorManager[ConnectorConfig]) ListTasksStates(ctx context.Context, pagination storage.Paginator,
 ) ([]models.Task, error) {
 	return l.scheduler.ListTasks(ctx, pagination)
 }
 
-func (l *ConnectorManager[Config, TaskDescriptor]) ReadTaskState(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
+func (l *ConnectorManager[Config]) ReadTaskState(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
 	return l.scheduler.ReadTask(ctx, taskID)
 }
 
-func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Reset(ctx context.Context) error {
+func (l *ConnectorManager[ConnectorConfig]) Reset(ctx context.Context) error {
 	config, err := l.ReadConfig(ctx)
 	if err != nil {
 		return err
@@ -245,16 +239,13 @@ func (l *ConnectorManager[ConnectorConfig, TaskDescriptor]) Reset(ctx context.Co
 	return l.Install(ctx, *config)
 }
 
-func NewConnectorManager[
-	ConnectorConfig payments.ConnectorConfigObject,
-	TaskDescriptor payments.TaskDescriptor,
-](
+func NewConnectorManager[ConnectorConfig models.ConnectorConfigObject](
 	logger sharedlogging.Logger,
 	store Repository,
-	loader Loader[ConnectorConfig, TaskDescriptor],
-	schedulerFactory TaskSchedulerFactory[TaskDescriptor],
-) *ConnectorManager[ConnectorConfig, TaskDescriptor] {
-	return &ConnectorManager[ConnectorConfig, TaskDescriptor]{
+	loader Loader[ConnectorConfig],
+	schedulerFactory TaskSchedulerFactory,
+) *ConnectorManager[ConnectorConfig] {
+	return &ConnectorManager[ConnectorConfig]{
 		logger: logger.WithFields(map[string]interface{}{
 			"component": "connector-manager",
 			"provider":  loader.Name(),

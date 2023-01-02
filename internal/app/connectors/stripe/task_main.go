@@ -3,6 +3,8 @@ package stripe
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/ingestion"
 	"github.com/formancehq/payments/internal/app/task"
@@ -13,7 +15,7 @@ import (
 func ingest(
 	ctx context.Context,
 	logger sharedlogging.Logger,
-	scheduler task.Scheduler[TaskDescriptor],
+	scheduler task.Scheduler,
 	ingester ingestion.Ingester,
 	bts []*stripe.BalanceTransaction,
 	commitState TimelineState,
@@ -33,10 +35,15 @@ func ingest(
 	}
 
 	for _, connectedAccount := range connectedAccounts {
-		err = scheduler.Schedule(TaskDescriptor{
+		descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 			Name:    "Fetch balance transactions for a specific connected account",
 			Account: connectedAccount,
-		}, true)
+		})
+		if err != nil {
+			return errors.Wrap(err, "failed to transform task descriptor")
+		}
+
+		err = scheduler.Schedule(descriptor, true)
 		if err != nil && !errors.Is(err, task.ErrAlreadyScheduled) {
 			return errors.Wrap(err, "scheduling connected account")
 		}
@@ -46,9 +53,9 @@ func ingest(
 }
 
 func MainTask(config Config) func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-	scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester) error {
+	scheduler task.Scheduler, ingester ingestion.Ingester) error {
 	return func(ctx context.Context, logger sharedlogging.Logger, resolver task.StateResolver,
-		scheduler task.Scheduler[TaskDescriptor], ingester ingestion.Ingester,
+		scheduler task.Scheduler, ingester ingestion.Ingester,
 	) error {
 		runner := NewRunner(
 			logger,

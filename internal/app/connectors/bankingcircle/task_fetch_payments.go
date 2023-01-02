@@ -15,7 +15,7 @@ import (
 func taskFetchPayments(logger sharedlogging.Logger, client *client) task.Task {
 	return func(
 		ctx context.Context,
-		scheduler task.Scheduler[TaskDescriptor],
+		scheduler task.Scheduler,
 		ingester ingestion.Ingester,
 	) error {
 		paymentsList, err := client.getAllPayments(ctx)

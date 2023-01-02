@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/formancehq/payments/internal/app/models"
-	"github.com/formancehq/payments/internal/app/payments"
-
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/go-libs/sharedpublish"
+	"github.com/formancehq/payments/internal/app/models"
 )
 
 type Ingester interface {
@@ -20,19 +18,19 @@ type DefaultIngester struct {
 	repo       Repository
 	logger     sharedlogging.Logger
 	provider   models.ConnectorProvider
-	descriptor payments.TaskDescriptor
+	descriptor models.TaskDescriptor
 	publisher  sharedpublish.Publisher
 }
 
 type Repository interface {
 	UpsertAccounts(ctx context.Context, provider models.ConnectorProvider, accounts []models.Account) error
 	UpsertPayments(ctx context.Context, provider models.ConnectorProvider, payments []*models.Payment) error
-	UpdateTaskState(ctx context.Context, provider models.ConnectorProvider, descriptor json.RawMessage, state json.RawMessage) error
+	UpdateTaskState(ctx context.Context, provider models.ConnectorProvider, descriptor models.TaskDescriptor, state json.RawMessage) error
 }
 
 func NewDefaultIngester(
 	provider models.ConnectorProvider,
-	descriptor payments.TaskDescriptor,
+	descriptor models.TaskDescriptor,
 	repo Repository,
 	logger sharedlogging.Logger,
 	publisher sharedpublish.Publisher,

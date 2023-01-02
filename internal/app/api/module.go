@@ -66,12 +66,12 @@ func HTTPModule() fx.Option {
 			})
 		}),
 		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, `group:"connectorHandlers"`))),
-		addConnector[dummypay.Config, dummypay.TaskDescriptor](dummypay.NewLoader()),
-		addConnector[modulr.Config, modulr.TaskDescriptor](modulr.NewLoader()),
-		addConnector[stripe.Config, stripe.TaskDescriptor](stripe.NewLoader()),
-		addConnector[wise.Config, wise.TaskDescriptor](wise.NewLoader()),
-		addConnector[currencycloud.Config, currencycloud.TaskDescriptor](currencycloud.NewLoader()),
-		addConnector[bankingcircle.Config, bankingcircle.TaskDescriptor](bankingcircle.NewLoader()),
+		addConnector[dummypay.Config](dummypay.NewLoader()),
+		addConnector[modulr.Config](modulr.NewLoader()),
+		addConnector[stripe.Config](stripe.NewLoader()),
+		addConnector[wise.Config](wise.NewLoader()),
+		addConnector[currencycloud.Config](currencycloud.NewLoader()),
+		addConnector[bankingcircle.Config](bankingcircle.NewLoader()),
 	)
 }
 

@@ -11,13 +11,13 @@ First, to create a connector, we need a loader.
 ## The loader object
 
 ```go
-type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {
+type Loader[ConnectorConfig payments.ConnectorConfigObject] interface {
 	// Name has to return the name of the connector. It must be constant and unique
 	Name() string
 	// Load is in charge of loading the connector
 	// It takes a logger and a ConnectorConfig object.
 	// At this point, the config must have been validated
-	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
+	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector
 	// ApplyDefaults is used to fill default values of the provided configuration object.
 	ApplyDefaults(t ConnectorConfig) ConnectorConfig
 	// AllowTasks define how many task the connector can run
@@ -53,7 +53,7 @@ func (cfg Config) Validate() error {
 	return nil
 }
 
-var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").Build()
+var Loader = integration.NewLoaderBuilder[Config]("example").Build()
 ```
 
 Here, we built our loader.
@@ -128,9 +128,9 @@ The Load function take a logger provided by the framework and a config, probably
 It has to return a Connector object. Here the interface :
 ```go
 // Connector provide entry point to a payment provider
-type Connector[TaskDescriptor payments.TaskDescriptor any] interface {
+type Connector interface {
 	// Install is used to start the connector. The implementation if in charge of scheduling all required resources.
-	Install(ctx task.ConnectorContext[TaskDescriptor]) error
+	Install(ctx task.ConnectorContext) error
 	// Uninstall is used to uninstall the connector. It has to close all related resources opened by the connector.
 	Uninstall(ctx context.Context) error
 	// Resolve is used to recover state of a failed or restarted task
@@ -161,10 +161,10 @@ func (cfg Config) Validate() error {
 Here we defined only one property to our connector, "Directory", which indicates the directory when json files will be pushed.
 Now, modify our loader :
 ```go
-var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").
-	WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-		return integration.NewConnectorBuilder[TaskDescriptor]().
-			WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
+var Loader = integration.NewLoaderBuilder[Config]("example").
+	WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector {
+		return integration.NewConnectorBuilder().
+			WithInstall(func(ctx task.ConnectorContext) error {
 				return errors.New("not implemented")
 			}).
 			Build()
@@ -176,9 +176,9 @@ Here we create a connector using a builtin builder, but you can implement the in
 We define a ```Install``` method which only returns an errors when installed.
 You can retry to install your connector and see the error on the http response.
 
-The ```Install``` method take a ```task.ConnectorContext[TaskDescriptor]``` parameter :
+The ```Install``` method take a ```task.ConnectorContext``` parameter :
 ```go
-type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
+type ConnectorContext interface {
 	Context() context.Context
 	Scheduler() Scheduler[TaskDescriptor]
 }
@@ -186,7 +186,7 @@ type ConnectorContext[TaskDescriptor payments.TaskDescriptor] interface {
 
 Basically this context provides two things :
 * a ```context.Context``` : If the connector make long-running processing, it should listen on this context to abort if necessary.
-* a ```Scheduler[TaskDescriptor]```: A scheduler to run tasks
+* a ```Scheduler```: A scheduler to run tasks
 
 But, what is a task ?
 
@@ -214,7 +214,7 @@ type (
 Add some logic on our connector :
 ```go
     ...
-    WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
+    WithInstall(func(ctx task.ConnectorContext) error {
         return ctx.Scheduler().Schedule("directory", true)
     }).
 	...
@@ -232,10 +232,10 @@ So, when calling ```ctx.Scheduler().Schedule("directory")```, the framework will
 Let's implement the resolve method :
 ```go
     ...
-    WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
+    WithInstall(func(ctx task.ConnectorContext) error {
         return ctx.Scheduler().Schedule("directory")
     }).
-    WithResolve(func(descriptor TaskDescriptor) task.Task {
+    WithResolve(func(descriptor models.TaskDescriptor) task.Task {
         if descriptor == "directory" {
 			return func() {
 			    // TODO
@@ -254,7 +254,7 @@ Now, we have to implement the logic for each task.
 Let's start with the main task which read the directory :
 ```go
     ...
-    WithResolve(func(descriptor TaskDescriptor) task.Task {
+    WithResolve(func(descriptor models.TaskDescriptor) task.Task {
         if descriptor == "directory" {
             return func(ctx context.Context, logget sharedlogging.Logger, scheduler task.Scheduler)
                 for {
@@ -511,15 +511,15 @@ func (cfg Config) Validate() error {
 	return nil
 }
 
-var Loader = integration.NewLoaderBuilder[Config, TaskDescriptor]("example").
-	WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
-		return integration.NewConnectorBuilder[TaskDescriptor]().
-			WithInstall(func(ctx task.ConnectorContext[TaskDescriptor]) error {
+var Loader = integration.NewLoaderBuilder[Config]("example").
+	WithLoad(func(logger sharedlogging.Logger, config Config) integration.Connector {
+		return integration.NewConnectorBuilder().
+			WithInstall(func(ctx task.ConnectorContext) error {
 				return ctx.Scheduler().Schedule("directory", false)
 			}).
-			WithResolve(func(descriptor TaskDescriptor) task.Task {
+			WithResolve(func(descriptor models.TaskDescriptor) task.Task {
 				if descriptor == "directory" {
-					return func(ctx context.Context, logger sharedlogging.Logger, scheduler task.Scheduler[TaskDescriptor]) error {
+					return func(ctx context.Context, logger sharedlogging.Logger, scheduler task.Scheduler) error {
 						for {
 							select {
 							case <-ctx.Done():

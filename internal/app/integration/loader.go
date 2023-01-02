@@ -3,12 +3,11 @@ package integration
 import (
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/payments/internal/app/models"
-	"github.com/formancehq/payments/internal/app/payments"
 )
 
-type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] interface {
+type Loader[ConnectorConfig models.ConnectorConfigObject] interface {
 	Name() models.ConnectorProvider
-	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
+	Load(logger sharedlogging.Logger, config ConnectorConfig) Connector
 
 	// ApplyDefaults is used to fill default values of the provided configuration object
 	ApplyDefaults(t ConnectorConfig) ConnectorConfig
@@ -19,39 +18,37 @@ type Loader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payme
 	AllowTasks() int
 }
 
-type LoaderBuilder[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
-	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
+type LoaderBuilder[ConnectorConfig models.ConnectorConfigObject] struct {
+	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
 	name          models.ConnectorProvider
 	allowedTasks  int
 }
 
-func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) WithLoad(loadFunction func(logger sharedlogging.Logger,
-	config ConnectorConfig) Connector[TaskDescriptor],
-) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
+func (b *LoaderBuilder[ConnectorConfig]) WithLoad(loadFunction func(logger sharedlogging.Logger,
+	config ConnectorConfig) Connector,
+) *LoaderBuilder[ConnectorConfig] {
 	b.loadFunction = loadFunction
 
 	return b
 }
 
-func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) WithApplyDefaults(
+func (b *LoaderBuilder[ConnectorConfig]) WithApplyDefaults(
 	applyDefaults func(t ConnectorConfig) ConnectorConfig,
-) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
+) *LoaderBuilder[ConnectorConfig] {
 	b.applyDefaults = applyDefaults
 
 	return b
 }
 
-func (b *LoaderBuilder[ConnectorConfig,
-	TaskDescriptor]) WithAllowedTasks(v int,
-) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
+func (b *LoaderBuilder[ConnectorConfig]) WithAllowedTasks(v int) *LoaderBuilder[ConnectorConfig] {
 	b.allowedTasks = v
 
 	return b
 }
 
-func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) Build() *BuiltLoader[ConnectorConfig, TaskDescriptor] {
-	return &BuiltLoader[ConnectorConfig, TaskDescriptor]{
+func (b *LoaderBuilder[ConnectorConfig]) Build() *BuiltLoader[ConnectorConfig] {
+	return &BuiltLoader[ConnectorConfig]{
 		loadFunction:  b.loadFunction,
 		applyDefaults: b.applyDefaults,
 		name:          b.name,
@@ -59,32 +56,29 @@ func (b *LoaderBuilder[ConnectorConfig, TaskDescriptor]) Build() *BuiltLoader[Co
 	}
 }
 
-func NewLoaderBuilder[ConnectorConfig payments.ConnectorConfigObject,
-	TaskDescriptor payments.TaskDescriptor](name models.ConnectorProvider,
-) *LoaderBuilder[ConnectorConfig, TaskDescriptor] {
-	return &LoaderBuilder[ConnectorConfig, TaskDescriptor]{
+func NewLoaderBuilder[ConnectorConfig models.ConnectorConfigObject](name models.ConnectorProvider,
+) *LoaderBuilder[ConnectorConfig] {
+	return &LoaderBuilder[ConnectorConfig]{
 		name: name,
 	}
 }
 
-type BuiltLoader[ConnectorConfig payments.ConnectorConfigObject, TaskDescriptor payments.TaskDescriptor] struct {
-	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector[TaskDescriptor]
+type BuiltLoader[ConnectorConfig models.ConnectorConfigObject] struct {
+	loadFunction  func(logger sharedlogging.Logger, config ConnectorConfig) Connector
 	applyDefaults func(t ConnectorConfig) ConnectorConfig
 	name          models.ConnectorProvider
 	allowedTasks  int
 }
 
-func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) AllowTasks() int {
+func (b *BuiltLoader[ConnectorConfig]) AllowTasks() int {
 	return b.allowedTasks
 }
 
-func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Name() models.ConnectorProvider {
+func (b *BuiltLoader[ConnectorConfig]) Name() models.ConnectorProvider {
 	return b.name
 }
 
-func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Load(logger sharedlogging.Logger,
-	config ConnectorConfig,
-) Connector[TaskDescriptor] {
+func (b *BuiltLoader[ConnectorConfig]) Load(logger sharedlogging.Logger, config ConnectorConfig) Connector {
 	if b.loadFunction != nil {
 		return b.loadFunction(logger, config)
 	}
@@ -92,7 +86,7 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) Load(logger sharedlogging
 	return nil
 }
 
-func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) ApplyDefaults(t ConnectorConfig) ConnectorConfig {
+func (b *BuiltLoader[ConnectorConfig]) ApplyDefaults(t ConnectorConfig) ConnectorConfig {
 	if b.applyDefaults != nil {
 		return b.applyDefaults(t)
 	}
@@ -100,4 +94,4 @@ func (b *BuiltLoader[ConnectorConfig, TaskDescriptor]) ApplyDefaults(t Connector
 	return t
 }
 
-var _ Loader[payments.EmptyConnectorConfig, struct{}] = &BuiltLoader[payments.EmptyConnectorConfig, struct{}]{}
+var _ Loader[models.EmptyConnectorConfig] = &BuiltLoader[models.EmptyConnectorConfig]{}

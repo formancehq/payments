@@ -1,19 +1,15 @@
 package integration
 
 import (
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/formancehq/payments/internal/app/task"
 )
 
-type TaskSchedulerFactory[TaskDescriptor payments.TaskDescriptor] interface {
-	Make(resolver task.Resolver[TaskDescriptor], maxTasks int) *task.DefaultTaskScheduler[TaskDescriptor]
+type TaskSchedulerFactory interface {
+	Make(resolver task.Resolver, maxTasks int) *task.DefaultTaskScheduler
 }
 
-type TaskSchedulerFactoryFn[TaskDescriptor payments.TaskDescriptor] func(resolver task.Resolver[TaskDescriptor],
-	maxProcesses int) *task.DefaultTaskScheduler[TaskDescriptor]
+type TaskSchedulerFactoryFn func(resolver task.Resolver, maxProcesses int) *task.DefaultTaskScheduler
 
-func (fn TaskSchedulerFactoryFn[TaskDescriptor]) Make(resolver task.Resolver[TaskDescriptor],
-	maxTasks int,
-) *task.DefaultTaskScheduler[TaskDescriptor] {
+func (fn TaskSchedulerFactoryFn) Make(resolver task.Resolver, maxTasks int) *task.DefaultTaskScheduler {
 	return fn(resolver, maxTasks)
 }

@@ -22,7 +22,7 @@ func (l *Loader) Name() models.ConnectorProvider {
 	return Name
 }
 
-func (l *Loader) Load(logger sharedlogging.Logger, config Config) integration.Connector[TaskDescriptor] {
+func (l *Loader) Load(logger sharedlogging.Logger, config Config) integration.Connector {
 	return newConnector(logger, config)
 }
 

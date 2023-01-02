@@ -18,7 +18,7 @@ const (
 	keyIDPrefix = "Signature keyId=\""
 )
 
-func buildSignature(apiKey string, apiSecret string, nonce string, date string) string {
+func buildSignature(apiKey, apiSecret, nonce, date string) string {
 	keyID := keyIDPrefix + apiKey + "\","
 
 	mac := hmac.New(sha1.New, []byte(apiSecret))

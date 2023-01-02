@@ -2,31 +2,35 @@ package task
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
+
+	"go.uber.org/dig"
+
 	"github.com/formancehq/payments/internal/app/models"
 
-	"github.com/formancehq/payments/internal/app/payments"
-
 	"github.com/formancehq/go-libs/sharedlogging/sharedlogginglogrus"
-	"github.com/pborman/uuid"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 )
 
-func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
-	provider models.ConnectorProvider, descriptor TaskDescriptor, expectedStatus models.TaskStatus, errString string,
+//nolint:gochecknoglobals // allow in tests
+var DefaultContainerFactory = ContainerCreateFunc(func(ctx context.Context, descriptor models.TaskDescriptor, taskID uuid.UUID) (*dig.Container, error) {
+	return dig.New(), nil
+})
+
+func newDescriptor() models.TaskDescriptor {
+	return []byte(uuid.New().String())
+}
+
+func TaskTerminatedWithStatus(store *InMemoryStore, provider models.ConnectorProvider,
+	descriptor models.TaskDescriptor, expectedStatus models.TaskStatus, errString string,
 ) func() bool {
 	return func() bool {
-		taskDescriptor, err := json.Marshal(descriptor)
-		if err != nil {
-			return false
-		}
-
-		status, resultErr, ok := store.Result(provider, taskDescriptor)
+		status, resultErr, ok := store.Result(provider, descriptor)
 		if !ok {
 			return false
 		}
@@ -39,27 +43,19 @@ func TaskTerminatedWithStatus[TaskDescriptor payments.TaskDescriptor](store *InM
 	}
 }
 
-func TaskTerminated[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
-	provider models.ConnectorProvider, descriptor TaskDescriptor,
-) func() bool {
+func TaskTerminated(store *InMemoryStore, provider models.ConnectorProvider, descriptor models.TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusTerminated, "")
 }
 
-func TaskFailed[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
-	provider models.ConnectorProvider, descriptor TaskDescriptor, errStr string,
-) func() bool {
+func TaskFailed(store *InMemoryStore, provider models.ConnectorProvider, descriptor models.TaskDescriptor, errStr string) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusFailed, errStr)
 }
 
-func TaskPending[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
-	provider models.ConnectorProvider, descriptor TaskDescriptor,
-) func() bool {
+func TaskPending(store *InMemoryStore, provider models.ConnectorProvider, descriptor models.TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusPending, "")
 }
 
-func TaskActive[TaskDescriptor payments.TaskDescriptor](store *InMemoryStore,
-	provider models.ConnectorProvider, descriptor TaskDescriptor,
-) func() bool {
+func TaskActive(store *InMemoryStore, provider models.ConnectorProvider, descriptor models.TaskDescriptor) func() bool {
 	return TaskTerminatedWithStatus(store, provider, descriptor, models.TaskStatusActive, "")
 }
 
@@ -77,11 +73,11 @@ func TestTaskScheduler(t *testing.T) {
 		t.Parallel()
 
 		store := NewInMemoryStore()
-		provider := models.ConnectorProvider(uuid.New())
+		provider := models.ConnectorProvider(uuid.New().String())
 		done := make(chan struct{})
 
-		scheduler := NewDefaultScheduler[string](provider, logger, store,
-			DefaultContainerFactory, ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler(provider, logger, store,
+			DefaultContainerFactory, ResolverFn(func(descriptor models.TaskDescriptor) Task {
 				return func(ctx context.Context) error {
 					select {
 					case <-ctx.Done():
@@ -92,7 +88,7 @@ func TestTaskScheduler(t *testing.T) {
 				}
 			}), 1)
 
-		descriptor := uuid.New()
+		descriptor := newDescriptor()
 		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 
@@ -105,9 +101,9 @@ func TestTaskScheduler(t *testing.T) {
 		t.Parallel()
 
 		store := NewInMemoryStore()
-		provider := models.ConnectorProvider(uuid.New())
-		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
-			ResolverFn[string](func(descriptor string) Task {
+		provider := models.ConnectorProvider(uuid.New().String())
+		scheduler := NewDefaultScheduler(provider, logger, store, DefaultContainerFactory,
+			ResolverFn(func(descriptor models.TaskDescriptor) Task {
 				return func(ctx context.Context) error {
 					<-ctx.Done()
 
@@ -115,7 +111,7 @@ func TestTaskScheduler(t *testing.T) {
 				}
 			}), 1)
 
-		descriptor := uuid.New()
+		descriptor := newDescriptor()
 		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 		require.Eventually(t, TaskActive(store, provider, descriptor), time.Second, 100*time.Millisecond)
@@ -127,16 +123,16 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Error", func(t *testing.T) {
 		t.Parallel()
 
-		provider := models.ConnectorProvider(uuid.New())
+		provider := models.ConnectorProvider(uuid.New().String())
 		store := NewInMemoryStore()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
-			ResolverFn[string](func(descriptor string) Task {
+		scheduler := NewDefaultScheduler(provider, logger, store, DefaultContainerFactory,
+			ResolverFn(func(descriptor models.TaskDescriptor) Task {
 				return func() error {
 					return errors.New("test")
 				}
 			}), 1)
 
-		descriptor := uuid.New()
+		descriptor := newDescriptor()
 		err := scheduler.Schedule(descriptor, false)
 		require.NoError(t, err)
 		require.Eventually(t, TaskFailed(store, provider, descriptor, "test"), time.Second,
@@ -146,18 +142,18 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Pending", func(t *testing.T) {
 		t.Parallel()
 
-		provider := models.ConnectorProvider(uuid.New())
+		provider := models.ConnectorProvider(uuid.New().String())
 		store := NewInMemoryStore()
-		descriptor1 := uuid.New()
-		descriptor2 := uuid.New()
+		descriptor1 := newDescriptor()
+		descriptor2 := newDescriptor()
 
 		task1Terminated := make(chan struct{})
 		task2Terminated := make(chan struct{})
 
-		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
-			ResolverFn[string](func(descriptor string) Task {
-				switch descriptor {
-				case descriptor1:
+		scheduler := NewDefaultScheduler(provider, logger, store, DefaultContainerFactory,
+			ResolverFn(func(descriptor models.TaskDescriptor) Task {
+				switch string(descriptor) {
+				case string(descriptor1):
 					return func(ctx context.Context) error {
 						select {
 						case <-task1Terminated:
@@ -166,7 +162,7 @@ func TestTaskScheduler(t *testing.T) {
 							return ctx.Err()
 						}
 					}
-				case descriptor2:
+				case string(descriptor2):
 					return func(ctx context.Context) error {
 						select {
 						case <-task2Terminated:
@@ -176,6 +172,7 @@ func TestTaskScheduler(t *testing.T) {
 						}
 					}
 				}
+
 				panic("unknown descriptor")
 			}), 1)
 
@@ -193,25 +190,28 @@ func TestTaskScheduler(t *testing.T) {
 	t.Run("Stop scheduler", func(t *testing.T) {
 		t.Parallel()
 
-		provider := models.ConnectorProvider(uuid.New())
+		provider := models.ConnectorProvider(uuid.New().String())
 		store := NewInMemoryStore()
-		scheduler := NewDefaultScheduler[string](provider, logger, store, DefaultContainerFactory,
-			ResolverFn[string](func(descriptor string) Task {
-				switch descriptor {
-				case "main":
-					return func(ctx context.Context, scheduler Scheduler[string]) {
+		mainDescriptor := newDescriptor()
+		workerDescriptor := newDescriptor()
+
+		scheduler := NewDefaultScheduler(provider, logger, store, DefaultContainerFactory,
+			ResolverFn(func(descriptor models.TaskDescriptor) Task {
+				switch string(descriptor) {
+				case string(mainDescriptor):
+					return func(ctx context.Context, scheduler Scheduler) {
 						<-ctx.Done()
-						require.NoError(t, scheduler.Schedule("worker", false))
+						require.NoError(t, scheduler.Schedule(workerDescriptor, false))
 					}
 				default:
 					panic("should not be called")
 				}
 			}), 1)
 
-		require.NoError(t, scheduler.Schedule("main", false))
-		require.Eventually(t, TaskActive(store, provider, "main"), time.Second, 100*time.Millisecond)
+		require.NoError(t, scheduler.Schedule(mainDescriptor, false))
+		require.Eventually(t, TaskActive(store, provider, mainDescriptor), time.Second, 100*time.Millisecond)
 		require.NoError(t, scheduler.Shutdown(context.Background()))
-		require.Eventually(t, TaskTerminated(store, provider, "main"), time.Second, 100*time.Millisecond)
-		require.Eventually(t, TaskPending(store, provider, "worker"), time.Second, 100*time.Millisecond)
+		require.Eventually(t, TaskTerminated(store, provider, mainDescriptor), time.Second, 100*time.Millisecond)
+		require.Eventually(t, TaskPending(store, provider, workerDescriptor), time.Second, 100*time.Millisecond)
 	})
 }
