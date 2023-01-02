@@ -26,7 +26,6 @@ jobs:
 
   goreleaser-build:
     if: github.event_name != 'release'
-    runs-on: payments-runner-size
     uses: numary/gh-workflows/.github/workflows/goreleaser-build.yml@main
     needs:
       - lint
@@ -34,7 +33,6 @@ jobs:
 
   goreleaser-release:
     if: github.event_name == 'release'
-    runs-on: payments-runner-size
     uses: numary/gh-workflows/.github/workflows/goreleaser-release.yml@main
     secrets:
       FURY_TOKEN: ${{ secrets.FURY_TOKEN }}
