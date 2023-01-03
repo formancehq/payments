@@ -3,6 +3,8 @@ package bankingcircle
 import (
 	"fmt"
 
+	"github.com/formancehq/payments/internal/app/models"
+
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/sharedlogging"
@@ -18,7 +20,7 @@ type TaskDescriptor struct {
 	Key  string `json:"key" yaml:"key" bson:"key"`
 }
 
-func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinition TaskDescriptor) task.Task {
+func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinition models.TaskDescriptor) task.Task {
 	bankingCircleClient, err := newClient(config.Username, config.Password, config.Endpoint, config.AuthorizationEndpoint, logger)
 	if err != nil {
 		logger.Error(err)
@@ -26,15 +28,22 @@ func resolveTasks(logger sharedlogging.Logger, config Config) func(taskDefinitio
 		return nil
 	}
 
-	return func(taskDefinition TaskDescriptor) task.Task {
-		switch taskDefinition.Key {
+	return func(taskDefinition models.TaskDescriptor) task.Task {
+		taskDescriptor, err := models.DecodeTaskDescriptor[TaskDescriptor](taskDefinition)
+		if err != nil {
+			logger.Error(err)
+
+			return nil
+		}
+
+		switch taskDescriptor.Key {
 		case taskNameFetchPayments:
 			return taskFetchPayments(logger, bankingCircleClient)
 		}
 
 		// This should never happen.
 		return func() error {
-			return fmt.Errorf("key '%s': %w", taskDefinition.Key, ErrMissingTask)
+			return fmt.Errorf("key '%s': %w", taskDescriptor.Key, ErrMissingTask)
 		}
 	}
 }

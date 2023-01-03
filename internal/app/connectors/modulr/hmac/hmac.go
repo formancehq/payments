@@ -19,7 +19,7 @@ const (
 
 var ErrInvalidCredentials = errors.New("invalid api credentials")
 
-func GenerateHeaders(apiKey string, apiSecret string, nonce string, hasRetry bool) (map[string]string, error) {
+func GenerateHeaders(apiKey, apiSecret, nonce string, hasRetry bool) (map[string]string, error) {
 	if apiKey == "" || apiSecret == "" {
 		return nil, ErrInvalidCredentials
 	}
@@ -27,7 +27,7 @@ func GenerateHeaders(apiKey string, apiSecret string, nonce string, hasRetry boo
 	return constructHeadersMap(apiKey, apiSecret, nonce, hasRetry, time.Now()), nil
 }
 
-func constructHeadersMap(apiKey string, apiSecret string, nonce string, hasRetry bool,
+func constructHeadersMap(apiKey, apiSecret, nonce string, hasRetry bool,
 	timestamp time.Time,
 ) map[string]string {
 	headers := make(map[string]string)

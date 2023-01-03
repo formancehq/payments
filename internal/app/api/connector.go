@@ -15,11 +15,9 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/formancehq/payments/internal/app/integration"
-	"github.com/formancehq/payments/internal/app/payments"
-
 	"github.com/formancehq/go-libs/sharedapi"
 	"github.com/formancehq/go-libs/sharedlogging"
+	"github.com/formancehq/payments/internal/app/integration"
 )
 
 func handleErrorBadRequest(w http.ResponseWriter, r *http.Request, err error) {
@@ -50,8 +48,7 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	}
 }
 
-func readConfig[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func readConfig[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		config, err := connectorManager.ReadConfig(r.Context())
@@ -69,18 +66,17 @@ func readConfig[Config payments.ConnectorConfigObject,
 }
 
 type listTasksResponseElement struct {
-	ID          string                  `json:"id"`
-	ConnectorID string                  `json:"connectorID"`
-	CreatedAt   string                  `json:"createdAt"`
-	UpdatedAt   string                  `json:"updatedAt"`
-	Descriptor  payments.TaskDescriptor `json:"descriptor"`
-	Status      models.TaskStatus       `json:"status"`
-	State       json.RawMessage         `json:"state"`
-	Error       string                  `json:"error"`
+	ID          string            `json:"id"`
+	ConnectorID string            `json:"connectorID"`
+	CreatedAt   string            `json:"createdAt"`
+	UpdatedAt   string            `json:"updatedAt"`
+	Descriptor  json.RawMessage   `json:"descriptor"`
+	Status      models.TaskStatus `json:"status"`
+	State       json.RawMessage   `json:"state"`
+	Error       string            `json:"error"`
 }
 
-func listTasks[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func listTasks[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		skip, err := integerWithDefault(r, "skip", 0)
@@ -129,8 +125,7 @@ func listTasks[Config payments.ConnectorConfigObject,
 	}
 }
 
-func readTask[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func readTask[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		taskID, err := uuid.Parse(mux.Vars(r)["taskID"])
@@ -165,8 +160,7 @@ func readTask[Config payments.ConnectorConfigObject,
 	}
 }
 
-func uninstall[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func uninstall[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := connectorManager.Uninstall(r.Context())
@@ -180,8 +174,7 @@ func uninstall[Config payments.ConnectorConfigObject,
 	}
 }
 
-func install[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func install[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		installed, err := connectorManager.IsInstalled(context.Background())
@@ -218,8 +211,7 @@ func install[Config payments.ConnectorConfigObject,
 	}
 }
 
-func reset[Config payments.ConnectorConfigObject,
-	Descriptor payments.TaskDescriptor](connectorManager *integration.ConnectorManager[Config, Descriptor],
+func reset[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		installed, err := connectorManager.IsInstalled(context.Background())

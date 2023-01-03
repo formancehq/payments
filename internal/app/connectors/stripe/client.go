@@ -21,7 +21,7 @@ func (fn ClientOptionFn) apply(req *http.Request) {
 	fn(req)
 }
 
-func QueryParam(key string, value string) ClientOptionFn {
+func QueryParam(key, value string) ClientOptionFn {
 	return func(req *http.Request) {
 		q := req.URL.Query()
 		q.Set(key, value)

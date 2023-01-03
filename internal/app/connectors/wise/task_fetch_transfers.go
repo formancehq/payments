@@ -15,7 +15,7 @@ import (
 func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID uint64) task.Task {
 	return func(
 		ctx context.Context,
-		scheduler task.Scheduler[TaskDescriptor],
+		scheduler task.Scheduler,
 		ingester ingestion.Ingester,
 	) error {
 		transfers, err := client.getTransfers(ctx, &profile{

@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 
+	"github.com/formancehq/go-libs/sharedotlp/pkg/sharedotlptraces"
+
 	"github.com/bombsimon/logrusr/v3"
 	"github.com/formancehq/payments/internal/app/api"
 	"github.com/formancehq/payments/internal/app/storage"
@@ -13,7 +15,6 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/formancehq/go-libs/sharedlogging"
 	"github.com/formancehq/go-libs/sharedlogging/sharedlogginglogrus"
-	"github.com/formancehq/go-libs/sharedotlp/pkg/sharedotlptraces"
 	"github.com/formancehq/go-libs/sharedpublish"
 	"github.com/formancehq/go-libs/sharedpublish/sharedpublishhttp"
 	"github.com/formancehq/go-libs/sharedpublish/sharedpublishkafka"

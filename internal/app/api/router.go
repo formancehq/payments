@@ -7,10 +7,8 @@ import (
 
 	"github.com/formancehq/payments/internal/app/storage"
 
-	"github.com/formancehq/payments/internal/app/integration"
-	"github.com/formancehq/payments/internal/app/payments"
-
 	"github.com/formancehq/go-libs/sharedauth"
+	"github.com/formancehq/payments/internal/app/integration"
 	"github.com/gorilla/mux"
 	"github.com/spf13/viper"
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
@@ -61,9 +59,9 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 	return rootMux, nil
 }
 
-func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.TaskDescriptor](
+func connectorRouter[Config models.ConnectorConfigObject](
 	provider models.ConnectorProvider,
-	manager *integration.ConnectorManager[Config, Descriptor],
+	manager *integration.ConnectorManager[Config],
 ) *mux.Router {
 	r := mux.NewRouter()
 
@@ -77,7 +75,7 @@ func connectorRouter[Config payments.ConnectorConfigObject, Descriptor payments.
 	return r
 }
 
-func addRoute(r *mux.Router, provider models.ConnectorProvider, path string, method string, handler http.Handler) {
+func addRoute(r *mux.Router, provider models.ConnectorProvider, path, method string, handler http.Handler) {
 	r.Path("/" + provider.String() + path).Methods(method).Handler(handler)
 
 	r.Path("/" + provider.StringLower() + path).Methods(method).Handler(handler)

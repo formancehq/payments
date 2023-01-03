@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"go.uber.org/dig"
+
 	"github.com/google/uuid"
 
 	"github.com/formancehq/payments/internal/app/storage"
@@ -15,7 +17,6 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 
 	"github.com/formancehq/go-libs/sharedlogging"
-	"github.com/formancehq/payments/internal/app/payments"
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,42 +28,40 @@ var (
 	ErrUnableToResolve  = errors.New("unable to resolve task")
 )
 
-type Scheduler[TaskDescriptor payments.TaskDescriptor] interface {
-	Schedule(p TaskDescriptor, restart bool) error
+type Scheduler interface {
+	Schedule(p models.TaskDescriptor, restart bool) error
 }
 
-type taskHolder[TaskDescriptor payments.TaskDescriptor] struct {
-	descriptor json.RawMessage
+type taskHolder struct {
+	descriptor models.TaskDescriptor
 	cancel     func()
 	logger     sharedlogging.Logger
 	stopChan   StopChan
 }
 
-type DefaultTaskScheduler[TaskDescriptor payments.TaskDescriptor] struct {
+type ContainerCreateFunc func(ctx context.Context, descriptor models.TaskDescriptor, taskID uuid.UUID) (*dig.Container, error)
+
+type DefaultTaskScheduler struct {
 	provider         models.ConnectorProvider
 	logger           sharedlogging.Logger
 	store            Repository
-	containerFactory ContainerFactory
-	tasks            map[string]*taskHolder[TaskDescriptor]
+	containerFactory ContainerCreateFunc
+	tasks            map[string]*taskHolder
 	mu               sync.Mutex
 	maxTasks         int
-	resolver         Resolver[TaskDescriptor]
+	resolver         Resolver
 	stopped          bool
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ListTasks(ctx context.Context,
-	pagination storage.Paginator,
-) ([]models.Task, error) {
+func (s *DefaultTaskScheduler) ListTasks(ctx context.Context, pagination storage.Paginator) ([]models.Task, error) {
 	return s.store.ListTasks(ctx, s.provider, pagination)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTask(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
+func (s *DefaultTaskScheduler) ReadTask(ctx context.Context, taskID uuid.UUID) (*models.Task, error) {
 	return s.store.GetTask(ctx, taskID)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTaskByDescriptor(ctx context.Context,
-	descriptor TaskDescriptor,
-) (*models.Task, error) {
+func (s *DefaultTaskScheduler) ReadTaskByDescriptor(ctx context.Context, descriptor models.TaskDescriptor) (*models.Task, error) {
 	taskDescriptor, err := json.Marshal(descriptor)
 	if err != nil {
 		return nil, err
@@ -71,11 +70,15 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) ReadTaskByDescriptor(ctx context.
 	return s.store.GetTaskByDescriptor(ctx, s.provider, taskDescriptor)
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescriptor, restart bool) error {
+func (s *DefaultTaskScheduler) Schedule(descriptor models.TaskDescriptor, restart bool) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	taskID := payments.IDFromDescriptor(descriptor)
+	taskID, err := descriptor.EncodeToString()
+	if err != nil {
+		return err
+	}
+
 	if _, ok := s.tasks[taskID]; ok {
 		return ErrAlreadyScheduled
 	}
@@ -96,19 +99,14 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Schedule(descriptor TaskDescripto
 		return nil
 	}
 
-	taskDescriptor, err := json.Marshal(descriptor)
-	if err != nil {
-		return err
-	}
-
-	if err := s.startTask(taskDescriptor); err != nil {
+	if err := s.startTask(descriptor); err != nil {
 		return errors.Wrap(err, "starting task")
 	}
 
 	return nil
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) Shutdown(ctx context.Context) error {
+func (s *DefaultTaskScheduler) Shutdown(ctx context.Context) error {
 	s.mu.Lock()
 	s.stopped = true
 	s.mu.Unlock()
@@ -137,14 +135,14 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Shutdown(ctx context.Context) err
 	return nil
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) Restore(ctx context.Context) error {
+func (s *DefaultTaskScheduler) Restore(ctx context.Context) error {
 	tasks, err := s.store.ListTasksByStatus(ctx, s.provider, models.TaskStatusActive)
 	if err != nil {
 		return err
 	}
 
 	for _, task := range tasks {
-		err = s.startTask(task.Descriptor)
+		err = s.startTask(task.GetDescriptor())
 		if err != nil {
 			s.logger.Errorf("Unable to restore task %s: %s", task.ID, err)
 		}
@@ -153,9 +151,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) Restore(ctx context.Context) erro
 	return nil
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) registerTaskError(ctx context.Context,
-	holder *taskHolder[TaskDescriptor], taskErr any,
-) {
+func (s *DefaultTaskScheduler) registerTaskError(ctx context.Context, holder *taskHolder, taskErr any) {
 	var taskError string
 
 	switch v := taskErr.(type) {
@@ -173,10 +169,18 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) registerTaskError(ctx context.Con
 	}
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[TaskDescriptor]) {
+func (s *DefaultTaskScheduler) deleteTask(holder *taskHolder) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	delete(s.tasks, payments.IDFromDescriptor(holder.descriptor))
+
+	taskID, err := holder.descriptor.EncodeToString()
+	if err != nil {
+		holder.logger.Errorf("Error encoding task descriptor: %s", err)
+
+		return
+	}
+
+	delete(s.tasks, taskID)
 
 	if s.stopped {
 		return
@@ -193,23 +197,14 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 		return
 	}
 
-	var descriptor TaskDescriptor
-
-	err = json.Unmarshal(oldestPendingTask.Descriptor, &descriptor)
-	if err != nil {
-		sharedlogging.Error(err)
-
-		return
-	}
-
-	p := s.resolver.Resolve(descriptor)
+	p := s.resolver.Resolve(oldestPendingTask.GetDescriptor())
 	if p == nil {
 		sharedlogging.Errorf("unable to resolve task")
 
 		return
 	}
 
-	err = s.startTask(oldestPendingTask.Descriptor)
+	err = s.startTask(oldestPendingTask.GetDescriptor())
 	if err != nil {
 		sharedlogging.Error(err)
 	}
@@ -217,7 +212,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) deleteTask(holder *taskHolder[Tas
 
 type StopChan chan chan struct{}
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMessage) error {
+func (s *DefaultTaskScheduler) startTask(descriptor models.TaskDescriptor) error {
 	task, err := s.store.FindAndUpsertTask(context.Background(), s.provider, descriptor,
 		models.TaskStatusActive, "")
 	if err != nil {
@@ -228,14 +223,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMess
 		"task-id": task.ID,
 	})
 
-	var taskDescriptor TaskDescriptor
-
-	err = json.Unmarshal(task.Descriptor, &taskDescriptor)
-	if err != nil {
-		return err
-	}
-
-	taskResolver := s.resolver.Resolve(taskDescriptor)
+	taskResolver := s.resolver.Resolve(task.GetDescriptor())
 	if taskResolver == nil {
 		return ErrUnableToResolve
 	}
@@ -246,13 +234,13 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMess
 		attribute.Stringer("connector", s.provider),
 	))
 
-	holder := &taskHolder[TaskDescriptor]{
+	holder := &taskHolder{
 		cancel:     cancel,
 		logger:     logger,
 		descriptor: descriptor,
 	}
 
-	container, err := s.containerFactory.Create(ctx, descriptor)
+	container, err := s.containerFactory(ctx, descriptor, task.ID)
 	if err != nil {
 		// TODO: Handle error
 		panic(err)
@@ -265,7 +253,7 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMess
 		panic(err)
 	}
 
-	err = container.Provide(func() Scheduler[TaskDescriptor] {
+	err = container.Provide(func() Scheduler {
 		return s
 	})
 	if err != nil {
@@ -304,7 +292,12 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMess
 		panic(err)
 	}
 
-	s.tasks[payments.IDFromDescriptor(descriptor)] = holder
+	taskID, err := holder.descriptor.EncodeToString()
+	if err != nil {
+		return err
+	}
+
+	s.tasks[taskID] = holder
 
 	go func() {
 		logger.Infof("Starting task...")
@@ -340,38 +333,33 @@ func (s *DefaultTaskScheduler[TaskDescriptor]) startTask(descriptor json.RawMess
 	return nil
 }
 
-func (s *DefaultTaskScheduler[TaskDescriptor]) stackTask(descriptor TaskDescriptor) error {
+func (s *DefaultTaskScheduler) stackTask(descriptor models.TaskDescriptor) error {
 	s.logger.WithFields(map[string]interface{}{
-		"descriptor": descriptor,
+		"descriptor": string(descriptor),
 	}).Infof("Stacking task")
 
-	taskDescriptor, err := json.Marshal(descriptor)
-	if err != nil {
-		return err
-	}
-
 	return s.store.UpdateTaskStatus(
-		context.Background(), s.provider, taskDescriptor, models.TaskStatusPending, "")
+		context.Background(), s.provider, descriptor, models.TaskStatusPending, "")
 }
 
-var _ Scheduler[struct{}] = &DefaultTaskScheduler[struct{}]{}
+var _ Scheduler = &DefaultTaskScheduler{}
 
-func NewDefaultScheduler[TaskDescriptor payments.TaskDescriptor](
+func NewDefaultScheduler(
 	provider models.ConnectorProvider,
 	logger sharedlogging.Logger,
 	store Repository,
-	containerFactory ContainerFactory,
-	resolver Resolver[TaskDescriptor],
+	containerFactory ContainerCreateFunc,
+	resolver Resolver,
 	maxTasks int,
-) *DefaultTaskScheduler[TaskDescriptor] {
-	return &DefaultTaskScheduler[TaskDescriptor]{
+) *DefaultTaskScheduler {
+	return &DefaultTaskScheduler{
 		provider: provider,
 		logger: logger.WithFields(map[string]interface{}{
 			"component": "scheduler",
 			"provider":  provider,
 		}),
 		store:            store,
-		tasks:            map[string]*taskHolder[TaskDescriptor]{},
+		tasks:            map[string]*taskHolder{},
 		containerFactory: containerFactory,
 		maxTasks:         maxTasks,
 		resolver:         resolver,

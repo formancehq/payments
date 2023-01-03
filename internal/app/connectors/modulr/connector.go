@@ -17,22 +17,32 @@ type Connector struct {
 	cfg    Config
 }
 
-func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
-	return ctx.Scheduler().Schedule(TaskDescriptor{
+func (c *Connector) Install(ctx task.ConnectorContext) error {
+	taskDescriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 		Name: "Fetch accounts from client",
 		Key:  taskNameFetchAccounts,
-	}, false)
+	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.Scheduler().Schedule(taskDescriptor, false)
 }
 
 func (c *Connector) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
-	return resolveTasks(c.logger, c.cfg)(descriptor)
+func (c *Connector) Resolve(descriptor models.TaskDescriptor) task.Task {
+	taskDescriptor, err := models.DecodeTaskDescriptor[TaskDescriptor](descriptor)
+	if err != nil {
+		return nil
+	}
+
+	return resolveTasks(c.logger, c.cfg)(taskDescriptor)
 }
 
-var _ integration.Connector[TaskDescriptor] = &Connector{}
+var _ integration.Connector = &Connector{}
 
 func newConnector(logger sharedlogging.Logger, cfg Config) *Connector {
 	return &Connector{

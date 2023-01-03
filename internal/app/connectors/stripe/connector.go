@@ -18,26 +18,36 @@ type Connector struct {
 	cfg    Config
 }
 
-func (c *Connector) Install(ctx task.ConnectorContext[TaskDescriptor]) error {
-	return ctx.Scheduler().Schedule(TaskDescriptor{
+func (c *Connector) Install(ctx task.ConnectorContext) error {
+	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 		Name: "Main task to periodically fetch transactions",
 		Main: true,
-	}, false)
+	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.Scheduler().Schedule(descriptor, false)
 }
 
 func (c *Connector) Uninstall(ctx context.Context) error {
 	return nil
 }
 
-func (c *Connector) Resolve(descriptor TaskDescriptor) task.Task {
-	if descriptor.Main {
+func (c *Connector) Resolve(descriptor models.TaskDescriptor) task.Task {
+	taskDescriptor, err := models.DecodeTaskDescriptor[TaskDescriptor](descriptor)
+	if err != nil {
+		panic(err)
+	}
+
+	if taskDescriptor.Main {
 		return MainTask(c.cfg)
 	}
 
-	return ConnectedAccountTask(c.cfg, descriptor.Account)
+	return ConnectedAccountTask(c.cfg, taskDescriptor.Account)
 }
 
-var _ integration.Connector[TaskDescriptor] = &Connector{}
+var _ integration.Connector = &Connector{}
 
 func newConnector(logger sharedlogging.Logger, cfg Config) *Connector {
 	return &Connector{

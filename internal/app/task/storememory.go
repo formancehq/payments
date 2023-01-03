@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -12,8 +13,6 @@ import (
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/formancehq/payments/internal/app/models"
-
-	"github.com/formancehq/payments/internal/app/payments"
 )
 
 type InMemoryStore struct {
@@ -33,9 +32,12 @@ func (s *InMemoryStore) GetTask(ctx context.Context, id uuid.UUID) (*models.Task
 }
 
 func (s *InMemoryStore) GetTaskByDescriptor(ctx context.Context, provider models.ConnectorProvider,
-	descriptor json.RawMessage,
+	descriptor models.TaskDescriptor,
 ) (*models.Task, error) {
-	id := payments.IDFromDescriptor(descriptor)
+	id, err := descriptor.EncodeToString()
+	if err != nil {
+		return nil, err
+	}
 
 	status, ok := s.statuses[id]
 	if !ok {
@@ -43,7 +45,7 @@ func (s *InMemoryStore) GetTaskByDescriptor(ctx context.Context, provider models
 	}
 
 	return &models.Task{
-		Descriptor: descriptor,
+		Descriptor: descriptor.ToMessage(),
 		Status:     status,
 		Error:      s.errors[id],
 		State:      nil,
@@ -62,10 +64,10 @@ func (s *InMemoryStore) ListTasks(ctx context.Context,
 			continue
 		}
 
-		var descriptor json.RawMessage
+		var descriptor models.TaskDescriptor
 
 		ret = append(ret, models.Task{
-			Descriptor: descriptor,
+			Descriptor: descriptor.ToMessage(),
 			Status:     status,
 			Error:      s.errors[id],
 			State:      nil,
@@ -101,12 +103,20 @@ func (s *InMemoryStore) ReadOldestPendingTask(ctx context.Context,
 
 	descriptorStr := strings.Split(oldestID, "/")[1]
 
-	var descriptor json.RawMessage
+	var descriptor models.TaskDescriptor
 
-	payments.DescriptorFromID(descriptorStr, &descriptor)
+	data, err := base64.StdEncoding.DecodeString(descriptorStr)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(data, &descriptor)
+	if err != nil {
+		return nil, err
+	}
 
 	return &models.Task{
-		Descriptor: descriptor,
+		Descriptor: descriptor.ToMessage(),
 		Status:     models.TaskStatusPending,
 		State:      nil,
 		CreatedAt:  s.created[oldestID],
@@ -135,7 +145,7 @@ func (s *InMemoryStore) ListTasksByStatus(ctx context.Context,
 }
 
 func (s *InMemoryStore) FindAndUpsertTask(ctx context.Context,
-	provider models.ConnectorProvider, descriptor json.RawMessage, status models.TaskStatus, taskErr string,
+	provider models.ConnectorProvider, descriptor models.TaskDescriptor, status models.TaskStatus, taskErr string,
 ) (*models.Task, error) {
 	err := s.UpdateTaskStatus(ctx, provider, descriptor, status, taskErr)
 	if err != nil {
@@ -143,7 +153,7 @@ func (s *InMemoryStore) FindAndUpsertTask(ctx context.Context,
 	}
 
 	return &models.Task{
-		Descriptor: descriptor,
+		Descriptor: descriptor.ToMessage(),
 		Status:     status,
 		Error:      taskErr,
 		State:      nil,
@@ -151,13 +161,18 @@ func (s *InMemoryStore) FindAndUpsertTask(ctx context.Context,
 }
 
 func (s *InMemoryStore) UpdateTaskStatus(ctx context.Context, provider models.ConnectorProvider,
-	descriptor json.RawMessage, status models.TaskStatus, err string,
+	descriptor models.TaskDescriptor, status models.TaskStatus, taskError string,
 ) error {
-	taskID := payments.IDFromDescriptor(descriptor)
+	taskID, err := descriptor.EncodeToString()
+	if err != nil {
+		return err
+	}
+
 	key := fmt.Sprintf("%s/%s", provider, taskID)
+
 	s.statuses[key] = status
 
-	s.errors[key] = err
+	s.errors[key] = taskError
 	if _, ok := s.created[key]; !ok {
 		s.created[key] = time.Now()
 	}
@@ -166,9 +181,13 @@ func (s *InMemoryStore) UpdateTaskStatus(ctx context.Context, provider models.Co
 }
 
 func (s *InMemoryStore) Result(provider models.ConnectorProvider,
-	descriptor json.RawMessage,
+	descriptor models.TaskDescriptor,
 ) (models.TaskStatus, string, bool) {
-	taskID := payments.IDFromDescriptor(descriptor)
+	taskID, err := descriptor.EncodeToString()
+	if err != nil {
+		panic(err)
+	}
+
 	key := fmt.Sprintf("%s/%s", provider, taskID)
 
 	status, ok := s.statuses[key]
