@@ -144,7 +144,7 @@ func (s *DefaultTaskScheduler) Restore(ctx context.Context) error {
 	for _, task := range tasks {
 		err = s.startTask(task.GetDescriptor())
 		if err != nil {
-			return err
+			s.logger.Errorf("Unable to restore task %s: %s", task.ID, err)
 		}
 	}
 
