@@ -113,7 +113,7 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 			return err
 		}
 
-		return scheduler.Schedule(descriptor, false)
+		return scheduler.Schedule(descriptor, true)
 	}
 }
 
