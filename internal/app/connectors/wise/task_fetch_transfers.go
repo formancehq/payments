@@ -78,6 +78,7 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 				accountBatch = append(accountBatch,
 					ingestion.AccountBatchElement{
 						Reference: ref,
+						Provider:  models.ConnectorProviderWise.String(),
 						Type:      models.AccountTypeTarget,
 					},
 				)

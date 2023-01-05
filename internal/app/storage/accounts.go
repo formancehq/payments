@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/app/models"
 )
@@ -32,4 +33,24 @@ func (s *Storage) UpsertAccounts(ctx context.Context, provider models.ConnectorP
 	}
 
 	return nil
+}
+
+func (s *Storage) ListAccounts(ctx context.Context, sort Sorter, pagination Paginator) ([]*models.Account, error) {
+	var accounts []*models.Account
+
+	query := s.db.NewSelect().
+		Model(&accounts)
+
+	if sort != nil {
+		query = sort.apply(query)
+	}
+
+	query = pagination.apply(query)
+
+	err := query.Scan(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list payments: %w", err)
+	}
+
+	return accounts, nil
 }

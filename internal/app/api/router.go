@@ -37,6 +37,8 @@ func httpRouter(store *storage.Storage, connectorHandlers []connectorHandler) (*
 	authGroup.Path("/payments").Methods(http.MethodGet).Handler(listPaymentsHandler(store))
 	authGroup.Path("/payments/{paymentID}").Methods(http.MethodGet).Handler(readPaymentHandler(store))
 
+	authGroup.Path("/accounts").Methods(http.MethodGet).Handler(listAccountsHandler(store))
+
 	authGroup.HandleFunc("/connectors", readConnectorsHandler(store))
 
 	connectorGroup := authGroup.PathPrefix("/connectors").Subrouter()
