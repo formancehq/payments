@@ -16,7 +16,8 @@ import (
 
 // ListPaymentsResponse struct for ListPaymentsResponse
 type ListPaymentsResponse struct {
-	Data interface{} `json:"data"`
+	Data   interface{} `json:"data"`
+	Cursor *Cursor     `json:"cursor,omitempty"`
 }
 
 // NewListPaymentsResponse instantiates a new ListPaymentsResponse object
@@ -63,10 +64,45 @@ func (o *ListPaymentsResponse) SetData(v interface{}) {
 	o.Data = v
 }
 
+// GetCursor returns the Cursor field value if set, zero value otherwise.
+func (o *ListPaymentsResponse) GetCursor() Cursor {
+	if o == nil || isNil(o.Cursor) {
+		var ret Cursor
+		return ret
+	}
+	return *o.Cursor
+}
+
+// GetCursorOk returns a tuple with the Cursor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *ListPaymentsResponse) GetCursorOk() (*Cursor, bool) {
+	if o == nil || isNil(o.Cursor) {
+		return nil, false
+	}
+	return o.Cursor, true
+}
+
+// HasCursor returns a boolean if a field has been set.
+func (o *ListPaymentsResponse) HasCursor() bool {
+	if o != nil && !isNil(o.Cursor) {
+		return true
+	}
+
+	return false
+}
+
+// SetCursor gets a reference to the given Cursor and assigns it to the Cursor field.
+func (o *ListPaymentsResponse) SetCursor(v Cursor) {
+	o.Cursor = &v
+}
+
 func (o ListPaymentsResponse) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Data != nil {
 		toSerialize["data"] = o.Data
+	}
+	if !isNil(o.Cursor) {
+		toSerialize["cursor"] = o.Cursor
 	}
 	return json.Marshal(toSerialize)
 }

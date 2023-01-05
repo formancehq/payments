@@ -10,25 +10,24 @@ paths:
       tags:
       - Payments
       parameters:
-      - name: limit
+      - name: pageSize
         in: query
         schema:
           type: integer
-        description: Limit the number of payments to return, pagination can be achieved in conjunction with 'skip' parameter.
+        description: Limit the number of payments to return.
         example: 10
-      - name: skip
+      - name: cursor
         in: query
         schema:
-          type: integer
-        description: How many payments to skip, pagination can be achieved in conjunction with 'limit' parameter.
-        example: 100
+          type: string
+        description: Cursor for pagination.
       - name: sort
         in: query
         schema:
           type: array
           items:
             type: string
-        description: Field used to sort payments (Default is by date).
+        description: Field used to sort payments (Default is desc by date).
         example: status
       responses:
         '200':    # status code
@@ -57,7 +56,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Payment'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Payment'
   /connectors:
     get:
       summary: Get all installed connectors
@@ -85,7 +87,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListConnectorsConfigsResponse'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ListConnectorsConfigsResponse'
   '/connectors/{connector}':
     post:
       summary: Install connector
@@ -145,7 +150,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorConfig'
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ConnectorConfig'
   '/connectors/{connector}/reset':
     post:
       summary: Reset connector
@@ -171,6 +179,17 @@ paths:
       operationId: listConnectorTasks
       description: List all tasks associated with this connector.
       parameters:
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+        description: Limit the number of tasks to return.
+        example: 10
+      - name: cursor
+        in: query
+        schema:
+          type: string
+        description: Cursor for pagination.
       - name: connector
         description: The connector code
         in: path
@@ -183,15 +202,20 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  oneOf:
-                    - $ref: '#/components/schemas/TaskDescriptorStripe'
-                    - $ref: '#/components/schemas/TaskDescriptorWise'
-                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-                    - $ref: '#/components/schemas/TaskDescriptorModulr'
-                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+                type: object
+                properties:
+                  cursor:
+                    $ref: '#/components/schemas/Cursor'
+                  data:
+                    type: array
+                    items:
+                      oneOf:
+                        - $ref: '#/components/schemas/TaskDescriptorStripe'
+                        - $ref: '#/components/schemas/TaskDescriptorWise'
+                        - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                        - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                        - $ref: '#/components/schemas/TaskDescriptorModulr'
+                        - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
   '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
@@ -219,13 +243,16 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                    - $ref: '#/components/schemas/TaskDescriptorStripe'
-                    - $ref: '#/components/schemas/TaskDescriptorWise'
-                    - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-                    - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-                    - $ref: '#/components/schemas/TaskDescriptorModulr'
-                    - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+                type: object
+                properties:
+                  data:
+                    oneOf:
+                        - $ref: '#/components/schemas/TaskDescriptorStripe'
+                        - $ref: '#/components/schemas/TaskDescriptorWise'
+                        - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                        - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                        - $ref: '#/components/schemas/TaskDescriptorModulr'
+                        - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
   /connectors/stripe/transfer:
     post:
       summary: Transfer funds between Stripe accounts
@@ -392,6 +419,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Payment'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
     GetPaymentResponse:
       type: object
       required:
@@ -735,3 +764,28 @@ components:
               type: string
             key:
               type: string
+    Cursor:
+      type: object
+      properties:
+        hasMore:
+          type: boolean
+          description: Indicates if there are more items to fetch
+        next:
+          type: string
+          description: The cursor to use to fetch the next page of results
+          example: 'eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9'
+        previous:
+          type: string
+          description: The cursor to use to fetch the previous page of results
+          example: 'eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9'
+        pageSize:
+          type: integer
+          description: The number of items per page
+          example: 10
+        total:
+          type: object
+          properties:
+            value:
+              type: integer
+              description: The total number of items available
+              example: 100

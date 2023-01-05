@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 )
 
-func (s *Storage) ListPayments(ctx context.Context, sort Sorter, pagination Paginator) ([]*models.Payment, error) {
+func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*models.Payment, PaginationDetails, error) {
 	var payments []*models.Payment
 
 	query := s.db.NewSelect().
@@ -20,18 +20,38 @@ func (s *Storage) ListPayments(ctx context.Context, sort Sorter, pagination Pagi
 		Relation("Metadata").
 		Relation("Adjustments")
 
-	if sort != nil {
-		query = sort.apply(query)
-	}
-
-	query = pagination.apply(query)
-
-	err := query.Scan(ctx)
+	count, err := query.Count(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list payments: %w", err)
+		return nil, PaginationDetails{}, fmt.Errorf("failed to count payments: %w", err)
 	}
 
-	return payments, nil
+	query = pagination.apply(query, "payment.created_at")
+
+	err = query.Scan(ctx)
+	if err != nil {
+		return nil, PaginationDetails{}, e("failed to list payments", err)
+	}
+
+	var (
+		hasMore                       = len(payments) > pagination.pageSize
+		firstReference, lastReference string
+	)
+
+	if hasMore {
+		payments = payments[:pagination.pageSize]
+	}
+
+	if len(payments) > 0 {
+		firstReference = payments[0].CreatedAt.Format(time.RFC3339Nano)
+		lastReference = payments[len(payments)-1].CreatedAt.Format(time.RFC3339Nano)
+	}
+
+	paginationDetails, err := pagination.paginationDetails(count, hasMore, firstReference, lastReference)
+	if err != nil {
+		return nil, PaginationDetails{}, fmt.Errorf("failed to get pagination details: %w", err)
+	}
+
+	return payments, paginationDetails, nil
 }
 
 func (s *Storage) GetPayment(ctx context.Context, id string) (*models.Payment, error) {

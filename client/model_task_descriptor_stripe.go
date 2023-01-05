@@ -14,8 +14,8 @@ import (
 	"encoding/json"
 )
 
-// ConnectorTaskBase struct for ConnectorTaskBase
-type ConnectorTaskBase struct {
+// TaskDescriptorStripe struct for TaskDescriptorStripe
+type TaskDescriptorStripe struct {
 	// The connector code
 	Provider interface{} `json:"provider,omitempty"`
 	// The date when the task was created
@@ -25,28 +25,29 @@ type ConnectorTaskBase struct {
 	// The error message if the task failed
 	Error interface{} `json:"error,omitempty"`
 	// The task state
-	State interface{} `json:"state,omitempty"`
+	State      interface{}                     `json:"state,omitempty"`
+	Descriptor *TaskDescriptorStripeDescriptor `json:"descriptor,omitempty"`
 }
 
-// NewConnectorTaskBase instantiates a new ConnectorTaskBase object
+// NewTaskDescriptorStripe instantiates a new TaskDescriptorStripe object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewConnectorTaskBase() *ConnectorTaskBase {
-	this := ConnectorTaskBase{}
+func NewTaskDescriptorStripe() *TaskDescriptorStripe {
+	this := TaskDescriptorStripe{}
 	return &this
 }
 
-// NewConnectorTaskBaseWithDefaults instantiates a new ConnectorTaskBase object
+// NewTaskDescriptorStripeWithDefaults instantiates a new TaskDescriptorStripe object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewConnectorTaskBaseWithDefaults() *ConnectorTaskBase {
-	this := ConnectorTaskBase{}
+func NewTaskDescriptorStripeWithDefaults() *TaskDescriptorStripe {
+	this := TaskDescriptorStripe{}
 	return &this
 }
 
 // GetProvider returns the Provider field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ConnectorTaskBase) GetProvider() interface{} {
+func (o *TaskDescriptorStripe) GetProvider() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -57,7 +58,7 @@ func (o *ConnectorTaskBase) GetProvider() interface{} {
 // GetProviderOk returns a tuple with the Provider field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ConnectorTaskBase) GetProviderOk() (*interface{}, bool) {
+func (o *TaskDescriptorStripe) GetProviderOk() (*interface{}, bool) {
 	if o == nil || isNil(o.Provider) {
 		return nil, false
 	}
@@ -65,7 +66,7 @@ func (o *ConnectorTaskBase) GetProviderOk() (*interface{}, bool) {
 }
 
 // HasProvider returns a boolean if a field has been set.
-func (o *ConnectorTaskBase) HasProvider() bool {
+func (o *TaskDescriptorStripe) HasProvider() bool {
 	if o != nil && isNil(o.Provider) {
 		return true
 	}
@@ -74,12 +75,12 @@ func (o *ConnectorTaskBase) HasProvider() bool {
 }
 
 // SetProvider gets a reference to the given interface{} and assigns it to the Provider field.
-func (o *ConnectorTaskBase) SetProvider(v interface{}) {
+func (o *TaskDescriptorStripe) SetProvider(v interface{}) {
 	o.Provider = v
 }
 
 // GetCreatedAt returns the CreatedAt field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ConnectorTaskBase) GetCreatedAt() interface{} {
+func (o *TaskDescriptorStripe) GetCreatedAt() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -90,7 +91,7 @@ func (o *ConnectorTaskBase) GetCreatedAt() interface{} {
 // GetCreatedAtOk returns a tuple with the CreatedAt field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ConnectorTaskBase) GetCreatedAtOk() (*interface{}, bool) {
+func (o *TaskDescriptorStripe) GetCreatedAtOk() (*interface{}, bool) {
 	if o == nil || isNil(o.CreatedAt) {
 		return nil, false
 	}
@@ -98,7 +99,7 @@ func (o *ConnectorTaskBase) GetCreatedAtOk() (*interface{}, bool) {
 }
 
 // HasCreatedAt returns a boolean if a field has been set.
-func (o *ConnectorTaskBase) HasCreatedAt() bool {
+func (o *TaskDescriptorStripe) HasCreatedAt() bool {
 	if o != nil && isNil(o.CreatedAt) {
 		return true
 	}
@@ -107,12 +108,12 @@ func (o *ConnectorTaskBase) HasCreatedAt() bool {
 }
 
 // SetCreatedAt gets a reference to the given interface{} and assigns it to the CreatedAt field.
-func (o *ConnectorTaskBase) SetCreatedAt(v interface{}) {
+func (o *TaskDescriptorStripe) SetCreatedAt(v interface{}) {
 	o.CreatedAt = v
 }
 
 // GetStatus returns the Status field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ConnectorTaskBase) GetStatus() interface{} {
+func (o *TaskDescriptorStripe) GetStatus() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -123,7 +124,7 @@ func (o *ConnectorTaskBase) GetStatus() interface{} {
 // GetStatusOk returns a tuple with the Status field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ConnectorTaskBase) GetStatusOk() (*interface{}, bool) {
+func (o *TaskDescriptorStripe) GetStatusOk() (*interface{}, bool) {
 	if o == nil || isNil(o.Status) {
 		return nil, false
 	}
@@ -131,7 +132,7 @@ func (o *ConnectorTaskBase) GetStatusOk() (*interface{}, bool) {
 }
 
 // HasStatus returns a boolean if a field has been set.
-func (o *ConnectorTaskBase) HasStatus() bool {
+func (o *TaskDescriptorStripe) HasStatus() bool {
 	if o != nil && isNil(o.Status) {
 		return true
 	}
@@ -140,12 +141,12 @@ func (o *ConnectorTaskBase) HasStatus() bool {
 }
 
 // SetStatus gets a reference to the given interface{} and assigns it to the Status field.
-func (o *ConnectorTaskBase) SetStatus(v interface{}) {
+func (o *TaskDescriptorStripe) SetStatus(v interface{}) {
 	o.Status = v
 }
 
 // GetError returns the Error field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ConnectorTaskBase) GetError() interface{} {
+func (o *TaskDescriptorStripe) GetError() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -156,7 +157,7 @@ func (o *ConnectorTaskBase) GetError() interface{} {
 // GetErrorOk returns a tuple with the Error field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ConnectorTaskBase) GetErrorOk() (*interface{}, bool) {
+func (o *TaskDescriptorStripe) GetErrorOk() (*interface{}, bool) {
 	if o == nil || isNil(o.Error) {
 		return nil, false
 	}
@@ -164,7 +165,7 @@ func (o *ConnectorTaskBase) GetErrorOk() (*interface{}, bool) {
 }
 
 // HasError returns a boolean if a field has been set.
-func (o *ConnectorTaskBase) HasError() bool {
+func (o *TaskDescriptorStripe) HasError() bool {
 	if o != nil && isNil(o.Error) {
 		return true
 	}
@@ -173,12 +174,12 @@ func (o *ConnectorTaskBase) HasError() bool {
 }
 
 // SetError gets a reference to the given interface{} and assigns it to the Error field.
-func (o *ConnectorTaskBase) SetError(v interface{}) {
+func (o *TaskDescriptorStripe) SetError(v interface{}) {
 	o.Error = v
 }
 
 // GetState returns the State field value if set, zero value otherwise (both if not set or set to explicit null).
-func (o *ConnectorTaskBase) GetState() interface{} {
+func (o *TaskDescriptorStripe) GetState() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -189,7 +190,7 @@ func (o *ConnectorTaskBase) GetState() interface{} {
 // GetStateOk returns a tuple with the State field value if set, nil otherwise
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ConnectorTaskBase) GetStateOk() (*interface{}, bool) {
+func (o *TaskDescriptorStripe) GetStateOk() (*interface{}, bool) {
 	if o == nil || isNil(o.State) {
 		return nil, false
 	}
@@ -197,7 +198,7 @@ func (o *ConnectorTaskBase) GetStateOk() (*interface{}, bool) {
 }
 
 // HasState returns a boolean if a field has been set.
-func (o *ConnectorTaskBase) HasState() bool {
+func (o *TaskDescriptorStripe) HasState() bool {
 	if o != nil && isNil(o.State) {
 		return true
 	}
@@ -206,11 +207,43 @@ func (o *ConnectorTaskBase) HasState() bool {
 }
 
 // SetState gets a reference to the given interface{} and assigns it to the State field.
-func (o *ConnectorTaskBase) SetState(v interface{}) {
+func (o *TaskDescriptorStripe) SetState(v interface{}) {
 	o.State = v
 }
 
-func (o ConnectorTaskBase) MarshalJSON() ([]byte, error) {
+// GetDescriptor returns the Descriptor field value if set, zero value otherwise.
+func (o *TaskDescriptorStripe) GetDescriptor() TaskDescriptorStripeDescriptor {
+	if o == nil || isNil(o.Descriptor) {
+		var ret TaskDescriptorStripeDescriptor
+		return ret
+	}
+	return *o.Descriptor
+}
+
+// GetDescriptorOk returns a tuple with the Descriptor field value if set, nil otherwise
+// and a boolean to check if the value has been set.
+func (o *TaskDescriptorStripe) GetDescriptorOk() (*TaskDescriptorStripeDescriptor, bool) {
+	if o == nil || isNil(o.Descriptor) {
+		return nil, false
+	}
+	return o.Descriptor, true
+}
+
+// HasDescriptor returns a boolean if a field has been set.
+func (o *TaskDescriptorStripe) HasDescriptor() bool {
+	if o != nil && !isNil(o.Descriptor) {
+		return true
+	}
+
+	return false
+}
+
+// SetDescriptor gets a reference to the given TaskDescriptorStripeDescriptor and assigns it to the Descriptor field.
+func (o *TaskDescriptorStripe) SetDescriptor(v TaskDescriptorStripeDescriptor) {
+	o.Descriptor = &v
+}
+
+func (o TaskDescriptorStripe) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Provider != nil {
 		toSerialize["provider"] = o.Provider
@@ -227,41 +260,44 @@ func (o ConnectorTaskBase) MarshalJSON() ([]byte, error) {
 	if o.State != nil {
 		toSerialize["state"] = o.State
 	}
+	if !isNil(o.Descriptor) {
+		toSerialize["descriptor"] = o.Descriptor
+	}
 	return json.Marshal(toSerialize)
 }
 
-type NullableConnectorTaskBase struct {
-	value *ConnectorTaskBase
+type NullableTaskDescriptorStripe struct {
+	value *TaskDescriptorStripe
 	isSet bool
 }
 
-func (v NullableConnectorTaskBase) Get() *ConnectorTaskBase {
+func (v NullableTaskDescriptorStripe) Get() *TaskDescriptorStripe {
 	return v.value
 }
 
-func (v *NullableConnectorTaskBase) Set(val *ConnectorTaskBase) {
+func (v *NullableTaskDescriptorStripe) Set(val *TaskDescriptorStripe) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableConnectorTaskBase) IsSet() bool {
+func (v NullableTaskDescriptorStripe) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableConnectorTaskBase) Unset() {
+func (v *NullableTaskDescriptorStripe) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableConnectorTaskBase(val *ConnectorTaskBase) *NullableConnectorTaskBase {
-	return &NullableConnectorTaskBase{value: val, isSet: true}
+func NewNullableTaskDescriptorStripe(val *TaskDescriptorStripe) *NullableTaskDescriptorStripe {
+	return &NullableTaskDescriptorStripe{value: val, isSet: true}
 }
 
-func (v NullableConnectorTaskBase) MarshalJSON() ([]byte, error) {
+func (v NullableTaskDescriptorStripe) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableConnectorTaskBase) UnmarshalJSON(src []byte) error {
+func (v *NullableTaskDescriptorStripe) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

@@ -9,25 +9,22 @@ paths:
     get:
       operationId: listPayments
       parameters:
-      - description: "Limit the number of payments to return, pagination can be achieved\
-          \ in conjunction with 'skip' parameter."
+      - description: Limit the number of payments to return.
         example: 10
         explode: true
         in: query
-        name: limit
+        name: pageSize
         required: false
         schema: {}
         style: form
-      - description: "How many payments to skip, pagination can be achieved in conjunction\
-          \ with 'limit' parameter."
-        example: 100
+      - description: Cursor for pagination.
         explode: true
         in: query
-        name: skip
+        name: cursor
         required: false
         schema: {}
         style: form
-      - description: Field used to sort payments (Default is by date).
+      - description: Field used to sort payments (Default is desc by date).
         example: status
         explode: true
         in: query
@@ -63,7 +60,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Payment'
+                $ref: '#/components/schemas/getPayment_200_response'
           description: A payment
       summary: Returns a payment.
       tags:
@@ -91,7 +88,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListConnectorsConfigsResponse'
+                $ref: '#/components/schemas/getAllConnectorsConfigs_200_response'
           description: List of available connectors configs
       summary: Get all available connectors configs
       tags:
@@ -157,7 +154,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConnectorConfig'
+                $ref: '#/components/schemas/readConnectorConfig_200_response'
           description: Connector config
       summary: Read connector config
       tags:
@@ -187,6 +184,21 @@ paths:
       description: List all tasks associated with this connector.
       operationId: listConnectorTasks
       parameters:
+      - description: Limit the number of tasks to return.
+        example: 10
+        explode: true
+        in: query
+        name: pageSize
+        required: false
+        schema: {}
+        style: form
+      - description: Cursor for pagination.
+        explode: true
+        in: query
+        name: cursor
+        required: false
+        schema: {}
+        style: form
       - description: The connector code
         explode: false
         in: path
@@ -200,14 +212,7 @@ paths:
           content:
             application/json:
               schema:
-                items:
-                  oneOf:
-                  - $ref: '#/components/schemas/TaskDescriptorStripe'
-                  - $ref: '#/components/schemas/TaskDescriptorWise'
-                  - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-                  - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-                  - $ref: '#/components/schemas/TaskDescriptorModulr'
-                  - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+                $ref: '#/components/schemas/listConnectorTasks_200_response'
           description: Task list
       summary: List connector tasks
       tags:
@@ -238,13 +243,7 @@ paths:
           content:
             application/json:
               schema:
-                oneOf:
-                - $ref: '#/components/schemas/TaskDescriptorStripe'
-                - $ref: '#/components/schemas/TaskDescriptorWise'
-                - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-                - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-                - $ref: '#/components/schemas/TaskDescriptorModulr'
-                - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+                $ref: '#/components/schemas/getConnectorTask_200_response'
           description: The specified task
       summary: Read a specific task of the connector
       tags:
@@ -382,11 +381,20 @@ components:
       - loginID
     ListPaymentsResponse:
       example:
+        cursor:
+          next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+          total:
+            value: 100
+          previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+          hasMore: ""
+          pageSize: 10
         data: ""
       properties:
         data:
           items:
             $ref: '#/components/schemas/Payment'
+        cursor:
+          $ref: '#/components/schemas/Cursor'
       required:
       - data
     GetPaymentResponse:
@@ -493,7 +501,7 @@ components:
             It can be useful for storing additional information about the transfer in a structured format.
           example:
             order_id: "6735"
-    ConnectorTaskBase:
+    TaskDescriptorStripe:
       properties:
         provider:
           description: The connector code
@@ -517,57 +525,232 @@ components:
         state:
           description: The task state
           example: {}
-    TaskDescriptorStripe:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
-              main: {}
-              account: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorStripe_descriptor'
     TaskDescriptorWise:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
-              key: {}
-              profileID: {}
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorWise_descriptor'
     TaskDescriptorModulr:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
-              key: {}
-              accountID: {}
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorModulr_descriptor'
     TaskDescriptorDummyPay:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
-              key: {}
-              fileName: {}
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorDummyPay_descriptor'
     TaskDescriptorCurrencyCloud:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorCurrencyCloud_descriptor'
     TaskDescriptorBankingCircle:
-      allOf:
-      - $ref: '#/components/schemas/ConnectorTaskBase'
-      - properties:
-          descriptor:
-            properties:
-              name: {}
-              key: {}
+      properties:
+        provider:
+          description: The connector code
+          example: stripe
+        createdAt:
+          description: The date when the task was created
+          example: 2020-01-01T00:00:00.000Z
+          format: date-time
+        status:
+          description: The task status
+          enum:
+          - stopped
+          - pending
+          - terminated
+          - active
+          - failed
+          example: stopped
+        error:
+          description: The error message if the task failed
+          example: "Error: Something went wrong"
+        state:
+          description: The task state
+          example: {}
+        descriptor:
+          $ref: '#/components/schemas/TaskDescriptorBankingCircle_descriptor'
+    Cursor:
+      example:
+        next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+        total:
+          value: 100
+        previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+        hasMore: ""
+        pageSize: 10
+      properties:
+        hasMore:
+          description: Indicates if there are more items to fetch
+        next:
+          description: The cursor to use to fetch the next page of results
+          example: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+        previous:
+          description: The cursor to use to fetch the previous page of results
+          example: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+        pageSize:
+          description: The number of items per page
+          example: 10
+        total:
+          $ref: '#/components/schemas/Cursor_total'
+    getPayment_200_response:
+      example:
+        data:
+          reference: ""
+          date: ""
+          amount: 100
+          scheme: ""
+          provider: ""
+          raw: ""
+          id: XXX
+          type: ""
+          asset: USD
+          status: ""
+      properties:
+        data:
+          $ref: '#/components/schemas/Payment'
+    getAllConnectorsConfigs_200_response:
+      example:
+        data:
+          connector:
+            key:
+              datatype: ""
+              required: ""
+      properties:
+        data:
+          $ref: '#/components/schemas/ListConnectorsConfigsResponse'
+    readConnectorConfig_200_response:
+      example:
+        data: ""
+      properties:
+        data:
+          oneOf:
+          - $ref: '#/components/schemas/StripeConfig'
+          - $ref: '#/components/schemas/DummyPayConfig'
+          - $ref: '#/components/schemas/WiseConfig'
+          - $ref: '#/components/schemas/ModulrConfig'
+          - $ref: '#/components/schemas/CurrencyCloudConfig'
+          - $ref: '#/components/schemas/BankingCircleConfig'
+    listConnectorTasks_200_response:
+      example:
+        cursor:
+          next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+          total:
+            value: 100
+          previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
+          hasMore: ""
+          pageSize: 10
+        data: ""
+      properties:
+        cursor:
+          $ref: '#/components/schemas/Cursor'
+        data:
+          items:
+            oneOf:
+            - $ref: '#/components/schemas/TaskDescriptorStripe'
+            - $ref: '#/components/schemas/TaskDescriptorWise'
+            - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+            - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+            - $ref: '#/components/schemas/TaskDescriptorModulr'
+            - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+    getConnectorTask_200_response:
+      example:
+        data: ""
+      properties:
+        data:
+          oneOf:
+          - $ref: '#/components/schemas/TaskDescriptorStripe'
+          - $ref: '#/components/schemas/TaskDescriptorWise'
+          - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+          - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+          - $ref: '#/components/schemas/TaskDescriptorModulr'
+          - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
     ListConnectorsConfigsResponse_connector_key:
       example:
         datatype: ""
@@ -583,3 +766,37 @@ components:
       properties:
         key:
           $ref: '#/components/schemas/ListConnectorsConfigsResponse_connector_key'
+    TaskDescriptorStripe_descriptor:
+      properties:
+        name: {}
+        main: {}
+        account: {}
+    TaskDescriptorWise_descriptor:
+      properties:
+        name: {}
+        key: {}
+        profileID: {}
+    TaskDescriptorModulr_descriptor:
+      properties:
+        name: {}
+        key: {}
+        accountID: {}
+    TaskDescriptorDummyPay_descriptor:
+      properties:
+        name: {}
+        key: {}
+        fileName: {}
+    TaskDescriptorCurrencyCloud_descriptor:
+      properties:
+        name: {}
+    TaskDescriptorBankingCircle_descriptor:
+      properties:
+        name: {}
+        key: {}
+    Cursor_total:
+      example:
+        value: 100
+      properties:
+        value:
+          description: The total number of items available
+          example: 100

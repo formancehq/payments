@@ -225,7 +225,7 @@ type ApiGetAllConnectorsConfigsRequest struct {
 	ApiService *PaymentsApiService
 }
 
-func (r ApiGetAllConnectorsConfigsRequest) Execute() (*ListConnectorsConfigsResponse, *http.Response, error) {
+func (r ApiGetAllConnectorsConfigsRequest) Execute() (*GetAllConnectorsConfigs200Response, *http.Response, error) {
 	return r.ApiService.GetAllConnectorsConfigsExecute(r)
 }
 
@@ -245,13 +245,13 @@ func (a *PaymentsApiService) GetAllConnectorsConfigs(ctx context.Context) ApiGet
 }
 
 // Execute executes the request
-//  @return ListConnectorsConfigsResponse
-func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnectorsConfigsRequest) (*ListConnectorsConfigsResponse, *http.Response, error) {
+//  @return GetAllConnectorsConfigs200Response
+func (a *PaymentsApiService) GetAllConnectorsConfigsExecute(r ApiGetAllConnectorsConfigsRequest) (*GetAllConnectorsConfigs200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue *ListConnectorsConfigsResponse
+		localVarReturnValue *GetAllConnectorsConfigs200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetAllConnectorsConfigs")
@@ -326,7 +326,7 @@ type ApiGetConnectorTaskRequest struct {
 	taskId     interface{}
 }
 
-func (r ApiGetConnectorTaskRequest) Execute() (interface{}, *http.Response, error) {
+func (r ApiGetConnectorTaskRequest) Execute() (*GetConnectorTask200Response, *http.Response, error) {
 	return r.ApiService.GetConnectorTaskExecute(r)
 }
 
@@ -350,13 +350,13 @@ func (a *PaymentsApiService) GetConnectorTask(ctx context.Context, connector Con
 }
 
 // Execute executes the request
-//  @return interface{}
-func (a *PaymentsApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskRequest) (interface{}, *http.Response, error) {
+//  @return GetConnectorTask200Response
+func (a *PaymentsApiService) GetConnectorTaskExecute(r ApiGetConnectorTaskRequest) (*GetConnectorTask200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue interface{}
+		localVarReturnValue *GetConnectorTask200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetConnectorTask")
@@ -432,7 +432,7 @@ type ApiGetPaymentRequest struct {
 	paymentId  interface{}
 }
 
-func (r ApiGetPaymentRequest) Execute() (*Payment, *http.Response, error) {
+func (r ApiGetPaymentRequest) Execute() (*GetPayment200Response, *http.Response, error) {
 	return r.ApiService.GetPaymentExecute(r)
 }
 
@@ -452,13 +452,13 @@ func (a *PaymentsApiService) GetPayment(ctx context.Context, paymentId interface
 }
 
 // Execute executes the request
-//  @return Payment
-func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*Payment, *http.Response, error) {
+//  @return GetPayment200Response
+func (a *PaymentsApiService) GetPaymentExecute(r ApiGetPaymentRequest) (*GetPayment200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue *Payment
+		localVarReturnValue *GetPayment200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.GetPayment")
@@ -634,9 +634,23 @@ type ApiListConnectorTasksRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
 	connector  Connectors
+	pageSize   *interface{}
+	cursor     *interface{}
 }
 
-func (r ApiListConnectorTasksRequest) Execute() (interface{}, *http.Response, error) {
+// Limit the number of tasks to return.
+func (r ApiListConnectorTasksRequest) PageSize(pageSize interface{}) ApiListConnectorTasksRequest {
+	r.pageSize = &pageSize
+	return r
+}
+
+// Cursor for pagination.
+func (r ApiListConnectorTasksRequest) Cursor(cursor interface{}) ApiListConnectorTasksRequest {
+	r.cursor = &cursor
+	return r
+}
+
+func (r ApiListConnectorTasksRequest) Execute() (*ListConnectorTasks200Response, *http.Response, error) {
 	return r.ApiService.ListConnectorTasksExecute(r)
 }
 
@@ -658,13 +672,13 @@ func (a *PaymentsApiService) ListConnectorTasks(ctx context.Context, connector C
 }
 
 // Execute executes the request
-//  @return interface{}
-func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRequest) (interface{}, *http.Response, error) {
+//  @return ListConnectorTasks200Response
+func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRequest) (*ListConnectorTasks200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue interface{}
+		localVarReturnValue *ListConnectorTasks200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ListConnectorTasks")
@@ -679,6 +693,12 @@ func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRe
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
+	if r.pageSize != nil {
+		localVarQueryParams.Add("pageSize", parameterToString(*r.pageSize, ""))
+	}
+	if r.cursor != nil {
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
+	}
 	// to determine the Content-Type header
 	localVarHTTPContentTypes := []string{}
 
@@ -736,24 +756,24 @@ func (a *PaymentsApiService) ListConnectorTasksExecute(r ApiListConnectorTasksRe
 type ApiListPaymentsRequest struct {
 	ctx        context.Context
 	ApiService *PaymentsApiService
-	limit      *interface{}
-	skip       *interface{}
+	pageSize   *interface{}
+	cursor     *interface{}
 	sort       *interface{}
 }
 
-// Limit the number of payments to return, pagination can be achieved in conjunction with &#39;skip&#39; parameter.
-func (r ApiListPaymentsRequest) Limit(limit interface{}) ApiListPaymentsRequest {
-	r.limit = &limit
+// Limit the number of payments to return.
+func (r ApiListPaymentsRequest) PageSize(pageSize interface{}) ApiListPaymentsRequest {
+	r.pageSize = &pageSize
 	return r
 }
 
-// How many payments to skip, pagination can be achieved in conjunction with &#39;limit&#39; parameter.
-func (r ApiListPaymentsRequest) Skip(skip interface{}) ApiListPaymentsRequest {
-	r.skip = &skip
+// Cursor for pagination.
+func (r ApiListPaymentsRequest) Cursor(cursor interface{}) ApiListPaymentsRequest {
+	r.cursor = &cursor
 	return r
 }
 
-// Field used to sort payments (Default is by date).
+// Field used to sort payments (Default is desc by date).
 func (r ApiListPaymentsRequest) Sort(sort interface{}) ApiListPaymentsRequest {
 	r.sort = &sort
 	return r
@@ -797,11 +817,11 @@ func (a *PaymentsApiService) ListPaymentsExecute(r ApiListPaymentsRequest) (*Lis
 	localVarQueryParams := url.Values{}
 	localVarFormParams := url.Values{}
 
-	if r.limit != nil {
-		localVarQueryParams.Add("limit", parameterToString(*r.limit, ""))
+	if r.pageSize != nil {
+		localVarQueryParams.Add("pageSize", parameterToString(*r.pageSize, ""))
 	}
-	if r.skip != nil {
-		localVarQueryParams.Add("skip", parameterToString(*r.skip, ""))
+	if r.cursor != nil {
+		localVarQueryParams.Add("cursor", parameterToString(*r.cursor, ""))
 	}
 	if r.sort != nil {
 		localVarQueryParams.Add("sort", parameterToString(*r.sort, ""))
@@ -866,7 +886,7 @@ type ApiReadConnectorConfigRequest struct {
 	connector  Connectors
 }
 
-func (r ApiReadConnectorConfigRequest) Execute() (interface{}, *http.Response, error) {
+func (r ApiReadConnectorConfigRequest) Execute() (*ReadConnectorConfig200Response, *http.Response, error) {
 	return r.ApiService.ReadConnectorConfigExecute(r)
 }
 
@@ -888,13 +908,13 @@ func (a *PaymentsApiService) ReadConnectorConfig(ctx context.Context, connector 
 }
 
 // Execute executes the request
-//  @return interface{}
-func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfigRequest) (interface{}, *http.Response, error) {
+//  @return ReadConnectorConfig200Response
+func (a *PaymentsApiService) ReadConnectorConfigExecute(r ApiReadConnectorConfigRequest) (*ReadConnectorConfig200Response, *http.Response, error) {
 	var (
 		localVarHTTPMethod  = http.MethodGet
 		localVarPostBody    interface{}
 		formFiles           []formFile
-		localVarReturnValue interface{}
+		localVarReturnValue *ReadConnectorConfig200Response
 	)
 
 	localBasePath, err := a.client.cfg.ServerURLWithContext(r.ctx, "PaymentsApiService.ReadConnectorConfig")

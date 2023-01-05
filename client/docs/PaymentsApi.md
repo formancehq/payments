@@ -145,7 +145,7 @@ No authorization required
 
 ## GetAllConnectorsConfigs
 
-> ListConnectorsConfigsResponse GetAllConnectorsConfigs(ctx).Execute()
+> GetAllConnectorsConfigs200Response GetAllConnectorsConfigs(ctx).Execute()
 
 Get all available connectors configs
 
@@ -172,7 +172,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.GetAllConnectorsConfigs``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetAllConnectorsConfigs`: ListConnectorsConfigsResponse
+    // response from `GetAllConnectorsConfigs`: GetAllConnectorsConfigs200Response
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.GetAllConnectorsConfigs`: %v\n", resp)
 }
 ```
@@ -188,7 +188,7 @@ Other parameters are passed through a pointer to a apiGetAllConnectorsConfigsReq
 
 ### Return type
 
-[**ListConnectorsConfigsResponse**](ListConnectorsConfigsResponse.md)
+[**GetAllConnectorsConfigs200Response**](GetAllConnectorsConfigs200Response.md)
 
 ### Authorization
 
@@ -206,7 +206,7 @@ No authorization required
 
 ## GetConnectorTask
 
-> interface{} GetConnectorTask(ctx, connector, taskId).Execute()
+> GetConnectorTask200Response GetConnectorTask(ctx, connector, taskId).Execute()
 
 Read a specific task of the connector
 
@@ -235,7 +235,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.GetConnectorTask``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetConnectorTask`: interface{}
+    // response from `GetConnectorTask`: GetConnectorTask200Response
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.GetConnectorTask`: %v\n", resp)
 }
 ```
@@ -261,7 +261,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**interface{}**
+[**GetConnectorTask200Response**](GetConnectorTask200Response.md)
 
 ### Authorization
 
@@ -279,7 +279,7 @@ No authorization required
 
 ## GetPayment
 
-> Payment GetPayment(ctx, paymentId).Execute()
+> GetPayment200Response GetPayment(ctx, paymentId).Execute()
 
 Returns a payment.
 
@@ -305,7 +305,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.GetPayment``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `GetPayment`: Payment
+    // response from `GetPayment`: GetPayment200Response
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.GetPayment`: %v\n", resp)
 }
 ```
@@ -329,7 +329,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-[**Payment**](Payment.md)
+[**GetPayment200Response**](GetPayment200Response.md)
 
 ### Authorization
 
@@ -417,7 +417,7 @@ No authorization required
 
 ## ListConnectorTasks
 
-> interface{} ListConnectorTasks(ctx, connector).Execute()
+> ListConnectorTasks200Response ListConnectorTasks(ctx, connector).PageSize(pageSize).Cursor(cursor).Execute()
 
 List connector tasks
 
@@ -437,15 +437,17 @@ import (
 
 func main() {
     connector := *openapiclient.NewConnectors() // Connectors | The connector code
+    pageSize := TODO // interface{} | Limit the number of tasks to return. (optional)
+    cursor := TODO // interface{} | Cursor for pagination. (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.PaymentsApi.ListConnectorTasks(context.Background(), connector).Execute()
+    resp, r, err := apiClient.PaymentsApi.ListConnectorTasks(context.Background(), connector).PageSize(pageSize).Cursor(cursor).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.ListConnectorTasks``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `ListConnectorTasks`: interface{}
+    // response from `ListConnectorTasks`: ListConnectorTasks200Response
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.ListConnectorTasks`: %v\n", resp)
 }
 ```
@@ -466,10 +468,12 @@ Other parameters are passed through a pointer to a apiListConnectorTasksRequest 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
 
+ **pageSize** | [**interface{}**](interface{}.md) | Limit the number of tasks to return. | 
+ **cursor** | [**interface{}**](interface{}.md) | Cursor for pagination. | 
 
 ### Return type
 
-**interface{}**
+[**ListConnectorTasks200Response**](ListConnectorTasks200Response.md)
 
 ### Authorization
 
@@ -487,7 +491,7 @@ No authorization required
 
 ## ListPayments
 
-> ListPaymentsResponse ListPayments(ctx).Limit(limit).Skip(skip).Sort(sort).Execute()
+> ListPaymentsResponse ListPayments(ctx).PageSize(pageSize).Cursor(cursor).Sort(sort).Execute()
 
 Returns a list of payments.
 
@@ -504,13 +508,13 @@ import (
 )
 
 func main() {
-    limit := TODO // interface{} | Limit the number of payments to return, pagination can be achieved in conjunction with 'skip' parameter. (optional)
-    skip := TODO // interface{} | How many payments to skip, pagination can be achieved in conjunction with 'limit' parameter. (optional)
-    sort := TODO // interface{} | Field used to sort payments (Default is by date). (optional)
+    pageSize := TODO // interface{} | Limit the number of payments to return. (optional)
+    cursor := TODO // interface{} | Cursor for pagination. (optional)
+    sort := TODO // interface{} | Field used to sort payments (Default is desc by date). (optional)
 
     configuration := openapiclient.NewConfiguration()
     apiClient := openapiclient.NewAPIClient(configuration)
-    resp, r, err := apiClient.PaymentsApi.ListPayments(context.Background()).Limit(limit).Skip(skip).Sort(sort).Execute()
+    resp, r, err := apiClient.PaymentsApi.ListPayments(context.Background()).PageSize(pageSize).Cursor(cursor).Sort(sort).Execute()
     if err != nil {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.ListPayments``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -531,9 +535,9 @@ Other parameters are passed through a pointer to a apiListPaymentsRequest struct
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **limit** | [**interface{}**](interface{}.md) | Limit the number of payments to return, pagination can be achieved in conjunction with &#39;skip&#39; parameter. | 
- **skip** | [**interface{}**](interface{}.md) | How many payments to skip, pagination can be achieved in conjunction with &#39;limit&#39; parameter. | 
- **sort** | [**interface{}**](interface{}.md) | Field used to sort payments (Default is by date). | 
+ **pageSize** | [**interface{}**](interface{}.md) | Limit the number of payments to return. | 
+ **cursor** | [**interface{}**](interface{}.md) | Cursor for pagination. | 
+ **sort** | [**interface{}**](interface{}.md) | Field used to sort payments (Default is desc by date). | 
 
 ### Return type
 
@@ -555,7 +559,7 @@ No authorization required
 
 ## ReadConnectorConfig
 
-> interface{} ReadConnectorConfig(ctx, connector).Execute()
+> ReadConnectorConfig200Response ReadConnectorConfig(ctx, connector).Execute()
 
 Read connector config
 
@@ -583,7 +587,7 @@ func main() {
         fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.ReadConnectorConfig``: %v\n", err)
         fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
     }
-    // response from `ReadConnectorConfig`: interface{}
+    // response from `ReadConnectorConfig`: ReadConnectorConfig200Response
     fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.ReadConnectorConfig`: %v\n", resp)
 }
 ```
@@ -607,7 +611,7 @@ Name | Type | Description  | Notes
 
 ### Return type
 
-**interface{}**
+[**ReadConnectorConfig200Response**](ReadConnectorConfig200Response.md)
 
 ### Authorization
 
