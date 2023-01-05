@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/messages"
+
 	"github.com/formancehq/payments/internal/app/models"
 )
 
@@ -44,7 +46,11 @@ func (i *DefaultIngester) IngestAccounts(ctx context.Context, batch AccountBatch
 		return fmt.Errorf("error upserting accounts: %w", err)
 	}
 
-	i.publish(ctx, TopicAccounts, NewEventSavedAccounts(accounts))
+	err := i.publisher.Publish(ctx, messages.TopicPayments,
+		messages.NewEventSavedAccounts(accounts))
+	if err != nil {
+		i.logger.Errorf("Publishing message: %w", err)
+	}
 
 	endedAt := time.Now()
 

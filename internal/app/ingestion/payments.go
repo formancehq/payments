@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/payments/internal/app/messages"
+
 	"github.com/formancehq/payments/internal/app/models"
 )
 
@@ -58,12 +60,18 @@ func (i *DefaultIngester) IngestPayments(ctx context.Context, batch PaymentBatch
 		return fmt.Errorf("error marshaling task state: %w", err)
 	}
 
-	if err := i.repo.UpdateTaskState(ctx, i.provider, taskDescriptor, taskState); err != nil {
+	if err = i.repo.UpdateTaskState(ctx, i.provider, taskDescriptor, taskState); err != nil {
 		return fmt.Errorf("error updating task state: %w", err)
 	}
 
 	for paymentIdx := range allPayments {
-		i.publish(ctx, TopicPayments, NewEventSavedPayments(allPayments[paymentIdx], i.provider))
+		err = i.publisher.Publish(ctx, messages.TopicPayments,
+			messages.NewEventSavedPayments(allPayments[paymentIdx], i.provider))
+		if err != nil {
+			i.logger.Errorf("Publishing message: %w", err)
+
+			continue
+		}
 	}
 
 	endedAt := time.Now()
