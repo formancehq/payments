@@ -3,6 +3,10 @@ package integration
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/app/messages"
+
+	"github.com/formancehq/go-libs/sharedpublish"
+
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/google/uuid"
@@ -29,6 +33,7 @@ type ConnectorManager[Config models.ConnectorConfigObject] struct {
 	store            Repository
 	schedulerFactory TaskSchedulerFactory
 	scheduler        *task.DefaultTaskScheduler
+	publisher        sharedpublish.Publisher
 }
 
 func (l *ConnectorManager[ConnectorConfig]) Enable(ctx context.Context) error {
@@ -236,7 +241,18 @@ func (l *ConnectorManager[ConnectorConfig]) Reset(ctx context.Context) error {
 		return err
 	}
 
-	return l.Install(ctx, *config)
+	err = l.Install(ctx, *config)
+	if err != nil {
+		return err
+	}
+
+	err = l.publisher.Publish(ctx, messages.TopicPayments,
+		messages.NewEventResetConnector(l.loader.Name()))
+	if err != nil {
+		l.logger.Errorf("Publishing message: %w", err)
+	}
+
+	return nil
 }
 
 func NewConnectorManager[ConnectorConfig models.ConnectorConfigObject](
@@ -244,6 +260,7 @@ func NewConnectorManager[ConnectorConfig models.ConnectorConfigObject](
 	store Repository,
 	loader Loader[ConnectorConfig],
 	schedulerFactory TaskSchedulerFactory,
+	publisher sharedpublish.Publisher,
 ) *ConnectorManager[ConnectorConfig] {
 	return &ConnectorManager[ConnectorConfig]{
 		logger: logger.WithFields(map[string]interface{}{
@@ -253,5 +270,6 @@ func NewConnectorManager[ConnectorConfig models.ConnectorConfigObject](
 		store:            store,
 		loader:           loader,
 		schedulerFactory: schedulerFactory,
+		publisher:        publisher,
 	}
 }
