@@ -58,7 +58,7 @@ func addConnector[ConnectorConfig models.ConnectorConfigObject](loader integrati
 			})
 
 			return integration.NewConnectorManager[ConnectorConfig](logger,
-				store, loader, schedulerFactory)
+				store, loader, schedulerFactory, publisher)
 		}),
 		fx.Provide(fx.Annotate(func(cm *integration.ConnectorManager[ConnectorConfig],
 		) connectorHandler {

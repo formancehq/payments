@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/app/models"
 
@@ -78,6 +79,7 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 				accountBatch = append(accountBatch,
 					ingestion.AccountBatchElement{
 						Reference: ref,
+						Provider:  models.ConnectorProviderWise.String(),
 						Type:      models.AccountTypeTarget,
 					},
 				)
@@ -95,7 +97,24 @@ func taskFetchTransfers(logger sharedlogging.Logger, client *client, profileID u
 			}
 		}
 
-		return ingester.IngestPayments(ctx, paymentBatch, struct{}{})
+		err = ingester.IngestPayments(ctx, paymentBatch, struct{}{})
+		if err != nil {
+			return err
+		}
+
+		// TODO: Implement proper looper & abstract the logic
+
+		time.Sleep(time.Minute)
+
+		descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
+			Name: "Fetch profiles from client",
+			Key:  taskNameFetchProfiles,
+		})
+		if err != nil {
+			return err
+		}
+
+		return scheduler.Schedule(descriptor, true)
 	}
 }
 

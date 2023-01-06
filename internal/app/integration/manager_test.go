@@ -65,7 +65,7 @@ func withManager[ConnectorConfig models.ConnectorConfigObject](builder *Connecto
 		WithAllowedTasks(1).
 		Build()
 	manager := NewConnectorManager[ConnectorConfig](logger, managerStore, loader,
-		schedulerFactory)
+		schedulerFactory, nil)
 
 	defer func() {
 		_ = manager.Uninstall(context.Background())
