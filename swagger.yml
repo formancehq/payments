@@ -58,6 +58,40 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Payment'
+  /accounts:
+      get:
+        summary: Returns a list of accounts.
+        operationId: listAccounts
+        tags:
+        - Payments
+        parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+          description: Limit the number of accounts to return, pagination can be achieved in conjunction with 'skip' parameter.
+          example: 10
+        - name: skip
+          in: query
+          schema:
+            type: integer
+          description: How many accounts to skip, pagination can be achieved in conjunction with 'limit' parameter.
+          example: 100
+        - name: sort
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          description: Field used to sort payments (Default is by date).
+          example: status
+        responses:
+          '200':    # status code
+            description: A JSON array of accounts
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ListAccountsResponse'
   /connectors:
     get:
       summary: Get all installed connectors
@@ -452,7 +486,39 @@ components:
           format: date-time
         raw:
           nullable: true
-
+    ListAccountsResponse:
+      type: object
+      required:
+      - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+    Account:
+      type: object
+      required:
+      - id
+      - createdAt
+      - provider
+      - reference
+      - type
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
+        reference:
+          type: string
+        type:
+          type: string
+          enum:
+          - TARGET
+          - SOURCE
+          
     ListConnectorsResponse:
       type: object
       required:
