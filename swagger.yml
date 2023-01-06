@@ -237,19 +237,26 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - cursor
                 properties:
                   cursor:
-                    $ref: '#/components/schemas/Cursor'
-                  data:
-                    type: array
-                    items:
-                      oneOf:
-                        - $ref: '#/components/schemas/TaskDescriptorStripe'
-                        - $ref: '#/components/schemas/TaskDescriptorWise'
-                        - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-                        - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-                        - $ref: '#/components/schemas/TaskDescriptorModulr'
-                        - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+                    allOf:
+                      - $ref: '#/components/schemas/Cursor'
+                      - type: object
+                        required:
+                          - data
+                        properties:
+                          data:
+                            type: array
+                            items:
+                              oneOf:
+                                - $ref: '#/components/schemas/TaskDescriptorStripe'
+                                - $ref: '#/components/schemas/TaskDescriptorWise'
+                                - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                                - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                                - $ref: '#/components/schemas/TaskDescriptorModulr'
+                                - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
   '/connectors/{connector}/tasks/{taskId}':
     get:
       summary: Read a specific task of the connector
@@ -447,21 +454,19 @@ components:
     ListPaymentsResponse:
       type: object
       required:
-      - data
+      - cursor
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Payment'
         cursor:
-          $ref: '#/components/schemas/Cursor'
-    GetPaymentResponse:
-      type: object
-      required:
-      - data
-      properties:
-        data:
-          $ref: '#/components/schemas/Payment'
+          allOf:
+            - $ref: '#/components/schemas/Cursor'
+            - type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Payment'
     Payment:
       type: object
       required:
@@ -518,12 +523,19 @@ components:
     ListAccountsResponse:
       type: object
       required:
-      - data
+        - cursor
       properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Account'
+        cursor:
+          allOf:
+            - $ref: '#/components/schemas/Cursor'
+            - type: object
+              required:
+                - data
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Account'
     Account:
       type: object
       required:
@@ -848,10 +860,3 @@ components:
           type: integer
           description: The number of items per page
           example: 10
-        total:
-          type: object
-          properties:
-            value:
-              type: integer
-              description: The total number of items available
-              example: 100

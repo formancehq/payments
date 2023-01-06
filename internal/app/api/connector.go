@@ -87,17 +87,13 @@ func listTasks[Config models.ConnectorConfigObject](connectorManager *integratio
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]listTasksResponseElement]{
-			Data: &data,
-			Cursor: &sharedapi.Cursor[[]listTasksResponseElement]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[listTasksResponseElement]{
+			Cursor: &sharedapi.Cursor[listTasksResponseElement]{
 				PageSize: paginationDetails.PageSize,
-				Total: sharedapi.Total{
-					Value: uint64(paginationDetails.TotalRecords),
-				},
 				HasMore:  paginationDetails.HasMore,
 				Previous: paginationDetails.PreviousPage,
 				Next:     paginationDetails.NextPage,
-				Data:     nil,
+				Data:     data,
 			},
 		})
 		if err != nil {

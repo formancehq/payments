@@ -14,32 +14,32 @@ import (
 	"encoding/json"
 )
 
-// ListConnectorTasks200Response struct for ListConnectorTasks200Response
-type ListConnectorTasks200Response struct {
+// ListAccountsResponse struct for ListAccountsResponse
+type ListAccountsResponse struct {
 	Cursor interface{} `json:"cursor"`
 }
 
-// NewListConnectorTasks200Response instantiates a new ListConnectorTasks200Response object
+// NewListAccountsResponse instantiates a new ListAccountsResponse object
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func NewListConnectorTasks200Response(cursor interface{}) *ListConnectorTasks200Response {
-	this := ListConnectorTasks200Response{}
+func NewListAccountsResponse(cursor interface{}) *ListAccountsResponse {
+	this := ListAccountsResponse{}
 	this.Cursor = cursor
 	return &this
 }
 
-// NewListConnectorTasks200ResponseWithDefaults instantiates a new ListConnectorTasks200Response object
+// NewListAccountsResponseWithDefaults instantiates a new ListAccountsResponse object
 // This constructor will only assign default values to properties that have it defined,
 // but it doesn't guarantee that properties required by API are set
-func NewListConnectorTasks200ResponseWithDefaults() *ListConnectorTasks200Response {
-	this := ListConnectorTasks200Response{}
+func NewListAccountsResponseWithDefaults() *ListAccountsResponse {
+	this := ListAccountsResponse{}
 	return &this
 }
 
 // GetCursor returns the Cursor field value
 // If the value is explicit nil, the zero value for interface{} will be returned
-func (o *ListConnectorTasks200Response) GetCursor() interface{} {
+func (o *ListAccountsResponse) GetCursor() interface{} {
 	if o == nil {
 		var ret interface{}
 		return ret
@@ -51,7 +51,7 @@ func (o *ListConnectorTasks200Response) GetCursor() interface{} {
 // GetCursorOk returns a tuple with the Cursor field value
 // and a boolean to check if the value has been set.
 // NOTE: If the value is an explicit nil, `nil, true` will be returned
-func (o *ListConnectorTasks200Response) GetCursorOk() (*interface{}, bool) {
+func (o *ListAccountsResponse) GetCursorOk() (*interface{}, bool) {
 	if o == nil || isNil(o.Cursor) {
 		return nil, false
 	}
@@ -59,11 +59,11 @@ func (o *ListConnectorTasks200Response) GetCursorOk() (*interface{}, bool) {
 }
 
 // SetCursor sets field value
-func (o *ListConnectorTasks200Response) SetCursor(v interface{}) {
+func (o *ListAccountsResponse) SetCursor(v interface{}) {
 	o.Cursor = v
 }
 
-func (o ListConnectorTasks200Response) MarshalJSON() ([]byte, error) {
+func (o ListAccountsResponse) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if o.Cursor != nil {
 		toSerialize["cursor"] = o.Cursor
@@ -71,38 +71,38 @@ func (o ListConnectorTasks200Response) MarshalJSON() ([]byte, error) {
 	return json.Marshal(toSerialize)
 }
 
-type NullableListConnectorTasks200Response struct {
-	value *ListConnectorTasks200Response
+type NullableListAccountsResponse struct {
+	value *ListAccountsResponse
 	isSet bool
 }
 
-func (v NullableListConnectorTasks200Response) Get() *ListConnectorTasks200Response {
+func (v NullableListAccountsResponse) Get() *ListAccountsResponse {
 	return v.value
 }
 
-func (v *NullableListConnectorTasks200Response) Set(val *ListConnectorTasks200Response) {
+func (v *NullableListAccountsResponse) Set(val *ListAccountsResponse) {
 	v.value = val
 	v.isSet = true
 }
 
-func (v NullableListConnectorTasks200Response) IsSet() bool {
+func (v NullableListAccountsResponse) IsSet() bool {
 	return v.isSet
 }
 
-func (v *NullableListConnectorTasks200Response) Unset() {
+func (v *NullableListAccountsResponse) Unset() {
 	v.value = nil
 	v.isSet = false
 }
 
-func NewNullableListConnectorTasks200Response(val *ListConnectorTasks200Response) *NullableListConnectorTasks200Response {
-	return &NullableListConnectorTasks200Response{value: val, isSet: true}
+func NewNullableListAccountsResponse(val *ListAccountsResponse) *NullableListAccountsResponse {
+	return &NullableListAccountsResponse{value: val, isSet: true}
 }
 
-func (v NullableListConnectorTasks200Response) MarshalJSON() ([]byte, error) {
+func (v NullableListAccountsResponse) MarshalJSON() ([]byte, error) {
 	return json.Marshal(v.value)
 }
 
-func (v *NullableListConnectorTasks200Response) UnmarshalJSON(src []byte) error {
+func (v *NullableListAccountsResponse) UnmarshalJSON(src []byte) error {
 	v.isSet = true
 	return json.Unmarshal(src, &v.value)
 }

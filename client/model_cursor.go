@@ -23,8 +23,7 @@ type Cursor struct {
 	// The cursor to use to fetch the previous page of results
 	Previous interface{} `json:"previous,omitempty"`
 	// The number of items per page
-	PageSize interface{}  `json:"pageSize,omitempty"`
-	Total    *CursorTotal `json:"total,omitempty"`
+	PageSize interface{} `json:"pageSize,omitempty"`
 }
 
 // NewCursor instantiates a new Cursor object
@@ -176,38 +175,6 @@ func (o *Cursor) SetPageSize(v interface{}) {
 	o.PageSize = v
 }
 
-// GetTotal returns the Total field value if set, zero value otherwise.
-func (o *Cursor) GetTotal() CursorTotal {
-	if o == nil || isNil(o.Total) {
-		var ret CursorTotal
-		return ret
-	}
-	return *o.Total
-}
-
-// GetTotalOk returns a tuple with the Total field value if set, nil otherwise
-// and a boolean to check if the value has been set.
-func (o *Cursor) GetTotalOk() (*CursorTotal, bool) {
-	if o == nil || isNil(o.Total) {
-		return nil, false
-	}
-	return o.Total, true
-}
-
-// HasTotal returns a boolean if a field has been set.
-func (o *Cursor) HasTotal() bool {
-	if o != nil && !isNil(o.Total) {
-		return true
-	}
-
-	return false
-}
-
-// SetTotal gets a reference to the given CursorTotal and assigns it to the Total field.
-func (o *Cursor) SetTotal(v CursorTotal) {
-	o.Total = &v
-}
-
 func (o Cursor) MarshalJSON() ([]byte, error) {
 	toSerialize := map[string]interface{}{}
 	if o.HasMore != nil {
@@ -221,9 +188,6 @@ func (o Cursor) MarshalJSON() ([]byte, error) {
 	}
 	if o.PageSize != nil {
 		toSerialize["pageSize"] = o.PageSize
-	}
-	if !isNil(o.Total) {
-		toSerialize["total"] = o.Total
 	}
 	return json.Marshal(toSerialize)
 }

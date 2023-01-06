@@ -8,7 +8,6 @@ Name | Type | Description | Notes
 **Next** | Pointer to **interface{}** | The cursor to use to fetch the next page of results | [optional] 
 **Previous** | Pointer to **interface{}** | The cursor to use to fetch the previous page of results | [optional] 
 **PageSize** | Pointer to **interface{}** | The number of items per page | [optional] 
-**Total** | Pointer to [**CursorTotal**](CursorTotal.md) |  | [optional] 
 
 ## Methods
 
@@ -169,31 +168,6 @@ HasPageSize returns a boolean if a field has been set.
 `func (o *Cursor) UnsetPageSize()`
 
 UnsetPageSize ensures that no value is present for PageSize, not even an explicit nil
-### GetTotal
-
-`func (o *Cursor) GetTotal() CursorTotal`
-
-GetTotal returns the Total field if non-nil, zero value otherwise.
-
-### GetTotalOk
-
-`func (o *Cursor) GetTotalOk() (*CursorTotal, bool)`
-
-GetTotalOk returns a tuple with the Total field if it's non-nil, zero value otherwise
-and a boolean to check if the value has been set.
-
-### SetTotal
-
-`func (o *Cursor) SetTotal(v CursorTotal)`
-
-SetTotal sets Total field to given value.
-
-### HasTotal
-
-`func (o *Cursor) HasTotal() bool`
-
-HasTotal returns a boolean if a field has been set.
-
 
 [[Back to Model list]](../README.md#documentation-for-models) [[Back to API list]](../README.md#documentation-for-api-endpoints) [[Back to README]](../README.md)
 

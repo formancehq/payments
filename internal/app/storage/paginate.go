@@ -15,7 +15,6 @@ const (
 
 type PaginationDetails struct {
 	PageSize     int
-	TotalRecords int
 	HasMore      bool
 	PreviousPage string
 	NextPage     string
@@ -92,7 +91,7 @@ func (p Paginator) apply(query *bun.SelectQuery, column string) *bun.SelectQuery
 	return query.Where(fmt.Sprintf("%s > ?", column), p.cursor.Reference)
 }
 
-func (p Paginator) paginationDetails(totalRecords int, hasMore bool, firstReference, lastReference string) (PaginationDetails, error) {
+func (p Paginator) paginationDetails(hasMore bool, firstReference, lastReference string) (PaginationDetails, error) {
 	var (
 		previousPage string
 		nextPage     string
@@ -123,7 +122,6 @@ func (p Paginator) paginationDetails(totalRecords int, hasMore bool, firstRefere
 
 	return PaginationDetails{
 		PageSize:     p.pageSize,
-		TotalRecords: totalRecords,
 		HasMore:      hasMore,
 		PreviousPage: previousPage,
 		NextPage:     nextPage,

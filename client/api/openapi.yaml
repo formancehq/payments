@@ -65,6 +65,47 @@ paths:
       summary: Returns a payment.
       tags:
       - Payments
+  /accounts:
+    get:
+      operationId: listAccounts
+      parameters:
+      - description: "Limit the number of accounts to return, pagination can be achieved\
+          \ in conjunction with 'skip' parameter."
+        example: 10
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema: {}
+        style: form
+      - description: "How many accounts to skip, pagination can be achieved in conjunction\
+          \ with 'limit' parameter."
+        example: 100
+        explode: true
+        in: query
+        name: skip
+        required: false
+        schema: {}
+        style: form
+      - description: Field used to sort payments (Default is by date).
+        example: status
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          items: {}
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListAccountsResponse'
+          description: A JSON array of accounts
+      summary: Returns a list of accounts.
+      tags:
+      - Payments
   /connectors:
     get:
       description: Get all installed connectors
@@ -381,28 +422,19 @@ components:
       - loginID
     ListPaymentsResponse:
       example:
-        cursor:
-          next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-          total:
-            value: 100
-          previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-          hasMore: ""
-          pageSize: 10
-        data: ""
+        cursor: ""
       properties:
-        data:
-          items:
-            $ref: '#/components/schemas/Payment'
         cursor:
-          $ref: '#/components/schemas/Cursor'
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Payment'
+            required:
+            - data
       required:
-      - data
-    GetPaymentResponse:
-      properties:
-        data:
-          $ref: '#/components/schemas/Payment'
-      required:
-      - data
+      - cursor
     Payment:
       example:
         reference: ""
@@ -456,6 +488,38 @@ components:
       - provider
       - scheme
       - status
+      - type
+    ListAccountsResponse:
+      example:
+        cursor: ""
+      properties:
+        cursor:
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  $ref: '#/components/schemas/Account'
+            required:
+            - data
+      required:
+      - cursor
+    Account:
+      properties:
+        id: {}
+        createdAt:
+          format: date-time
+        provider: {}
+        reference: {}
+        type:
+          enum:
+          - TARGET
+          - SOURCE
+      required:
+      - createdAt
+      - id
+      - provider
+      - reference
       - type
     ListConnectorsResponse:
       example:
@@ -658,13 +722,6 @@ components:
         descriptor:
           $ref: '#/components/schemas/TaskDescriptorBankingCircle_descriptor'
     Cursor:
-      example:
-        next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-        total:
-          value: 100
-        previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-        hasMore: ""
-        pageSize: 10
       properties:
         hasMore:
           description: Indicates if there are more items to fetch
@@ -677,8 +734,6 @@ components:
         pageSize:
           description: The number of items per page
           example: 10
-        total:
-          $ref: '#/components/schemas/Cursor_total'
     getPayment_200_response:
       example:
         data:
@@ -719,26 +774,25 @@ components:
           - $ref: '#/components/schemas/BankingCircleConfig'
     listConnectorTasks_200_response:
       example:
-        cursor:
-          next: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-          total:
-            value: 100
-          previous: eyJpZCI6IjU5ZjYwZjQ0LWY0ZjktNDY0ZC1hZjQxLWY0ZjQxZjQxZjQxZiJ9
-          hasMore: ""
-          pageSize: 10
-        data: ""
+        cursor: ""
       properties:
         cursor:
-          $ref: '#/components/schemas/Cursor'
-        data:
-          items:
-            oneOf:
-            - $ref: '#/components/schemas/TaskDescriptorStripe'
-            - $ref: '#/components/schemas/TaskDescriptorWise'
-            - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
-            - $ref: '#/components/schemas/TaskDescriptorDummyPay'
-            - $ref: '#/components/schemas/TaskDescriptorModulr'
-            - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+          allOf:
+          - $ref: '#/components/schemas/Cursor'
+          - properties:
+              data:
+                items:
+                  oneOf:
+                  - $ref: '#/components/schemas/TaskDescriptorStripe'
+                  - $ref: '#/components/schemas/TaskDescriptorWise'
+                  - $ref: '#/components/schemas/TaskDescriptorCurrencyCloud'
+                  - $ref: '#/components/schemas/TaskDescriptorDummyPay'
+                  - $ref: '#/components/schemas/TaskDescriptorModulr'
+                  - $ref: '#/components/schemas/TaskDescriptorBankingCircle'
+            required:
+            - data
+      required:
+      - cursor
     getConnectorTask_200_response:
       example:
         data: ""
@@ -793,10 +847,3 @@ components:
       properties:
         name: {}
         key: {}
-    Cursor_total:
-      example:
-        value: 100
-      properties:
-        value:
-          description: The total number of items available
-          example: 100

@@ -156,17 +156,13 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[[]*paymentResponse]{
-			Data: &data,
-			Cursor: &sharedapi.Cursor[[]*paymentResponse]{
+		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[*paymentResponse]{
+			Cursor: &sharedapi.Cursor[*paymentResponse]{
 				PageSize: paginationDetails.PageSize,
-				Total: sharedapi.Total{
-					Value: uint64(paginationDetails.TotalRecords),
-				},
 				HasMore:  paginationDetails.HasMore,
 				Previous: paginationDetails.PreviousPage,
 				Next:     paginationDetails.NextPage,
-				Data:     nil,
+				Data:     data,
 			},
 		})
 		if err != nil {

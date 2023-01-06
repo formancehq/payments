@@ -119,11 +119,6 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 	query := s.db.NewSelect().Model(&tasks).
 		Where("connector_id = ?", connector.ID)
 
-	count, err := query.Count(ctx)
-	if err != nil {
-		return nil, PaginationDetails{}, fmt.Errorf("failed to count payments: %w", err)
-	}
-
 	query = pagination.apply(query, "task.created_at")
 
 	err = query.Scan(ctx)
@@ -145,7 +140,7 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 		lastReference = tasks[len(tasks)-1].CreatedAt.Format(time.RFC3339Nano)
 	}
 
-	paginationDetails, err := pagination.paginationDetails(count, hasMore, firstReference, lastReference)
+	paginationDetails, err := pagination.paginationDetails(hasMore, firstReference, lastReference)
 	if err != nil {
 		return nil, PaginationDetails{}, fmt.Errorf("failed to get pagination details: %w", err)
 	}

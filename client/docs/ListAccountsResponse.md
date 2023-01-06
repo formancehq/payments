@@ -1,4 +1,4 @@
-# ListConnectorTasks200Response
+# ListAccountsResponse
 
 ## Properties
 
@@ -8,51 +8,51 @@ Name | Type | Description | Notes
 
 ## Methods
 
-### NewListConnectorTasks200Response
+### NewListAccountsResponse
 
-`func NewListConnectorTasks200Response(cursor interface{}, ) *ListConnectorTasks200Response`
+`func NewListAccountsResponse(cursor interface{}, ) *ListAccountsResponse`
 
-NewListConnectorTasks200Response instantiates a new ListConnectorTasks200Response object
+NewListAccountsResponse instantiates a new ListAccountsResponse object
 This constructor will assign default values to properties that have it defined,
 and makes sure properties required by API are set, but the set of arguments
 will change when the set of required properties is changed
 
-### NewListConnectorTasks200ResponseWithDefaults
+### NewListAccountsResponseWithDefaults
 
-`func NewListConnectorTasks200ResponseWithDefaults() *ListConnectorTasks200Response`
+`func NewListAccountsResponseWithDefaults() *ListAccountsResponse`
 
-NewListConnectorTasks200ResponseWithDefaults instantiates a new ListConnectorTasks200Response object
+NewListAccountsResponseWithDefaults instantiates a new ListAccountsResponse object
 This constructor will only assign default values to properties that have it defined,
 but it doesn't guarantee that properties required by API are set
 
 ### GetCursor
 
-`func (o *ListConnectorTasks200Response) GetCursor() interface{}`
+`func (o *ListAccountsResponse) GetCursor() interface{}`
 
 GetCursor returns the Cursor field if non-nil, zero value otherwise.
 
 ### GetCursorOk
 
-`func (o *ListConnectorTasks200Response) GetCursorOk() (*interface{}, bool)`
+`func (o *ListAccountsResponse) GetCursorOk() (*interface{}, bool)`
 
 GetCursorOk returns a tuple with the Cursor field if it's non-nil, zero value otherwise
 and a boolean to check if the value has been set.
 
 ### SetCursor
 
-`func (o *ListConnectorTasks200Response) SetCursor(v interface{})`
+`func (o *ListAccountsResponse) SetCursor(v interface{})`
 
 SetCursor sets Cursor field to given value.
 
 
 ### SetCursorNil
 
-`func (o *ListConnectorTasks200Response) SetCursorNil(b bool)`
+`func (o *ListAccountsResponse) SetCursorNil(b bool)`
 
  SetCursorNil sets the value for Cursor to be an explicit nil
 
 ### UnsetCursor
-`func (o *ListConnectorTasks200Response) UnsetCursor()`
+`func (o *ListAccountsResponse) UnsetCursor()`
 
 UnsetCursor ensures that no value is present for Cursor, not even an explicit nil
 

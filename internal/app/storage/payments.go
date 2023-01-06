@@ -20,14 +20,9 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 		Relation("Metadata").
 		Relation("Adjustments")
 
-	count, err := query.Count(ctx)
-	if err != nil {
-		return nil, PaginationDetails{}, fmt.Errorf("failed to count payments: %w", err)
-	}
-
 	query = pagination.apply(query, "payment.created_at")
 
-	err = query.Scan(ctx)
+	err := query.Scan(ctx)
 	if err != nil {
 		return nil, PaginationDetails{}, e("failed to list payments", err)
 	}
@@ -46,7 +41,7 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 		lastReference = payments[len(payments)-1].CreatedAt.Format(time.RFC3339Nano)
 	}
 
-	paginationDetails, err := pagination.paginationDetails(count, hasMore, firstReference, lastReference)
+	paginationDetails, err := pagination.paginationDetails(hasMore, firstReference, lastReference)
 	if err != nil {
 		return nil, PaginationDetails{}, fmt.Errorf("failed to get pagination details: %w", err)
 	}

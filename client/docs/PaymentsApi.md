@@ -10,6 +10,7 @@ Method | HTTP request | Description
 [**GetConnectorTask**](PaymentsApi.md#GetConnectorTask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
 [**GetPayment**](PaymentsApi.md#GetPayment) | **Get** /payments/{paymentId} | Returns a payment.
 [**InstallConnector**](PaymentsApi.md#InstallConnector) | **Post** /connectors/{connector} | Install connector
+[**ListAccounts**](PaymentsApi.md#ListAccounts) | **Get** /accounts | Returns a list of accounts.
 [**ListConnectorTasks**](PaymentsApi.md#ListConnectorTasks) | **Get** /connectors/{connector}/tasks | List connector tasks
 [**ListPayments**](PaymentsApi.md#ListPayments) | **Get** /payments | Returns a list of payments.
 [**ReadConnectorConfig**](PaymentsApi.md#ReadConnectorConfig) | **Get** /connectors/{connector}/config | Read connector config
@@ -409,6 +410,74 @@ No authorization required
 
 - **Content-Type**: application/json
 - **Accept**: Not defined
+
+[[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
+[[Back to Model list]](../README.md#documentation-for-models)
+[[Back to README]](../README.md)
+
+
+## ListAccounts
+
+> ListAccountsResponse ListAccounts(ctx).Limit(limit).Skip(skip).Sort(sort).Execute()
+
+Returns a list of accounts.
+
+### Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "os"
+    openapiclient "./openapi"
+)
+
+func main() {
+    limit := TODO // interface{} | Limit the number of accounts to return, pagination can be achieved in conjunction with 'skip' parameter. (optional)
+    skip := TODO // interface{} | How many accounts to skip, pagination can be achieved in conjunction with 'limit' parameter. (optional)
+    sort := TODO // interface{} | Field used to sort payments (Default is by date). (optional)
+
+    configuration := openapiclient.NewConfiguration()
+    apiClient := openapiclient.NewAPIClient(configuration)
+    resp, r, err := apiClient.PaymentsApi.ListAccounts(context.Background()).Limit(limit).Skip(skip).Sort(sort).Execute()
+    if err != nil {
+        fmt.Fprintf(os.Stderr, "Error when calling `PaymentsApi.ListAccounts``: %v\n", err)
+        fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+    }
+    // response from `ListAccounts`: ListAccountsResponse
+    fmt.Fprintf(os.Stdout, "Response from `PaymentsApi.ListAccounts`: %v\n", resp)
+}
+```
+
+### Path Parameters
+
+
+
+### Other Parameters
+
+Other parameters are passed through a pointer to a apiListAccountsRequest struct via the builder pattern
+
+
+Name | Type | Description  | Notes
+------------- | ------------- | ------------- | -------------
+ **limit** | [**interface{}**](interface{}.md) | Limit the number of accounts to return, pagination can be achieved in conjunction with &#39;skip&#39; parameter. | 
+ **skip** | [**interface{}**](interface{}.md) | How many accounts to skip, pagination can be achieved in conjunction with &#39;limit&#39; parameter. | 
+ **sort** | [**interface{}**](interface{}.md) | Field used to sort payments (Default is by date). | 
+
+### Return type
+
+[**ListAccountsResponse**](ListAccountsResponse.md)
+
+### Authorization
+
+No authorization required
+
+### HTTP request headers
+
+- **Content-Type**: Not defined
+- **Accept**: application/json
 
 [[Back to top]](#) [[Back to API list]](../README.md#documentation-for-api-endpoints)
 [[Back to Model list]](../README.md#documentation-for-models)

@@ -84,6 +84,7 @@ Class | Method | HTTP request | Description
 *PaymentsApi* | [**GetConnectorTask**](docs/PaymentsApi.md#getconnectortask) | **Get** /connectors/{connector}/tasks/{taskId} | Read a specific task of the connector
 *PaymentsApi* | [**GetPayment**](docs/PaymentsApi.md#getpayment) | **Get** /payments/{paymentId} | Returns a payment.
 *PaymentsApi* | [**InstallConnector**](docs/PaymentsApi.md#installconnector) | **Post** /connectors/{connector} | Install connector
+*PaymentsApi* | [**ListAccounts**](docs/PaymentsApi.md#listaccounts) | **Get** /accounts | Returns a list of accounts.
 *PaymentsApi* | [**ListConnectorTasks**](docs/PaymentsApi.md#listconnectortasks) | **Get** /connectors/{connector}/tasks | List connector tasks
 *PaymentsApi* | [**ListPayments**](docs/PaymentsApi.md#listpayments) | **Get** /payments | Returns a list of payments.
 *PaymentsApi* | [**ReadConnectorConfig**](docs/PaymentsApi.md#readconnectorconfig) | **Get** /connectors/{connector}/config | Read connector config
@@ -93,17 +94,17 @@ Class | Method | HTTP request | Description
 
 ## Documentation For Models
 
+ - [Account](docs/Account.md)
  - [BankingCircleConfig](docs/BankingCircleConfig.md)
  - [ConnectorBaseInfo](docs/ConnectorBaseInfo.md)
  - [Connectors](docs/Connectors.md)
  - [CurrencyCloudConfig](docs/CurrencyCloudConfig.md)
  - [Cursor](docs/Cursor.md)
- - [CursorTotal](docs/CursorTotal.md)
  - [DummyPayConfig](docs/DummyPayConfig.md)
  - [GetAllConnectorsConfigs200Response](docs/GetAllConnectorsConfigs200Response.md)
  - [GetConnectorTask200Response](docs/GetConnectorTask200Response.md)
  - [GetPayment200Response](docs/GetPayment200Response.md)
- - [GetPaymentResponse](docs/GetPaymentResponse.md)
+ - [ListAccountsResponse](docs/ListAccountsResponse.md)
  - [ListConnectorTasks200Response](docs/ListConnectorTasks200Response.md)
  - [ListConnectorsConfigsResponse](docs/ListConnectorsConfigsResponse.md)
  - [ListConnectorsConfigsResponseConnector](docs/ListConnectorsConfigsResponseConnector.md)
