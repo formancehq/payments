@@ -1,3 +1,4 @@
+//go:generate docker run --rm -w /local -v ${PWD}:/local openapitools/openapi-generator-cli:latest validate -i ./swagger.yml
 package main
 
 import "github.com/formancehq/payments/cmd"
