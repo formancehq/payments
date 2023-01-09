@@ -157,7 +157,7 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 		}
 
 		err = json.NewEncoder(w).Encode(api.BaseResponse[*paymentResponse]{
-			Cursor: &sharedapi.Cursor[*paymentResponse]{
+			Cursor: &api.Cursor[*paymentResponse]{
 				PageSize: paginationDetails.PageSize,
 				HasMore:  paginationDetails.HasMore,
 				Previous: paginationDetails.PreviousPage,

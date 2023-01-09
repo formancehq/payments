@@ -58,7 +58,7 @@ func readConfig[Config models.ConnectorConfigObject](connectorManager *integrati
 			return
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[Config]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[Config]{
 			Data: config,
 		})
 		if err != nil {
@@ -116,8 +116,8 @@ func listTasks[Config models.ConnectorConfigObject](connectorManager *integratio
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[listTasksResponseElement]{
-			Cursor: &sharedapi.Cursor[listTasksResponseElement]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[listTasksResponseElement]{
+			Cursor: &api.Cursor[listTasksResponseElement]{
 				PageSize: paginationDetails.PageSize,
 				HasMore:  paginationDetails.HasMore,
 				Previous: paginationDetails.PreviousPage,
@@ -159,7 +159,7 @@ func readTask[Config models.ConnectorConfigObject](connectorManager *integration
 			Error:       task.Error,
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[listTasksResponseElement]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[listTasksResponseElement]{
 			Data: &data,
 		})
 		if err != nil {

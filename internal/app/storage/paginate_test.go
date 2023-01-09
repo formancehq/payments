@@ -64,12 +64,18 @@ func TestPaginate(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			got, err := Paginate(tt.args.pageSize, tt.args.token, tt.args.sorter)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Paginate() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Paginate() got = %v, want %v", got, tt.want)
 			}
@@ -122,13 +128,18 @@ func TestPaginatorApply(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			p := Paginator{
 				pageSize: tt.fields.pageSize,
 				token:    tt.fields.token,
 				cursor:   tt.fields.cursor,
 				sorter:   tt.fields.sorter,
 			}
+
 			if got := p.apply(tt.args.query, tt.args.column); tt.want != nil && !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("apply() = %v, want %v", got, tt.want)
 			}
@@ -136,18 +147,42 @@ func TestPaginatorApply(t *testing.T) {
 	}
 }
 
-func TestPaginator_paginationDetails(t *testing.T) {
+func TestPaginatorPaginationDetails(t *testing.T) {
+	t.Parallel()
+
 	type fields struct {
 		pageSize int
 		token    string
 		cursor   baseCursor
 		sorter   Sorter
 	}
+
 	type args struct {
 		hasMore        bool
 		firstReference string
 		lastReference  string
 	}
+
+	cursor := baseCursor{
+		Reference: "abc",
+		Sorter:    nil,
+		Next:      false,
+	}
+
+	token, err := cursor.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tokenNext, err := baseCursor{
+		Reference: "",
+		Sorter:    nil,
+		Next:      true,
+	}.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		name    string
 		fields  fields
@@ -164,34 +199,42 @@ func TestPaginator_paginationDetails(t *testing.T) {
 		},
 		{
 			name:    "with cursor",
-			fields:  fields{pageSize: 10, token: "", cursor: baseCursor{Reference: "abc"}, sorter: nil},
-			args:    args{hasMore: false, firstReference: "", lastReference: ""},
-			want:    PaginationDetails{PageSize: 10, HasMore: false},
+			fields:  fields{pageSize: 10, token: "", cursor: cursor, sorter: nil},
+			args:    args{hasMore: false, firstReference: "abc", lastReference: ""},
+			want:    PaginationDetails{PageSize: 10, HasMore: false, PreviousPage: token},
 			wantErr: false,
 		},
 		{
 			name:    "has more",
 			fields:  fields{pageSize: 10, token: "", cursor: baseCursor{}, sorter: nil},
 			args:    args{hasMore: true, firstReference: "", lastReference: ""},
-			want:    PaginationDetails{PageSize: 10, HasMore: false},
+			want:    PaginationDetails{PageSize: 10, HasMore: true, NextPage: tokenNext},
 			wantErr: false,
 		},
 	}
+
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			p := Paginator{
 				pageSize: tt.fields.pageSize,
 				token:    tt.fields.token,
 				cursor:   tt.fields.cursor,
 				sorter:   tt.fields.sorter,
 			}
+
 			got, err := p.paginationDetails(tt.args.hasMore, tt.args.firstReference, tt.args.lastReference)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("paginationDetails() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
+
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("paginationDetails() got = %v, want %v", got, tt.want)
+				t.Errorf("paginationDetails() got = %+v, want %+v", got, tt.want)
 			}
 		})
 	}

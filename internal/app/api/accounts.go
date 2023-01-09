@@ -90,9 +90,9 @@ func listAccountsHandler(repo listAccountsRepository) http.HandlerFunc {
 				Type:      ret[i].Type,
 			}
 		}
-    
+
 		err = json.NewEncoder(w).Encode(api.BaseResponse[*accountResponse]{
-			Cursor: &sharedapi.Cursor[*accountResponse]{
+			Cursor: &api.Cursor[*accountResponse]{
 				PageSize: paginationDetails.PageSize,
 				HasMore:  paginationDetails.HasMore,
 				Previous: paginationDetails.PreviousPage,
