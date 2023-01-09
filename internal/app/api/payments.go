@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/storage"
 
-	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/api"
 	"github.com/gorilla/mux"
 	"github.com/pkg/errors"
 )
@@ -156,7 +156,7 @@ func listPaymentsHandler(repo listPaymentsRepository) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[*paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[*paymentResponse]{
 			Cursor: &sharedapi.Cursor[*paymentResponse]{
 				PageSize: paginationDetails.PageSize,
 				HasMore:  paginationDetails.HasMore,
@@ -235,7 +235,7 @@ func readPaymentHandler(repo readPaymentRepository) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[paymentResponse]{
 			Data: &data,
 		})
 		if err != nil {

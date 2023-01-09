@@ -15,9 +15,38 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/logging"
 	"github.com/formancehq/payments/internal/app/integration"
 )
+
+func handleErrorBadRequest(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusBadRequest)
+
+	logging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
+	err = json.NewEncoder(w).Encode(api.ErrorResponse{
+		ErrorCode:    http.StatusText(http.StatusBadRequest),
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
+	}
+}
+
+func handleError(w http.ResponseWriter, r *http.Request, err error) {
+	w.WriteHeader(http.StatusInternalServerError)
+
+	logging.GetLogger(r.Context()).Error(err)
+	// TODO: Opentracing
+	err = json.NewEncoder(w).Encode(api.ErrorResponse{
+		ErrorCode:    "INTERNAL",
+		ErrorMessage: err.Error(),
+	})
+	if err != nil {
+		panic(err)
+	}
+}
 
 func readConfig[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {

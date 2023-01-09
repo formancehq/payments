@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/storage"
 
-	"github.com/formancehq/go-libs/sharedapi"
+	"github.com/formancehq/go-libs/api"
 	"github.com/pkg/errors"
 )
 
@@ -90,8 +90,8 @@ func listAccountsHandler(repo listAccountsRepository) http.HandlerFunc {
 				Type:      ret[i].Type,
 			}
 		}
-
-		err = json.NewEncoder(w).Encode(sharedapi.BaseResponse[*accountResponse]{
+    
+		err = json.NewEncoder(w).Encode(api.BaseResponse[*accountResponse]{
 			Cursor: &sharedapi.Cursor[*accountResponse]{
 				PageSize: paginationDetails.PageSize,
 				HasMore:  paginationDetails.HasMore,
