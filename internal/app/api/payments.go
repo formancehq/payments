@@ -39,7 +39,7 @@ type paymentResponse struct {
 
 type paymentMetadata struct {
 	Key       string                     `json:"key"`
-	Value     string                     `json:"value:"`
+	Value     string                     `json:"value"`
 	Changelog []paymentMetadataChangelog `json:"changelog"`
 }
 
