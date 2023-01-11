@@ -5,13 +5,12 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/app/connectors/bankingcircle"
+	"github.com/formancehq/payments/internal/app/connectors/configtemplate"
 	"github.com/formancehq/payments/internal/app/connectors/currencycloud"
 	"github.com/formancehq/payments/internal/app/connectors/dummypay"
 	"github.com/formancehq/payments/internal/app/connectors/modulr"
 	"github.com/formancehq/payments/internal/app/connectors/stripe"
 	"github.com/formancehq/payments/internal/app/connectors/wise"
-
-	"github.com/formancehq/payments/internal/pkg/configtemplate"
 )
 
 func connectorConfigsHandler() http.HandlerFunc {

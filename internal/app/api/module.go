@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -152,4 +153,17 @@ func handleValidationError(w http.ResponseWriter, r *http.Request, err error) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func pageSizeQueryParam(r *http.Request) (int, error) {
+	if value := r.URL.Query().Get("pageSize"); value != "" {
+		ret, err := strconv.ParseInt(value, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+
+		return int(ret), nil
+	}
+
+	return 0, nil
 }
