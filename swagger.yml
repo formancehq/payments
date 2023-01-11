@@ -415,17 +415,22 @@ components:
 
     ConnectorsConfigsResponse:
       type: object
+      required:
+        - data
       properties:
-        connector:
+        data:
           type: object
           properties:
-            key:
+            connector:
               type: object
               properties:
-                dataType:
-                  type: string
-                required:
-                  type: boolean
+                key:
+                  type: object
+                  properties:
+                    dataType:
+                      type: string
+                    required:
+                      type: boolean
 
     TaskResponse:
       type: object
