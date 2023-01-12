@@ -2,6 +2,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/app/messages"
 
@@ -107,7 +108,7 @@ func (l *ConnectorManager[ConnectorConfig]) Install(ctx context.Context, config 
 		return err
 	}
 
-	err = l.connector.Install(task.NewConnectorContext(context.Background(), l.scheduler))
+	err = l.connector.Install(task.NewConnectorContext(context.TODO(), l.scheduler))
 	if err != nil {
 		l.logger.Errorf("Error starting connector: %s", err)
 
@@ -250,6 +251,22 @@ func (l *ConnectorManager[ConnectorConfig]) Reset(ctx context.Context) error {
 		messages.NewEventResetConnector(l.loader.Name()))
 	if err != nil {
 		l.logger.Errorf("Publishing message: %w", err)
+	}
+
+	return nil
+}
+
+type Transfer struct {
+	Source      string
+	Destination string
+	Currency    string
+	Amount      int64
+}
+
+func (l *ConnectorManager[ConnectorConfig]) InitiateTransfer(ctx context.Context, transfer Transfer) error {
+	err := l.connector.InitiateTransfer(task.NewConnectorContext(ctx, l.scheduler), transfer)
+	if err != nil {
+		return fmt.Errorf("initiating transfer: %w", err)
 	}
 
 	return nil

@@ -327,6 +327,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/StripeTransferResponse'
 
+  /connectors/{connector}/transfer:
+    post:
+      summary: Transfer funds between Connector accounts
+      tags:
+        - Payments
+      operationId: connectorsTransfer
+      description: Execute a transfer between two accounts.
+      parameters:
+        - name: connector
+          description: The name of the connector.
+          in: path
+          schema:
+            $ref: '#/components/schemas/Connector'
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '201':
+          description: OK
 components:
   schemas:
     ConnectorConfigResponse:
@@ -945,6 +968,28 @@ components:
         error:
           type: string
 
+    TransferRequest:
+      type: object
+      required:
+        - asset
+        - amount
+        - destination
+      properties:
+        amount:
+          type: integer
+          format: int64
+          minimum: 0
+          example: 100
+        asset:
+          type: string
+          example: USD
+        destination:
+          type: string
+          example: acct_1Gqj58KZcSIg2N2q
+        source:
+          type: string
+          example: acct_1Gqj58KZcSIg2N2q
+
     StripeTransferRequest:
       type: object
       properties:
@@ -978,25 +1023,6 @@ components:
         - TERMINATED
         - FAILED
 
-    StripeTimelineState:
-      type: object
-      properties:
-        oldestId:
-          type: string
-          description: The id of the oldest BalanceTransaction fetched from stripe for this account
-        oldestDate:
-          type: string
-          format: date-time
-          description: The creation date of the oldest BalanceTransaction fetched from stripe for this account
-        moreRecentId:
-          type: string
-          description: The id of the more recent BalanceTransaction fetched from stripe for this account
-        moreRecentDate:
-          type: string
-          format: date-time
-          description: The creation date of the more recent BalanceTransaction fetched from stripe for this account
-        noMoreHistory:
-          type: boolean
     ServerInfo:
       type: object
       required:

@@ -185,7 +185,7 @@ func uninstall[Config models.ConnectorConfigObject](connectorManager *integratio
 func install[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := connectorManager.IsInstalled(context.Background())
+		installed, err := connectorManager.IsInstalled(context.TODO())
 		if err != nil {
 			handleError(w, r, err)
 
@@ -222,7 +222,7 @@ func install[Config models.ConnectorConfigObject](connectorManager *integration.
 func reset[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := connectorManager.IsInstalled(context.Background())
+		installed, err := connectorManager.IsInstalled(context.TODO())
 		if err != nil {
 			handleError(w, r, err)
 
@@ -243,5 +243,86 @@ func reset[Config models.ConnectorConfigObject](connectorManager *integration.Co
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+type transferRequest struct {
+	Amount      int64  `json:"amount"`
+	Source      string `json:"source"`
+	Destination string `json:"destination"`
+	Asset       string `json:"asset"`
+
+	currency string
+}
+
+func (req *transferRequest) validate() error {
+	if req.Amount <= 0 {
+		return errors.New("amount must be greater than 0")
+	}
+
+	if req.Asset == "" {
+		return errors.New("asset is required")
+	}
+
+	if len(req.Asset) < 3 { //nolint:gomnd // allow length 3 for POC
+		return errors.New("asset is invalid")
+	}
+
+	req.currency = req.Asset[:3]
+
+	if req.Destination == "" {
+		return errors.New("destination is required")
+	}
+
+	return nil
+}
+
+func initiateTransfer[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req transferRequest
+
+		err := json.NewDecoder(r.Body).Decode(&req)
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		err = req.validate()
+		if err != nil {
+			handleErrorBadRequest(w, r, err)
+
+			return
+		}
+
+		installed, err := connectorManager.IsInstalled(r.Context())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		if !installed {
+			handleError(w, r, errors.New("connector not installed"))
+
+			return
+		}
+
+		transfer := integration.Transfer{
+			Source:      req.Source,
+			Destination: req.Destination,
+			Currency:    req.currency,
+			Amount:      req.Amount,
+		}
+
+		err = connectorManager.InitiateTransfer(r.Context(), transfer)
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		w.WriteHeader(http.StatusCreated)
 	}
 }

@@ -17,6 +17,24 @@ type Connector struct {
 	cfg    Config
 }
 
+func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer integration.Transfer) error {
+	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
+		Name: "Initiate transfer",
+		Key:  taskNameTransfer,
+		Transfer: Transfer{
+			Source:      transfer.Source,
+			Destination: transfer.Destination,
+			Amount:      transfer.Amount,
+			Currency:    transfer.Currency,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	return ctx.Scheduler().Schedule(descriptor, true)
+}
+
 func (c *Connector) Install(ctx task.ConnectorContext) error {
 	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 		Name: "Fetch profiles from client",

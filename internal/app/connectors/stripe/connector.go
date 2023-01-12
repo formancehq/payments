@@ -18,6 +18,11 @@ type Connector struct {
 	cfg    Config
 }
 
+func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer integration.Transfer) error {
+	// TODO implement me
+	panic("implement me")
+}
+
 func (c *Connector) Install(ctx task.ConnectorContext) error {
 	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 		Name: "Main task to periodically fetch transactions",
