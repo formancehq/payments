@@ -42,7 +42,7 @@ const (
 	serviceName = "Payments"
 )
 
-func HTTPModule() fx.Option {
+func HTTPModule(serviceInfo api.ServiceInfo) fx.Option {
 	return fx.Options(
 		fx.Invoke(func(m *mux.Router, lc fx.Lifecycle) {
 			lc.Append(fx.Hook{
@@ -66,7 +66,8 @@ func HTTPModule() fx.Option {
 				},
 			})
 		}),
-		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, `group:"connectorHandlers"`))),
+		fx.Supply(serviceInfo),
+		fx.Provide(fx.Annotate(httpRouter, fx.ParamTags(``, ``, `group:"connectorHandlers"`))),
 		addConnector[dummypay.Config](dummypay.NewLoader()),
 		addConnector[modulr.Config](modulr.NewLoader()),
 		addConnector[stripe.Config](stripe.NewLoader()),
