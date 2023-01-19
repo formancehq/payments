@@ -29,6 +29,15 @@ type Connector struct {
 	Payments []*Payment `bun:"rel:has-many,join:id=connector_id"`
 }
 
+func (c Connector) String() string {
+	c.EncryptedConfig = "****"
+	c.Config = nil
+
+	var t any = c
+
+	return fmt.Sprintf("%+v", t)
+}
+
 type ConnectorProvider string
 
 const (
