@@ -21,6 +21,6 @@ type Metadata struct {
 }
 
 type MetadataChangelog struct {
-	CreatedAt time.Time
-	Value     string
+	CreatedAt time.Time `json:"createdAt"`
+	Value     string    `json:"value"`
 }
