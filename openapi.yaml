@@ -160,7 +160,7 @@ paths:
       responses:
         '200':
           $ref: '#/components/responses/Task'
-  /connectors/stripe/transfer:
+  /connectors/stripe/transfers:
     post:
       summary: Transfer funds between Stripe accounts
       tags:
