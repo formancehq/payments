@@ -120,3 +120,5 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace github.com/formancehq/go-libs => github.com/formancehq/stack/libs/go-libs v0.0.0-20230127002413-b15713736f50

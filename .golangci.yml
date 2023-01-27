@@ -91,6 +91,7 @@ linters:
     - noctx # TODO: FIX
     - contextcheck # TODO: FIX
     - containedctx # TODO: FIX
+    - gomoddirectives
 
 issues:
   exclude-rules:

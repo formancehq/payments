@@ -1,21 +1,23 @@
 package cmd
 
 import (
+	"net/http"
 	"strings"
-
-	"github.com/formancehq/go-libs/otlp/otlptraces"
 
 	"github.com/bombsimon/logrusr/v3"
 	sharedapi "github.com/formancehq/go-libs/api"
+	"github.com/formancehq/go-libs/otlp/otlptraces"
 	"github.com/formancehq/payments/internal/app/api"
 	"github.com/formancehq/payments/internal/app/storage"
 	"github.com/pkg/errors"
+	"github.com/stripe/stripe-go/v72"
 	"go.opentelemetry.io/otel"
 
 	"github.com/Shopify/sarama"
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/formancehq/go-libs/logging"
 	"github.com/formancehq/go-libs/logging/logginglogrus"
+	"github.com/formancehq/go-libs/otlp"
 	"github.com/formancehq/go-libs/publish"
 	"github.com/formancehq/go-libs/publish/publishhttp"
 	"github.com/formancehq/go-libs/publish/publishkafka"
@@ -64,6 +66,11 @@ func newServer() *cobra.Command {
 
 func runServer(cmd *cobra.Command, args []string) error {
 	setLogger()
+
+	client := &http.Client{
+		Transport: otlp.NewRoundTripper(viper.GetBool(debugFlag)),
+	}
+	stripe.SetHTTPClient(client)
 
 	databaseOptions, err := prepareDatabaseOptions()
 	if err != nil {
