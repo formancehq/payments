@@ -126,7 +126,7 @@ paths:
       tags:
         - Payments
       description: |
-        Reset a connector by its name. 
+        Reset a connector by its name.
         It will remove the connector and ALL PAYMENTS generated with it.
       parameters:
         - $ref: '#/components/parameters/Connector'
@@ -869,6 +869,7 @@ components:
         - ACTIVE
         - TERMINATED
         - FAILED
+        - SUCCEEDED
     ServerInfo:
       type: object
       required:
