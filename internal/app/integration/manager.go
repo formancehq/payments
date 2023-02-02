@@ -214,8 +214,8 @@ func (l *ConnectorManager[ConnectorConfig]) IsEnabled(ctx context.Context) (bool
 	return l.store.IsEnabled(ctx, l.loader.Name())
 }
 
-func (l *ConnectorManager[ConnectorConfig]) FindAll(ctx context.Context) ([]models.Connector, error) {
-	return l.store.FindAll(ctx)
+func (l *ConnectorManager[ConnectorConfig]) FindAll(ctx context.Context) ([]*models.Connector, error) {
+	return l.store.ListConnectors(ctx)
 }
 
 func (l *ConnectorManager[ConnectorConfig]) IsInstalled(ctx context.Context) (bool, error) {
