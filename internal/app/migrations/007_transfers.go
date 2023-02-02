@@ -9,7 +9,7 @@ import (
 func init() {
 	up := func(tx *sql.Tx) error {
 		_, err := tx.Exec(`
-				CREATE TYPE transfer_status AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED');;
+				CREATE TYPE transfer_status AS ENUM ('PENDING', 'SUCCEEDED', 'FAILED');
 
 				CREATE TABLE payments.transfers (
 					id uuid  NOT NULL DEFAULT gen_random_uuid(),
