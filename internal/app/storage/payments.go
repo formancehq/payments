@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/uptrace/bun"
@@ -40,6 +41,10 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 			payments = payments[1:]
 		}
 	}
+
+	sort.Slice(payments, func(i, j int) bool {
+		return payments[i].CreatedAt.After(payments[j].CreatedAt)
+	})
 
 	if len(payments) > 0 {
 		firstReference = payments[0].CreatedAt.Format(time.RFC3339Nano)

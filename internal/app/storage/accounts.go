@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/formancehq/payments/internal/app/models"
@@ -62,6 +63,10 @@ func (s *Storage) ListAccounts(ctx context.Context, pagination Paginator) ([]*mo
 			accounts = accounts[1:]
 		}
 	}
+
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].CreatedAt.After(accounts[j].CreatedAt)
+	})
 
 	if len(accounts) > 0 {
 		firstReference = accounts[0].CreatedAt.Format(time.RFC3339Nano)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -139,6 +140,10 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 			tasks = tasks[1:]
 		}
 	}
+
+	sort.Slice(tasks, func(i, j int) bool {
+		return tasks[i].CreatedAt.After(tasks[j].CreatedAt)
+	})
 
 	if len(tasks) > 0 {
 		firstReference = tasks[0].CreatedAt.Format(time.RFC3339Nano)
