@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/formancehq/payments/internal/app/storage"
 
 	"github.com/google/uuid"
@@ -251,7 +253,6 @@ func reset[Config models.ConnectorConfigObject](connectorManager *integration.Co
 	}
 }
 
-
 type transferRequest struct {
 	Amount      int64  `json:"amount"`
 	Source      string `json:"source"`
@@ -398,6 +399,7 @@ func listTransfers[Config models.ConnectorConfigObject](connectorManager *integr
 			panic(err)
 		}
 	}
+}
 
 func connectorNotInstalled[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 	w http.ResponseWriter, r *http.Request,
