@@ -31,5 +31,5 @@ COPY --from=builder /go/src/github.com/formancehq/payments/bin/payments /usr/loc
 EXPOSE 8080
 
 ENTRYPOINT ["payments"]
-
+ENV OTEL_SERVICE_NAME=payments
 CMD ["server"]
