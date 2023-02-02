@@ -1,9 +1,7 @@
 package api
 
 import (
-	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"time"
 
@@ -51,6 +49,10 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 func readConfig[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if connectorNotInstalled(connectorManager, w, r) {
+			return
+		}
+
 		config, err := connectorManager.ReadConfig(r.Context())
 		if err != nil {
 			handleError(w, r, err)
@@ -81,6 +83,10 @@ type listTasksResponseElement struct {
 func listTasks[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if connectorNotInstalled(connectorManager, w, r) {
+			return
+		}
+
 		pageSize, err := pageSizeQueryParam(r)
 		if err != nil {
 			handleValidationError(w, r, err)
@@ -134,6 +140,10 @@ func listTasks[Config models.ConnectorConfigObject](connectorManager *integratio
 func readTask[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if connectorNotInstalled(connectorManager, w, r) {
+			return
+		}
+
 		taskID, err := uuid.Parse(mux.Vars(r)["taskID"])
 		if err != nil {
 			handleErrorBadRequest(w, r, err)
@@ -171,6 +181,10 @@ func readTask[Config models.ConnectorConfigObject](connectorManager *integration
 func uninstall[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		if connectorNotInstalled(connectorManager, w, r) {
+			return
+		}
+
 		err := connectorManager.Uninstall(r.Context())
 		if err != nil {
 			handleError(w, r, err)
@@ -185,7 +199,7 @@ func uninstall[Config models.ConnectorConfigObject](connectorManager *integratio
 func install[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := connectorManager.IsInstalled(context.TODO())
+		installed, err := connectorManager.IsInstalled(r.Context())
 		if err != nil {
 			handleError(w, r, err)
 
@@ -222,20 +236,11 @@ func install[Config models.ConnectorConfigObject](connectorManager *integration.
 func reset[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		installed, err := connectorManager.IsInstalled(context.TODO())
-		if err != nil {
-			handleError(w, r, err)
-
+		if connectorNotInstalled(connectorManager, w, r) {
 			return
 		}
 
-		if !installed {
-			handleError(w, r, errors.New("connector not installed"))
-
-			return
-		}
-
-		err = connectorManager.Reset(r.Context())
+		err := connectorManager.Reset(r.Context())
 		if err != nil {
 			handleError(w, r, err)
 
@@ -245,6 +250,7 @@ func reset[Config models.ConnectorConfigObject](connectorManager *integration.Co
 		w.WriteHeader(http.StatusNoContent)
 	}
 }
+
 
 type transferRequest struct {
 	Amount      int64  `json:"amount"`
@@ -392,4 +398,22 @@ func listTransfers[Config models.ConnectorConfigObject](connectorManager *integr
 			panic(err)
 		}
 	}
+
+func connectorNotInstalled[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
+	w http.ResponseWriter, r *http.Request,
+) bool {
+	installed, err := connectorManager.IsInstalled(r.Context())
+	if err != nil {
+		handleError(w, r, err)
+
+		return true
+	}
+
+	if !installed {
+		handleErrorBadRequest(w, r, integration.ErrNotInstalled)
+
+		return true
+	}
+
+	return false
 }
