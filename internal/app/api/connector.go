@@ -277,6 +277,10 @@ func (req *transferRequest) validate() error {
 	return nil
 }
 
+type initiateTransferResponse struct {
+	ID string `json:"id"`
+}
+
 func initiateTransfer[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
 ) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -316,13 +320,76 @@ func initiateTransfer[Config models.ConnectorConfigObject](connectorManager *int
 			Amount:      req.Amount,
 		}
 
-		err = connectorManager.InitiateTransfer(r.Context(), transfer)
+		transferID, err := connectorManager.InitiateTransfer(r.Context(), transfer)
 		if err != nil {
 			handleError(w, r, err)
 
 			return
 		}
 
-		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(api.BaseResponse[initiateTransferResponse]{
+			Data: &initiateTransferResponse{
+				ID: transferID.String(),
+			},
+		})
+		if err != nil {
+			panic(err)
+		}
+	}
+}
+
+type listTransfersResponseElement struct {
+	ID          string  `json:"id"`
+	Source      string  `json:"source"`
+	Destination string  `json:"destination"`
+	Amount      int64   `json:"amount"`
+	Currency    string  `json:"asset"`
+	Status      string  `json:"status"`
+	Error       *string `json:"error"`
+}
+
+func listTransfers[Config models.ConnectorConfigObject](connectorManager *integration.ConnectorManager[Config],
+) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		installed, err := connectorManager.IsInstalled(r.Context())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		if !installed {
+			handleError(w, r, errors.New("connector not installed"))
+
+			return
+		}
+
+		transfers, err := connectorManager.ListTransfers(r.Context())
+		if err != nil {
+			handleError(w, r, err)
+
+			return
+		}
+
+		response := make([]listTransfersResponseElement, len(transfers))
+
+		for transferIdx := range transfers {
+			response[transferIdx] = listTransfersResponseElement{
+				ID:          transfers[transferIdx].ID.String(),
+				Source:      transfers[transferIdx].Source,
+				Destination: transfers[transferIdx].Destination,
+				Amount:      transfers[transferIdx].Amount,
+				Currency:    transfers[transferIdx].Currency,
+				Status:      transfers[transferIdx].Status.String(),
+				Error:       transfers[transferIdx].Error,
+			}
+		}
+
+		err = json.NewEncoder(w).Encode(api.BaseResponse[[]listTransfersResponseElement]{
+			Data: &response,
+		})
+		if err != nil {
+			panic(err)
+		}
 	}
 }

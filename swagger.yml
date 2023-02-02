@@ -348,8 +348,33 @@ paths:
             schema:
               $ref: '#/components/schemas/TransferRequest'
       responses:
-        '201':
+        '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+  /connectors/{connector}/transfers:
+      get:
+        summary: List transfers and their statuses
+        tags:
+          - Payments
+        operationId: listConnectorsTransfers
+        description: List transfers
+        parameters:
+          - name: connector
+            description: The name of the connector.
+            in: path
+            schema:
+              $ref: '#/components/schemas/Connector'
+            required: true
+        responses:
+          '200':
+            description: OK
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/TransfersResponse'
 components:
   schemas:
     ConnectorConfigResponse:
@@ -1015,6 +1040,39 @@ components:
     StripeTransferResponse:
       type: object
 
+    TransferResponse:
+      type: object
+      properties:
+        id:
+          type: string
+
+    TransfersResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              amount:
+                type: integer
+                format: int64
+                minimum: 0
+              asset:
+                type: string
+              destination:
+                type: string
+              source:
+                type: string
+              currency:
+                type: string
+              status:
+                type: string
+              error:
+                type: string
+               
     PaymentStatus:
       type: string
       enum:

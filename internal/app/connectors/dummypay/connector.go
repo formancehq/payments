@@ -23,7 +23,7 @@ type Connector struct {
 	fs     fs
 }
 
-func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer integration.Transfer) error {
+func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer models.Transfer) error {
 	// TODO implement me
 	panic("implement me")
 }

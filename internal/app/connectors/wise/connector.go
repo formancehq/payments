@@ -17,11 +17,12 @@ type Connector struct {
 	cfg    Config
 }
 
-func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer integration.Transfer) error {
+func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer models.Transfer) error {
 	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
 		Name: "Initiate transfer",
 		Key:  taskNameTransfer,
 		Transfer: Transfer{
+			ID:          transfer.ID,
 			Source:      transfer.Source,
 			Destination: transfer.Destination,
 			Amount:      transfer.Amount,

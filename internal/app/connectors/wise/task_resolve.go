@@ -3,6 +3,8 @@ package wise
 import (
 	"fmt"
 
+	"github.com/google/uuid"
+
 	"github.com/formancehq/payments/internal/app/task"
 
 	"github.com/formancehq/go-libs/logging"
@@ -23,10 +25,11 @@ type TaskDescriptor struct {
 }
 
 type Transfer struct {
-	Source      string `json:"source" yaml:"source" bson:"source"`
-	Destination string `json:"destination" yaml:"destination" bson:"destination"`
-	Amount      int64  `json:"amount" yaml:"amount" bson:"amount"`
-	Currency    string `json:"currency" yaml:"currency" bson:"currency"`
+	ID          uuid.UUID `json:"id" yaml:"id" bson:"id"`
+	Source      string    `json:"source" yaml:"source" bson:"source"`
+	Destination string    `json:"destination" yaml:"destination" bson:"destination"`
+	Amount      int64     `json:"amount" yaml:"amount" bson:"amount"`
+	Currency    string    `json:"currency" yaml:"currency" bson:"currency"`
 }
 
 func resolveTasks(logger logging.Logger, config Config) func(taskDefinition TaskDescriptor) task.Task {

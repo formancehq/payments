@@ -17,7 +17,7 @@ type Connector interface {
 	// Resolve is used to recover state of a failed or restarted task
 	Resolve(descriptor models.TaskDescriptor) task.Task
 	// InitiateTransfer is used to initiate a transfer from the connector to a bank account.
-	InitiateTransfer(ctx task.ConnectorContext, transfer Transfer) error
+	InitiateTransfer(ctx task.ConnectorContext, transfer models.Transfer) error
 }
 
 type ConnectorBuilder struct {
@@ -25,7 +25,7 @@ type ConnectorBuilder struct {
 	uninstall        func(ctx context.Context) error
 	resolve          func(descriptor models.TaskDescriptor) task.Task
 	install          func(ctx task.ConnectorContext) error
-	initiateTransfer func(ctx task.ConnectorContext, transfer Transfer) error
+	initiateTransfer func(ctx task.ConnectorContext, transfer models.Transfer) error
 }
 
 func (b *ConnectorBuilder) WithUninstall(
@@ -67,10 +67,10 @@ type BuiltConnector struct {
 	uninstall        func(ctx context.Context) error
 	resolve          func(name models.TaskDescriptor) task.Task
 	install          func(ctx task.ConnectorContext) error
-	initiateTransfer func(ctx task.ConnectorContext, transfer Transfer) error
+	initiateTransfer func(ctx task.ConnectorContext, transfer models.Transfer) error
 }
 
-func (b *BuiltConnector) InitiateTransfer(ctx task.ConnectorContext, transfer Transfer) error {
+func (b *BuiltConnector) InitiateTransfer(ctx task.ConnectorContext, transfer models.Transfer) error {
 	if b.initiateTransfer != nil {
 		return b.initiateTransfer(ctx, transfer)
 	}

@@ -263,13 +263,28 @@ type Transfer struct {
 	Amount      int64
 }
 
-func (l *ConnectorManager[ConnectorConfig]) InitiateTransfer(ctx context.Context, transfer Transfer) error {
-	err := l.connector.InitiateTransfer(task.NewConnectorContext(ctx, l.scheduler), transfer)
+func (l *ConnectorManager[ConnectorConfig]) InitiateTransfer(ctx context.Context, transfer Transfer) (uuid.UUID, error) {
+	newTransfer, err := l.store.CreateNewTransfer(ctx, l.loader.Name(),
+		transfer.Source, transfer.Destination, transfer.Currency, transfer.Amount)
 	if err != nil {
-		return fmt.Errorf("initiating transfer: %w", err)
+		return uuid.Nil, fmt.Errorf("creating new transfer: %w", err)
 	}
 
-	return nil
+	err = l.connector.InitiateTransfer(task.NewConnectorContext(ctx, l.scheduler), newTransfer)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("initiating transfer: %w", err)
+	}
+
+	return newTransfer.ID, nil
+}
+
+func (l *ConnectorManager[ConnectorConfig]) ListTransfers(ctx context.Context) ([]models.Transfer, error) {
+	transfers, err := l.store.ListTransfers(ctx, l.loader.Name())
+	if err != nil {
+		return nil, fmt.Errorf("retrieving transfers: %w", err)
+	}
+
+	return transfers, nil
 }
 
 func NewConnectorManager[ConnectorConfig models.ConnectorConfigObject](
