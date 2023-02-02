@@ -29,6 +29,7 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 
 	var (
 		hasMore                       = len(payments) > pagination.pageSize
+		hasPrevious                   bool
 		firstReference, lastReference string
 	)
 
@@ -39,9 +40,16 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 	if len(payments) > 0 {
 		firstReference = payments[0].CreatedAt.Format(time.RFC3339Nano)
 		lastReference = payments[len(payments)-1].CreatedAt.Format(time.RFC3339Nano)
+
+		query = s.db.NewSelect().Model(&payments)
+
+		hasPrevious, err = pagination.hasPrevious(ctx, query, "payment.created_at", firstReference)
+		if err != nil {
+			return nil, PaginationDetails{}, fmt.Errorf("failed to check if there is a previous page: %w", err)
+		}
 	}
 
-	paginationDetails, err := pagination.paginationDetails(hasMore, firstReference, lastReference)
+	paginationDetails, err := pagination.paginationDetails(hasMore, hasPrevious, firstReference, lastReference)
 	if err != nil {
 		return nil, PaginationDetails{}, fmt.Errorf("failed to get pagination details: %w", err)
 	}

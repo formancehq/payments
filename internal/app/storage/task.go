@@ -109,6 +109,8 @@ func (s *Storage) ListTasksByStatus(ctx context.Context, provider models.Connect
 }
 
 func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvider, pagination Paginator) ([]models.Task, PaginationDetails, error) {
+	s.debug()
+
 	connector, err := s.GetConnector(ctx, provider)
 	if err != nil {
 		return nil, PaginationDetails{}, e("failed to get connector", err)
@@ -128,6 +130,7 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 
 	var (
 		hasMore                       = len(tasks) > pagination.pageSize
+		hasPrevious                   bool
 		firstReference, lastReference string
 	)
 
@@ -138,9 +141,17 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 	if len(tasks) > 0 {
 		firstReference = tasks[0].CreatedAt.Format(time.RFC3339Nano)
 		lastReference = tasks[len(tasks)-1].CreatedAt.Format(time.RFC3339Nano)
+
+		query = s.db.NewSelect().Model(&tasks).
+			Where("connector_id = ?", connector.ID)
+
+		hasPrevious, err = pagination.hasPrevious(ctx, query, "task.created_at", firstReference)
+		if err != nil {
+			return nil, PaginationDetails{}, fmt.Errorf("failed to check if there is a previous page: %w", err)
+		}
 	}
 
-	paginationDetails, err := pagination.paginationDetails(hasMore, firstReference, lastReference)
+	paginationDetails, err := pagination.paginationDetails(hasMore, hasPrevious, firstReference, lastReference)
 	if err != nil {
 		return nil, PaginationDetails{}, fmt.Errorf("failed to get pagination details: %w", err)
 	}
