@@ -13,6 +13,7 @@ func newStorage(db *bun.DB) *Storage {
 	return &Storage{db: db}
 }
 
+//nolint:unused // used in debug mode
 func (s *Storage) debug() {
 	s.db.AddQueryHook(bundebug.NewQueryHook(bundebug.WithVerbose(true)))
 }

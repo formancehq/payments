@@ -109,8 +109,6 @@ func (s *Storage) ListTasksByStatus(ctx context.Context, provider models.Connect
 }
 
 func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvider, pagination Paginator) ([]models.Task, PaginationDetails, error) {
-	s.debug()
-
 	connector, err := s.GetConnector(ctx, provider)
 	if err != nil {
 		return nil, PaginationDetails{}, e("failed to get connector", err)
@@ -135,7 +133,11 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 	)
 
 	if hasMore {
-		tasks = tasks[:pagination.pageSize]
+		if pagination.cursor.Next {
+			tasks = tasks[:pagination.pageSize]
+		} else {
+			tasks = tasks[1:]
+		}
 	}
 
 	if len(tasks) > 0 {
