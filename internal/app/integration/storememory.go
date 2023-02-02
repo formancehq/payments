@@ -21,8 +21,8 @@ func (i *InMemoryConnectorStore) Uninstall(ctx context.Context, name models.Conn
 	return nil
 }
 
-func (i *InMemoryConnectorStore) FindAll(_ context.Context) ([]models.Connector, error) {
-	return []models.Connector{}, nil
+func (i *InMemoryConnectorStore) ListConnectors(_ context.Context) ([]*models.Connector, error) {
+	return []*models.Connector{}, nil
 }
 
 func (i *InMemoryConnectorStore) IsInstalled(ctx context.Context, name models.ConnectorProvider) (bool, error) {
