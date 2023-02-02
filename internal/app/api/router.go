@@ -74,7 +74,7 @@ func connectorRouter[Config models.ConnectorConfigObject](
 	addRoute(r, provider, "/reset", http.MethodPost, reset(manager))
 	addRoute(r, provider, "/tasks", http.MethodGet, listTasks(manager))
 	addRoute(r, provider, "/tasks/{taskID}", http.MethodGet, readTask(manager))
-	addRoute(r, provider, "/transfer", http.MethodPost, initiateTransfer(manager))
+	addRoute(r, provider, "/transfers", http.MethodPost, initiateTransfer(manager))
 	addRoute(r, provider, "/transfers", http.MethodGet, listTransfers(manager))
 
 	return r

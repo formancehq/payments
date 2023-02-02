@@ -327,7 +327,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StripeTransferResponse'
 
-  /connectors/{connector}/transfer:
+  /connectors/{connector}/transfers:
     post:
       summary: Transfer funds between Connector accounts
       tags:
@@ -1072,7 +1072,7 @@ components:
                 type: string
               error:
                 type: string
-               
+
     PaymentStatus:
       type: string
       enum:
