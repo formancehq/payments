@@ -134,7 +134,7 @@ func (s *Storage) ListTasks(ctx context.Context, provider models.ConnectorProvid
 	)
 
 	if hasMore {
-		if pagination.cursor.Next {
+		if pagination.cursor.Next || pagination.cursor.Reference == "" {
 			tasks = tasks[:pagination.pageSize]
 		} else {
 			tasks = tasks[1:]

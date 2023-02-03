@@ -57,7 +57,7 @@ func (s *Storage) ListAccounts(ctx context.Context, pagination Paginator) ([]*mo
 	)
 
 	if hasMore {
-		if pagination.cursor.Next {
+		if pagination.cursor.Next || pagination.cursor.Reference == "" {
 			accounts = accounts[:pagination.pageSize]
 		} else {
 			accounts = accounts[1:]

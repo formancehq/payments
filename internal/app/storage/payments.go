@@ -35,7 +35,7 @@ func (s *Storage) ListPayments(ctx context.Context, pagination Paginator) ([]*mo
 	)
 
 	if hasMore {
-		if pagination.cursor.Next {
+		if pagination.cursor.Next || pagination.cursor.Reference == "" {
 			payments = payments[:pagination.pageSize]
 		} else {
 			payments = payments[1:]
