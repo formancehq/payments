@@ -42,7 +42,7 @@ jobs:
       - test
 
   docker-build-push:
-    runs-on: ubuntu-latest
+    runs-on: payments-runner-size
     needs:
       - lint
       - test
