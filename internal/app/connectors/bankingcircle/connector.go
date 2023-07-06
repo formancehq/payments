@@ -1,16 +1,15 @@
-package wise
+package bankingcircle
 
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/app/models"
-
 	"github.com/formancehq/payments/internal/app/integration"
+	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/task"
 	"github.com/formancehq/stack/libs/go-libs/logging"
 )
 
-const Name = models.ConnectorProviderWise
+const Name = models.ConnectorProviderBankingCircle
 
 type Connector struct {
 	logger logging.Logger
@@ -18,37 +17,20 @@ type Connector struct {
 }
 
 func (c *Connector) InitiateTransfer(ctx task.ConnectorContext, transfer models.Transfer) error {
-	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
-		Name: "Initiate transfer",
-		Key:  taskNameTransfer,
-		Transfer: Transfer{
-			ID:          transfer.ID,
-			Source:      transfer.Source,
-			Destination: transfer.Destination,
-			Amount:      transfer.Amount,
-			Currency:    transfer.Currency,
-		},
-	})
-	if err != nil {
-		return err
-	}
-
-	return ctx.Scheduler().Schedule(ctx.Context(), descriptor, models.TaskSchedulerOptions{
-		ScheduleOption: models.OPTIONS_RUN_NOW,
-		Restart:        true,
-	})
+	// TODO implement me
+	panic("implement me")
 }
 
 func (c *Connector) Install(ctx task.ConnectorContext) error {
-	descriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
-		Name: "Fetch profiles from client",
-		Key:  taskNameFetchProfiles,
+	taskDescriptor, err := models.EncodeTaskDescriptor(TaskDescriptor{
+		Name: "Main task to periodically fetch payments",
+		Key:  taskNameMain,
 	})
 	if err != nil {
 		return err
 	}
 
-	return ctx.Scheduler().Schedule(ctx.Context(), descriptor, models.TaskSchedulerOptions{
+	return ctx.Scheduler().Schedule(ctx.Context(), taskDescriptor, models.TaskSchedulerOptions{
 		// We want to polling every c.cfg.PollingPeriod.Duration seconds the users
 		// and their transactions.
 		ScheduleOption: models.OPTIONS_RUN_INDEFINITELY,
