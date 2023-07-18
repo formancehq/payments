@@ -1,12 +1,11 @@
-package moneycorp
+package currencycloud
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"time"
 
-	"github.com/formancehq/payments/internal/app/connectors/moneycorp/client"
+	"github.com/formancehq/payments/internal/app/connectors/currencycloud/client"
 	"github.com/formancehq/payments/internal/app/ingestion"
 	"github.com/formancehq/payments/internal/app/models"
 	"github.com/formancehq/payments/internal/app/task"
@@ -21,44 +20,38 @@ func taskFetchAccounts(logger logging.Logger, client *client.Client) task.Task {
 	) error {
 		logger.Info(taskNameFetchAccounts)
 
-		for page := 1; ; page++ {
-			pagedAccounts, err := client.GetAccounts(ctx, page, pageSize)
+		page := 1
+		for {
+			if page < 0 {
+				break
+			}
+
+			pagedAccounts, nextPage, err := client.GetAccounts(ctx, page)
 			if err != nil {
 				return err
 			}
 
-			if len(pagedAccounts) == 0 {
-				break
-			}
+			page = nextPage
 
 			if err := ingestAccountsBatch(ctx, ingester, pagedAccounts); err != nil {
 				return err
 			}
+		}
 
-			for _, account := range pagedAccounts {
-				logger.Infof("scheduling fetch-transactions: %s", account.ID)
+		taskTransactions, err := models.EncodeTaskDescriptor(TaskDescriptor{
+			Name: "Fetch transactions from client",
+			Key:  taskNameFetchTransactions,
+		})
+		if err != nil {
+			return err
+		}
 
-				transactionsTask, err := models.EncodeTaskDescriptor(TaskDescriptor{
-					Name:      "Fetch transactions from client by account",
-					Key:       taskNameFetchTransactions,
-					AccountID: account.ID,
-				})
-				if err != nil {
-					return err
-				}
-
-				err = scheduler.Schedule(ctx, transactionsTask, models.TaskSchedulerOptions{
-					ScheduleOption: models.OPTIONS_RUN_NOW,
-					Restart:        true,
-				})
-				if err != nil && !errors.Is(err, task.ErrAlreadyScheduled) {
-					return err
-				}
-			}
-
-			if len(pagedAccounts) < pageSize {
-				break
-			}
+		err = scheduler.Schedule(ctx, taskTransactions, models.TaskSchedulerOptions{
+			ScheduleOption: models.OPTIONS_RUN_NOW,
+			Restart:        true,
+		})
+		if err != nil && !errors.Is(err, task.ErrAlreadyScheduled) {
+			return err
 		}
 
 		return nil
@@ -81,13 +74,13 @@ func ingestAccountsBatch(
 			Account: &models.Account{
 				ID: models.AccountID{
 					Reference: account.ID,
-					Provider:  models.ConnectorProviderMoneycorp,
+					Provider:  models.ConnectorProviderCurrencyCloud,
 				},
 				// Moneycorp does not send the opening date of the account
-				CreatedAt:   time.Now(),
+				CreatedAt:   account.CreatedAt,
 				Reference:   account.ID,
-				Provider:    models.ConnectorProviderMoneycorp,
-				AccountName: account.Attributes.AccountName,
+				Provider:    models.ConnectorProviderCurrencyCloud,
+				AccountName: account.AccountName,
 				Type:        models.AccountTypeInternal,
 				RawData:     raw,
 			},
