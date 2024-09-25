@@ -1,10 +1,10 @@
-project_name: payments
+# yaml-language-server: $schema=https://goreleaser.com/static/schema-pro.json
+version: 2
+project_name: fctl
+
 includes:
-  - from_file:
-      path: ./../../.goreleaser.default.yaml
-monorepo:
-  tag_prefix: v
-  dir: ./
+  - from_url:
+      url: https://raw.githubusercontent.com/formancehq/earthly/refs/heads/main/.goreleaser.default.yaml
 
 builds:
   - binary: payments
@@ -28,7 +28,6 @@ archives:
       - payments
     format: tar.gz
     name_template: "{{.ProjectName}}_{{.Os}}-{{.Arch}}"
-
 
 release:
   prerelease: auto
