@@ -12,7 +12,7 @@ require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/formancehq/go-libs v1.7.1
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
-	github.com/get-momo/atlar-v1-go-client v1.2.1
+	github.com/get-momo/atlar-v1-go-client v1.3.0
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-openapi/runtime v0.26.0
 	github.com/go-openapi/strfmt v0.21.8
