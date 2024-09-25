@@ -1,7 +1,7 @@
 VERSION 0.8
 PROJECT FormanceHQ/payments
 
-IMPORT github.com/formancehq/earthly:tags/v0.16.1 AS core
+IMPORT github.com/formancehq/earthly:tags/v0.16.2 AS core
 
 FROM core+base-image
 
