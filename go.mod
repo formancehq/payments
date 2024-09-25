@@ -7,7 +7,7 @@ toolchain go1.22.7
 require (
 	github.com/ThreeDotsLabs/watermill v1.3.7
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
-	github.com/alitto/pond v1.8.3
+	github.com/alitto/pond v1.9.2
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc
 	github.com/formancehq/go-libs v1.7.1
