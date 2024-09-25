@@ -1,16 +1,13 @@
 VERSION 0.8
+PROJECT FormanceHQ/payments
 
-IMPORT github.com/formancehq/earthly:tags/v0.15.0 AS core
-IMPORT ../.. AS stack
-IMPORT ../../releases AS releases
-IMPORT .. AS components
+IMPORT github.com/formancehq/earthly:tags/v0.16.0 AS core
 
 FROM core+base-image
 
 sources:
     WORKDIR src
-    COPY --pass-args (releases+sdk-generate/go) /src/releases/sdks/go
-    WORKDIR /src/components/payments
+    WORKDIR /src
     COPY go.* .
     COPY --dir pkg cmd internal .
     COPY main.go .
@@ -19,7 +16,7 @@ sources:
 compile:
     FROM core+builder-image
     COPY (+sources/*) /src
-    WORKDIR /src/components/payments
+    WORKDIR /src
     ARG VERSION=latest
     DO --pass-args core+GO_COMPILE --VERSION=$VERSION
 
@@ -35,7 +32,7 @@ build-image:
 tests:
     FROM core+builder-image
     COPY (+sources/*) /src
-    WORKDIR /src/components/payments
+    WORKDIR /src
     WITH DOCKER --pull=postgres:15-alpine
         DO --pass-args core+GO_TESTS
     END
@@ -50,14 +47,14 @@ deploy:
     RUN kubectl patch Versions.formance.com default -p "{\"spec\":{\"payments\": \"${tag}\"}}" --type=merge
 
 deploy-staging:
-    BUILD --pass-args stack+deployer-module --MODULE=payments
+    BUILD --pass-args core+deployer-module --MODULE=payments
 
 lint:
     FROM core+builder-image
     COPY (+sources/*) /src
     COPY --pass-args +tidy/go.* .
-    WORKDIR /src/components/payments
-    DO --pass-args stack+GO_LINT
+    WORKDIR /src
+    DO --pass-args core+GO_LINT
     SAVE ARTIFACT cmd AS LOCAL cmd
     SAVE ARTIFACT internal AS LOCAL internal
     SAVE ARTIFACT pkg AS LOCAL pkg
@@ -76,8 +73,8 @@ openapi:
 tidy:
     FROM core+builder-image
     COPY --pass-args (+sources/src) /src
-    WORKDIR /src/components/payments
-    DO --pass-args stack+GO_TIDY
+    WORKDIR /src
+    DO --pass-args core+GO_TIDY
 
 generate-generic-connector-client:
     FROM openapitools/openapi-generator-cli:v6.6.0
@@ -96,4 +93,7 @@ generate-generic-connector-client:
     SAVE ARTIFACT ./generated AS LOCAL ./cmd/connectors/internal/connectors/generic/client/generated
 
 release:
-    BUILD --pass-args stack+goreleaser --path=components/payments
+    FROM core+builder-image
+    ARG mode=local
+    COPY --dir . /src
+    DO core+GORELEASER --mode=$mode
