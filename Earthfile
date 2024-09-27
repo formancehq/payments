@@ -35,6 +35,7 @@ compile-plugins:
         DO --pass-args core+GO_COMPILE --VERSION=$VERSION
         WORKDIR /src
         SAVE ARTIFACT /src/internal/connectors/plugins/public/$c/cmd/main ./plugins/$c
+        SAVE ARTIFACT /src/internal/connectors/plugins/public/$c/cmd/main AS LOCAL ./plugins/$c
     END
 
 compile:
