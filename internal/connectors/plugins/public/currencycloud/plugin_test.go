@@ -1,0 +1,13 @@
+package currencycloud
+
+import (
+	"testing"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
+)
+
+func TestPlugin(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Stripe Plugin Suite")
+}

@@ -10,6 +10,15 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
+type Client interface {
+	GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, int, error)
+	GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error)
+	GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error)
+	GetContactID(ctx context.Context, accountID string) (*Contact, error)
+	GetTransactions(ctx context.Context, page int, pageSize int, updatedAtFrom time.Time) ([]Transaction, int, error)
+}
+
 type apiTransport struct {
 	authToken  string
 	underlying *otelhttp.Transport
@@ -21,14 +30,14 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlying.RoundTrip(req)
 }
 
-type Client struct {
+type client struct {
 	httpClient httpwrapper.Client
 	endpoint   string
 	loginID    string
 	apiKey     string
 }
 
-func (c *Client) buildEndpoint(path string, args ...interface{}) string {
+func (c *client) buildEndpoint(path string, args ...interface{}) string {
 	return fmt.Sprintf("%s/%s", c.endpoint, fmt.Sprintf(path, args...))
 }
 
@@ -41,7 +50,7 @@ func newHTTPClient() *http.Client {
 }
 
 // New creates a new client for the CurrencyCloud API.
-func New(ctx context.Context, loginID, apiKey, endpoint string) (*Client, error) {
+func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) {
 	if endpoint == "" {
 		endpoint = DevAPIEndpoint
 	}
@@ -49,7 +58,7 @@ func New(ctx context.Context, loginID, apiKey, endpoint string) (*Client, error)
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
 
-	c := &Client{
+	c := &client{
 		endpoint: endpoint,
 		loginID:  loginID,
 		apiKey:   apiKey,
