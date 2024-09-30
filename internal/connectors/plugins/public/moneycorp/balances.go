@@ -13,27 +13,29 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching balances")
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching balances"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	balances, err := p.client.GetAccountBalances(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 	}
 
 	var accountBalances []models.PSPBalance
 	for _, balance := range balances {
 		precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, err
+			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(balance.Attributes.AvailableBalance.String(), precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, err
+			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 		}
 
 		accountBalances = append(accountBalances, models.PSPBalance{

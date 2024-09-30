@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type balancesResponse struct {
@@ -42,12 +40,8 @@ func (c *Client) GetAccountBalances(ctx context.Context, accountID string) ([]*B
 	var errRes moneycorpError
 
 	_, err = c.httpClient.Do(req, &balances, &errRes)
-	switch err {
-	case nil:
-		return balances.Balances, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account balances: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get account balances: %w", err)
+	return balances.Balances, nil
 }

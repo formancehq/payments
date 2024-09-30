@@ -24,9 +24,10 @@ func New(clientID, apiKey, endpoint string) (*Client, error) {
 		HttpErrorCheckerFn: func(statusCode int) error {
 			if statusCode == http.StatusNotFound {
 				return nil
-			}
-			if statusCode >= http.StatusBadRequest {
-				return httpwrapper.ErrStatusCodeUnexpected
+			} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
+				return httpwrapper.ErrStatusCodeClientError
+			} else if statusCode >= http.StatusInternalServerError {
+				return httpwrapper.ErrStatusCodeServerError
 			}
 			return nil
 
