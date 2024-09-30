@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type DestinationType string
@@ -65,14 +63,10 @@ func (c *Client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 	var res TransferResponse
 	var errRes modulrError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to initiate transfer: %w", err)
+	return &res, nil
 }
 
 func (c *Client) GetTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
@@ -89,15 +83,12 @@ func (c *Client) GetTransfer(ctx context.Context, transferID string) (TransferRe
 	var res getTransferResponse
 	var errRes modulrError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		if len(res.Content) == 0 {
-			return TransferResponse{}, fmt.Errorf("transfer not found")
-		}
-		return res.Content[0], nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return TransferResponse{}, errRes.Error()
+	if err != nil {
+		return TransferResponse{}, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
 	}
-	return TransferResponse{}, fmt.Errorf("failed to get transactions %w", err)
+
+	if len(res.Content) == 0 {
+		return TransferResponse{}, fmt.Errorf("transfer not found")
+	}
+	return res.Content[0], nil
 }
