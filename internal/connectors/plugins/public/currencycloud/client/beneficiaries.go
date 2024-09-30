@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Beneficiary struct {
@@ -49,13 +47,9 @@ func (c *Client) GetBeneficiaries(ctx context.Context, page int, pageSize int) (
 
 	res := response{Beneficiaries: make([]*Beneficiary, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return res.Beneficiaries, res.Pagination.NextPage, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, 0, errRes.Error()
+	_, err = c.httpClient.Do(req, &res, &errRes)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get beneficiaries %w, %w", err, errRes.Error())
 	}
-	return nil, 0, fmt.Errorf("failed to get beneficiaries %w", err)
+	return res.Beneficiaries, res.Pagination.NextPage, nil
 }

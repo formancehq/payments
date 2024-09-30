@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Contact struct {
@@ -35,16 +33,13 @@ func (c *Client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 
 	res := Contacts{Contacts: make([]*Contact, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		if len(res.Contacts) == 0 {
-			return nil, fmt.Errorf("no contact found for account %s", accountID)
-		}
-		return res.Contacts[0], nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	_, err = c.httpClient.Do(req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get contacts %w, %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get contacts %w", err)
+
+	if len(res.Contacts) == 0 {
+		return nil, fmt.Errorf("no contact found for account %s", accountID)
+	}
+	return res.Contacts[0], nil
 }
