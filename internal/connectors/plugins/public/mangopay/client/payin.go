@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayinResponse struct {
@@ -41,13 +39,9 @@ func (c *Client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, 
 	}
 
 	var payinResponse PayinResponse
-	_, err = c.httpClient.Do(req, &payinResponse, nil)
-	switch err {
-	case nil:
-		return &payinResponse, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &payinResponse, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payin response got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get payin response: %w", err)
+	return &payinResponse, nil
 }
