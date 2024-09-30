@@ -39,7 +39,7 @@ func Module(pluginPath map[string]string, stack, stackURL string) fx.Option {
 			return webhooks.New()
 		}),
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks) workflow.Workflow {
-			return workflow.New(temporalClient, plugins, webhooks, stack)
+			return workflow.New(temporalClient, plugins, webhooks, stack, stackURL)
 		}),
 		fx.Provide(func(storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
 			return activities.New(storage, events, plugins)

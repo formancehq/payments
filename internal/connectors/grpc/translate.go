@@ -333,11 +333,20 @@ func TranslateWebhook(from models.PSPWebhook) *proto.Webhook {
 		queryValues[k] = &proto.Webhook_Values{Values: v}
 	}
 
-	return &proto.Webhook{
+	w := &proto.Webhook{
 		Headers:     headers,
 		QueryValues: queryValues,
 		Body:        from.Body,
 	}
+
+	if from.BasicAuth != nil {
+		w.BasicAuth = &proto.Webhook_BasicAuth{
+			Username: from.BasicAuth.Username,
+			Password: from.BasicAuth.Password,
+		}
+	}
+
+	return w
 }
 
 func TranslateProtoWebhook(from *proto.Webhook) models.PSPWebhook {
@@ -351,9 +360,18 @@ func TranslateProtoWebhook(from *proto.Webhook) models.PSPWebhook {
 		queryValues[k] = v.Values
 	}
 
-	return models.PSPWebhook{
+	w := models.PSPWebhook{
 		QueryValues: queryValues,
 		Headers:     headers,
 		Body:        from.Body,
 	}
+
+	if from.BasicAuth != nil {
+		w.BasicAuth = &models.BasicAuth{
+			Username: from.BasicAuth.GetUsername(),
+			Password: from.BasicAuth.GetPassword(),
+		}
+	}
+
+	return w
 }

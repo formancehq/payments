@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"net/url"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -31,12 +33,18 @@ func (w Workflow) createWebhooks(
 	createWebhooks CreateWebhooks,
 	nextTasks []models.TaskTree,
 ) error {
+	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/webhooks", createWebhooks.ConnectorID.String())
+	if err != nil {
+		return errors.Wrap(err, "joining webhook base URL")
+	}
+
 	resp, err := activities.PluginCreateWebhooks(
 		infiniteRetryContext(ctx),
 		createWebhooks.ConnectorID,
 		models.CreateWebhooksRequest{
-			ConnectorID: createWebhooks.ConnectorID.String(),
-			FromPayload: createWebhooks.FromPayload.GetPayload(),
+			WebhookBaseUrl: webhookBaseURL,
+			ConnectorID:    createWebhooks.ConnectorID.String(),
+			FromPayload:    createWebhooks.FromPayload.GetPayload(),
 		},
 	)
 	if err != nil {
