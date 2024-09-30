@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
 )
@@ -21,7 +22,7 @@ func (c *client) GetMerchantAccounts(ctx context.Context, pageNumber, pageSize i
 		return nil, err
 	}
 
-	if raw.StatusCode >= 300 {
+	if raw.StatusCode >= http.StatusBadRequest {
 		return nil, fmt.Errorf("failed to get merchant accounts: %d", raw.StatusCode)
 	}
 

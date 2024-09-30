@@ -14,10 +14,10 @@ import (
 
 func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Stripe Plugin Suite")
+	RunSpecs(t, "Adyen Plugin Suite")
 }
 
-var _ = Describe("Stripe Plugin", func() {
+var _ = Describe("Adyen Plugin", func() {
 	var (
 		plg *Plugin
 		m   *client.MockClient
