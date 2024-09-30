@@ -14,15 +14,17 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching balances")
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching balances"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	account, err := p.client.GetAccount(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 	}
 
 	var balances []models.PSPBalance
@@ -31,7 +33,7 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 		// circle response. We will use the current time instead.
 		// lastTransactionTimestamp, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", balance.LastTransactionTimestamp)
 		// if err != nil {
-		// 	return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse opening date: %w", err)
+		// 	return models.FetchNextBalancesResponse{}, models.NewPluginError(fmt.Errorf("failed to parse opening date: %w", err))
 		// }
 		lastTransactionTimestamp := time.Now().UTC()
 
@@ -39,12 +41,12 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 
 		beginOfDayAmount, err := currency.GetAmountWithPrecisionFromString(balance.BeginOfDayAmount.String(), precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, err
+			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 		}
 
 		intraDayAmount, err := currency.GetAmountWithPrecisionFromString(balance.IntraDayAmount.String(), precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, err
+			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 		}
 
 		amount := big.NewInt(0).Add(beginOfDayAmount, intraDayAmount)

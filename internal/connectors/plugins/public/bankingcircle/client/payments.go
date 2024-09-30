@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow for client-side structures
@@ -113,14 +111,10 @@ func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 
 	res := response{Result: make([]Payment, 0)}
 	statusCode, err := c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return res.Result, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, fmt.Errorf("received status code %d for get payments", statusCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payments, status code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get payments: %w", err)
+	return res.Result, nil
 }
 
 type StatusResponse struct {
@@ -145,12 +139,8 @@ func (c *Client) GetPaymentStatus(ctx context.Context, paymentID string) (*Statu
 
 	var res StatusResponse
 	statusCode, err := c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, fmt.Errorf("received status code %d for get payment status", statusCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payment status, status code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get payments status: %w", err)
+	return &res, nil
 }
