@@ -3,6 +3,10 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"errors"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"go.temporal.io/sdk/temporal"
 )
 
 type Plugin interface {
@@ -19,6 +23,40 @@ type Plugin interface {
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
+}
+
+type PluginError struct {
+	IsRetryable bool
+	err         error
+}
+
+func NewPluginError(err error) *PluginError {
+	isRetryable := true
+
+	if errors.Is(err, httpwrapper.ErrStatusCodeClientError) {
+		isRetryable = false
+	}
+
+	return &PluginError{
+		IsRetryable: isRetryable,
+		err:         err,
+	}
+}
+
+func (e *PluginError) Error() string {
+	return e.err.Error()
+}
+
+func (e *PluginError) ForbidRetry() *PluginError {
+	e.IsRetryable = false
+	return e
+}
+
+func (e *PluginError) TemporalError() error {
+	if e.IsRetryable {
+		return temporal.NewApplicationErrorWithCause(e.err.Error(), "plugin", e.err)
+	}
+	return temporal.NewNonRetryableApplicationError(e.err.Error(), "plugin", e.err)
 }
 
 type InstallRequest struct {
