@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Account struct {
@@ -48,12 +46,8 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 	res := response{Accounts: make([]*Account, 0)}
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return res.Accounts, res.Pagination.NextPage, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, 0, errRes.Error()
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get accounts: %w, %w", err, errRes.Error())
 	}
-	return nil, 0, fmt.Errorf("failed to get accounts: %w", err)
+	return res.Accounts, res.Pagination.NextPage, nil
 }
