@@ -39,41 +39,26 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		}
 
 		if len(pagedAccounts) == 0 {
+			hasMore = false
 			break
 		}
 
 		filteredAccounts := filterAccounts(pagedAccounts, oldState.LastAccountID)
-		for _, account := range filteredAccounts {
-			openingDate, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", account.OpeningDate)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to parse opening date: %w", err)
-			}
-
-			raw, err := json.Marshal(account)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to marshal account: %w", err)
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference:    account.AccountID,
-				CreatedAt:    openingDate,
-				Name:         &account.AccountDescription,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
-				Raw:          raw,
-			})
-
-			newState.LastAccountID = account.AccountID
-			newState.FromOpeningDate = openingDate
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
+		accounts, err = fillAccounts(accounts, filteredAccounts)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
 		}
 
-		if len(accounts) >= req.PageSize {
-			hasMore = true
+		needMore := true
+		needMore, hasMore, accounts = shouldFetchMore(accounts, req.PageSize)
+		if !needMore {
 			break
 		}
+	}
+
+	if len(accounts) > 0 {
+		newState.LastAccountID = accounts[len(accounts)-1].Reference
+		newState.FromOpeningDate = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -113,4 +98,31 @@ func filterAccounts(pagedAccounts []client.Account, lastAccountID string) []clie
 	}
 
 	return filteredAccounts
+}
+
+func fillAccounts(
+	accounts []models.PSPAccount,
+	pagedAccounts []client.Account,
+) ([]models.PSPAccount, error) {
+	for _, account := range pagedAccounts {
+		openingDate, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", account.OpeningDate)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse opening date: %w", err)
+		}
+
+		raw, err := json.Marshal(account)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal account: %w", err)
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    account.AccountID,
+			CreatedAt:    openingDate,
+			Name:         &account.AccountDescription,
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
+			Raw:          raw,
+		})
+	}
+
+	return accounts, nil
 }
