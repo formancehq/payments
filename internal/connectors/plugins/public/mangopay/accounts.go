@@ -21,7 +21,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	} else {
 		oldState = accountsState{
@@ -31,10 +31,12 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	var from client.User
 	if req.FromPayload == nil {
-		return models.FetchNextAccountsResponse{}, errors.New("missing from payload when fetching accounts")
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching accounts"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	newState := accountsState{
@@ -48,7 +50,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	for {
 		pagedAccounts, err := p.client.GetWallets(ctx, from.ID, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedAccounts) == 0 {
@@ -67,7 +69,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 			raw, err := json.Marshal(account)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
+				return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -104,7 +106,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextAccountsResponse{

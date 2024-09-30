@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayoutRequest struct {
@@ -62,16 +60,11 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	req.Header.Set("Content-Type", "application/json")
 
 	var payoutResponse PayoutResponse
-	_, err = c.httpClient.Do(req, &payoutResponse, nil)
-	switch err {
-	case nil:
-		return &payoutResponse, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		// Never retry payout initiation
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initiate payout, got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get payout response: %w", err)
+	return &payoutResponse, nil
 }
 
 func (c *Client) GetPayout(ctx context.Context, payoutID string) (*PayoutResponse, error) {
@@ -88,13 +81,9 @@ func (c *Client) GetPayout(ctx context.Context, payoutID string) (*PayoutRespons
 	}
 
 	var payoutResponse PayoutResponse
-	_, err = c.httpClient.Do(req, &payoutResponse, nil)
-	switch err {
-	case nil:
-		return &payoutResponse, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payout response got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get payout response: %w", err)
+	return &payoutResponse, nil
 }

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Refund struct {
@@ -42,13 +40,9 @@ func (c *Client) GetRefund(ctx context.Context, refundID string) (*Refund, error
 	}
 
 	var refund Refund
-	_, err = c.httpClient.Do(req, &refund, nil)
-	switch err {
-	case nil:
-		return &refund, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &refund, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get refund, got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get refund: %w", err)
+	return &refund, nil
 }
