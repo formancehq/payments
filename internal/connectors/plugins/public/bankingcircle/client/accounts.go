@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Account struct {
@@ -69,14 +67,10 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 
 	res := response{Result: make([]Account, 0)}
 	statusCode, err := c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return res.Result, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, fmt.Errorf("received status code %d for get accounts", statusCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get accounts, status code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get accounts: %w", err)
+	return res.Result, nil
 }
 
 func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
@@ -97,12 +91,8 @@ func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, er
 
 	var account Account
 	statusCode, err := c.httpClient.Do(req, &account, nil)
-	switch err {
-	case nil:
-		return &account, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, fmt.Errorf("received status code %d for get account", statusCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account, status code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get account: %w", err)
+	return &account, nil
 }
