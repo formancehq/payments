@@ -17,7 +17,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	}
 
@@ -36,7 +36,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	for {
 		pagedAccounts, nextPage, err := p.client.GetAccounts(ctx, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedAccounts) == 0 {
@@ -53,7 +53,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 			raw, err := json.Marshal(account)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
+				return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -86,7 +86,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextAccountsResponse{
