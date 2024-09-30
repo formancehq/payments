@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/hmacvalidator"
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
@@ -22,7 +23,7 @@ func (c *client) searchWebhook(ctx context.Context, connectorID string) error {
 			return err
 		}
 
-		if raw.StatusCode >= 300 {
+		if raw.StatusCode >= http.StatusBadRequest {
 			return fmt.Errorf("failed to get webhooks: %d", raw.StatusCode)
 		}
 
@@ -95,7 +96,7 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 		return err
 	}
 
-	if raw.StatusCode >= 300 {
+	if raw.StatusCode >= http.StatusBadRequest {
 		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
@@ -107,7 +108,7 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 		return err
 	}
 
-	if raw.StatusCode >= 300 {
+	if raw.StatusCode >= http.StatusBadRequest {
 		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
@@ -154,7 +155,7 @@ func (c *client) DeleteWebhook(ctx context.Context, connectorID string) error {
 		return err
 	}
 
-	if raw.StatusCode >= 300 {
+	if raw.StatusCode >= http.StatusBadRequest {
 		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
