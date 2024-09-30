@@ -18,7 +18,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	}
 
@@ -31,7 +31,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for page := 1; ; page++ {
 		pagedPayments, err := p.client.GetPayments(ctx, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedPayments) == 0 {
@@ -47,7 +47,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 			p, err := translatePayment(payment)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 			}
 
 			if p != nil {
@@ -71,14 +71,14 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextPaymentsResponse{
 		Payments: payments,
 		NewState: payload,
 		HasMore:  hasMore,
-	}, err
+	}, nil
 }
 
 func translatePayment(from client.Payment) (*models.PSPPayment, error) {
