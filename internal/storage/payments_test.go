@@ -317,6 +317,168 @@ func TestPaymentsUpsert(t *testing.T) {
 
 		comparePayments(t, expectedPayments, *actual)
 	})
+
+	t.Run("upsert with reversed refund", func(t *testing.T) {
+		p := models.Payment{
+			ID:            pID1,
+			ConnectorID:   defaultConnector.ID,
+			InitialAmount: big.NewInt(0),
+			Amount:        big.NewInt(0),
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUND_REVERSED,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUND_REVERSED,
+					Amount:    big.NewInt(50),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		upsertPayments(t, ctx, store, []models.Payment{p})
+
+		actual, err := store.PaymentsGet(ctx, p.ID)
+		require.NoError(t, err)
+
+		expectedPayments := models.Payment{
+			ID:                   pID1,
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "test1",
+			CreatedAt:            now.Add(-60 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_TRANSFER,
+			InitialAmount:        big.NewInt(100),
+			Amount:               big.NewInt(100),
+			Asset:                "USD/2",
+			Scheme:               models.PAYMENT_SCHEME_OTHER,
+			Status:               models.PAYMENT_STATUS_REFUNDED,
+			SourceAccountID:      &defaultAccounts[0].ID,
+			DestinationAccountID: &defaultAccounts[1].ID,
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUND_REVERSED,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUND_REVERSED,
+					Amount:    big.NewInt(50),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-20 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUNDED,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-20 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+					Amount:    big.NewInt(50),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(100),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		comparePayments(t, expectedPayments, *actual)
+	})
+
+	t.Run("upsert with amount adjustment", func(t *testing.T) {
+		p := models.Payment{
+			ID:            pID1,
+			ConnectorID:   defaultConnector.ID,
+			InitialAmount: big.NewInt(0),
+			Amount:        big.NewInt(0),
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-5 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-5 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+					Amount:    big.NewInt(150),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		upsertPayments(t, ctx, store, []models.Payment{p})
+
+		actual, err := store.PaymentsGet(ctx, p.ID)
+		require.NoError(t, err)
+		require.Equal(t, big.NewInt(150), actual.InitialAmount)
+	})
+
+	t.Run("upsert with capture", func(t *testing.T) {
+		p := models.Payment{
+			ID:            pID1,
+			ConnectorID:   defaultConnector.ID,
+			InitialAmount: big.NewInt(0),
+			Amount:        big.NewInt(0),
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-3 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_CAPTURE,
+					},
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-3 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_CAPTURE,
+					Amount:    big.NewInt(50),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		}
+
+		upsertPayments(t, ctx, store, []models.Payment{p})
+
+		actual, err := store.PaymentsGet(ctx, p.ID)
+		require.NoError(t, err)
+		require.Equal(t, big.NewInt(150), actual.Amount)
+	})
 }
 
 func TestPaymentsUpdateMetadata(t *testing.T) {

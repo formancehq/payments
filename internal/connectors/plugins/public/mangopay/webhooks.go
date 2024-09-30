@@ -3,11 +3,9 @@ package mangopay
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
@@ -104,10 +102,8 @@ func (p Plugin) initWebhookConfig() {
 }
 
 func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
-	stackPublicURL := os.Getenv("STACK_PUBLIC_URL")
-	if stackPublicURL == "" {
-		err := errors.New("STACK_PUBLIC_URL is not set")
-		return err
+	if req.WebhookBaseUrl == "" {
+		return fmt.Errorf("STACK_PUBLIC_URL is not set")
 	}
 
 	activeHooks, err := p.getActiveHooks(ctx)
@@ -115,9 +111,8 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 		return err
 	}
 
-	webhookURL := fmt.Sprintf("%s/api/payments/v3/connectors/webhooks/%s", stackPublicURL, req.ConnectorID)
 	for eventType, config := range webhookConfigs {
-		url, err := url.JoinPath(webhookURL, config.urlPath)
+		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return err
 		}
@@ -125,7 +120,7 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 		if v, ok := activeHooks[eventType]; ok {
 			// Already created, continue
 
-			if v.URL != webhookURL {
+			if v.URL != url {
 				// If the URL is different, update it
 				err := p.client.UpdateHook(ctx, v.ID, url)
 				if err != nil {
