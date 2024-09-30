@@ -17,12 +17,12 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching payments")
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	account, err := p.client.GetAccount(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 	}
 
 	precision := supportedCurrenciesWithDecimal[account.Currency]
