@@ -14,7 +14,9 @@ import (
 func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	userID := models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayUserIDMetadataKey)
 	if userID == "" {
-		return models.CreateBankAccountResponse{}, fmt.Errorf("missing userID in bank account metadata")
+		return models.CreateBankAccountResponse{}, models.NewPluginError(
+			fmt.Errorf("missing userID in bank account metadata"),
+		).ForbidRetry()
 	}
 
 	ownerAddress := client.OwnerAddress{
@@ -49,7 +51,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 		var err error
 		mangopayBankAccount, err = p.client.CreateIBANBankAccount(ctx, userID, req)
 		if err != nil {
-			return models.CreateBankAccountResponse{}, err
+			return models.CreateBankAccountResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	} else {
 		if req.BankAccount.Country == nil {
@@ -58,7 +60,9 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 		switch *req.BankAccount.Country {
 		case "US":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.NewPluginError(
+					fmt.Errorf("missing account number in bank account metadata"),
+				).ForbidRetry()
 			}
 
 			req := &client.CreateUSBankAccountRequest{
@@ -73,12 +77,14 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 			var err error
 			mangopayBankAccount, err = p.client.CreateUSBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, models.NewPluginError(err)
 			}
 
 		case "CA":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.NewPluginError(
+					fmt.Errorf("missing account number in bank account metadata"),
+				).ForbidRetry()
 			}
 			req := &client.CreateCABankAccountRequest{
 				OwnerName:         req.BankAccount.Name,
@@ -93,12 +99,14 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 			var err error
 			mangopayBankAccount, err = p.client.CreateCABankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, models.NewPluginError(err).ForbidRetry()
 			}
 
 		case "GB":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.NewPluginError(
+					fmt.Errorf("missing account number in bank account metadata"),
+				).ForbidRetry()
 			}
 
 			req := &client.CreateGBBankAccountRequest{
@@ -112,12 +120,14 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 			var err error
 			mangopayBankAccount, err = p.client.CreateGBBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, models.NewPluginError(err).ForbidRetry()
 			}
 
 		default:
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.NewPluginError(
+					fmt.Errorf("missing account number in bank account metadata"),
+				).ForbidRetry()
 			}
 
 			req := &client.CreateOtherBankAccountRequest{
@@ -137,7 +147,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 			var err error
 			mangopayBankAccount, err = p.client.CreateOtherBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, models.NewPluginError(err).ForbidRetry()
 			}
 		}
 	}
@@ -146,7 +156,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 	if mangopayBankAccount != nil {
 		raw, err := json.Marshal(mangopayBankAccount)
 		if err != nil {
-			return models.CreateBankAccountResponse{}, err
+			return models.CreateBankAccountResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 
 		account = models.PSPAccount{

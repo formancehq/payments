@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type OwnerAddress struct {
@@ -130,16 +128,11 @@ func (c *Client) createBankAccount(ctx context.Context, endpoint string, req any
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	var bankAccount BankAccount
-	_, err = c.httpClient.Do(httpReq, &bankAccount, nil)
-	switch err {
-	case nil:
-		return &bankAccount, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// Never retry bank account creation
-		// TODO(polo): retry ?
-		return nil, err
+	statusCode, err := c.httpClient.Do(httpReq, &bankAccount, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create bank account, got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to create bank account: %w", err)
+	return &bankAccount, nil
 }
 
 type BankAccount struct {
@@ -167,13 +160,9 @@ func (c *Client) GetBankAccounts(ctx context.Context, userID string, page, pageS
 	req.URL.RawQuery = q.Encode()
 
 	var bankAccounts []BankAccount
-	_, err = c.httpClient.Do(req, &bankAccounts, nil)
-	switch err {
-	case nil:
-		return bankAccounts, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &bankAccounts, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get bank accounts, got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get bank accounts: %w", err)
+	return bankAccounts, nil
 }

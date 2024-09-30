@@ -15,15 +15,17 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching payments"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	wallet, err := p.client.GetWallet(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
 	}
 
 	var amount big.Int

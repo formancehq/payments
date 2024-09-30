@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Payment struct {
@@ -61,13 +59,9 @@ func (c *Client) GetTransactions(ctx context.Context, walletsID string, page, pa
 	req.URL.RawQuery = q.Encode()
 
 	var payments []Payment
-	_, err = c.httpClient.Do(req, &payments, nil)
-	switch err {
-	case nil:
-		return payments, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &payments, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transactions, got code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to get transactions: %w", err)
+	return payments, nil
 }

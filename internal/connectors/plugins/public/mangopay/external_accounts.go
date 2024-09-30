@@ -19,7 +19,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
+			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	} else {
 		oldState = externalAccountsState{
@@ -30,10 +30,12 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 	var from client.User
 	if req.FromPayload == nil {
-		return models.FetchNextExternalAccountsResponse{}, errors.New("missing from payload when fetching external accounts")
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching external accounts"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextExternalAccountsResponse{}, err
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	newState := externalAccountsState{
@@ -48,7 +50,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 		pagedExternalAccounts, err := p.client.GetBankAccounts(ctx, from.ID, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
+			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedExternalAccounts) == 0 {
@@ -67,7 +69,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 			raw, err := json.Marshal(bankAccount)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
+				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -99,7 +101,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextExternalAccountsResponse{}, err
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextExternalAccountsResponse{
