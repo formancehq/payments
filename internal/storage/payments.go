@@ -119,7 +119,6 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 	}
 
 	if len(paymentsCaptured) > 0 {
-		fmt.Println("paymentsCaptured", paymentsCaptured)
 		_, err = tx.NewInsert().
 			Model(&paymentsCaptured).
 			On("CONFLICT (id) DO UPDATE").

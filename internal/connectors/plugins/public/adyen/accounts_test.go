@@ -22,7 +22,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 		plg = &Plugin{}
 	})
 
-	Context("fetch next accounts", func() {
+	Context("fetching next accounts", func() {
 		var (
 			m              *client.MockClient
 			sampleAccounts []management.Merchant
@@ -39,6 +39,10 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 					Name: pointer.For(fmt.Sprintf("name-%d", i)),
 				})
 			}
+		})
+
+		AfterEach(func() {
+			sampleAccounts = nil
 		})
 
 		It("should fetch next accounts - no state no results", func(ctx SpecContext) {
