@@ -107,8 +107,9 @@ type CreateBankAccountResponse struct {
 }
 
 type CreateWebhooksRequest struct {
-	FromPayload json.RawMessage
-	ConnectorID string
+	FromPayload    json.RawMessage
+	ConnectorID    string
+	WebhookBaseUrl string
 }
 
 type CreateWebhooksResponse struct {

@@ -33,6 +33,7 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 		headers := r.Header
 		queryValues := r.URL.Query()
 		path := r.URL.Path
+		username, password, ok := r.BasicAuth()
 
 		webhook := models.Webhook{
 			ID:          uuid.New().String(),
@@ -40,6 +41,13 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 			QueryValues: queryValues,
 			Headers:     headers,
 			Body:        body,
+		}
+
+		if ok {
+			webhook.BasicAuth = &models.BasicAuth{
+				Username: username,
+				Password: password,
+			}
 		}
 
 		err = backend.ConnectorsHandleWebhooks(ctx, path, webhook)

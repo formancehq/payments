@@ -11,7 +11,14 @@ type WebhookConfig struct {
 	URLPath     string      `json:"urlPath"`
 }
 
+type BasicAuth struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type PSPWebhook struct {
+	BasicAuth *BasicAuth `json:"basicAuth"`
+
 	QueryValues map[string][]string `json:"queryValues"`
 	Headers     map[string][]string `json:"headers"`
 	Body        []byte              `json:"payload"`
@@ -20,6 +27,7 @@ type PSPWebhook struct {
 type Webhook struct {
 	ID          string              `json:"id"`
 	ConnectorID ConnectorID         `json:"connectorID"`
+	BasicAuth   *BasicAuth          `json:"basicAuth"`
 	QueryValues map[string][]string `json:"queryValues"`
 	Headers     map[string][]string `json:"headers"`
 	Body        []byte              `json:"payload"`

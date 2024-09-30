@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"net/url"
 	"time"
 
 	"github.com/formancehq/go-libs/pointer"
@@ -36,16 +36,17 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 		return models.CreateWebhooksResponse{}, err
 	}
 
-	stackPublicURL := os.Getenv("STACK_PUBLIC_URL")
-	if stackPublicURL == "" {
-		err := errors.New("STACK_PUBLIC_URL is not set")
-		return models.CreateWebhooksResponse{}, err
+	if req.WebhookBaseUrl == "" {
+		return models.CreateWebhooksResponse{}, errors.New("STACK_PUBLIC_URL is not set")
 	}
 
-	webhookURL := fmt.Sprintf("%s/api/payments/v3/connectors/webhooks/%s", stackPublicURL, req.ConnectorID)
 	others := make([]models.PSPOther, 0, len(webhookConfigs))
 	for name, config := range webhookConfigs {
-		url := fmt.Sprintf("%s%s", webhookURL, config.urlPath)
+		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
+		if err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
+
 		resp, err := p.client.CreateWebhook(ctx, from.ID, name, config.triggerOn, url, config.version)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err

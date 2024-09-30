@@ -62,6 +62,7 @@ func NewRootCommand() *cobra.Command {
 	server.Flags().String(listenFlag, ":8080", "Listen address")
 	server.Flags().String(pluginsDirectoryPathFlag, "", "Plugin directory path")
 	server.Flags().String(stackFlag, "", "Stack name")
+	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	root.AddCommand(server)
 
 	return root

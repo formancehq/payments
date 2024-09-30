@@ -252,6 +252,11 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) Payment {
 		Metadata: from.Metadata,
 	}
 
+	if p.Status == PAYMENT_STATUS_AUTHORISATION {
+		// Will be capture later
+		p.Amount = big.NewInt(0)
+	}
+
 	p.Adjustments = append(p.Adjustments, FromPSPPaymentToPaymentAdjustement(from, connectorID))
 
 	return p
