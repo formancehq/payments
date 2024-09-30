@@ -22,16 +22,18 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 		}
 	}
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching payments"),
+		)
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 	}
 
 	newState := paymentsState{
@@ -44,7 +46,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			// retryable error already handled by the client
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedTransactions) == 0 {
@@ -54,7 +56,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		for _, transaction := range pagedTransactions {
 			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(fmt.Errorf("failed to parse transaction date: %v", err))
 			}
 
 			switch createdAt.Compare(oldState.LastCreatedAt) {
@@ -67,7 +69,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 			payment, err := transactionToPayment(transaction)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 			}
 
 			if payment != nil {
@@ -91,7 +93,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextPaymentsResponse{
@@ -104,7 +106,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, error) {
 	rawData, err := json.Marshal(transaction)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
+		return nil, models.NewPluginError(fmt.Errorf("failed to marshal transaction: %w", err))
 	}
 
 	paymentType, shouldBeRecorded := matchPaymentType(transaction.Attributes.Type, transaction.Attributes.Direction)
@@ -114,17 +116,17 @@ func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, 
 
 	createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse transaction date: %w", err)
+		return nil, models.NewPluginError(fmt.Errorf("failed to parse transaction date: %w", err))
 	}
 
 	c, err := currency.GetPrecision(supportedCurrenciesWithDecimal, transaction.Attributes.Currency)
 	if err != nil {
-		return nil, err
+		return nil, models.NewPluginError(err)
 	}
 
 	amount, err := currency.GetAmountWithPrecisionFromString(transaction.Attributes.Amount.String(), c)
 	if err != nil {
-		return nil, err
+		return nil, models.NewPluginError(err)
 	}
 
 	payment := models.PSPPayment{

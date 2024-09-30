@@ -6,8 +6,6 @@ import (
 	"io"
 )
 
-// TODO(polo): add retryable errors with temporal
-
 type moneycorpErrors struct {
 	Errors []*moneycorpError `json:"errors"`
 }
@@ -17,7 +15,6 @@ type moneycorpError struct {
 	Code       string `json:"code"`
 	Title      string `json:"title"`
 	Detail     string `json:"detail"`
-	// WithRetry  bool   `json:"-"`
 }
 
 func (me *moneycorpError) Error() error {

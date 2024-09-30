@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -94,8 +95,11 @@ func (t *apiTransport) login(ctx context.Context) error {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		// TODO(polo): retryable errors
-		return unmarshalError(resp.StatusCode, resp.Body).Error()
+		errRes := unmarshalError(resp.StatusCode, resp.Body)
+		if resp.StatusCode >= http.StatusInternalServerError {
+			return errRes.Error()
+		}
+		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, errRes.Error())
 	}
 
 	var res loginResponse

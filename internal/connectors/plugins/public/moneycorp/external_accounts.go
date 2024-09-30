@@ -23,16 +23,18 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
+			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 		}
 	}
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextExternalAccountsResponse{}, errors.New("missing from payload when fetching external accounts")
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching external accounts"),
+		)
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextExternalAccountsResponse{}, err
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	newState := externalAccountsState{
@@ -47,7 +49,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
+			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedRecipients) == 0 {
@@ -57,7 +59,9 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		for _, recipient := range pagedRecipients {
 			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", recipient.Attributes.CreatedAt)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
+				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(
+					fmt.Errorf("failed to parse transaction date: %v", err),
+				)
 			}
 
 			switch createdAt.Compare(oldState.LastCreatedAt) {
@@ -68,7 +72,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 			raw, err := json.Marshal(recipient)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
+				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -99,7 +103,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextExternalAccountsResponse{}, err
+		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextExternalAccountsResponse{
