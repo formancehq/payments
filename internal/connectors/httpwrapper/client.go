@@ -15,11 +15,15 @@ import (
 )
 
 var (
-	ErrStatusCodeUnexpected = errors.New("unexpected status code")
+	ErrStatusCodeUnexpected  = errors.New("unexpected status code")
+	ErrStatusCodeClientError = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
+	ErrStatusCodeServerError = fmt.Errorf("%w: http server error", ErrStatusCodeUnexpected)
 
 	defaultHttpErrorCheckerFn = func(statusCode int) error {
-		if statusCode >= http.StatusBadRequest {
-			return ErrStatusCodeUnexpected
+		if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
+			return ErrStatusCodeClientError
+		} else if statusCode >= http.StatusInternalServerError {
+			return ErrStatusCodeServerError
 		}
 		return nil
 	}
