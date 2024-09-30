@@ -14,13 +14,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type NewPlugin func(logger hclog.Logger) models.Plugin
+
 type impl struct {
 	logger hclog.Logger
 
 	plugin models.Plugin
 }
 
-func NewGRPCImplem(plugin models.Plugin) *impl {
+func NewGRPCImplem(newPlugin NewPlugin) *impl {
 	logger := hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Debug,
 		Output: os.Stderr,
@@ -28,7 +30,7 @@ func NewGRPCImplem(plugin models.Plugin) *impl {
 
 	return &impl{
 		logger: logger,
-		plugin: plugin,
+		plugin: newPlugin(logger),
 	}
 }
 
