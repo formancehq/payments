@@ -11,6 +11,7 @@ package client
 
 import (
 	context "context"
+	http "net/http"
 	reflect "reflect"
 	time "time"
 
@@ -38,6 +39,21 @@ func NewMockClient(ctrl *gomock.Controller) *MockClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
+}
+
+// Authenticate mocks base method.
+func (m *MockClient) Authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Authenticate", ctx, httpClient)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Authenticate indicates an expected call of Authenticate.
+func (mr *MockClientMockRecorder) Authenticate(ctx, httpClient any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authenticate", reflect.TypeOf((*MockClient)(nil).Authenticate), ctx, httpClient)
 }
 
 // GetAccounts mocks base method.

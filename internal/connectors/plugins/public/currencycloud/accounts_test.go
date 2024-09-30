@@ -38,10 +38,35 @@ var _ = Describe("Currencycloud Plugin Accounts", func() {
 				sampleAccounts = append(sampleAccounts, &client.Account{
 					ID:          fmt.Sprintf("%d", i),
 					AccountName: fmt.Sprintf("account-%d", i),
-					CreatedAt:   now.Add(time.Duration(50-i) * time.Minute),
-					UpdatedAt:   now.Add(time.Duration(50-i) * time.Minute),
+					CreatedAt:   now.Add(-time.Duration(50-i) * time.Minute),
+					UpdatedAt:   now.Add(-time.Duration(50-i) * time.Minute),
 				})
 			}
+		})
+
+		It("should fetch next accounts - no state no results", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
+				[]*client.Account{},
+				-1,
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Accounts).To(HaveLen(0))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state accountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastPage).To(Equal(1))
+			Expect(state.LastCreatedAt.IsZero()).To(BeTrue())
 		})
 
 		It("should fetch next accounts - no state pageSize > total accounts", func(ctx SpecContext) {
@@ -50,7 +75,7 @@ var _ = Describe("Currencycloud Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, gomock.Any(), 60).Return(
+			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
 				sampleAccounts,
 				-1,
 				nil,
@@ -96,9 +121,33 @@ var _ = Describe("Currencycloud Plugin Accounts", func() {
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 1, sampleAccounts[39].CreatedAt)),
+				State:    []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 1, sampleAccounts[38].CreatedAt.Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
+
+			m.EXPECT().GetAccounts(ctx, 1, 40).Return(
+				sampleAccounts[:40],
+				2,
+				nil,
+			)
+
+			m.EXPECT().GetAccounts(ctx, 2, 40).Return(
+				sampleAccounts[41:],
+				-1,
+				nil,
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Accounts).To(HaveLen(10))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state accountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastPage).To(Equal(2))
+			Expect(state.LastCreatedAt.UTC()).To(Equal(sampleAccounts[49].CreatedAt.UTC()))
 		})
 	})
 })

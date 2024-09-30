@@ -48,35 +48,18 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 			break
 		}
 
-		for _, transaction := range pagedTransactions {
-			switch transaction.UpdatedAt.Compare(newState.LastUpdatedAt) {
-			case -1, 0:
-				continue
-			default:
-			}
-
-			payment, err := transactionToPayment(transaction)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-
-			if payment != nil {
-				payments = append(payments, *payment)
-			}
-
-			newState.LastUpdatedAt = transaction.UpdatedAt
-
-			if len(payments) >= req.PageSize {
-				break
-			}
+		payments, err = fillPayments(payments, pagedTransactions, newState)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		if len(payments) >= req.PageSize {
-			hasMore = true
-			break
+		if len(payments) > 0 {
+			newState.LastUpdatedAt = payments[len(payments)-1].CreatedAt
 		}
 
-		if nextPage == -1 {
+		needMore := true
+		needMore, hasMore, payments = shouldFetchMore(payments, req.PageSize, nextPage)
+		if !needMore {
 			break
 		}
 
@@ -93,6 +76,31 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillPayments(
+	payments []models.PSPPayment,
+	pagedTransactions []client.Transaction,
+	newState paymentsState,
+) ([]models.PSPPayment, error) {
+	for _, transaction := range pagedTransactions {
+		switch transaction.UpdatedAt.Compare(newState.LastUpdatedAt) {
+		case -1, 0:
+			continue
+		default:
+		}
+
+		payment, err := transactionToPayment(transaction)
+		if err != nil {
+			return nil, err
+		}
+
+		if payment != nil {
+			payments = append(payments, *payment)
+		}
+	}
+
+	return payments, nil
 }
 
 func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, error) {

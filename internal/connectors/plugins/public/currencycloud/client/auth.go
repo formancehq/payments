@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (c *client) authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
+func (c *client) Authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
 	// now := time.Now()

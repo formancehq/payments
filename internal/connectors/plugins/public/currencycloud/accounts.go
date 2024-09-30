@@ -35,7 +35,6 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	hasMore := false
 	page := oldState.LastPage
 
-OUTER:
 	for {
 		pagedAccounts, nextPage, err := p.client.GetAccounts(ctx, page, req.PageSize)
 		if err != nil {
@@ -51,36 +50,19 @@ OUTER:
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		switch {
-		case len(accounts) > req.PageSize:
-			// We have more accounts than requested, return the first `req.PageSize`
-			// and set `hasMore` to true
-			hasMore = true
-			accounts = accounts[:req.PageSize]
-			break OUTER
-
-		case len(accounts) == req.PageSize:
-			// We have exactly the number of accounts requested, return them and
-			// set `hasMore` to true if it's not the last page
-			if nextPage != -1 {
-				// Not the last page
-				hasMore = true
-			}
-			break OUTER
-
-		case nextPage == -1:
-			// No more accounts to fetch, and the number of accounts is less than
-			// requested, return all accounts and set `hasMore` to false
-			hasMore = false
-			break OUTER
-
+		needMore := true
+		needMore, hasMore, accounts = shouldFetchMore(accounts, req.PageSize, nextPage)
+		if !needMore {
+			break
 		}
 
 		page = nextPage
 	}
 
 	newState.LastPage = page
-	newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+	if len(accounts) > 0 {
+		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {

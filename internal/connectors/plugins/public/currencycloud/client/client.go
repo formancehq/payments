@@ -12,6 +12,7 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
+	Authenticate(ctx context.Context, httpClient *http.Client) (string, error)
 	GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, int, error)
 	GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error)
 	GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error)
@@ -22,10 +23,20 @@ type Client interface {
 type apiTransport struct {
 	authToken  string
 	underlying *otelhttp.Transport
+
+	c *client
 }
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("X-Auth-Token", t.authToken)
+
+	if t.authToken == "" {
+		authToken, err := t.c.Authenticate(req.Context(), newHTTPClient())
+		if err != nil {
+			return nil, err
+		}
+		t.authToken = authToken
+	}
 
 	return t.underlying.RoundTrip(req)
 }
@@ -55,29 +66,18 @@ func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) 
 		endpoint = DevAPIEndpoint
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-	defer cancel()
-
 	c := &client{
 		endpoint: endpoint,
 		loginID:  loginID,
 		apiKey:   apiKey,
 	}
 
-	// Tokens expire after 30 minutes of inactivity which should not be the case
-	// for us since we're polling the API frequently.
-	// TODO(polo): add refreh
-	authToken, err := c.authenticate(ctx, newHTTPClient())
-	if err != nil {
-		return nil, err
-	}
-
 	config := &httpwrapper.Config{
 		Transport: &apiTransport{
-			authToken:  authToken,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
+
 	httpClient, err := httpwrapper.NewClient(config)
 	if err != nil {
 		return nil, err
