@@ -8,11 +8,20 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 )
 
 type Plugin struct {
+	logger hclog.Logger
+
 	config Config
 	client *client.Client
+}
+
+func New(logger hclog.Logger) models.Plugin {
+	return &Plugin{
+		logger: logger,
+	}
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
