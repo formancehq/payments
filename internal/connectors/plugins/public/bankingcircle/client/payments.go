@@ -81,7 +81,7 @@ type Payment struct {
 	} `json:"creditorInformation"`
 }
 
-func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Payment, error) {
+func (c *client) GetPayments(ctx context.Context, page int, pageSize int) ([]Payment, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ type StatusResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) GetPaymentStatus(ctx context.Context, paymentID string) (*StatusResponse, error) {
+func (c *client) GetPaymentStatus(ctx context.Context, paymentID string) (*StatusResponse, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}

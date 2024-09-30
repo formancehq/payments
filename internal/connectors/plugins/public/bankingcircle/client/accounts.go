@@ -34,7 +34,7 @@ type Account struct {
 	} `json:"balances"`
 }
 
-func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOpeningDate time.Time) ([]Account, error) {
+func (c *client) GetAccounts(ctx context.Context, page int, pageSize int, fromOpeningDate time.Time) ([]Account, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 	return nil, fmt.Errorf("failed to get accounts: %w", err)
 }
 
-func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
+func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}

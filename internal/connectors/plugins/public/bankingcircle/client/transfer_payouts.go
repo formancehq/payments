@@ -36,7 +36,7 @@ type PaymentResponse struct {
 	Status    string `json:"status"`
 }
 
-func (c *Client) InitiateTransferOrPayouts(ctx context.Context, transferRequest *PaymentRequest) (*PaymentResponse, error) {
+func (c *client) InitiateTransferOrPayouts(ctx context.Context, transferRequest *PaymentRequest) (*PaymentResponse, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}

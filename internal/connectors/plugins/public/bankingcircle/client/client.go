@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"time"
@@ -8,7 +9,16 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-type Client struct {
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
+type Client interface {
+	GetAccounts(ctx context.Context, page int, pageSize int, fromOpeningDate time.Time) ([]Account, error)
+	GetAccount(ctx context.Context, accountID string) (*Account, error)
+	GetPayments(ctx context.Context, page int, pageSize int) ([]Payment, error)
+	GetPaymentStatus(ctx context.Context, paymentID string) (*StatusResponse, error)
+	InitiateTransferOrPayouts(ctx context.Context, transferRequest *PaymentRequest) (*PaymentResponse, error)
+}
+
+type client struct {
 	httpClient httpwrapper.Client
 
 	username string
@@ -25,7 +35,7 @@ func New(
 	username, password,
 	endpoint, authorizationEndpoint,
 	uCertificate, uCertificateKey string,
-) (*Client, error) {
+) (Client, error) {
 	cert, err := tls.X509KeyPair([]byte(uCertificate), []byte(uCertificateKey))
 	if err != nil {
 		return nil, err
@@ -44,7 +54,7 @@ func New(
 		return nil, err
 	}
 
-	c := &Client{
+	c := &client{
 		httpClient: httpClient,
 
 		username:              username,
