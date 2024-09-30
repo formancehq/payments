@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Beneficiary struct {
@@ -38,12 +36,8 @@ func (c *Client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 	var res responseWrapper[[]Beneficiary]
 	var errRes modulrError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get beneficiaries: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get beneficiaries %w", err)
+	return &res, nil
 }

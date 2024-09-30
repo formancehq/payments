@@ -21,16 +21,18 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	}
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(
+			errors.New("missing from payload when fetching payments"),
+		).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	newState := paymentsState{
@@ -42,7 +44,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for page := 0; ; page++ {
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastTransactionTime)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedTransactions.Content) == 0 {
@@ -52,7 +54,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		for _, transaction := range pagedTransactions.Content {
 			createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", transaction.TransactionDate)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 			}
 
 			switch createdTime.Compare(oldState.LastTransactionTime) {
@@ -64,7 +66,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 			payment, err := transactionToPayment(transaction, from)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 			}
 
 			if payment != nil {
@@ -86,7 +88,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextPaymentsResponse{
