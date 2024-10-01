@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func (c *Client) authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
+func (c *client) authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
 	// now := time.Now()
@@ -20,7 +20,7 @@ func (c *Client) authenticate(ctx context.Context, httpClient *http.Client) (str
 	form.Add("login_id", c.loginID)
 	form.Add("api_key", c.apiKey)
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/authenticate/api"), strings.NewReader(form.Encode()))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
