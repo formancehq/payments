@@ -16,7 +16,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
 
@@ -29,7 +29,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	for page := 0; ; page++ {
 		pagedBeneficiarise, err := p.client.GetBeneficiaries(ctx, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
 		if len(pagedBeneficiarise.Content) == 0 {
@@ -39,7 +39,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		for _, beneficiary := range pagedBeneficiarise.Content {
 			createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", beneficiary.Created)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+				return models.FetchNextExternalAccountsResponse{}, err
 			}
 
 			switch createdTime.Compare(oldState.LastCreatedAt) {
@@ -51,7 +51,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 			raw, err := json.Marshal(beneficiary)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+				return models.FetchNextExternalAccountsResponse{}, err
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -76,7 +76,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
 	return models.FetchNextExternalAccountsResponse{

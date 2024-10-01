@@ -18,7 +18,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextAccountsResponse{}, err
 		}
 	}
 
@@ -31,7 +31,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	for page := 0; ; page++ {
 		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+			return models.FetchNextAccountsResponse{}, err
 		}
 
 		if len(pagedAccounts.Content) == 0 {
@@ -41,7 +41,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		for _, account := range pagedAccounts.Content {
 			createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", account.CreatedDate)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+				return models.FetchNextAccountsResponse{}, err
 			}
 
 			switch createdTime.Compare(oldState.LastCreatedAt) {
@@ -53,7 +53,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 			raw, err := json.Marshal(account)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+				return models.FetchNextAccountsResponse{}, err
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -79,7 +79,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+		return models.FetchNextAccountsResponse{}, err
 	}
 
 	return models.FetchNextAccountsResponse{

@@ -3,7 +3,6 @@ package bankingcircle
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"time"
 
@@ -14,17 +13,15 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(
-			errors.New("missing from payload when fetching balances"),
-		).ForbidRetry()
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextBalancesResponse{}, err
 	}
 
 	account, err := p.client.GetAccount(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+		return models.FetchNextBalancesResponse{}, err
 	}
 
 	var balances []models.PSPBalance
@@ -37,12 +34,12 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 
 		beginOfDayAmount, err := currency.GetAmountWithPrecisionFromString(balance.BeginOfDayAmount.String(), precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+			return models.FetchNextBalancesResponse{}, err
 		}
 
 		intraDayAmount, err := currency.GetAmountWithPrecisionFromString(balance.IntraDayAmount.String(), precision)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+			return models.FetchNextBalancesResponse{}, err
 		}
 
 		amount := big.NewInt(0).Add(beginOfDayAmount, intraDayAmount)

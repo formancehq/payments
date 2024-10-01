@@ -20,16 +20,16 @@ func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextE
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
 
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(ErrFromPayloadMissing).ForbidRetry()
+		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
 	newState := externalAccountsState{
@@ -41,7 +41,7 @@ func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextE
 	for {
 		pagedExternalAccounts, err := p.client.GetRecipientAccounts(ctx, from.ID, req.PageSize, newState.LastSeekPosition)
 		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
 		if len(pagedExternalAccounts.Content) == 0 {
@@ -55,7 +55,7 @@ func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextE
 
 			raw, err := json.Marshal(externalAccount)
 			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+				return models.FetchNextExternalAccountsResponse{}, err
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -86,7 +86,7 @@ func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextE
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextExternalAccountsResponse{}, models.NewPluginError(err)
+		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
 	return models.FetchNextExternalAccountsResponse{

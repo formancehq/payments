@@ -3,7 +3,6 @@ package mangopay
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -15,17 +14,15 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(
-			errors.New("missing from payload when fetching payments"),
-		).ForbidRetry()
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextBalancesResponse{}, err
 	}
 
 	wallet, err := p.client.GetWallet(ctx, from.Reference)
 	if err != nil {
-		return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+		return models.FetchNextBalancesResponse{}, err
 	}
 
 	var amount big.Int

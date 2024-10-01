@@ -59,9 +59,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 
 	pluginPath, ok := p.pluginsPath[connectorID.Provider]
 	if !ok {
-		return models.NewPluginError(
-			errors.Wrap(ErrNotFound, "plugin path not found"),
-		).ForbidRetry().TemporalError()
+		return ErrNotFound
 	}
 
 	loggerOptions := &hclog.LoggerOptions{
@@ -116,7 +114,7 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 
 	pluginInfo, ok := p.plugins[connectorID.String()]
 	if !ok {
-		return nil, models.NewPluginError(ErrNotFound).ForbidRetry().TemporalError()
+		return nil, ErrNotFound
 	}
 
 	return getPlugin(pluginInfo.client)

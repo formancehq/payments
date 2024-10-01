@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/formancehq/payments/internal/models"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -17,15 +16,12 @@ type FetchNextBalancesRequest struct {
 func (a Activities) PluginFetchNextBalances(ctx context.Context, request FetchNextBalancesRequest) (*models.FetchNextBalancesResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, err
+		return nil, temporalError(err)
 	}
 
 	resp, err := plugin.FetchNextBalances(ctx, request.Req)
 	if err != nil {
-		if plgErr, ok := err.(*models.PluginError); ok {
-			return nil, plgErr.TemporalError()
-		}
-		return nil, temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeUnhandled, err)
+		return nil, temporalError(err)
 	}
 	return &resp, nil
 }

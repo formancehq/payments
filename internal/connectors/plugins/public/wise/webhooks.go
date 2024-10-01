@@ -29,14 +29,14 @@ var webhookConfigs map[string]webhookConfig
 func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.CreateWebhooksResponse{}, models.NewPluginError(ErrFromPayloadMissing).ForbidRetry()
+		return models.CreateWebhooksResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.CreateWebhooksResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.CreateWebhooksResponse{}, err
 	}
 
 	if req.WebhookBaseUrl == "" {
-		return models.CreateWebhooksResponse{}, models.NewPluginError(ErrStackPublicUrlMissing)
+		return models.CreateWebhooksResponse{}, ErrStackPublicUrlMissing
 	}
 
 	others := make([]models.PSPOther, 0, len(webhookConfigs))
@@ -48,12 +48,12 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 
 		resp, err := p.client.CreateWebhook(ctx, from.ID, name, config.triggerOn, url, config.version)
 		if err != nil {
-			return models.CreateWebhooksResponse{}, models.NewPluginError(err)
+			return models.CreateWebhooksResponse{}, err
 		}
 
 		raw, err := json.Marshal(resp)
 		if err != nil {
-			return models.CreateWebhooksResponse{}, models.NewPluginError(err)
+			return models.CreateWebhooksResponse{}, err
 		}
 
 		others = append(others, models.PSPOther{
@@ -70,12 +70,12 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 func (p Plugin) translateTransferStateChangedWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
 	transfer, err := p.client.TranslateTransferStateChangedWebhook(ctx, req.Webhook.Body)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	payment, err := fromTransferToPayment(transfer)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	return models.WebhookResponse{
@@ -86,12 +86,12 @@ func (p Plugin) translateTransferStateChangedWebhook(ctx context.Context, req mo
 func (p Plugin) translateBalanceUpdateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
 	update, err := p.client.TranslateBalanceUpdateWebhook(ctx, req.Webhook.Body)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	raw, err := json.Marshal(update)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	occuredAt, err := time.Parse(time.RFC3339, update.Data.OccurredAt)
@@ -113,7 +113,7 @@ func (p Plugin) translateBalanceUpdateWebhook(ctx context.Context, req models.Tr
 
 	amount, err := currency.GetAmountWithPrecisionFromString(update.Data.Amount.String(), precision)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	payment := models.PSPPayment{
