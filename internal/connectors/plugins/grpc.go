@@ -20,8 +20,9 @@ type impl struct {
 
 func NewGRPCImplem(plugin models.Plugin) *impl {
 	logger := hclog.New(&hclog.LoggerOptions{
-		Level:  hclog.Debug,
-		Output: os.Stderr,
+		Level:      hclog.Debug,
+		Output:     os.Stderr,
+		JSONFormat: true,
 	})
 
 	hclog.SetDefault(logger)
