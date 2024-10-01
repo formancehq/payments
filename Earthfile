@@ -111,7 +111,7 @@ generate:
     RUN apk update && apk add openjdk11
     DO --pass-args core+GO_INSTALL --package=go.uber.org/mock/mockgen@latest
     COPY (+sources/*) /src
-    WORKDIR /src/components/payments
+    WORKDIR /src
     DO --pass-args core+GO_GENERATE
     SAVE ARTIFACT internal AS LOCAL internal
 
