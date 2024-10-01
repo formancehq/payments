@@ -61,6 +61,7 @@ func Module(pluginPath map[string]string, stack, stackURL string) fx.Option {
 					return engine.OnStart(ctx)
 				},
 				OnStop: func(ctx context.Context) error {
+					engine.OnStop(ctx)
 					workers.Close()
 					return nil
 				},
