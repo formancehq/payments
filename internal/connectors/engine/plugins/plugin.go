@@ -29,16 +29,21 @@ type plugins struct {
 
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
+
+	debug         bool
+	jsonFormatter bool
 }
 
 type pluginInformation struct {
 	client *plugin.Client
 }
 
-func New(pluginsPath map[string]string) *plugins {
+func New(pluginsPath map[string]string, debug, jsonFormatter bool) *plugins {
 	return &plugins{
-		pluginsPath: pluginsPath,
-		plugins:     make(map[string]pluginInformation),
+		pluginsPath:   pluginsPath,
+		plugins:       make(map[string]pluginInformation),
+		debug:         debug,
+		jsonFormatter: jsonFormatter,
 	}
 }
 
@@ -57,16 +62,25 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		return errors.Wrap(ErrNotFound, "plugin path not found")
 	}
 
+	loggerOptions := &hclog.LoggerOptions{
+		Name:   fmt.Sprintf("%s-%s", connectorID.Provider, connectorID.String()),
+		Output: os.Stdout,
+		Level:  hclog.Info,
+	}
+
+	if p.debug {
+		loggerOptions.Level = hclog.Debug
+	}
+	if p.jsonFormatter {
+		loggerOptions.JSONFormat = true
+	}
+
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
 		Cmd:              exec.Command("sh", "-c", pluginPath),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Logger: hclog.New(&hclog.LoggerOptions{
-			Name:   fmt.Sprintf("%s-%s", connectorID.Provider, connectorID.String()),
-			Output: os.Stdout,
-			Level:  hclog.Debug,
-		}),
+		Logger:           hclog.New(loggerOptions),
 	})
 
 	p.plugins[connectorID.String()] = pluginInformation{

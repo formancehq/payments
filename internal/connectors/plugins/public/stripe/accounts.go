@@ -22,13 +22,13 @@ func resolveAccount(ref string) string {
 	return ref
 }
 
-type AccountsState struct {
+type accountsState struct {
 	RootCreated bool            `json:"root_created"`
 	Timeline    client.Timeline `json:"timeline"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var oldState AccountsState
+	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextAccountsResponse{}, err

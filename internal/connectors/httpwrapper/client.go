@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 )
@@ -82,8 +83,7 @@ func (c *client) Do(req *http.Request, expectedBody, errorBody any) (int, error)
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			_ = err
-			// TODO(polo): log error
+			hclog.Default().Error("failed to close response body", "error", err)
 		}
 	}()
 

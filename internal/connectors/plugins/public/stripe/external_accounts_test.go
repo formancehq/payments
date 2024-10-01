@@ -1,10 +1,9 @@
-package stripe_test
+package stripe
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -15,11 +14,11 @@ import (
 
 var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 	var (
-		plg *stripe.Plugin
+		plg *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &stripe.Plugin{}
+		plg = &Plugin{}
 	})
 
 	Context("fetch next ExternalAccounts", func() {
@@ -66,7 +65,7 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 			Expect(res.HasMore).To(BeTrue())
 			Expect(res.ExternalAccounts).To(HaveLen(pageSize))
 
-			var state stripe.AccountsState
+			var state accountsState
 
 			err = json.Unmarshal(res.NewState, &state)
 			Expect(err).To(BeNil())

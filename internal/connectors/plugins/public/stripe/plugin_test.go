@@ -1,4 +1,4 @@
-package stripe_test
+package stripe
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,11 +18,11 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Stripe Plugin", func() {
 	var (
-		plg *stripe.Plugin
+		plg *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &stripe.Plugin{}
+		plg = &Plugin{}
 	})
 
 	Context("install", func() {

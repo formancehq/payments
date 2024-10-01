@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -88,8 +89,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			// TODO(polo): log the error
-			_ = err
+			hclog.Default().Error("failed to close response body", "error", err)
 		}
 	}()
 
