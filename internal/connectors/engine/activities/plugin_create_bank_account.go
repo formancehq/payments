@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/formancehq/payments/internal/models"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -20,8 +21,10 @@ func (a Activities) PluginCreateBankAccount(ctx context.Context, request CreateB
 
 	resp, err := plugin.CreateBankAccount(ctx, request.Req)
 	if err != nil {
-		// TODO(polo): temporal errors
-		return nil, err
+		if plgErr, ok := err.(*models.PluginError); ok {
+			return nil, plgErr.TemporalError()
+		}
+		return nil, temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeUnhandled, err)
 	}
 	return &resp, nil
 }
