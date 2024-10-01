@@ -67,16 +67,26 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 	paymentsToInsert := make([]payment, 0, len(payments))
 	adjustmentsToInsert := make([]paymentAdjustment, 0)
 	paymentsRefunded := make([]payment, 0)
+	paymentsInitialAmountToAdjust := make([]payment, 0)
+	paymentsCaptured := make([]payment, 0)
 	for _, p := range payments {
 		paymentsToInsert = append(paymentsToInsert, fromPaymentModels(p))
 
 		for _, a := range p.Adjustments {
 			adjustmentsToInsert = append(adjustmentsToInsert, fromPaymentAdjustmentModels(a))
 			switch a.Status {
+			case models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT:
+				res := fromPaymentModels(p)
+				res.InitialAmount = a.Amount
+				paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
 			case models.PAYMENT_STATUS_REFUNDED:
 				res := fromPaymentModels(p)
 				res.Amount = a.Amount
 				paymentsRefunded = append(paymentsRefunded, res)
+			case models.PAYMENT_STATUS_CAPTURE, models.PAYMENT_STATUS_REFUND_REVERSED:
+				res := fromPaymentModels(p)
+				res.Amount = a.Amount
+				paymentsCaptured = append(paymentsCaptured, res)
 			}
 		}
 	}
@@ -94,6 +104,28 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			Exec(ctx)
 		if err != nil {
 			return e("failed to insert payments", err)
+		}
+	}
+
+	if len(paymentsInitialAmountToAdjust) > 0 {
+		_, err = tx.NewInsert().
+			Model(&paymentsInitialAmountToAdjust).
+			On("CONFLICT (id) DO UPDATE").
+			Set("initial_amount = EXCLUDED.initial_amount").
+			Exec(ctx)
+		if err != nil {
+			return e("failed to update payment", err)
+		}
+	}
+
+	if len(paymentsCaptured) > 0 {
+		_, err = tx.NewInsert().
+			Model(&paymentsCaptured).
+			On("CONFLICT (id) DO UPDATE").
+			Set("amount = payment.amount + EXCLUDED.amount").
+			Exec(ctx)
+		if err != nil {
+			return e("failed to update payment", err)
 		}
 	}
 

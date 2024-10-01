@@ -32,6 +32,7 @@ func (w Workflow) runHandleWebhooks(
 		models.TranslateWebhookRequest{
 			Name: handleWebhooks.WebhookConfig.Name,
 			Webhook: models.PSPWebhook{
+				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
 				QueryValues: handleWebhooks.Webhook.QueryValues,
 				Headers:     handleWebhooks.Webhook.Headers,
 				Body:        handleWebhooks.Webhook.Body,

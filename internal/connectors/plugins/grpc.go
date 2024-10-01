@@ -242,8 +242,9 @@ func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksR
 	i.logger.Info("creating webhooks...")
 
 	resp, err := i.plugin.CreateWebhooks(ctx, models.CreateWebhooksRequest{
-		ConnectorID: req.ConnectorId,
-		FromPayload: req.FromPayload,
+		ConnectorID:    req.ConnectorId,
+		FromPayload:    req.FromPayload,
+		WebhookBaseUrl: req.WebhookBaseUrl,
 	})
 	if err != nil {
 		i.logger.Error("creating webhooks failed: ", err)

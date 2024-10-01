@@ -33,15 +33,17 @@ type Workflow struct {
 	plugins  plugins.Plugins
 	webhooks webhooks.Webhooks
 
-	stack string
+	stackPublicURL string
+	stack          string
 }
 
-func New(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks, stack string) Workflow {
+func New(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks, stack string, stackPublicURL string) Workflow {
 	return Workflow{
 		temporalClient: temporalClient,
 		plugins:        plugins,
 		webhooks:       webhooks,
 		stack:          stack,
+		stackPublicURL: stackPublicURL,
 	}
 }
 
