@@ -464,7 +464,16 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 }
 
 func (e *engine) OnStop(ctx context.Context) {
-	e.wg.Wait()
+	waitingChan := make(chan struct{})
+	go func() {
+		e.wg.Wait()
+		close(waitingChan)
+	}()
+
+	select {
+	case <-waitingChan:
+	case <-ctx.Done():
+	}
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
