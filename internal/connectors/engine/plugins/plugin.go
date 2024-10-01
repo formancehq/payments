@@ -17,6 +17,7 @@ var (
 	ErrNotFound = errors.New("plugin not found")
 )
 
+//go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
 	RegisterPlugin(connectorID models.ConnectorID) error
 	UnregisterPlugin(connectorID models.ConnectorID) error
