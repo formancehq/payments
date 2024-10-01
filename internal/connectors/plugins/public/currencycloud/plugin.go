@@ -22,6 +22,12 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	if err != nil {
 		return models.InstallResponse{}, err
 	}
+
+	err = client.Authenticate(ctx)
+	if err != nil {
+		return models.InstallResponse{}, err
+	}
+
 	p.client = client
 
 	return models.InstallResponse{
