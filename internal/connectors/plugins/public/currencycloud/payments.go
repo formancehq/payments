@@ -22,19 +22,12 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		}
 	}
 
-	var from models.PSPAccount
-	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
-	}
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
-	}
-
 	newState := paymentsState{
 		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
 	var payments []models.PSPPayment
+	var updatedAts []time.Time
 	hasMore := false
 	page := 1
 	for {
@@ -47,36 +40,24 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 			break
 		}
 
-		for _, transaction := range pagedTransactions {
-			switch transaction.UpdatedAt.Compare(newState.LastUpdatedAt) {
-			case -1, 0:
-				continue
-			default:
-			}
-
-			payment, err := transactionToPayment(transaction)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-
-			if payment != nil {
-				payments = append(payments, *payment)
-			}
-
-			newState.LastUpdatedAt = transaction.UpdatedAt
-
-			if len(payments) >= req.PageSize {
-				break
-			}
+		payments, updatedAts, err = fillPayments(payments, updatedAts, pagedTransactions, newState)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		if len(payments) >= req.PageSize {
-			hasMore = true
+		needMore := true
+		needMore, hasMore, payments = shouldFetchMore(payments, nextPage, req.PageSize)
+
+		if len(payments) > 0 {
+			newState.LastUpdatedAt = updatedAts[len(payments)-1]
+		}
+
+		if !needMore {
 			break
 		}
 
-		if nextPage == -1 {
-			break
+		if len(payments) > 0 {
+			newState.LastUpdatedAt = updatedAts[len(payments)-1]
 		}
 
 		page = nextPage
@@ -92,6 +73,33 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillPayments(
+	payments []models.PSPPayment,
+	updatedAts []time.Time,
+	pagedTransactions []client.Transaction,
+	newState paymentsState,
+) ([]models.PSPPayment, []time.Time, error) {
+	for _, transaction := range pagedTransactions {
+		switch transaction.UpdatedAt.Compare(newState.LastUpdatedAt) {
+		case -1, 0:
+			continue
+		default:
+		}
+
+		payment, err := transactionToPayment(transaction)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if payment != nil {
+			payments = append(payments, *payment)
+			updatedAts = append(updatedAts, transaction.UpdatedAt)
+		}
+	}
+
+	return payments, updatedAts, nil
 }
 
 func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, error) {
@@ -126,7 +134,7 @@ func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, e
 	switch paymentType {
 	case models.PAYMENT_TYPE_PAYOUT:
 		payment.SourceAccountReference = &transaction.AccountID
-	default:
+	case models.PAYMENT_TYPE_PAYIN:
 		payment.DestinationAccountReference = &transaction.AccountID
 	}
 

@@ -2,14 +2,15 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-func (c *client) authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
+func (c *client) Authenticate(ctx context.Context) error {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
 	// now := time.Now()
@@ -23,22 +24,11 @@ func (c *client) authenticate(ctx context.Context, httpClient *http.Client) (str
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/authenticate/api"), strings.NewReader(form.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Accept", "application/json")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to do get request: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", unmarshalError(resp.StatusCode, resp.Body).Error()
-	}
 
 	//nolint:tagliatelle // allow for client code
 	type response struct {
@@ -46,10 +36,15 @@ func (c *client) authenticate(ctx context.Context, httpClient *http.Client) (str
 	}
 
 	var res response
-
-	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return "", fmt.Errorf("failed to decode response body: %w", err)
+	var errRes currencyCloudError
+	_, err = c.httpClient.Do(req, &res, &errRes)
+	switch err {
+	case nil:
+		c.authToken = res.AuthToken
+	case httpwrapper.ErrStatusCodeUnexpected:
+		// TODO(polo): retryable errors
+		return errRes.Error()
 	}
 
-	return res.AuthToken, nil
+	return nil
 }
