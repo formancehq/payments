@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type Funds struct {
@@ -54,7 +56,10 @@ func (c *Client) GetWalletTransfer(ctx context.Context, transferID string) (Tran
 	var transfer TransferResponse
 	statusCode, err := c.httpClient.Do(req, &transfer, nil)
 	if err != nil {
-		return transfer, fmt.Errorf("failed to get transfer response, got code %d: %w", statusCode, err)
+		return transfer, errorsutils.NewErrorWithExitCode(
+			fmt.Errorf("failed to get transfer response: %w", err),
+			statusCode,
+		)
 	}
 	return transfer, nil
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type User struct {
@@ -33,7 +35,7 @@ func (c *Client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, 
 	var users []User
 	statusCode, err := c.httpClient.Do(req, &users, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get user response, got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get user response: %w", err), statusCode)
 	}
 	return users, nil
 }

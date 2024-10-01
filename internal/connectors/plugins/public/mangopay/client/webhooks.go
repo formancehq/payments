@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type EventType string
@@ -100,7 +102,7 @@ func (c *Client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, &hooks, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list hooks, got code %d: %w: %w", statusCode, err, errRes.Error())
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to list hooks: %w %w", err, errRes.Error()), statusCode)
 	}
 	return hooks, nil
 }
@@ -134,7 +136,7 @@ func (c *Client) CreateHook(ctx context.Context, eventType EventType, URL string
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, nil, &errRes)
 	if err != nil {
-		return fmt.Errorf("failed to create hook, got code %d: %w: %w", statusCode, err, errRes.Error())
+		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create hook: %w %w", err, errRes.Error()), statusCode)
 	}
 	return nil
 }
@@ -168,7 +170,7 @@ func (c *Client) UpdateHook(ctx context.Context, hookID string, URL string) erro
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, nil, &errRes)
 	if err != nil {
-		return fmt.Errorf("failed to update hook, got code %d: %w: %w", statusCode, err, errRes.Error())
+		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to update hook: %w %w", err, errRes.Error()), statusCode)
 	}
 	return nil
 }
