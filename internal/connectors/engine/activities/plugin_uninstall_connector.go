@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/formancehq/payments/internal/models"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -15,18 +14,15 @@ type UninstallConnectorRequest struct {
 func (a Activities) PluginUninstallConnector(ctx context.Context, request UninstallConnectorRequest) (*models.UninstallResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, err
+		return nil, temporalError(err)
 	}
 
 	resp, err := plugin.Uninstall(ctx, models.UninstallRequest{})
 	if err != nil {
-		if plgErr, ok := err.(*models.PluginError); ok {
-			return nil, plgErr.TemporalError()
-		}
-		return nil, temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeUnhandled, err)
+		return nil, temporalError(err)
 	}
 
-	return &resp, err
+	return &resp, nil
 }
 
 var PluginUninstallConnectorActivity = Activities{}.PluginUninstallConnector

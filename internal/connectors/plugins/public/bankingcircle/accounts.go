@@ -21,7 +21,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+			return models.FetchNextAccountsResponse{}, err
 		}
 	}
 
@@ -46,12 +46,12 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		for _, account := range filteredAccounts {
 			openingDate, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", account.OpeningDate)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, models.NewPluginError(fmt.Errorf("failed to parse opening date: %w", err))
+				return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to parse opening date: %w", err)
 			}
 
 			raw, err := json.Marshal(account)
 			if err != nil {
-				return models.FetchNextAccountsResponse{}, models.NewPluginError(fmt.Errorf("failed to marshal account: %w", err))
+				return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to marshal account: %w", err)
 			}
 
 			accounts = append(accounts, models.PSPAccount{
@@ -78,7 +78,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
+		return models.FetchNextAccountsResponse{}, err
 	}
 
 	return models.FetchNextAccountsResponse{

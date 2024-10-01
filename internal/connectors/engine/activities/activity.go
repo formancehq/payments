@@ -11,8 +11,6 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-const ErrTypeUnhandled = "unhandled"
-
 type Activities struct {
 	storage storage.Storage
 	events  *events.Events

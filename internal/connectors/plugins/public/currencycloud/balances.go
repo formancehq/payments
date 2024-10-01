@@ -17,7 +17,7 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 
 		pagedBalances, nextPage, err := p.client.GetBalances(ctx, page, req.PageSize)
 		if err != nil {
-			return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+			return models.FetchNextBalancesResponse{}, err
 		}
 
 		page = nextPage
@@ -30,7 +30,7 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 
 			amount, err := currency.GetAmountWithPrecisionFromString(balance.Amount.String(), precision)
 			if err != nil {
-				return models.FetchNextBalancesResponse{}, models.NewPluginError(err)
+				return models.FetchNextBalancesResponse{}, err
 			}
 
 			balances = append(balances, models.PSPBalance{

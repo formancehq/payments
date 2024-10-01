@@ -3,7 +3,6 @@ package currencycloud
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
@@ -19,18 +18,16 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(
-			errors.New("missing from payload when fetching payments"),
-		).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	newState := paymentsState{
@@ -43,7 +40,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for {
 		pagedTransactions, nextPage, err := p.client.GetTransactions(ctx, page, req.PageSize, newState.LastUpdatedAt)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
 		if len(pagedTransactions) == 0 {
@@ -59,7 +56,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 			payment, err := transactionToPayment(transaction)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+				return models.FetchNextPaymentsResponse{}, err
 			}
 
 			if payment != nil {
@@ -87,7 +84,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	return models.FetchNextPaymentsResponse{

@@ -22,7 +22,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextPaymentsResponse{}, err
 		}
 	} else {
 		oldState = paymentsState{
@@ -32,10 +32,10 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(errors.New("missing from payload when fetching payments")).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	newState := paymentsState{
@@ -49,7 +49,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for {
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreationDate)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
 		if len(pagedTransactions) == 0 {
@@ -59,7 +59,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		for _, transaction := range pagedTransactions {
 			payment, err := transactionToPayment(transaction)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+				return models.FetchNextPaymentsResponse{}, err
 			}
 
 			if payment != nil {
@@ -89,7 +89,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	return models.FetchNextPaymentsResponse{
