@@ -63,9 +63,10 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		Cmd:              exec.Command("sh", "-c", pluginPath),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		Logger: hclog.New(&hclog.LoggerOptions{
-			Name:   fmt.Sprintf("%s-%s", connectorID.Provider, connectorID.String()),
-			Output: os.Stdout,
-			Level:  hclog.Debug,
+			Name:       fmt.Sprintf("%s-%s", connectorID.Provider, connectorID.String()),
+			Output:     os.Stdout,
+			Level:      hclog.Debug,
+			JSONFormat: true,
 		}),
 	})
 
