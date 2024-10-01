@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/formancehq/go-libs/api"
-	"github.com/formancehq/go-libs/contextutil"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 )
@@ -31,9 +30,6 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		// Detach the context to avoid cancellation of the installation process
-		// leading to a partial installation
-		ctx, _ = contextutil.Detached(ctx)
 		connectorID, err := backend.ConnectorsInstall(ctx, provider, config)
 		if err != nil {
 			otel.RecordError(span, err)
