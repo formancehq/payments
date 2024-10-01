@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
@@ -32,6 +33,7 @@ type Engine interface {
 	DeletePool(ctx context.Context, poolID uuid.UUID) error
 
 	OnStart(ctx context.Context) error
+	OnStop(ctx context.Context)
 }
 
 type engine struct {
@@ -43,6 +45,8 @@ type engine struct {
 	webhooks webhooks.Webhooks
 
 	stack string
+
+	wg sync.WaitGroup
 }
 
 func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins, storage storage.Storage, webhooks webhooks.Webhooks, stack string) Engine {
@@ -52,6 +56,8 @@ func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins
 		plugins:        plugins,
 		storage:        storage,
 		webhooks:       webhooks,
+		stack:          stack,
+		wg:             sync.WaitGroup{},
 	}
 }
 
@@ -75,6 +81,14 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Provider:  provider,
 		Config:    rawConfig,
 	}
+
+	// Detached the context to avoid being in a weird state if request is
+	// cancelled in the middle of the operation.
+	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
 
 	if err := e.storage.ConnectorsInstall(ctx, connector); err != nil {
 		return models.ConnectorID{}, err
@@ -167,6 +181,11 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	// Detached the context to avoid being in a weird state if request is
 	// cancelled in the middle of the operation.
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	if err := e.UninstallConnector(ctx, connectorID); err != nil {
 		return err
 	}
@@ -254,6 +273,11 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	}
 
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	if _, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
@@ -284,6 +308,11 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	}
 
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
@@ -317,6 +346,11 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 	}
 
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	pool, err := e.storage.PoolsGet(ctx, id)
 	if err != nil {
 		return err
@@ -355,6 +389,11 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	}
 
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	pool, err := e.storage.PoolsGet(ctx, id)
 	if err != nil {
 		return err
@@ -392,6 +431,11 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 		return err
 	}
 	ctx, _ = contextutil.Detached(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
@@ -417,6 +461,10 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (e *engine) OnStop(ctx context.Context) {
+	e.wg.Wait()
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
