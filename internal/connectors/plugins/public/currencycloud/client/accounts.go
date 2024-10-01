@@ -20,6 +20,10 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/accounts/find"), http.NoBody)
 	if err != nil {

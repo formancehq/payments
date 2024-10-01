@@ -10,7 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-func (c *client) Authenticate(ctx context.Context) error {
+func (c *client) authenticate(ctx context.Context) error {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
 	// now := time.Now()
@@ -46,5 +46,15 @@ func (c *client) Authenticate(ctx context.Context) error {
 		return errRes.Error()
 	}
 
+	return nil
+}
+
+func (c *client) ensureLogin(ctx context.Context) error {
+	if c.authToken == "" {
+		_, err, _ := c.singleFlight.Do("authenticate", func() (interface{}, error) {
+			return nil, c.authenticate(ctx)
+		})
+		return err
+	}
 	return nil
 }
