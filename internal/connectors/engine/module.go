@@ -17,7 +17,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(pluginPath map[string]string, stack, stackURL string) fx.Option {
+func Module(pluginPath map[string]string, stack, stackURL string, debug, jsonFormatter bool) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{}),
 		fx.Provide(func(
@@ -33,7 +33,7 @@ func Module(pluginPath map[string]string, stack, stackURL string) fx.Option {
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func() plugins.Plugins {
-			return plugins.New(pluginPath)
+			return plugins.New(pluginPath, debug, jsonFormatter)
 		}),
 		fx.Provide(func() webhooks.Webhooks {
 			return webhooks.New()
