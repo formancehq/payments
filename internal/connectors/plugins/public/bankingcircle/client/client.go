@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/hashicorp/go-hclog"
 )
 
 type Client struct {
@@ -22,6 +23,7 @@ type Client struct {
 }
 
 func New(
+	logger hclog.Logger,
 	username, password,
 	endpoint, authorizationEndpoint,
 	uCertificate, uCertificateKey string,
@@ -39,7 +41,7 @@ func New(
 	config := &httpwrapper.Config{
 		Transport: tr,
 	}
-	httpClient, err := httpwrapper.NewClient(config)
+	httpClient, err := httpwrapper.NewClient(logger, config)
 	if err != nil {
 		return nil, err
 	}

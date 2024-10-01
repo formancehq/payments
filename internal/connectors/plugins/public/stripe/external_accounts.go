@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type ExternalAccountsState struct {
+type externalAccountsState struct {
 	Timeline client.Timeline `json:"timeline"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	var (
-		oldState ExternalAccountsState
+		oldState externalAccountsState
 		from     models.PSPAccount
 	)
 	if req.State != nil {

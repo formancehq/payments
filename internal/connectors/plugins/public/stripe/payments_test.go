@@ -1,12 +1,12 @@
-package stripe_test
+package stripe
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	stripesdk "github.com/stripe/stripe-go/v79"
@@ -15,11 +15,13 @@ import (
 
 var _ = Describe("Stripe Plugin Payments", func() {
 	var (
-		plg *stripe.Plugin
+		plg *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &stripe.Plugin{}
+		plg = &Plugin{
+			logger: hclog.Default(),
+		}
 	})
 
 	Context("fetch next Payments", func() {
@@ -212,7 +214,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 				nil,
 			)
 			res, err := plg.FetchNextPayments(ctx, req)
-			Expect(err).To(MatchError(ContainSubstring(stripe.ErrUnsupportedCurrency.Error())))
+			Expect(err).To(MatchError(ContainSubstring(ErrUnsupportedCurrency.Error())))
 			Expect(res.HasMore).To(BeFalse())
 		})
 
@@ -283,7 +285,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 			Expect(res.Payments[11].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(res.Payments[11].Status).To(Equal(models.PAYMENT_STATUS_DISPUTE))
 
-			var state stripe.PaymentsState
+			var state paymentsState
 
 			err = json.Unmarshal(res.NewState, &state)
 			Expect(err).To(BeNil())

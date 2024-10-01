@@ -1,12 +1,12 @@
-package stripe_test
+package stripe
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	stripesdk "github.com/stripe/stripe-go/v79"
@@ -15,11 +15,13 @@ import (
 
 var _ = Describe("Stripe Plugin Accounts", func() {
 	var (
-		plg *stripe.Plugin
+		plg *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &stripe.Plugin{}
+		plg = &Plugin{
+			logger: hclog.Default(),
+		}
 	})
 
 	Context("fetch next accounts", func() {
@@ -62,7 +64,7 @@ var _ = Describe("Stripe Plugin Accounts", func() {
 			Expect(res.Accounts).To(HaveLen(req.PageSize))
 			Expect(res.Accounts[0].Reference).To(Equal("root"))
 
-			var state stripe.AccountsState
+			var state accountsState
 
 			err = json.Unmarshal(res.NewState, &state)
 			Expect(err).To(BeNil())

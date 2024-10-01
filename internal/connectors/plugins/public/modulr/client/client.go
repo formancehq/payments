@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client/hmac"
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -42,7 +43,7 @@ func (m *Client) buildEndpoint(path string, args ...interface{}) string {
 
 const SandboxAPIEndpoint = "https://api-sandbox.modulrfinance.com/api-sandbox-token"
 
-func New(apiKey, apiSecret, endpoint string) (*Client, error) {
+func New(logger hclog.Logger, apiKey, apiSecret, endpoint string) (*Client, error) {
 	if endpoint == "" {
 		endpoint = SandboxAPIEndpoint
 	}
@@ -58,7 +59,7 @@ func New(apiKey, apiSecret, endpoint string) (*Client, error) {
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(config)
+	httpClient, err := httpwrapper.NewClient(logger, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create modulr client: %w", err)
 	}
