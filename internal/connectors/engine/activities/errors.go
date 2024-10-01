@@ -16,7 +16,7 @@ var nonRetryableErrors = []error{
 	plugins.ErrNotFound,
 }
 
-func temporalError(err error) error {
+func temporalError(err error, cause string) error {
 	isRetryable := true
 
 	for _, candidate := range nonRetryableErrors {
@@ -27,7 +27,7 @@ func temporalError(err error) error {
 	}
 
 	if isRetryable {
-		return temporal.NewApplicationErrorWithCause(err.Error(), "application", err)
+		return temporal.NewApplicationErrorWithCause(err.Error(), cause, err)
 	}
-	return temporal.NewNonRetryableApplicationError(err.Error(), "application", err)
+	return temporal.NewNonRetryableApplicationError(err.Error(), cause, err)
 }
