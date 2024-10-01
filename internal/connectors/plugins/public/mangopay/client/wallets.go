@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type Wallet struct {
@@ -42,7 +44,7 @@ func (c *Client) GetWallets(ctx context.Context, userID string, page, pageSize i
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, &wallets, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get wallets, got code %d: %w: %w", statusCode, err, errRes.Error())
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
 	}
 	return wallets, nil
 }
@@ -63,7 +65,7 @@ func (c *Client) GetWallet(ctx context.Context, walletID string) (*Wallet, error
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, &wallet, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get wallet, got code %d: %w: %w", statusCode, err, errRes.Error())
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallet: %w %w", err, errRes.Error()), statusCode)
 	}
 	return &wallet, nil
 }
