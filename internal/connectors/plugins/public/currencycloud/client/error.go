@@ -1,9 +1,7 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 )
 
 type currencyCloudError struct {
@@ -33,13 +31,4 @@ func (ce *currencyCloudError) Error() error {
 	}
 
 	return fmt.Errorf("%s: %s", ce.ErrorCode, errorMessage)
-}
-
-func unmarshalError(statusCode int, body io.ReadCloser) *currencyCloudError {
-	var ce currencyCloudError
-	_ = json.NewDecoder(body).Decode(&ce)
-
-	ce.StatusCode = statusCode
-
-	return &ce
 }

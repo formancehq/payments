@@ -23,6 +23,10 @@ func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Ba
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.buildEndpoint("v2/balances/find"), http.NoBody)
 	if err != nil {

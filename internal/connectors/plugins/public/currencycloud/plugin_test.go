@@ -42,6 +42,16 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 			_, err := plg.Install(ctx, req)
 			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
 		})
+
+		It("should return valid install response", func(ctx SpecContext) {
+			req := models.InstallRequest{Config: json.RawMessage(`{"loginID": "test", "apiKey": "test", "endpoint": "test"}`)}
+			res, err := plg.Install(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(len(res.Capabilities) > 0).To(BeTrue())
+			Expect(res.Capabilities).To(Equal(capabilities))
+			Expect(len(res.Workflow) > 0).To(BeTrue())
+			Expect(res.Workflow).To(Equal(workflow()))
+		})
 	})
 
 	Context("uninstall", func() {
