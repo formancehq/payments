@@ -8,7 +8,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	stripesdk "github.com/stripe/stripe-go/v79"
@@ -21,9 +20,7 @@ var _ = Describe("Stripe Plugin Balances", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{
-			logger: hclog.Default(),
-		}
+		plg = &Plugin{}
 	})
 
 	Context("fetch next balances", func() {

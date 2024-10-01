@@ -16,7 +16,6 @@ import (
 // is only accepting request with "application/json" content type, and the lib
 // sets it as application/x-www-form-urlencoded, giving us a 415 error.
 type apiTransport struct {
-	logger   hclog.Logger
 	clientID string
 	apiKey   string
 	endpoint string
@@ -90,7 +89,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			t.logger.Error("failed to close response body", "error", err)
+			hclog.Default().Error("failed to close response body", "error", err)
 		}
 	}()
 

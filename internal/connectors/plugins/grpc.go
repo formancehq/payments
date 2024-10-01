@@ -14,34 +14,31 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type NewPlugin func(logger hclog.Logger) models.Plugin
-
 type impl struct {
-	logger hclog.Logger
-
 	plugin models.Plugin
 }
 
-func NewGRPCImplem(newPlugin NewPlugin) *impl {
+func NewGRPCImplem(plugin models.Plugin) *impl {
 	logger := hclog.New(&hclog.LoggerOptions{
 		Level:  hclog.Debug,
 		Output: os.Stderr,
 	})
 
+	hclog.SetDefault(logger)
+
 	return &impl{
-		logger: logger,
-		plugin: newPlugin(logger),
+		plugin: plugin,
 	}
 }
 
 func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*services.InstallResponse, error) {
-	i.logger.Info("installing...")
+	hclog.Default().Info("installing...")
 
 	resp, err := i.plugin.Install(ctx, models.InstallRequest{
 		Config: req.Config,
 	})
 	if err != nil {
-		i.logger.Error("install failed: ", err)
+		hclog.Default().Error("install failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -58,7 +55,7 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 		})
 	}
 
-	i.logger.Info("installed!")
+	hclog.Default().Info("installed!")
 
 	return &services.InstallResponse{
 		Capabilities:    capabilities,
@@ -68,23 +65,23 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 }
 
 func (i *impl) Uninstall(ctx context.Context, req *services.UninstallRequest) (*services.UninstallResponse, error) {
-	i.logger.Info("uninstalling...")
+	hclog.Default().Info("uninstalling...")
 
 	_, err := i.plugin.Uninstall(ctx, models.UninstallRequest{
 		ConnectorID: req.ConnectorId,
 	})
 	if err != nil {
-		i.logger.Error("uninstall failed: ", err)
+		hclog.Default().Error("uninstall failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
-	i.logger.Info("uninstalled!")
+	hclog.Default().Info("uninstalled!")
 
 	return &services.UninstallResponse{}, nil
 }
 
 func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAccountsRequest) (*services.FetchNextAccountsResponse, error) {
-	i.logger.Info("fetching next accounts...")
+	hclog.Default().Info("fetching next accounts...")
 
 	resp, err := i.plugin.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{
 		FromPayload: req.FromPayload,
@@ -92,7 +89,7 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
-		i.logger.Error("fetching next accounts failed: ", err)
+		hclog.Default().Error("fetching next accounts failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -101,7 +98,7 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 		accounts = append(accounts, grpc.TranslateAccount(account))
 	}
 
-	i.logger.Info("fetched next accounts succeeded!")
+	hclog.Default().Info("fetched next accounts succeeded!")
 
 	return &services.FetchNextAccountsResponse{
 		Accounts: accounts,
@@ -111,7 +108,7 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 }
 
 func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error) {
-	i.logger.Info("fetching next external accounts...")
+	hclog.Default().Info("fetching next external accounts...")
 
 	resp, err := i.plugin.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{
 		FromPayload: req.FromPayload,
@@ -119,7 +116,7 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
-		i.logger.Error("fetching next external accounts failed: ", err)
+		hclog.Default().Error("fetching next external accounts failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -128,7 +125,7 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 		externalAccounts = append(externalAccounts, grpc.TranslateAccount(account))
 	}
 
-	i.logger.Info("fetched next external accounts succeeded!")
+	hclog.Default().Info("fetched next external accounts succeeded!")
 
 	return &services.FetchNextExternalAccountsResponse{
 		Accounts: externalAccounts,
@@ -138,7 +135,7 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 }
 
 func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPaymentsRequest) (*services.FetchNextPaymentsResponse, error) {
-	i.logger.Info("fetching next payments...")
+	hclog.Default().Info("fetching next payments...")
 
 	resp, err := i.plugin.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
 		FromPayload: req.FromPayload,
@@ -146,7 +143,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
-		i.logger.Error("fetching next payments failed: ", err)
+		hclog.Default().Error("fetching next payments failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -155,7 +152,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 		payments = append(payments, grpc.TranslatePayment(payment))
 	}
 
-	i.logger.Info("fetched next payments succeeded!")
+	hclog.Default().Info("fetched next payments succeeded!")
 
 	return &services.FetchNextPaymentsResponse{
 		Payments: payments,
@@ -165,7 +162,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 }
 
 func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBalancesRequest) (*services.FetchNextBalancesResponse, error) {
-	i.logger.Info("fetching next balances...")
+	hclog.Default().Info("fetching next balances...")
 
 	resp, err := i.plugin.FetchNextBalances(ctx, models.FetchNextBalancesRequest{
 		FromPayload: req.FromPayload,
@@ -173,7 +170,7 @@ func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBal
 		PageSize:    int(req.PageSize),
 	})
 	if err != nil {
-		i.logger.Error("fetching next balances failed: ", err)
+		hclog.Default().Error("fetching next balances failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -182,7 +179,7 @@ func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBal
 		balances = append(balances, grpc.TranslateBalance(balance))
 	}
 
-	i.logger.Info("fetched next balances succeeded!")
+	hclog.Default().Info("fetched next balances succeeded!")
 
 	return &services.FetchNextBalancesResponse{
 		Balances: balances,
@@ -192,7 +189,7 @@ func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBal
 }
 
 func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error) {
-	i.logger.Info("fetching next others...")
+	hclog.Default().Info("fetching next others...")
 
 	resp, err := i.plugin.FetchNextOthers(ctx, models.FetchNextOthersRequest{
 		FromPayload: req.FromPayload,
@@ -201,7 +198,7 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 		Name:        req.Name,
 	})
 	if err != nil {
-		i.logger.Error("fetching next others failed: ", err)
+		hclog.Default().Error("fetching next others failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -213,7 +210,7 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 		})
 	}
 
-	i.logger.Info("fetched next others succeeded!")
+	hclog.Default().Info("fetched next others succeeded!")
 
 	return &services.FetchNextOthersResponse{
 		Others:   others,
@@ -223,17 +220,17 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 }
 
 func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error) {
-	i.logger.Info("creating bank account...")
+	hclog.Default().Info("creating bank account...")
 
 	resp, err := i.plugin.CreateBankAccount(ctx, models.CreateBankAccountRequest{
 		BankAccount: grpc.TranslateProtoBankAccount(req.BankAccount),
 	})
 	if err != nil {
-		i.logger.Error("creating bank account failed: ", err)
+		hclog.Default().Error("creating bank account failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
-	i.logger.Info("created bank account succeeded!")
+	hclog.Default().Info("created bank account succeeded!")
 
 	return &services.CreateBankAccountResponse{
 		RelatedAccount: grpc.TranslateAccount(resp.RelatedAccount),
@@ -241,7 +238,7 @@ func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAc
 }
 
 func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error) {
-	i.logger.Info("creating webhooks...")
+	hclog.Default().Info("creating webhooks...")
 
 	resp, err := i.plugin.CreateWebhooks(ctx, models.CreateWebhooksRequest{
 		ConnectorID:    req.ConnectorId,
@@ -249,11 +246,11 @@ func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksR
 		WebhookBaseUrl: req.WebhookBaseUrl,
 	})
 	if err != nil {
-		i.logger.Error("creating webhooks failed: ", err)
+		hclog.Default().Error("creating webhooks failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
-	i.logger.Info("created webhooks succeeded!")
+	hclog.Default().Info("created webhooks succeeded!")
 
 	others := make([]*proto.Other, 0, len(resp.Others))
 	for _, other := range resp.Others {
@@ -269,18 +266,18 @@ func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksR
 }
 
 func (i *impl) TranslateWebhook(ctx context.Context, req *services.TranslateWebhookRequest) (*services.TranslateWebhookResponse, error) {
-	i.logger.Info("translating webhook...")
+	hclog.Default().Info("translating webhook...")
 
 	resp, err := i.plugin.TranslateWebhook(ctx, models.TranslateWebhookRequest{
 		Name:    req.Name,
 		Webhook: grpc.TranslateProtoWebhook(req.Webhook),
 	})
 	if err != nil {
-		i.logger.Error("translating webhook failed: ", err)
+		hclog.Default().Error("translating webhook failed: ", err)
 		return nil, translateErrorToGRPC(err)
 	}
 
-	i.logger.Info("translated webhook succeeded!")
+	hclog.Default().Info("translated webhook succeeded!")
 
 	responses := make([]*services.TranslateWebhookResponse_Response, 0, len(resp.Responses))
 	for _, response := range resp.Responses {

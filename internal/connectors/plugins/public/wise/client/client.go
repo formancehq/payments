@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/hashicorp/go-hclog"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -33,7 +32,7 @@ func (w *Client) endpoint(path string) string {
 	return fmt.Sprintf("%s/%s", apiEndpoint, path)
 }
 
-func New(logger hclog.Logger, apiKey string) (*Client, error) {
+func New(apiKey string) (*Client, error) {
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
 		Transport: &apiTransport{
@@ -42,7 +41,7 @@ func New(logger hclog.Logger, apiKey string) (*Client, error) {
 		},
 	}
 
-	httpClient, err := httpwrapper.NewClient(logger, config)
+	httpClient, err := httpwrapper.NewClient(config)
 	return &Client{
 		httpClient:             httpClient,
 		recipientAccountsCache: recipientsCache,

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -37,7 +36,7 @@ var _ = Describe("ClientWrapper", func() {
 	BeforeEach(func() {
 		config = &httpwrapper.Config{Timeout: 30 * time.Millisecond}
 		var err error
-		client, err = httpwrapper.NewClient(hclog.Default(), config)
+		client, err = httpwrapper.NewClient(config)
 		Expect(err).To(BeNil())
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			params, err := url.ParseQuery(r.URL.RawQuery)

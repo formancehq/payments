@@ -33,14 +33,12 @@ type Client interface {
 }
 
 type client struct {
-	logger hclog.Logger
-
 	httpClient *http.Client
 
 	httpErrorCheckerFn func(statusCode int) error
 }
 
-func NewClient(logger hclog.Logger, config *Config) (Client, error) {
+func NewClient(config *Config) (Client, error) {
 	if config.Timeout == 0 {
 		config.Timeout = 10 * time.Second
 	}
@@ -65,7 +63,6 @@ func NewClient(logger hclog.Logger, config *Config) (Client, error) {
 	}
 
 	return &client{
-		logger:             logger,
 		httpErrorCheckerFn: config.HttpErrorCheckerFn,
 		httpClient:         httpClient,
 	}, nil
@@ -86,7 +83,7 @@ func (c *client) Do(req *http.Request, expectedBody, errorBody any) (int, error)
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			c.logger.Error("failed to close response body", "error", err)
+			hclog.Default().Error("failed to close response body", "error", err)
 		}
 	}()
 
