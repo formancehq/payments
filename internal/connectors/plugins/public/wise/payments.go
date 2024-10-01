@@ -3,7 +3,6 @@ package wise
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/formancehq/go-libs/pointer"
@@ -20,16 +19,16 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	}
 
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(ErrFromPayloadMissing).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	newState := paymentsState{
@@ -41,7 +40,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for {
 		pagedTransfers, err := p.client.GetTransfers(ctx, from.ID, newState.Offset, req.PageSize)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 		}
 
 		if len(pagedTransfers) == 0 {
@@ -51,7 +50,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		for _, transfer := range pagedTransfers {
 			payment, err := fromTransferToPayment(transfer)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
+				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 			}
 
 			payments = append(payments, *payment)
@@ -74,7 +73,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, err
+		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextPaymentsResponse{

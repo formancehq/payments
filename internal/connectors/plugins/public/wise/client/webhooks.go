@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type webhookSubscription struct {
@@ -66,14 +64,10 @@ func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	var res webhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create subscription: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to create subscription: %w", err)
+	return &res, nil
 }
 
 func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
@@ -86,14 +80,10 @@ func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 	var res []webhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return res, errRes.Error(statusCode).Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subscription: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return res, fmt.Errorf("failed to get subscription: %w", err)
+	return res, nil
 }
 
 func (c *Client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
@@ -105,14 +95,10 @@ func (c *Client) DeleteWebhooks(ctx context.Context, profileID uint64, subscript
 
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, nil, &errRes)
-	switch err {
-	case nil:
-		return nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return errRes.Error(statusCode).Error()
+	if err != nil {
+		return fmt.Errorf("failed to delete webhooks: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return fmt.Errorf("failed to get subscription: %w", err)
+	return nil
 }
 
 type transferStateChangedWebhookPayload struct {

@@ -10,6 +10,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+var (
+	ErrFromPayloadMissing    = errors.New("missing from payload in request")
+	ErrStackPublicUrlMissing = errors.New("STACK_PUBLIC_URL is not set")
+)
+
 type Plugin struct {
 	config Config
 	client *client.Client

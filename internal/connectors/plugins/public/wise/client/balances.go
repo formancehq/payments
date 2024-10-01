@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Balance struct {
@@ -51,14 +49,10 @@ func (c *Client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 	var balances []Balance
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &balances, &errRes)
-	switch err {
-	case nil:
-		return balances, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return balances, errRes.Error(statusCode).Error()
+	if err != nil {
+		return balances, fmt.Errorf("failed to get balances: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return balances, fmt.Errorf("failed to get balances: %w", err)
+	return balances, nil
 }
 
 func (c *Client) GetBalance(ctx context.Context, profileID uint64, balanceID uint64) (*Balance, error) {
@@ -76,12 +70,8 @@ func (c *Client) GetBalance(ctx context.Context, profileID uint64, balanceID uin
 	var balance Balance
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &balance, &errRes)
-	switch err {
-	case nil:
-		return &balance, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return &balance, fmt.Errorf("failed to get balance: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to get balances: %w", err)
+	return &balance, nil
 }

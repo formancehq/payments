@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Transfer struct {
@@ -82,14 +80,8 @@ func (c *Client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 	var transfers []Transfer
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &transfers, &errRes)
-	switch err {
-	case nil:
-		// fallthrough
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return transfers, errRes.Error(statusCode).Error()
-	default:
-		return transfers, fmt.Errorf("failed to get transfers: %w", err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transfers: %w %w", err, errRes.Error(statusCode).Error())
 	}
 
 	for i, transfer := range transfers {
@@ -179,14 +171,10 @@ func (c *Client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 	var transfer Transfer
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
-	switch err {
-	case nil:
-		return &transfer, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to get transfer: %w", err)
+	return &transfer, nil
 }
 
 func (c *Client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
@@ -214,12 +202,8 @@ func (c *Client) CreateTransfer(ctx context.Context, quote Quote, targetAccount 
 	var transfer Transfer
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
-	switch err {
-	case nil:
-		return &transfer, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to create transfer: %w", err)
+	return &transfer, nil
 }
