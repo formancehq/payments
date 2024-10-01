@@ -12,7 +12,7 @@ func main() {
 	plugin.Serve(&plugin.ServeConfig{
 		HandshakeConfig: grpc.Handshake,
 		Plugins: map[string]plugin.Plugin{
-			"psp": &grpc.PSPGRPCPlugin{Impl: plugins.NewGRPCImplem(generic.New)},
+			"psp": &grpc.PSPGRPCPlugin{Impl: plugins.NewGRPCImplem(&generic.Plugin{})},
 		},
 
 		// A non-nil value here enables gRPC serving for this plugin...

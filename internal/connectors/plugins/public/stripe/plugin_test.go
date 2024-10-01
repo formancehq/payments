@@ -7,7 +7,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -23,9 +22,7 @@ var _ = Describe("Stripe Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{
-			logger: hclog.Default(),
-		}
+		plg = &Plugin{}
 	})
 
 	Context("install", func() {

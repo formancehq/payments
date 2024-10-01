@@ -6,19 +6,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 )
 
 type Plugin struct {
-	logger hclog.Logger
-
 	client *client.Client
-}
-
-func New(logger hclog.Logger) models.Plugin {
-	return &Plugin{
-		logger: logger,
-	}
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
@@ -27,7 +18,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.New(p.logger, config.APIKey, config.APISecret, config.Endpoint)
+	client, err := client.New(config.APIKey, config.APISecret, config.Endpoint)
 	if err != nil {
 		return models.InstallResponse{}, err
 	}

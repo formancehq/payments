@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -42,7 +41,7 @@ func newHTTPClient() *http.Client {
 }
 
 // New creates a new client for the CurrencyCloud API.
-func New(ctx context.Context, logger hclog.Logger, loginID, apiKey, endpoint string) (*Client, error) {
+func New(ctx context.Context, loginID, apiKey, endpoint string) (*Client, error) {
 	if endpoint == "" {
 		endpoint = DevAPIEndpoint
 	}
@@ -70,7 +69,7 @@ func New(ctx context.Context, logger hclog.Logger, loginID, apiKey, endpoint str
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(logger, config)
+	httpClient, err := httpwrapper.NewClient(config)
 	if err != nil {
 		return nil, err
 	}

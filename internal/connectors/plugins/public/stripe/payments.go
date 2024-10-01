@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
 	stripesdk "github.com/stripe/stripe-go/v79"
 )
@@ -81,7 +82,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripesdk.BalanceTransaction) (payment *models.PSPPayment, err error) {
 	if balanceTransaction.Source == nil {
-		p.logger.Info("skipping balance transaction with nil source element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
+		hclog.Default().Info("skipping balance transaction with nil source element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
 		return nil, nil
 	}
 
@@ -94,7 +95,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 	switch balanceTransaction.Type {
 	case stripesdk.BalanceTransactionTypeCharge:
 		if balanceTransaction.Source.Charge == nil {
-			p.logger.Info("skipping balance transaction with nil charge element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
+			hclog.Default().Info("skipping balance transaction with nil charge element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
 			return nil, nil
 		}
 		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Charge.Currency))
@@ -479,7 +480,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		}
 
 	default:
-		p.logger.Info("unsupported balance transaction type", "err", ErrUnsupportedTransactionType, "type", balanceTransaction.Type)
+		hclog.Default().Info("unsupported balance transaction type", "err", ErrUnsupportedTransactionType, "type", balanceTransaction.Type)
 		return nil, nil
 	}
 
