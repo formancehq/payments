@@ -10,6 +10,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+var (
+	ErrMissingAccountInMetadata = errors.New("missing account number in bank account metadata")
+)
+
 type Plugin struct {
 	client *client.Client
 }
