@@ -32,6 +32,10 @@ func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, up
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.buildEndpoint("v2/transactions/find"), http.NoBody)
 	if err != nil {

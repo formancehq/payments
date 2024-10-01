@@ -18,6 +18,10 @@ func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, err
+	}
+
 	form := url.Values{}
 	form.Set("account_id", accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,

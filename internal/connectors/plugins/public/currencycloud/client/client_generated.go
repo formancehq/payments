@@ -40,20 +40,6 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// Authenticate mocks base method.
-func (m *MockClient) Authenticate(ctx context.Context) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Authenticate", ctx)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// Authenticate indicates an expected call of Authenticate.
-func (mr *MockClientMockRecorder) Authenticate(ctx any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Authenticate", reflect.TypeOf((*MockClient)(nil).Authenticate), ctx)
-}
-
 // GetAccounts mocks base method.
 func (m *MockClient) GetAccounts(ctx context.Context, page, pageSize int) ([]*Account, int, error) {
 	m.ctrl.T.Helper()

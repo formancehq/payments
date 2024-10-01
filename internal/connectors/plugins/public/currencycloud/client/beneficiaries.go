@@ -22,6 +22,10 @@ func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) (
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/beneficiaries/find"), http.NoBody)
 	if err != nil {

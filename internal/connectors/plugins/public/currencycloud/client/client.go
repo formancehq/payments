@@ -8,11 +8,11 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"golang.org/x/sync/singleflight"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
-	Authenticate(ctx context.Context) error
 	GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, int, error)
 	GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error)
 	GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error)
@@ -39,7 +39,8 @@ type client struct {
 	loginID    string
 	apiKey     string
 
-	authToken string
+	singleFlight singleflight.Group
+	authToken    string
 }
 
 func (c *client) buildEndpoint(path string, args ...interface{}) string {
