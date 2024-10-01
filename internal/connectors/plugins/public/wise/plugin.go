@@ -30,7 +30,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.New(config.APIKey)
+	client, err := client.New(p.logger, config.APIKey)
 	if err != nil {
 		return models.InstallResponse{}, fmt.Errorf("failed to install wise plugin %w", err)
 	}

@@ -29,7 +29,7 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.New(config.ClientID, config.APIKey, config.Endpoint)
+	client, err := client.New(p.logger, config.ClientID, config.APIKey, config.Endpoint)
 	if err != nil {
 		return models.InstallResponse{}, err
 	}

@@ -1,4 +1,4 @@
-package stripe_test
+package stripe
 
 import (
 	"encoding/json"
@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"strings"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	stripesdk "github.com/stripe/stripe-go/v79"
@@ -17,11 +17,13 @@ import (
 
 var _ = Describe("Stripe Plugin Balances", func() {
 	var (
-		plg *stripe.Plugin
+		plg *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &stripe.Plugin{}
+		plg = &Plugin{
+			logger: hclog.Default(),
+		}
 	})
 
 	Context("fetch next balances", func() {

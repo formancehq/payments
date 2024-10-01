@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -15,6 +16,7 @@ import (
 // is only accepting request with "application/json" content type, and the lib
 // sets it as application/x-www-form-urlencoded, giving us a 415 error.
 type apiTransport struct {
+	logger   hclog.Logger
 	clientID string
 	apiKey   string
 	endpoint string
@@ -88,8 +90,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			// TODO(polo): log the error
-			_ = err
+			t.logger.Error("failed to close response body", "error", err)
 		}
 	}()
 
