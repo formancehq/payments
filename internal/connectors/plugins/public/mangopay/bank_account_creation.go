@@ -60,9 +60,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 		switch *req.BankAccount.Country {
 		case "US":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.NewPluginError(
-					fmt.Errorf("missing account number in bank account metadata"),
-				).ForbidRetry()
+				return models.CreateBankAccountResponse{}, models.NewPluginError(ErrMissingAccountInMetadata).ForbidRetry()
 			}
 
 			req := &client.CreateUSBankAccountRequest{
@@ -82,9 +80,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		case "CA":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.NewPluginError(
-					fmt.Errorf("missing account number in bank account metadata"),
-				).ForbidRetry()
+				return models.CreateBankAccountResponse{}, models.NewPluginError(ErrMissingAccountInMetadata).ForbidRetry()
 			}
 			req := &client.CreateCABankAccountRequest{
 				OwnerName:         req.BankAccount.Name,
@@ -104,9 +100,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		case "GB":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.NewPluginError(
-					fmt.Errorf("missing account number in bank account metadata"),
-				).ForbidRetry()
+				return models.CreateBankAccountResponse{}, models.NewPluginError(ErrMissingAccountInMetadata).ForbidRetry()
 			}
 
 			req := &client.CreateGBBankAccountRequest{
@@ -125,9 +119,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		default:
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.NewPluginError(
-					fmt.Errorf("missing account number in bank account metadata"),
-				).ForbidRetry()
+				return models.CreateBankAccountResponse{}, models.NewPluginError(ErrMissingAccountInMetadata).ForbidRetry()
 			}
 
 			req := &client.CreateOtherBankAccountRequest{
