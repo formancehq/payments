@@ -31,10 +31,6 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 	for _, balance := range account.Balances {
 		// Note(polo): the last transaction timestamp is wrong in the banking
 		// circle response. We will use the current time instead.
-		// lastTransactionTimestamp, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", balance.LastTransactionTimestamp)
-		// if err != nil {
-		// 	return models.FetchNextBalancesResponse{}, models.NewPluginError(fmt.Errorf("failed to parse opening date: %w", err))
-		// }
 		lastTransactionTimestamp := time.Now().UTC()
 
 		precision := supportedCurrenciesWithDecimal[balance.Currency]
