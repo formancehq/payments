@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type RecipientAccountsResponse struct {
@@ -48,14 +46,10 @@ func (c *Client) GetRecipientAccounts(ctx context.Context, profileID uint64, pag
 	var accounts RecipientAccountsResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &accounts, &errRes)
-	switch err {
-	case nil:
-		return &accounts, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recipient accounts: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to get recipient accounts: %w", err)
+	return &accounts, nil
 }
 
 func (c *Client) GetRecipientAccount(ctx context.Context, accountID uint64) (*RecipientAccount, error) {
@@ -77,19 +71,16 @@ func (c *Client) GetRecipientAccount(ctx context.Context, accountID uint64) (*Re
 	var res RecipientAccount
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		c.recipientAccountsCache.Add(accountID, &res)
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
+	if err != nil {
 		e := errRes.Error(statusCode)
 		if e.Code == "RECIPIENT_MISSING" {
-			// This is a valid response, we just don't have the account amoungs
+			// This is a valid response, we just don't have the account amongst
 			// our recipients.
 			return &RecipientAccount{}, nil
 		}
-		return nil, e.Error()
+		return nil, fmt.Errorf("failed to get recipient account: %w %w", err, e.Error())
 	}
-	return nil, fmt.Errorf("failed to get recipient account: %w", err)
+
+	c.recipientAccountsCache.Add(accountID, &res)
+	return &res, nil
 }

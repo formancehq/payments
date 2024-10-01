@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Payout struct {
@@ -76,14 +74,10 @@ func (c *Client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 	var payout Payout
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
-	switch err {
-	case nil:
-		return &payout, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return &payout, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to get payout: %w", err)
+	return &payout, nil
 }
 
 func (c *Client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
@@ -110,12 +104,8 @@ func (c *Client) CreatePayout(ctx context.Context, quote Quote, targetAccount ui
 	var payout Payout
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
-	switch err {
-	case nil:
-		return &payout, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error(statusCode).Error()
+	if err != nil {
+		return &payout, fmt.Errorf("failed to make payout: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return nil, fmt.Errorf("failed to make payout: %w", err)
+	return &payout, nil
 }
