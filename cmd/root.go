@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/bun/bunmigrate"
 	"github.com/formancehq/go-libs/health"
 	"github.com/formancehq/go-libs/licence"
+	"github.com/formancehq/go-libs/logging"
 	"github.com/formancehq/go-libs/otlp/otlptraces"
 	"github.com/formancehq/go-libs/publish"
 	"github.com/formancehq/go-libs/service"
@@ -103,6 +104,8 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(listenFlag)
 	stack, _ := cmd.Flags().GetString(stackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
+	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
+	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
 
 	return fx.Options(
 		fx.Provide(func() *bunconnect.ConnectionOptions {
@@ -127,7 +130,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
-		engine.Module(pluginPaths, stack, stackPublicURL),
+		engine.Module(pluginPaths, stack, stackPublicURL, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
 	), nil
