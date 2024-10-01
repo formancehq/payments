@@ -19,16 +19,16 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
 
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(ErrFromPayloadMissing).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	newState := paymentsState{
@@ -40,7 +40,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	for {
 		pagedTransfers, err := p.client.GetTransfers(ctx, from.ID, newState.Offset, req.PageSize)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
 		if len(pagedTransfers) == 0 {
@@ -50,7 +50,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		for _, transfer := range pagedTransfers {
 			payment, err := fromTransferToPayment(transfer)
 			if err != nil {
-				return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+				return models.FetchNextPaymentsResponse{}, err
 			}
 
 			payments = append(payments, *payment)
@@ -73,7 +73,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextPaymentsResponse{}, models.NewPluginError(err)
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	return models.FetchNextPaymentsResponse{

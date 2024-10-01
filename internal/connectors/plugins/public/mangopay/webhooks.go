@@ -166,7 +166,7 @@ func (p Plugin) translateTransfer(ctx context.Context, req webhookTranslateReque
 
 	raw, err := json.Marshal(transfer)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(fmt.Errorf("failed to marshal transfer: %w", err))
+		return models.WebhookResponse{}, fmt.Errorf("failed to marshal transfer: %w", err)
 	}
 
 	paymentStatus := matchPaymentStatus(transfer.Status)
@@ -205,12 +205,12 @@ func (p Plugin) translateTransfer(ctx context.Context, req webhookTranslateReque
 func (p Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	payout, err := p.client.GetPayout(ctx, req.webhook.ResourceID)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err)
+		return models.WebhookResponse{}, err
 	}
 
 	raw, err := json.Marshal(payout)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(fmt.Errorf("failed to marshal transfer: %w", err))
+		return models.WebhookResponse{}, fmt.Errorf("failed to marshal transfer: %w", err)
 	}
 
 	paymentStatus := matchPaymentStatus(payout.Status)
@@ -245,12 +245,12 @@ func (p Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest
 func (p Plugin) translatePayin(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	payin, err := p.client.GetPayin(ctx, req.webhook.ResourceID)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(err).ForbidRetry()
+		return models.WebhookResponse{}, err
 	}
 
 	raw, err := json.Marshal(payin)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(fmt.Errorf("failed to marshal transfer: %w", err))
+		return models.WebhookResponse{}, fmt.Errorf("failed to marshal transfer: %w", err)
 	}
 
 	paymentStatus := matchPaymentStatus(payin.Status)
@@ -290,7 +290,7 @@ func (p Plugin) translateRefund(ctx context.Context, req webhookTranslateRequest
 
 	raw, err := json.Marshal(refund)
 	if err != nil {
-		return models.WebhookResponse{}, models.NewPluginError(fmt.Errorf("failed to marshal transfer: %w", err))
+		return models.WebhookResponse{}, fmt.Errorf("failed to marshal transfer: %w", err)
 	}
 
 	paymentType := matchPaymentType(refund.InitialTransactionType)

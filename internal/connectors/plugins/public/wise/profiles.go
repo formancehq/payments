@@ -17,7 +17,7 @@ func (p Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOther
 	var oldState profilesState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextOthersResponse{}, models.NewPluginError(err).ForbidRetry()
+			return models.FetchNextOthersResponse{}, err
 		}
 	}
 
@@ -29,7 +29,7 @@ func (p Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOther
 	hasMore := false
 	profiles, err := p.client.GetProfiles(ctx)
 	if err != nil {
-		return models.FetchNextOthersResponse{}, models.NewPluginError(err)
+		return models.FetchNextOthersResponse{}, err
 	}
 
 	for _, profile := range profiles {
@@ -39,7 +39,7 @@ func (p Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOther
 
 		raw, err := json.Marshal(profile)
 		if err != nil {
-			return models.FetchNextOthersResponse{}, models.NewPluginError(err)
+			return models.FetchNextOthersResponse{}, err
 		}
 
 		others = append(others, models.PSPOther{
@@ -57,7 +57,7 @@ func (p Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOther
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextOthersResponse{}, models.NewPluginError(err)
+		return models.FetchNextOthersResponse{}, err
 	}
 
 	return models.FetchNextOthersResponse{
