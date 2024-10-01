@@ -3,7 +3,6 @@ package wise
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strconv"
 
 	"github.com/formancehq/go-libs/pointer"
@@ -21,16 +20,16 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 		}
 	}
 
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.FetchNextAccountsResponse{}, errors.New("missing from payload when fetching accounts")
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(ErrFromPayloadMissing).ForbidRetry()
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err).ForbidRetry()
 	}
 
 	newState := accountsState{
@@ -42,7 +41,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	// Wise balances are considered as accounts on our side.
 	balances, err := p.client.GetBalances(ctx, from.ID)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	for _, balance := range balances {
@@ -52,7 +51,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 		raw, err := json.Marshal(balance)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+			return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 		}
 
 		accounts = append(accounts, models.PSPAccount{
@@ -76,7 +75,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
+		return models.FetchNextAccountsResponse{}, models.NewPluginError(err)
 	}
 
 	return models.FetchNextAccountsResponse{
