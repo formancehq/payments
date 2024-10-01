@@ -17,7 +17,7 @@ type Balance struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-func (c *Client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
+func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_balances")
 	// now := time.Now()
