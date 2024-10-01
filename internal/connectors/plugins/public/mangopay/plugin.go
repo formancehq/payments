@@ -8,19 +8,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 )
 
 type Plugin struct {
-	logger hclog.Logger
-
 	client *client.Client
-}
-
-func New(logger hclog.Logger) models.Plugin {
-	return &Plugin{
-		logger: logger,
-	}
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
@@ -29,7 +20,7 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.New(p.logger, config.ClientID, config.APIKey, config.Endpoint)
+	client, err := client.New(config.ClientID, config.APIKey, config.Endpoint)
 	if err != nil {
 		return models.InstallResponse{}, err
 	}

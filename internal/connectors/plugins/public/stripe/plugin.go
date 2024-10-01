@@ -7,21 +7,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	stripesdk "github.com/stripe/stripe-go/v79"
 )
 
 type Plugin struct {
-	logger hclog.Logger
-
 	StripeAPIBackend stripesdk.Backend // override in tests to mock
 	client           client.Client
-}
-
-func New(logger hclog.Logger) models.Plugin {
-	return &Plugin{
-		logger: logger,
-	}
 }
 
 func (p *Plugin) SetClient(client client.Client) error {
