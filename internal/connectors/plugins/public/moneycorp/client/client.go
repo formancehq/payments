@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -13,9 +14,10 @@ type Client struct {
 	endpoint   string
 }
 
-func New(clientID, apiKey, endpoint string) (*Client, error) {
+func New(logger hclog.Logger, clientID, apiKey, endpoint string) (*Client, error) {
 	config := &httpwrapper.Config{
 		Transport: &apiTransport{
+			logger:     logger,
 			clientID:   clientID,
 			apiKey:     apiKey,
 			endpoint:   endpoint,
@@ -34,7 +36,7 @@ func New(clientID, apiKey, endpoint string) (*Client, error) {
 	}
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
-	httpClient, err := httpwrapper.NewClient(config)
+	httpClient, err := httpwrapper.NewClient(logger, config)
 	c := &Client{
 		httpClient: httpClient,
 		endpoint:   endpoint,

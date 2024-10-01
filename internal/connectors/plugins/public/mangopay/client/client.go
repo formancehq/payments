@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/hashicorp/go-hclog"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -15,7 +16,7 @@ type Client struct {
 	endpoint string
 }
 
-func New(clientID, apiKey, endpoint string) (*Client, error) {
+func New(logger hclog.Logger, clientID, apiKey, endpoint string) (*Client, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	config := &httpwrapper.Config{
@@ -25,7 +26,7 @@ func New(clientID, apiKey, endpoint string) (*Client, error) {
 			TokenURL:     endpoint + "/v2.01/oauth/token",
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(config)
+	httpClient, err := httpwrapper.NewClient(logger, config)
 
 	c := &Client{
 		httpClient: httpClient,

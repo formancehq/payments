@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"math/big"
 	"strings"
 	"time"
@@ -23,12 +22,12 @@ var (
 	ErrUnsupportedCurrency        = errors.New("unsupported currency")
 )
 
-type PaymentsState struct {
+type paymentsState struct {
 	Timeline client.Timeline `json:"timeline"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	var oldState PaymentsState
+	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextPaymentsResponse{}, err
@@ -82,7 +81,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripesdk.BalanceTransaction) (payment *models.PSPPayment, err error) {
 	if balanceTransaction.Source == nil {
-		log.Printf("skipping balance transaction of type %q with nil source element: %q", balanceTransaction.Type, balanceTransaction.ID)
+		p.logger.Info("skipping balance transaction with nil source element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
 		return nil, nil
 	}
 
@@ -95,7 +94,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 	switch balanceTransaction.Type {
 	case stripesdk.BalanceTransactionTypeCharge:
 		if balanceTransaction.Source.Charge == nil {
-			log.Printf("skipping balance transaction of type %q with nil charge element: %q", balanceTransaction.Type, balanceTransaction.ID)
+			p.logger.Info("skipping balance transaction with nil charge element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
 			return nil, nil
 		}
 		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Charge.Currency))
@@ -480,8 +479,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		}
 
 	default:
-		// TODO (laouji): standardize logging
-		log.Printf("stripe fetch payments task %s %q", ErrUnsupportedTransactionType, balanceTransaction.Type)
+		p.logger.Info("unsupported balance transaction type", "err", ErrUnsupportedTransactionType, "type", balanceTransaction.Type)
 		return nil, nil
 	}
 
