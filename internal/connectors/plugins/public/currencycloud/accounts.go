@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -43,39 +44,14 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 			break
 		}
 
-		for _, account := range pagedAccounts {
-			switch account.CreatedAt.Compare(oldState.LastCreatedAt) {
-			case -1, 0:
-				// Account already ingested, skip
-				continue
-			default:
-			}
-
-			raw, err := json.Marshal(account)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: account.ID,
-				CreatedAt: account.CreatedAt,
-				Name:      &account.AccountName,
-				Raw:       raw,
-			})
-
-			newState.LastCreatedAt = account.CreatedAt
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
+		accounts, err = fillAccounts(accounts, pagedAccounts, oldState)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
 		}
 
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
-
-		if nextPage == -1 {
+		needMore := true
+		needMore, hasMore, accounts = shouldFetchMore(accounts, nextPage, req.PageSize)
+		if !needMore {
 			break
 		}
 
@@ -83,6 +59,9 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	}
 
 	newState.LastPage = page
+	if len(accounts) > 0 {
+		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
@@ -94,4 +73,33 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillAccounts(
+	accounts []models.PSPAccount,
+	pagedAccounts []*client.Account,
+	oldState accountsState,
+) ([]models.PSPAccount, error) {
+	for _, account := range pagedAccounts {
+		switch account.CreatedAt.Compare(oldState.LastCreatedAt) {
+		case -1, 0:
+			// Account already ingested, skip
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(account)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: account.ID,
+			CreatedAt: account.CreatedAt,
+			Name:      &account.AccountName,
+			Raw:       raw,
+		})
+	}
+
+	return accounts, nil
 }
