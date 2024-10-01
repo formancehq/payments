@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type PayinResponse struct {
@@ -41,7 +43,7 @@ func (c *Client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, 
 	var payinResponse PayinResponse
 	statusCode, err := c.httpClient.Do(req, &payinResponse, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payin response got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payin: %w", err), statusCode)
 	}
 	return &payinResponse, nil
 }

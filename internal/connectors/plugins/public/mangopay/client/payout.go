@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type PayoutRequest struct {
@@ -62,7 +64,7 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	var payoutResponse PayoutResponse
 	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiate payout, got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate payout: %w", err), statusCode)
 	}
 	return &payoutResponse, nil
 }
@@ -83,7 +85,7 @@ func (c *Client) GetPayout(ctx context.Context, payoutID string) (*PayoutRespons
 	var payoutResponse PayoutResponse
 	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payout response got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payout: %w", err), statusCode)
 	}
 	return &payoutResponse, nil
 }

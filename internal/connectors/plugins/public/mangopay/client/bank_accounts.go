@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type OwnerAddress struct {
@@ -130,7 +132,7 @@ func (c *Client) createBankAccount(ctx context.Context, endpoint string, req any
 	var bankAccount BankAccount
 	statusCode, err := c.httpClient.Do(httpReq, &bankAccount, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create bank account, got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create bank account: %w", err), statusCode)
 	}
 	return &bankAccount, nil
 }
@@ -162,7 +164,7 @@ func (c *Client) GetBankAccounts(ctx context.Context, userID string, page, pageS
 	var bankAccounts []BankAccount
 	statusCode, err := c.httpClient.Do(req, &bankAccounts, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get bank accounts, got code %d: %w", statusCode, err)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get bank accounts: %w", err), statusCode)
 	}
 	return bankAccounts, nil
 }
