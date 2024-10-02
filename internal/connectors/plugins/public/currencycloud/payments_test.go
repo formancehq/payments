@@ -2,6 +2,7 @@ package currencycloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"testing"
@@ -51,6 +52,24 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 					Amount:    "100",
 				})
 			}
+		})
+
+		It("should return an error - get transactions error", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetTransactions(ctx, 1, 60, time.Time{}).Return(
+				[]client.Transaction{},
+				-1,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
 		It("should fetch next payments - no state no results", func(ctx SpecContext) {

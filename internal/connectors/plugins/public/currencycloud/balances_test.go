@@ -1,6 +1,7 @@
 package currencycloud
 
 import (
+	"errors"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
@@ -58,6 +59,23 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 					UpdatedAt: now.Add(-time.Duration(15) * time.Minute).UTC(),
 				},
 			}
+		})
+
+		It("should return an error - get balances error", func(ctx SpecContext) {
+			req := models.FetchNextBalancesRequest{
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetBalances(ctx, 1, 60).Return(
+				[]*client.Balance{},
+				-1,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextBalances(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
 		It("should fetch next balances - no state no results", func(ctx SpecContext) {
