@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 func (c *client) authenticate(ctx context.Context) error {
@@ -38,12 +36,8 @@ func (c *client) authenticate(ctx context.Context) error {
 	var res response
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		c.authToken = res.AuthToken
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return errRes.Error()
+	if err != nil {
+		return fmt.Errorf("failed to get authenticate: %w, %w", err, errRes.Error())
 	}
 
 	return nil

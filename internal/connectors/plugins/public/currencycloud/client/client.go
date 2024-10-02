@@ -49,12 +49,6 @@ func (c *client) buildEndpoint(path string, args ...interface{}) string {
 
 const DevAPIEndpoint = "https://devapi.currencycloud.com"
 
-func NewHTTPClient() *http.Client {
-	return &http.Client{
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
-	}
-}
-
 // New creates a new client for the CurrencyCloud API.
 func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) {
 	if endpoint == "" {
