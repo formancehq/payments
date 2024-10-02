@@ -23,7 +23,7 @@ type webhookConfig struct {
 
 var webhookConfigs map[string]webhookConfig
 
-func (p Plugin) initWebhookConfig() {
+func (p *Plugin) initWebhookConfig() {
 	webhookConfigs = map[string]webhookConfig{
 		"standard": {
 			urlPath: "/standard",
@@ -49,7 +49,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return p.client.CreateWebhook(ctx, url, req.ConnectorID)
 }
 
-func (p Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if !p.client.VerifyWebhookBasicAuth(req.Webhook.BasicAuth) {
 		return models.TranslateWebhookResponse{}, errors.New("invalid basic auth")
 	}
@@ -110,7 +110,7 @@ func (p Plugin) translateStandardWebhook(ctx context.Context, req models.Transla
 	}, nil
 }
 
-func (p Plugin) handleAuthorisation(
+func (p *Plugin) handleAuthorisation(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(item)
@@ -138,7 +138,7 @@ func (p Plugin) handleAuthorisation(
 	return &payment, nil
 }
 
-func (p Plugin) handleAuthorisationAdjustment(
+func (p *Plugin) handleAuthorisationAdjustment(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(item)
@@ -161,7 +161,7 @@ func (p Plugin) handleAuthorisationAdjustment(
 	return &payment, nil
 }
 
-func (p Plugin) handleCancellation(
+func (p *Plugin) handleCancellation(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(item)
@@ -185,7 +185,7 @@ func (p Plugin) handleCancellation(
 	return &payment, nil
 }
 
-func (p Plugin) handleCapture(
+func (p *Plugin) handleCapture(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -212,7 +212,7 @@ func (p Plugin) handleCapture(
 	return &payment, nil
 }
 
-func (p Plugin) handleCaptureFailed(
+func (p *Plugin) handleCaptureFailed(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -240,7 +240,7 @@ func (p Plugin) handleCaptureFailed(
 	return &payment, nil
 }
 
-func (p Plugin) handleRefund(
+func (p *Plugin) handleRefund(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -268,7 +268,7 @@ func (p Plugin) handleRefund(
 	return &payment, nil
 }
 
-func (p Plugin) handleRefundFailed(
+func (p *Plugin) handleRefundFailed(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -295,7 +295,7 @@ func (p Plugin) handleRefundFailed(
 	return &payment, nil
 }
 
-func (p Plugin) handleRefundedReversed(
+func (p *Plugin) handleRefundedReversed(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -323,7 +323,7 @@ func (p Plugin) handleRefundedReversed(
 	return &payment, nil
 }
 
-func (p Plugin) handleRefundWithData(
+func (p *Plugin) handleRefundWithData(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -351,7 +351,7 @@ func (p Plugin) handleRefundWithData(
 	return &payment, nil
 }
 
-func (p Plugin) handlePayoutThirdparty(
+func (p *Plugin) handlePayoutThirdparty(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(item)
@@ -379,7 +379,7 @@ func (p Plugin) handlePayoutThirdparty(
 	return &payment, nil
 }
 
-func (p Plugin) handlePayoutDecline(
+func (p *Plugin) handlePayoutDecline(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
@@ -407,7 +407,7 @@ func (p Plugin) handlePayoutDecline(
 	return &payment, nil
 }
 
-func (p Plugin) handlePayoutExpire(
+func (p *Plugin) handlePayoutExpire(
 	item webhook.NotificationRequestItem,
 ) (*models.PSPPayment, error) {
 	if item.Success == "false" {
