@@ -3,17 +3,20 @@ package activities
 import (
 	"errors"
 
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	engineplugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/temporal"
 )
 
 var nonRetryableErrors = []error{
+	engineplugins.ErrNotFound,
 	httpwrapper.ErrStatusCodeClientError,
 	models.ErrMissingFromPayloadInRequest,
 	models.ErrMissingAccountInMetadata,
-	plugins.ErrNotFound,
+	plugins.ErrNotYetInstalled,
+	plugins.ErrNotImplemented,
 }
 
 func temporalError(err error, cause string) error {
