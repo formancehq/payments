@@ -8,5 +8,10 @@ import (
 )
 
 func (s *Service) BankAccountsGet(ctx context.Context, id uuid.UUID) (*models.BankAccount, error) {
-	return s.storage.BankAccountsGet(ctx, id, true)
+	ba, err := s.storage.BankAccountsGet(ctx, id, true)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get bank account")
+	}
+
+	return ba, nil
 }

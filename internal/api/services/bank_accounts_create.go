@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) BankAccountsCreate(ctx context.Context, bankAccount models.BankAccount) error {
-	return s.storage.BankAccountsUpsert(ctx, bankAccount)
+	return newStorageError(s.storage.BankAccountsUpsert(ctx, bankAccount), "cannot create bank account")
 }

@@ -75,7 +75,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 				Name:         &account.Description,
 				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
 				Metadata: map[string]string{
-					"user_id": from.ID,
+					userIDMetadataKey: from.ID,
 				},
 				Raw: raw,
 			})

@@ -9,5 +9,10 @@ import (
 )
 
 func (s *Service) AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error) {
-	return s.storage.AccountsList(ctx, query)
+	accounts, err := s.storage.AccountsList(ctx, query)
+	if err != nil {
+		return nil, newStorageError(err, "cannot list accounts")
+	}
+
+	return accounts, nil
 }

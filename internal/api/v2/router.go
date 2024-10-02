@@ -85,6 +85,22 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 					connectorsRouter(backend, r)
 				})
 			})
+
+			// Transfer Initiations
+			r.Route("/transfer-initiations", func(r chi.Router) {
+				r.Post("/", transferInitiationsCreate(backend))
+				r.Get("/", transferInitiationsList(backend))
+
+				r.Route("/{transferInitiationID}", func(r chi.Router) {
+					r.Get("/", transferInitiationsGet(backend))
+					r.Delete("/", transferInitiationsDelete(backend))
+
+					r.Post("/status", transferInitiationsUpdateStatus(backend))
+					r.Post("/retry", transferInitiationsRetry(backend))
+					// TODO(polo): add reverse
+					// r.Post("/reverse", transferInitiationsReverse(backend))
+				})
+			})
 		})
 	})
 
@@ -128,4 +144,8 @@ func bankAccountID(r *http.Request) string {
 
 func taskID(r *http.Request) string {
 	return chi.URLParam(r, "taskID")
+}
+
+func transferInitiationID(r *http.Request) string {
+	return chi.URLParam(r, "transferInitiationID")
 }

@@ -8,5 +8,10 @@ import (
 )
 
 func (s *Service) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error) {
-	return s.storage.PoolsGet(ctx, id)
+	p, err := s.storage.PoolsGet(ctx, id)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get pool")
+	}
+
+	return p, nil
 }

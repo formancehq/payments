@@ -46,6 +46,14 @@ func (s *GRPCServer) CreateBankAccount(ctx context.Context, req *services.Create
 	return s.Impl.CreateBankAccount(ctx, req)
 }
 
+func (s *GRPCServer) CreateTransfer(ctx context.Context, req *services.CreateTransferRequest) (*services.CreateTransferResponse, error) {
+	return s.Impl.CreateTransfer(ctx, req)
+}
+
+func (s *GRPCServer) CreatePayout(ctx context.Context, req *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error) {
+	return s.Impl.CreatePayout(ctx, req)
+}
+
 func (s *GRPCServer) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error) {
 	return s.Impl.CreateWebhooks(ctx, req)
 }

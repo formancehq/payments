@@ -9,5 +9,10 @@ import (
 )
 
 func (s *Service) PoolsList(ctx context.Context, query storage.ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error) {
-	return s.storage.PoolsList(ctx, query)
+	ps, err := s.storage.PoolsList(ctx, query)
+	if err != nil {
+		return nil, newStorageError(err, "cannot list pools")
+	}
+
+	return ps, nil
 }

@@ -12,5 +12,5 @@ func (s *Service) ConnectorsUninstall(ctx context.Context, connectorID models.Co
 		return newStorageError(err, "get connector")
 	}
 
-	return s.engine.UninstallConnector(ctx, connectorID)
+	return handleEngineErrors(s.engine.UninstallConnector(ctx, connectorID))
 }
