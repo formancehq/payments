@@ -40,6 +40,8 @@ func (c *client) authenticate(ctx context.Context) error {
 		return fmt.Errorf("failed to get authenticate: %w, %w", err, errRes.Error())
 	}
 
+	c.authToken = res.AuthToken
+
 	return nil
 }
 
