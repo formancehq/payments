@@ -11,6 +11,7 @@ import (
 )
 
 type PayoutRequest struct {
+	Reference           string `json:"-"` // Needed for idempotency
 	AuthorID            string `json:"AuthorId"`
 	DebitedFunds        Funds  `json:"DebitedFunds"`
 	Fees                Funds  `json:"Fees"`
@@ -60,6 +61,7 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 		return nil, fmt.Errorf("failed to create login request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", payoutRequest.Reference)
 
 	var payoutResponse PayoutResponse
 	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)

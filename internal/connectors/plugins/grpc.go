@@ -235,6 +235,54 @@ func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAc
 	}, nil
 }
 
+func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferRequest) (*services.CreateTransferResponse, error) {
+	hclog.Default().Info("creating transfer...")
+
+	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
+	if err != nil {
+		hclog.Default().Error("creating transfer failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	resp, err := i.plugin.CreateTransfer(ctx, models.CreateTransferRequest{
+		PaymentInitiation: pi,
+	})
+	if err != nil {
+		hclog.Default().Error("creating transfer failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("created transfer succeeded!")
+
+	return &services.CreateTransferResponse{
+		Payment: grpc.TranslatePayment(resp.Payment),
+	}, nil
+}
+
+func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error) {
+	hclog.Default().Info("creating payout...")
+
+	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
+	if err != nil {
+		hclog.Default().Error("creating payout failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	resp, err := i.plugin.CreatePayout(ctx, models.CreatePayoutRequest{
+		PaymentInitiation: pi,
+	})
+	if err != nil {
+		hclog.Default().Error("creating payout failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("created payout succeeded!")
+
+	return &services.CreatePayoutResponse{
+		Payment: grpc.TranslatePayment(resp.Payment),
+	}, nil
+}
+
 func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error) {
 	hclog.Default().Info("creating webhooks...")
 

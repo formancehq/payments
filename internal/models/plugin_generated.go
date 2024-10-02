@@ -54,6 +54,36 @@ func (mr *MockPluginMockRecorder) CreateBankAccount(arg0, arg1 any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockPlugin)(nil).CreateBankAccount), arg0, arg1)
 }
 
+// CreatePayout mocks base method.
+func (m *MockPlugin) CreatePayout(arg0 context.Context, arg1 CreatePayoutRequest) (CreatePayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePayout", arg0, arg1)
+	ret0, _ := ret[0].(CreatePayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePayout indicates an expected call of CreatePayout.
+func (mr *MockPluginMockRecorder) CreatePayout(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockPlugin)(nil).CreatePayout), arg0, arg1)
+}
+
+// CreateTransfer mocks base method.
+func (m *MockPlugin) CreateTransfer(arg0 context.Context, arg1 CreateTransferRequest) (CreateTransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTransfer", arg0, arg1)
+	ret0, _ := ret[0].(CreateTransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTransfer indicates an expected call of CreateTransfer.
+func (mr *MockPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPlugin)(nil).CreateTransfer), arg0, arg1)
+}
+
 // CreateWebhooks mocks base method.
 func (m *MockPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksRequest) (CreateWebhooksResponse, error) {
 	m.ctrl.T.Helper()

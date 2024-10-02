@@ -7,4 +7,5 @@ var (
 	ErrFailedAccountCreation       = errors.New("failed to create account")
 	ErrMissingFromPayloadInRequest = errors.New("missing from payload in request")
 	ErrMissingAccountInMetadata    = errors.New("missing account number in metadata")
+	ErrInvalidRequest              = errors.New("invalid request")
 )

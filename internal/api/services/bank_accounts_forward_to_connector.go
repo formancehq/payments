@@ -8,5 +8,10 @@ import (
 )
 
 func (s *Service) BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error) {
-	return s.engine.ForwardBankAccount(ctx, bankAccountID, connectorID)
+	ba, err := s.engine.ForwardBankAccount(ctx, bankAccountID, connectorID)
+	if err != nil {
+		return nil, handleEngineErrors(err)
+	}
+
+	return ba, nil
 }

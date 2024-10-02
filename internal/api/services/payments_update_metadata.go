@@ -7,5 +7,5 @@ import (
 )
 
 func (s *Service) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error {
-	return s.storage.PaymentsUpdateMetadata(ctx, id, metadata)
+	return newStorageError(s.storage.PaymentsUpdateMetadata(ctx, id, metadata), "cannot update payment metadata")
 }

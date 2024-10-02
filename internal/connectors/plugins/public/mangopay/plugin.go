@@ -94,6 +94,35 @@ func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcco
 	return p.createBankAccount(ctx, req)
 }
 
+func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	if p.client == nil {
+		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+	}
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	return models.CreateTransferResponse{
+		Payment: payment,
+	}, nil
+}
+
+func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	if p.client == nil {
+		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createPayout(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	return models.CreatePayoutResponse{
+		Payment: payment,
+	}, nil
+}
+
 func (p Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
