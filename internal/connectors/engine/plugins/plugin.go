@@ -17,6 +17,7 @@ var (
 	ErrNotFound = errors.New("plugin not found")
 )
 
+//go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
 	RegisterPlugin(connectorID models.ConnectorID) error
 	UnregisterPlugin(connectorID models.ConnectorID) error
@@ -59,7 +60,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 
 	pluginPath, ok := p.pluginsPath[connectorID.Provider]
 	if !ok {
-		return errors.Wrap(ErrNotFound, "plugin path not found")
+		return ErrNotFound
 	}
 
 	loggerOptions := &hclog.LoggerOptions{
@@ -114,7 +115,7 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 
 	pluginInfo, ok := p.plugins[connectorID.String()]
 	if !ok {
-		return nil, errors.New("plugin not found")
+		return nil, ErrNotFound
 	}
 
 	return getPlugin(pluginInfo.client)

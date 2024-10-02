@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type EventType string
@@ -100,15 +100,11 @@ func (c *Client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
 
 	var hooks []*Hook
 	var errRes mangopayError
-	_, err = c.httpClient.Do(req, &hooks, errRes)
-	switch err {
-	case nil:
-		return hooks, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	statusCode, err := c.httpClient.Do(req, &hooks, &errRes)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to list hooks: %w %w", err, errRes.Error()), statusCode)
 	}
-	return nil, fmt.Errorf("failed to list hooks %w", err)
+	return hooks, nil
 }
 
 type CreateHookRequest struct {
@@ -138,9 +134,9 @@ func (c *Client) CreateHook(ctx context.Context, eventType EventType, URL string
 	req.Header.Set("Content-Type", "application/json")
 
 	var errRes mangopayError
-	_, err = c.httpClient.Do(req, nil, &errRes)
+	statusCode, err := c.httpClient.Do(req, nil, &errRes)
 	if err != nil {
-		return errRes.Error()
+		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create hook: %w %w", err, errRes.Error()), statusCode)
 	}
 	return nil
 }
@@ -172,9 +168,9 @@ func (c *Client) UpdateHook(ctx context.Context, hookID string, URL string) erro
 	req.Header.Set("Content-Type", "application/json")
 
 	var errRes mangopayError
-	_, err = c.httpClient.Do(req, nil, &errRes)
+	statusCode, err := c.httpClient.Do(req, nil, &errRes)
 	if err != nil {
-		return errRes.Error()
+		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to update hook: %w %w", err, errRes.Error()), statusCode)
 	}
 	return nil
 }

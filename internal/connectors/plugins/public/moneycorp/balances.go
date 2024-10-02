@@ -7,13 +7,12 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 )
 
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching balances")
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err

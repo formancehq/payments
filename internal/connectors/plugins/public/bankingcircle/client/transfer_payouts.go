@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PaymentAccount struct {
@@ -60,12 +58,8 @@ func (c *Client) InitiateTransferOrPayouts(ctx context.Context, transferRequest 
 
 	var res PaymentResponse
 	statusCode, err := c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, fmt.Errorf("received status code %d for make payout", statusCode)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make payout, status code %d: %w", statusCode, err)
 	}
-	return nil, fmt.Errorf("failed to make payout: %w", err)
+	return &res, nil
 }

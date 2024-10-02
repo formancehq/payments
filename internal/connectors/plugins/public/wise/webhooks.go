@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"time"
@@ -30,14 +29,14 @@ var webhookConfigs map[string]webhookConfig
 func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.CreateWebhooksResponse{}, errors.New("missing from payload when creating webhooks")
+		return models.CreateWebhooksResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.CreateWebhooksResponse{}, err
 	}
 
 	if req.WebhookBaseUrl == "" {
-		return models.CreateWebhooksResponse{}, errors.New("STACK_PUBLIC_URL is not set")
+		return models.CreateWebhooksResponse{}, ErrStackPublicUrlMissing
 	}
 
 	others := make([]models.PSPOther, 0, len(webhookConfigs))

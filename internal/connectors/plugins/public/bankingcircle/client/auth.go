@@ -3,11 +3,10 @@ package client
 import (
 	"context"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 func (c *Client) login(ctx context.Context) error {
@@ -37,14 +36,11 @@ func (c *Client) login(ctx context.Context) error {
 	var res response
 	var errors []responseError
 	statusCode, err := c.httpClient.Do(req, &res, &errors)
-	switch err {
-	case nil:
-		// fallthrough
-	case httpwrapper.ErrStatusCodeUnexpected:
+	if err != nil {
 		if len(errors) > 0 {
-			return fmt.Errorf("failed to login: %s %s", errors[0].ErrorCode, errors[0].ErrorText)
+			log.Printf("bankingcircle auth failed with code %s: %s", errors[0].ErrorCode, errors[0].ErrorText)
 		}
-		return fmt.Errorf("failed to login: %d", statusCode)
+		return fmt.Errorf("failed to login, status code %d: %w", statusCode, err)
 	}
 
 	c.accessToken = res.AccessToken

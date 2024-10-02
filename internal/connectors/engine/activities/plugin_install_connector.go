@@ -16,16 +16,15 @@ type InstallConnectorRequest struct {
 func (a Activities) PluginInstallConnector(ctx context.Context, request InstallConnectorRequest) (*models.InstallResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 
 	resp, err := plugin.Install(ctx, request.Req)
 	if err != nil {
-		// TODO(polo): temporal errors
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 
-	return &resp, err
+	return &resp, nil
 }
 
 var PluginInstallConnectorActivity = Activities{}.PluginInstallConnector

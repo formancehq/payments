@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 )
 
 type externalAccountsState struct {
@@ -29,7 +28,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextExternalAccountsResponse{}, errors.New("missing from payload when fetching external accounts")
+		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err

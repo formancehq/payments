@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow for clients
@@ -51,14 +49,10 @@ func (c *Client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 	var res responseWrapper[[]Account]
 	var errRes modulrError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get accounts: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get accounts: %w", err)
+	return &res, nil
 }
 
 func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
@@ -75,12 +69,8 @@ func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	var res Account
 	var errRes modulrError
 	_, err = c.httpClient.Do(req, &res, &errRes)
-	switch err {
-	case nil:
-		return &res, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get account: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get account: %w", err)
+	return &res, nil
 }

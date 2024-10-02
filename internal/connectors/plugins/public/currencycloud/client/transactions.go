@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"time"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -62,13 +60,9 @@ func (c *Client) GetTransactions(ctx context.Context, page int, pageSize int, up
 
 	res := response{Transactions: make([]Transaction, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, nil)
-	switch err {
-	case nil:
-		return res.Transactions, res.Pagination.NextPage, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, 0, errRes.Error()
+	_, err = c.httpClient.Do(req, &res, &errRes)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to get transactions: %w, %w", err, errRes.Error())
 	}
-	return nil, 0, fmt.Errorf("failed to get transactions %w", err)
+	return res.Transactions, res.Pagination.NextPage, nil
 }

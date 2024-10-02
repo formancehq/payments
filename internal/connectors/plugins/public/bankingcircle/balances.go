@@ -3,7 +3,6 @@ package bankingcircle
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"math/big"
 	"time"
 
@@ -14,7 +13,7 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching balances")
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err
@@ -29,10 +28,6 @@ func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalan
 	for _, balance := range account.Balances {
 		// Note(polo): the last transaction timestamp is wrong in the banking
 		// circle response. We will use the current time instead.
-		// lastTransactionTimestamp, err := time.Parse("2006-01-02T15:04:05.999999999+00:00", balance.LastTransactionTimestamp)
-		// if err != nil {
-		// 	return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse opening date: %w", err)
-		// }
 		lastTransactionTimestamp := time.Now().UTC()
 
 		precision := supportedCurrenciesWithDecimal[balance.Currency]

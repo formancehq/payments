@@ -14,16 +14,15 @@ type UninstallConnectorRequest struct {
 func (a Activities) PluginUninstallConnector(ctx context.Context, request UninstallConnectorRequest) (*models.UninstallResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 
 	resp, err := plugin.Uninstall(ctx, models.UninstallRequest{})
 	if err != nil {
-		// TODO(polo): temporal errors
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 
-	return &resp, err
+	return &resp, nil
 }
 
 var PluginUninstallConnectorActivity = Activities{}.PluginUninstallConnector

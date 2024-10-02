@@ -3,7 +3,6 @@ package wise
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"strconv"
 
 	"github.com/formancehq/go-libs/pointer"
@@ -27,7 +26,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 	var from client.Profile
 	if req.FromPayload == nil {
-		return models.FetchNextAccountsResponse{}, errors.New("missing from payload when fetching accounts")
+		return models.FetchNextAccountsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextAccountsResponse{}, err

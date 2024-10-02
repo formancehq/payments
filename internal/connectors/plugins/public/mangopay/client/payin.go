@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type PayinResponse struct {
@@ -41,13 +41,9 @@ func (c *Client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, 
 	}
 
 	var payinResponse PayinResponse
-	_, err = c.httpClient.Do(req, &payinResponse, nil)
-	switch err {
-	case nil:
-		return &payinResponse, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &payinResponse, nil)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payin: %w", err), statusCode)
 	}
-	return nil, fmt.Errorf("failed to get payin response: %w", err)
+	return &payinResponse, nil
 }

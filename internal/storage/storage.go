@@ -10,6 +10,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
+//go:generate mockgen -source storage.go -destination storage_generated.go -package storage . Storage
 type Storage interface {
 	// Close closes the storage.
 	Close() error

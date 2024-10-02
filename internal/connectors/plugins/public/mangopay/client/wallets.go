@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type Wallet struct {
@@ -42,15 +42,11 @@ func (c *Client) GetWallets(ctx context.Context, userID string, page, pageSize i
 
 	var wallets []Wallet
 	var errRes mangopayError
-	_, err = c.httpClient.Do(req, &wallets, errRes)
-	switch err {
-	case nil:
-		return wallets, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	statusCode, err := c.httpClient.Do(req, &wallets, &errRes)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
 	}
-	return nil, fmt.Errorf("failed to get wallets %w", err)
+	return wallets, nil
 }
 
 func (c *Client) GetWallet(ctx context.Context, walletID string) (*Wallet, error) {
@@ -67,13 +63,9 @@ func (c *Client) GetWallet(ctx context.Context, walletID string) (*Wallet, error
 
 	var wallet Wallet
 	var errRes mangopayError
-	_, err = c.httpClient.Do(req, &wallet, errRes)
-	switch err {
-	case nil:
-		return &wallet, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	statusCode, err := c.httpClient.Do(req, &wallet, &errRes)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallet: %w %w", err, errRes.Error()), statusCode)
 	}
-	return nil, fmt.Errorf("failed to get wallet %w", err)
+	return &wallet, nil
 }

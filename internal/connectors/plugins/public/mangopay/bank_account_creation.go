@@ -49,7 +49,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 		var err error
 		mangopayBankAccount, err = p.client.CreateIBANBankAccount(ctx, userID, req)
 		if err != nil {
-			return models.CreateBankAccountResponse{}, err
+			return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 		}
 	} else {
 		if req.BankAccount.Country == nil {
@@ -58,7 +58,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 		switch *req.BankAccount.Country {
 		case "US":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
 			}
 
 			req := &client.CreateUSBankAccountRequest{
@@ -78,7 +78,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		case "CA":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
 			}
 			req := &client.CreateCABankAccountRequest{
 				OwnerName:         req.BankAccount.Name,
@@ -98,7 +98,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		case "GB":
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
 			}
 
 			req := &client.CreateGBBankAccountRequest{
@@ -117,7 +117,7 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 
 		default:
 			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("missing account number in bank account metadata")
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
 			}
 
 			req := &client.CreateOtherBankAccountRequest{

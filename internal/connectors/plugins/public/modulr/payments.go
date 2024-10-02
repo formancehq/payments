@@ -3,7 +3,6 @@ package modulr
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -27,7 +26,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, errors.New("missing from payload when fetching payments")
+		return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextPaymentsResponse{}, err

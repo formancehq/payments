@@ -83,5 +83,5 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		ExternalAccounts: accounts,
 		NewState:         payload,
 		HasMore:          hasMore,
-	}, err
+	}, nil
 }

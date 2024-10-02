@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/go-libs/errorsutils"
 )
 
 type User struct {
@@ -33,13 +33,9 @@ func (c *Client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, 
 	req.URL.RawQuery = q.Encode()
 
 	var users []User
-	_, err = c.httpClient.Do(req, &users, nil)
-	switch err {
-	case nil:
-		return users, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, err
+	statusCode, err := c.httpClient.Do(req, &users, nil)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get user response: %w", err), statusCode)
 	}
-	return nil, fmt.Errorf("failed to get user response: %w", err)
+	return users, nil
 }

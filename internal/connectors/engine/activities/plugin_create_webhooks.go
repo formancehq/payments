@@ -15,13 +15,12 @@ type CreateWebhooksRequest struct {
 func (a Activities) PluginCreateWebhooks(ctx context.Context, request CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 
 	resp, err := plugin.CreateWebhooks(ctx, request.Req)
 	if err != nil {
-		// TODO(polo): temporal errors
-		return nil, err
+		return nil, temporalError(err, request.ConnectorID.Provider)
 	}
 	return &resp, nil
 }

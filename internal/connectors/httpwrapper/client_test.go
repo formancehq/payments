@@ -76,7 +76,17 @@ var _ = Describe("ClientWrapper", func() {
 			res := &errorRes{}
 			code, doErr := client.Do(req, &successRes{}, res)
 			Expect(code).To(Equal(http.StatusInternalServerError))
-			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeUnexpected))
+			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeServerError))
+			Expect(res.Code).To(Equal("err123"))
+		})
+		It("unmarshals error responses when http client error seen", func(ctx SpecContext) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"?code=400", http.NoBody)
+			Expect(err).To(BeNil())
+
+			res := &errorRes{}
+			code, doErr := client.Do(req, &successRes{}, res)
+			Expect(code).To(Equal(http.StatusBadRequest))
+			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeClientError))
 			Expect(res.Code).To(Equal("err123"))
 		})
 		It("responds with error when HTTP request fails", func(ctx SpecContext) {

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/google/uuid"
 )
 
@@ -45,12 +44,8 @@ func (c *Client) CreateQuote(ctx context.Context, profileID, currency string, am
 
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &quote, &errRes)
-	switch err {
-	case nil:
-		return quote, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return quote, errRes.Error(statusCode).Error()
+	if err != nil {
+		return quote, fmt.Errorf("failed to get response from quote: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return quote, fmt.Errorf("failed to get response from quote: %w", err)
+	return quote, nil
 }

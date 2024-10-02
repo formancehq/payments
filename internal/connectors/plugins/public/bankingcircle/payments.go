@@ -78,7 +78,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		Payments: payments,
 		NewState: payload,
 		HasMore:  hasMore,
-	}, err
+	}, nil
 }
 
 func translatePayment(from client.Payment) (*models.PSPPayment, error) {

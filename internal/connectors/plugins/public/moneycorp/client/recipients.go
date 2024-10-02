@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type recipientsResponse struct {
@@ -45,12 +43,8 @@ func (c *Client) GetRecipients(ctx context.Context, accountID string, page int, 
 	recipients := recipientsResponse{Recipients: make([]*Recipient, 0)}
 	var errRes moneycorpError
 	_, err = c.httpClient.Do(req, &recipients, &errRes)
-	switch err {
-	case nil:
-		return recipients.Recipients, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return nil, errRes.Error()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get recipients: %w %w", err, errRes.Error())
 	}
-	return nil, fmt.Errorf("failed to get recipients %w", err)
+	return recipients.Recipients, nil
 }

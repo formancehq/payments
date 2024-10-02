@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Profile struct {
@@ -27,12 +25,8 @@ func (c *Client) GetProfiles(ctx context.Context) ([]Profile, error) {
 
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &profiles, &errRes)
-	switch err {
-	case nil:
-		return profiles, nil
-	case httpwrapper.ErrStatusCodeUnexpected:
-		// TODO(polo): retryable errors
-		return profiles, errRes.Error(statusCode).Error()
+	if err != nil {
+		return profiles, fmt.Errorf("failed to make profiles: %w %w", err, errRes.Error(statusCode).Error())
 	}
-	return profiles, fmt.Errorf("failed to get profiles: %w", err)
+	return profiles, nil
 }
