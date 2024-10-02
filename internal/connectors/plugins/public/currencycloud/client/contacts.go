@@ -12,11 +12,15 @@ type Contact struct {
 	ID string `json:"id"`
 }
 
-func (c *Client) GetContactID(ctx context.Context, accountID string) (*Contact, error) {
+func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_contacts")
 	// now := time.Now()
 	// defer f(ctx, now)
+
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, err
+	}
 
 	form := url.Values{}
 	form.Set("account_id", accountID)

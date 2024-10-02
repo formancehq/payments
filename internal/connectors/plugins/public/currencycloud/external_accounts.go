@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -34,49 +35,23 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	hasMore := false
 	page := oldState.LastPage
 	for {
-		pagedBeneficiarise, nextPage, err := p.client.GetBeneficiaries(ctx, page, req.PageSize)
+		pagedBeneficiaries, nextPage, err := p.client.GetBeneficiaries(ctx, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		if len(pagedBeneficiarise) == 0 {
+		if len(pagedBeneficiaries) == 0 {
 			break
 		}
 
-		for _, beneficiary := range pagedBeneficiarise {
-			switch beneficiary.CreatedAt.Compare(oldState.LastCreatedAt) {
-			case -1, 0:
-				// Account already ingested, skip
-				continue
-			default:
-			}
-
-			raw, err := json.Marshal(beneficiary)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference:    beneficiary.ID,
-				CreatedAt:    beneficiary.CreatedAt,
-				Name:         &beneficiary.Name,
-				DefaultAsset: &beneficiary.Currency,
-				Raw:          raw,
-			})
-
-			newState.LastCreatedAt = beneficiary.CreatedAt
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
+		accounts, err = fillBeneficiaries(accounts, pagedBeneficiaries, oldState)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
-
-		if nextPage == -1 {
+		needMore := true
+		needMore, hasMore, accounts = shouldFetchMore(accounts, nextPage, req.PageSize)
+		if !needMore {
 			break
 		}
 
@@ -84,6 +59,9 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	}
 
 	newState.LastPage = page
+	if len(accounts) > 0 {
+		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
+	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
@@ -95,4 +73,34 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func fillBeneficiaries(
+	accounts []models.PSPAccount,
+	pagedBeneficiaries []*client.Beneficiary,
+	oldState externalAccountsState,
+) ([]models.PSPAccount, error) {
+	for _, beneficiary := range pagedBeneficiaries {
+		switch beneficiary.CreatedAt.Compare(oldState.LastCreatedAt) {
+		case -1, 0:
+			// Account already ingested, skip
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(beneficiary)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    beneficiary.ID,
+			CreatedAt:    beneficiary.CreatedAt,
+			Name:         &beneficiary.Name,
+			DefaultAsset: &beneficiary.Currency,
+			Raw:          raw,
+		})
+	}
+
+	return accounts, nil
 }

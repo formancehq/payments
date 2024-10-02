@@ -2,14 +2,13 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
-func (c *Client) authenticate(ctx context.Context, httpClient *http.Client) (string, error) {
+func (c *client) authenticate(ctx context.Context) error {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
 	// now := time.Now()
@@ -20,25 +19,14 @@ func (c *Client) authenticate(ctx context.Context, httpClient *http.Client) (str
 	form.Add("login_id", c.loginID)
 	form.Add("api_key", c.apiKey)
 
-	req, err := http.NewRequest(http.MethodPost,
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/authenticate/api"), strings.NewReader(form.Encode()))
 	if err != nil {
-		return "", fmt.Errorf("failed to create request: %w", err)
+		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Accept", "application/json")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return "", fmt.Errorf("failed to do get request: %w", err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", unmarshalError(resp.StatusCode, resp.Body).Error()
-	}
 
 	//nolint:tagliatelle // allow for client code
 	type response struct {
@@ -46,10 +34,23 @@ func (c *Client) authenticate(ctx context.Context, httpClient *http.Client) (str
 	}
 
 	var res response
-
-	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return "", fmt.Errorf("failed to decode response body: %w", err)
+	var errRes currencyCloudError
+	_, err = c.httpClient.Do(req, &res, &errRes)
+	if err != nil {
+		return fmt.Errorf("failed to get authenticate: %w, %w", err, errRes.Error())
 	}
 
-	return res.AuthToken, nil
+	c.authToken = res.AuthToken
+
+	return nil
+}
+
+func (c *client) ensureLogin(ctx context.Context) error {
+	if c.authToken == "" {
+		_, err, _ := c.singleFlight.Do("authenticate", func() (interface{}, error) {
+			return nil, c.authenticate(ctx)
+		})
+		return err
+	}
+	return nil
 }

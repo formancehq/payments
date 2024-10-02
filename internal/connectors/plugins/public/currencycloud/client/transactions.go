@@ -22,7 +22,7 @@ type Transaction struct {
 	Amount json.Number `json:"amount"`
 }
 
-func (c *Client) GetTransactions(ctx context.Context, page int, pageSize int, updatedAtFrom time.Time) ([]Transaction, int, error) {
+func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, updatedAtFrom time.Time) ([]Transaction, int, error) {
 	if page < 1 {
 		return nil, 0, fmt.Errorf("page must be greater than 0")
 	}
@@ -31,6 +31,10 @@ func (c *Client) GetTransactions(ctx context.Context, page int, pageSize int, up
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_transactions")
 	// now := time.Now()
 	// defer f(ctx, now)
+
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.buildEndpoint("v2/transactions/find"), http.NoBody)

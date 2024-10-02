@@ -9,7 +9,7 @@ import (
 )
 
 type Plugin struct {
-	client *client.Client
+	client client.Client
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
@@ -22,6 +22,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	if err != nil {
 		return models.InstallResponse{}, err
 	}
+
 	p.client = client
 
 	return models.InstallResponse{

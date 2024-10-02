@@ -17,11 +17,15 @@ type Balance struct {
 	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-func (c *Client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
+func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_balances")
 	// now := time.Now()
 	// defer f(ctx, now)
+
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.buildEndpoint("v2/balances/find"), http.NoBody)

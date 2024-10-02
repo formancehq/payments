@@ -16,11 +16,15 @@ type Beneficiary struct {
 	// Contains a lot more fields that will be not used on our side for now
 }
 
-func (c *Client) GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error) {
+func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_beneficiaries")
 	// now := time.Now()
 	// defer f(ctx, now)
+
+	if err := c.ensureLogin(ctx); err != nil {
+		return nil, 0, err
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/beneficiaries/find"), http.NoBody)
