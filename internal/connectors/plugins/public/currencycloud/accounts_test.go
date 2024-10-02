@@ -2,6 +2,7 @@ package currencycloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -43,6 +44,24 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 					UpdatedAt:   now.Add(-time.Duration(50-i) * time.Minute).UTC(),
 				})
 			}
+		})
+
+		It("should return an error - get accounts error", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
+				[]*client.Account{},
+				-1,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
 		It("should fetch next accounts - no state no results", func(ctx SpecContext) {

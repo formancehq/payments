@@ -2,6 +2,7 @@ package currencycloud
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -44,6 +45,24 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 					CreatedAt:             now.Add(-time.Duration(50-i) * time.Minute).UTC(),
 				})
 			}
+		})
+
+		It("should return an error - get beneficiaries error", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetBeneficiaries(ctx, 1, 60).Return(
+				[]*client.Beneficiary{},
+				-1,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
 		})
 
 		It("should fetch next external accounts - no state no results", func(ctx SpecContext) {
