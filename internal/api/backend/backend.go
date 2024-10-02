@@ -42,6 +42,24 @@ type Backend interface {
 	PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
 
+	// Payment Initiations
+	PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool) error
+	PaymentInitiationsList(ctx context.Context, query storage.ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error)
+	PaymentInitiationsGet(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiation, error)
+	PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID) error
+	PaymentInitiationsReject(ctx context.Context, id models.PaymentInitiationID) error
+	PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID) error
+	PaymentInitiationsDelete(ctx context.Context, id models.PaymentInitiationID) error
+
+	// Payment Initiation Adjustments
+	PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error)
+	PaymentInitiationAdjustmentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.PaymentInitiationAdjustment, error)
+	PaymentInitiationAdjustmentsGetLast(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiationAdjustment, error)
+
+	// Payment Initiatiion Related Payments
+	PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+	PaymentInitiationRelatedPaymentListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error)
+
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)

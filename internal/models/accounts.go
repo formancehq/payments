@@ -146,3 +146,14 @@ func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID Con
 	}
 	return accounts
 }
+
+func ToPSPAccount(from *Account) *PSPAccount {
+	return &PSPAccount{
+		Reference:    from.Reference,
+		CreatedAt:    from.CreatedAt,
+		Name:         from.Name,
+		DefaultAsset: from.DefaultAsset,
+		Metadata:     from.Metadata,
+		Raw:          from.Raw,
+	}
+}

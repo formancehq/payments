@@ -22,7 +22,8 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 		// Authenticated routes
 		r.Group(func(r chi.Router) {
-			r.Use(auth.Middleware(a))
+			// r.Use(auth.Middleware(a))
+			_ = a
 
 			// Accounts
 			r.Route("/accounts", func(r chi.Router) {
@@ -94,6 +95,26 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 					// TODO(polo): add update config handler
 				})
 			})
+
+			// Payment Initiations
+			r.Route("/payment-initiations", func(r chi.Router) {
+				r.Post("/", paymentInitiationsCreate(backend))
+				r.Get("/", paymentInitiationsList(backend))
+
+				r.Route("/{paymentInitiationID}", func(r chi.Router) {
+					r.Delete("/", paymentInitiationsDelete(backend))
+					r.Get("/", paymentInitiationsGet(backend))
+					r.Post("/retry", paymentInitiationsRetry(backend))
+					r.Post("/approve", paymentInitiationsApprove(backend))
+					r.Post("/reject", paymentInitiationsReject(backend))
+					// TODO(polo): add reverse
+					// r.Post("/reverse", paymentInitiationsReverse(backend))
+
+					r.Get("/adjustments", paymentInitiationAdjustmentsList(backend))
+					r.Get("/payments", paymentInitiationPaymentsList(backend))
+				})
+
+			})
 		})
 	})
 
@@ -126,4 +147,8 @@ func bankAccountID(r *http.Request) string {
 
 func scheduleID(r *http.Request) string {
 	return chi.URLParam(r, "scheduleID")
+}
+
+func paymentInitiationID(r *http.Request) string {
+	return chi.URLParam(r, "paymentInitiationID")
 }

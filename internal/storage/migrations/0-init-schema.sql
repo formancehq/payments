@@ -276,13 +276,13 @@ alter table webhooks_configs
 -- Webhooks
 create table if not exists webhooks (
     -- Mandatory fields
-    id text not null,
+    id           text not null,
     connector_id varchar not null,
 
     -- Optional fields
-    headers json,
+    headers      json,
     query_values json,
-    body bytea,
+    body         bytea,
 
     -- Primary key
     primary key (id)
@@ -290,4 +290,73 @@ create table if not exists webhooks (
 alter table webhooks
     add constraint webhooks_connector_id_fk foreign key (connector_id)
     references connectors (id)
+    on delete cascade;
+
+-- Payment Initiations
+create table if not exists payment_initiations (
+    -- Mandatory fields
+    id                     text not null,
+    connector_id           varchar not null,
+    reference              text not null,
+    created_at             timestamp without time zone not null,
+    scheduled_at           timestamp without time zone not null,
+    description            text not null,
+    type                   text not null,
+    amount                 numeric not null,
+    asset                  text not null,
+
+    -- Optional fields
+    source_account_id varchar,
+    destination_account_id varchar,
+
+    -- Optional fields with default
+    metadata jsonb not null default '{}'::jsonb,
+
+    -- Primary key
+    primary key (id)
+);
+alter table payment_initiations
+    add constraint payment_initiations_connector_id_fk foreign key (connector_id)
+    references connectors (id)
+    on delete cascade;
+
+-- Payment Initiation Related Payments
+create table if not exists payment_initiation_related_payments(
+    -- Mandatory fields
+    payment_initiation_id varchar not null,
+    payment_id            varchar not null,
+    created_at           timestamp without time zone not null,
+
+    -- Primary key
+    primary key (payment_initiation_id, payment_id)
+);
+alter table payment_initiation_related_payments
+    add constraint payment_initiation_related_payments_payment_initiation_id_fk foreign key (payment_initiation_id)
+    references payment_initiations (id)
+    on delete cascade;
+alter table payment_initiation_related_payments
+    add constraint payment_initiation_related_payments_payment_id_fk foreign key (payment_id)
+    references payments (id)
+    on delete cascade;
+
+-- Payment Initiation Adjustments
+create table if not exists payment_initiation_adjustments(
+    -- Mandatory fields
+    id                    varchar not null,
+    payment_initiation_id varchar not null,
+    created_at            timestamp without time zone not null,
+    status                text not null,
+
+    -- Optional fields
+    error                 text,
+
+     -- Optional fields with default
+    metadata jsonb not null default '{}'::jsonb,
+
+    -- Primary key
+    primary key (id)
+);
+alter table payment_initiation_adjustments
+    add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
+    references payment_initiations (id)
     on delete cascade;

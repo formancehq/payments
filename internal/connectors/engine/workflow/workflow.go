@@ -86,6 +86,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runCreateBankAccount,
 		}).
 		Append(temporalworker.Definition{
+			Name: "CreatePayout",
+			Func: w.runCreatePayout,
+		}).
+		Append(temporalworker.Definition{
+			Name: "CreateTransfer",
+			Func: w.runCreateTransfer,
+		}).
+		Append(temporalworker.Definition{
 			Name: "Run",
 			Func: w.run,
 		}).

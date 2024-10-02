@@ -1,0 +1,30 @@
+syntax = "proto3";
+package formance.payments.connectors.grpc.proto;
+option go_package = "github.com/formancehq/payments/internal/connectors/grpc/proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "account.proto";
+import "monetary.proto";
+
+message PaymentInitiation {
+    // Unique reference for the payment
+    string reference = 1;
+
+    // Timestamp of the payment creation
+    google.protobuf.Timestamp created_at = 2;
+
+    // Description of the payment
+    string description = 3;
+
+    // PSP source account for the payment
+    formance.payments.connectors.grpc.proto.Account source_account = 4;
+    // PSP destination account for the payment
+    formance.payments.connectors.grpc.proto.Account destination_account = 5;
+
+    // Amount and asset of the payment
+    formance.payments.connectors.grpc.proto.Monetary amount = 6;
+
+    // Additional metadata
+    map<string, string> metadata = 7;
+}

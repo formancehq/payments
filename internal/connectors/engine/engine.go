@@ -26,6 +26,8 @@ type Engine interface {
 	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error
 	ResetConnector(ctx context.Context, connectorID models.ConnectorID) error
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error)
+	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
+	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
 	HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error
 	CreatePool(ctx context.Context, pool models.Pool) error
 	AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
@@ -250,6 +252,66 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	}
 
 	return &bankAccount, nil
+}
+
+func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error {
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-transfer-%s-%s-%d", piID.ConnectorID.String(), piID.String(), attempt),
+			TaskQueue:                                piID.ConnectorID.String(),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateTransfer,
+		workflow.CreateTransfer{
+			ConnectorID:         piID.ConnectorID,
+			PaymentInitiationID: piID,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Wait for bank account creation to complete
+	if err := run.Get(ctx, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int) error {
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-payout-%s-%s-%d", piID.ConnectorID.String(), piID.String(), attempt),
+			TaskQueue:                                piID.ConnectorID.String(),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreatePayout,
+		workflow.CreatePayout{
+			ConnectorID:         piID.ConnectorID,
+			PaymentInitiationID: piID,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Wait for bank account creation to complete
+	if err := run.Get(ctx, nil); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {

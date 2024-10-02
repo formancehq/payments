@@ -265,6 +265,181 @@ func (mr *MockBackendMockRecorder) ConnectorsUninstall(ctx, connectorID any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockBackend)(nil).ConnectorsUninstall), ctx, connectorID)
 }
 
+// PaymentInitiationAdjustmentsGetLast mocks base method.
+func (m *MockBackend) PaymentInitiationAdjustmentsGetLast(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiationAdjustment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationAdjustmentsGetLast", ctx, id)
+	ret0, _ := ret[0].(*models.PaymentInitiationAdjustment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationAdjustmentsGetLast indicates an expected call of PaymentInitiationAdjustmentsGetLast.
+func (mr *MockBackendMockRecorder) PaymentInitiationAdjustmentsGetLast(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationAdjustmentsGetLast", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationAdjustmentsGetLast), ctx, id)
+}
+
+// PaymentInitiationAdjustmentsList mocks base method.
+func (m *MockBackend) PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationAdjustmentsList", ctx, id, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiationAdjustment])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationAdjustmentsList indicates an expected call of PaymentInitiationAdjustmentsList.
+func (mr *MockBackendMockRecorder) PaymentInitiationAdjustmentsList(ctx, id, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationAdjustmentsList", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationAdjustmentsList), ctx, id, query)
+}
+
+// PaymentInitiationAdjustmentsListAll mocks base method.
+func (m *MockBackend) PaymentInitiationAdjustmentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.PaymentInitiationAdjustment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationAdjustmentsListAll", ctx, id)
+	ret0, _ := ret[0].([]models.PaymentInitiationAdjustment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationAdjustmentsListAll indicates an expected call of PaymentInitiationAdjustmentsListAll.
+func (mr *MockBackendMockRecorder) PaymentInitiationAdjustmentsListAll(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationAdjustmentsListAll", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationAdjustmentsListAll), ctx, id)
+}
+
+// PaymentInitiationRelatedPaymentListAll mocks base method.
+func (m *MockBackend) PaymentInitiationRelatedPaymentListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationRelatedPaymentListAll", ctx, id)
+	ret0, _ := ret[0].([]models.Payment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationRelatedPaymentListAll indicates an expected call of PaymentInitiationRelatedPaymentListAll.
+func (mr *MockBackendMockRecorder) PaymentInitiationRelatedPaymentListAll(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationRelatedPaymentListAll", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationRelatedPaymentListAll), ctx, id)
+}
+
+// PaymentInitiationRelatedPaymentsList mocks base method.
+func (m *MockBackend) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationRelatedPaymentsList", ctx, id, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.Payment])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationRelatedPaymentsList indicates an expected call of PaymentInitiationRelatedPaymentsList.
+func (mr *MockBackendMockRecorder) PaymentInitiationRelatedPaymentsList(ctx, id, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationRelatedPaymentsList", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationRelatedPaymentsList), ctx, id, query)
+}
+
+// PaymentInitiationsApprove mocks base method.
+func (m *MockBackend) PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsApprove", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsApprove indicates an expected call of PaymentInitiationsApprove.
+func (mr *MockBackendMockRecorder) PaymentInitiationsApprove(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsApprove", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsApprove), ctx, id)
+}
+
+// PaymentInitiationsCreate mocks base method.
+func (m *MockBackend) PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsCreate", ctx, paymentInitiation, sendToPSP)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsCreate indicates an expected call of PaymentInitiationsCreate.
+func (mr *MockBackendMockRecorder) PaymentInitiationsCreate(ctx, paymentInitiation, sendToPSP any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsCreate", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsCreate), ctx, paymentInitiation, sendToPSP)
+}
+
+// PaymentInitiationsDelete mocks base method.
+func (m *MockBackend) PaymentInitiationsDelete(ctx context.Context, id models.PaymentInitiationID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsDelete indicates an expected call of PaymentInitiationsDelete.
+func (mr *MockBackendMockRecorder) PaymentInitiationsDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsDelete", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsDelete), ctx, id)
+}
+
+// PaymentInitiationsGet mocks base method.
+func (m *MockBackend) PaymentInitiationsGet(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiation, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsGet", ctx, id)
+	ret0, _ := ret[0].(*models.PaymentInitiation)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationsGet indicates an expected call of PaymentInitiationsGet.
+func (mr *MockBackendMockRecorder) PaymentInitiationsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsGet", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsGet), ctx, id)
+}
+
+// PaymentInitiationsList mocks base method.
+func (m *MockBackend) PaymentInitiationsList(ctx context.Context, query storage.ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiation])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationsList indicates an expected call of PaymentInitiationsList.
+func (mr *MockBackendMockRecorder) PaymentInitiationsList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsList", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsList), ctx, query)
+}
+
+// PaymentInitiationsReject mocks base method.
+func (m *MockBackend) PaymentInitiationsReject(ctx context.Context, id models.PaymentInitiationID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsReject", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsReject indicates an expected call of PaymentInitiationsReject.
+func (mr *MockBackendMockRecorder) PaymentInitiationsReject(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsReject", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsReject), ctx, id)
+}
+
+// PaymentInitiationsRetry mocks base method.
+func (m *MockBackend) PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationsRetry", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsRetry indicates an expected call of PaymentInitiationsRetry.
+func (mr *MockBackendMockRecorder) PaymentInitiationsRetry(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsRetry", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsRetry), ctx, id)
+}
+
 // PaymentsGet mocks base method.
 func (m *MockBackend) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
 	m.ctrl.T.Helper()
