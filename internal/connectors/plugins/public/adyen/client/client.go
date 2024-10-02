@@ -2,11 +2,14 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/adyen"
 	"github.com/adyen/adyen-go-api-library/v7/src/common"
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -53,4 +56,19 @@ func New(apiKey, username, password, companyID string, liveEndpointPrefix string
 		webhookPassword: password,
 		companyID:       companyID,
 	}, nil
+}
+
+// wrap a public error for cases that we don't want to retry
+// so that activities can classify this error for temporal
+func (c *client) wrapSDKError(err error, statusCode int) error {
+	if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
+		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
+	}
+
+	// Adyen SDK doesn't appear to catch anything above 500
+	// let's return an error here too even if it was nil
+	if statusCode >= http.StatusInternalServerError {
+		return fmt.Errorf("unexpected status code %d: %w", statusCode, err)
+	}
+	return err
 }
