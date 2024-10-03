@@ -2,12 +2,9 @@ package activities_test
 
 import (
 	"fmt"
-	"net/http"
 
-	"github.com/formancehq/go-libs/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -15,6 +12,8 @@ import (
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("Plugin Fetch Next Accounts", func() {
@@ -66,12 +65,11 @@ var _ = Describe("Plugin Fetch Next Accounts", func() {
 			temporalErr, ok := err.(*temporal.ApplicationError)
 			Expect(ok).To(BeTrue())
 			Expect(temporalErr.NonRetryable()).To(BeFalse())
-			Expect(temporalErr.Type()).To(Equal(req.ConnectorID.Provider))
+			Expect(temporalErr.Type()).To(Equal(activities.ErrTypeDefault))
 		})
 
 		It("returns a non-retryable temporal error", func(ctx SpecContext) {
-			wrappedErr := fmt.Errorf("some string: %w", httpwrapper.ErrStatusCodeClientError)
-			newErr := errorsutils.NewErrorWithExitCode(wrappedErr, http.StatusTeapot)
+			newErr := status.Errorf(codes.InvalidArgument, "invalid")
 
 			p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
 			plugin.EXPECT().FetchNextAccounts(ctx, req.Req).Return(sampleResponse, newErr)
@@ -80,7 +78,7 @@ var _ = Describe("Plugin Fetch Next Accounts", func() {
 			temporalErr, ok := err.(*temporal.ApplicationError)
 			Expect(ok).To(BeTrue())
 			Expect(temporalErr.NonRetryable()).To(BeTrue())
-			Expect(temporalErr.Type()).To(Equal(req.ConnectorID.Provider))
+			Expect(temporalErr.Type()).To(Equal(activities.ErrTypeInvalidArgument))
 		})
 	})
 })
