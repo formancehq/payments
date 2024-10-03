@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"errors"
 	"os"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
@@ -10,8 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/grpc/proto/services"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-hclog"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type impl struct {
@@ -313,12 +310,3 @@ func (i *impl) TranslateWebhook(ctx context.Context, req *services.TranslateWebh
 }
 
 var _ grpc.PSP = &impl{}
-
-func translateErrorToGRPC(err error) error {
-	switch {
-	case errors.Is(err, models.ErrInvalidConfig):
-		return status.Errorf(codes.InvalidArgument, err.Error())
-	default:
-		return status.Errorf(codes.Internal, err.Error())
-	}
-}
