@@ -1,36 +1,49 @@
 package activities
 
 import (
-	"errors"
-
-	engineplugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/temporal"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-var nonRetryableErrors = []error{
-	engineplugins.ErrNotFound,
-	httpwrapper.ErrStatusCodeClientError,
-	models.ErrMissingFromPayloadInRequest,
-	models.ErrMissingAccountInMetadata,
-	plugins.ErrNotYetInstalled,
-	plugins.ErrNotImplemented,
+const (
+	ErrTypeDefault            = "DEFAULT"
+	ErrTypeFailedPrecondition = "FAILED_PRECONDITON"
+	ErrTypeInvalidArgument    = "INVALID_ARGUMENT"
+	ErrTypePermissionDenied   = "PERMISSION_DENIED"
+	ErrTypeUnimplemented      = "UNIMPLEMENTED"
+	ErrTypeUnauthenticated    = "UNAUTHENTICATED"
+)
+
+var nonRetryableErrorTypes = map[codes.Code]string{
+	codes.FailedPrecondition: ErrTypeFailedPrecondition,
+	codes.InvalidArgument:    ErrTypeInvalidArgument,
+	codes.PermissionDenied:   ErrTypePermissionDenied,
+	codes.Unimplemented:      ErrTypeUnimplemented,
+	codes.Unauthenticated:    ErrTypeUnauthenticated,
 }
 
-func temporalError(err error, cause string) error {
-	isRetryable := true
+func temporalError(err error) error {
+	var reason string
 
-	for _, candidate := range nonRetryableErrors {
-		if errors.Is(err, candidate) {
-			isRetryable = false
-			break
+	code := status.Code(err)
+	if code == codes.OK {
+		return nil
+	}
+
+	if converted := status.Convert(err); converted != nil {
+		for _, d := range converted.Details() {
+			switch info := d.(type) {
+			case *errdetails.ErrorInfo:
+				reason = info.Reason
+			}
 		}
 	}
 
-	if isRetryable {
-		return temporal.NewApplicationErrorWithCause(err.Error(), cause, err)
+	errorType, ok := nonRetryableErrorTypes[code]
+	if !ok {
+		return temporal.NewApplicationErrorWithCause(reason, ErrTypeDefault, err)
 	}
-	return temporal.NewNonRetryableApplicationError(err.Error(), cause, err)
+	return temporal.NewNonRetryableApplicationError(reason, errorType, err)
 }

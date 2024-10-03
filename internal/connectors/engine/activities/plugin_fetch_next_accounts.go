@@ -16,12 +16,12 @@ type FetchNextAccountsRequest struct {
 func (a Activities) PluginFetchNextAccounts(ctx context.Context, request FetchNextAccountsRequest) (*models.FetchNextAccountsResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalError(err, request.ConnectorID.Provider)
+		return nil, temporalError(err)
 	}
 
 	resp, err := plugin.FetchNextAccounts(ctx, request.Req)
 	if err != nil {
-		return nil, temporalError(err, request.ConnectorID.Provider)
+		return nil, temporalError(err)
 	}
 	return &resp, nil
 }
