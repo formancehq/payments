@@ -12,15 +12,17 @@ type balancesResponse struct {
 }
 
 type Balance struct {
-	ID         string `json:"id"`
-	Attributes struct {
-		CurrencyCode     string      `json:"currencyCode"`
-		OverallBalance   json.Number `json:"overallBalance"`
-		AvailableBalance json.Number `json:"availableBalance"`
-		ClearedBalance   json.Number `json:"clearedBalance"`
-		ReservedBalance  json.Number `json:"reservedBalance"`
-		UnclearedBalance json.Number `json:"unclearedBalance"`
-	} `json:"attributes"`
+	ID         string     `json:"id"`
+	Attributes Attributes `json:"attributes"`
+}
+
+type Attributes struct {
+	CurrencyCode     string      `json:"currencyCode"`
+	OverallBalance   json.Number `json:"overallBalance"`
+	AvailableBalance json.Number `json:"availableBalance"`
+	ClearedBalance   json.Number `json:"clearedBalance"`
+	ReservedBalance  json.Number `json:"reservedBalance"`
+	UnclearedBalance json.Number `json:"unclearedBalance"`
 }
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
