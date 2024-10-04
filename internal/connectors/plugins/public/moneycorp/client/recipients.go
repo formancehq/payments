@@ -20,7 +20,7 @@ type Recipient struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error) {
+func (c *client) GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_recipients")
 	// now := time.Now()

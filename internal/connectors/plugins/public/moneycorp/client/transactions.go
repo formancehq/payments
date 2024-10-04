@@ -38,7 +38,7 @@ type Transaction struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {
+func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_transactions")
 	// now := time.Now()
