@@ -2,7 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
 	"github.com/stripe/stripe-go/v79/balance"
@@ -41,4 +43,24 @@ func New(backend stripe.Backend, apiKey string) Client {
 func limit(wanted int64, have int) *int64 {
 	needed := wanted - int64(have)
 	return &needed
+}
+
+// wrap a public error for cases that we don't want to retry
+// so that activities can classify this error for temporal
+func wrapSDKErr(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	stripeErr, ok := err.(*stripe.Error)
+	if !ok {
+		return err
+	}
+
+	switch stripeErr.Type {
+	case stripe.ErrorTypeInvalidRequest, stripe.ErrorTypeIdempotency:
+		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
+
+	}
+	return err
 }

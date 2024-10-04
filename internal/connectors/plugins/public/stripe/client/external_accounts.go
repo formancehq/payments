@@ -31,7 +31,7 @@ func (c *client) GetExternalAccounts(
 				Account:    &accountID,
 				ListParams: params,
 			})
-			return itr.BankAccountList(), itr.Err()
+			return itr.BankAccountList(), wrapSDKErr(itr.Err())
 		})
 		if err != nil {
 			return results, timeline, false, err
@@ -51,7 +51,7 @@ func (c *client) GetExternalAccounts(
 		},
 	})
 	if err := itr.Err(); err != nil {
-		return nil, timeline, false, handleError(itr.Iter)
+		return nil, timeline, false, wrapSDKErr(err)
 	}
 	results = append(results, itr.BankAccountList().Data...)
 	timeline.LatestID = results[len(results)-1].ID
