@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type paymentsState struct {
@@ -37,7 +38,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	var payments []models.PSPPayment
+	payments := make([]models.PSPPayment, 0, req.PageSize)
 	hasMore := false
 	for page := 0; ; page++ {
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
@@ -45,45 +46,23 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			// retryable error already handled by the client
 			return models.FetchNextPaymentsResponse{}, err
 		}
-
 		if len(pagedTransactions) == 0 {
 			break
 		}
 
-		for _, transaction := range pagedTransactions {
-			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
-			}
-
-			switch createdAt.Compare(oldState.LastCreatedAt) {
-			case -1, 0:
-				continue
-			default:
-			}
-
-			newState.LastCreatedAt = createdAt
-
-			payment, err := transactionToPayment(transaction)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-
-			if payment != nil {
-				payments = append(payments, *payment)
-			}
-
-			if len(payments) == req.PageSize {
-				break
-			}
+		var lastCreatedAt time.Time
+		payments, lastCreatedAt, err = toPSPPayments(oldState.LastCreatedAt, payments, pagedTransactions)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
 		}
-
-		if len(pagedTransactions) < req.PageSize {
-			break
+		if len(payments) == 0 {
+			continue
 		}
+		newState.LastCreatedAt = lastCreatedAt
 
-		if len(payments) == req.PageSize {
-			hasMore = true
+		needMore := true
+		needMore, hasMore, payments = pagination.ShouldFetchMore(payments, page, req.PageSize)
+		if !needMore {
 			break
 		}
 	}
@@ -98,6 +77,38 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func toPSPPayments(
+	lastCreatedAt time.Time,
+	payments []models.PSPPayment,
+	transactions []*client.Transaction,
+) ([]models.PSPPayment, time.Time, error) {
+	var newCreatedAt time.Time
+	for _, transaction := range transactions {
+		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
+		if err != nil {
+			return payments, lastCreatedAt, fmt.Errorf("failed to parse transaction date: %v", err)
+		}
+
+		switch createdAt.Compare(lastCreatedAt) {
+		case -1, 0:
+			continue
+		default:
+		}
+
+		payment, err := transactionToPayment(transaction)
+		if err != nil {
+			return payments, lastCreatedAt, err
+		}
+		if payment == nil {
+			continue
+		}
+
+		newCreatedAt = createdAt
+		payments = append(payments, *payment)
+	}
+	return payments, newCreatedAt, nil
 }
 
 func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, error) {

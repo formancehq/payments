@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type accountsState struct {
@@ -28,7 +30,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		LastIDCreated: oldState.LastIDCreated,
 	}
 
-	var accounts []models.PSPAccount
+	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
@@ -37,42 +39,22 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
-
 		if len(pagedAccounts) == 0 {
 			break
 		}
 
-		for _, account := range pagedAccounts {
-			if account.ID <= oldState.LastIDCreated {
-				continue
-			}
-
-			raw, err := json.Marshal(account)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: account.ID,
-				// Moneycorp does not send the opening date of the account
-				CreatedAt: time.Now().UTC(),
-				Name:      &account.Attributes.AccountName,
-				Raw:       raw,
-			})
-
-			newState.LastIDCreated = account.ID
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
+		accounts, err = toPSPAccounts(oldState.LastIDCreated, accounts, pagedAccounts)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
 		}
-
-		if len(pagedAccounts) < req.PageSize {
-			break
+		if len(accounts) == 0 {
+			continue
 		}
+		newState.LastIDCreated = accounts[len(accounts)-1].Reference
 
-		if len(accounts) >= req.PageSize {
-			hasMore = true
+		needMore := true
+		needMore, hasMore, accounts = pagination.ShouldFetchMore(accounts, page, req.PageSize)
+		if !needMore {
 			break
 		}
 	}
@@ -87,4 +69,30 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func toPSPAccounts(
+	lastIDSeen string,
+	accounts []models.PSPAccount,
+	pagedAccounts []*client.Account,
+) ([]models.PSPAccount, error) {
+	for _, account := range pagedAccounts {
+		if account.ID <= lastIDSeen {
+			continue
+		}
+
+		raw, err := json.Marshal(account)
+		if err != nil {
+			return accounts, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: account.ID,
+			// Moneycorp does not send the opening date of the account
+			CreatedAt: time.Now().UTC(),
+			Name:      &account.Attributes.AccountName,
+			Raw:       raw,
+		})
+	}
+	return accounts, nil
 }
