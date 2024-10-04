@@ -7,6 +7,8 @@ import (
 )
 
 var (
+	ErrMissingCurrencies = errors.New("missing currencies")
+
 	UnsupportedCurrencies = map[string]struct{}{
 		"HUF": {},
 		"ISK": {},
@@ -203,7 +205,7 @@ func GetPrecision(currencies map[string]int, cur string) (int, error) {
 
 	def, ok := currencies[asset]
 	if !ok {
-		return 0, errors.New("missing currencies")
+		return 0, ErrMissingCurrencies
 	}
 
 	return def, nil
