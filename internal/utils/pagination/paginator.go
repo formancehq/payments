@@ -1,6 +1,6 @@
-package currencycloud
+package pagination
 
-func shouldFetchMore[T any](ret []T, nextPage, pageSize int) (bool, bool, []T) {
+func ShouldFetchMore[T any](ret []T, nextPage, pageSize int) (bool, bool, []T) {
 	switch {
 	case len(ret) > pageSize:
 		return false, true, ret[:pageSize]
