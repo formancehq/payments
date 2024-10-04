@@ -2,8 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/hmacvalidator"
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
@@ -19,12 +17,9 @@ func (c *client) searchWebhook(ctx context.Context, connectorID string) error {
 			ctx,
 			c.client.Management().WebhooksCompanyLevelApi.ListAllWebhooksInput(c.companyID).PageNumber(int32(page)).PageSize(int32(pageSize)),
 		)
+		err = c.wrapSDKError(err, raw.StatusCode)
 		if err != nil {
 			return err
-		}
-
-		if raw.StatusCode >= http.StatusBadRequest {
-			return fmt.Errorf("failed to get webhooks: %d", raw.StatusCode)
 		}
 
 		if len(webhooks.Data) == 0 {
@@ -92,24 +87,18 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 		c.client.Management().WebhooksCompanyLevelApi.SetUpWebhookInput(c.companyID).
 			CreateCompanyWebhookRequest(req),
 	)
+	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
 		return err
-	}
-
-	if raw.StatusCode >= http.StatusBadRequest {
-		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
 	hmac, raw, err := c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKey(
 		ctx,
 		c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKeyInput(c.companyID, *webhook.Id),
 	)
+	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
 		return err
-	}
-
-	if raw.StatusCode >= http.StatusBadRequest {
-		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
 	c.standardWebhook = &webhook
@@ -150,13 +139,9 @@ func (c *client) DeleteWebhook(ctx context.Context, connectorID string) error {
 		ctx,
 		c.client.Management().WebhooksCompanyLevelApi.RemoveWebhookInput(c.companyID, *c.standardWebhook.Id),
 	)
-
+	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
 		return err
-	}
-
-	if raw.StatusCode >= http.StatusBadRequest {
-		return fmt.Errorf("failed to create webhook: %d", raw.StatusCode)
 	}
 
 	c.standardWebhook = nil

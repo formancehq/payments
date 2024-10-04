@@ -39,7 +39,7 @@ func (c *client) GetPayments(
 			transactionParams := &stripe.BalanceTransactionListParams{ListParams: params}
 			expandBalanceTransactionParams(transactionParams)
 			itr := c.balanceTransactionClient.List(transactionParams)
-			return itr.BalanceTransactionList(), itr.Err()
+			return itr.BalanceTransactionList(), wrapSDKErr(itr.Err())
 		})
 		if err != nil {
 			return results, timeline, false, err
@@ -69,7 +69,7 @@ func (c *client) GetPayments(
 	itr := c.balanceTransactionClient.List(params)
 	results = append(results, itr.BalanceTransactionList().Data...)
 	timeline.LatestID = results[len(results)-1].ID
-	return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, itr.Err()
+	return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 }
 
 func expandBalanceTransactionParams(params *stripe.BalanceTransactionListParams) {

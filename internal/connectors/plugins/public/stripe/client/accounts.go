@@ -22,7 +22,7 @@ func (c *client) GetAccounts(
 		var oldest interface{}
 		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
 			itr := c.accountClient.List(&stripe.AccountListParams{ListParams: params})
-			return itr.AccountList(), itr.Err()
+			return itr.AccountList(), wrapSDKErr(itr.Err())
 		})
 		if err != nil {
 			return results, timeline, false, err
@@ -43,5 +43,5 @@ func (c *client) GetAccounts(
 	itr := c.accountClient.List(&stripe.AccountListParams{ListParams: filters})
 	results = append(results, itr.AccountList().Data...)
 	timeline.LatestID = results[len(results)-1].ID
-	return results, timeline, itr.AccountList().ListMeta.HasMore, itr.Err()
+	return results, timeline, itr.AccountList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 }
