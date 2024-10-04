@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type paymentsState struct {
@@ -46,7 +47,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		}
 
 		needMore := true
-		needMore, hasMore, payments = shouldFetchMore(payments, nextPage, req.PageSize)
+		needMore, hasMore, payments = pagination.ShouldFetchMore(payments, nextPage, req.PageSize)
 
 		if len(payments) > 0 {
 			newState.LastUpdatedAt = updatedAts[len(payments)-1]
