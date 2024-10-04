@@ -18,6 +18,7 @@ func (c *client) GetAccountBalances(ctx context.Context, accountID string) (*str
 	}
 
 	balance, err := c.balanceClient.Get(&stripe.BalanceParams{Params: filters})
+	err = wrapSDKErr(err)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get stripe balance: %w", err)
 	}
