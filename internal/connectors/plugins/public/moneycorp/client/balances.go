@@ -23,7 +23,7 @@ type Balance struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
+func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_account_balances")
 	// now := time.Now()

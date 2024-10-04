@@ -1,19 +1,29 @@
 package client
 
 import (
+	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-type Client struct {
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
+type Client interface {
+	GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error)
+	GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error)
+	GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error)
+	GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error)
+}
+
+type client struct {
 	httpClient httpwrapper.Client
 	endpoint   string
 }
 
-func New(clientID, apiKey, endpoint string) (*Client, error) {
+func New(clientID, apiKey, endpoint string) (*client, error) {
 	config := &httpwrapper.Config{
 		Transport: &apiTransport{
 			clientID:   clientID,
@@ -36,7 +46,7 @@ func New(clientID, apiKey, endpoint string) (*Client, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	httpClient, err := httpwrapper.NewClient(config)
-	c := &Client{
+	c := &client{
 		httpClient: httpClient,
 		endpoint:   endpoint,
 	}

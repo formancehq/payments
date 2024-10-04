@@ -18,7 +18,7 @@ type Account struct {
 	} `json:"attributes"`
 }
 
-func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error) {
+func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error) {
 	// TODO(polo, crimson): metrics
 	// metrics can also be embedded in wrapper
 	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_accounts")
