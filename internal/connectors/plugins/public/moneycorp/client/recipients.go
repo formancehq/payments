@@ -12,12 +12,14 @@ type recipientsResponse struct {
 }
 
 type Recipient struct {
-	ID         string `json:"id"`
-	Attributes struct {
-		BankAccountCurrency string `json:"bankAccountCurrency"`
-		CreatedAt           string `json:"createdAt"`
-		BankAccountName     string `json:"bankAccountName"`
-	} `json:"attributes"`
+	ID         string              `json:"id"`
+	Attributes RecipientAttributes `json:"attributes"`
+}
+
+type RecipientAttributes struct {
+	BankAccountCurrency string `json:"bankAccountCurrency"`
+	CreatedAt           string `json:"createdAt"`
+	BankAccountName     string `json:"bankAccountName"`
 }
 
 func (c *client) GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error) {
