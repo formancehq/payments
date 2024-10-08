@@ -16,7 +16,7 @@ type externalAccountsState struct {
 	LastSeekPosition uint64 `json:"lastSeekPosition"`
 }
 
-func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
