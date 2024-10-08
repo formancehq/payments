@@ -34,7 +34,7 @@ type Balance struct {
 	Visible          bool      `json:"visible"`
 }
 
-func (c *Client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, error) {
+func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "list_balances")
 	// now := time.Now()
@@ -55,7 +55,7 @@ func (c *Client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 	return balances, nil
 }
 
-func (c *Client) GetBalance(ctx context.Context, profileID uint64, balanceID uint64) (*Balance, error) {
+func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uint64) (*Balance, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "list_balances")
 	// now := time.Now()

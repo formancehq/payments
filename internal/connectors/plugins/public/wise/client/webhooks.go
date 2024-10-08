@@ -36,7 +36,7 @@ type webhookSubscriptionResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error) {
+func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error) {
 	reqBody, err := json.Marshal(webhookSubscription{
 		Name:      name,
 		TriggerOn: triggerOn,
@@ -70,7 +70,7 @@ func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	return &res, nil
 }
 
-func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
+func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions", profileID)), http.NoBody)
 	if err != nil {
@@ -86,7 +86,7 @@ func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 	return res, nil
 }
 
-func (c *Client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
+func (c *client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodDelete, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions/%s", profileID, subscriptionID)), http.NoBody)
 	if err != nil {
@@ -119,7 +119,7 @@ type transferStateChangedWebhookPayload struct {
 	SentAt         string `json:"sent_at"`
 }
 
-func (c *Client) TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error) {
+func (c *client) TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error) {
 	var transferStatedChangedEvent transferStateChangedWebhookPayload
 	err := json.Unmarshal(payload, &transferStatedChangedEvent)
 	if err != nil {
@@ -161,7 +161,7 @@ type balanceUpdateWebhookPayload struct {
 	SentAt         string `json:"sent_at"`
 }
 
-func (c *Client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error) {
+func (c *client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error) {
 	var balanceUpdateEvent balanceUpdateWebhookPayload
 	err := json.Unmarshal(payload, &balanceUpdateEvent)
 	if err != nil {

@@ -14,7 +14,7 @@ type Quote struct {
 	ID uuid.UUID `json:"id"`
 }
 
-func (c *Client) CreateQuote(ctx context.Context, profileID, currency string, amount json.Number) (Quote, error) {
+func (c *client) CreateQuote(ctx context.Context, profileID, currency string, amount json.Number) (Quote, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "create_quote")
 	// now := time.Now()

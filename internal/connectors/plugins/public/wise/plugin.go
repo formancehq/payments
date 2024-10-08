@@ -16,7 +16,7 @@ var (
 
 type Plugin struct {
 	config Config
-	client *client.Client
+	client client.Client
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
