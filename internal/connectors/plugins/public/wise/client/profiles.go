@@ -11,7 +11,7 @@ type Profile struct {
 	Type string `json:"type"`
 }
 
-func (c *Client) GetProfiles(ctx context.Context) ([]Profile, error) {
+func (c *client) GetProfiles(ctx context.Context) ([]Profile, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "list_profiles")
 	// now := time.Now()

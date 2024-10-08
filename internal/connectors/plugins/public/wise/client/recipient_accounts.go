@@ -22,7 +22,7 @@ type RecipientAccount struct {
 	} `json:"name"`
 }
 
-func (c *Client) GetRecipientAccounts(ctx context.Context, profileID uint64, pageSize int, seekPositionForNext uint64) (*RecipientAccountsResponse, error) {
+func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pageSize int, seekPositionForNext uint64) (*RecipientAccountsResponse, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "list_recipient_accounts")
 	// now := time.Now()
@@ -52,7 +52,7 @@ func (c *Client) GetRecipientAccounts(ctx context.Context, profileID uint64, pag
 	return &accounts, nil
 }
 
-func (c *Client) GetRecipientAccount(ctx context.Context, accountID uint64) (*RecipientAccount, error) {
+func (c *client) GetRecipientAccount(ctx context.Context, accountID uint64) (*RecipientAccount, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "get_recipient_account")
 	// now := time.Now()

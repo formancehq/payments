@@ -59,7 +59,7 @@ func (t *Transfer) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error) {
+func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "list_transfers")
 	// now := time.Now()
@@ -156,7 +156,7 @@ func (c *Client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 	return transfers, nil
 }
 
-func (c *Client) GetTransfer(ctx context.Context, transferID string) (*Transfer, error) {
+func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "get_transfer")
 	// now := time.Now()
@@ -177,7 +177,7 @@ func (c *Client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 	return &transfer, nil
 }
 
-func (c *Client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
+func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
 	// TODO(polo): metrics
 	// metrics.GetMetricsRegistry().ConnectorPSPCalls().Add(ctx, 1, metric.WithAttributes([]attribute.KeyValue{
 	// 	attribute.String("connector", "wise"),
