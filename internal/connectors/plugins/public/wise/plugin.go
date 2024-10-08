@@ -63,6 +63,9 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	if p.client == nil {
+		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+	}
 	return p.uninstall(ctx, req)
 }
 
