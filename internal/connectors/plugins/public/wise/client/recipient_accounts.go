@@ -58,6 +58,8 @@ func (c *Client) GetRecipientAccount(ctx context.Context, accountID uint64) (*Re
 	// now := time.Now()
 	// defer f(ctx, now)
 
+	c.mux.Lock()
+	defer c.mux.Unlock()
 	if rc, ok := c.recipientAccountsCache.Get(accountID); ok {
 		return rc, nil
 	}
