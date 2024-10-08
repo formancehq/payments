@@ -8,15 +8,17 @@ import (
 	"time"
 )
 
+type BalanceAmount struct {
+	Value    json.Number `json:"value"`
+	Currency string      `json:"currency"`
+}
+
 type Balance struct {
-	ID       uint64 `json:"id"`
-	Currency string `json:"currency"`
-	Type     string `json:"type"`
-	Name     string `json:"name"`
-	Amount   struct {
-		Value    json.Number `json:"value"`
-		Currency string      `json:"currency"`
-	} `json:"amount"`
+	ID             uint64        `json:"id"`
+	Currency       string        `json:"currency"`
+	Type           string        `json:"type"`
+	Name           string        `json:"name"`
+	Amount         BalanceAmount `json:"amount"`
 	ReservedAmount struct {
 		Value    json.Number `json:"value"`
 		Currency string      `json:"currency"`

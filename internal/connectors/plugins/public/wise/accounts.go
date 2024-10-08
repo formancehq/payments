@@ -60,7 +60,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			Name:         &balance.Name,
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Amount.Currency)),
 			Metadata: map[string]string{
-				metadataProfileIDKey: strconv.FormatUint(from.ID, 10),
+				MetadataProfileIDKey: strconv.FormatUint(from.ID, 10),
 			},
 			Raw: raw,
 		})

@@ -1,5 +1,5 @@
 package wise
 
 const (
-	metadataProfileIDKey = "profile_id"
+	MetadataProfileIDKey = "profile_id"
 )
