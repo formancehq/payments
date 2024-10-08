@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (p Plugin) uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+func (p *Plugin) uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	profiles, err := p.client.GetProfiles(ctx)
 	if err != nil {
 		return models.UninstallResponse{}, err

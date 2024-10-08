@@ -26,7 +26,7 @@ type webhookConfig struct {
 
 var webhookConfigs map[string]webhookConfig
 
-func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	var from client.Profile
 	if req.FromPayload == nil {
 		return models.CreateWebhooksResponse{}, models.ErrMissingFromPayloadInRequest
@@ -67,7 +67,7 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 	}, nil
 }
 
-func (p Plugin) translateTransferStateChangedWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translateTransferStateChangedWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
 	transfer, err := p.client.TranslateTransferStateChangedWebhook(ctx, req.Webhook.Body)
 	if err != nil {
 		return models.WebhookResponse{}, err
@@ -83,7 +83,7 @@ func (p Plugin) translateTransferStateChangedWebhook(ctx context.Context, req mo
 	}, nil
 }
 
-func (p Plugin) translateBalanceUpdateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translateBalanceUpdateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.WebhookResponse, error) {
 	update, err := p.client.TranslateBalanceUpdateWebhook(ctx, req.Webhook.Body)
 	if err != nil {
 		return models.WebhookResponse{}, err
@@ -139,7 +139,7 @@ func (p Plugin) translateBalanceUpdateWebhook(ctx context.Context, req models.Tr
 	}, nil
 }
 
-func (p Plugin) verifySignature(body []byte, signature string) error {
+func (p *Plugin) verifySignature(body []byte, signature string) error {
 	msgHash := sha256.New()
 	_, err := msgHash.Write(body)
 	if err != nil {

@@ -13,7 +13,7 @@ type profilesState struct {
 	LastProfileID uint64 `json:"lastProfileID"`
 }
 
-func (p Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+func (p *Plugin) fetchNextProfiles(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	var oldState profilesState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
