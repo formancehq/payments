@@ -38,8 +38,8 @@ type Client interface {
 	GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error)
 	GetTransfer(ctx context.Context, transferID string) (*Transfer, error)
 	CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error)
-	CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error)
-	ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error)
+	CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*WebhookSubscriptionResponse, error)
+	ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error)
 	DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error
 	TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error)
 	TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error)

@@ -86,10 +86,10 @@ func (mr *MockClientMockRecorder) CreateTransfer(ctx, quote, targetAccount, tran
 }
 
 // CreateWebhook mocks base method.
-func (m *MockClient) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error) {
+func (m *MockClient) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*WebhookSubscriptionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateWebhook", ctx, profileID, name, triggerOn, url, version)
-	ret0, _ := ret[0].(*webhookSubscriptionResponse)
+	ret0, _ := ret[0].(*WebhookSubscriptionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -235,10 +235,10 @@ func (mr *MockClientMockRecorder) GetTransfers(ctx, profileID, offset, limit any
 }
 
 // ListWebhooksSubscription mocks base method.
-func (m *MockClient) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
+func (m *MockClient) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListWebhooksSubscription", ctx, profileID)
-	ret0, _ := ret[0].([]webhookSubscriptionResponse)
+	ret0, _ := ret[0].([]WebhookSubscriptionResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

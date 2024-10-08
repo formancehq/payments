@@ -9,23 +9,22 @@ import (
 	"time"
 )
 
-type webhookSubscription struct {
-	Name      string `json:"name"`
-	TriggerOn string `json:"trigger_on"`
-	Delivery  struct {
-		Version string `json:"version"`
-		URL     string `json:"url"`
-	} `json:"delivery"`
+type WebhookDelivery struct {
+	Version string `json:"version"`
+	URL     string `json:"url"`
 }
 
-type webhookSubscriptionResponse struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Delivery struct {
-		Version string `json:"version"`
-		URL     string `json:"url"`
-	} `json:"delivery"`
-	TriggerOn string `json:"trigger_on"`
+type webhookSubscription struct {
+	Name      string          `json:"name"`
+	TriggerOn string          `json:"trigger_on"`
+	Delivery  WebhookDelivery `json:"delivery"`
+}
+
+type WebhookSubscriptionResponse struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Delivery  WebhookDelivery `json:"delivery"`
+	TriggerOn string          `json:"trigger_on"`
 	Scope     struct {
 		Domain string `json:"domain"`
 	} `json:"scope"`
@@ -36,7 +35,7 @@ type webhookSubscriptionResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error) {
+func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*WebhookSubscriptionResponse, error) {
 	reqBody, err := json.Marshal(webhookSubscription{
 		Name:      name,
 		TriggerOn: triggerOn,
@@ -61,7 +60,7 @@ func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	var res webhookSubscriptionResponse
+	var res WebhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
 	if err != nil {
@@ -70,14 +69,14 @@ func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	return &res, nil
 }
 
-func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
+func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error) {
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions", profileID)), http.NoBody)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []webhookSubscriptionResponse
+	var res []WebhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
 	if err != nil {
