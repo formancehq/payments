@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"net/http"
+	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -25,6 +26,7 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 type Client struct {
 	httpClient httpwrapper.Client
 
+	mux                    *sync.Mutex
 	recipientAccountsCache *lru.Cache[uint64, *RecipientAccount]
 }
 
@@ -44,6 +46,7 @@ func New(apiKey string) (*Client, error) {
 	httpClient, err := httpwrapper.NewClient(config)
 	return &Client{
 		httpClient:             httpClient,
+		mux:                    &sync.Mutex{},
 		recipientAccountsCache: recipientsCache,
 	}, err
 }
