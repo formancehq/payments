@@ -173,4 +173,8 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 	}, nil
 }
 
+func (p *Plugin) SetClient(cl client.Client) {
+	p.client = cl
+}
+
 var _ models.Plugin = &Plugin{}
