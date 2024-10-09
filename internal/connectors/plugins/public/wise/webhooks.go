@@ -149,7 +149,7 @@ func (p *Plugin) verifySignature(body []byte, signature string) error {
 
 	data, err := base64.StdEncoding.DecodeString(signature)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to decode signature for wise webhook: %w", err)
 	}
 
 	err = rsa.VerifyPKCS1v15(p.config.webhookPublicKey, crypto.SHA256, msgHashSum, data)

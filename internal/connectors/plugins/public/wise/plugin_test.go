@@ -3,17 +3,24 @@ package wise
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
@@ -23,15 +30,17 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Wise Plugin", func() {
 	var (
-		plg    *Plugin
-		block  *pem.Block
-		pemKey *bytes.Buffer
+		plg        *Plugin
+		block      *pem.Block
+		pemKey     *bytes.Buffer
+		privatekey *rsa.PrivateKey
 	)
 
 	BeforeEach(func() {
 		plg = &Plugin{}
 
-		privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
+		var err error
+		privatekey, err = rsa.GenerateKey(rand.Reader, 2048)
 		Expect(err).To(BeNil())
 		publickey := &privatekey.PublicKey
 		publicKeyBytes, err := x509.MarshalPKIXPublicKey(publickey)
@@ -70,6 +79,122 @@ var _ = Describe("Wise Plugin", func() {
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow[0].Name).To(Equal("fetch_profiles"))
+		})
+	})
+
+	Context("translate webhook", func() {
+		var (
+			body      []byte
+			signature []byte
+			m         *client.MockClient
+		)
+
+		BeforeEach(func() {
+			config := &Config{
+				APIKey:           "key",
+				WebhookPublicKey: pemKey.String(),
+			}
+			configJson, err := json.Marshal(config)
+			req := models.InstallRequest{Config: configJson}
+			_, err = plg.Install(context.Background(), req)
+			Expect(err).To(BeNil())
+
+			ctrl := gomock.NewController(GinkgoT())
+			m = client.NewMockClient(ctrl)
+			plg.SetClient(m)
+
+			body = bytes.NewBufferString("body content").Bytes()
+			hash := sha256.New()
+			hash.Write(body)
+			digest := hash.Sum(nil)
+
+			signature, err = rsa.SignPKCS1v15(rand.Reader, privatekey, crypto.SHA256, digest)
+			Expect(err).To(BeNil())
+		})
+
+		It("it fails when X-Delivery-ID header missing", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{}
+			_, err := plg.TranslateWebhook(context.Background(), req)
+			Expect(err).To(MatchError(ErrWebhookHeaderXDeliveryIDMissing))
+		})
+
+		It("it fails when X-Signature-Sha256 header missing", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Headers: map[string][]string{
+						HeadersDeliveryID: {"delivery-id"},
+					},
+				},
+			}
+			_, err := plg.TranslateWebhook(context.Background(), req)
+			Expect(err).To(MatchError(ErrWebhookHeaderXSignatureMissing))
+		})
+
+		It("it fails when unknown webhook name in request", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{
+				Name: "unknown",
+				Webhook: models.PSPWebhook{
+					Body: body,
+					Headers: map[string][]string{
+						HeadersDeliveryID: {"delivery-id"},
+						HeadersSignature:  {base64.StdEncoding.EncodeToString(signature)},
+					},
+				},
+			}
+
+			_, err := plg.TranslateWebhook(context.Background(), req)
+			Expect(err).To(MatchError(ErrWebhookNameUnknown))
+		})
+
+		It("it can create the transfer_state_changed webhook", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{
+				Name: "transfer_state_changed",
+				Webhook: models.PSPWebhook{
+					Body: body,
+					Headers: map[string][]string{
+						HeadersDeliveryID: {"delivery-id"},
+						HeadersSignature:  {base64.StdEncoding.EncodeToString(signature)},
+					},
+				},
+			}
+			transfer := client.Transfer{ID: 1, Reference: "ref1", TargetValue: json.Number("25"), TargetCurrency: "EUR"}
+			m.EXPECT().TranslateTransferStateChangedWebhook(ctx, body).Return(transfer, nil)
+
+			res, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Responses).To(HaveLen(1))
+			Expect(res.Responses[0].IdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
+			Expect(res.Responses[0].Payment).NotTo(BeNil())
+			Expect(res.Responses[0].Payment.Reference).To(Equal(fmt.Sprint(transfer.ID)))
+		})
+
+		It("it can create the balance_update webhook", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{
+				Name: "balance_update",
+				Webhook: models.PSPWebhook{
+					Body: body,
+					Headers: map[string][]string{
+						HeadersDeliveryID: {"delivery-id"},
+						HeadersSignature:  {base64.StdEncoding.EncodeToString(signature)},
+					},
+				},
+			}
+			balance := client.BalanceUpdateWebhookPayload{
+				Data: client.BalanceUpdateWebhookData{
+					TransferReference: "trx",
+					OccurredAt:        time.Now().Format(time.RFC3339),
+					Currency:          "USD",
+					Amount:            json.Number("43"),
+				},
+			}
+			m.EXPECT().TranslateBalanceUpdateWebhook(ctx, body).Return(balance, nil)
+
+			res, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.Responses).To(HaveLen(1))
+			Expect(res.Responses[0].IdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
+			Expect(res.Responses[0].Payment).NotTo(BeNil())
+			Expect(res.Responses[0].Payment.Reference).To(Equal(balance.Data.TransferReference))
 		})
 	})
 

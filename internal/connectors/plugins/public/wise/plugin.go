@@ -11,7 +11,14 @@ import (
 )
 
 var (
-	ErrStackPublicUrlMissing = errors.New("STACK_PUBLIC_URL is not set")
+	HeadersTestNotification = "X-Test-Notification"
+	HeadersDeliveryID       = "X-Delivery-Id"
+	HeadersSignature        = "X-Signature-Sha256"
+
+	ErrStackPublicUrlMissing           = errors.New("STACK_PUBLIC_URL is not set")
+	ErrWebhookHeaderXDeliveryIDMissing = errors.New("missing X-Delivery-Id header")
+	ErrWebhookHeaderXSignatureMissing  = errors.New("missing X-Signature-Sha256 header")
+	ErrWebhookNameUnknown              = errors.New("unknown webhook name")
 )
 
 type Plugin struct {
@@ -134,21 +141,21 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	testNotif, ok := req.Webhook.Headers["X-Test-Notification"]
+	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]
 	if ok && len(testNotif) > 0 {
 		if testNotif[0] == "true" {
 			return models.TranslateWebhookResponse{}, nil
 		}
 	}
 
-	v, ok := req.Webhook.Headers["X-Delivery-Id"]
+	v, ok := req.Webhook.Headers[HeadersDeliveryID]
 	if !ok || len(v) == 0 {
-		return models.TranslateWebhookResponse{}, errors.New("missing X-Delivery-Id header")
+		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXDeliveryIDMissing
 	}
 
-	signatures, ok := req.Webhook.Headers["X-Signature-Sha256"]
+	signatures, ok := req.Webhook.Headers[HeadersSignature]
 	if !ok || len(signatures) == 0 {
-		return models.TranslateWebhookResponse{}, errors.New("missing X-Signature-Sha256 header")
+		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXSignatureMissing
 	}
 
 	err := p.verifySignature(req.Webhook.Body, signatures[0])
@@ -158,7 +165,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 
 	config, ok := webhookConfigs[req.Name]
 	if !ok {
-		return models.TranslateWebhookResponse{}, errors.New("unknown webhook name")
+		return models.TranslateWebhookResponse{}, ErrWebhookNameUnknown
 	}
 
 	res, err := config.fn(ctx, req)
