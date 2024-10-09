@@ -94,11 +94,23 @@ var _ = Describe("Wise Plugin", func() {
 			_, err := plg.FetchNextBalances(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+		It("fails when fetch next others is called before install", func(ctx SpecContext) {
+			req := models.FetchNextOthersRequest{
+				State: json.RawMessage(`{}`),
+			}
+			_, err := plg.FetchNextOthers(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
 		It("fails when fetch next external accounts is called before install", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
 				State: json.RawMessage(`{}`),
 			}
 			_, err := plg.FetchNextExternalAccounts(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+		It("fails when create webhook is called before install", func(ctx SpecContext) {
+			req := models.CreateWebhooksRequest{}
+			_, err := plg.CreateWebhooks(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
