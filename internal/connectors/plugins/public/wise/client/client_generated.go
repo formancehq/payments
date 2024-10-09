@@ -250,10 +250,10 @@ func (mr *MockClientMockRecorder) ListWebhooksSubscription(ctx, profileID any) *
 }
 
 // TranslateBalanceUpdateWebhook mocks base method.
-func (m *MockClient) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error) {
+func (m *MockClient) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (BalanceUpdateWebhookPayload, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "TranslateBalanceUpdateWebhook", ctx, payload)
-	ret0, _ := ret[0].(balanceUpdateWebhookPayload)
+	ret0, _ := ret[0].(BalanceUpdateWebhookPayload)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
