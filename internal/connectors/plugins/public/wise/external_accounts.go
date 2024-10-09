@@ -71,6 +71,7 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 			}
 		}
 
+		newState.LastSeekPosition = pagedExternalAccounts.SeekPositionForNext
 		if len(accounts) >= req.PageSize {
 			hasMore = true
 			break
@@ -80,8 +81,6 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 			// No more data to fetch
 			break
 		}
-
-		newState.LastSeekPosition = pagedExternalAccounts.SeekPositionForNext
 	}
 
 	payload, err := json.Marshal(newState)
