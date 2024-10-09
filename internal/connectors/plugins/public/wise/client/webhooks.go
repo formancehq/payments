@@ -139,32 +139,36 @@ func (c *client) TranslateTransferStateChangedWebhook(ctx context.Context, paylo
 	return *transfer, nil
 }
 
-type balanceUpdateWebhookPayload struct {
-	Data struct {
-		Resource struct {
-			ID        uint64 `json:"id"`
-			ProfileID uint64 `json:"profile_id"`
-			Type      string `json:"type"`
-		} `json:"resource"`
-		Amount            json.Number `json:"amount"`
-		BalanceID         uint64      `json:"balance_id"`
-		Currency          string      `json:"currency"`
-		TransactionType   string      `json:"transaction_type"`
-		OccurredAt        string      `json:"occurred_at"`
-		TransferReference string      `json:"transfer_reference"`
-		ChannelName       string      `json:"channel_name"`
-	} `json:"data"`
-	SubscriptionID string `json:"subscription_id"`
-	EventType      string `json:"event_type"`
-	SchemaVersion  string `json:"schema_version"`
-	SentAt         string `json:"sent_at"`
+type BalanceUpdateWebhookPayload struct {
+	Data           BalanceUpdateWebhookData `json:"data"`
+	SubscriptionID string                   `json:"subscription_id"`
+	EventType      string                   `json:"event_type"`
+	SchemaVersion  string                   `json:"schema_version"`
+	SentAt         string                   `json:"sent_at"`
 }
 
-func (c *client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error) {
-	var balanceUpdateEvent balanceUpdateWebhookPayload
+type BalanceUpdateWebhookData struct {
+	Resource          BalanceUpdateWebhookResource `json:"resource"`
+	Amount            json.Number                  `json:"amount"`
+	BalanceID         uint64                       `json:"balance_id"`
+	Currency          string                       `json:"currency"`
+	TransactionType   string                       `json:"transaction_type"`
+	OccurredAt        string                       `json:"occurred_at"`
+	TransferReference string                       `json:"transfer_reference"`
+	ChannelName       string                       `json:"channel_name"`
+}
+
+type BalanceUpdateWebhookResource struct {
+	ID        uint64 `json:"id"`
+	ProfileID uint64 `json:"profile_id"`
+	Type      string `json:"type"`
+}
+
+func (c *client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (BalanceUpdateWebhookPayload, error) {
+	var balanceUpdateEvent BalanceUpdateWebhookPayload
 	err := json.Unmarshal(payload, &balanceUpdateEvent)
 	if err != nil {
-		return balanceUpdateWebhookPayload{}, err
+		return BalanceUpdateWebhookPayload{}, err
 	}
 
 	return balanceUpdateEvent, nil

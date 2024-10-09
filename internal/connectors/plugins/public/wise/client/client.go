@@ -42,7 +42,7 @@ type Client interface {
 	ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error)
 	DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error
 	TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error)
-	TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error)
+	TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (BalanceUpdateWebhookPayload, error)
 }
 
 type client struct {
