@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 )
 
 type paymentsState struct {
@@ -52,9 +53,13 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			if err != nil {
 				return models.FetchNextPaymentsResponse{}, err
 			}
+			newState.Offset++
+			if payment == nil {
+				hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
+				continue
+			}
 
 			payments = append(payments, *payment)
-			newState.Offset++
 
 			if len(payments) >= req.PageSize {
 				break
