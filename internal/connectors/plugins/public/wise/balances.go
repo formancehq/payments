@@ -24,7 +24,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	pID, ok := from.Metadata[MetadataProfileIDKey]
+	pID, ok := from.Metadata[metadataProfileIDKey]
 	if !ok {
 		return models.FetchNextBalancesResponse{}, errors.New("missing profile ID in from payload when fetching balances")
 	}
