@@ -50,11 +50,11 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 			// Payments
 			r.Route("/payments", func(r chi.Router) {
 				r.Get("/", paymentsList(backend))
+				r.Post("/", paymentsCreate(backend))
 
 				r.Route("/{paymentID}", func(r chi.Router) {
 					r.Get("/", paymentsGet(backend))
 					r.Patch("/metadata", paymentsUpdateMetadata(backend))
-					// TODO(polo): add create payment handler
 				})
 			})
 

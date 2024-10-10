@@ -153,6 +153,15 @@ func PaymentSchemeFromString(value string) (PaymentScheme, error) {
 	}
 }
 
+func MustPaymentSchemeFromString(value string) PaymentScheme {
+	t, err := PaymentSchemeFromString(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return t
+}
+
 func (s PaymentScheme) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, s.String())), nil
 }
