@@ -8,7 +8,9 @@ import (
 
 	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
@@ -18,7 +20,7 @@ type externalAccountsState struct {
 	LastCreatedAt time.Time `json:"last_created_at"`
 }
 
-func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
@@ -39,59 +41,34 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	var accounts []models.PSPAccount
 	hasMore := false
+	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
+		pageSize := req.PageSize - len(accounts)
 
-		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
+		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, pageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
-
 		if len(pagedRecipients) == 0 {
+			hasMore = false
 			break
 		}
 
-		for _, recipient := range pagedRecipients {
-			createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", recipient.Attributes.CreatedAt)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, fmt.Errorf("failed to parse transaction date: %v", err)
-			}
-
-			switch createdAt.Compare(oldState.LastCreatedAt) {
-			case -1, 0:
-				continue
-			default:
-			}
-
-			raw, err := json.Marshal(recipient)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: recipient.ID,
-				// Moneycorp does not send the opening date of the account
-				CreatedAt:    createdAt,
-				Name:         &recipient.Attributes.BankAccountName,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, recipient.Attributes.BankAccountCurrency)),
-				Raw:          raw,
-			})
-
-			newState.LastCreatedAt = createdAt
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
+		var lastCreatedAt time.Time
+		accounts, lastCreatedAt, err = recipientToPSPAccounts(oldState.LastCreatedAt, accounts, pagedRecipients)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
 		}
-
-		if len(accounts) >= req.PageSize {
-			hasMore = true
+		if len(accounts) == 0 {
 			break
 		}
+		newState.LastCreatedAt = lastCreatedAt
 
-		if len(pagedRecipients) < req.PageSize {
+		needMore := true
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, pageSize)
+		if !needMore {
 			break
 		}
 	}
@@ -106,4 +83,40 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func recipientToPSPAccounts(
+	lastCreatedAt time.Time,
+	accounts []models.PSPAccount,
+	pagedAccounts []*client.Recipient,
+) ([]models.PSPAccount, time.Time, error) {
+	var newCreatedAt time.Time
+	for _, recipient := range pagedAccounts {
+		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", recipient.Attributes.CreatedAt)
+		if err != nil {
+			return accounts, lastCreatedAt, fmt.Errorf("failed to parse transaction date: %v", err)
+		}
+
+		switch createdAt.Compare(lastCreatedAt) {
+		case -1, 0:
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(recipient)
+		if err != nil {
+			return accounts, lastCreatedAt, err
+		}
+
+		newCreatedAt = createdAt
+		accounts = append(accounts, models.PSPAccount{
+			Reference: recipient.ID,
+			// Moneycorp does not send the opening date of the account
+			CreatedAt:    createdAt,
+			Name:         &recipient.Attributes.BankAccountName,
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, recipient.Attributes.BankAccountCurrency)),
+			Raw:          raw,
+		})
+	}
+	return accounts, newCreatedAt, nil
 }
