@@ -50,7 +50,7 @@ var _ = Describe("Wise Plugin Balances", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(
 					`{"Reference":"%d","Metadata":{"%s":"%d"}}`,
 					expectedProfileID,
-					MetadataProfileIDKey,
+					metadataProfileIDKey,
 					profileVal,
 				)),
 				PageSize: 10,
