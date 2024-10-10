@@ -3,6 +3,7 @@ package workflow
 import (
 	"fmt"
 
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -23,7 +24,7 @@ func (w Workflow) runHandleWebhooks(
 ) error {
 	err := activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
 	if err != nil {
-		return errors.Wrap(err, "failed to store webhook")
+		return fmt.Errorf("storing webhook: %w", err)
 	}
 
 	resp, err := activities.PluginTranslateWebhook(
@@ -40,7 +41,7 @@ func (w Workflow) runHandleWebhooks(
 		},
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to translate webhook")
+		return fmt.Errorf("translating webhook: %w", err)
 	}
 
 	for _, response := range resp.Responses {
@@ -71,7 +72,7 @@ func (w Workflow) runHandleWebhooks(
 					return err
 				}
 			} else {
-				return errors.Wrap(err, "running store workflow")
+				fmt.Errorf("storing webhook translation: %w", err)
 			}
 		}
 	}
@@ -92,44 +93,81 @@ func (w Workflow) runStoreWebhookTranslation(
 	ctx workflow.Context,
 	storeWebhookTranslation StoreWebhookTranslation,
 ) error {
+	var sendEvent *SendEvents
 	if storeWebhookTranslation.Account != nil {
+		accounts := models.FromPSPAccounts(
+			[]models.PSPAccount{*storeWebhookTranslation.Account},
+			models.ACCOUNT_TYPE_INTERNAL,
+			storeWebhookTranslation.ConnectorID,
+		)
+
 		err := activities.StorageAccountsStore(
 			infiniteRetryContext(ctx),
-			models.FromPSPAccounts(
-				[]models.PSPAccount{*storeWebhookTranslation.Account},
-				models.ACCOUNT_TYPE_INTERNAL,
-				storeWebhookTranslation.ConnectorID,
-			),
+			accounts,
 		)
 		if err != nil {
-			return errors.Wrap(err, "storing next accounts")
+			return fmt.Errorf("storing next accounts: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Account: pointer.For(accounts[0]),
 		}
 	}
 
 	if storeWebhookTranslation.ExternalAccount != nil {
+		accounts := models.FromPSPAccounts(
+			[]models.PSPAccount{*storeWebhookTranslation.ExternalAccount},
+			models.ACCOUNT_TYPE_EXTERNAL,
+			storeWebhookTranslation.ConnectorID,
+		)
+
 		err := activities.StorageAccountsStore(
 			infiniteRetryContext(ctx),
-			models.FromPSPAccounts(
-				[]models.PSPAccount{*storeWebhookTranslation.ExternalAccount},
-				models.ACCOUNT_TYPE_EXTERNAL,
-				storeWebhookTranslation.ConnectorID,
-			),
+			accounts,
 		)
 		if err != nil {
-			return errors.Wrap(err, "storing next accounts")
+			return fmt.Errorf("storing next accounts: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Account: pointer.For(accounts[0]),
 		}
 	}
 
 	if storeWebhookTranslation.Payment != nil {
+		payments := models.FromPSPPayments(
+			[]models.PSPPayment{*storeWebhookTranslation.Payment},
+			storeWebhookTranslation.ConnectorID,
+		)
 		err := activities.StoragePaymentsStore(
 			infiniteRetryContext(ctx),
-			models.FromPSPPayments(
-				[]models.PSPPayment{*storeWebhookTranslation.Payment},
-				storeWebhookTranslation.ConnectorID,
-			),
+			payments,
 		)
 		if err != nil {
-			return errors.Wrap(err, "storing next accounts")
+			return fmt.Errorf("storing next payments: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Payment: pointer.For(payments[0]),
+		}
+	}
+
+	if sendEvent != nil {
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         storeWebhookTranslation.ConnectorID.String(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunSendEvents,
+			*sendEvent,
+		).Get(ctx, nil); err != nil {
+			return fmt.Errorf("sending events: %w", err)
 		}
 	}
 
