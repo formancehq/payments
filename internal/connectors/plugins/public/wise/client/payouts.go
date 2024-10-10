@@ -59,7 +59,7 @@ func (t *Payout) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (c *Client) GetPayout(ctx context.Context, payoutID string) (*Payout, error) {
+func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "get_payout")
 	// now := time.Now()
@@ -80,7 +80,7 @@ func (c *Client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 	return &payout, nil
 }
 
-func (c *Client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
+func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "wise", "initiate_payout")
 	// now := time.Now()

@@ -9,13 +9,14 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 )
 
 type paymentsState struct {
 	Offset int
 }
 
-func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
@@ -52,9 +53,13 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 			if err != nil {
 				return models.FetchNextPaymentsResponse{}, err
 			}
+			newState.Offset++
+			if payment == nil {
+				hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
+				continue
+			}
 
 			payments = append(payments, *payment)
-			newState.Offset++
 
 			if len(payments) >= req.PageSize {
 				break

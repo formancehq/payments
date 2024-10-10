@@ -9,23 +9,22 @@ import (
 	"time"
 )
 
-type webhookSubscription struct {
-	Name      string `json:"name"`
-	TriggerOn string `json:"trigger_on"`
-	Delivery  struct {
-		Version string `json:"version"`
-		URL     string `json:"url"`
-	} `json:"delivery"`
+type WebhookDelivery struct {
+	Version string `json:"version"`
+	URL     string `json:"url"`
 }
 
-type webhookSubscriptionResponse struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Delivery struct {
-		Version string `json:"version"`
-		URL     string `json:"url"`
-	} `json:"delivery"`
-	TriggerOn string `json:"trigger_on"`
+type webhookSubscription struct {
+	Name      string          `json:"name"`
+	TriggerOn string          `json:"trigger_on"`
+	Delivery  WebhookDelivery `json:"delivery"`
+}
+
+type WebhookSubscriptionResponse struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	Delivery  WebhookDelivery `json:"delivery"`
+	TriggerOn string          `json:"trigger_on"`
 	Scope     struct {
 		Domain string `json:"domain"`
 	} `json:"scope"`
@@ -36,7 +35,7 @@ type webhookSubscriptionResponse struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*webhookSubscriptionResponse, error) {
+func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, triggerOn, url, version string) (*WebhookSubscriptionResponse, error) {
 	reqBody, err := json.Marshal(webhookSubscription{
 		Name:      name,
 		TriggerOn: triggerOn,
@@ -61,7 +60,7 @@ func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	var res webhookSubscriptionResponse
+	var res WebhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
 	if err != nil {
@@ -70,14 +69,14 @@ func (c *Client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	return &res, nil
 }
 
-func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]webhookSubscriptionResponse, error) {
+func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64) ([]WebhookSubscriptionResponse, error) {
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions", profileID)), http.NoBody)
 	if err != nil {
 		return nil, err
 	}
 
-	var res []webhookSubscriptionResponse
+	var res []WebhookSubscriptionResponse
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(req, &res, &errRes)
 	if err != nil {
@@ -86,7 +85,7 @@ func (c *Client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 	return res, nil
 }
 
-func (c *Client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
+func (c *client) DeleteWebhooks(ctx context.Context, profileID uint64, subscriptionID string) error {
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodDelete, c.endpoint(fmt.Sprintf("/v3/profiles/%d/subscriptions/%s", profileID, subscriptionID)), http.NoBody)
 	if err != nil {
@@ -119,7 +118,7 @@ type transferStateChangedWebhookPayload struct {
 	SentAt         string `json:"sent_at"`
 }
 
-func (c *Client) TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error) {
+func (c *client) TranslateTransferStateChangedWebhook(ctx context.Context, payload []byte) (Transfer, error) {
 	var transferStatedChangedEvent transferStateChangedWebhookPayload
 	err := json.Unmarshal(payload, &transferStatedChangedEvent)
 	if err != nil {
@@ -140,32 +139,36 @@ func (c *Client) TranslateTransferStateChangedWebhook(ctx context.Context, paylo
 	return *transfer, nil
 }
 
-type balanceUpdateWebhookPayload struct {
-	Data struct {
-		Resource struct {
-			ID        uint64 `json:"id"`
-			ProfileID uint64 `json:"profile_id"`
-			Type      string `json:"type"`
-		} `json:"resource"`
-		Amount            json.Number `json:"amount"`
-		BalanceID         uint64      `json:"balance_id"`
-		Currency          string      `json:"currency"`
-		TransactionType   string      `json:"transaction_type"`
-		OccurredAt        string      `json:"occurred_at"`
-		TransferReference string      `json:"transfer_reference"`
-		ChannelName       string      `json:"channel_name"`
-	} `json:"data"`
-	SubscriptionID string `json:"subscription_id"`
-	EventType      string `json:"event_type"`
-	SchemaVersion  string `json:"schema_version"`
-	SentAt         string `json:"sent_at"`
+type BalanceUpdateWebhookPayload struct {
+	Data           BalanceUpdateWebhookData `json:"data"`
+	SubscriptionID string                   `json:"subscription_id"`
+	EventType      string                   `json:"event_type"`
+	SchemaVersion  string                   `json:"schema_version"`
+	SentAt         string                   `json:"sent_at"`
 }
 
-func (c *Client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (balanceUpdateWebhookPayload, error) {
-	var balanceUpdateEvent balanceUpdateWebhookPayload
+type BalanceUpdateWebhookData struct {
+	Resource          BalanceUpdateWebhookResource `json:"resource"`
+	Amount            json.Number                  `json:"amount"`
+	BalanceID         uint64                       `json:"balance_id"`
+	Currency          string                       `json:"currency"`
+	TransactionType   string                       `json:"transaction_type"`
+	OccurredAt        string                       `json:"occurred_at"`
+	TransferReference string                       `json:"transfer_reference"`
+	ChannelName       string                       `json:"channel_name"`
+}
+
+type BalanceUpdateWebhookResource struct {
+	ID        uint64 `json:"id"`
+	ProfileID uint64 `json:"profile_id"`
+	Type      string `json:"type"`
+}
+
+func (c *client) TranslateBalanceUpdateWebhook(ctx context.Context, payload []byte) (BalanceUpdateWebhookPayload, error) {
+	var balanceUpdateEvent BalanceUpdateWebhookPayload
 	err := json.Unmarshal(payload, &balanceUpdateEvent)
 	if err != nil {
-		return balanceUpdateWebhookPayload{}, err
+		return BalanceUpdateWebhookPayload{}, err
 	}
 
 	return balanceUpdateEvent, nil
