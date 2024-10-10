@@ -187,6 +187,42 @@ func (i *impl) CreateBankAccount(ctx context.Context, req models.CreateBankAccou
 	}, nil
 }
 
+func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	resp, err := i.pluginClient.CreateTransfer(ctx, &services.CreateTransferRequest{
+		PaymentInitiation: grpc.TranslatePaymentInitiation(req.PaymentInitiation),
+	})
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	payment, err := grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	return models.CreateTransferResponse{
+		Payment: payment,
+	}, nil
+}
+
+func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	resp, err := i.pluginClient.CreatePayout(ctx, &services.CreatePayoutRequest{
+		PaymentInitiation: grpc.TranslatePaymentInitiation(req.PaymentInitiation),
+	})
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	payment, err := grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	return models.CreatePayoutResponse{
+		Payment: payment,
+	}, nil
+}
+
 func (i *impl) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	resp, err := i.pluginClient.CreateWebhooks(ctx, &services.CreateWebhooksRequest{
 		ConnectorId:    req.ConnectorID,

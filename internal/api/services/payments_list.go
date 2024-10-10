@@ -9,5 +9,10 @@ import (
 )
 
 func (s *Service) PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
-	return s.storage.PaymentsList(ctx, query)
+	ps, err := s.storage.PaymentsList(ctx, query)
+	if err != nil {
+		return nil, newStorageError(err, "cannot list payments")
+	}
+
+	return ps, nil
 }

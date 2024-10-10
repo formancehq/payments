@@ -11,5 +11,5 @@ func (s *Service) ConnectorsHandleWebhooks(
 	urlPath string,
 	webhook models.Webhook,
 ) error {
-	return s.engine.HandleWebhook(ctx, urlPath, webhook)
+	return handleEngineErrors(s.engine.HandleWebhook(ctx, urlPath, webhook))
 }

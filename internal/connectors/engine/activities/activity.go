@@ -53,6 +53,14 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginCreateBankAccount,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginCreateTransfert",
+			Func: a.PluginCreateTransfer,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCreatePayout",
+			Func: a.PluginCreatePayout,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginCreateWebhooks",
 			Func: a.PluginCreateWebhooks,
 		}).
@@ -63,6 +71,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageAccountsStore",
 			Func: a.StorageAccountsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageAccountsGet",
+			Func: a.StorageAccountsGet,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageAccountsDelete",
@@ -163,6 +175,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageWebhooksDelete",
 			Func: a.StorageWebhooksDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationGet",
+			Func: a.StoragePaymentInitiationsGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationsRelatedPaymentsStore",
+			Func: a.StoragePaymentInitiationsRelatedPaymentsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PaymentInitiationsAdjustmentsStore",
+			Func: a.PaymentInitiationsAdjustmentsStore,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",

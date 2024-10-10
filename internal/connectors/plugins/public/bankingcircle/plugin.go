@@ -71,6 +71,14 @@ func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcco
 	return p.createBankAccount(ctx, req)
 }
 
+func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
+}
+
+func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+}
+
 func (p Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
 }

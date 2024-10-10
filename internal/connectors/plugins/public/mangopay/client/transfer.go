@@ -1,6 +1,7 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -15,6 +16,7 @@ type Funds struct {
 }
 
 type TransferRequest struct {
+	Reference        string `json:"-"` // Needed for idempotency
 	AuthorID         string `json:"AuthorId"`
 	CreditedUserID   string `json:"CreditedUserId,omitempty"`
 	DebitedFunds     Funds  `json:"DebitedFunds"`
@@ -39,6 +41,36 @@ type TransferResponse struct {
 	Nature           string `json:"Nature"`
 	DebitedWalletID  string `json:"DebitedWalletId"`
 	CreditedWalletID string `json:"CreditedWalletId"`
+}
+
+func (c *Client) InitiateWalletTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
+	// TODO(polo): metrics
+	// f := connectors.ClientMetrics(ctx, "mangopay", "initiate_transfer")
+	// now := time.Now()
+	// defer f(ctx, now)
+
+	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers", c.endpoint, c.clientID)
+
+	body, err := json.Marshal(transferRequest)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transfer request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transfer request: %w", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Idempotency-Key", transferRequest.Reference)
+
+	var transferResponse TransferResponse
+	var errRes mangopayError
+	statusCode, err := c.httpClient.Do(req, &transferResponse, &errRes)
+	if err != nil {
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
+	}
+
+	return &transferResponse, nil
 }
 
 func (c *Client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {

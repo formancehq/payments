@@ -26,6 +26,8 @@ type PluginClient interface {
 	FetchNextExternalAccounts(ctx context.Context, in *FetchNextExternalAccountsRequest, opts ...grpc.CallOption) (*FetchNextExternalAccountsResponse, error)
 	FetchNextBalances(ctx context.Context, in *FetchNextBalancesRequest, opts ...grpc.CallOption) (*FetchNextBalancesResponse, error)
 	CreateBankAccount(ctx context.Context, in *CreateBankAccountRequest, opts ...grpc.CallOption) (*CreateBankAccountResponse, error)
+	CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error)
+	CreatePayout(ctx context.Context, in *CreatePayoutRequest, opts ...grpc.CallOption) (*CreatePayoutResponse, error)
 	CreateWebhooks(ctx context.Context, in *CreateWebhooksRequest, opts ...grpc.CallOption) (*CreateWebhooksResponse, error)
 	TranslateWebhook(ctx context.Context, in *TranslateWebhookRequest, opts ...grpc.CallOption) (*TranslateWebhookResponse, error)
 }
@@ -110,6 +112,24 @@ func (c *pluginClient) CreateBankAccount(ctx context.Context, in *CreateBankAcco
 	return out, nil
 }
 
+func (c *pluginClient) CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error) {
+	out := new(CreateTransferResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/CreateTransfer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginClient) CreatePayout(ctx context.Context, in *CreatePayoutRequest, opts ...grpc.CallOption) (*CreatePayoutResponse, error) {
+	out := new(CreatePayoutResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/CreatePayout", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pluginClient) CreateWebhooks(ctx context.Context, in *CreateWebhooksRequest, opts ...grpc.CallOption) (*CreateWebhooksResponse, error) {
 	out := new(CreateWebhooksResponse)
 	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/CreateWebhooks", in, out, opts...)
@@ -140,6 +160,8 @@ type PluginServer interface {
 	FetchNextExternalAccounts(context.Context, *FetchNextExternalAccountsRequest) (*FetchNextExternalAccountsResponse, error)
 	FetchNextBalances(context.Context, *FetchNextBalancesRequest) (*FetchNextBalancesResponse, error)
 	CreateBankAccount(context.Context, *CreateBankAccountRequest) (*CreateBankAccountResponse, error)
+	CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error)
+	CreatePayout(context.Context, *CreatePayoutRequest) (*CreatePayoutResponse, error)
 	CreateWebhooks(context.Context, *CreateWebhooksRequest) (*CreateWebhooksResponse, error)
 	TranslateWebhook(context.Context, *TranslateWebhookRequest) (*TranslateWebhookResponse, error)
 	mustEmbedUnimplementedPluginServer()
@@ -172,6 +194,12 @@ func (UnimplementedPluginServer) FetchNextBalances(context.Context, *FetchNextBa
 }
 func (UnimplementedPluginServer) CreateBankAccount(context.Context, *CreateBankAccountRequest) (*CreateBankAccountResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateBankAccount not implemented")
+}
+func (UnimplementedPluginServer) CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateTransfer not implemented")
+}
+func (UnimplementedPluginServer) CreatePayout(context.Context, *CreatePayoutRequest) (*CreatePayoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreatePayout not implemented")
 }
 func (UnimplementedPluginServer) CreateWebhooks(context.Context, *CreateWebhooksRequest) (*CreateWebhooksResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateWebhooks not implemented")
@@ -336,6 +364,42 @@ func _Plugin_CreateBankAccount_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Plugin_CreateTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).CreateTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/formance.payments.grpc.services.Plugin/CreateTransfer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).CreateTransfer(ctx, req.(*CreateTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Plugin_CreatePayout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreatePayoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).CreatePayout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/formance.payments.grpc.services.Plugin/CreatePayout",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).CreatePayout(ctx, req.(*CreatePayoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Plugin_CreateWebhooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(CreateWebhooksRequest)
 	if err := dec(in); err != nil {
@@ -410,6 +474,14 @@ var Plugin_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateBankAccount",
 			Handler:    _Plugin_CreateBankAccount_Handler,
+		},
+		{
+			MethodName: "CreateTransfer",
+			Handler:    _Plugin_CreateTransfer_Handler,
+		},
+		{
+			MethodName: "CreatePayout",
+			Handler:    _Plugin_CreatePayout_Handler,
 		},
 		{
 			MethodName: "CreateWebhooks",

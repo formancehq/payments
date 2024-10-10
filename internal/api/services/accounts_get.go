@@ -7,5 +7,10 @@ import (
 )
 
 func (s *Service) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
-	return s.storage.AccountsGet(ctx, id)
+	account, err := s.storage.AccountsGet(ctx, id)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get account")
+	}
+
+	return account, nil
 }

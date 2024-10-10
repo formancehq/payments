@@ -8,6 +8,7 @@ import "bank_account.proto";
 import "capability.proto";
 import "other.proto";
 import "payment.proto";
+import "payment_initiation.proto";
 import "webhook.proto";
 import "workflow.proto";
 
@@ -123,6 +124,22 @@ message CreateWebhooksResponse {
     repeated formance.payments.connectors.grpc.proto.Other others = 1;
 }
 
+message CreateTransferRequest {
+    formance.payments.connectors.grpc.proto.PaymentInitiation payment_initiation = 1;
+}
+
+message CreateTransferResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+}
+
+message CreatePayoutRequest {
+    formance.payments.connectors.grpc.proto.PaymentInitiation payment_initiation = 1;
+}
+
+message CreatePayoutResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+}
+
 service Plugin {
     rpc Install(InstallRequest) returns (InstallResponse) {}
     rpc Uninstall(UninstallRequest) returns (UninstallResponse) {}
@@ -133,6 +150,8 @@ service Plugin {
     rpc FetchNextExternalAccounts(FetchNextExternalAccountsRequest) returns (FetchNextExternalAccountsResponse) {}
     rpc FetchNextBalances(FetchNextBalancesRequest) returns (FetchNextBalancesResponse) {}
     rpc CreateBankAccount(CreateBankAccountRequest) returns (CreateBankAccountResponse) {}
+    rpc CreateTransfer(CreateTransferRequest) returns (CreateTransferResponse) {}
+    rpc CreatePayout(CreatePayoutRequest) returns (CreatePayoutResponse) {}
     rpc CreateWebhooks(CreateWebhooksRequest) returns (CreateWebhooksResponse) {}
     rpc TranslateWebhook(TranslateWebhookRequest) returns (TranslateWebhookResponse) {}
 }

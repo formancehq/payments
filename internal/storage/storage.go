@@ -48,6 +48,23 @@ type Storage interface {
 	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
+	// Payment Initiations
+	PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error
+	PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error
+	PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error)
+	PaymentInitiationsDelete(ctx context.Context, piID models.PaymentInitiationID) error
+	PaymentInitiationsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error)
+
+	// Payment Initiation Adjustments
+	PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error
+	PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error)
+	PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error)
+
+	// Payment Initiation Related Payments
+	PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID models.PaymentInitiationID, pID models.PaymentID, createdAt time.Time) error
+	PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+
 	// Pools
 	PoolsUpsert(ctx context.Context, pool models.Pool) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)

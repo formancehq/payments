@@ -219,6 +219,63 @@ func TranslateProtoPayment(payment *proto.Payment) (models.PSPPayment, error) {
 	}, nil
 }
 
+func TranslatePaymentInitiation(pi models.PSPPaymentInitiation) *proto.PaymentInitiation {
+	return &proto.PaymentInitiation{
+		Reference:   pi.Reference,
+		CreatedAt:   timestamppb.New(pi.CreatedAt),
+		Description: pi.Description,
+		SourceAccount: func() *proto.Account {
+			if pi.SourceAccount == nil {
+				return nil
+			}
+
+			return TranslateAccount(*pi.SourceAccount)
+		}(),
+		DestinationAccount: func() *proto.Account {
+			if pi.DestinationAccount == nil {
+				return nil
+			}
+
+			return TranslateAccount(*pi.DestinationAccount)
+		}(),
+		Amount: &proto.Monetary{
+			Asset:  pi.Asset,
+			Amount: []byte(pi.Amount.Text(10)),
+		},
+		Metadata: pi.Metadata,
+	}
+}
+
+func TranslateProtoPaymentInitiation(pi *proto.PaymentInitiation) (models.PSPPaymentInitiation, error) {
+	amount, ok := big.NewInt(0).SetString(string(pi.Amount.Amount), 10)
+	if !ok {
+		return models.PSPPaymentInitiation{}, errors.New("failed to parse amount")
+	}
+
+	return models.PSPPaymentInitiation{
+		Reference:   pi.Reference,
+		CreatedAt:   pi.CreatedAt.AsTime(),
+		Description: pi.Description,
+		SourceAccount: func() *models.PSPAccount {
+			if pi.SourceAccount == nil {
+				return nil
+			}
+
+			return pointer.For(TranslateProtoAccount(pi.SourceAccount))
+		}(),
+		DestinationAccount: func() *models.PSPAccount {
+			if pi.DestinationAccount == nil {
+				return nil
+			}
+
+			return pointer.For(TranslateProtoAccount(pi.DestinationAccount))
+		}(),
+		Amount:   amount,
+		Asset:    pi.Amount.Asset,
+		Metadata: pi.Metadata,
+	}, nil
+}
+
 func TranslateTask(taskTree models.TaskTree) *proto.TaskTree {
 	res := proto.TaskTree{
 		NextTasks:    []*proto.TaskTree{},

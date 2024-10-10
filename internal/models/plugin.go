@@ -17,6 +17,8 @@ type Plugin interface {
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
 
 	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
+	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
+	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
@@ -131,4 +133,20 @@ type WebhookResponse struct {
 
 type TranslateWebhookResponse struct {
 	Responses []WebhookResponse
+}
+
+type CreateTransferRequest struct {
+	PaymentInitiation PSPPaymentInitiation
+}
+
+type CreateTransferResponse struct {
+	Payment PSPPayment
+}
+
+type CreatePayoutRequest struct {
+	PaymentInitiation PSPPaymentInitiation
+}
+
+type CreatePayoutResponse struct {
+	Payment PSPPayment
 }
