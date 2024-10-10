@@ -114,7 +114,7 @@ func (w Workflow) runCreatePayout(
 				CreatedAt:           workflow.Now(ctx),
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 			},
-			&err,
+			err,
 			nil,
 		)
 		if err != nil {

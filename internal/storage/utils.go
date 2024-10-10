@@ -3,5 +3,5 @@ package storage
 import "regexp"
 
 var (
-	metadataRegex = regexp.MustCompile("metadata\\[(.+)\\]")
+	metadataRegex = regexp.MustCompile(`metadata\[(.+)\]`)
 )

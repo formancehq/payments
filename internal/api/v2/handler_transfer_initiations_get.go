@@ -94,7 +94,7 @@ func transferInitiationsGet(backend backend.Backend) http.HandlerFunc {
 				if relatedAdjustments[0].Error == nil {
 					return ""
 				}
-				return *relatedAdjustments[0].Error
+				return relatedAdjustments[0].Error.Error()
 			}()
 		}
 
@@ -126,7 +126,7 @@ func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferI
 				if adjustment.Error == nil {
 					return ""
 				}
-				return *adjustment.Error
+				return adjustment.Error.Error()
 			}(),
 			Metadata: adjustment.Metadata,
 		}

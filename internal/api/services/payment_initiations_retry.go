@@ -39,7 +39,8 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 	attempts := getAttemps(adjustments, isReversed)
 
 	if isReversed {
-		// TODO(polo): implement reverse
+		// TODO(polo): implement the reverse retry
+		return fmt.Errorf("cannot retry a reversed payment initiation: %w", ErrValidation)
 	} else {
 		switch pi.Type {
 		case models.PAYMENT_INITIATION_TYPE_TRANSFER:
