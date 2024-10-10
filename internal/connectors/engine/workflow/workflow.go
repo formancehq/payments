@@ -98,6 +98,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.run,
 		}).
 		Append(temporalworker.Definition{
+			Name: "RunCreateFormanceAccount",
+			Func: w.runCreateFormanceAccount,
+		}).
+		Append(temporalworker.Definition{
 			Name: "RunCreateWebhooks",
 			Func: w.runCreateWebhooks,
 		}).

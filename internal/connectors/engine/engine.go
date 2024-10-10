@@ -22,19 +22,41 @@ import (
 )
 
 type Engine interface {
+	// Install a connector with the given provider and configuration.
 	InstallConnector(ctx context.Context, provider string, rawConfig json.RawMessage) (models.ConnectorID, error)
+	// Uninstall a connector with the given ID.
 	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error
+	// Reset a connector with the given ID, by uninstalling and reinstalling it.
 	ResetConnector(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Create a Formance account, no call to the plugin, just a creation
+	// of an account in the database related to the provided connector id.
+	CreateFormanceAccount(ctx context.Context, account models.Account) error
+
+	// Forward a bank account to the given connector, which will create it
+	// in the external system (PSP).
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error)
+	// Create a transfer between two accounts on the given connector (PSP).
 	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
+	// Create a payout on the given connector (PSP).
 	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
+
+	// We received a webhook, handle it by calling the corresponding plugin to
+	// translate it to a formance object and store it.
 	HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error
+
+	// Create a Formance pool composed of accounts.
 	CreatePool(ctx context.Context, pool models.Pool) error
+	// Add an account to a Formance pool.
 	AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+	// Remove an account from a Formance pool.
 	RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+	// Delete a Formance pool.
 	DeletePool(ctx context.Context, poolID uuid.UUID) error
 
+	// Called when the engine is starting, to start all the plugins.
 	OnStart(ctx context.Context) error
+	// Called when the engine is stopping, to stop all the plugins.
 	OnStop(ctx context.Context)
 }
 
@@ -216,6 +238,35 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		return err
 	}
 
+	if err := run.Get(ctx, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-formance-account-%s-%s", account.ConnectorID.String(), account.Reference),
+			TaskQueue:                                account.ConnectorID.String(),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateFormanceAccount,
+		workflow.CreateFormanceAccount{
+			Account: account,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Wait for bank account creation to complete
 	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
