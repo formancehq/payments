@@ -39,6 +39,7 @@ type Backend interface {
 	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Payments
+	PaymentsCreate(ctx context.Context, payment models.Payment) error
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error
 	PaymentsList(ctx context.Context, query storage.ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)

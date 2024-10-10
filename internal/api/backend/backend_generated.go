@@ -46,6 +46,20 @@ func (m *MockBackend) EXPECT() *MockBackendMockRecorder {
 	return m.recorder
 }
 
+// AccountsCreate mocks base method.
+func (m *MockBackend) AccountsCreate(ctx context.Context, account models.Account) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsCreate", ctx, account)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AccountsCreate indicates an expected call of AccountsCreate.
+func (mr *MockBackendMockRecorder) AccountsCreate(ctx, account any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsCreate", reflect.TypeOf((*MockBackend)(nil).AccountsCreate), ctx, account)
+}
+
 // AccountsGet mocks base method.
 func (m *MockBackend) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	m.ctrl.T.Helper()
@@ -438,6 +452,20 @@ func (m *MockBackend) PaymentInitiationsRetry(ctx context.Context, id models.Pay
 func (mr *MockBackendMockRecorder) PaymentInitiationsRetry(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsRetry", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsRetry), ctx, id)
+}
+
+// PaymentsCreate mocks base method.
+func (m *MockBackend) PaymentsCreate(ctx context.Context, payment models.Payment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsCreate", ctx, payment)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsCreate indicates an expected call of PaymentsCreate.
+func (mr *MockBackendMockRecorder) PaymentsCreate(ctx, payment any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsCreate", reflect.TypeOf((*MockBackend)(nil).PaymentsCreate), ctx, payment)
 }
 
 // PaymentsGet mocks base method.

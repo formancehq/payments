@@ -111,6 +111,14 @@ func PaymentStatusFromString(value string) (PaymentStatus, error) {
 	}
 }
 
+func MustPaymentStatusFromString(value string) PaymentStatus {
+	v, err := PaymentStatusFromString(value)
+	if err != nil {
+		panic(err)
+	}
+	return v
+}
+
 func (t PaymentStatus) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, t.String())), nil
 }
