@@ -41,12 +41,14 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	hasMore := false
 	for page := 0; ; page++ {
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
+		pageSize := req.PageSize - len(payments)
+
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, pageSize, oldState.LastCreatedAt)
 		if err != nil {
-			// retryable error already handled by the client
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		if len(pagedTransactions) == 0 {
+			hasMore = false
 			break
 		}
 
@@ -56,12 +58,12 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 		if len(payments) == 0 {
-			continue
+			break
 		}
 		newState.LastCreatedAt = lastCreatedAt
 
 		needMore := true
-		needMore, hasMore, payments = pagination.ShouldFetchMore(payments, page, req.PageSize)
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, pageSize)
 		if !needMore {
 			break
 		}

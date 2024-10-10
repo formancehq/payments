@@ -7,7 +7,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
@@ -51,7 +50,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		}
 
 		needMore := true
-		needMore, hasMore, accounts = pagination.ShouldFetchMore(accounts, nextPage, req.PageSize)
+		needMore, hasMore, accounts = shouldFetchMore(accounts, nextPage, req.PageSize)
 		if !needMore {
 			break
 		}
