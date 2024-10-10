@@ -49,6 +49,15 @@ func PaymentTypeFromString(value string) (PaymentType, error) {
 	}
 }
 
+func MustPaymentTypeFromString(value string) PaymentType {
+	t, err := PaymentTypeFromString(value)
+	if err != nil {
+		panic(err)
+	}
+
+	return t
+}
+
 func (t PaymentType) MarshalJSON() ([]byte, error) {
 	return []byte(fmt.Sprintf(`"%s"`, t.String())), nil
 }
