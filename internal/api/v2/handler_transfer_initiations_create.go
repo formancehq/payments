@@ -138,7 +138,7 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 				if lastAdjustment.Error == nil {
 					return ""
 				}
-				return *lastAdjustment.Error
+				return lastAdjustment.Error.Error()
 			}()
 		}
 

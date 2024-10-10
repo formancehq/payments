@@ -7,6 +7,7 @@ import (
 	stdtime "time"
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/query"
 	"github.com/formancehq/go-libs/time"
 	"github.com/formancehq/payments/internal/models"
@@ -427,8 +428,13 @@ func fromPaymentInitiationAdjustmentModels(from models.PaymentInitiationAdjustme
 		PaymentInitiationID: from.PaymentInitiationID,
 		CreatedAt:           time.New(from.CreatedAt),
 		Status:              from.Status,
-		Error:               from.Error,
-		Metadata:            from.Metadata,
+		Error: func() *string {
+			if from.Error == nil {
+				return nil
+			}
+			return pointer.For(from.Error.Error())
+		}(),
+		Metadata: from.Metadata,
 	}
 }
 
@@ -438,7 +444,13 @@ func toPaymentInitiationAdjustmentModels(from paymentInitiationAdjustment) model
 		PaymentInitiationID: from.PaymentInitiationID,
 		CreatedAt:           from.CreatedAt.Time,
 		Status:              from.Status,
-		Error:               from.Error,
-		Metadata:            from.Metadata,
+		Error: func() error {
+			if from.Error == nil {
+				return nil
+			}
+
+			return errors.New(*from.Error)
+		}(),
+		Metadata: from.Metadata,
 	}
 }

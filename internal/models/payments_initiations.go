@@ -185,7 +185,7 @@ func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, source
 type PaymentInitiationExpanded struct {
 	PaymentInitiation PaymentInitiation
 	Status            string
-	Error             *string
+	Error             error
 }
 
 func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
@@ -228,6 +228,11 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 		Asset:    pi.PaymentInitiation.Asset,
 		Metadata: pi.PaymentInitiation.Metadata,
 		Status:   pi.Status,
-		Error:    pi.Error,
+		Error: func() *string {
+			if pi.Error == nil {
+				return nil
+			}
+			return pointer.For(pi.Error.Error())
+		}(),
 	})
 }

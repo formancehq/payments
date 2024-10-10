@@ -2,7 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
+
+	"github.com/formancehq/go-libs/pointer"
 )
 
 type PaymentInitiationAdjustment struct {
@@ -16,7 +19,7 @@ type PaymentInitiationAdjustment struct {
 	// Last status of the adjustment
 	Status PaymentInitiationAdjustmentStatus `json:"status"`
 	// Error description if we had one
-	Error *string `json:"error"`
+	Error error `json:"error"`
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
 }
@@ -34,8 +37,14 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 		PaymentInitiationID: pia.PaymentInitiationID.String(),
 		CreatedAt:           pia.CreatedAt,
 		Status:              pia.Status,
-		Error:               pia.Error,
-		Metadata:            pia.Metadata,
+		Error: func() *string {
+			if pia.Error == nil {
+				return nil
+			}
+
+			return pointer.For(pia.Error.Error())
+		}(),
+		Metadata: pia.Metadata,
 	})
 }
 
@@ -67,7 +76,9 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 	pia.PaymentInitiationID = piID
 	pia.CreatedAt = aux.CreatedAt
 	pia.Status = aux.Status
-	pia.Error = aux.Error
+	if aux.Error != nil {
+		pia.Error = errors.New(*aux.Error)
+	}
 	pia.Metadata = aux.Metadata
 
 	return nil
