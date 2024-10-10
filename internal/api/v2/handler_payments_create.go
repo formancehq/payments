@@ -16,27 +16,17 @@ import (
 )
 
 type createPaymentRequest struct {
-	Reference            string                             `json:"reference"`
-	ConnectorID          string                             `json:"connectorID"`
-	CreatedAt            time.Time                          `json:"createdAt"`
-	Type                 string                             `json:"type"`
-	InitialAmount        *big.Int                           `json:"initialAmount"`
-	Amount               *big.Int                           `json:"amount"`
-	Asset                string                             `json:"asset"`
-	Scheme               string                             `json:"scheme"`
-	SourceAccountID      *string                            `json:"sourceAccountID"`
-	DestinationAccountID *string                            `json:"destinationAccountID"`
-	Metadata             map[string]string                  `json:"metadata"`
-	Adjustments          []createPaymentsAdjustmentsRequest `json:"adjustments"`
-}
-
-type createPaymentsAdjustmentsRequest struct {
-	Reference string            `json:"reference"`
-	CreatedAt time.Time         `json:"createdAt"`
-	Status    string            `json:"status"`
-	Amount    *big.Int          `json:"amount"`
-	Asset     *string           `json:"asset"`
-	Metadata  map[string]string `json:"metadata"`
+	Reference            string            `json:"reference"`
+	ConnectorID          string            `json:"connectorID"`
+	CreatedAt            time.Time         `json:"createdAt"`
+	Type                 string            `json:"type"`
+	Amount               *big.Int          `json:"amount"`
+	Asset                string            `json:"asset"`
+	Scheme               string            `json:"scheme"`
+	Status               string            `json:"status"`
+	SourceAccountID      *string           `json:"sourceAccountID"`
+	DestinationAccountID *string           `json:"destinationAccountID"`
+	Metadata             map[string]string `json:"metadata"`
 }
 
 func (r *createPaymentRequest) validate() error {
@@ -76,6 +66,14 @@ func (r *createPaymentRequest) validate() error {
 		return errors.New("asset is required")
 	}
 
+	if r.Status == "" {
+		return errors.New("status is required")
+	}
+
+	if _, err := models.PaymentStatusFromString(r.Status); err != nil {
+		return fmt.Errorf("invalid status: %w", err)
+	}
+
 	if r.SourceAccountID != nil {
 		_, err := models.AccountIDFromString(*r.SourceAccountID)
 		if err != nil {
@@ -88,44 +86,6 @@ func (r *createPaymentRequest) validate() error {
 		if err != nil {
 			return fmt.Errorf("invalid destinationAccountID: %w", err)
 		}
-	}
-
-	if len(r.Adjustments) == 0 {
-		return errors.New("adjustments is required")
-	}
-
-	for i, adj := range r.Adjustments {
-		if err := adj.validate(); err != nil {
-			return fmt.Errorf("adjustment %d: %w", i, err)
-		}
-	}
-
-	return nil
-}
-
-func (r *createPaymentsAdjustmentsRequest) validate() error {
-	if r.Reference == "" {
-		return errors.New("reference is required")
-	}
-
-	if r.CreatedAt.IsZero() || r.CreatedAt.After(time.Now()) {
-		return errors.New("createdAt is empty or in the future")
-	}
-
-	if r.Amount == nil {
-		return errors.New("amount is required")
-	}
-
-	if r.Asset == nil {
-		return errors.New("asset is required")
-	}
-
-	if r.Status == "" {
-		return errors.New("status is required")
-	}
-
-	if _, err := models.PaymentStatusFromString(r.Status); err != nil {
-		return fmt.Errorf("invalid status: %w", err)
 	}
 
 	return nil
@@ -152,6 +112,13 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 
 		connectorID := models.MustConnectorIDFromString(req.ConnectorID)
 		paymentType := models.MustPaymentTypeFromString(req.Type)
+		status := models.MustPaymentStatusFromString(req.Status)
+		raw, err := json.Marshal(req)
+		if err != nil {
+			otel.RecordError(span, err)
+			api.InternalServerError(w, r, err)
+			return
+		}
 		pid := models.PaymentID{
 			PaymentReference: models.PaymentReference{
 				Reference: req.Reference,
@@ -166,7 +133,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			Reference:     req.Reference,
 			CreatedAt:     req.CreatedAt.UTC(),
 			Type:          paymentType,
-			InitialAmount: req.InitialAmount,
+			InitialAmount: req.Amount,
 			Amount:        req.Amount,
 			Asset:         req.Asset,
 			Scheme:        models.MustPaymentSchemeFromString(req.Scheme),
@@ -185,31 +152,24 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			Metadata: req.Metadata,
 		}
 
-		for _, adj := range req.Adjustments {
-			raw, err := json.Marshal(adj)
-			if err != nil {
-				otel.RecordError(span, err)
-				api.InternalServerError(w, r, err)
-				return
-			}
-			status := models.MustPaymentStatusFromString(adj.Status)
-
-			payment.Adjustments = append(payment.Adjustments, models.PaymentAdjustment{
+		// Create adjustments from main payments to keep the compatibility with the old API
+		payment.Adjustments = []models.PaymentAdjustment{
+			{
 				ID: models.PaymentAdjustmentID{
 					PaymentID: pid,
-					Reference: adj.Reference,
-					CreatedAt: adj.CreatedAt.UTC(),
+					Reference: req.Reference,
+					CreatedAt: req.CreatedAt,
 					Status:    status,
 				},
 				PaymentID: pid,
-				Reference: adj.Reference,
-				CreatedAt: adj.CreatedAt,
+				Reference: req.Reference,
+				CreatedAt: req.CreatedAt,
 				Status:    status,
-				Amount:    adj.Amount,
-				Asset:     adj.Asset,
-				Metadata:  adj.Metadata,
+				Amount:    req.Amount,
+				Asset:     &req.Asset,
+				Metadata:  req.Metadata,
 				Raw:       raw,
-			})
+			},
 		}
 
 		err = backend.PaymentsCreate(ctx, payment)
