@@ -27,11 +27,11 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 			// Accounts
 			r.Route("/accounts", func(r chi.Router) {
 				r.Get("/", accountsList(backend))
+				r.Post("/", accountsCreate(backend))
 
 				r.Route("/{accountID}", func(r chi.Router) {
 					r.Get("/", accountsGet(backend))
 					r.Get("/balances", accountsBalances(backend))
-					// TODO(polo): add create account handler
 				})
 			})
 
