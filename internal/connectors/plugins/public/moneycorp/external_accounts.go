@@ -41,16 +41,18 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
-	var accounts []models.PSPAccount
 	hasMore := false
+	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
+		pageSize := req.PageSize - len(accounts)
 
-		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
+		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, pageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 		if len(pagedRecipients) == 0 {
+			hasMore = false
 			break
 		}
 
@@ -60,12 +62,12 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 		if len(accounts) == 0 {
-			continue
+			break
 		}
-
 		newState.LastCreatedAt = lastCreatedAt
+
 		needMore := true
-		needMore, hasMore, accounts = pagination.ShouldFetchMore(accounts, page, req.PageSize)
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, pageSize)
 		if !needMore {
 			break
 		}

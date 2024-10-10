@@ -34,12 +34,14 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
+		pageSize := req.PageSize - len(accounts)
 
-		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
+		pagedAccounts, err := p.client.GetAccounts(ctx, page, pageSize)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
 		if len(pagedAccounts) == 0 {
+			hasMore = false
 			break
 		}
 
@@ -48,12 +50,12 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 		if len(accounts) == 0 {
-			continue
+			break
 		}
 		newState.LastIDCreated = accounts[len(accounts)-1].Reference
 
 		needMore := true
-		needMore, hasMore, accounts = pagination.ShouldFetchMore(accounts, page, req.PageSize)
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, pageSize)
 		if !needMore {
 			break
 		}
