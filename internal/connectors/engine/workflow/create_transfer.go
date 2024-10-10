@@ -114,7 +114,7 @@ func (w Workflow) runCreateTransfer(
 				CreatedAt:           workflow.Now(ctx),
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 			},
-			&errPlugin,
+			errPlugin,
 			nil,
 		)
 		if err != nil {
@@ -134,7 +134,7 @@ func init() {
 func (w Workflow) addPIAdjustment(
 	ctx workflow.Context,
 	adjustmentID models.PaymentInitiationAdjustmentID,
-	err *error,
+	err error,
 	metadata map[string]string,
 ) error {
 	adj := models.PaymentInitiationAdjustment{
@@ -142,12 +142,8 @@ func (w Workflow) addPIAdjustment(
 		PaymentInitiationID: adjustmentID.PaymentInitiationID,
 		CreatedAt:           workflow.Now(ctx),
 		Status:              adjustmentID.Status,
+		Error:               err,
 		Metadata:            metadata,
-	}
-
-	if err != nil {
-		errStr := (*err).Error()
-		adj.Error = &errStr
 	}
 
 	return activities.PaymentInitiationsAdjustmentsStore(

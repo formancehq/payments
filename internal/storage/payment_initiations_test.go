@@ -7,11 +7,11 @@ import (
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
 	"github.com/formancehq/go-libs/logging"
-	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/query"
 	"github.com/formancehq/go-libs/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
@@ -771,7 +771,7 @@ var (
 			PaymentInitiationID: defaultPaymentInitiations[0].ID,
 			CreatedAt:           now.Add(-5 * time.Minute).UTC().Time,
 			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
-			Error:               pointer.For("test"),
+			Error:               errors.New("test"),
 			Metadata: map[string]string{
 				"foo2": "bar2",
 			},
@@ -964,7 +964,14 @@ func comparePaymentInitiationAdjustments(t *testing.T, expected, actual models.P
 	require.Equal(t, expected.PaymentInitiationID, actual.PaymentInitiationID)
 	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
 	require.Equal(t, expected.Status, actual.Status)
-	require.Equal(t, expected.Error, actual.Error)
+
+	switch {
+	case expected.Error != nil && actual.Error != nil:
+		require.Equal(t, expected.Error.Error(), actual.Error.Error())
+	case expected.Error == nil && actual.Error == nil:
+	default:
+		t.Fatalf("expected.Error != actual.Error")
+	}
 
 	require.Equal(t, len(expected.Metadata), len(actual.Metadata))
 	for k, v := range expected.Metadata {
