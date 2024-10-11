@@ -119,6 +119,26 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 		})
 	})
 
+	Context("create transfer", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{}
+			_, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in transfers_test.go
+	})
+
+	Context("create payout", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in payouts_test.go
+	})
+
 	Context("create webhooks", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreateWebhooksRequest{}

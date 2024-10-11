@@ -118,3 +118,33 @@ func (mr *MockClientMockRecorder) GetTransactions(ctx, page, pageSize, updatedAt
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, page, pageSize, updatedAtFrom)
 }
+
+// InitiatePayout mocks base method.
+func (m *MockClient) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitiatePayout", ctx, payoutRequest)
+	ret0, _ := ret[0].(*PayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InitiatePayout indicates an expected call of InitiatePayout.
+func (mr *MockClientMockRecorder) InitiatePayout(ctx, payoutRequest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiatePayout", reflect.TypeOf((*MockClient)(nil).InitiatePayout), ctx, payoutRequest)
+}
+
+// InitiateTransfer mocks base method.
+func (m *MockClient) InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitiateTransfer", ctx, transferRequest)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InitiateTransfer indicates an expected call of InitiateTransfer.
+func (mr *MockClientMockRecorder) InitiateTransfer(ctx, transferRequest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateTransfer", reflect.TypeOf((*MockClient)(nil).InitiateTransfer), ctx, transferRequest)
+}

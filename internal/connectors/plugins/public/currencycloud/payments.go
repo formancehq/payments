@@ -155,10 +155,12 @@ func matchTransactionStatus(transactionStatus string) models.PaymentStatus {
 	switch transactionStatus {
 	case "completed":
 		return models.PAYMENT_STATUS_SUCCEEDED
-	case "pending":
+	case "pending", "ready_to_send":
 		return models.PAYMENT_STATUS_PENDING
 	case "deleted":
 		return models.PAYMENT_STATUS_FAILED
+	case "cancelled":
+		return models.PAYMENT_STATUS_CANCELLED
 	}
 	return models.PAYMENT_STATUS_OTHER
 }
