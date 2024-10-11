@@ -172,7 +172,7 @@ func (pi *PaymentInitiation) UnmarshalJSON(data []byte) error {
 func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, sourceAccount, destinationAccount *PSPAccount) *PSPPaymentInitiation {
 	return &PSPPaymentInitiation{
 		Reference:          from.Reference,
-		CreatedAt:          from.CreatedAt,
+		CreatedAt:          from.ScheduledAt, // Scheduled at should be the creation time of the payment on the PSP
 		Description:        from.Description,
 		SourceAccount:      sourceAccount,
 		DestinationAccount: destinationAccount,
