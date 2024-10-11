@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/formancehq/payments/internal/models"
 )
 
 type Contact struct {
@@ -43,7 +45,8 @@ func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 	}
 
 	if len(res.Contacts) == 0 {
-		return nil, fmt.Errorf("no contact found for account %s", accountID)
+		return nil, fmt.Errorf("no contact found for account %s: %w", accountID, models.ErrInvalidRequest)
 	}
+
 	return res.Contacts[0], nil
 }
