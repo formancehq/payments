@@ -32,6 +32,9 @@ type Engine interface {
 	// Create a Formance account, no call to the plugin, just a creation
 	// of an account in the database related to the provided connector id.
 	CreateFormanceAccount(ctx context.Context, account models.Account) error
+	// Create a Formance payment, no call to the plugin, just a creation
+	// of a payment in the database related to the provided connector id.
+	CreateFormancePayment(ctx context.Context, payment models.Payment) error
 
 	// Forward a bank account to the given connector, which will create it
 	// in the external system (PSP).
@@ -260,6 +263,35 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		workflow.RunCreateFormanceAccount,
 		workflow.CreateFormanceAccount{
 			Account: account,
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	// Wait for bank account creation to complete
+	if err := run.Get(ctx, nil); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payment) error {
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-formance-payment-%s-%s", payment.ConnectorID.String(), payment.Reference),
+			TaskQueue:                                payment.ConnectorID.String(),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateFormancePayment,
+		workflow.CreateFormancePayment{
+			Payment: payment,
 		},
 	)
 	if err != nil {
