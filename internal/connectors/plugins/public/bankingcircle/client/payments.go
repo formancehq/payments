@@ -117,6 +117,29 @@ func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 	return res.Result, nil
 }
 
+func (c *Client) GetPayment(ctx context.Context, paymentID string) (*Payment, error) {
+	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
+		return nil, err
+	}
+
+	// f := connectors.ClientMetrics(ctx, "bankingcircle", "get_payment")
+	// now := time.Now()
+	// defer f(ctx, now)
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/payments/singles/%s", c.endpoint, paymentID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create payments request: %w", err)
+	}
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+
+	var res Payment
+	statusCode, err := c.httpClient.Do(req, &res, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get payment, status code %d: %w", statusCode, err)
+	}
+	return &res, nil
+}
+
 type StatusResponse struct {
 	Status string `json:"status"`
 }
