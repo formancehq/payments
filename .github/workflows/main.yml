@@ -25,7 +25,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   Dirty:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     steps:
       - uses: 'actions/checkout@v4'
         with:
@@ -54,7 +54,7 @@ jobs:
           fi
 
   Tests:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     needs:
       - Dirty
     steps:
@@ -76,15 +76,11 @@ jobs:
           SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
 
   GoReleaser:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     if: contains(github.event.pull_request.labels.*.name, 'build-images') || github.ref == 'refs/heads/main' || github.event_name == 'merge_group'
     needs:
       - Dirty
     steps:
-      - uses: earthly/actions-setup@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: "latest"
       - uses: 'actions/checkout@v4'
         with:
           fetch-depth: 0
