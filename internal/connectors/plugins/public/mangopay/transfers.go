@@ -23,7 +23,7 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
 	}
 
-	if pi.SourceAccount == nil {
+	if pi.DestinationAccount == nil {
 		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
 	}
 
