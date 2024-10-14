@@ -199,7 +199,7 @@ func UpdatePaymentStatusTask(
 		)
 		if err != nil {
 			otel.RecordError(span, err)
-			return err
+			return fmt.Errorf("failed to get atlar transfer: %w, %w", err, task.ErrRetryable)
 		}
 
 		status := getCreditTransferResponse.Payload.Status
@@ -370,7 +370,7 @@ func ingestAtlarTransaction(
 	transactionResponse, err := client.GetV1TransactionsID(requestCtx, transactionId)
 	if err != nil {
 		otel.RecordError(span, err)
-		return err
+		return fmt.Errorf("failed to get atlar transactions: %w, %w", err, task.ErrRetryable)
 	}
 
 	batchElement, err := atlarTransactionToPaymentBatchElement(ctx, connectorID, taskID, transactionResponse.Payload, client)
