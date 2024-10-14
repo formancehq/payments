@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 )
 
+type PluginFn func() Plugin
+
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {
 	Install(context.Context, InstallRequest) (InstallResponse, error)
