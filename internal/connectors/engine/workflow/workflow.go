@@ -120,5 +120,9 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "RunSendEvents",
 			Func: w.runSendEvents,
+		}).
+		Append(temporalworker.Definition{
+			Name: "RunUpdatePaymentInitiationFromPayment",
+			Func: w.runUpdatePaymentInitiationFromPayment,
 		})
 }
