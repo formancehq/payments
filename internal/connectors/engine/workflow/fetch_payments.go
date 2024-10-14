@@ -77,7 +77,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*2)
+		errChan := make(chan error, len(paymentsResponse.Payments)*3)
 		for _, payment := range payments {
 			p := payment
 
@@ -85,6 +85,33 @@ func (w Workflow) fetchNextPayments(
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
 
+				// We want to update the payment initiation from the payment
+				// if it exists
+				if err := workflow.ExecuteChildWorkflow(
+					workflow.WithChildOptions(
+						ctx,
+						workflow.ChildWorkflowOptions{
+							TaskQueue:         fetchNextPayments.ConnectorID.String(),
+							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+							SearchAttributes: map[string]interface{}{
+								SearchAttributeStack: w.stack,
+							},
+						},
+					),
+					RunUpdatePaymentInitiationFromPayment,
+					UpdatePaymentInitiationFromPayment{
+						Payment: &p,
+					},
+				).Get(ctx, nil); err != nil {
+					errChan <- errors.Wrap(err, "sending events")
+				}
+			})
+
+			wg.Add(1)
+			workflow.Go(ctx, func(ctx workflow.Context) {
+				defer wg.Done()
+
+				// Send the payment event
 				if err := workflow.ExecuteChildWorkflow(
 					workflow.WithChildOptions(
 						ctx,
@@ -118,6 +145,7 @@ func (w Workflow) fetchNextPayments(
 					errChan <- errors.Wrap(err, "marshalling payment")
 				}
 
+				// Run next tasks
 				if err := workflow.ExecuteChildWorkflow(
 					workflow.WithChildOptions(
 						ctx,

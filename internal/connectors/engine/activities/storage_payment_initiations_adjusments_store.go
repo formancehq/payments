@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) PaymentInitiationsAdjustmentsStore(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+func (a Activities) StoragePaymentInitiationsAdjustmentsStore(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 	return a.storage.PaymentInitiationAdjustmentsUpsert(ctx, adj)
 }
 
-var PaymentInitiationsAdjustmentsStoreActivity = Activities{}.PaymentInitiationsAdjustmentsStore
+var StoragePaymentInitiationsAdjustmentsStoreActivity = Activities{}.StoragePaymentInitiationsAdjustmentsStore
 
-func PaymentInitiationsAdjustmentsStore(ctx workflow.Context, adj models.PaymentInitiationAdjustment) error {
-	return executeActivity(ctx, PaymentInitiationsAdjustmentsStoreActivity, nil, adj)
+func StoragePaymentInitiationsAdjustmentsStore(ctx workflow.Context, adj models.PaymentInitiationAdjustment) error {
+	return executeActivity(ctx, StoragePaymentInitiationsAdjustmentsStoreActivity, nil, adj)
 }
