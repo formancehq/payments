@@ -9,13 +9,39 @@ sources:
     WORKDIR src
     WORKDIR /src
     COPY go.* .
-    COPY --dir pkg cmd internal .
+    COPY --dir cmd pkg internal .
     COPY main.go .
     SAVE ARTIFACT /src
+
+compile-configs:
+    FROM core+builder-image
+    COPY (+sources/*) /src
+    WORKDIR /src/internal/connectors/plugins/public
+    FOR c IN $(ls -d */ | sed 's#/##')
+        RUN echo "{\"$c\":" >> raw_configs.json
+        RUN cat /src/internal/connectors/plugins/public/$c/config.json >> raw_configs.json
+        RUN echo "}" >> raw_configs.json
+    END
+    RUN jq --slurp 'add' raw_configs.json > configs.json
+    SAVE ARTIFACT /src/internal/connectors/plugins/public/configs.json /configs.json
+
+compile-plugins:
+    FROM core+builder-image
+    COPY (+sources/*) /src
+    COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
+    WORKDIR /src/internal/connectors/plugins/public
+    FOR c IN $(ls -d */ | sed 's#/##')
+        WORKDIR /src/internal/connectors/plugins/public/$c/cmd
+        DO --pass-args core+GO_COMPILE --VERSION=$VERSION
+        WORKDIR /src
+        SAVE ARTIFACT /src/internal/connectors/plugins/public/$c/cmd/main ./plugins/$c
+        SAVE ARTIFACT /src/internal/connectors/plugins/public/$c/cmd/main AS LOCAL ./plugins/$c
+    END
 
 compile:
     FROM core+builder-image
     COPY (+sources/*) /src
+    COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
     WORKDIR /src
     ARG VERSION=latest
     DO --pass-args core+GO_COMPILE --VERSION=$VERSION
@@ -25,6 +51,10 @@ build-image:
     ENTRYPOINT ["/bin/payments"]
     CMD ["serve"]
     COPY (+compile/main) /bin/payments
+    COPY (+compile-plugins/plugins) /plugins
+    FOR c IN $(ls /plugins/*)
+        RUN chmod +x $c
+    END
     ARG REPOSITORY=ghcr.io
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag
@@ -76,21 +106,30 @@ tidy:
     WORKDIR /src
     DO --pass-args core+GO_TIDY
 
-generate-generic-connector-client:
-    FROM openapitools/openapi-generator-cli:v6.6.0
+generate:
+    FROM core+builder-image
+    RUN apk update && apk add openjdk11
+    DO --pass-args core+GO_INSTALL --package=go.uber.org/mock/mockgen@latest
+    COPY (+sources/*) /src
     WORKDIR /src
-    COPY cmd/connectors/internal/connectors/generic/client/generic-openapi.yaml .
-    RUN docker-entrypoint.sh generate \
-        -i ./generic-openapi.yaml \
-        -g go \
-        -o ./generated \
-        --git-user-id=formancehq \
-        --git-repo-id=payments \
-        -p packageVersion=latest \
-        -p isGoSubmodule=true \
-        -p packageName=genericclient
-    RUN rm -rf ./generated/test
-    SAVE ARTIFACT ./generated AS LOCAL ./cmd/connectors/internal/connectors/generic/client/generated
+    DO --pass-args core+GO_GENERATE
+    SAVE ARTIFACT internal AS LOCAL internal
+
+# generate-generic-connector-client:
+#     FROM openapitools/openapi-generator-cli:v6.6.0
+#     WORKDIR /src
+#     COPY cmd/connectors/internal/connectors/generic/client/generic-openapi.yaml .
+#     RUN docker-entrypoint.sh generate \
+#         -i ./generic-openapi.yaml \
+#         -g go \
+#         -o ./generated \
+#         --git-user-id=formancehq \
+#         --git-repo-id=payments \
+#         -p packageVersion=latest \
+#         -p isGoSubmodule=true \
+#         -p packageName=genericclient
+#     RUN rm -rf ./generated/test
+#     SAVE ARTIFACT ./generated AS LOCAL ./cmd/connectors/internal/connectors/generic/client/generated
 
 release:
     FROM core+builder-image
