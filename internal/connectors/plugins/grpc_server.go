@@ -21,7 +21,7 @@ type server struct {
 	plugin models.Plugin
 }
 
-func NewServer(lc fx.Lifecycle, plg models.Plugin) Server {
+func NewServer(lc fx.Lifecycle, shutdowner fx.Shutdowner, plg models.Plugin) Server {
 	srv := &server{plugin: plg}
 	wg := &sync.WaitGroup{}
 	lc.Append(fx.Hook{
@@ -38,12 +38,15 @@ func NewServer(lc fx.Lifecycle, plg models.Plugin) Server {
 					// A non-nil value here enables gRPC serving for this plugin...
 					GRPCServer: plugin.DefaultGRPCServer,
 				})
+				// when Serve has ended the server closed usually because the plugin.Client told it to
+				// if the parent application (managed by fx) is still running we need to tell it the plugin is done
+				shutdowner.Shutdown(fx.ExitCode(0))
 			}()
 			return nil
 		},
 		OnStop: func(ctx context.Context) error {
-			// plugin.Serve is expected to block until a signal is received
-			// this ensures the parent doesn't exit before the child
+			// plugin.Serve is expected to block until the plugin.Client tells it to stop
+			// this ensures the main plugin process doesn't exit before the plugin server shutsdown
 			wg.Wait()
 			return nil
 		},
