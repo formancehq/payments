@@ -273,6 +273,25 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 	return nil
 }
 
+func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error) {
+	var paymentInitiationRelatedPayments []paymentInitiationRelatedPayment
+	err := s.db.NewSelect().
+		Model(&paymentInitiationRelatedPayments).
+		Column("payment_initiation_id").
+		Where("payment_id = ?", id).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get payment initiation related payments", err)
+	}
+
+	ids := make([]models.PaymentInitiationID, 0, len(paymentInitiationRelatedPayments))
+	for _, pi := range paymentInitiationRelatedPayments {
+		ids = append(ids, pi.PaymentInitiationID)
+	}
+
+	return ids, nil
+}
+
 type PaymentInitiationRelatedPaymentsQuery struct{}
 
 type ListPaymentInitiationRelatedPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]]

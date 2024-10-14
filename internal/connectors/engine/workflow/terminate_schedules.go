@@ -6,24 +6,19 @@ import (
 	"github.com/formancehq/go-libs/bun/bunpaginate"
 	"github.com/formancehq/go-libs/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/workflow"
 )
 
-type TerminateSchedules struct {
-	ConnectorID models.ConnectorID
-}
-
 func (w Workflow) runTerminateSchedules(
 	ctx workflow.Context,
-	terminateSchedules TerminateSchedules,
+	uninstallConnector UninstallConnector,
 ) error {
 	query := storage.NewListSchedulesQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
-				query.Match("connector_id", terminateSchedules.ConnectorID.String()),
+				query.Match("connector_id", uninstallConnector.ConnectorID.String()),
 			),
 	)
 	for {

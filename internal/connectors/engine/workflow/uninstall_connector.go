@@ -28,7 +28,7 @@ func (w Workflow) runUninstallConnector(
 			},
 		),
 		RunTerminateSchedules,
-		TerminateSchedules{
+		UninstallConnector{
 			ConnectorID: uninstallConnector.ConnectorID,
 		},
 	).Get(ctx, nil); err != nil {
