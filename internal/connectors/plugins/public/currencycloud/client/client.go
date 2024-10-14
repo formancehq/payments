@@ -18,6 +18,8 @@ type Client interface {
 	GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error)
 	GetContactID(ctx context.Context, accountID string) (*Contact, error)
 	GetTransactions(ctx context.Context, page int, pageSize int, updatedAtFrom time.Time) ([]Transaction, int, error)
+	InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error)
+	InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error)
 }
 
 type apiTransport struct {
