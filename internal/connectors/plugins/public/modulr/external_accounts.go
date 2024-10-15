@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
-	LastCreatedAt time.Time `json:"lastCreatedAt"`
+	LastModifiedSince time.Time `json:"lastModifiedSince"`
 }
 
 func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -21,57 +23,35 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	}
 
 	newState := externalAccountsState{
-		LastCreatedAt: oldState.LastCreatedAt,
+		LastModifiedSince: oldState.LastModifiedSince,
 	}
 
 	var accounts []models.PSPAccount
+	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pagedBeneficiarise, err := p.client.GetBeneficiaries(ctx, page, req.PageSize, oldState.LastCreatedAt)
+		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, req.PageSize, oldState.LastModifiedSince)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		if len(pagedBeneficiarise.Content) == 0 {
+		accounts, err = fillBeneficiaries(pagedBeneficiaries, accounts, oldState)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedBeneficiaries, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
 
-		for _, beneficiary := range pagedBeneficiarise.Content {
-			createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", beneficiary.Created)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
 
-			switch createdTime.Compare(oldState.LastCreatedAt) {
-			case -1, 0:
-				// Account already ingested, skip
-				continue
-			default:
-			}
-
-			raw, err := json.Marshal(beneficiary)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: beneficiary.ID,
-				CreatedAt: createdTime,
-				Name:      &beneficiary.Name,
-				Raw:       raw,
-			})
-
-			newState.LastCreatedAt = createdTime
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
+	if len(accounts) > 0 {
+		newState.LastModifiedSince = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -84,4 +64,38 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func fillBeneficiaries(
+	pagedBeneficiaries []client.Beneficiary,
+	accounts []models.PSPAccount,
+	oldState externalAccountsState,
+) ([]models.PSPAccount, error) {
+	for _, beneficiary := range pagedBeneficiaries {
+		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", beneficiary.Created)
+		if err != nil {
+			return nil, err
+		}
+
+		switch createdTime.Compare(oldState.LastModifiedSince) {
+		case -1, 0:
+			// Account already ingested, skip
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(beneficiary)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: beneficiary.ID,
+			CreatedAt: createdTime,
+			Name:      &beneficiary.Name,
+			Raw:       raw,
+		})
+	}
+
+	return accounts, nil
 }
