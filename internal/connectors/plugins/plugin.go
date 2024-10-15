@@ -12,13 +12,13 @@ import (
 )
 
 // TODO(polo): metrics
-func NewPlugin(name string, pluginFn models.PluginFn) *cobra.Command {
+func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          fmt.Sprintf("serve %s plugin", name),
 		Aliases:      []string{name},
 		Short:        fmt.Sprintf("Launch %s plugin server", name),
 		SilenceUsage: true,
-		RunE:         runServer(pluginFn),
+		RunE:         runServer(pluginConstructorFn),
 	}
 
 	service.AddFlags(cmd.Flags())
@@ -27,11 +27,11 @@ func NewPlugin(name string, pluginFn models.PluginFn) *cobra.Command {
 	return cmd
 }
 
-func runServer(pluginFn models.PluginFn) func(cmd *cobra.Command, args []string) error {
+func runServer(pluginConstructorFn models.PluginConstructorFn) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// TODO initialise logger here?
 		opts := fx.Options(
-			fx.Provide(pluginFn, NewServer),
+			fx.Provide(pluginConstructorFn, NewServer),
 			fx.Invoke(func(Server) {}),
 		)
 		return service.New(cmd.OutOrStderr(), opts).Run(cmd)
