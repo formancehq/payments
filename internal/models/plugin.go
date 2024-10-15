@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 )
 
-type PluginFn func() Plugin
+type PluginConstructorFn func() Plugin
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {
