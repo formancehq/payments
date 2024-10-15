@@ -20,14 +20,21 @@ type Destination struct {
 	ID   string `json:"id"`
 }
 
+type Details struct {
+	SourceAccountID string      `json:"sourceAccountId"`
+	Destination     Destination `json:"destination"`
+	Currency        string      `json:"currency"`
+	Amount          json.Number `json:"amount"`
+}
+
 type TransferRequest struct {
+	IdempotencyKey    string      `json:"-"`
 	SourceAccountID   string      `json:"sourceAccountId"`
 	Destination       Destination `json:"destination"`
 	Currency          string      `json:"currency"`
 	Amount            json.Number `json:"amount"`
 	Reference         string      `json:"reference"`
 	ExternalReference string      `json:"externalReference"`
-	PaymentDate       string      `json:"paymentDate"`
 }
 
 type getTransferResponse struct {
@@ -35,15 +42,16 @@ type getTransferResponse struct {
 }
 
 type TransferResponse struct {
-	ID                string `json:"id"`
-	Status            string `json:"status"`
-	CreatedDate       string `json:"createdDate"`
-	ExternalReference string `json:"externalReference"`
-	ApprovalStatus    string `json:"approvalStatus"`
-	Message           string `json:"message"`
+	ID                string  `json:"id"`
+	Status            string  `json:"status"`
+	CreatedDate       string  `json:"createdDate"`
+	ExternalReference string  `json:"externalReference"`
+	ApprovalStatus    string  `json:"approvalStatus"`
+	Message           string  `json:"message"`
+	Details           Details `json:"details"`
 }
 
-func (c *Client) InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
+func (c *client) InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "initiate_transfer")
 	// now := time.Now()
@@ -59,6 +67,7 @@ func (c *Client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 		return nil, fmt.Errorf("failed to create transfer request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-mod-nonce", transferRequest.IdempotencyKey)
 
 	var res TransferResponse
 	var errRes modulrError
@@ -69,7 +78,7 @@ func (c *Client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 	return &res, nil
 }
 
-func (c *Client) GetTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
+func (c *client) GetTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "get_transfer")
 	// now := time.Now()

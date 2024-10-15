@@ -1,4 +1,4 @@
-package currencycloud
+package modulr
 
 import (
 	"encoding/json"
@@ -7,14 +7,14 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/pointer"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 )
 
-var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
+var _ = Describe("Modulr Plugin Transfers Creation", func() {
 	var (
 		plg *Plugin
 	)
@@ -23,7 +23,7 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 		plg = &Plugin{}
 	})
 
-	Context("create payout", func() {
+	Context("create transfer", func() {
 		var (
 			m                          *client.MockClient
 			samplePSPPaymentInitiation models.PSPPaymentInitiation
@@ -34,7 +34,7 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.client = m
-			now = time.Now().UTC()
+			now, _ = time.Parse("2006-01-02T15:04:05.999-0700", time.Now().UTC().Format("2006-01-02T15:04:05.999-0700"))
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{
 				Reference:   "test1",
@@ -61,121 +61,115 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 		})
 
 		It("should return an error - validation error - source account", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
+			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
 			req.PaymentInitiation.SourceAccount = nil
 
-			resp, err := plg.CreatePayout(ctx, req)
+			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("source account is required: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
 		It("should return an error - validation error - destination account", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
+			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
 			req.PaymentInitiation.DestinationAccount = nil
 
-			resp, err := plg.CreatePayout(ctx, req)
+			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("destination account is required: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
 		It("should return an error - validation error - asset not supported", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
+			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
 			req.PaymentInitiation.Asset = "HUF/2"
 
-			resp, err := plg.CreatePayout(ctx, req)
+			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
-		It("should return an error - get contactID error", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
+		It("should return an error - initiate transfer error", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(nil, errors.New("test error"))
-
-			resp, err := plg.CreatePayout(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
-		})
-
-		It("should return an error - initiate payout error", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Contact{ID: "1"}, nil)
-
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
-				OnBehalfOf:      "1",
-				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Currency:        "EUR",
-				Amount:          "1.00",
-				Reference:       samplePSPPaymentInitiation.Description,
-				UniqueRequestID: samplePSPPaymentInitiation.Reference,
+			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
+				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
+				Destination: client.Destination{
+					Type: "ACCOUNT",
+					ID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
+				},
+				Currency:          "EUR",
+				Amount:            "1.00",
+				Reference:         samplePSPPaymentInitiation.Description,
+				ExternalReference: samplePSPPaymentInitiation.Description,
 			}).Return(nil, errors.New("test error"))
 
-			resp, err := plg.CreatePayout(ctx, req)
+			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
 		It("should be ok", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
+			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Contact{ID: "1"}, nil)
-
-			trResponse := client.PayoutResponse{
-				ID:            "test1",
-				Amount:        "1.00",
-				BeneficiaryID: "acc2",
-				Currency:      "EUR",
-				Reference:     samplePSPPaymentInitiation.Description,
-				Status:        "ready_to_send",
-				CreatedAt:     now,
+			trResponse := client.TransferResponse{
+				ID:                "1",
+				Status:            "PROCESSED",
+				CreatedDate:       now.Format("2006-01-02T15:04:05.999-0700"),
+				ExternalReference: samplePSPPaymentInitiation.Description,
+				Details: client.Details{
+					SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
+					Destination: client.Destination{
+						Type: "ACCOUNT",
+						ID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
+					},
+					Currency: "EUR",
+					Amount:   "1.00",
+				},
 			}
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
-				OnBehalfOf:      "1",
-				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Currency:        "EUR",
-				Amount:          "1.00",
-				Reference:       samplePSPPaymentInitiation.Description,
-				UniqueRequestID: samplePSPPaymentInitiation.Reference,
+			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
+				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
+				Destination: client.Destination{
+					Type: "ACCOUNT",
+					ID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
+				},
+				Currency:          "EUR",
+				Amount:            "1.00",
+				Reference:         samplePSPPaymentInitiation.Description,
+				ExternalReference: samplePSPPaymentInitiation.Description,
 			}).Return(&trResponse, nil)
 
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
 
-			resp, err := plg.CreatePayout(ctx, req)
+			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(models.CreatePayoutResponse{
+			Expect(resp).To(Equal(models.CreateTransferResponse{
 				Payment: models.PSPPayment{
-					Reference:                   "test1",
+					Reference:                   "1",
 					CreatedAt:                   now,
-					Type:                        models.PAYMENT_TYPE_PAYOUT,
+					Type:                        models.PAYMENT_TYPE_TRANSFER,
 					Amount:                      big.NewInt(100),
 					Asset:                       "EUR/2",
 					Scheme:                      models.PAYMENT_SCHEME_OTHER,
-					Status:                      models.PAYMENT_STATUS_PENDING,
+					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 					SourceAccountReference:      pointer.For("acc1"),
 					DestinationAccountReference: pointer.For("acc2"),
 					Raw:                         raw,
