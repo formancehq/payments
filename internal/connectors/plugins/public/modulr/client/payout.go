@@ -9,11 +9,9 @@ import (
 )
 
 type PayoutRequest struct {
-	SourceAccountID string `json:"sourceAccountId"`
-	Destination     struct {
-		Type string `json:"type"`
-		ID   string `json:"id"`
-	} `json:"destination"`
+	IdempotencyKey    string      `json:"-"`
+	SourceAccountID   string      `json:"sourceAccountId"`
+	Destination       Destination `json:"destination"`
 	Currency          string      `json:"currency"`
 	Amount            json.Number `json:"amount"`
 	Reference         string      `json:"reference"`
@@ -21,15 +19,16 @@ type PayoutRequest struct {
 }
 
 type PayoutResponse struct {
-	ID                string `json:"id"`
-	Status            string `json:"status"`
-	CreatedDate       string `json:"createdDate"`
-	ExternalReference string `json:"externalReference"`
-	ApprovalStatus    string `json:"approvalStatus"`
-	Message           string `json:"message"`
+	ID                string  `json:"id"`
+	Status            string  `json:"status"`
+	CreatedDate       string  `json:"createdDate"`
+	ExternalReference string  `json:"externalReference"`
+	ApprovalStatus    string  `json:"approvalStatus"`
+	Message           string  `json:"message"`
+	Details           Details `json:"details"`
 }
 
-func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "initiate_payout")
 	// now := time.Now()
@@ -45,6 +44,7 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 		return nil, fmt.Errorf("failed to create payout request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("x-mod-nonce", payoutRequest.IdempotencyKey)
 
 	var res PayoutResponse
 	var errRes modulrError
@@ -55,7 +55,7 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	return &res, nil
 }
 
-func (c *Client) GetPayout(ctx context.Context, payoutID string) (PayoutResponse, error) {
+func (c *client) GetPayout(ctx context.Context, payoutID string) (PayoutResponse, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "get_payout")
 	// now := time.Now()

@@ -23,7 +23,7 @@ type Transaction struct {
 	AdditionalInfo  interface{} `json:"additionalInfo"`
 }
 
-func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) (*responseWrapper[[]Transaction], error) {
+func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) ([]Transaction, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "list_transactions")
 	// now := time.Now()
@@ -38,7 +38,7 @@ func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pa
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(pageSize))
 	if !fromTransactionDate.IsZero() {
-		q.Add("fromTransactionDate", fromTransactionDate.Format("2006-01-02T15:04:05-0700"))
+		q.Add("fromTransactionDate", fromTransactionDate.Format("2006-01-02T15:04:05.999-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -48,5 +48,5 @@ func (c *Client) GetTransactions(ctx context.Context, accountID string, page, pa
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}
-	return &res, nil
+	return res.Content, nil
 }

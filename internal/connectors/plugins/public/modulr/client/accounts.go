@@ -25,7 +25,7 @@ type Account struct {
 	CreatedDate string `json:"createdDate"`
 }
 
-func (c *Client) GetAccounts(ctx context.Context, page, pageSize int, fromCreatedAt time.Time) (*responseWrapper[[]Account], error) {
+func (c *client) GetAccounts(ctx context.Context, page, pageSize int, fromCreatedAt time.Time) ([]Account, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "list_accounts")
 	// now := time.Now()
@@ -42,7 +42,7 @@ func (c *Client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 	q.Add("sortField", "createdDate")
 	q.Add("sortOrder", "asc")
 	if !fromCreatedAt.IsZero() {
-		q.Add("fromCreatedDate", fromCreatedAt.Format("2006-01-02T15:04:05-0700"))
+		q.Add("fromCreatedDate", fromCreatedAt.Format("2006-01-02T15:04:05.999-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -52,10 +52,10 @@ func (c *Client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accounts: %w %w", err, errRes.Error())
 	}
-	return &res, nil
+	return res.Content, nil
 }
 
-func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
+func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "list_accounts")
 	// now := time.Now()
