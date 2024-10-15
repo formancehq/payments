@@ -1,21 +1,13 @@
 package main
 
 import (
-	"github.com/formancehq/payments/internal/connectors/grpc"
+	"github.com/formancehq/go-libs/service"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/generic"
-	"github.com/hashicorp/go-plugin"
+	"github.com/formancehq/payments/internal/models"
 )
 
 func main() {
-	// TODO(polo): metrics
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: grpc.Handshake,
-		Plugins: map[string]plugin.Plugin{
-			"psp": &grpc.PSPGRPCPlugin{Impl: plugins.NewGRPCImplem(&generic.Plugin{})},
-		},
-
-		// A non-nil value here enables gRPC serving for this plugin...
-		GRPCServer: plugin.DefaultGRPCServer,
-	})
+	pluginFn := func() models.Plugin { return &generic.Plugin{} }
+	service.Execute(plugins.NewPlugin("generic", pluginFn))
 }
