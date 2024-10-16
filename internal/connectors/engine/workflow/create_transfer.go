@@ -146,7 +146,7 @@ func (w Workflow) addPIAdjustment(
 		Metadata:            metadata,
 	}
 
-	return activities.PaymentInitiationsAdjustmentsStore(
+	return activities.StoragePaymentInitiationsAdjustmentsStore(
 		infiniteRetryContext(ctx),
 		adj,
 	)

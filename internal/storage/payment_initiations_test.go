@@ -657,6 +657,33 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 	})
 }
 
+func TestPaymentInitiationIDsFromPaymentID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertPayments(t, ctx, store, defaultPayments)
+	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations)
+	upsertPaymentInitiationRelatedPayments(t, ctx, store)
+
+	t.Run("unknown payment id", func(t *testing.T) {
+		ids, err := store.PaymentInitiationIDsListFromPaymentID(ctx, models.PaymentID{})
+		require.NoError(t, err)
+		require.Len(t, ids, 0)
+	})
+
+	t.Run("known payment id", func(t *testing.T) {
+		ids, err := store.PaymentInitiationIDsListFromPaymentID(ctx, defaultPayments[0].ID)
+		require.NoError(t, err)
+		require.Len(t, ids, 2)
+		require.Contains(t, ids, piID1)
+		require.Contains(t, ids, piID2)
+	})
+}
+
 func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 	t.Parallel()
 

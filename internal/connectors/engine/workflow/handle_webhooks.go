@@ -72,7 +72,7 @@ func (w Workflow) runHandleWebhooks(
 					return err
 				}
 			} else {
-				fmt.Errorf("storing webhook translation: %w", err)
+				return fmt.Errorf("storing webhook translation: %w", err)
 			}
 		}
 	}
