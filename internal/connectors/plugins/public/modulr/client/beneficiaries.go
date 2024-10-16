@@ -14,7 +14,7 @@ type Beneficiary struct {
 	Created string `json:"created"`
 }
 
-func (c *Client) GetBeneficiaries(ctx context.Context, page, pageSize int, modifiedSince time.Time) (*responseWrapper[[]Beneficiary], error) {
+func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modifiedSince time.Time) ([]Beneficiary, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "modulr", "list_beneficiaries")
 	// now := time.Now()
@@ -29,7 +29,7 @@ func (c *Client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(pageSize))
 	if !modifiedSince.IsZero() {
-		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05-0700"))
+		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05.999-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -39,5 +39,5 @@ func (c *Client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 	if err != nil {
 		return nil, fmt.Errorf("failed to get beneficiaries: %w %w", err, errRes.Error())
 	}
-	return &res, nil
+	return res.Content, nil
 }

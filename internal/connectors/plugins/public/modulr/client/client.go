@@ -1,14 +1,29 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client/hmac"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
+
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
+type Client interface {
+	GetAccounts(ctx context.Context, page, pageSize int, fromCreatedAt time.Time) ([]Account, error)
+	GetAccount(ctx context.Context, accountID string) (*Account, error)
+	GetBeneficiaries(ctx context.Context, page, pageSize int, modifiedSince time.Time) ([]Beneficiary, error)
+	GetPayments(ctx context.Context, paymentType PaymentType, page, pageSize int, modifiedSince time.Time) ([]Payment, error)
+	InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error)
+	GetPayout(ctx context.Context, payoutID string) (PayoutResponse, error)
+	GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) ([]Transaction, error)
+	InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error)
+	GetTransfer(ctx context.Context, transferID string) (TransferResponse, error)
+}
 
 type apiTransport struct {
 	apiKey     string
@@ -30,19 +45,19 @@ type responseWrapper[t any] struct {
 	TotalPages int `json:"totalPages"`
 }
 
-type Client struct {
+type client struct {
 	httpClient httpwrapper.Client
 	endpoint   string
 }
 
-func (m *Client) buildEndpoint(path string, args ...interface{}) string {
+func (m *client) buildEndpoint(path string, args ...interface{}) string {
 	endpoint := strings.TrimSuffix(m.endpoint, "/")
 	return fmt.Sprintf("%s/%s", endpoint, fmt.Sprintf(path, args...))
 }
 
 const SandboxAPIEndpoint = "https://api-sandbox.modulrfinance.com/api-sandbox-token"
 
-func New(apiKey, apiSecret, endpoint string) (*Client, error) {
+func New(apiKey, apiSecret, endpoint string) (Client, error) {
 	if endpoint == "" {
 		endpoint = SandboxAPIEndpoint
 	}
@@ -63,7 +78,7 @@ func New(apiKey, apiSecret, endpoint string) (*Client, error) {
 		return nil, fmt.Errorf("failed to create modulr client: %w", err)
 	}
 
-	return &Client{
+	return &client{
 		httpClient: httpClient,
 		endpoint:   endpoint,
 	}, nil
