@@ -147,7 +147,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				nil,
 			)
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetBeneficiaries(ctx, 1, 39, lastCreatedAt.UTC()).Return(
 				sampleBeneficiaries[41:],
 				nil,
 			)

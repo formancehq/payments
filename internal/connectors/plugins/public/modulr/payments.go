@@ -17,7 +17,7 @@ type paymentsState struct {
 	LastTransactionTime time.Time `json:"lastTransactionTime"`
 }
 
-func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
@@ -41,12 +41,14 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastTransactionTime)
+		pageSize := req.PageSize - len(payments)
+
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, pageSize, oldState.LastTransactionTime)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		payments, err = p.fillPayments(ctx, pagedTransactions, from, payments, oldState)
+		payments, err = p.fillPayments(ctx, pagedTransactions, from, payments, oldState, req.PageSize)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -55,10 +57,6 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		if !needMore || !hasMore {
 			break
 		}
-	}
-
-	if !needMore {
-		payments = payments[:req.PageSize]
 	}
 
 	if len(payments) > 0 {
@@ -77,14 +75,19 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}, nil
 }
 
-func (p Plugin) fillPayments(
+func (p *Plugin) fillPayments(
 	ctx context.Context,
 	pagedTransactions []client.Transaction,
 	from models.PSPAccount,
 	payments []models.PSPPayment,
 	oldState paymentsState,
+	pageSize int,
 ) ([]models.PSPPayment, error) {
 	for _, transaction := range pagedTransactions {
+		if len(payments) >= pageSize {
+			break
+		}
+
 		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", transaction.TransactionDate)
 		if err != nil {
 			return nil, err
@@ -110,7 +113,7 @@ func (p Plugin) fillPayments(
 	return payments, nil
 }
 
-func (p Plugin) transactionToPayment(
+func (p *Plugin) transactionToPayment(
 	ctx context.Context,
 	transaction client.Transaction,
 	from models.PSPAccount,
@@ -171,7 +174,7 @@ func (p Plugin) transactionToPayment(
 	return payment, nil
 }
 
-func (p Plugin) fetchAndTranslateTransfer(
+func (p *Plugin) fetchAndTranslateTransfer(
 	ctx context.Context,
 	transaction client.Transaction,
 ) (*models.PSPPayment, error) {
