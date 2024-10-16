@@ -174,7 +174,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				nil,
 			)
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(ctx, "test", 1, 39, lastCreatedAt.UTC()).Return(
 				sampleTransactions[41:],
 				nil,
 			)
