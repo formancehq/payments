@@ -30,6 +30,8 @@ func (t Capability) String() string {
 		return "FETCH_PAYMENTS"
 	case CAPABILITY_FETCH_OTHERS:
 		return "FETCH_OTHERS"
+	case CAPABILITY_FETCH_BALANCES:
+		return "FETCH_BALANCES"
 	case CAPABILITY_WEBHOOKS:
 		return "WEBHOOKS"
 	case CAPABILITY_CREATION_BANK_ACCOUNT:
@@ -47,6 +49,8 @@ func (t Capability) Value() (driver.Value, error) {
 		return "FETCH_ACCOUNTS", nil
 	case CAPABILITY_FETCH_EXTERNAL_ACCOUNTS:
 		return "FETCH_EXTERNAL_ACCOUNTS", nil
+	case CAPABILITY_FETCH_BALANCES:
+		return "FETCH_BALANCES", nil
 	case CAPABILITY_FETCH_PAYMENTS:
 		return "FETCH_PAYMENTS", nil
 	case CAPABILITY_FETCH_OTHERS:
@@ -84,6 +88,8 @@ func (t *Capability) Scan(value interface{}) error {
 		*t = CAPABILITY_FETCH_EXTERNAL_ACCOUNTS
 	case "FETCH_PAYMENTS":
 		*t = CAPABILITY_FETCH_PAYMENTS
+	case "FETCH_BALANCES":
+		*t = CAPABILITY_FETCH_BALANCES
 	case "FETCH_OTHERS":
 		*t = CAPABILITY_FETCH_OTHERS
 	case "WEBHOOKS":
