@@ -42,7 +42,7 @@ func (c *client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 	q.Add("sortField", "createdDate")
 	q.Add("sortOrder", "asc")
 	if !fromCreatedAt.IsZero() {
-		q.Add("fromCreatedDate", fromCreatedAt.Format("2006-01-02T15:04:05.999-0700"))
+		q.Add("fromCreatedDate", fromCreatedAt.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
