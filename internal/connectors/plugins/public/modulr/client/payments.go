@@ -53,7 +53,7 @@ func (c *client) GetPayments(ctx context.Context, paymentType PaymentType, page,
 	q.Add("type", string(paymentType))
 	q.Add("sortOrder", "asc")
 	if !modifiedSince.IsZero() {
-		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05.999-0700"))
+		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
