@@ -38,7 +38,7 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(pageSize))
 	if !fromTransactionDate.IsZero() {
-		q.Add("fromTransactionDate", fromTransactionDate.Format("2006-01-02T15:04:05.999-0700"))
+		q.Add("fromTransactionDate", fromTransactionDate.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 

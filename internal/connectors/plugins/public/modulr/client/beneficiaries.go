@@ -29,7 +29,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 	q.Add("page", strconv.Itoa(page))
 	q.Add("size", strconv.Itoa(pageSize))
 	if !modifiedSince.IsZero() {
-		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05.999-0700"))
+		q.Add("modifiedSince", modifiedSince.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
