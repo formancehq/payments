@@ -14,7 +14,7 @@ type externalAccountsState struct {
 	LastModifiedSince time.Time `json:"lastModifiedSince"`
 }
 
-func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
@@ -26,16 +26,18 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		LastModifiedSince: oldState.LastModifiedSince,
 	}
 
-	var accounts []models.PSPAccount
+	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, req.PageSize, oldState.LastModifiedSince)
+		pageSize := req.PageSize - len(accounts)
+
+		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, pageSize, oldState.LastModifiedSince)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		accounts, err = fillBeneficiaries(pagedBeneficiaries, accounts, oldState)
+		accounts, err = fillBeneficiaries(pagedBeneficiaries, accounts, oldState, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -44,10 +46,6 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		if !needMore || !hasMore {
 			break
 		}
-	}
-
-	if !needMore {
-		accounts = accounts[:req.PageSize]
 	}
 
 	if len(accounts) > 0 {
@@ -70,8 +68,13 @@ func fillBeneficiaries(
 	pagedBeneficiaries []client.Beneficiary,
 	accounts []models.PSPAccount,
 	oldState externalAccountsState,
+	pageSize int,
 ) ([]models.PSPAccount, error) {
 	for _, beneficiary := range pagedBeneficiaries {
+		if len(accounts) >= pageSize {
+			break
+		}
+
 		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", beneficiary.Created)
 		if err != nil {
 			return nil, err

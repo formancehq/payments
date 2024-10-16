@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
 		return models.FetchNextBalancesResponse{}, errors.New("missing from payload when fetching balances")
