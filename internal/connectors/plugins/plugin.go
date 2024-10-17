@@ -6,6 +6,7 @@ import (
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
 	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel/metric"

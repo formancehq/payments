@@ -85,7 +85,6 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		loggerOptions.JSONFormat = true
 	}
 
-	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
