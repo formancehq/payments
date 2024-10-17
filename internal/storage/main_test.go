@@ -7,11 +7,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/formancehq/go-libs/bun/bunconnect"
-	"github.com/formancehq/go-libs/logging"
-	"github.com/formancehq/go-libs/testing/docker"
-	"github.com/formancehq/go-libs/testing/platform/pgtesting"
-	"github.com/formancehq/go-libs/testing/utils"
+	"github.com/formancehq/go-libs/v2/bun/bunconnect"
+	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/testing/docker"
+	"github.com/formancehq/go-libs/v2/testing/platform/pgtesting"
+	"github.com/formancehq/go-libs/v2/testing/utils"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 	utils.WithTestMain(func(t *utils.TestingTForMain) int {
 		srv = pgtesting.CreatePostgresServer(t, docker.NewPool(t, logging.Testing()))
 
-		db, err := sql.Open("postgres", srv.GetDSN())
+		db, err := sql.Open("pgx", srv.GetDSN())
 		if err != nil {
 			logging.Error(err)
 			os.Exit(1)

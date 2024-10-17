@@ -3,9 +3,9 @@ package plugins
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/otlp/otlpmetrics"
-	"github.com/formancehq/go-libs/otlp/otlptraces"
-	"github.com/formancehq/go-libs/service"
+	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
+	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
+	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"

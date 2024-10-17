@@ -3,8 +3,8 @@ package v2
 import (
 	"net/http"
 
-	"github.com/formancehq/go-libs/auth"
-	"github.com/formancehq/go-libs/service"
+	"github.com/formancehq/go-libs/v2/auth"
+	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/go-chi/chi/v5"
 )

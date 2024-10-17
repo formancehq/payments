@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/formancehq/go-libs/bun/bunpaginate"
-	"github.com/formancehq/go-libs/contextutil"
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/contextutil"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"

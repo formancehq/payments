@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/ThreeDotsLabs/watermill/message"
-	"github.com/formancehq/go-libs/publish"
+	"github.com/formancehq/go-libs/v2/publish"
 	eventsdef "github.com/formancehq/payments/pkg/events"
 )
 

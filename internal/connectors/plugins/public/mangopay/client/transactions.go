@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/errorsutils"
+	"github.com/formancehq/go-libs/v2/errorsutils"
 )
 
 type Payment struct {

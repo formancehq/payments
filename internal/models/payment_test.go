@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/pointer"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
