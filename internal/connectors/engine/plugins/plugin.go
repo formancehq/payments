@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
@@ -31,6 +32,8 @@ type plugins struct {
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
+	// used to pass flags to plugins
+	rawFlags      []string
 	debug         bool
 	jsonFormatter bool
 }
@@ -39,10 +42,16 @@ type pluginInformation struct {
 	client *plugin.Client
 }
 
-func New(pluginsPath map[string]string, debug, jsonFormatter bool) *plugins {
+func New(
+	pluginsPath map[string]string,
+	rawFlags []string,
+	debug bool,
+	jsonFormatter bool,
+) *plugins {
 	return &plugins{
 		pluginsPath:   pluginsPath,
 		plugins:       make(map[string]pluginInformation),
+		rawFlags:      rawFlags,
 		debug:         debug,
 		jsonFormatter: jsonFormatter,
 	}
@@ -76,10 +85,11 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		loggerOptions.JSONFormat = true
 	}
 
+	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
-		Cmd:              exec.Command("sh", "-c", pluginPath),
+		Cmd:              exec.Command(pluginPath, strings.Join(p.rawFlags, " ")),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		Logger:           hclog.New(loggerOptions),
 	})
