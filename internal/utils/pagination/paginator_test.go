@@ -19,24 +19,43 @@ var _ = Describe("ShouldFetchMore", func() {
 	}
 
 	Context("pagination", func() {
-		It("detects when total is max capacity and batch has fewer than page size", func(_ SpecContext) {
+		It("detects that the total is < pageSize and batch is full", func(_ SpecContext) {
 			pageSize := 10
 			total := make([]GenericContainer, 0, pageSize)
-			batch := []GenericContainer{
-				{Val: 11},
-			}
+			batch := make([]GenericContainer, 0, pageSize)
 
 			for i := 0; i < pageSize; i++ {
-				total = append(total, GenericContainer{i})
+				if i <= 4 {
+					total = append(total, GenericContainer{i})
+				}
+
+				batch = append(batch, GenericContainer{i})
 			}
 
 			needsMore, hasMore := pagination.ShouldFetchMore(total, batch, pageSize)
-			Expect(needsMore).To(BeFalse())
+			Expect(needsMore).To(BeTrue())
+			Expect(hasMore).To(BeTrue())
+		})
+
+		It("detects that the total is < pageSize and batch is not full", func(_ SpecContext) {
+			pageSize := 10
+			total := make([]GenericContainer, 0, pageSize)
+			batch := make([]GenericContainer, 0, pageSize)
+
+			for i := 0; i < pageSize; i++ {
+				if i <= 4 {
+					total = append(total, GenericContainer{i})
+					batch = append(batch, GenericContainer{i})
+				}
+			}
+
+			needsMore, hasMore := pagination.ShouldFetchMore(total, batch, pageSize)
+			Expect(needsMore).To(BeTrue())
 			Expect(hasMore).To(BeFalse())
 		})
 
-		It("detects when total is max capacity and batch has max page size", func(_ SpecContext) {
-			pageSize := 15
+		It("detects that the total is == pageSize and batch is full", func(_ SpecContext) {
+			pageSize := 10
 			total := make([]GenericContainer, 0, pageSize)
 			batch := make([]GenericContainer, 0, pageSize)
 
@@ -50,19 +69,55 @@ var _ = Describe("ShouldFetchMore", func() {
 			Expect(hasMore).To(BeTrue())
 		})
 
-		It("detects when total cannot be acheived with current batch size", func(_ SpecContext) {
-			pageSize := 8
+		It("detects that the total is == pageSize and batch is not full", func(_ SpecContext) {
+			pageSize := 10
 			total := make([]GenericContainer, 0, pageSize)
 			batch := make([]GenericContainer, 0, pageSize)
 
-			for i := 0; i < pageSize-1; i++ {
+			for i := 0; i < pageSize; i++ {
+				if i <= 4 {
+					batch = append(batch, GenericContainer{i})
+				}
 				total = append(total, GenericContainer{i})
-				batch = append(batch, GenericContainer{i})
 			}
 
 			needsMore, hasMore := pagination.ShouldFetchMore(total, batch, pageSize)
-			Expect(needsMore).To(BeTrue())
+			Expect(needsMore).To(BeFalse())
 			Expect(hasMore).To(BeFalse())
+		})
+
+		It("detects that the total is > pageSize and batch is not full", func(_ SpecContext) {
+			pageSize := 10
+			total := make([]GenericContainer, 0, pageSize)
+			batch := make([]GenericContainer, 0, pageSize)
+
+			for i := 0; i < pageSize+10; i++ {
+				if i <= 4 {
+					batch = append(batch, GenericContainer{i})
+				}
+				total = append(total, GenericContainer{i})
+			}
+
+			needsMore, hasMore := pagination.ShouldFetchMore(total, batch, pageSize)
+			Expect(needsMore).To(BeFalse())
+			Expect(hasMore).To(BeTrue())
+		})
+
+		It("detects that the total is > pageSize and batch is full", func(_ SpecContext) {
+			pageSize := 10
+			total := make([]GenericContainer, 0, pageSize)
+			batch := make([]GenericContainer, 0, pageSize)
+
+			for i := 0; i < pageSize+10; i++ {
+				if i < 10 {
+					batch = append(batch, GenericContainer{i})
+				}
+				total = append(total, GenericContainer{i})
+			}
+
+			needsMore, hasMore := pagination.ShouldFetchMore(total, batch, pageSize)
+			Expect(needsMore).To(BeFalse())
+			Expect(hasMore).To(BeTrue())
 		})
 	})
 })
