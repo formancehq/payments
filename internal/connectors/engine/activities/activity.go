@@ -3,7 +3,7 @@ package activities
 import (
 	"errors"
 
-	temporalworker "github.com/formancehq/go-libs/temporal"
+	temporalworker "github.com/formancehq/go-libs/v2/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"

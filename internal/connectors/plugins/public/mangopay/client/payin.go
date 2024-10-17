@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/errorsutils"
+	"github.com/formancehq/go-libs/v2/errorsutils"
 )
 
 type PayinResponse struct {

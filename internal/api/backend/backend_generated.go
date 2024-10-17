@@ -15,7 +15,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	bunpaginate "github.com/formancehq/go-libs/bun/bunpaginate"
+	bunpaginate "github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	plugins "github.com/formancehq/payments/internal/connectors/plugins"
 	models "github.com/formancehq/payments/internal/models"
 	storage "github.com/formancehq/payments/internal/storage"
