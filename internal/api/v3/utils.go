@@ -4,9 +4,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/formancehq/go-libs/bun/bunpaginate"
-	"github.com/formancehq/go-libs/pointer"
-	"github.com/formancehq/go-libs/query"
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/query"
 )
 
 func getQueryBuilder(r *http.Request) (query.Builder, error) {

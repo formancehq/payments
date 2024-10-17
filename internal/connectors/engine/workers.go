@@ -3,8 +3,8 @@ package engine
 import (
 	"sync"
 
-	"github.com/formancehq/go-libs/logging"
-	"github.com/formancehq/go-libs/temporal"
+	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/temporal"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/go-libs/errorsutils"
+	"github.com/formancehq/go-libs/v2/errorsutils"
 )
 
 type Wallet struct {

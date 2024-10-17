@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/formancehq/go-libs/service"
+	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp"
 	"github.com/formancehq/payments/internal/models"

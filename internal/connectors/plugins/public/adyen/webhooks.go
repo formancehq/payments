@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/stack/libs/go-libs/pointer"
 )
 
 type webhookConfig struct {
