@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 	utils.WithTestMain(func(t *utils.TestingTForMain) int {
 		srv = pgtesting.CreatePostgresServer(t, docker.NewPool(t, logging.Testing()))
 
-		db, err := sql.Open("postgres", srv.GetDSN())
+		db, err := sql.Open("pgx", srv.GetDSN())
 		if err != nil {
 			logging.Error(err)
 			os.Exit(1)
