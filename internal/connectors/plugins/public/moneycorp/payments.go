@@ -112,7 +112,13 @@ func (p *Plugin) toPSPPayments(
 func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {
 	switch transaction.Attributes.Type {
 	case "Transfer":
-		return p.fetchAndTranslateTransfer(ctx, transaction)
+		if transaction.Attributes.Direction == "Debit" {
+			return p.fetchAndTranslateTransfer(ctx, transaction)
+		} else {
+			// Do not fetch the transfer, it does not exists if we're trying to
+			// fetch it with the destination account.
+			return nil, nil
+		}
 	}
 
 	rawData, err := json.Marshal(transaction)
@@ -144,7 +150,7 @@ func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.T
 	if transaction.Attributes.Type == "Payment" {
 		// In case of payments (related to payouts), we want to take the real
 		// object id as a reference
-		reference = transaction.Attributes.Relationships.Data.ID
+		reference = transaction.Relationships.Data.ID
 	}
 
 	payment := models.PSPPayment{
@@ -175,7 +181,7 @@ func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.T
 }
 
 func (p *Plugin) fetchAndTranslateTransfer(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {
-	transfer, err := p.client.GetTransfer(ctx, fmt.Sprint(transaction.Attributes.AccountID), transaction.ID)
+	transfer, err := p.client.GetTransfer(ctx, fmt.Sprint(transaction.Attributes.AccountID), transaction.Relationships.Data.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -61,10 +61,10 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 						Currency:  "EUR",
 						Amount:    json.Number("65"),
 						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
-						Relationships: client.RelationShips{
-							Data: client.Data{
-								ID: sampleTransfer.ID,
-							},
+					},
+					Relationships: client.RelationShips{
+						Data: client.Data{
+							ID: sampleTransfer.ID,
 						},
 					},
 				},
@@ -77,10 +77,10 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 						Currency:  "DKK",
 						Amount:    json.Number("42"),
 						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
-						Relationships: client.RelationShips{
-							Data: client.Data{
-								ID: "Payout-1",
-							},
+					},
+					Relationships: client.RelationShips{
+						Data: client.Data{
+							ID: "Payout-1",
 						},
 					},
 				},
@@ -188,7 +188,7 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 			Expect(err).To(BeNil())
 			Expect(res.Payments[0].Amount).To(Equal(big.NewInt(expectedAmount * 100))) // after conversion to minors
 			// Payment
-			Expect(res.Payments[1].Reference).To(Equal(samplePayments[1].Attributes.Relationships.Data.ID))
+			Expect(res.Payments[1].Reference).To(Equal(samplePayments[1].Relationships.Data.ID))
 			Expect(res.Payments[1].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 			expectedAmount, err = samplePayments[1].Attributes.Amount.Int64()
 			Expect(err).To(BeNil())
@@ -246,10 +246,10 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 						Currency:  "EUR",
 						Amount:    json.Number("42"),
 						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
-						Relationships: client.RelationShips{
-							Data: client.Data{
-								ID: fmt.Sprintf("%d", i),
-							},
+					},
+					Relationships: client.RelationShips{
+						Data: client.Data{
+							ID: fmt.Sprintf("%d", i),
 						},
 					},
 				})
@@ -363,7 +363,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 		})
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
-			lastCreatedAt, err := time.Parse(time.RFC3339Nano, samplePayments[38].Attributes.CreatedAt+"Z")
+			lastCreatedAt, _ := time.Parse(time.RFC3339Nano, samplePayments[38].Attributes.CreatedAt+"Z")
 			req := models.FetchNextPaymentsRequest{
 				State:       []byte(fmt.Sprintf(`{"lastCreatedAt": "%s"}`, lastCreatedAt.Format(time.RFC3339Nano))),
 				PageSize:    40,
