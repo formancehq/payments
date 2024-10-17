@@ -5,17 +5,18 @@ import (
 	"os"
 
 	_ "github.com/bombsimon/logrusr/v3"
-	sharedapi "github.com/formancehq/go-libs/api"
-	"github.com/formancehq/go-libs/auth"
-	"github.com/formancehq/go-libs/bun/bunconnect"
-	"github.com/formancehq/go-libs/bun/bunmigrate"
-	"github.com/formancehq/go-libs/health"
-	"github.com/formancehq/go-libs/licence"
-	"github.com/formancehq/go-libs/logging"
-	"github.com/formancehq/go-libs/otlp/otlptraces"
-	"github.com/formancehq/go-libs/publish"
-	"github.com/formancehq/go-libs/service"
-	"github.com/formancehq/go-libs/temporal"
+	sharedapi "github.com/formancehq/go-libs/v2/api"
+	"github.com/formancehq/go-libs/v2/auth"
+	"github.com/formancehq/go-libs/v2/bun/bunconnect"
+	"github.com/formancehq/go-libs/v2/bun/bunmigrate"
+	"github.com/formancehq/go-libs/v2/health"
+	"github.com/formancehq/go-libs/v2/licence"
+	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/otlp"
+	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
+	"github.com/formancehq/go-libs/v2/publish"
+	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/go-libs/v2/temporal"
 	"github.com/formancehq/payments/internal/api"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
@@ -116,6 +117,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 				Version: Version,
 			}
 		}),
+		otlp.FXModuleFromFlags(cmd),
 		otlptraces.FXModuleFromFlags(cmd),
 		temporal.FXModuleFromFlags(
 			cmd,

@@ -4,7 +4,7 @@ import (
 	"context"
 	_ "embed"
 
-	"github.com/formancehq/go-libs/migrations"
+	"github.com/formancehq/go-libs/v2/migrations"
 	"github.com/uptrace/bun"
 )
 

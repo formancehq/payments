@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/pointer"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/grpc/proto"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
