@@ -2,6 +2,7 @@ package moneycorp
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -22,51 +23,171 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 		var (
 			m *client.MockClient
 
-			pageSize               int
 			sampleExternalAccounts []*client.Recipient
 			accRef                 string
+			now                    time.Time
 		)
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
-
-			pageSize = 10
 			accRef = "baseAcc"
+			now = time.Now().UTC()
+
 			sampleExternalAccounts = make([]*client.Recipient, 0)
-			for i := 0; i < pageSize; i++ {
+			for i := 0; i < 50; i++ {
 				sampleExternalAccounts = append(sampleExternalAccounts, &client.Recipient{
 					Attributes: client.RecipientAttributes{
 						BankAccountCurrency: "JPY",
-						CreatedAt:           strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
+						CreatedAt:           strings.TrimSuffix(now.Add(-time.Duration(60-i)*time.Minute).UTC().Format(time.RFC3339Nano), "Z"),
 						BankAccountName:     "jpy account",
 					},
 				})
 			}
 
 		})
-		It("fetches next ExternalAccounts", func(ctx SpecContext) {
+
+		It("should return an error - missing from payload", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, accRef)),
-				State:       json.RawMessage(`{}`),
-				PageSize:    pageSize,
+				State:    []byte(`{}`),
+				PageSize: 60,
 			}
-			m.EXPECT().GetRecipients(ctx, accRef, gomock.Any(), pageSize).Return(
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("missing from payload in request"))
+			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
+		})
+
+		It("should return an error - get beneficiaries error", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(`{}`),
+				PageSize:    60,
+				FromPayload: []byte(`{"reference": "baseAcc"}`),
+			}
+
+			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
+				[]*client.Recipient{},
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
+		})
+
+		It("should fetch next external accounts - no state no results", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(`{}`),
+				PageSize:    60,
+				FromPayload: []byte(`{"reference": "baseAcc"}`),
+			}
+
+			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
+				[]*client.Recipient{},
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(0))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We fetched everything, state should be resetted
+			Expect(state.LastPage).To(Equal(0))
+			Expect(state.LastCreatedAt.IsZero()).To(BeTrue())
+		})
+
+		It("should fetch next external accounts - no state pageSize > total accounts", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(`{}`),
+				PageSize:    60,
+				FromPayload: []byte(`{"reference": "baseAcc"}`),
+			}
+
+			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
 				sampleExternalAccounts,
 				nil,
 			)
-			res, err := plg.FetchNextExternalAccounts(ctx, req)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.HasMore).To(BeTrue())
-			Expect(res.ExternalAccounts).To(HaveLen(pageSize))
-			Expect(*res.ExternalAccounts[0].Name).To(Equal(sampleExternalAccounts[0].Attributes.BankAccountName))
+			Expect(resp.ExternalAccounts).To(HaveLen(50))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
 
-			var state accountsState
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We fetched everything, state should be resetted
+			Expect(state.LastPage).To(Equal(0))
+			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[49].Attributes.CreatedAt+"Z")
+			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
+		})
 
-			err = json.Unmarshal(res.NewState, &state)
+		It("should fetch next accounts - no state pageSize < total accounts", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(`{}`),
+				PageSize:    40,
+				FromPayload: []byte(`{"reference": "baseAcc"}`),
+			}
+
+			m.EXPECT().GetRecipients(ctx, accRef, 0, 40).Return(
+				sampleExternalAccounts[:40],
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(40))
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			Expect(state.LastPage).To(Equal(0))
+			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[39].Attributes.CreatedAt+"Z")
+			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
+		})
+
+		It("should fetch next external accounts - with state pageSize < total accounts", func(ctx SpecContext) {
+			lastCreaatedAt, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[38].Attributes.CreatedAt+"Z")
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(fmt.Sprintf(`{"lastPage": %d, "lastCreatedAt": "%s"}`, 0, lastCreaatedAt.Format(time.RFC3339Nano))),
+				PageSize:    40,
+				FromPayload: []byte(`{"reference": "baseAcc"}`),
+			}
+
+			m.EXPECT().GetRecipients(ctx, accRef, 0, 40).Return(
+				sampleExternalAccounts[:40],
+				nil,
+			)
+
+			m.EXPECT().GetRecipients(ctx, accRef, 1, 40).Return(
+				sampleExternalAccounts[41:],
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(10))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We fetched everything, state should be resetted
+			Expect(state.LastPage).To(Equal(1))
+			createdAtTime, _ := time.Parse(time.RFC3339Nano, sampleExternalAccounts[49].Attributes.CreatedAt+"Z")
+			Expect(state.LastCreatedAt.UTC()).To(Equal(createdAtTime.UTC()))
 		})
 	})
 })

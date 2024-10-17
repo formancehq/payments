@@ -3,6 +3,7 @@ package moneycorp
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
@@ -14,7 +15,7 @@ type accountsState struct {
 	LastPage int `json:"lastPage"`
 	// Moneycorp does not send the creation date for accounts, but we can still
 	// sort by ID created (which is incremental when creating accounts).
-	LastIDCreated string `json:"lastIDCreated"`
+	LastIDCreated int64 `json:"lastIDCreated"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -25,40 +26,48 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		}
 	}
 
+	if oldState.LastIDCreated == 0 {
+		oldState.LastIDCreated = -1
+	}
+
 	newState := accountsState{
 		LastPage:      oldState.LastPage,
 		LastIDCreated: oldState.LastIDCreated,
 	}
 
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
+	needMore := false
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
-		pageSize := req.PageSize - len(accounts)
 
-		pagedAccounts, err := p.client.GetAccounts(ctx, page, pageSize)
+		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
-		}
-		if len(pagedAccounts) == 0 {
-			hasMore = false
-			break
 		}
 
 		accounts, err = toPSPAccounts(oldState.LastIDCreated, accounts, pagedAccounts)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
-		if len(accounts) == 0 {
-			break
-		}
-		newState.LastIDCreated = accounts[len(accounts)-1].Reference
 
-		needMore := true
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, pageSize)
-		if !needMore {
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
+
+	if len(accounts) > 0 {
+		id, err := strconv.ParseInt(accounts[len(accounts)-1].Reference, 10, 64)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+
+		newState.LastIDCreated = id
 	}
 
 	payload, err := json.Marshal(newState)
@@ -74,12 +83,17 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 }
 
 func toPSPAccounts(
-	lastIDSeen string,
+	lastIDSeen int64,
 	accounts []models.PSPAccount,
 	pagedAccounts []*client.Account,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
-		if account.ID <= lastIDSeen {
+		id, err := strconv.ParseInt(account.ID, 10, 64)
+		if err != nil {
+			return accounts, err
+		}
+
+		if id <= lastIDSeen {
 			continue
 		}
 
