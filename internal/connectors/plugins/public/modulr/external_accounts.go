@@ -30,9 +30,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pageSize := req.PageSize - len(accounts)
-
-		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, pageSize, oldState.LastModifiedSince)
+		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, req.PageSize, oldState.LastModifiedSince)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -46,6 +44,10 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		accounts = accounts[:req.PageSize]
 	}
 
 	if len(accounts) > 0 {

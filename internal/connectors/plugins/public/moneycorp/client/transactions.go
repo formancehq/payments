@@ -24,9 +24,19 @@ type fetchTransactionRequest struct {
 }
 
 type Transaction struct {
-	ID         string                `json:"id"`
-	Type       string                `json:"type"`
-	Attributes TransactionAttributes `json:"attributes"`
+	ID            string                `json:"id"`
+	Type          string                `json:"type"`
+	Attributes    TransactionAttributes `json:"attributes"`
+	Relationships RelationShips         `json:"relationships"`
+}
+
+type Data struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type RelationShips struct {
+	Data Data `json:"data"`
 }
 
 type TransactionAttributes struct {
@@ -92,5 +102,6 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}
+
 	return transactions.Transactions, nil
 }

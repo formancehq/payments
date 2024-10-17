@@ -14,10 +14,8 @@ import (
 )
 
 type externalAccountsState struct {
-	LastPage int `json:"last_page"`
-	// Moneycorp does not allow us to sort by , but we can still
-	// sort by ID created (which is incremental when creating accounts).
-	LastCreatedAt time.Time `json:"last_created_at"`
+	LastPage      int       `json:"lastPage"`
+	LastCreatedAt time.Time `json:"LastCreatedAt"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -41,36 +39,34 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		LastCreatedAt: oldState.LastCreatedAt,
 	}
 
+	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
-		pageSize := req.PageSize - len(accounts)
 
-		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, pageSize)
+		pagedRecipients, err := p.client.GetRecipients(ctx, from.Reference, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
-		if len(pagedRecipients) == 0 {
-			hasMore = false
-			break
-		}
 
-		var lastCreatedAt time.Time
-		accounts, lastCreatedAt, err = recipientToPSPAccounts(oldState.LastCreatedAt, accounts, pagedRecipients)
+		accounts, err = recipientToPSPAccounts(oldState.LastCreatedAt, accounts, pagedRecipients)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
-		if len(accounts) == 0 {
-			break
-		}
-		newState.LastCreatedAt = lastCreatedAt
 
-		needMore := true
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, pageSize)
-		if !needMore {
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
+
+	if len(accounts) > 0 {
+		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -89,12 +85,11 @@ func recipientToPSPAccounts(
 	lastCreatedAt time.Time,
 	accounts []models.PSPAccount,
 	pagedAccounts []*client.Recipient,
-) ([]models.PSPAccount, time.Time, error) {
-	var newCreatedAt time.Time
+) ([]models.PSPAccount, error) {
 	for _, recipient := range pagedAccounts {
 		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", recipient.Attributes.CreatedAt)
 		if err != nil {
-			return accounts, lastCreatedAt, fmt.Errorf("failed to parse transaction date: %v", err)
+			return accounts, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
 		switch createdAt.Compare(lastCreatedAt) {
@@ -105,10 +100,9 @@ func recipientToPSPAccounts(
 
 		raw, err := json.Marshal(recipient)
 		if err != nil {
-			return accounts, lastCreatedAt, err
+			return accounts, err
 		}
 
-		newCreatedAt = createdAt
 		accounts = append(accounts, models.PSPAccount{
 			Reference: recipient.ID,
 			// Moneycorp does not send the opening date of the account
@@ -118,5 +112,5 @@ func recipientToPSPAccounts(
 			Raw:          raw,
 		})
 	}
-	return accounts, newCreatedAt, nil
+	return accounts, nil
 }

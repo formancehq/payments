@@ -74,5 +74,15 @@ var _ = Describe("Moneycorp Plugin", func() {
 			_, err := plg.FetchNextExternalAccounts(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+		It("fails when creating transfer is called before install", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{}
+			_, err := plg.CreateTransfer(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+		It("fails when creating payout is called before install", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{}
+			_, err := plg.CreatePayout(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
 	})
 })
