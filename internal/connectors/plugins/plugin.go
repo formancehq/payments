@@ -8,6 +8,8 @@ import (
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/spf13/cobra"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/fx"
 )
 
@@ -30,10 +32,17 @@ func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cob
 func runServer(pluginConstructorFn models.PluginConstructorFn) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		// TODO initialise logger here?
+
 		opts := fx.Options(
+			fx.Provide(fx.Annotate(noop.NewMeterProvider, fx.As(new(metric.MeterProvider)))),
+			fx.Decorate(fx.Annotate(func(meterProvider metric.MeterProvider) (metrics.MetricsRegistry, error) {
+				return metrics.RegisterMetricsRegistry(meterProvider)
+			})),
+			fx.Provide(metrics.RegisterMetricsRegistry),
 			fx.Provide(pluginConstructorFn, NewServer),
 			fx.Invoke(func(Server) {}),
 		)
+
 		return service.New(cmd.OutOrStderr(), opts).Run(cmd)
 	}
 }
