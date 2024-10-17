@@ -26,7 +26,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 		plg = &Plugin{}
 	})
 
-	Context("fetching next accounts", func() {
+	Context("fetching next payments", func() {
 		var (
 			m                  *client.MockClient
 			sampleTransactions []client.Transaction
