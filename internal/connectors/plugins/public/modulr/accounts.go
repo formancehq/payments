@@ -32,9 +32,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pageSize := req.PageSize - len(accounts)
-
-		pagedAccounts, err := p.client.GetAccounts(ctx, page, pageSize, oldState.LastCreatedAt)
+		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
@@ -48,6 +46,10 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		accounts = accounts[:req.PageSize]
 	}
 
 	if len(accounts) > 0 {

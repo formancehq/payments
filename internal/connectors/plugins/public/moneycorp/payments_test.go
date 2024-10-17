@@ -58,6 +58,7 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 					Attributes: client.TransactionAttributes{
 						AccountID: accRef,
 						Type:      "Transfer",
+						Direction: "Debit",
 						Currency:  "EUR",
 						Amount:    json.Number("65"),
 						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
@@ -227,6 +228,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 
 			samplePayments []*client.Transaction
 			accRef         int32
+			now            time.Time
 		)
 
 		BeforeEach(func() {
@@ -234,6 +236,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 			accRef = 3796
+			now = time.Now().UTC()
 
 			samplePayments = make([]*client.Transaction, 0)
 			for i := 0; i < 50; i++ {
@@ -245,7 +248,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 						Direction: "Debit",
 						Currency:  "EUR",
 						Amount:    json.Number("42"),
-						CreatedAt: strings.TrimSuffix(time.Now().UTC().Format(time.RFC3339Nano), "Z"),
+						CreatedAt: strings.TrimSuffix(now.Add(-time.Duration(60-i)*time.Minute).UTC().Format(time.RFC3339Nano), "Z"),
 					},
 					Relationships: client.RelationShips{
 						Data: client.Data{
