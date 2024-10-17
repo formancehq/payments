@@ -16,6 +16,9 @@ type Client interface {
 	GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error)
 	GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error)
 	GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error)
+	InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error)
+	GetTransfer(ctx context.Context, accountID string, transferID string) (*TransferResponse, error)
+	InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error)
 }
 
 type client struct {

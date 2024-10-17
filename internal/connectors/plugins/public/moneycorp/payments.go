@@ -39,34 +39,31 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
+	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pageSize := req.PageSize - len(payments)
-
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, pageSize, oldState.LastCreatedAt)
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
-		if len(pagedTransactions) == 0 {
-			hasMore = false
-			break
-		}
 
-		var lastCreatedAt time.Time
-		payments, lastCreatedAt, err = toPSPPayments(oldState.LastCreatedAt, payments, pagedTransactions)
+		payments, err = p.toPSPPayments(ctx, oldState.LastCreatedAt, payments, pagedTransactions)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
-		if len(payments) == 0 {
-			break
-		}
-		newState.LastCreatedAt = lastCreatedAt
 
-		needMore := true
-		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, pageSize)
-		if !needMore {
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		payments = payments[:req.PageSize]
+	}
+
+	if len(payments) > 0 {
+		newState.LastCreatedAt = payments[len(payments)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -81,16 +78,16 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func toPSPPayments(
+func (p *Plugin) toPSPPayments(
+	ctx context.Context,
 	lastCreatedAt time.Time,
 	payments []models.PSPPayment,
 	transactions []*client.Transaction,
-) ([]models.PSPPayment, time.Time, error) {
-	var newCreatedAt time.Time
+) ([]models.PSPPayment, error) {
 	for _, transaction := range transactions {
 		createdAt, err := time.Parse("2006-01-02T15:04:05.999999999", transaction.Attributes.CreatedAt)
 		if err != nil {
-			return payments, lastCreatedAt, fmt.Errorf("failed to parse transaction date: %v", err)
+			return payments, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
 		switch createdAt.Compare(lastCreatedAt) {
@@ -99,21 +96,25 @@ func toPSPPayments(
 		default:
 		}
 
-		payment, err := transactionToPayment(transaction)
+		payment, err := p.transactionToPayment(ctx, transaction)
 		if err != nil {
-			return payments, lastCreatedAt, err
+			return payments, err
 		}
 		if payment == nil {
 			continue
 		}
 
-		newCreatedAt = createdAt
 		payments = append(payments, *payment)
 	}
-	return payments, newCreatedAt, nil
+	return payments, nil
 }
 
-func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, error) {
+func (p *Plugin) transactionToPayment(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {
+	switch transaction.Attributes.Type {
+	case "Transfer":
+		return p.fetchAndTranslateTransfer(ctx, transaction)
+	}
+
 	rawData, err := json.Marshal(transaction)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal transaction: %w", err)
@@ -139,15 +140,21 @@ func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, 
 		return nil, err
 	}
 
+	reference := transaction.ID
+	if transaction.Attributes.Type == "Payment" {
+		// In case of payments (related to payouts), we want to take the real
+		// object id as a reference
+		reference = transaction.Attributes.Relationships.Data.ID
+	}
+
 	payment := models.PSPPayment{
-		Reference: transaction.ID,
+		Reference: reference,
 		CreatedAt: createdAt,
 		Type:      paymentType,
 		Amount:    amount,
 		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Attributes.Currency),
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Metadata:  map[string]string{},
 		Raw:       rawData,
 	}
 
@@ -165,6 +172,15 @@ func transactionToPayment(transaction *client.Transaction) (*models.PSPPayment, 
 	}
 
 	return &payment, nil
+}
+
+func (p *Plugin) fetchAndTranslateTransfer(ctx context.Context, transaction *client.Transaction) (*models.PSPPayment, error) {
+	transfer, err := p.client.GetTransfer(ctx, fmt.Sprint(transaction.Attributes.AccountID), transaction.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return transferToPayment(transfer)
 }
 
 func matchPaymentType(transactionType string, transactionDirection string) (models.PaymentType, bool) {
