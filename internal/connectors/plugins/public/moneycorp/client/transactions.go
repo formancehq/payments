@@ -29,15 +29,25 @@ type Transaction struct {
 	Attributes TransactionAttributes `json:"attributes"`
 }
 
+type Data struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+type RelationShips struct {
+	Data Data `json:"data"`
+}
+
 type TransactionAttributes struct {
-	AccountID            int32       `json:"accountId"`
-	CreatedAt            string      `json:"createdAt"`
-	Currency             string      `json:"transactionCurrency"`
-	Amount               json.Number `json:"transactionAmount"`
-	Direction            string      `json:"transactionDirection"`
-	Type                 string      `json:"transactionType"`
-	ClientReference      string      `json:"clientReference"`
-	TransactionReference string      `json:"transactionReference"`
+	AccountID            int32         `json:"accountId"`
+	CreatedAt            string        `json:"createdAt"`
+	Currency             string        `json:"transactionCurrency"`
+	Amount               json.Number   `json:"transactionAmount"`
+	Direction            string        `json:"transactionDirection"`
+	Type                 string        `json:"transactionType"`
+	ClientReference      string        `json:"clientReference"`
+	TransactionReference string        `json:"transactionReference"`
+	Relationships        RelationShips `json:"relationships"`
 }
 
 func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {

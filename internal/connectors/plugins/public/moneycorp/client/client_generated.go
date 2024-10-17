@@ -99,3 +99,48 @@ func (mr *MockClientMockRecorder) GetTransactions(ctx, accountID, page, pageSize
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, accountID, page, pageSize, lastCreatedAt)
 }
+
+// GetTransfer mocks base method.
+func (m *MockClient) GetTransfer(ctx context.Context, accountID, transferID string) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransfer", ctx, accountID, transferID)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransfer indicates an expected call of GetTransfer.
+func (mr *MockClientMockRecorder) GetTransfer(ctx, accountID, transferID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransfer", reflect.TypeOf((*MockClient)(nil).GetTransfer), ctx, accountID, transferID)
+}
+
+// InitiatePayout mocks base method.
+func (m *MockClient) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitiatePayout", ctx, pr)
+	ret0, _ := ret[0].(*PayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InitiatePayout indicates an expected call of InitiatePayout.
+func (mr *MockClientMockRecorder) InitiatePayout(ctx, pr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiatePayout", reflect.TypeOf((*MockClient)(nil).InitiatePayout), ctx, pr)
+}
+
+// InitiateTransfer mocks base method.
+func (m *MockClient) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "InitiateTransfer", ctx, tr)
+	ret0, _ := ret[0].(*TransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// InitiateTransfer indicates an expected call of InitiateTransfer.
+func (mr *MockClientMockRecorder) InitiateTransfer(ctx, tr any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateTransfer", reflect.TypeOf((*MockClient)(nil).InitiateTransfer), ctx, tr)
+}
