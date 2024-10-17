@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
+	"log"
 	"os"
 
 	_ "github.com/bombsimon/logrusr/v3"
@@ -109,6 +111,12 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 
+	if len(os.Args) < 2 {
+		// this shouldn't happen as long as this function is called by a subcommand
+		log.Fatalf("os arguments does not contain command name: %s", os.Args)
+	}
+	rawFlags := os.Args[2:]
+
 	return fx.Options(
 		fx.Provide(func() *bunconnect.ConnectionOptions {
 			return connectionOptions
@@ -133,7 +141,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
-		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, debug, jsonFormatter),
+		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
 	), nil
@@ -146,7 +154,7 @@ func getPluginsMap(pluginsDirectoryPath string) (map[string]string, error) {
 
 	files, err := os.ReadDir(pluginsDirectoryPath)
 	if err != nil {
-		return nil, errors.New("failed to read plugins directory")
+		return nil, fmt.Errorf("failed to read plugins directory %s", pluginsDirectoryPath)
 	}
 
 	plugins := make(map[string]string)
