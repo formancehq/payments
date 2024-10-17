@@ -41,9 +41,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
-		pageSize := req.PageSize - len(payments)
-
-		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, pageSize, oldState.LastTransactionTime)
+		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastTransactionTime)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -57,6 +55,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		if !needMore || !hasMore {
 			break
 		}
+	}
+
+	if !needMore {
+		payments = payments[:req.PageSize]
 	}
 
 	if len(payments) > 0 {

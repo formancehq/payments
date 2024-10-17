@@ -148,7 +148,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				nil,
 			)
 
-			m.EXPECT().GetAccounts(ctx, 1, 39, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetAccounts(ctx, 1, 40, lastCreatedAt.UTC()).Return(
 				sampleAccounts[41:],
 				nil,
 			)
