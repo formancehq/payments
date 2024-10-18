@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	logging "github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
 	internalTime "github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
@@ -40,10 +39,8 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		return err
 	}
 	defer func() {
-		err := tx.Rollback()
-		if err != nil {
-			logging.FromContext(ctx).Error("failed to rollback transaction", err)
-		}
+		// There is an error sent if the transaction is already committed
+		_ = tx.Rollback()
 	}()
 
 	for _, balance := range toInsert {
