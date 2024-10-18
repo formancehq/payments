@@ -2,11 +2,13 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	logging "github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
 	internalTime "github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
@@ -29,50 +31,94 @@ type balance struct {
 
 func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) error {
 	toInsert := fromBalancesModels(balances)
-
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return e("failed to start transaction", err)
-	}
-	defer tx.Rollback()
-
-	_, err = tx.NewInsert().
-		Model((*models.Balance)(nil)).
-		With("cte1", tx.NewValues(&toInsert)).
-		Column(
-			"account_id",
-			"created_at",
-			"asset",
-			"connector_id",
-			"balance",
-			"last_updated_at",
-		).
-		TableExpr(`
-		(SELECT *
-			FROM cte1
-			WHERE cte1.balance != COALESCE((SELECT balance FROM balances WHERE account_id = cte1.account_id AND last_updated_at < cte1.last_updated_at AND asset = cte1.asset ORDER BY last_updated_at DESC LIMIT 1), cte1.balance+1)
-		) data`).
-		On("CONFLICT (account_id, created_at, asset) DO NOTHING").
-		Exec(ctx)
-	if err != nil {
-		return e("failed to create balances", err)
+	if len(balances) == 0 {
+		return nil
 	}
 
-	// Always update the previous row in order to keep the balance history consistent.
-	_, err = tx.NewUpdate().
-		Model((*models.Balance)(nil)).
-		With("cte1", s.db.NewValues(&toInsert)).
-		TableExpr(`
-					(SELECT (SELECT created_at FROM balances WHERE last_updated_at < cte1.last_updated_at AND account_id = cte1.account_id AND asset = cte1.asset ORDER BY last_updated_at DESC LIMIT 1), cte1.account_id, cte1.asset, cte1.last_updated_at FROM cte1) data
-				`).
-		Set("last_updated_at = data.last_updated_at").
-		Where("balance.account_id = data.account_id AND balance.asset = data.asset AND balance.created_at = data.created_at").
-		Exec(ctx)
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return e("failed to update balances", err)
+		return err
+	}
+	defer func() {
+		err := tx.Rollback()
+		if err != nil {
+			logging.FromContext(ctx).Error("failed to rollback transaction", err)
+		}
+	}()
+
+	for _, balance := range toInsert {
+		if err := s.insertBalances(ctx, tx, &balance); err != nil {
+			return err
+		}
 	}
 
 	return e("failed to commit transaction", tx.Commit())
+}
+
+func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance) error {
+	var lastBalance models.Balance
+	found := true
+	err := tx.NewSelect().
+		Model(&lastBalance).
+		Where("account_id = ? AND asset = ?", balance.AccountID, balance.Asset).
+		Order("created_at DESC").
+		Limit(1).
+		Scan(ctx)
+	if err != nil {
+		pErr := e("failed to get account", err)
+		if !errors.Is(pErr, ErrNotFound) {
+			return pErr
+		}
+		found = false
+	}
+
+	if found && lastBalance.CreatedAt.After(balance.CreatedAt.Time) {
+		// Do not insert balance if the last balance is newer
+		return nil
+	}
+
+	switch {
+	case found && lastBalance.Balance.Cmp(balance.Balance) == 0:
+		// same balance, no need to have a new entry, just update the last one
+		_, err = tx.NewUpdate().
+			Model((*models.Balance)(nil)).
+			Set("last_updated_at = ?", balance.LastUpdatedAt).
+			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
+			Exec(ctx)
+		if err != nil {
+			return e("failed to update balance", err)
+		}
+
+	case found && lastBalance.Balance.Cmp(balance.Balance) != 0:
+		// different balance, insert a new entry
+		_, err = tx.NewInsert().
+			Model(balance).
+			Exec(ctx)
+		if err != nil {
+			return e("failed to insert balance", err)
+		}
+
+		// and update last row last updated at to this created at
+		_, err = tx.NewUpdate().
+			Model(&lastBalance).
+			Set("last_updated_at = ?", balance.CreatedAt).
+			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
+			Exec(ctx)
+		if err != nil {
+			return e("failed to update balance", err)
+		}
+
+	case !found:
+		// no balance found, insert a new entry
+		_, err = tx.NewInsert().
+			Model(balance).
+			Exec(ctx)
+		if err != nil {
+			return e("failed to insert balance", err)
+		}
+	}
+
+	return nil
 }
 
 func (s *store) BalancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
@@ -203,7 +249,7 @@ func (s *store) balancesGetAtByAsset(ctx context.Context, accountID models.Accou
 		Where("asset = ?", asset).
 		Where("created_at <= ?", at).
 		Where("last_updated_at >= ?", at).
-		Order("last_updated_at DESC").
+		Order("created_at DESC").
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
