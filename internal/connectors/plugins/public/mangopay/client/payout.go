@@ -43,7 +43,7 @@ type PayoutResponse struct {
 	BankWireRef     string `json:"BankWireRef"`
 }
 
-func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "initiate_payout")
 	// now := time.Now()
@@ -71,7 +71,7 @@ func (c *Client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	return &payoutResponse, nil
 }
 
-func (c *Client) GetPayout(ctx context.Context, payoutID string) (*PayoutResponse, error) {
+func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutResponse, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "get_payout")
 	// now := time.Now()

@@ -27,7 +27,7 @@ type PayinResponse struct {
 	ExecutionType    string `json:"ExecutionType"`
 }
 
-func (c *Client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, error) {
+func (c *client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "get_payin")
 	// now := time.Now()
