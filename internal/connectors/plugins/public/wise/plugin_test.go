@@ -240,5 +240,15 @@ var _ = Describe("Wise Plugin", func() {
 			_, err := plg.CreateWebhooks(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+		It("fails when create transfer is called before install", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{}
+			_, err := plg.CreateTransfer(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+		It("fails when create transfer is called before install", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{}
+			_, err := plg.CreatePayout(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
 	})
 })
