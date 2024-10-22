@@ -11,39 +11,39 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	userID := models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayUserIDMetadataKey)
+func (p Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
+	userID := models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayUserIDMetadataKey)
 	if userID == "" {
 		return models.CreateBankAccountResponse{}, fmt.Errorf("missing userID in bank account metadata")
 	}
 
 	ownerAddress := client.OwnerAddress{
-		AddressLine1: models.ExtractNamespacedMetadata(req.BankAccount.Metadata, models.BankAccountOwnerAddressLine1MetadataKey),
-		AddressLine2: models.ExtractNamespacedMetadata(req.BankAccount.Metadata, models.BankAccountOwnerAddressLine2MetadataKey),
-		City:         models.ExtractNamespacedMetadata(req.BankAccount.Metadata, models.BankAccountOwnerCityMetadataKey),
-		Region:       models.ExtractNamespacedMetadata(req.BankAccount.Metadata, models.BankAccountOwnerRegionMetadataKey),
-		PostalCode:   models.ExtractNamespacedMetadata(req.BankAccount.Metadata, models.BankAccountOwnerPostalCodeMetadataKey),
+		AddressLine1: models.ExtractNamespacedMetadata(ba.Metadata, models.BankAccountOwnerAddressLine1MetadataKey),
+		AddressLine2: models.ExtractNamespacedMetadata(ba.Metadata, models.BankAccountOwnerAddressLine2MetadataKey),
+		City:         models.ExtractNamespacedMetadata(ba.Metadata, models.BankAccountOwnerCityMetadataKey),
+		Region:       models.ExtractNamespacedMetadata(ba.Metadata, models.BankAccountOwnerRegionMetadataKey),
+		PostalCode:   models.ExtractNamespacedMetadata(ba.Metadata, models.BankAccountOwnerPostalCodeMetadataKey),
 		Country: func() string {
-			if req.BankAccount.Country == nil {
+			if ba.Country == nil {
 				return ""
 			}
-			return *req.BankAccount.Country
+			return *ba.Country
 		}(),
 	}
 
 	var mangopayBankAccount *client.BankAccount
-	if req.BankAccount.IBAN != nil {
+	if ba.IBAN != nil {
 		req := &client.CreateIBANBankAccountRequest{
-			OwnerName:    req.BankAccount.Name,
+			OwnerName:    ba.Name,
 			OwnerAddress: &ownerAddress,
-			IBAN:         *req.BankAccount.IBAN,
+			IBAN:         *ba.IBAN,
 			BIC: func() string {
-				if req.BankAccount.SwiftBicCode == nil {
+				if ba.SwiftBicCode == nil {
 					return ""
 				}
-				return *req.BankAccount.SwiftBicCode
+				return *ba.SwiftBicCode
 			}(),
-			Tag: models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayTagMetadataKey),
+			Tag: models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayTagMetadataKey),
 		}
 
 		var err error
@@ -52,92 +52,92 @@ func (p Plugin) createBankAccount(ctx context.Context, req models.CreateBankAcco
 			return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 		}
 	} else {
-		if req.BankAccount.Country == nil {
-			req.BankAccount.Country = pointer.For("")
+		if ba.Country == nil {
+			ba.Country = pointer.For("")
 		}
-		switch *req.BankAccount.Country {
+		switch *ba.Country {
 		case "US":
-			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
+			if ba.AccountNumber == nil {
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInRequest
 			}
 
 			req := &client.CreateUSBankAccountRequest{
-				OwnerName:          req.BankAccount.Name,
+				OwnerName:          ba.Name,
 				OwnerAddress:       &ownerAddress,
-				AccountNumber:      *req.BankAccount.AccountNumber,
-				ABA:                models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayABAMetadataKey),
-				DepositAccountType: models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayDepositAccountTypeMetadataKey),
-				Tag:                models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayTagMetadataKey),
+				AccountNumber:      *ba.AccountNumber,
+				ABA:                models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayABAMetadataKey),
+				DepositAccountType: models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayDepositAccountTypeMetadataKey),
+				Tag:                models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayTagMetadataKey),
 			}
 
 			var err error
 			mangopayBankAccount, err = p.client.CreateUSBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 			}
 
 		case "CA":
-			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
+			if ba.AccountNumber == nil {
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInRequest
 			}
 			req := &client.CreateCABankAccountRequest{
-				OwnerName:         req.BankAccount.Name,
+				OwnerName:         ba.Name,
 				OwnerAddress:      &ownerAddress,
-				AccountNumber:     *req.BankAccount.AccountNumber,
-				InstitutionNumber: models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayInstitutionNumberMetadataKey),
-				BranchCode:        models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayBranchCodeMetadataKey),
-				BankName:          models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayBankNameMetadataKey),
-				Tag:               models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayTagMetadataKey),
+				AccountNumber:     *ba.AccountNumber,
+				InstitutionNumber: models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayInstitutionNumberMetadataKey),
+				BranchCode:        models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayBranchCodeMetadataKey),
+				BankName:          models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayBankNameMetadataKey),
+				Tag:               models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayTagMetadataKey),
 			}
 
 			var err error
 			mangopayBankAccount, err = p.client.CreateCABankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 			}
 
 		case "GB":
-			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
+			if ba.AccountNumber == nil {
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInRequest
 			}
 
 			req := &client.CreateGBBankAccountRequest{
-				OwnerName:     req.BankAccount.Name,
+				OwnerName:     ba.Name,
 				OwnerAddress:  &ownerAddress,
-				AccountNumber: *req.BankAccount.AccountNumber,
-				SortCode:      models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopaySortCodeMetadataKey),
-				Tag:           models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayTagMetadataKey),
+				AccountNumber: *ba.AccountNumber,
+				SortCode:      models.ExtractNamespacedMetadata(ba.Metadata, client.MangopaySortCodeMetadataKey),
+				Tag:           models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayTagMetadataKey),
 			}
 
 			var err error
 			mangopayBankAccount, err = p.client.CreateGBBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 			}
 
 		default:
-			if req.BankAccount.AccountNumber == nil {
-				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInMetadata
+			if ba.AccountNumber == nil {
+				return models.CreateBankAccountResponse{}, models.ErrMissingAccountInRequest
 			}
 
 			req := &client.CreateOtherBankAccountRequest{
-				OwnerName:     req.BankAccount.Name,
+				OwnerName:     ba.Name,
 				OwnerAddress:  &ownerAddress,
-				AccountNumber: *req.BankAccount.AccountNumber,
+				AccountNumber: *ba.AccountNumber,
 				BIC: func() string {
-					if req.BankAccount.SwiftBicCode == nil {
+					if ba.SwiftBicCode == nil {
 						return ""
 					}
-					return *req.BankAccount.SwiftBicCode
+					return *ba.SwiftBicCode
 				}(),
-				Country: *req.BankAccount.Country,
-				Tag:     models.ExtractNamespacedMetadata(req.BankAccount.Metadata, client.MangopayTagMetadataKey),
+				Country: *ba.Country,
+				Tag:     models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayTagMetadataKey),
 			}
 
 			var err error
 			mangopayBankAccount, err = p.client.CreateOtherBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, err
+				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
 			}
 		}
 	}

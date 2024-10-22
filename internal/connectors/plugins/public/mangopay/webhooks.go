@@ -103,7 +103,7 @@ func (p Plugin) initWebhookConfig() {
 
 func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
 	if req.WebhookBaseUrl == "" {
-		return fmt.Errorf("STACK_PUBLIC_URL is not set")
+		return fmt.Errorf("STACK_PUBLIC_URL is not set: %w", models.ErrInvalidRequest)
 	}
 
 	activeHooks, err := p.getActiveHooks(ctx)
@@ -233,7 +233,11 @@ func (p Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest
 	}
 
 	if payout.DebitedWalletID != "" {
-		payment.DestinationAccountReference = &payout.DebitedWalletID
+		payment.SourceAccountReference = &payout.DebitedWalletID
+	}
+
+	if payout.BankAccountID != "" {
+		payment.DestinationAccountReference = &payout.BankAccountID
 	}
 
 	return models.WebhookResponse{
@@ -301,6 +305,14 @@ func (p Plugin) translateRefund(ctx context.Context, req webhookTranslateRequest
 		return models.WebhookResponse{}, fmt.Errorf("failed to parse amount %s", refund.DebitedFunds.Amount.String())
 	}
 
+	status := models.PAYMENT_STATUS_REFUNDED
+	switch req.webhook.EventType {
+	case client.EventTypePayOutRefundFailed,
+		client.EventTypePayinRefundFailed,
+		client.EventTypeTransferRefundFailed:
+		status = models.PAYMENT_STATUS_REFUNDED_FAILURE
+	}
+
 	payment := models.PSPPayment{
 		ParentReference: refund.InitialTransactionID,
 		Reference:       refund.ID,
@@ -309,7 +321,7 @@ func (p Plugin) translateRefund(ctx context.Context, req webhookTranslateRequest
 		Amount:          &amountRefunded,
 		Asset:           currency.FormatAsset(supportedCurrenciesWithDecimal, refund.DebitedFunds.Currency),
 		Scheme:          models.PAYMENT_SCHEME_OTHER,
-		Status:          models.PAYMENT_STATUS_REFUNDED,
+		Status:          status,
 		Raw:             raw,
 	}
 

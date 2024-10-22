@@ -22,7 +22,7 @@ type Wallet struct {
 	} `json:"Balance"`
 }
 
-func (c *Client) GetWallets(ctx context.Context, userID string, page, pageSize int) ([]Wallet, error) {
+func (c *client) GetWallets(ctx context.Context, userID string, page, pageSize int) ([]Wallet, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "list_wallets")
 	// now := time.Now()
@@ -49,7 +49,7 @@ func (c *Client) GetWallets(ctx context.Context, userID string, page, pageSize i
 	return wallets, nil
 }
 
-func (c *Client) GetWallet(ctx context.Context, walletID string) (*Wallet, error) {
+func (c *client) GetWallet(ctx context.Context, walletID string) (*Wallet, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "get_wallets")
 	// now := time.Now()

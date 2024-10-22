@@ -81,7 +81,7 @@ type Hook struct {
 	EventType EventType `json:"EventType"`
 }
 
-func (c *Client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
+func (c *client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "list_hooks")
 	// now := time.Now()
@@ -112,7 +112,7 @@ type CreateHookRequest struct {
 	URL       string    `json:"Url"`
 }
 
-func (c *Client) CreateHook(ctx context.Context, eventType EventType, URL string) error {
+func (c *client) CreateHook(ctx context.Context, eventType EventType, URL string) error {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_hook")
 	// now := time.Now()
@@ -146,7 +146,7 @@ type UpdateHookRequest struct {
 	Status string `json:"Status"`
 }
 
-func (c *Client) UpdateHook(ctx context.Context, hookID string, URL string) error {
+func (c *client) UpdateHook(ctx context.Context, hookID string, URL string) error {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "udpate_hook")
 	// now := time.Now()

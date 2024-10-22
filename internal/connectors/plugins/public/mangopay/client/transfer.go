@@ -43,7 +43,7 @@ type TransferResponse struct {
 	CreditedWalletID string `json:"CreditedWalletId"`
 }
 
-func (c *Client) InitiateWalletTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
+func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "initiate_transfer")
 	// now := time.Now()
@@ -67,13 +67,13 @@ func (c *Client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 	var errRes mangopayError
 	statusCode, err := c.httpClient.Do(req, &transferResponse, &errRes)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
+		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error()), statusCode)
 	}
 
 	return &transferResponse, nil
 }
 
-func (c *Client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
+func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "get_transfer")
 	// now := time.Now()

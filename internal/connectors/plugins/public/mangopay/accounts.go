@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type accountsState struct {
@@ -42,6 +43,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	}
 
 	var accounts []models.PSPAccount
+	needMore := false
 	hasMore := false
 	page := oldState.LastPage
 	for {
@@ -50,53 +52,25 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		if len(pagedAccounts) == 0 {
-			break
+		accounts, err = fillAccounts(pagedAccounts, accounts, from, oldState)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
 		}
 
-		for _, account := range pagedAccounts {
-			accountCreationDate := time.Unix(account.CreationDate, 0)
-			switch accountCreationDate.Compare(oldState.LastCreationDate) {
-			case -1, 0:
-				// creationDate <= state.LastCreationDate, nothing to do,
-				// we already processed this account.
-				continue
-			default:
-			}
-
-			raw, err := json.Marshal(account)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference:    account.ID,
-				CreatedAt:    accountCreationDate,
-				Name:         &account.Description,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
-				Metadata: map[string]string{
-					userIDMetadataKey: from.ID,
-				},
-				Raw: raw,
-			})
-
-			newState.LastCreationDate = accountCreationDate
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(pagedAccounts) < req.PageSize {
-			break
-		}
-
-		if len(accounts) >= req.PageSize {
-			hasMore = true
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
 
 		page++
+	}
+
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
+
+	if len(accounts) > 0 {
+		newState.LastCreationDate = accounts[len(accounts)-1].CreatedAt
 	}
 
 	newState.LastPage = page
@@ -111,4 +85,40 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillAccounts(
+	pagedAccounts []client.Wallet,
+	accounts []models.PSPAccount,
+	from client.User,
+	oldState accountsState,
+) ([]models.PSPAccount, error) {
+	for _, account := range pagedAccounts {
+		accountCreationDate := time.Unix(account.CreationDate, 0)
+		switch accountCreationDate.Compare(oldState.LastCreationDate) {
+		case -1, 0:
+			// creationDate <= state.LastCreationDate, nothing to do,
+			// we already processed this account.
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(account)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    account.ID,
+			CreatedAt:    accountCreationDate,
+			Name:         &account.Description,
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
+			Metadata: map[string]string{
+				userIDMetadataKey: from.ID,
+			},
+			Raw: raw,
+		})
+	}
+
+	return accounts, nil
 }

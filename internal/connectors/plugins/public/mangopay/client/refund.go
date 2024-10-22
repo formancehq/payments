@@ -28,7 +28,7 @@ type Refund struct {
 	InitialTransactionType string `json:"InitialTransactionType"`
 }
 
-func (c *Client) GetRefund(ctx context.Context, refundID string) (*Refund, error) {
+func (c *client) GetRefund(ctx context.Context, refundID string) (*Refund, error) {
 	// TODO(polo): metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "get_refund")
 	// now := time.Now()
