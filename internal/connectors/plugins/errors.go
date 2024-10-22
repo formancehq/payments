@@ -66,7 +66,7 @@ func translateErrorToGRPC(err error) error {
 		code = codes.Unimplemented
 		reason = FailureReasonUnimplemented
 	case errors.Is(err, models.ErrMissingFromPayloadInRequest),
-		errors.Is(err, models.ErrMissingAccountInMetadata),
+		errors.Is(err, models.ErrMissingAccountInRequest),
 		errors.Is(err, models.ErrInvalidRequest):
 		code = codes.FailedPrecondition
 		reason = FailureReasonInvalidRequest

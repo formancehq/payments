@@ -8,11 +8,12 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
-	LastPage         int       `json:"last_page"`
-	LastCreationDate time.Time `json:"last_creation_date"`
+	LastPage         int       `json:"lastPage"`
+	LastCreationDate time.Time `json:"lastCreationDate"`
 }
 
 func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -42,6 +43,7 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 	}
 
 	var accounts []models.PSPAccount
+	needMore := false
 	hasMore := false
 	for page := oldState.LastPage; ; page++ {
 		newState.LastPage = page
@@ -51,50 +53,23 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		if len(pagedExternalAccounts) == 0 {
+		accounts, err = fillExternalAccounts(pagedExternalAccounts, accounts, from, oldState)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedExternalAccounts, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
 
-		for _, bankAccount := range pagedExternalAccounts {
-			creationDate := time.Unix(bankAccount.CreationDate, 0)
-			switch creationDate.Compare(oldState.LastCreationDate) {
-			case -1, 0:
-				// creationDate <= state.LastCreationDate, nothing to do,
-				// we already processed this bank account.
-				continue
-			default:
-			}
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
 
-			raw, err := json.Marshal(bankAccount)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: bankAccount.ID,
-				CreatedAt: creationDate,
-				Name:      &bankAccount.OwnerName,
-				Metadata: map[string]string{
-					"user_id": from.ID,
-				},
-				Raw: raw,
-			})
-
-			newState.LastCreationDate = creationDate
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(pagedExternalAccounts) < req.PageSize {
-			break
-		}
-
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
+	if len(accounts) > 0 {
+		newState.LastCreationDate = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -107,4 +82,39 @@ func (p Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchN
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func fillExternalAccounts(
+	pagedExternalAccounts []client.BankAccount,
+	accounts []models.PSPAccount,
+	from client.User,
+	oldState externalAccountsState,
+) ([]models.PSPAccount, error) {
+	for _, bankAccount := range pagedExternalAccounts {
+		creationDate := time.Unix(bankAccount.CreationDate, 0)
+		switch creationDate.Compare(oldState.LastCreationDate) {
+		case -1, 0:
+			// creationDate <= state.LastCreationDate, nothing to do,
+			// we already processed this bank account.
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(bankAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: bankAccount.ID,
+			CreatedAt: creationDate,
+			Name:      &bankAccount.OwnerName,
+			Metadata: map[string]string{
+				"user_id": from.ID,
+			},
+			Raw: raw,
+		})
+	}
+
+	return accounts, nil
 }

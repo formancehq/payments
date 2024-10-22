@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -12,23 +11,14 @@ import (
 )
 
 type Payment struct {
-	Id             string `json:"Id"`
-	Tag            string `json:"Tag"`
-	CreationDate   int64  `json:"CreationDate"`
-	AuthorId       string `json:"AuthorId"`
-	CreditedUserId string `json:"CreditedUserId"`
-	DebitedFunds   struct {
-		Currency string      `json:"Currency"`
-		Amount   json.Number `json:"Amount"`
-	} `json:"DebitedFunds"`
-	CreditedFunds struct {
-		Currency string      `json:"Currency"`
-		Amount   json.Number `json:"Amount"`
-	} `json:"CreditedFunds"`
-	Fees struct {
-		Currency string      `json:"Currency"`
-		Amount   json.Number `json:"Amount"`
-	} `json:"Fees"`
+	Id               string `json:"Id"`
+	Tag              string `json:"Tag"`
+	CreationDate     int64  `json:"CreationDate"`
+	AuthorId         string `json:"AuthorId"`
+	CreditedUserId   string `json:"CreditedUserId"`
+	DebitedFunds     Funds  `json:"DebitedFunds"`
+	CreditedFunds    Funds  `json:"CreditedFunds"`
+	Fees             Funds  `json:"Fees"`
 	Status           string `json:"Status"`
 	ResultCode       string `json:"ResultCode"`
 	ResultMessage    string `json:"ResultMessage"`
@@ -39,7 +29,7 @@ type Payment struct {
 	DebitedWalletID  string `json:"DebitedWalletId"`
 }
 
-func (c *Client) GetTransactions(ctx context.Context, walletsID string, page, pageSize int, afterCreatedAt time.Time) ([]Payment, error) {
+func (c *client) GetTransactions(ctx context.Context, walletsID string, page, pageSize int, afterCreatedAt time.Time) ([]Payment, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "list_transactions")
 	// now := time.Now()
