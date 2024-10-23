@@ -25,11 +25,11 @@ func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 	}
 
 	if pi.SourceAccount == nil {
-		return models.ErrInvalidRequest
+		return fmt.Errorf("missing source account: %w", models.ErrInvalidRequest)
 	}
 
 	if pi.DestinationAccount == nil {
-		return models.ErrInvalidRequest
+		return fmt.Errorf("missing destination account: %w", models.ErrInvalidRequest)
 	}
 
 	_, ok := pi.SourceAccount.Metadata[userIDMetadataKey]
@@ -53,11 +53,12 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 
 	curr, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %w: %w", err, models.ErrInvalidRequest)
 	}
 
 	resp, err := p.client.InitiatePayout(ctx, &client.PayoutRequest{
-		AuthorID: userID,
+		Reference: pi.Reference,
+		AuthorID:  userID,
 		DebitedFunds: client.Funds{
 			Currency: curr,
 			Amount:   json.Number(pi.Amount.String()),

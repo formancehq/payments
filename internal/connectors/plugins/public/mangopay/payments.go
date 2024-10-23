@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type paymentsState struct {
@@ -44,6 +45,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}
 
 	var payments []models.PSPPayment
+	needMore := false
 	hasMore := false
 	page := oldState.LastPage
 	for {
@@ -52,40 +54,27 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		if len(pagedTransactions) == 0 {
-			break
+		payments, err = fillPayments(pagedTransactions, payments)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		for _, transaction := range pagedTransactions {
-			payment, err := transactionToPayment(transaction)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-
-			if payment != nil {
-				payments = append(payments, *payment)
-			}
-
-			newState.LastCreationDate = payment.CreatedAt
-
-			if len(payments) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(pagedTransactions) < req.PageSize {
-			break
-		}
-
-		if len(payments) >= req.PageSize {
-			hasMore = true
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
 
 		page++
 	}
 
+	if !needMore {
+		payments = payments[:req.PageSize]
+	}
+
 	newState.LastPage = page
+	if len(payments) > 0 {
+		newState.LastCreationDate = payments[len(payments)-1].CreatedAt
+	}
 
 	payload, err := json.Marshal(newState)
 	if err != nil {
@@ -97,6 +86,23 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillPayments(
+	pagedTransactions []client.Payment,
+	payments []models.PSPPayment,
+) ([]models.PSPPayment, error) {
+	for _, transaction := range pagedTransactions {
+		payment, err := transactionToPayment(transaction)
+		if err != nil {
+			return nil, err
+		}
+
+		if payment != nil {
+			payments = append(payments, *payment)
+		}
+	}
+	return payments, nil
 }
 
 func transactionToPayment(from client.Payment) (*models.PSPPayment, error) {

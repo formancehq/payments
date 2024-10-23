@@ -31,7 +31,7 @@ type CreateIBANBankAccountRequest struct {
 	Tag string `json:"Tag,omitempty"`
 }
 
-func (c *Client) CreateIBANBankAccount(ctx context.Context, userID string, req *CreateIBANBankAccountRequest) (*BankAccount, error) {
+func (c *client) CreateIBANBankAccount(ctx context.Context, userID string, req *CreateIBANBankAccountRequest) (*BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_iban_bank_account")
 	// now := time.Now()
@@ -50,7 +50,7 @@ type CreateUSBankAccountRequest struct {
 	Tag                string        `json:"Tag,omitempty"`
 }
 
-func (c *Client) CreateUSBankAccount(ctx context.Context, userID string, req *CreateUSBankAccountRequest) (*BankAccount, error) {
+func (c *client) CreateUSBankAccount(ctx context.Context, userID string, req *CreateUSBankAccountRequest) (*BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_us_bank_account")
 	// now := time.Now()
@@ -70,7 +70,7 @@ type CreateCABankAccountRequest struct {
 	Tag               string        `json:"Tag,omitempty"`
 }
 
-func (c *Client) CreateCABankAccount(ctx context.Context, userID string, req *CreateCABankAccountRequest) (*BankAccount, error) {
+func (c *client) CreateCABankAccount(ctx context.Context, userID string, req *CreateCABankAccountRequest) (*BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_ca_bank_account")
 	// now := time.Now()
@@ -88,7 +88,7 @@ type CreateGBBankAccountRequest struct {
 	Tag           string        `json:"Tag,omitempty"`
 }
 
-func (c *Client) CreateGBBankAccount(ctx context.Context, userID string, req *CreateGBBankAccountRequest) (*BankAccount, error) {
+func (c *client) CreateGBBankAccount(ctx context.Context, userID string, req *CreateGBBankAccountRequest) (*BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_gb_bank_account")
 	// now := time.Now()
@@ -107,7 +107,7 @@ type CreateOtherBankAccountRequest struct {
 	Tag           string        `json:"Tag,omitempty"`
 }
 
-func (c *Client) CreateOtherBankAccount(ctx context.Context, userID string, req *CreateOtherBankAccountRequest) (*BankAccount, error) {
+func (c *client) CreateOtherBankAccount(ctx context.Context, userID string, req *CreateOtherBankAccountRequest) (*BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "create_other_bank_account")
 	// now := time.Now()
@@ -117,7 +117,7 @@ func (c *Client) CreateOtherBankAccount(ctx context.Context, userID string, req 
 	return c.createBankAccount(ctx, endpoint, req)
 }
 
-func (c *Client) createBankAccount(ctx context.Context, endpoint string, req any) (*BankAccount, error) {
+func (c *client) createBankAccount(ctx context.Context, endpoint string, req any) (*BankAccount, error) {
 	body, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal bank account request: %w", err)
@@ -143,7 +143,7 @@ type BankAccount struct {
 	CreationDate int64  `json:"CreationDate"`
 }
 
-func (c *Client) GetBankAccounts(ctx context.Context, userID string, page, pageSize int) ([]BankAccount, error) {
+func (c *client) GetBankAccounts(ctx context.Context, userID string, page, pageSize int) ([]BankAccount, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "list_bank_accounts")
 	// now := time.Now()

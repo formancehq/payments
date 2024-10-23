@@ -14,7 +14,7 @@ type User struct {
 	CreationDate int64  `json:"CreationDate"`
 }
 
-func (c *Client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, error) {
+func (c *client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, error) {
 	// TODO(polo): add metrics
 	// f := connectors.ClientMetrics(ctx, "mangopay", "list_users")
 	// now := time.Now()
