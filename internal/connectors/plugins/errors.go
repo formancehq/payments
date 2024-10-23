@@ -19,8 +19,9 @@ const (
 )
 
 var (
-	ErrNotImplemented  = errors.New("not implemented")
-	ErrNotYetInstalled = errors.New("not yet installed")
+	ErrNotImplemented       = errors.New("not implemented")
+	ErrNotYetInstalled      = errors.New("not yet installed")
+	ErrCurrencyNotSupported = errors.New("currency not supported")
 )
 
 type Error struct {
@@ -67,7 +68,8 @@ func translateErrorToGRPC(err error) error {
 		reason = FailureReasonUnimplemented
 	case errors.Is(err, models.ErrMissingFromPayloadInRequest),
 		errors.Is(err, models.ErrMissingAccountInRequest),
-		errors.Is(err, models.ErrInvalidRequest):
+		errors.Is(err, models.ErrInvalidRequest),
+		errors.Is(err, ErrCurrencyNotSupported):
 		code = codes.FailedPrecondition
 		reason = FailureReasonInvalidRequest
 	case errors.Is(err, models.ErrInvalidConfig):

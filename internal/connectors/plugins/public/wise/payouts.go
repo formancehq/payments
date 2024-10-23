@@ -45,27 +45,23 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.PSPPayment{}, err
 	}
 
-	if payment == nil {
-		return models.PSPPayment{}, fmt.Errorf("unsupported payments: %w", models.ErrInvalidRequest)
-	}
-
-	return *payment, nil
+	return payment, nil
 }
 
-func fromPayoutToPayment(from client.Payout) (*models.PSPPayment, error) {
+func fromPayoutToPayment(from client.Payout) (models.PSPPayment, error) {
 	raw, err := json.Marshal(from)
 	if err != nil {
-		return nil, err
+		return models.PSPPayment{}, err
 	}
 
 	precision, ok := supportedCurrenciesWithDecimal[from.TargetCurrency]
 	if !ok {
-		return nil, nil
+		return models.PSPPayment{}, fmt.Errorf("unsupported currency: %s: %w", from.TargetCurrency, models.ErrInvalidRequest)
 	}
 
 	amount, err := currency.GetAmountWithPrecisionFromString(from.TargetValue.String(), precision)
 	if err != nil {
-		return nil, err
+		return models.PSPPayment{}, err
 	}
 
 	p := models.PSPPayment{
@@ -87,5 +83,5 @@ func fromPayoutToPayment(from client.Payout) (*models.PSPPayment, error) {
 		p.DestinationAccountReference = pointer.For(fmt.Sprintf("%d", from.TargetAccount))
 	}
 
-	return &p, nil
+	return p, nil
 }
