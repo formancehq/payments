@@ -18,20 +18,6 @@ import (
 	"go.uber.org/fx"
 )
 
-func loggerOptions(cmd *cobra.Command) *hclog.LoggerOptions {
-	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
-
-	level := hclog.Info
-	if service.IsDebug(cmd) {
-		level = hclog.Debug
-	}
-	return &hclog.LoggerOptions{
-		Level:      level,
-		Output:     os.Stderr,
-		JSONFormat: jsonFormatter,
-	}
-}
-
 // TODO(polo): metrics
 func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cobra.Command {
 	cmd := &cobra.Command{
@@ -39,25 +25,22 @@ func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cob
 		Aliases:      []string{name},
 		Short:        fmt.Sprintf("Launch %s plugin server", name),
 		SilenceUsage: true,
+		RunE:         runServer(pluginConstructorFn),
 	}
 
 	service.AddFlags(cmd.Flags())
 	otlpmetrics.AddFlags(cmd.Flags())
 	otlptraces.AddFlags(cmd.Flags())
-
-	hlogger := hclog.New(loggerOptions(cmd))
-	hclog.SetDefault(hlogger)
-
-	logger := logging.NewHcLogLoggerAdapter(hlogger, nil)
-	cmd.RunE = runServer(pluginConstructorFn, logger)
 	return cmd
 }
 
 func runServer(
 	pluginConstructorFn models.PluginConstructorFn,
-	logger logging.Logger,
 ) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
+		hlogger := hclog.New(loggerOptions())
+		hclog.SetDefault(hlogger)
+
 		opts := fx.Options(
 			otlp.FXModuleFromFlags(cmd),
 			fx.Provide(fx.Annotate(noop.NewMeterProvider, fx.As(new(metric.MeterProvider)))),
@@ -65,10 +48,21 @@ func runServer(
 				return metrics.RegisterMetricsRegistry(meterProvider)
 			})),
 			fx.Provide(metrics.RegisterMetricsRegistry),
-			fx.Provide(pluginConstructorFn, NewServer),
+			fx.Provide(pluginConstructorFn, func() hclog.Logger { return hlogger }, NewServer),
 			fx.Invoke(func(Server) {}),
 		)
 
+		logger := logging.NewHcLogLoggerAdapter(hlogger, nil)
 		return service.NewWithLogger(logger, opts).Run(cmd)
+	}
+}
+
+func loggerOptions() *hclog.LoggerOptions {
+	// client-side logger settings (internal/connectors/engine/plugins/plugin.go) will override
+	// the output format and verbosity, so we can just make this as verbose as possible
+	return &hclog.LoggerOptions{
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
 	}
 }
