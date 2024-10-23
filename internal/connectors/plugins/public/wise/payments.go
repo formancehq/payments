@@ -3,9 +3,11 @@ package wise
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
@@ -100,35 +102,35 @@ func fillPayments(
 
 		payment, err := fromTransferToPayment(transfer)
 		if err != nil {
+			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
+				// Do not insert unknown currencies
+				hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
+				continue
+			}
 			return nil, nil, err
 		}
 
-		if payment == nil {
-			hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
-			continue
-		}
-
-		payments = append(payments, *payment)
+		payments = append(payments, payment)
 		paymentIDs = append(paymentIDs, transfer.ID)
 	}
 
 	return payments, paymentIDs, nil
 }
 
-func fromTransferToPayment(from client.Transfer) (*models.PSPPayment, error) {
+func fromTransferToPayment(from client.Transfer) (models.PSPPayment, error) {
 	raw, err := json.Marshal(from)
 	if err != nil {
-		return nil, err
+		return models.PSPPayment{}, err
 	}
 
 	precision, ok := supportedCurrenciesWithDecimal[from.TargetCurrency]
 	if !ok {
-		return nil, nil
+		return models.PSPPayment{}, fmt.Errorf("unsupported currency: %s: %w", from.TargetCurrency, plugins.ErrCurrencyNotSupported)
 	}
 
 	amount, err := currency.GetAmountWithPrecisionFromString(from.TargetValue.String(), precision)
 	if err != nil {
-		return nil, err
+		return models.PSPPayment{}, err
 	}
 
 	p := models.PSPPayment{
@@ -150,7 +152,7 @@ func fromTransferToPayment(from client.Transfer) (*models.PSPPayment, error) {
 		p.DestinationAccountReference = pointer.For(fmt.Sprintf("%d", from.DestinationBalanceID))
 	}
 
-	return &p, nil
+	return p, nil
 }
 
 func matchTransferStatus(status string) models.PaymentStatus {

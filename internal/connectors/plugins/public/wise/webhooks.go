@@ -79,7 +79,7 @@ func (p *Plugin) translateTransferStateChangedWebhook(ctx context.Context, req m
 	}
 
 	return models.WebhookResponse{
-		Payment: payment,
+		Payment: &payment,
 	}, nil
 }
 
