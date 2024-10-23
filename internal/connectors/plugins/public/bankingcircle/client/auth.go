@@ -35,7 +35,7 @@ func (c *Client) login(ctx context.Context) error {
 
 	var res response
 	var errors []responseError
-	statusCode, err := c.httpClient.Do(req, &res, &errors)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, &errors)
 	if err != nil {
 		if len(errors) > 0 {
 			log.Printf("bankingcircle auth failed with code %s: %s", errors[0].ErrorCode, errors[0].ErrorText)

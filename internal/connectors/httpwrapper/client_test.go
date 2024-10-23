@@ -1,6 +1,7 @@
 package httpwrapper_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -64,7 +65,7 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(err).To(BeNil())
 
 			res := &successRes{}
-			code, doErr := client.Do(req, res, nil)
+			code, doErr := client.Do(context.Background(), req, res, nil)
 			Expect(code).To(Equal(http.StatusOK))
 			Expect(doErr).To(BeNil())
 			Expect(res.ID).To(Equal("someid"))
@@ -74,7 +75,7 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(err).To(BeNil())
 
 			res := &errorRes{}
-			code, doErr := client.Do(req, &successRes{}, res)
+			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
 			Expect(code).To(Equal(http.StatusInternalServerError))
 			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeServerError))
 			Expect(res.Code).To(Equal("err123"))
@@ -84,7 +85,7 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(err).To(BeNil())
 
 			res := &errorRes{}
-			code, doErr := client.Do(req, &successRes{}, res)
+			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
 			Expect(code).To(Equal(http.StatusBadRequest))
 			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeClientError))
 			Expect(res.Code).To(Equal("err123"))
@@ -94,7 +95,7 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(err).To(BeNil())
 
 			res := &errorRes{}
-			code, doErr := client.Do(req, &successRes{}, res)
+			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
 			Expect(code).To(Equal(0))
 			Expect(doErr).To(MatchError(ContainSubstring("failed to make request")))
 		})

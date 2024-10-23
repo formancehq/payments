@@ -64,7 +64,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	req.Header.Set("Idempotency-Key", payoutRequest.Reference)
 
 	var payoutResponse PayoutResponse
-	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate payout: %w", err), statusCode)
 	}
@@ -85,7 +85,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutRespons
 	}
 
 	var payoutResponse PayoutResponse
-	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payout: %w", err), statusCode)
 	}

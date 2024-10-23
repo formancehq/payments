@@ -71,7 +71,7 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 
 	var res TransferResponse
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
 	}
@@ -91,7 +91,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (TransferRe
 
 	var res getTransferResponse
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return TransferResponse{}, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
 	}

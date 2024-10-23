@@ -24,7 +24,7 @@ func (c *client) GetProfiles(ctx context.Context) ([]Profile, error) {
 	}
 
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &profiles, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &profiles, &errRes)
 	if err != nil {
 		return profiles, fmt.Errorf("failed to make profiles: %w %w", err, errRes.Error(statusCode).Error())
 	}
