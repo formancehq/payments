@@ -45,6 +45,10 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.PSPPayment{}, err
 	}
 
+	if payment == nil {
+		return models.PSPPayment{}, fmt.Errorf("unsupported payments: %w", models.ErrInvalidRequest)
+	}
+
 	return *payment, nil
 }
 
