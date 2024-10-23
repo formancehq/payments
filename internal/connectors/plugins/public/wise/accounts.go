@@ -45,7 +45,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	for _, balance := range balances {
-		if balance.ID <= oldState.LastAccountID {
+		if oldState.LastAccountID != 0 && balance.ID <= oldState.LastAccountID {
 			continue
 		}
 

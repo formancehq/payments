@@ -73,6 +73,7 @@ var _ = Describe("Wise Plugin", func() {
 				WebhookPublicKey: pemKey.String(),
 			}
 			configJson, err := json.Marshal(config)
+			Expect(err).To(BeNil())
 			req := models.InstallRequest{Config: configJson}
 			res, err := plg.Install(context.Background(), req)
 			Expect(err).To(BeNil())
@@ -95,6 +96,7 @@ var _ = Describe("Wise Plugin", func() {
 				WebhookPublicKey: pemKey.String(),
 			}
 			configJson, err := json.Marshal(config)
+			Expect(err).To(BeNil())
 			req := models.InstallRequest{Config: configJson}
 			_, err = plg.Install(context.Background(), req)
 			Expect(err).To(BeNil())

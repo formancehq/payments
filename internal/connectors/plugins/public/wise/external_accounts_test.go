@@ -2,6 +2,7 @@ package wise
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
@@ -15,60 +16,158 @@ import (
 var _ = Describe("Wise Plugin External Accounts", func() {
 	var (
 		plg *Plugin
-		m   *client.MockClient
 	)
 
 	BeforeEach(func() {
 		plg = &Plugin{}
-
-		ctrl := gomock.NewController(GinkgoT())
-		m = client.NewMockClient(ctrl)
-		plg.SetClient(m)
 	})
 
-	Context("fetch next external accounts", func() {
+	Context("fetching next external accounts", func() {
 		var (
-			accounts          []*client.RecipientAccount
-			expectedProfileID uint64
-			lastSeekPosition  uint64
+			m                       *client.MockClient
+			sampleRecipientAccounts []*client.RecipientAccount
 		)
 
 		BeforeEach(func() {
-			expectedProfileID = 154
-			lastSeekPosition = 83
-			accounts = []*client.RecipientAccount{
-				{ID: lastSeekPosition + 1, Profile: expectedProfileID},
-				{ID: lastSeekPosition + 2, Profile: expectedProfileID},
+			ctrl := gomock.NewController(GinkgoT())
+			m = client.NewMockClient(ctrl)
+			plg.client = m
+
+			sampleRecipientAccounts = make([]*client.RecipientAccount, 0)
+			for i := 0; i < 50; i++ {
+				sampleRecipientAccounts = append(sampleRecipientAccounts, &client.RecipientAccount{
+					ID:       uint64(i),
+					Profile:  uint64(0),
+					Currency: "USD",
+					Name: client.Name{
+						FullName: fmt.Sprintf("Account %d", i),
+					},
+				})
 			}
 		})
 
-		It("fetches recpient accounts from wise", func(ctx SpecContext) {
+		It("should return an error - get beneficiaries error", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				State: json.RawMessage(fmt.Sprintf(`{"lastSeekPosition":%d}`, lastSeekPosition)),
-				FromPayload: json.RawMessage(fmt.Sprintf(
-					`{"id":%d,"type":"sometype"}`,
-					expectedProfileID,
-				)),
-				PageSize: len(accounts),
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
 			}
-			recipientRes := &client.RecipientAccountsResponse{
-				Content:                accounts,
-				SeekPositionForCurrent: lastSeekPosition + 1,
-				SeekPositionForNext:    accounts[len(accounts)-1].ID + 1,
-			}
-			m.EXPECT().GetRecipientAccounts(ctx, expectedProfileID, req.PageSize, lastSeekPosition).Return(recipientRes, nil)
 
-			res, err := plg.FetchNextExternalAccounts(ctx, req)
+			m.EXPECT().GetRecipientAccounts(gomock.Any(), uint64(0), 60, uint64(0)).Return(
+				&client.RecipientAccountsResponse{},
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
+		})
+
+		It("should fetch next external accounts - no state no results", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 60, uint64(0)).Return(
+				&client.RecipientAccountsResponse{
+					Content:             []*client.RecipientAccount{},
+					SeekPositionForNext: 0,
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.HasMore).To(BeTrue())
-			Expect(res.ExternalAccounts).To(HaveLen(req.PageSize))
-			Expect(res.ExternalAccounts[0].Reference).To(Equal(fmt.Sprint(accounts[0].ID)))
+			Expect(resp.ExternalAccounts).To(HaveLen(0))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
 
 			var state externalAccountsState
-
-			err = json.Unmarshal(res.NewState, &state)
+			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastSeekPosition).To(Equal(recipientRes.SeekPositionForNext))
+			// We fetched everything, state should be resetted
+			Expect(state.LastSeekPosition).To(Equal(uint64(0)))
+		})
+
+		It("should fetch next external accounts - no state pageSize > total accounts", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 60, uint64(0)).Return(
+				&client.RecipientAccountsResponse{
+					Content:             sampleRecipientAccounts,
+					SeekPositionForNext: 0,
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(50))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastSeekPosition).To(Equal(uint64(49)))
+		})
+
+		It("should fetch next accounts - no state pageSize < total accounts", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				PageSize:    40,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 40, uint64(0)).Return(
+				&client.RecipientAccountsResponse{
+					Content:             sampleRecipientAccounts[:40],
+					SeekPositionForNext: 39,
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(40))
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastSeekPosition).To(Equal(uint64(39)))
+		})
+
+		It("should fetch next external accounts - with state pageSize < total accounts", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{
+				State:       []byte(fmt.Sprintf(`{"lastSeekPosition": %d}`, 38)),
+				PageSize:    40,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 40, uint64(38)).Return(
+				&client.RecipientAccountsResponse{
+					Content:             sampleRecipientAccounts[39:],
+					SeekPositionForNext: 49,
+				},
+				nil,
+			)
+
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.ExternalAccounts).To(HaveLen(11))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state externalAccountsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We fetched everything, state should be resetted
+			Expect(state.LastSeekPosition).To(Equal(uint64(49)))
 		})
 	})
 })
