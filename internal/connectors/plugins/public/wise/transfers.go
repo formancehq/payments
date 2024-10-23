@@ -43,9 +43,5 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return models.PSPPayment{}, err
 	}
 
-	if payment == nil {
-		return models.PSPPayment{}, fmt.Errorf("unsupported payments: %w", models.ErrInvalidRequest)
-	}
-
-	return *payment, nil
+	return payment, nil
 }
