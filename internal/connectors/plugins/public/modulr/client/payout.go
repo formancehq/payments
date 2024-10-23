@@ -48,7 +48,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 
 	var res PayoutResponse
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payout: %w %w", err, errRes.Error())
 	}
@@ -68,7 +68,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (PayoutResponse
 
 	var res PayoutResponse
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return PayoutResponse{}, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error())
 	}

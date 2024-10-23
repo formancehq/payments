@@ -47,7 +47,7 @@ func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pag
 
 	var accounts RecipientAccountsResponse
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &accounts, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &accounts, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recipient accounts: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -74,7 +74,7 @@ func (c *client) GetRecipientAccount(ctx context.Context, accountID uint64) (*Re
 
 	var res RecipientAccount
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &res, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		e := errRes.Error(statusCode)
 		if e.Code == "RECIPIENT_MISSING" {

@@ -73,7 +73,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 
 	var payout Payout
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
 		return &payout, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -103,7 +103,7 @@ func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount ui
 
 	var payout Payout
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
 		return &payout, fmt.Errorf("failed to make payout: %w %w", err, errRes.Error(statusCode).Error())
 	}

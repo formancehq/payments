@@ -44,7 +44,7 @@ func (c *client) GetRecipients(ctx context.Context, accountID string, page int, 
 
 	recipients := recipientsResponse{Recipients: make([]*Recipient, 0)}
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &recipients, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &recipients, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recipients: %w %w", err, errRes.Error())
 	}

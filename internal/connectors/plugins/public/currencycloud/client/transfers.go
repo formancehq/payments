@@ -72,7 +72,7 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 
 	var res TransferResponse
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transfer: %w, %w", err, errRes.Error())
 	}

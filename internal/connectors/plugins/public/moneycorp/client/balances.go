@@ -26,11 +26,6 @@ type Attributes struct {
 }
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_account_balances")
-	// now := time.Now()
-	// defer f(ctx, now)
-
 	endpoint := fmt.Sprintf("%s/accounts/%s/balances", c.endpoint, accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
@@ -41,7 +36,7 @@ func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*B
 	balances := balancesResponse{Balances: make([]*Balance, 0)}
 	var errRes moneycorpError
 
-	_, err = c.httpClient.Do(req, &balances, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account balances: %w %w", err, errRes.Error())
 	}

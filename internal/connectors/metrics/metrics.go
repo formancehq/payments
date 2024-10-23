@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
 )
@@ -8,6 +9,7 @@ import (
 var registry MetricsRegistry
 
 func GetMetricsRegistry() MetricsRegistry {
+	hclog.Default().Info("get metrics registry", "name", "payments")
 	if registry == nil {
 		registry = NewNoOpMetricsRegistry()
 	}
@@ -27,6 +29,7 @@ type metricsRegistry struct {
 
 func RegisterMetricsRegistry(meterProvider metric.MeterProvider) (MetricsRegistry, error) {
 	meter := meterProvider.Meter("payments")
+	hclog.Default().Info("REGISTERING METER", "name", "payments")
 
 	connectorPSPCalls, err := meter.Int64Counter(
 		"payments_connectors_psp_calls",

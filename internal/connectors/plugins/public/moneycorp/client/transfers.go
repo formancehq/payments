@@ -73,7 +73,7 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 
 	var transferResponse transferResponse
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &transferResponse, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
 	}
@@ -96,7 +96,7 @@ func (c *client) GetTransfer(ctx context.Context, accountID string, transferID s
 
 	var transferResponse transferResponse
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &transferResponse, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
 	}

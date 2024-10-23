@@ -51,7 +51,7 @@ func (c *client) GetTransactions(ctx context.Context, walletsID string, page, pa
 	req.URL.RawQuery = q.Encode()
 
 	var payments []Payment
-	statusCode, err := c.httpClient.Do(req, &payments, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payments, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get transactions: %w", err), statusCode)
 	}

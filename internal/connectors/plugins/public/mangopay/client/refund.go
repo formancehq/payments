@@ -42,7 +42,7 @@ func (c *client) GetRefund(ctx context.Context, refundID string) (*Refund, error
 	}
 
 	var refund Refund
-	statusCode, err := c.httpClient.Do(req, &refund, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &refund, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get refund: %w", err), statusCode)
 	}

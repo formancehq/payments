@@ -35,7 +35,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 
 	var res responseWrapper[[]Beneficiary]
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get beneficiaries: %w %w", err, errRes.Error())
 	}
