@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
@@ -37,50 +38,35 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 	}
 
 	var accounts []models.PSPAccount
+	needMore := false
 	hasMore := false
+	lastSeekPosition := oldState.LastSeekPosition
 	for {
-		pagedExternalAccounts, err := p.client.GetRecipientAccounts(ctx, from.ID, req.PageSize, newState.LastSeekPosition)
+		pagedExternalAccounts, err := p.client.GetRecipientAccounts(ctx, from.ID, req.PageSize, lastSeekPosition)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		if len(pagedExternalAccounts.Content) == 0 {
+		accounts, err = fillExternalAccounts(pagedExternalAccounts, accounts, oldState)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
+
+		lastSeekPosition = pagedExternalAccounts.SeekPositionForNext
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedExternalAccounts.Content, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
 
-		for _, externalAccount := range pagedExternalAccounts.Content {
-			if externalAccount.ID <= oldState.LastSeekPosition {
-				continue
-			}
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
 
-			raw, err := json.Marshal(externalAccount)
-			if err != nil {
-				return models.FetchNextExternalAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference:    strconv.FormatUint(externalAccount.ID, 10),
-				CreatedAt:    time.Now().UTC(),
-				Name:         &externalAccount.Name.FullName,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, externalAccount.Currency)),
-				Raw:          raw,
-			})
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
-		}
-
-		newState.LastSeekPosition = pagedExternalAccounts.SeekPositionForNext
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
-
-		if pagedExternalAccounts.SeekPositionForNext == 0 {
-			// No more data to fetch
-			break
-		}
+	if len(accounts) > 0 {
+		// No need to check the error, it's already checked in the fillExternalAccounts function
+		id, _ := strconv.ParseUint(accounts[len(accounts)-1].Reference, 10, 64)
+		newState.LastSeekPosition = id
 	}
 
 	payload, err := json.Marshal(newState)
@@ -93,4 +79,31 @@ func (p *Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNext
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func fillExternalAccounts(
+	pagedExternalAccounts *client.RecipientAccountsResponse,
+	accounts []models.PSPAccount,
+	oldState externalAccountsState,
+) ([]models.PSPAccount, error) {
+	for _, externalAccount := range pagedExternalAccounts.Content {
+		if oldState.LastSeekPosition != 0 && externalAccount.ID <= oldState.LastSeekPosition {
+			continue
+		}
+
+		raw, err := json.Marshal(externalAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    strconv.FormatUint(externalAccount.ID, 10),
+			CreatedAt:    time.Now().UTC(),
+			Name:         &externalAccount.Name.FullName,
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, externalAccount.Currency)),
+			Raw:          raw,
+		})
+	}
+
+	return accounts, nil
 }

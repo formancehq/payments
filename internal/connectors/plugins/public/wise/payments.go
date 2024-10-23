@@ -9,11 +9,13 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 	"github.com/hashicorp/go-hclog"
 )
 
 type paymentsState struct {
-	Offset int
+	Offset         int    `json:"offset"`
+	LastTransferID uint64 `json:"lastTransferID"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -37,6 +39,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	var payments []models.PSPPayment
+	var paymentIDs []uint64
+	needMore := false
 	hasMore := false
 	for {
 		pagedTransfers, err := p.client.GetTransfers(ctx, from.ID, newState.Offset, req.PageSize)
@@ -44,36 +48,31 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		if len(pagedTransfers) == 0 {
+		payments, paymentIDs, err = fillPayments(pagedTransfers, payments, paymentIDs, oldState)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransfers, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
 
-		for _, transfer := range pagedTransfers {
-			payment, err := fromTransferToPayment(transfer)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-			newState.Offset++
-			if payment == nil {
-				hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
-				continue
-			}
+		newState.Offset += req.PageSize
+	}
 
-			payments = append(payments, *payment)
+	if !needMore {
+		payments = payments[:req.PageSize]
+		paymentIDs = paymentIDs[:req.PageSize]
 
-			if len(payments) >= req.PageSize {
-				break
-			}
-		}
+		// Wise is very annoying with that point, the offset must be a multiple
+		// of the pageSize, otherwise, we will have an error inconsistent
+		// pagination.
+		newState.Offset += req.PageSize
+	}
 
-		if len(pagedTransfers) < req.PageSize {
-			break
-		}
-
-		if len(payments) >= req.PageSize {
-			hasMore = true
-			break
-		}
+	if len(paymentIDs) > 0 {
+		newState.LastTransferID = paymentIDs[len(paymentIDs)-1]
 	}
 
 	payload, err := json.Marshal(newState)
@@ -86,6 +85,34 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillPayments(
+	pagedTransfers []client.Transfer,
+	payments []models.PSPPayment,
+	paymentIDs []uint64,
+	oldState paymentsState,
+) ([]models.PSPPayment, []uint64, error) {
+	for _, transfer := range pagedTransfers {
+		if oldState.LastTransferID != 0 && transfer.ID <= oldState.LastTransferID {
+			continue
+		}
+
+		payment, err := fromTransferToPayment(transfer)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if payment == nil {
+			hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
+			continue
+		}
+
+		payments = append(payments, *payment)
+		paymentIDs = append(paymentIDs, transfer.ID)
+	}
+
+	return payments, paymentIDs, nil
 }
 
 func fromTransferToPayment(from client.Transfer) (*models.PSPPayment, error) {
