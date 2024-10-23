@@ -52,7 +52,7 @@ func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Ba
 
 	res := response{Balances: make([]*Balance, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get balances %w, %w", err, errRes.Error())
 	}

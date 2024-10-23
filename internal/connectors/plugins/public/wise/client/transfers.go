@@ -79,7 +79,7 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 
 	var transfers []Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfers, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfers, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfers: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -170,7 +170,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 
 	var transfer Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -201,7 +201,7 @@ func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount 
 
 	var transfer Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}

@@ -50,7 +50,7 @@ func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 
 	var balances []Balance
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &balances, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
 		return balances, fmt.Errorf("failed to get balances: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -71,7 +71,7 @@ func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uin
 
 	var balance Balance
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &balance, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &balance, &errRes)
 	if err != nil {
 		return &balance, fmt.Errorf("failed to get balance: %w %w", err, errRes.Error(statusCode).Error())
 	}

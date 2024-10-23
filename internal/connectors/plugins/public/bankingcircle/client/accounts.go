@@ -66,7 +66,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 	}
 
 	res := response{Result: make([]Account, 0)}
-	statusCode, err := c.httpClient.Do(req, &res, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accounts, status code %d: %w", statusCode, err)
 	}
@@ -90,7 +90,7 @@ func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	var account Account
-	statusCode, err := c.httpClient.Do(req, &account, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &account, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account, status code %d: %w", statusCode, err)
 	}

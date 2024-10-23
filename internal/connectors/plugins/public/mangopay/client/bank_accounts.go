@@ -130,7 +130,7 @@ func (c *client) createBankAccount(ctx context.Context, endpoint string, req any
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	var bankAccount BankAccount
-	statusCode, err := c.httpClient.Do(httpReq, &bankAccount, nil)
+	statusCode, err := c.httpClient.Do(ctx, httpReq, &bankAccount, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create bank account: %w", err), statusCode)
 	}
@@ -162,7 +162,7 @@ func (c *client) GetBankAccounts(ctx context.Context, userID string, page, pageS
 	req.URL.RawQuery = q.Encode()
 
 	var bankAccounts []BankAccount
-	statusCode, err := c.httpClient.Do(req, &bankAccounts, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &bankAccounts, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get bank accounts: %w", err), statusCode)
 	}

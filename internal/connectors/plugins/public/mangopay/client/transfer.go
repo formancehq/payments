@@ -65,7 +65,7 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 
 	var transferResponse TransferResponse
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, &transferResponse, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error()), statusCode)
 	}
@@ -86,7 +86,7 @@ func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (Tran
 	}
 
 	var transfer TransferResponse
-	statusCode, err := c.httpClient.Do(req, &transfer, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, nil)
 	if err != nil {
 		return transfer, errorsutils.NewErrorWithExitCode(
 			fmt.Errorf("failed to get transfer response: %w", err),

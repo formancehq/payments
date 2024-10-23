@@ -64,7 +64,7 @@ func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, up
 
 	res := response{Transactions: make([]Transaction, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get transactions: %w, %w", err, errRes.Error())
 	}
