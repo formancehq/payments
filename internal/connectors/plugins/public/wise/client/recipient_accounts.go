@@ -13,13 +13,15 @@ type RecipientAccountsResponse struct {
 	Size                   int                 `json:"size"`
 }
 
+type Name struct {
+	FullName string `json:"fullName"`
+}
+
 type RecipientAccount struct {
 	ID       uint64 `json:"id"`
 	Profile  uint64 `json:"profileId"`
 	Currency string `json:"currency"`
-	Name     struct {
-		FullName string `json:"fullName"`
-	} `json:"name"`
+	Name     Name   `json:"name"`
 }
 
 func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pageSize int, seekPositionForNext uint64) (*RecipientAccountsResponse, error) {

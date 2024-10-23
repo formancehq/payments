@@ -2,8 +2,9 @@ package wise
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"math/big"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
@@ -16,64 +17,176 @@ import (
 var _ = Describe("Wise Plugin Payments", func() {
 	var (
 		plg *Plugin
-		m   *client.MockClient
 	)
 
 	BeforeEach(func() {
 		plg = &Plugin{}
-
-		ctrl := gomock.NewController(GinkgoT())
-		m = client.NewMockClient(ctrl)
-		plg.SetClient(m)
 	})
 
-	Context("fetch next payments", func() {
+	Context("fetching next accounts", func() {
 		var (
-			transfers         []client.Transfer
-			expectedProfileID uint64
+			m               *client.MockClient
+			sampleTransfers []client.Transfer
+			now             time.Time
 		)
 
 		BeforeEach(func() {
-			expectedProfileID = 111
-			transfers = []client.Transfer{
-				{ID: 1, Reference: "ref1", TargetValue: json.Number("25"), TargetCurrency: "EUR"},
-				{ID: 2, Reference: "ref2", TargetValue: json.Number("44"), TargetCurrency: "DKK"},
-				{ID: 3, Reference: "ref2", TargetValue: json.Number("61"), TargetCurrency: "EEK"}, // skipped due to unsupported currency
-				{ID: 4, Reference: "ref2", TargetValue: json.Number("95"), TargetCurrency: "CAD"},
+			ctrl := gomock.NewController(GinkgoT())
+			m = client.NewMockClient(ctrl)
+			plg.client = m
+			now = time.Now().UTC()
+
+			sampleTransfers = make([]client.Transfer, 0)
+			for i := 0; i < 50; i++ {
+				sampleTransfers = append(sampleTransfers, client.Transfer{
+					ID:                   uint64(i),
+					Reference:            fmt.Sprintf("test%d", i),
+					Status:               "outgoing_payment_sent",
+					SourceAccount:        1,
+					SourceCurrency:       "USD",
+					SourceValue:          "100",
+					TargetAccount:        2,
+					TargetCurrency:       "USD",
+					TargetValue:          "100",
+					User:                 1,
+					SourceBalanceID:      123,
+					DestinationBalanceID: 321,
+					CreatedAt:            now.Add(-time.Duration(50-i) * time.Minute).UTC(),
+				})
 			}
 		})
 
-		It("fetches payments from wise", func(ctx SpecContext) {
+		It("should return an error - missing from payload", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
-				State:       json.RawMessage(`{}`),
-				FromPayload: json.RawMessage(fmt.Sprintf(`{"ID":%d}`, expectedProfileID)),
-				PageSize:    len(transfers),
+				PageSize: 60,
 			}
-			m.EXPECT().GetTransfers(ctx, expectedProfileID, 0, req.PageSize).Return(
-				transfers,
-				nil,
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("missing from payload in request"))
+			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+		})
+
+		It("should return an error - get transactions error", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
+				[]client.Transfer{},
+				errors.New("test error"),
 			)
-			m.EXPECT().GetTransfers(ctx, expectedProfileID, 4, req.PageSize).Return(
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+		})
+
+		It("should fetch next payments - no state no results", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
 				[]client.Transfer{},
 				nil,
 			)
 
-			res, err := plg.FetchNextPayments(ctx, req)
+			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.HasMore).To(BeFalse())
-			Expect(res.Payments).To(HaveLen(req.PageSize - 1))
-			Expect(res.Payments[0].Reference).To(Equal(fmt.Sprint(transfers[0].ID)))
-			expectedAmount, err := transfers[0].TargetValue.Int64()
-			Expect(err).To(BeNil())
-			Expect(res.Payments[0].Amount).To(Equal(big.NewInt(expectedAmount * 100))) // after conversion to minors
-			Expect(res.Payments[1].Reference).To(Equal(fmt.Sprint(transfers[1].ID)))
-			Expect(res.Payments[2].Reference).To(Equal(fmt.Sprint(transfers[3].ID)))
+			Expect(resp.Payments).To(HaveLen(0))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
 
 			var state paymentsState
-
-			err = json.Unmarshal(res.NewState, &state)
+			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(fmt.Sprint(state.Offset)).To(Equal(res.Payments[len(res.Payments)-1].Reference))
+			// We fetched everything, state should be resetted
+			Expect(state.Offset).To(Equal(0))
+			Expect(state.LastTransferID).To(Equal(uint64(0)))
+		})
+
+		It("should fetch next payments - no state pageSize > total payments", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    60,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
+				sampleTransfers,
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(50))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// Offset should not be increased as we did not attain the pageSize
+			Expect(state.Offset).To(Equal(0))
+			Expect(state.LastTransferID).To(Equal(uint64(49)))
+		})
+
+		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				PageSize:    40,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 40).Return(
+				sampleTransfers[:40],
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(40))
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We attain the pageSize, offset should be increased
+			Expect(state.Offset).To(Equal(40))
+			Expect(state.LastTransferID).To(Equal(uint64(39)))
+		})
+
+		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:       []byte(`{"offset": 0, "lastTransferID": 38}`),
+				PageSize:    40,
+				FromPayload: []byte(`{"id": 0}`),
+			}
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 40).Return(
+				sampleTransfers[:40],
+				nil,
+			)
+
+			m.EXPECT().GetTransfers(ctx, uint64(0), 40, 40).Return(
+				sampleTransfers[40:],
+				nil,
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(11))
+			Expect(resp.HasMore).To(BeFalse())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.Offset).To(Equal(40))
+			Expect(state.LastTransferID).To(Equal(uint64(49)))
 		})
 	})
 })
