@@ -15,7 +15,7 @@ func TestPlugin(t *testing.T) {
 	RunSpecs(t, "Mangopay Plugin Suite")
 }
 
-var _ = Describe("Modulr Plugin", func() {
+var _ = Describe("Mangopay Plugin", func() {
 	var (
 		plg *Plugin
 	)
