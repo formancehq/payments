@@ -33,7 +33,7 @@ func (c *client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, 
 	req.URL.RawQuery = q.Encode()
 
 	var users []User
-	statusCode, err := c.httpClient.Do(req, &users, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &users, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get user response: %w", err), statusCode)
 	}

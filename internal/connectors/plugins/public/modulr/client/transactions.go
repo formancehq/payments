@@ -44,7 +44,7 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 
 	var res responseWrapper[[]Transaction]
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}

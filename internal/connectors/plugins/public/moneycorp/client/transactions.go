@@ -98,7 +98,7 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 
 	transactions := transactionsResponse{Transactions: make([]*Transaction, 0)}
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &transactions, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &transactions, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}

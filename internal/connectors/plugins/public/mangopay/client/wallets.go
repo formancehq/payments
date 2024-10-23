@@ -42,7 +42,7 @@ func (c *client) GetWallets(ctx context.Context, userID string, page, pageSize i
 
 	var wallets []Wallet
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, &wallets, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &wallets, &errRes)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
 	}
@@ -63,7 +63,7 @@ func (c *client) GetWallet(ctx context.Context, walletID string) (*Wallet, error
 
 	var wallet Wallet
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, &wallet, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &wallet, &errRes)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallet: %w %w", err, errRes.Error()), statusCode)
 	}

@@ -82,7 +82,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 
 	var res payoutResponse
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
 	}
