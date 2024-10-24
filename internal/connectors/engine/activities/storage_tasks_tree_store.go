@@ -13,7 +13,7 @@ type TasksTreeStoreRequest struct {
 }
 
 func (a Activities) StorageTasksTreeStore(ctx context.Context, request TasksTreeStoreRequest) error {
-	return a.storage.TasksUpsert(ctx, request.ConnectorID, request.Workflow)
+	return temporalStorageError(a.storage.TasksUpsert(ctx, request.ConnectorID, request.Workflow))
 }
 
 var StorageTasksTreeStoreActivity = Activities{}.StorageTasksTreeStore

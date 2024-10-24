@@ -1,6 +1,9 @@
 package activities
 
 import (
+	"errors"
+
+	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/temporal"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/codes"
@@ -8,6 +11,7 @@ import (
 )
 
 const (
+	ErrTypeStorage            = "STORAGE"
 	ErrTypeDefault            = "DEFAULT"
 	ErrTypeFailedPrecondition = "FAILED_PRECONDITON"
 	ErrTypeInvalidArgument    = "INVALID_ARGUMENT"
@@ -24,7 +28,7 @@ var nonRetryableErrorTypes = map[codes.Code]string{
 	codes.Unauthenticated:    ErrTypeUnauthenticated,
 }
 
-func temporalError(err error) error {
+func temporalPluginError(err error) error {
 	var reason string
 
 	code := status.Code(err)
@@ -46,4 +50,20 @@ func temporalError(err error) error {
 		return temporal.NewApplicationErrorWithCause(reason, ErrTypeDefault, err)
 	}
 	return temporal.NewNonRetryableApplicationError(reason, errorType, err)
+}
+
+func temporalStorageError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, storage.ErrNotFound),
+		errors.Is(err, storage.ErrDuplicateKeyValue),
+		errors.Is(err, storage.ErrValidation):
+		// Do not retry these errors
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeStorage, err)
+	default:
+		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeStorage, err)
+	}
 }

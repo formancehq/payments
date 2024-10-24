@@ -15,12 +15,12 @@ type CreateBankAccountRequest struct {
 func (a Activities) PluginCreateBankAccount(ctx context.Context, request CreateBankAccountRequest) (*models.CreateBankAccountResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 
 	resp, err := plugin.CreateBankAccount(ctx, request.Req)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 	return &resp, nil
 }

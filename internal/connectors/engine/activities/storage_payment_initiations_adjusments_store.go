@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StoragePaymentInitiationsAdjustmentsStore(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
-	return a.storage.PaymentInitiationAdjustmentsUpsert(ctx, adj)
+	return temporalStorageError(a.storage.PaymentInitiationAdjustmentsUpsert(ctx, adj))
 }
 
 var StoragePaymentInitiationsAdjustmentsStoreActivity = Activities{}.StoragePaymentInitiationsAdjustmentsStore

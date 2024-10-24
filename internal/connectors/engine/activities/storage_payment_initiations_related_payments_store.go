@@ -15,7 +15,7 @@ type RelatedPayment struct {
 }
 
 func (a Activities) StoragePaymentInitiationsRelatedPaymentsStore(ctx context.Context, relatedPayment RelatedPayment) error {
-	return a.storage.PaymentInitiationRelatedPaymentsUpsert(ctx, relatedPayment.PiID, relatedPayment.PID, relatedPayment.CreatedAt)
+	return temporalStorageError(a.storage.PaymentInitiationRelatedPaymentsUpsert(ctx, relatedPayment.PiID, relatedPayment.PID, relatedPayment.CreatedAt))
 }
 
 var StoragePaymentInitiationsRelatedPaymentsStoreActivity = Activities{}.StoragePaymentInitiationsRelatedPaymentsStore

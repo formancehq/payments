@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageAccountsStore(ctx context.Context, accounts []models.Account) error {
-	return a.storage.AccountsUpsert(ctx, accounts)
+	return temporalStorageError(a.storage.AccountsUpsert(ctx, accounts))
 }
 
 var StorageAccountsStoreActivity = Activities{}.StorageAccountsStore

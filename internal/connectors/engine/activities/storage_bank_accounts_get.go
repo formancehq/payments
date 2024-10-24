@@ -9,7 +9,11 @@ import (
 )
 
 func (a Activities) StorageBankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) (*models.BankAccount, error) {
-	return a.storage.BankAccountsGet(ctx, id, expand)
+	ba, err := a.storage.BankAccountsGet(ctx, id, expand)
+	if err != nil {
+		return nil, temporalStorageError(err)
+	}
+	return ba, nil
 }
 
 var StorageBankAccountsGetActivity = Activities{}.StorageBankAccountsGet

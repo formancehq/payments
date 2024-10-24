@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageInstancesDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return a.storage.InstancesDeleteFromConnectorID(ctx, connectorID)
+	return temporalStorageError(a.storage.InstancesDeleteFromConnectorID(ctx, connectorID))
 }
 
 var StorageInstancesDeleteActivity = Activities{}.StorageInstancesDelete

@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageWebhooksStore(ctx context.Context, webhook models.Webhook) error {
-	return a.storage.WebhooksInsert(ctx, webhook)
+	return temporalStorageError(a.storage.WebhooksInsert(ctx, webhook))
 }
 
 var StorageWebhooksStoreActivity = Activities{}.StorageWebhooksStore
