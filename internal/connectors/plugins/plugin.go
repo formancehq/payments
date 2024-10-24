@@ -17,7 +17,6 @@ import (
 	"go.uber.org/fx"
 )
 
-// TODO(polo): metrics
 func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          fmt.Sprintf("serve %s plugin", name),
