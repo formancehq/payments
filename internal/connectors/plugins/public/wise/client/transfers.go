@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Transfer struct {
@@ -60,10 +62,7 @@ func (t *Transfer) UnmarshalJSON(data []byte) error {
 }
 
 func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "list_transfers")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transfers")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers"), http.NoBody)
@@ -157,10 +156,7 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 }
 
 func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "get_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers/"+transferID), http.NoBody)
