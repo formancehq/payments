@@ -123,6 +123,33 @@ func TestConnectorsUninstall(t *testing.T) {
 	})
 }
 
+func TestConnectorsScheduleForDeletion(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+
+	t.Run("schedule for deletion of unknown connector", func(t *testing.T) {
+		id := models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}
+
+		require.NoError(t, store.ConnectorsScheduleForDeletion(ctx, id))
+	})
+
+	t.Run("schedule for deletion of default connector", func(t *testing.T) {
+		require.NoError(t, store.ConnectorsScheduleForDeletion(ctx, defaultConnector.ID))
+
+		connector, err := store.ConnectorsGet(ctx, defaultConnector.ID)
+		require.NoError(t, err)
+		require.NotNil(t, connector)
+		require.True(t, connector.ScheduledForDeletion)
+	})
+}
+
 func TestConnectorsGet(t *testing.T) {
 	t.Parallel()
 

@@ -17,7 +17,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(pluginPath map[string]string, stack, stackURL string, debug, jsonFormatter bool) fx.Option {
+func Module(pluginPath map[string]string, stack, stackURL, temporalNamespace string, debug, jsonFormatter bool) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{}),
 		fx.Provide(func(
@@ -39,7 +39,7 @@ func Module(pluginPath map[string]string, stack, stackURL string, debug, jsonFor
 			return webhooks.New()
 		}),
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks) workflow.Workflow {
-			return workflow.New(temporalClient, plugins, webhooks, stack, stackURL)
+			return workflow.New(temporalClient, temporalNamespace, plugins, webhooks, stack, stackURL)
 		}),
 		fx.Provide(func(storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
 			return activities.New(storage, events, plugins)

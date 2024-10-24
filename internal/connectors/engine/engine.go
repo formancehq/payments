@@ -163,11 +163,20 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 }
 
 func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error {
-	run, err := e.temporalClient.ExecuteWorkflow(
+	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
+		return err
+	}
+
+	if err := e.storage.ConnectorsScheduleForDeletion(ctx, connectorID); err != nil {
+		return err
+	}
+
+	// Launch the uninstallation in background
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("uninstall-%s", connectorID.String()),
-			TaskQueue:                                connectorID.String(),
+			TaskQueue:                                defaultWorkerName,
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -176,24 +185,12 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		},
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
-			ConnectorID: connectorID,
+			ConnectorID:       connectorID,
+			DefaultWorkerName: defaultWorkerName,
 		},
 	)
 	if err != nil {
 		return err
-	}
-
-	// Wait for uninstallation to complete
-	if err := run.Get(ctx, nil); err != nil {
-		return err
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		return err
-	}
-
-	if err := e.plugins.UnregisterPlugin(connectorID); err != nil {
-		return handlePluginError(err)
 	}
 
 	return nil

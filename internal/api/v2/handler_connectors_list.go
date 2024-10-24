@@ -14,10 +14,11 @@ import (
 // NOTE: in order to maintain previous version compatibility, we need to keep the
 // same response structure as the previous version of the API
 type connectorsListElement struct {
-	Provider    string `json:"provider"`
-	ConnectorID string `json:"connectorID"`
-	Name        string `json:"name"`
-	Enabled     bool   `json:"enabled"`
+	Provider             string `json:"provider"`
+	ConnectorID          string `json:"connectorID"`
+	Name                 string `json:"name"`
+	Enabled              bool   `json:"enabled"`
+	ScheduledForDeletion bool   `json:"scheduledForDeletion"`
 }
 
 func connectorsList(backend backend.Backend) http.HandlerFunc {
@@ -43,10 +44,11 @@ func connectorsList(backend backend.Backend) http.HandlerFunc {
 		data := make([]*connectorsListElement, len(connectors.Data))
 		for i := range connectors.Data {
 			data[i] = &connectorsListElement{
-				Provider:    connectors.Data[i].Provider,
-				ConnectorID: connectors.Data[i].ID.String(),
-				Name:        connectors.Data[i].Name,
-				Enabled:     true,
+				Provider:             connectors.Data[i].Provider,
+				ConnectorID:          connectors.Data[i].ID.String(),
+				Name:                 connectors.Data[i].Name,
+				ScheduledForDeletion: connectors.Data[i].ScheduledForDeletion,
+				Enabled:              true,
 			}
 		}
 
