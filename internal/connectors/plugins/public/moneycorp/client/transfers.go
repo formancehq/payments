@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type transferRequest struct {
@@ -50,10 +52,7 @@ type TransferResponse struct {
 }
 
 func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
-	// TODO(polo, crimson): metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "initiate_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
 	endpoint := fmt.Sprintf("%s/accounts/%s/transfers", c.endpoint, tr.SourceAccountID)
 
@@ -82,10 +81,7 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 }
 
 func (c *client) GetTransfer(ctx context.Context, accountID string, transferID string) (*TransferResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "get_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
 
 	endpoint := fmt.Sprintf("%s/accounts/%s/transfers/%s", c.endpoint, accountID, transferID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

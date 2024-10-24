@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type balancesResponse struct {
@@ -26,6 +28,8 @@ type Attributes struct {
 }
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_account_balances")
+
 	endpoint := fmt.Sprintf("%s/accounts/%s/balances", c.endpoint, accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
