@@ -107,6 +107,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
 	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
+	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 
 	return fx.Options(
 		fx.Provide(func() *bunconnect.ConnectionOptions {
@@ -132,7 +133,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
-		engine.Module(pluginPaths, stack, stackPublicURL, debug, jsonFormatter),
+		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
 	), nil

@@ -303,6 +303,20 @@ func (mr *MockStorageMockRecorder) ConnectorsList(ctx, q any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsList", reflect.TypeOf((*MockStorage)(nil).ConnectorsList), ctx, q)
 }
 
+// ConnectorsScheduleForDeletion mocks base method.
+func (m *MockStorage) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsScheduleForDeletion", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConnectorsScheduleForDeletion indicates an expected call of ConnectorsScheduleForDeletion.
+func (mr *MockStorageMockRecorder) ConnectorsScheduleForDeletion(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsScheduleForDeletion", reflect.TypeOf((*MockStorage)(nil).ConnectorsScheduleForDeletion), ctx, id)
+}
+
 // ConnectorsUninstall mocks base method.
 func (m *MockStorage) ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error {
 	m.ctrl.T.Helper()
