@@ -27,6 +27,6 @@ func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.NoContent(w)
+		api.Accepted(w, connectorID.String())
 	}
 }

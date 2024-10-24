@@ -7,6 +7,7 @@ create table if not exists connectors (
     name       text not null,
     created_at timestamp without time zone not null,
     provider   text not null,
+    scheduled_for_deletion boolean not null default false,
 
     -- Optional fields
     config bytea,
