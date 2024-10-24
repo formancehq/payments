@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageConnectorsStore(ctx context.Context, connector models.Connector) error {
-	return a.storage.ConnectorsInstall(ctx, connector)
+	return temporalStorageError(a.storage.ConnectorsInstall(ctx, connector))
 }
 
 var StorageConnectorsStoreActivity = Activities{}.StorageConnectorsStore

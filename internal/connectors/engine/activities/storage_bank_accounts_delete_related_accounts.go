@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageBankAccountsDeleteRelatedAccounts(ctx context.Context, connectorID models.ConnectorID) error {
-	return a.storage.BankAccountsDeleteRelatedAccountFromConnectorID(ctx, connectorID)
+	return temporalStorageError(a.storage.BankAccountsDeleteRelatedAccountFromConnectorID(ctx, connectorID))
 }
 
 var StorageBankAccountsDeleteRelatedAccountsActivity = Activities{}.StorageBankAccountsDeleteRelatedAccounts

@@ -8,7 +8,11 @@ import (
 )
 
 func (a Activities) StorageAccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
-	return a.storage.AccountsGet(ctx, id)
+	account, err := a.storage.AccountsGet(ctx, id)
+	if err != nil {
+		return nil, temporalStorageError(err)
+	}
+	return account, nil
 }
 
 var StorageAccountsGetActivity = Activities{}.StorageAccountsGet

@@ -8,7 +8,11 @@ import (
 )
 
 func (a Activities) StoragePaymentInitiationsGet(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiation, error) {
-	return a.storage.PaymentInitiationsGet(ctx, id)
+	pi, err := a.storage.PaymentInitiationsGet(ctx, id)
+	if err != nil {
+		return nil, temporalStorageError(err)
+	}
+	return pi, nil
 }
 
 var StoragePaymentInitiationsGetActivity = Activities{}.StoragePaymentInitiationsGet

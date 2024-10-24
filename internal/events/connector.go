@@ -1,6 +1,7 @@
 package events
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/publish"
@@ -13,16 +14,20 @@ type connectorMessagePayload struct {
 	ConnectorID string    `json:"connectorId"`
 }
 
-func (e Events) NewEventResetConnector(connectorID models.ConnectorID) publish.EventMessage {
+func (e Events) NewEventResetConnector(connectorID models.ConnectorID, at time.Time) publish.EventMessage {
 	return publish.EventMessage{
-		IdempotencyKey: connectorID.String(),
+		IdempotencyKey: resetConnectorIdempotencyKey(connectorID, at),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeConnectorReset,
 		Payload: connectorMessagePayload{
-			CreatedAt:   time.Now().UTC(),
+			CreatedAt:   at,
 			ConnectorID: connectorID.String(),
 		},
 	}
+}
+
+func resetConnectorIdempotencyKey(connectorID models.ConnectorID, at time.Time) string {
+	return fmt.Sprintf("%s-%s", connectorID.String(), at.Format(time.RFC3339Nano))
 }
