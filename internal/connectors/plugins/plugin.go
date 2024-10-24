@@ -14,7 +14,6 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/noop"
 	"go.uber.org/fx"
 )
 
@@ -41,19 +40,25 @@ func runServer(
 		hlogger := hclog.New(loggerOptions())
 		hclog.SetDefault(hlogger)
 
-		opts := fx.Options(
+		opts := make([]fx.Option, 0)
+		opts = append(opts,
 			otlp.FXModuleFromFlags(cmd),
-			fx.Provide(fx.Annotate(noop.NewMeterProvider, fx.As(new(metric.MeterProvider)))),
+			otlpmetrics.FXModuleFromFlags(cmd),
 			fx.Decorate(fx.Annotate(func(meterProvider metric.MeterProvider) (metrics.MetricsRegistry, error) {
+				hlogger.Info("decorate metrics registery called")
 				return metrics.RegisterMetricsRegistry(meterProvider)
 			})),
 			fx.Provide(metrics.RegisterMetricsRegistry),
+			fx.Invoke(func(metrics.MetricsRegistry) {}),
+		)
+
+		opts = append(opts,
 			fx.Provide(pluginConstructorFn, func() hclog.Logger { return hlogger }, NewServer),
 			fx.Invoke(func(Server) {}),
 		)
 
 		logger := logging.NewHcLogLoggerAdapter(hlogger, nil)
-		return service.NewWithLogger(logger, opts).Run(cmd)
+		return service.NewWithLogger(logger, fx.Options(opts...)).Run(cmd)
 	}
 }
 
