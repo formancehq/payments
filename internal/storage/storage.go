@@ -40,6 +40,7 @@ type Storage interface {
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
 	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
+	ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error
 
 	// Events Sent
 	EventsSentUpsert(ctx context.Context, event models.EventSent) error

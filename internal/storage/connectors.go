@@ -18,10 +18,11 @@ type connector struct {
 	bun.BaseModel `bun:"table:connectors"`
 
 	// Mandatory fields
-	ID        models.ConnectorID `bun:"id,pk,type:character varying,notnull"`
-	Name      string             `bun:"name,type:text,notnull"`
-	CreatedAt time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
-	Provider  string             `bun:"provider,type:text,notnull"`
+	ID                   models.ConnectorID `bun:"id,pk,type:character varying,notnull"`
+	Name                 string             `bun:"name,type:text,notnull"`
+	CreatedAt            time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+	Provider             string             `bun:"provider,type:text,notnull"`
+	ScheduledForDeletion bool               `bun:"scheduled_for_deletion,type:boolean,notnull"`
 
 	// EncryptedConfig is a PGP-encrypted JSON string.
 	EncryptedConfig string `bun:"config,type:bytea,notnull"`
@@ -38,10 +39,11 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 	defer tx.Rollback()
 
 	toInsert := connector{
-		ID:        c.ID,
-		Name:      c.Name,
-		CreatedAt: time.New(c.CreatedAt),
-		Provider:  c.Provider,
+		ID:                   c.ID,
+		Name:                 c.Name,
+		CreatedAt:            time.New(c.CreatedAt),
+		Provider:             c.Provider,
+		ScheduledForDeletion: false,
 	}
 
 	_, err = tx.NewInsert().
@@ -64,7 +66,15 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 	return e("failed to commit transaction", tx.Commit())
 }
 
-// TODO(polo): find a better way to delete all data
+func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
+	_, err := s.db.NewUpdate().
+		Model((*connector)(nil)).
+		Set("scheduled_for_deletion = ?", true).
+		Where("id = ?", id).
+		Exec(ctx)
+	return e("failed to schedule connector for deletion", err)
+}
+
 func (s *store) ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*connector)(nil)).
@@ -86,11 +96,12 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 	}
 
 	return &models.Connector{
-		ID:        connector.ID,
-		Name:      connector.Name,
-		CreatedAt: connector.CreatedAt.Time,
-		Provider:  connector.Provider,
-		Config:    connector.DecryptedConfig,
+		ID:                   connector.ID,
+		Name:                 connector.Name,
+		CreatedAt:            connector.CreatedAt.Time,
+		Provider:             connector.Provider,
+		Config:               connector.DecryptedConfig,
+		ScheduledForDeletion: connector.ScheduledForDeletion,
 	}, nil
 }
 
@@ -153,11 +164,12 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 	connectors := make([]models.Connector, 0, len(cursor.Data))
 	for _, c := range cursor.Data {
 		connectors = append(connectors, models.Connector{
-			ID:        c.ID,
-			Name:      c.Name,
-			CreatedAt: c.CreatedAt.Time,
-			Provider:  c.Provider,
-			Config:    c.DecryptedConfig,
+			ID:                   c.ID,
+			Name:                 c.Name,
+			CreatedAt:            c.CreatedAt.Time,
+			Provider:             c.Provider,
+			Config:               c.DecryptedConfig,
+			ScheduledForDeletion: c.ScheduledForDeletion,
 		})
 	}
 
