@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-hclog"
@@ -85,12 +86,13 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		loggerOptions.JSONFormat = true
 	}
 
+	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
-		Cmd:              exec.Command(pluginPath, strings.Join(p.rawFlags, " ")),
+		Cmd:              pluginCmd(pluginPath, p.rawFlags, logger),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Logger:           hclog.New(loggerOptions),
+		Logger:           logger,
 	})
 
 	p.plugins[connectorID.String()] = pluginInformation{
@@ -152,6 +154,23 @@ func getPlugin(client *plugin.Client) (models.Plugin, error) {
 	}
 
 	return impl, nil
+}
+
+func pluginCmd(pluginPath string, rawFlags []string, logger hclog.Logger) *exec.Cmd {
+	flags := make([]string, 0)
+	for _, flag := range rawFlags {
+		if strings.Contains(flag, otlpmetrics.OtelMetricsExporterOTLPModeFlag) ||
+			strings.Contains(flag, otlpmetrics.OtelMetricsExporterFlag) {
+			logger.Debug("overriding plugin flag", "flagname", flag)
+			continue
+		}
+		flags = append(flags, flag)
+	}
+	// default settings for metrics interfere with go-plugin so we set grpc mode explictly
+	flags = append(flags, fmt.Sprintf("--%s=otlp", otlpmetrics.OtelMetricsExporterFlag))
+	flags = append(flags, fmt.Sprintf("--%s=grpc", otlpmetrics.OtelMetricsExporterOTLPModeFlag))
+
+	return exec.Command(pluginPath, flags...)
 }
 
 var _ Plugins = &plugins{}
