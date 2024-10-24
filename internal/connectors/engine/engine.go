@@ -249,10 +249,15 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
-	run, err := e.temporalClient.ExecuteWorkflow(
+	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
+		return err
+	}
+
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-account-%s-%s", account.ConnectorID.String(), account.Reference),
+			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s", account.ConnectorID.String(), account.Reference),
 			TaskQueue:                                account.ConnectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -260,17 +265,12 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 				workflow.SearchAttributeStack: e.stack,
 			},
 		},
-		workflow.RunCreateFormanceAccount,
-		workflow.CreateFormanceAccount{
-			Account: account,
+		workflow.RunSendEvents,
+		workflow.SendEvents{
+			Account: &account,
 		},
 	)
 	if err != nil {
-		return err
-	}
-
-	// Wait for bank account creation to complete
-	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -278,10 +278,15 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 }
 
 func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payment) error {
-	run, err := e.temporalClient.ExecuteWorkflow(
+	if err := e.storage.PaymentsUpsert(ctx, []models.Payment{payment}); err != nil {
+		return err
+	}
+
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-payment-%s-%s", payment.ConnectorID.String(), payment.Reference),
+			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s", payment.ConnectorID.String(), payment.Reference),
 			TaskQueue:                                payment.ConnectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -289,17 +294,12 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 				workflow.SearchAttributeStack: e.stack,
 			},
 		},
-		workflow.RunCreateFormancePayment,
-		workflow.CreateFormancePayment{
-			Payment: payment,
+		workflow.RunSendEvents,
+		workflow.SendEvents{
+			Payment: &payment,
 		},
 	)
 	if err != nil {
-		return err
-	}
-
-	// Wait for bank account creation to complete
-	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -452,13 +452,8 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		return err
 	}
 
-	ctx, _ = contextutil.Detached(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
-	run, err := e.temporalClient.ExecuteWorkflow(
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-creation-%s", pool.IdempotencyKey()),
@@ -475,10 +470,6 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		},
 	)
 	if err != nil {
-		return err
-	}
-
-	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -501,7 +492,8 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		return err
 	}
 
-	run, err := e.temporalClient.ExecuteWorkflow(
+	// Do not wait for sending of events
+	_, err = e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s", pool.IdempotencyKey()),
@@ -518,10 +510,6 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		},
 	)
 	if err != nil {
-		return err
-	}
-
-	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -544,7 +532,8 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		return err
 	}
 
-	run, err := e.temporalClient.ExecuteWorkflow(
+	// Do not wait for sending of events
+	_, err = e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s", pool.IdempotencyKey()),
@@ -564,10 +553,6 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		return err
 	}
 
-	if err := run.Get(ctx, nil); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -575,13 +560,9 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	if err := e.storage.PoolsDelete(ctx, poolID); err != nil {
 		return err
 	}
-	ctx, _ = contextutil.Detached(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
 
-	run, err := e.temporalClient.ExecuteWorkflow(
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-deletion-%s", poolID.String()),
@@ -598,10 +579,6 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 		},
 	)
 	if err != nil {
-		return err
-	}
-
-	if err := run.Get(ctx, nil); err != nil {
 		return err
 	}
 
