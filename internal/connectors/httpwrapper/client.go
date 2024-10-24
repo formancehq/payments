@@ -17,6 +17,8 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const MetricOperationContextKey = "_metric_operation_context_key"
+
 var (
 	ErrStatusCodeUnexpected  = errors.New("unexpected status code")
 	ErrStatusCodeClientError = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
@@ -84,12 +86,12 @@ func NewClient(config *Config) (Client, error) {
 
 func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorBody any) (int, error) {
 	start := time.Now()
-	attrs := c.commonMetricsAttributes
-	attrs = append(attrs, attribute.String("endpoint", req.URL.Path))
+	attrs := c.metricsAttributes(ctx, req)
 	defer func() {
-		f := metrics.GetMetricsRegistry().ConnectorPSPCallLatencies().Record
+		registry := metrics.GetMetricsRegistry()
 		opts := metric.WithAttributes(attrs...)
-		f(ctx, time.Since(start).Milliseconds(), opts)
+		registry.ConnectorPSPCalls().Add(ctx, 1, opts)
+		registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
 	}()
 
 	resp, err := c.httpClient.Do(req)
@@ -129,4 +131,17 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 		return resp.StatusCode, fmt.Errorf("failed to unmarshal response with status %d: %w", resp.StatusCode, err)
 	}
 	return resp.StatusCode, nil
+}
+
+func (c *client) metricsAttributes(ctx context.Context, req *http.Request) []attribute.KeyValue {
+	attrs := c.commonMetricsAttributes
+	attrs = append(attrs, attribute.String("endpoint", req.URL.Path))
+
+	val := ctx.Value(MetricOperationContextKey)
+	if val != nil {
+		if name, ok := val.(string); ok {
+			attrs = append(attrs, attribute.String("name", name))
+		}
+	}
+	return attrs
 }
