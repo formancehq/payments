@@ -317,6 +317,64 @@ func (mr *MockStorageMockRecorder) ConnectorsUninstall(ctx, id any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsUninstall), ctx, id)
 }
 
+// EventsSentDeleteFromConnectorID mocks base method.
+func (m *MockStorage) EventsSentDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EventsSentDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EventsSentDeleteFromConnectorID indicates an expected call of EventsSentDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) EventsSentDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).EventsSentDeleteFromConnectorID), ctx, connectorID)
+}
+
+// EventsSentExists mocks base method.
+func (m *MockStorage) EventsSentExists(ctx context.Context, id models.EventID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EventsSentExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EventsSentExists indicates an expected call of EventsSentExists.
+func (mr *MockStorageMockRecorder) EventsSentExists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentExists", reflect.TypeOf((*MockStorage)(nil).EventsSentExists), ctx, id)
+}
+
+// EventsSentGet mocks base method.
+func (m *MockStorage) EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EventsSentGet", ctx, id)
+	ret0, _ := ret[0].(*models.EventSent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// EventsSentGet indicates an expected call of EventsSentGet.
+func (mr *MockStorageMockRecorder) EventsSentGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentGet", reflect.TypeOf((*MockStorage)(nil).EventsSentGet), ctx, id)
+}
+
+// EventsSentUpsert mocks base method.
+func (m *MockStorage) EventsSentUpsert(ctx context.Context, event models.EventSent) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "EventsSentUpsert", ctx, event)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// EventsSentUpsert indicates an expected call of EventsSentUpsert.
+func (mr *MockStorageMockRecorder) EventsSentUpsert(ctx, event any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EventsSentUpsert", reflect.TypeOf((*MockStorage)(nil).EventsSentUpsert), ctx, event)
+}
+
 // InstancesDeleteFromConnectorID mocks base method.
 func (m *MockStorage) InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()

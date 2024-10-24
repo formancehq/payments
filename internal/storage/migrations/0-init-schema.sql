@@ -360,3 +360,20 @@ alter table payment_initiation_adjustments
     add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
     on delete cascade;
+
+-- Events sent
+create table if not exists events_sent (
+    -- Mandatory fields
+    id           varchar not null,
+    sent_at      timestamp without time zone not null,
+
+    -- Optional fields
+    connector_id varchar,
+
+    -- Primary key
+    primary key (id)
+);
+alter table events_sent
+    add constraint events_sent_connector_id_fk foreign key (connector_id)
+    references connectors (id)
+    on delete cascade;

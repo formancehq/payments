@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageWebhooksDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return a.storage.WebhooksDeleteFromConnectorID(ctx, connectorID)
+	return temporalStorageError(a.storage.WebhooksDeleteFromConnectorID(ctx, connectorID))
 }
 
 var StorageWebhooksDeleteActivity = Activities{}.StorageWebhooksDelete

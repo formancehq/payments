@@ -8,7 +8,11 @@ import (
 )
 
 func (a Activities) StoragePaymentInitiationIDsListFromPaymentID(ctx context.Context, paymentID models.PaymentID) ([]models.PaymentInitiationID, error) {
-	return a.storage.PaymentInitiationIDsListFromPaymentID(ctx, paymentID)
+	cursor, err := a.storage.PaymentInitiationIDsListFromPaymentID(ctx, paymentID)
+	if err != nil {
+		return nil, temporalStorageError(err)
+	}
+	return cursor, nil
 }
 
 var StoragePaymentInitiationIDsListFromPaymentIDActivity = Activities{}.StoragePaymentInitiationIDsListFromPaymentID

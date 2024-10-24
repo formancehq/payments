@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageBankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error {
-	return a.storage.BankAccountsAddRelatedAccount(ctx, relatedAccount)
+	return temporalStorageError(a.storage.BankAccountsAddRelatedAccount(ctx, relatedAccount))
 }
 
 var StorageBankAccountsAddRelatedAccountActivity = Activities{}.StorageBankAccountsAddRelatedAccount

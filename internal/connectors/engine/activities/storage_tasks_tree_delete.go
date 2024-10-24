@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageTasksTreeDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return a.storage.TasksDeleteFromConnectorID(ctx, connectorID)
+	return temporalStorageError(a.storage.TasksDeleteFromConnectorID(ctx, connectorID))
 }
 
 var StorageTasksTreeDeleteActivity = Activities{}.StorageTasksTreeDelete

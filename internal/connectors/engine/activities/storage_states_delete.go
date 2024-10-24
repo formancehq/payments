@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageStatesDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return a.storage.StatesDeleteFromConnectorID(ctx, connectorID)
+	return temporalStorageError(a.storage.StatesDeleteFromConnectorID(ctx, connectorID))
 }
 
 var StorageStatesDeleteActivity = Activities{}.StorageStatesDelete
