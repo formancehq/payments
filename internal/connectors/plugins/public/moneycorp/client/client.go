@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -29,7 +30,11 @@ type client struct {
 
 func New(clientID, apiKey, endpoint string) (*client, error) {
 	metricsAttributes := []attribute.KeyValue{
-		attribute.String("psp", "moneycorp"),
+		attribute.String("connector", "moneycorp"),
+	}
+	stack := os.Getenv("STACK")
+	if stack != "" {
+		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
 	}
 	config := &httpwrapper.Config{
 		CommonMetricsAttributes: metricsAttributes,
