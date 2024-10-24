@@ -15,12 +15,12 @@ type CreateTransferRequest struct {
 func (a Activities) PluginCreateTransfer(ctx context.Context, request CreateTransferRequest) (*models.CreateTransferResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 
 	resp, err := plugin.CreateTransfer(ctx, request.Req)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 	return &resp, nil
 }

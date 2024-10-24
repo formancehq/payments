@@ -19,6 +19,7 @@ func (a Activities) StorageStatesGet(ctx context.Context, id models.StateID) (*m
 				State:       nil,
 			}, nil
 		}
+		return nil, temporalStorageError(err)
 	}
 	return &resp, nil
 }

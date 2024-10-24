@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageSchedulesStore(ctx context.Context, schedule models.Schedule) error {
-	return a.storage.SchedulesUpsert(ctx, schedule)
+	return temporalStorageError(a.storage.SchedulesUpsert(ctx, schedule))
 }
 
 var StorageSchedulesStoreActivity = Activities{}.StorageSchedulesStore

@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageBalancesStore(ctx context.Context, balances []models.Balance) error {
-	return a.storage.BalancesUpsert(ctx, balances)
+	return temporalStorageError(a.storage.BalancesUpsert(ctx, balances))
 }
 
 var StorageBalancesStoreActivity = Activities{}.StorageBalancesStore

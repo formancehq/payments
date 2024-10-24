@@ -1,11 +1,16 @@
 package workflow
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
+
+type sendEventActivityFunction func(ctx workflow.Context) error
 
 type SendEvents struct {
 	Account        *models.Account
@@ -22,9 +27,16 @@ func (w Workflow) runSendEvents(
 	sendEvents SendEvents,
 ) error {
 	if sendEvents.Account != nil {
-		err := activities.EventsSendAccount(
-			infiniteRetryContext(ctx),
-			*sendEvents.Account,
+		err := sendEvent(
+			ctx,
+			sendEvents.Account.IdempotencyKey(),
+			&sendEvents.Account.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendAccount(
+					infiniteRetryContext(ctx),
+					*sendEvents.Account,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -32,9 +44,16 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.Balance != nil {
-		err := activities.EventsSendBalance(
-			infiniteRetryContext(ctx),
-			*sendEvents.Balance,
+		err := sendEvent(
+			ctx,
+			sendEvents.Balance.IdempotencyKey(),
+			&sendEvents.Balance.AccountID.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendBalance(
+					infiniteRetryContext(ctx),
+					*sendEvents.Balance,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -42,9 +61,16 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.BankAccount != nil {
-		err := activities.EventsSendBankAccount(
-			infiniteRetryContext(ctx),
-			*sendEvents.BankAccount,
+		err := sendEvent(
+			ctx,
+			sendEvents.BankAccount.IdempotencyKey(),
+			nil,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendBankAccount(
+					infiniteRetryContext(ctx),
+					*sendEvents.BankAccount,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -53,10 +79,17 @@ func (w Workflow) runSendEvents(
 
 	if sendEvents.Payment != nil {
 		for _, adjustment := range sendEvents.Payment.Adjustments {
-			err := activities.EventsSendPayment(
-				infiniteRetryContext(ctx),
-				*sendEvents.Payment,
-				adjustment,
+			err := sendEvent(
+				ctx,
+				adjustment.IdempotencyKey(),
+				&sendEvents.Payment.ConnectorID,
+				func(ctx workflow.Context) error {
+					return activities.EventsSendPayment(
+						infiniteRetryContext(ctx),
+						*sendEvents.Payment,
+						adjustment,
+					)
+				},
 			)
 			if err != nil {
 				return err
@@ -65,9 +98,18 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.ConnectorReset != nil {
-		err := activities.EventsSendConnectorReset(
-			infiniteRetryContext(ctx),
-			*sendEvents.ConnectorReset,
+		now := workflow.Now(ctx).UTC()
+		err := sendEvent(
+			ctx,
+			fmt.Sprintf("%s-%s", sendEvents.ConnectorReset.String(), now.Format(time.RFC3339Nano)),
+			sendEvents.ConnectorReset,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendConnectorReset(
+					infiniteRetryContext(ctx),
+					*sendEvents.ConnectorReset,
+					now,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -75,9 +117,16 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.PoolsCreation != nil {
-		err := activities.EventsSendPoolCreation(
-			infiniteRetryContext(ctx),
-			*sendEvents.PoolsCreation,
+		err := sendEvent(
+			ctx,
+			sendEvents.PoolsCreation.IdempotencyKey(),
+			nil,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPoolCreation(
+					infiniteRetryContext(ctx),
+					*sendEvents.PoolsCreation,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -85,9 +134,16 @@ func (w Workflow) runSendEvents(
 	}
 
 	if sendEvents.PoolsDeletion != nil {
-		err := activities.EventsSendPoolDeletion(
-			infiniteRetryContext(ctx),
-			*sendEvents.PoolsDeletion,
+		err := sendEvent(
+			ctx,
+			sendEvents.PoolsDeletion.String(),
+			nil,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPoolDeletion(
+					infiniteRetryContext(ctx),
+					*sendEvents.PoolsDeletion,
+				)
+			},
 		)
 		if err != nil {
 			return err
@@ -101,4 +157,43 @@ var RunSendEvents any
 
 func init() {
 	RunSendEvents = Workflow{}.runSendEvents
+}
+
+func sendEvent(
+	ctx workflow.Context,
+	idempotencyKey string,
+	connectorID *models.ConnectorID,
+	fn sendEventActivityFunction,
+) error {
+	isExisting, err := activities.StorageEventsSentExists(
+		infiniteRetryContext(ctx),
+		idempotencyKey,
+		connectorID,
+	)
+	if err != nil {
+		return err
+	}
+
+	if !isExisting {
+		// event was not sent yet
+		if err := fn(ctx); err != nil {
+			return err
+		}
+
+		if err := activities.StorageEventsSentStore(
+			infiniteRetryContext(ctx),
+			models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: idempotencyKey,
+					ConnectorID:         connectorID,
+				},
+				ConnectorID: connectorID,
+				SentAt:      workflow.Now(ctx).UTC(),
+			},
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

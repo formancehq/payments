@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) StorageWebhooksConfigsStore(ctx context.Context, configs []models.WebhookConfig) error {
-	return a.storage.WebhooksConfigsUpsert(ctx, configs)
+	return temporalStorageError(a.storage.WebhooksConfigsUpsert(ctx, configs))
 }
 
 var StorageWebhooksConfigsStoreActivity = Activities{}.StorageWebhooksConfigsStore

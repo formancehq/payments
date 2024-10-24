@@ -15,12 +15,12 @@ type CreatePayoutRequest struct {
 func (a Activities) PluginCreatePayout(ctx context.Context, request CreatePayoutRequest) (*models.CreatePayoutResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 
 	resp, err := plugin.CreatePayout(ctx, request.Req)
 	if err != nil {
-		return nil, temporalError(err)
+		return nil, temporalPluginError(err)
 	}
 	return &resp, nil
 }

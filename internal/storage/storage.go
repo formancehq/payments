@@ -41,6 +41,12 @@ type Storage interface {
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
 	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 
+	// Events Sent
+	EventsSentUpsert(ctx context.Context, event models.EventSent) error
+	EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error)
+	EventsSentExists(ctx context.Context, id models.EventID) (bool, error)
+	EventsSentDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
 	// Payments
 	PaymentsUpsert(ctx context.Context, payments []models.Payment) error
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error

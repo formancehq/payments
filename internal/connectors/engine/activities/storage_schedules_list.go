@@ -10,7 +10,11 @@ import (
 )
 
 func (a Activities) StorageSchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error) {
-	return a.storage.SchedulesList(ctx, query)
+	cursor, err := a.storage.SchedulesList(ctx, query)
+	if err != nil {
+		return nil, temporalStorageError(err)
+	}
+	return cursor, nil
 }
 
 var StorageSchedulesListActivity = Activities{}.StorageSchedulesList
