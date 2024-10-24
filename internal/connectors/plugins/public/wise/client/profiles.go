@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Profile struct {
@@ -12,10 +14,7 @@ type Profile struct {
 }
 
 func (c *client) GetProfiles(ctx context.Context) ([]Profile, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "list_profiles")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_profiles")
 
 	var profiles []Profile
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint("v2/profiles"), http.NoBody)
