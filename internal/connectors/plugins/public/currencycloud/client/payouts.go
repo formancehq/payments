@@ -72,7 +72,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 
 	var payoutResponse PayoutResponse
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &payoutResponse, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &payoutResponse, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payout: %w, %w", err, errRes.Error())
 	}

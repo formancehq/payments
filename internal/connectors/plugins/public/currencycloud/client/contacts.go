@@ -39,7 +39,7 @@ func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 
 	res := Contacts{Contacts: make([]*Contact, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contacts %w, %w", err, errRes.Error())
 	}

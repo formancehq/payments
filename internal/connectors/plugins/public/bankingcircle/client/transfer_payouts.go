@@ -57,7 +57,7 @@ func (c *Client) InitiateTransferOrPayouts(ctx context.Context, transferRequest 
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	var res PaymentResponse
-	statusCode, err := c.httpClient.Do(req, &res, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make payout, status code %d: %w", statusCode, err)
 	}

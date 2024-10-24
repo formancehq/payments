@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type BalanceAmount struct {
@@ -37,10 +39,7 @@ type Balance struct {
 }
 
 func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "list_balances")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_balances")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("v4/profiles/%d/balances?types=STANDARD", profileID)), http.NoBody)
@@ -50,7 +49,7 @@ func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 
 	var balances []Balance
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &balances, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
 		return balances, fmt.Errorf("failed to get balances: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -58,10 +57,7 @@ func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 }
 
 func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uint64) (*Balance, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "list_balances")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_balance")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("v4/profiles/%d/balances/%d", profileID, balanceID)), http.NoBody)
@@ -71,7 +67,7 @@ func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uin
 
 	var balance Balance
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &balance, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &balance, &errRes)
 	if err != nil {
 		return &balance, fmt.Errorf("failed to get balance: %w %w", err, errRes.Error(statusCode).Error())
 	}

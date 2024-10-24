@@ -41,7 +41,7 @@ func (c *client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, 
 	}
 
 	var payinResponse PayinResponse
-	statusCode, err := c.httpClient.Do(req, &payinResponse, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payinResponse, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payin: %w", err), statusCode)
 	}

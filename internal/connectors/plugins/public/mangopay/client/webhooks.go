@@ -100,7 +100,7 @@ func (c *client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
 
 	var hooks []*Hook
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, &hooks, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &hooks, &errRes)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to list hooks: %w %w", err, errRes.Error()), statusCode)
 	}
@@ -134,7 +134,7 @@ func (c *client) CreateHook(ctx context.Context, eventType EventType, URL string
 	req.Header.Set("Content-Type", "application/json")
 
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, nil, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, nil, &errRes)
 	if err != nil {
 		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create hook: %w %w", err, errRes.Error()), statusCode)
 	}
@@ -168,7 +168,7 @@ func (c *client) UpdateHook(ctx context.Context, hookID string, URL string) erro
 	req.Header.Set("Content-Type", "application/json")
 
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, nil, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, nil, &errRes)
 	if err != nil {
 		return errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to update hook: %w %w", err, errRes.Error()), statusCode)
 	}

@@ -3,11 +3,13 @@ package client
 import (
 	"context"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -27,7 +29,15 @@ type client struct {
 }
 
 func New(clientID, apiKey, endpoint string) (*client, error) {
+	metricsAttributes := []attribute.KeyValue{
+		attribute.String("connector", "moneycorp"),
+	}
+	stack := os.Getenv("STACK")
+	if stack != "" {
+		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
+	}
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: metricsAttributes,
 		Transport: &apiTransport{
 			clientID:   clientID,
 			apiKey:     apiKey,

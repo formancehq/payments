@@ -59,7 +59,7 @@ func (c *client) GetPayments(ctx context.Context, paymentType PaymentType, page,
 
 	var res responseWrapper[[]Payment]
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get payments: %w %w", err, errRes.Error())
 	}

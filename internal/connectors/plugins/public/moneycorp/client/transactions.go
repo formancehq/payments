@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type transactionsResponse struct {
@@ -51,10 +53,7 @@ type TransactionAttributes struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_transactions")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
 
 	var body io.Reader
 	if !lastCreatedAt.IsZero() {
@@ -98,7 +97,7 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 
 	transactions := transactionsResponse{Transactions: make([]*Transaction, 0)}
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &transactions, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &transactions, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}

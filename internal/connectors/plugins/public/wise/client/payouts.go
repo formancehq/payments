@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Payout struct {
@@ -60,10 +62,7 @@ func (t *Payout) UnmarshalJSON(data []byte) error {
 }
 
 func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "get_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payout")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers/"+payoutID), http.NoBody)
@@ -73,7 +72,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 
 	var payout Payout
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
 		return &payout, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -82,7 +81,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 
 func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
 	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "initiate_payout")
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
 	// now := time.Now()
 	// defer f(ctx, now)
 
@@ -103,7 +102,7 @@ func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount ui
 
 	var payout Payout
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &payout, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
 		return &payout, fmt.Errorf("failed to make payout: %w %w", err, errRes.Error(statusCode).Error())
 	}

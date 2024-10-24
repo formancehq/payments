@@ -51,7 +51,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) (
 
 	res := response{Beneficiaries: make([]*Beneficiary, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, 0, fmt.Errorf("failed to get beneficiaries %w, %w", err, errRes.Error())
 	}
