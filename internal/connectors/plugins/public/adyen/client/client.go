@@ -4,13 +4,18 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"time"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/adyen"
 	"github.com/adyen/adyen-go-api-library/v7/src/common"
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -24,7 +29,8 @@ type Client interface {
 }
 
 type client struct {
-	client *adyen.APIClient
+	client                 *adyen.APIClient
+	commonMetricAttributes []attribute.KeyValue
 
 	webhookUsername string
 	webhookPassword string
@@ -51,10 +57,11 @@ func New(apiKey, username, password, companyID string, liveEndpointPrefix string
 	c := adyen.NewClient(adyenConfig)
 
 	return &client{
-		client:          c,
-		webhookUsername: username,
-		webhookPassword: password,
-		companyID:       companyID,
+		client:                 c,
+		commonMetricAttributes: CommonMetricsAttributes(),
+		webhookUsername:        username,
+		webhookPassword:        password,
+		companyID:              companyID,
 	}, nil
 }
 
@@ -71,4 +78,27 @@ func (c *client) wrapSDKError(err error, statusCode int) error {
 		return fmt.Errorf("unexpected status code %d: %w", statusCode, err)
 	}
 	return err
+}
+
+// recordMetrics is meant to be called in a defer
+func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
+	registry := metrics.GetMetricsRegistry()
+
+	attrs := c.commonMetricAttributes
+	attrs = append(attrs, attribute.String("operation", operation))
+	opts := metric.WithAttributes(attrs...)
+
+	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
+	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
+}
+
+func CommonMetricsAttributes() []attribute.KeyValue {
+	metricsAttributes := []attribute.KeyValue{
+		attribute.String("connector", "adyen"),
+	}
+	stack := os.Getenv("STACK")
+	if stack != "" {
+		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
+	}
+	return metricsAttributes
 }
