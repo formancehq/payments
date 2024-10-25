@@ -2,15 +2,14 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/genericclient"
 )
 
 func (c *Client) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "generic", "get_balance")
-	// now := time.Now()
-	// defer f(ctx, now)
+	start := time.Now()
+	defer c.recordMetrics(ctx, start, "list_balances")
 
 	req := c.apiClient.DefaultApi.GetAccountBalances(ctx, accountID)
 
