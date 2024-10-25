@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayoutRequest struct {
@@ -29,10 +31,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "modulr", "initiate_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
 
 	body, err := json.Marshal(payoutRequest)
 	if err != nil {
@@ -56,10 +55,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 }
 
 func (c *client) GetPayout(ctx context.Context, payoutID string) (PayoutResponse, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "modulr", "get_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payout")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("payments?id=%s", payoutID), nil)
 	if err != nil {
