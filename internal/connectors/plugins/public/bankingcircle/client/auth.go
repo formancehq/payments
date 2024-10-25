@@ -7,13 +7,12 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 func (c *Client) login(ctx context.Context) error {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "authorize")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authorize")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.authorizationEndpoint+"/api/v1/authorizations/authorize", http.NoBody)
