@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/stripe/stripe-go/v79"
 )
@@ -12,10 +13,8 @@ func (c *client) GetExternalAccounts(
 	timeline Timeline,
 	pageSize int64,
 ) (results []*stripe.BankAccount, _ Timeline, hasMore bool, err error) {
-	// TODO
-	//	f := connectors.ClientMetrics(ctx, "stripe", "list_accounts")
-	//	now := time.Now()
-	//	defer f(ctx, now)
+	start := time.Now()
+	defer c.recordMetrics(ctx, start, "list_bank_accounts")
 
 	results = make([]*stripe.BankAccount, 0, int(pageSize))
 
