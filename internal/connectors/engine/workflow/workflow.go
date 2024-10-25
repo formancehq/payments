@@ -28,7 +28,8 @@ func (f *FromPayload) GetPayload() json.RawMessage {
 }
 
 type Workflow struct {
-	temporalClient client.Client
+	temporalNamespace string
+	temporalClient    client.Client
 
 	plugins  plugins.Plugins
 	webhooks webhooks.Webhooks
@@ -37,13 +38,14 @@ type Workflow struct {
 	stack          string
 }
 
-func New(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks, stack string, stackPublicURL string) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, plugins plugins.Plugins, webhooks webhooks.Webhooks, stack string, stackPublicURL string) Workflow {
 	return Workflow{
-		temporalClient: temporalClient,
-		plugins:        plugins,
-		webhooks:       webhooks,
-		stack:          stack,
-		stackPublicURL: stackPublicURL,
+		temporalClient:    temporalClient,
+		temporalNamespace: temporalNamespace,
+		plugins:           plugins,
+		webhooks:          webhooks,
+		stack:             stack,
+		stackPublicURL:    stackPublicURL,
 	}
 }
 
@@ -72,6 +74,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "TerminateSchedules",
 			Func: w.runTerminateSchedules,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TerminateWorkflows",
+			Func: w.runTerminateWorkflows,
 		}).
 		Append(temporalworker.Definition{
 			Name: "InstallConnector",
