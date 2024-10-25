@@ -756,8 +756,6 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241023095900-6d34ea55cc59 h1:NXWfsl/OjlKh9p8kOAkLDWB6xOtV2aLxhTFy7GjE2l8=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241023095900-6d34ea55cc59/go.mod h1:DgV5ZYXS1tI6oryEiuwtGcJ9FWIDgrbN83m9F98WW7U=
 github.com/formancehq/go-libs/v2 v2.0.1-0.20241024113615-9aed7e642e48 h1:T4lyAtlwRHqWYANYAcrtq/QC5m5PP1dwG02AN/uFmpA=
 github.com/formancehq/go-libs/v2 v2.0.1-0.20241024113615-9aed7e642e48/go.mod h1:DgV5ZYXS1tI6oryEiuwtGcJ9FWIDgrbN83m9F98WW7U=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=

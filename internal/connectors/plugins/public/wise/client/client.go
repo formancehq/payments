@@ -5,13 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 const apiEndpoint = "https://api.wise.com"
@@ -59,17 +57,9 @@ func (c *client) endpoint(path string) string {
 }
 
 func New(apiKey string) (Client, error) {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "wise"),
-	}
-	stack := os.Getenv("STACK")
-	if stack != "" {
-		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
-	}
-
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: metricsAttributes,
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("wise"),
 		Transport: &apiTransport{
 			APIKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
