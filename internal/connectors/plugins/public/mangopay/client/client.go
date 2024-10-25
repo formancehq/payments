@@ -44,6 +44,7 @@ func New(clientID, apiKey, endpoint string) (Client, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("mangopay"),
 		OAuthConfig: &clientcredentials.Config{
 			ClientID:     clientID,
 			ClientSecret: apiKey,

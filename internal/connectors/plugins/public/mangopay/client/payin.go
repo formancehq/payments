@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayinResponse struct {
@@ -28,10 +29,7 @@ type PayinResponse struct {
 }
 
 func (c *client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "get_payin")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payin")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payins/%s", c.endpoint, c.clientID, payinID)
 
