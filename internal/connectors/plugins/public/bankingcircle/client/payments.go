@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow for client-side structures
@@ -84,10 +86,7 @@ func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 		return nil, err
 	}
 
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "list_payments")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_payments")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v1/payments/singles", http.NoBody)
 	if err != nil {
@@ -122,9 +121,7 @@ func (c *Client) GetPayment(ctx context.Context, paymentID string) (*Payment, er
 		return nil, err
 	}
 
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "get_payment")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payment")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/payments/singles/%s", c.endpoint, paymentID), http.NoBody)
 	if err != nil {
@@ -148,11 +145,7 @@ func (c *Client) GetPaymentStatus(ctx context.Context, paymentID string) (*Statu
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
-
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "get_payment_status")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payment_status")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/payments/singles/%s/status", c.endpoint, paymentID), http.NoBody)
 	if err != nil {

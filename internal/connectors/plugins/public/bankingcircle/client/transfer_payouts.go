@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PaymentAccount struct {
@@ -39,10 +41,7 @@ func (c *Client) InitiateTransferOrPayouts(ctx context.Context, transferRequest 
 		return nil, err
 	}
 
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "create_transfers_payouts")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_transfers_payouts")
 
 	body, err := json.Marshal(transferRequest)
 	if err != nil {
