@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Beneficiary struct {
@@ -17,10 +19,7 @@ type Beneficiary struct {
 }
 
 func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_beneficiaries")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_beneficiaries")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err

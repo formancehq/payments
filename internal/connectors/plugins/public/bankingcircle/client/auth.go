@@ -12,7 +12,7 @@ import (
 )
 
 func (c *Client) login(ctx context.Context) error {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authorize")
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.authorizationEndpoint+"/api/v1/authorizations/authorize", http.NoBody)
