@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PaymentType string
@@ -37,10 +39,7 @@ type Payment struct {
 }
 
 func (c *client) GetPayments(ctx context.Context, paymentType PaymentType, page, pageSize int, modifiedSince time.Time) ([]Payment, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "modulr", "list_payments")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_payments")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("payments"), http.NoBody)
 	if err != nil {
