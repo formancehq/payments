@@ -64,6 +64,7 @@ func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) 
 	}
 
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("currencycloud"),
 		Transport: &apiTransport{
 			c:          c,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),

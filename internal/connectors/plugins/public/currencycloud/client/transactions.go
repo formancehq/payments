@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -27,10 +29,7 @@ func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, up
 		return nil, 0, fmt.Errorf("page must be greater than 0")
 	}
 
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_transactions")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err
