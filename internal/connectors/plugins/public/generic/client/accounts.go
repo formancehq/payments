@@ -8,10 +8,8 @@ import (
 )
 
 func (c *Client) ListAccounts(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Account, error) {
-	// TODO(f): Add metrics
-	// f := connectors.ClientMetrics(ctx, "generic", "list_accounts")
-	// now := time.Now()
-	// defer f(ctx, now)
+	start := time.Now()
+	defer c.recordMetrics(ctx, start, "list_accounts")
 
 	req := c.apiClient.DefaultApi.
 		GetAccounts(ctx).
