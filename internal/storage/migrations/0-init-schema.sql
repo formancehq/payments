@@ -217,8 +217,8 @@ alter table states
     references connectors (id)
     on delete cascade;
 
--- tasks
-create table if not exists tasks (
+-- connector tasks tree
+create table if not exists connector_tasks_tree (
     -- Mandatory fields
     connector_id varchar not null,
     tasks        json not null,
@@ -226,8 +226,8 @@ create table if not exists tasks (
     -- Primary key
     primary key (connector_id)
 );
-alter table tasks
-    add constraint tasks_connector_id_fk foreign key (connector_id)
+alter table connector_tasks_tree
+    add constraint connector_tasks_tree_connector_id_fk foreign key (connector_id)
     references connectors (id)
     on delete cascade;
 
@@ -376,5 +376,26 @@ create table if not exists events_sent (
 );
 alter table events_sent
     add constraint events_sent_connector_id_fk foreign key (connector_id)
+    references connectors (id)
+    on delete cascade;
+
+-- tasks
+create table if not exists tasks (
+    -- Mandatory fields
+    id varchar not null,
+    connector_id varchar not null,
+    status text not null,
+    created_at timestamp without time zone not null,
+    updated_at timestamp without time zone not null,
+
+    -- Optional fields
+    created_object_id varchar,
+    error text,
+
+    -- Primary key
+    primary key (id)
+);
+alter table tasks
+    add constraint tasks_connector_id_fk foreign key (connector_id)
     references connectors (id)
     on delete cascade;

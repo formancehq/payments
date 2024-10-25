@@ -20,7 +20,7 @@ type FetchNextOthers struct {
 func (w Workflow) runFetchNextOthers(
 	ctx workflow.Context,
 	fetchNextOthers FetchNextOthers,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	if err := w.createInstance(ctx, fetchNextOthers.ConnectorID); err != nil {
 		return errors.Wrap(err, "creating instance")
@@ -32,7 +32,7 @@ func (w Workflow) runFetchNextOthers(
 func (w Workflow) fetchNextOthers(
 	ctx workflow.Context,
 	fetchNextOthers FetchNextOthers,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	stateReference := models.CAPABILITY_FETCH_OTHERS.String()
 	if fetchNextOthers.FromPayload != nil {

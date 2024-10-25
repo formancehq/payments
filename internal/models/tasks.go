@@ -1,35 +1,101 @@
 package models
 
-type TaskType int
+import (
+	"encoding/json"
+	"errors"
+	"time"
 
-const (
-	TASK_FETCH_OTHERS TaskType = iota
-	TASK_FETCH_ACCOUNTS
-	TASK_FETCH_BALANCES
-	TASK_FETCH_EXTERNAL_ACCOUNTS
-	TASK_FETCH_PAYMENTS
-	TASK_CREATE_WEBHOOKS
+	"github.com/formancehq/go-libs/v2/pointer"
 )
 
-type TaskTreeFetchOther struct{}
-type TaskTreeFetchAccounts struct{}
-type TaskTreeFetchBalances struct{}
-type TaskTreeFetchExternalAccounts struct{}
-type TaskTreeFetchPayments struct{}
-type TaskTreeCreateWebhooks struct{}
+type TaskStatus string
 
-type TaskTree struct {
-	TaskType     TaskType
-	Name         string
-	Periodically bool
-	NextTasks    []TaskTree
+const (
+	TASK_STATUS_PROCESSING TaskStatus = "PROCESSING"
+	TASK_STATUS_SUCCEEDED  TaskStatus = "SUCCEEDED"
+	TASK_STATUS_FAILED     TaskStatus = "FAILED"
+)
 
-	TaskTreeFetchOther            *TaskTreeFetchOther
-	TaskTreeFetchAccounts         *TaskTreeFetchAccounts
-	TaskTreeFetchBalances         *TaskTreeFetchBalances
-	TaskTreeFetchExternalAccounts *TaskTreeFetchExternalAccounts
-	TaskTreeFetchPayments         *TaskTreeFetchPayments
-	TaskTreeCreateWebhooks        *TaskTreeCreateWebhooks
+type Task struct {
+	// Unique identifier of the task
+	ID TaskID `json:"id"`
+	// Related Connector ID
+	ConnectorID ConnectorID `json:"connectorID"`
+	// Status of the task
+	Status TaskStatus `json:"status"`
+	// Time when the task was created
+	CreatedAt time.Time `json:"createdAt"`
+	// Time when the task was last updated
+	UpdatedAt time.Time `json:"updatedAt"`
+
+	CreatedObjectID *string `json:"createdObjectID,omitempty"`
+	Error           error   `json:"error,omitempty"`
 }
 
-type Tasks []TaskTree
+func (t Task) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID              string     `json:"id"`
+		ConnectorID     string     `json:"connectorID"`
+		Status          TaskStatus `json:"status"`
+		CreatedAt       time.Time  `json:"createdAt"`
+		UpdatedAt       time.Time  `json:"updatedAt"`
+		CreatedObjectID *string    `json:"createdObjectID,omitempty"`
+		Error           *string    `json:"error,omitempty"`
+	}{
+		ID:              t.ID.String(),
+		ConnectorID:     t.ConnectorID.String(),
+		Status:          t.Status,
+		CreatedAt:       t.CreatedAt,
+		UpdatedAt:       t.UpdatedAt,
+		CreatedObjectID: t.CreatedObjectID,
+		Error: func() *string {
+			if t.Error == nil {
+				return nil
+			}
+
+			return pointer.For(t.Error.Error())
+		}(),
+	})
+}
+
+func (t *Task) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		ID              string     `json:"id"`
+		ConnectorID     string     `json:"connectorID"`
+		Status          TaskStatus `json:"status"`
+		CreatedAt       time.Time  `json:"createdAt"`
+		UpdatedAt       time.Time  `json:"updatedAt"`
+		CreatedObjectID *string    `json:"createdObjectID,omitempty"`
+		Error           *string    `json:"error,omitempty"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	id, err := TaskIDFromString(aux.ID)
+	if err != nil {
+		return err
+	}
+
+	connectorID, err := ConnectorIDFromString(aux.ConnectorID)
+	if err != nil {
+		return err
+	}
+
+	t.ID = *id
+	t.ConnectorID = connectorID
+	t.Status = aux.Status
+	t.CreatedAt = aux.CreatedAt
+	t.UpdatedAt = aux.UpdatedAt
+	t.CreatedObjectID = aux.CreatedObjectID
+	t.Error = func() error {
+		if aux.Error == nil {
+			return nil
+		}
+
+		return errors.New(*aux.Error)
+	}()
+
+	return nil
+}

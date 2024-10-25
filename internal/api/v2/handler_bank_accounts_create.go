@@ -108,7 +108,14 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		if connectorID != nil {
-			bankAccount, err = backend.BankAccountsForwardToConnector(ctx, bankAccount.ID, *connectorID)
+			_, err = backend.BankAccountsForwardToConnector(ctx, bankAccount.ID, *connectorID, true)
+			if err != nil {
+				otel.RecordError(span, err)
+				handleServiceErrors(w, r, err)
+				return
+			}
+
+			bankAccount, err = backend.BankAccountsGet(ctx, bankAccount.ID)
 			if err != nil {
 				otel.RecordError(span, err)
 				handleServiceErrors(w, r, err)

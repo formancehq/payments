@@ -18,9 +18,6 @@ type Backend interface {
 	AccountsCreate(ctx context.Context, account models.Account) error
 	AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
-	BankAccountsList(ctx context.Context, query storage.ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error)
-	BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error
-	BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error)
 
 	// Balances
 	BalancesList(ctx context.Context, query storage.ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
@@ -29,6 +26,9 @@ type Backend interface {
 	// Bank Accounts
 	BankAccountsCreate(ctx context.Context, bankAccount models.BankAccount) error
 	BankAccountsGet(ctx context.Context, id uuid.UUID) (*models.BankAccount, error)
+	BankAccountsList(ctx context.Context, query storage.ListBankAccountsQuery) (*bunpaginate.Cursor[models.BankAccount], error)
+	BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error
+	BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 
 	// Connectors
 	ConnectorsConfigs() plugins.Configs
@@ -73,6 +73,9 @@ type Backend interface {
 	// Schedules
 	SchedulesList(ctx context.Context, query storage.ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
 	SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error)
+
+	// Tasks
+	TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 
 	// Webhooks
 	ConnectorsHandleWebhooks(ctx context.Context, urlPath string, webhook models.Webhook) error

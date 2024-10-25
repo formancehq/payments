@@ -120,18 +120,18 @@ func (mr *MockBackendMockRecorder) BankAccountsCreate(ctx, bankAccount any) *gom
 }
 
 // BankAccountsForwardToConnector mocks base method.
-func (m *MockBackend) BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error) {
+func (m *MockBackend) BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BankAccountsForwardToConnector", ctx, bankAccountID, connectorID)
-	ret0, _ := ret[0].(*models.BankAccount)
+	ret := m.ctrl.Call(m, "BankAccountsForwardToConnector", ctx, bankAccountID, connectorID, waitResult)
+	ret0, _ := ret[0].(models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // BankAccountsForwardToConnector indicates an expected call of BankAccountsForwardToConnector.
-func (mr *MockBackendMockRecorder) BankAccountsForwardToConnector(ctx, bankAccountID, connectorID any) *gomock.Call {
+func (mr *MockBackendMockRecorder) BankAccountsForwardToConnector(ctx, bankAccountID, connectorID, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsForwardToConnector", reflect.TypeOf((*MockBackend)(nil).BankAccountsForwardToConnector), ctx, bankAccountID, connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsForwardToConnector", reflect.TypeOf((*MockBackend)(nil).BankAccountsForwardToConnector), ctx, bankAccountID, connectorID, waitResult)
 }
 
 // BankAccountsGet mocks base method.
@@ -641,6 +641,21 @@ func (m *MockBackend) SchedulesList(ctx context.Context, query storage.ListSched
 func (mr *MockBackendMockRecorder) SchedulesList(ctx, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesList", reflect.TypeOf((*MockBackend)(nil).SchedulesList), ctx, query)
+}
+
+// TaskGet mocks base method.
+func (m *MockBackend) TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TaskGet", ctx, id)
+	ret0, _ := ret[0].(*models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TaskGet indicates an expected call of TaskGet.
+func (mr *MockBackendMockRecorder) TaskGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TaskGet", reflect.TypeOf((*MockBackend)(nil).TaskGet), ctx, id)
 }
 
 // WorkflowsInstancesList mocks base method.

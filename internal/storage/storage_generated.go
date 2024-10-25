@@ -259,6 +259,49 @@ func (mr *MockStorageMockRecorder) Close() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Close", reflect.TypeOf((*MockStorage)(nil).Close))
 }
 
+// ConnectorTasksTreeDeleteFromConnectorID mocks base method.
+func (m *MockStorage) ConnectorTasksTreeDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorTasksTreeDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConnectorTasksTreeDeleteFromConnectorID indicates an expected call of ConnectorTasksTreeDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) ConnectorTasksTreeDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorTasksTreeDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).ConnectorTasksTreeDeleteFromConnectorID), ctx, connectorID)
+}
+
+// ConnectorTasksTreeGet mocks base method.
+func (m *MockStorage) ConnectorTasksTreeGet(ctx context.Context, connectorID models.ConnectorID) (*models.ConnectorTasksTree, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorTasksTreeGet", ctx, connectorID)
+	ret0, _ := ret[0].(*models.ConnectorTasksTree)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ConnectorTasksTreeGet indicates an expected call of ConnectorTasksTreeGet.
+func (mr *MockStorageMockRecorder) ConnectorTasksTreeGet(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorTasksTreeGet", reflect.TypeOf((*MockStorage)(nil).ConnectorTasksTreeGet), ctx, connectorID)
+}
+
+// ConnectorTasksTreeUpsert mocks base method.
+func (m *MockStorage) ConnectorTasksTreeUpsert(ctx context.Context, connectorID models.ConnectorID, tasks models.ConnectorTasksTree) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorTasksTreeUpsert", ctx, connectorID, tasks)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConnectorTasksTreeUpsert indicates an expected call of ConnectorTasksTreeUpsert.
+func (mr *MockStorageMockRecorder) ConnectorTasksTreeUpsert(ctx, connectorID, tasks any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorTasksTreeUpsert", reflect.TypeOf((*MockStorage)(nil).ConnectorTasksTreeUpsert), ctx, connectorID, tasks)
+}
+
 // ConnectorsGet mocks base method.
 func (m *MockStorage) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error) {
 	m.ctrl.T.Helper()
@@ -914,32 +957,32 @@ func (mr *MockStorageMockRecorder) TasksDeleteFromConnectorID(ctx, connectorID a
 }
 
 // TasksGet mocks base method.
-func (m *MockStorage) TasksGet(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error) {
+func (m *MockStorage) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TasksGet", ctx, connectorID)
-	ret0, _ := ret[0].(*models.Tasks)
+	ret := m.ctrl.Call(m, "TasksGet", ctx, id)
+	ret0, _ := ret[0].(*models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // TasksGet indicates an expected call of TasksGet.
-func (mr *MockStorageMockRecorder) TasksGet(ctx, connectorID any) *gomock.Call {
+func (mr *MockStorageMockRecorder) TasksGet(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TasksGet", reflect.TypeOf((*MockStorage)(nil).TasksGet), ctx, connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TasksGet", reflect.TypeOf((*MockStorage)(nil).TasksGet), ctx, id)
 }
 
 // TasksUpsert mocks base method.
-func (m *MockStorage) TasksUpsert(ctx context.Context, connectorID models.ConnectorID, tasks models.Tasks) error {
+func (m *MockStorage) TasksUpsert(ctx context.Context, task models.Task) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TasksUpsert", ctx, connectorID, tasks)
+	ret := m.ctrl.Call(m, "TasksUpsert", ctx, task)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // TasksUpsert indicates an expected call of TasksUpsert.
-func (mr *MockStorageMockRecorder) TasksUpsert(ctx, connectorID, tasks any) *gomock.Call {
+func (mr *MockStorageMockRecorder) TasksUpsert(ctx, task any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TasksUpsert", reflect.TypeOf((*MockStorage)(nil).TasksUpsert), ctx, connectorID, tasks)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TasksUpsert", reflect.TypeOf((*MockStorage)(nil).TasksUpsert), ctx, task)
 }
 
 // WebhooksConfigsDeleteFromConnectorID mocks base method.

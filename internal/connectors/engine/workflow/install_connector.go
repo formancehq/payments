@@ -34,7 +34,7 @@ func (w Workflow) runInstallConnector(
 	}
 
 	// Third step: store the workflow of the connector
-	err = activities.StorageTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
+	err = activities.StorageConnectorTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
 	if err != nil {
 		return errors.Wrap(err, "failed to store tasks tree")
 	}
@@ -75,7 +75,7 @@ func (w Workflow) runInstallConnector(
 		installConnector.Config,
 		installConnector.ConnectorID,
 		nil,
-		[]models.TaskTree(installResponse.Workflow),
+		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
 		if errors.As(err, &applicationError) {

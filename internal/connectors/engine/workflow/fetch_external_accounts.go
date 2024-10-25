@@ -20,7 +20,7 @@ type FetchNextExternalAccounts struct {
 func (w Workflow) runFetchNextExternalAccounts(
 	ctx workflow.Context,
 	fetchNextExternalAccount FetchNextExternalAccounts,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	if err := w.createInstance(ctx, fetchNextExternalAccount.ConnectorID); err != nil {
 		return errors.Wrap(err, "creating instance")
@@ -32,7 +32,7 @@ func (w Workflow) runFetchNextExternalAccounts(
 func (w Workflow) fetchExternalAccounts(
 	ctx workflow.Context,
 	fetchNextExternalAccount FetchNextExternalAccounts,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	stateReference := models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS.String()
 	if fetchNextExternalAccount.FromPayload != nil {
