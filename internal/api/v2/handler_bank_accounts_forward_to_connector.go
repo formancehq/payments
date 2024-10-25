@@ -58,7 +58,14 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		bankAccount, err := backend.BankAccountsForwardToConnector(ctx, id, connectorID)
+		_, err = backend.BankAccountsForwardToConnector(ctx, id, connectorID, true)
+		if err != nil {
+			otel.RecordError(span, err)
+			handleServiceErrors(w, r, err)
+			return
+		}
+
+		bankAccount, err := backend.BankAccountsGet(ctx, id)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

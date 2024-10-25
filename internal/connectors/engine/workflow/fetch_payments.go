@@ -20,7 +20,7 @@ type FetchNextPayments struct {
 func (w Workflow) runFetchNextPayments(
 	ctx workflow.Context,
 	fetchNextPayments FetchNextPayments,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	if err := w.createInstance(ctx, fetchNextPayments.ConnectorID); err != nil {
 		return errors.Wrap(err, "creating instance")
@@ -32,7 +32,7 @@ func (w Workflow) runFetchNextPayments(
 func (w Workflow) fetchNextPayments(
 	ctx workflow.Context,
 	fetchNextPayments FetchNextPayments,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	stateReference := models.CAPABILITY_FETCH_PAYMENTS.String()
 	if fetchNextPayments.FromPayload != nil {

@@ -32,7 +32,7 @@ type InstallRequest struct {
 
 type InstallResponse struct {
 	Capabilities    []Capability
-	Workflow        Tasks
+	Workflow        ConnectorTasksTree
 	WebhooksConfigs []PSPWebhookConfig
 }
 
