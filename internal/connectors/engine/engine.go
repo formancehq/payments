@@ -649,42 +649,48 @@ func (e *engine) OnStart(ctx context.Context) error {
 }
 
 func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) error {
+	// Even if the connector is scheduled for deletion, we still need to register
+	// the plugin to be able to handle the uninstallation.
+	// It will be unregistered when the uninstallation is done in the workflow
+	// after the deletion of the connector entry in the database.
 	err := e.plugins.RegisterPlugin(connector.ID)
 	if err != nil {
 		return err
 	}
 
-	err = e.workers.AddWorker(connector.ID.String())
-	if err != nil {
-		return err
-	}
+	if !connector.ScheduledForDeletion {
+		err = e.workers.AddWorker(connector.ID.String())
+		if err != nil {
+			return err
+		}
 
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
+		config := models.DefaultConfig()
+		if err := json.Unmarshal(connector.Config, &config); err != nil {
+			return err
+		}
 
-	// Launch the workflow
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("install-%s", connector.ID.String()),
-			TaskQueue:                                connector.ID.String(),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+		// Launch the workflow
+		_, err = e.temporalClient.ExecuteWorkflow(
+			ctx,
+			client.StartWorkflowOptions{
+				ID:                                       fmt.Sprintf("install-%s", connector.ID.String()),
+				TaskQueue:                                connector.ID.String(),
+				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+				WorkflowExecutionErrorWhenAlreadyStarted: false,
+				SearchAttributes: map[string]interface{}{
+					workflow.SearchAttributeStack: e.stack,
+				},
 			},
-		},
-		workflow.RunInstallConnector,
-		workflow.InstallConnector{
-			ConnectorID: connector.ID,
-			RawConfig:   connector.Config,
-			Config:      config,
-		},
-	)
-	if err != nil {
-		return err
+			workflow.RunInstallConnector,
+			workflow.InstallConnector{
+				ConnectorID: connector.ID,
+				RawConfig:   connector.Config,
+				Config:      config,
+			},
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
