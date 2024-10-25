@@ -2,15 +2,14 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
 )
 
 func (c *client) GetMerchantAccounts(ctx context.Context, pageNumber, pageSize int32) ([]management.Merchant, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "adyen", "list_merchant_accounts")
-	// now := time.Now()
-	// defer f(ctx, now)
+	start := time.Now()
+	defer c.recordMetrics(ctx, start, "list_merchant_accounts")
 
 	listMerchantsResponse, raw, err := c.client.Management().AccountMerchantLevelApi.ListMerchantAccounts(
 		ctx,
