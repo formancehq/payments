@@ -140,7 +140,7 @@ func (c *client) metricsAttributes(ctx context.Context, req *http.Request) []att
 	val := ctx.Value(MetricOperationContextKey)
 	if val != nil {
 		if name, ok := val.(string); ok {
-			attrs = append(attrs, attribute.String("name", name))
+			attrs = append(attrs, attribute.String("operation", name))
 		}
 	}
 	return attrs
