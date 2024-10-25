@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Account struct {
@@ -15,14 +17,10 @@ type Account struct {
 }
 
 func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, int, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_accounts")
-	// now := time.Now()
-	// defer f(ctx, now)
-
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err
 	}
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/accounts/find"), http.NoBody)

@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 func (c *client) authenticate(ctx context.Context) error {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
 
 	form := make(url.Values)
 

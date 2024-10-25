@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Balance struct {
@@ -18,10 +20,7 @@ type Balance struct {
 }
 
 func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_balances")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_balances")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err
