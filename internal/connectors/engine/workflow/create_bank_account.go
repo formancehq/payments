@@ -9,6 +9,7 @@ import (
 )
 
 type CreateBankAccount struct {
+	TaskID        models.TaskID
 	ConnectorID   models.ConnectorID
 	BankAccountID uuid.UUID
 }
@@ -16,14 +17,40 @@ type CreateBankAccount struct {
 func (w Workflow) runCreateBankAccount(
 	ctx workflow.Context,
 	createBankAccount CreateBankAccount,
-) (*models.BankAccount, error) {
+) error {
+	accountID, err := w.createBankAccount(ctx, createBankAccount)
+	if err != nil {
+		if errUpdateTask := w.updateTasksError(
+			ctx,
+			createBankAccount.TaskID,
+			createBankAccount.ConnectorID,
+			err,
+		); errUpdateTask != nil {
+			return errUpdateTask
+		}
+
+		return err
+	}
+
+	return w.updateTaskSucces(
+		ctx,
+		createBankAccount.TaskID,
+		createBankAccount.ConnectorID,
+		accountID,
+	)
+}
+
+func (w Workflow) createBankAccount(
+	ctx workflow.Context,
+	createBankAccount CreateBankAccount,
+) (string, error) {
 	bankAccount, err := activities.StorageBankAccountsGet(
 		infiniteRetryContext(ctx),
 		createBankAccount.BankAccountID,
 		true,
 	)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	createBAResponse, err := activities.PluginCreateBankAccount(
@@ -34,7 +61,7 @@ func (w Workflow) runCreateBankAccount(
 		},
 	)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	account := models.FromPSPAccount(
@@ -48,7 +75,7 @@ func (w Workflow) runCreateBankAccount(
 		[]models.Account{account},
 	)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	relatedAccount := models.BankAccountRelatedAccount{
@@ -63,7 +90,7 @@ func (w Workflow) runCreateBankAccount(
 		relatedAccount,
 	)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
@@ -84,10 +111,10 @@ func (w Workflow) runCreateBankAccount(
 			BankAccount: bankAccount,
 		},
 	).Get(ctx, nil); err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return bankAccount, nil
+	return account.ID.String(), nil
 }
 
 var RunCreateBankAccount any

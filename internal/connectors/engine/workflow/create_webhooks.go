@@ -19,7 +19,7 @@ type CreateWebhooks struct {
 func (w Workflow) runCreateWebhooks(
 	ctx workflow.Context,
 	createWebhooks CreateWebhooks,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	if err := w.createInstance(ctx, createWebhooks.ConnectorID); err != nil {
 		return errors.Wrap(err, "creating instance")
@@ -31,7 +31,7 @@ func (w Workflow) runCreateWebhooks(
 func (w Workflow) createWebhooks(
 	ctx workflow.Context,
 	createWebhooks CreateWebhooks,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/webhooks", createWebhooks.ConnectorID.String())
 	if err != nil {

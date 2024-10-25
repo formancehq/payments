@@ -276,7 +276,7 @@ func TranslateProtoPaymentInitiation(pi *proto.PaymentInitiation) (models.PSPPay
 	}, nil
 }
 
-func TranslateTask(taskTree models.TaskTree) *proto.TaskTree {
+func TranslateTask(taskTree models.ConnectorTaskTree) *proto.TaskTree {
 	res := proto.TaskTree{
 		NextTasks:    []*proto.TaskTree{},
 		Name:         taskTree.Name,
@@ -321,12 +321,12 @@ func TranslateTask(taskTree models.TaskTree) *proto.TaskTree {
 	return &res
 }
 
-func TranslateProtoTask(task *proto.TaskTree) models.TaskTree {
-	res := models.TaskTree{
+func TranslateProtoTask(task *proto.TaskTree) models.ConnectorTaskTree {
+	res := models.ConnectorTaskTree{
 		TaskType:     0,
 		Name:         task.Name,
 		Periodically: task.Periodically,
-		NextTasks:    []models.TaskTree{},
+		NextTasks:    []models.ConnectorTaskTree{},
 	}
 
 	switch task.Task.(type) {
@@ -359,7 +359,7 @@ func TranslateProtoTask(task *proto.TaskTree) models.TaskTree {
 	return res
 }
 
-func TranslateWorkflow(workflows models.Tasks) *proto.Workflow {
+func TranslateWorkflow(workflows models.ConnectorTasksTree) *proto.Workflow {
 	res := proto.Workflow{}
 
 	for _, task := range workflows {
@@ -369,8 +369,8 @@ func TranslateWorkflow(workflows models.Tasks) *proto.Workflow {
 	return &res
 }
 
-func TranslateProtoWorkflow(workflow *proto.Workflow) models.Tasks {
-	res := models.Tasks{}
+func TranslateProtoWorkflow(workflow *proto.Workflow) models.ConnectorTasksTree {
+	res := models.ConnectorTasksTree{}
 
 	for _, task := range workflow.Tasks {
 		res = append(res, TranslateProtoTask(task))

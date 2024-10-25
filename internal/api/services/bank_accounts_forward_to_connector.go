@@ -7,11 +7,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error) {
-	ba, err := s.engine.ForwardBankAccount(ctx, bankAccountID, connectorID)
+func (s *Service) BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+	task, err := s.engine.ForwardBankAccount(ctx, bankAccountID, connectorID, waitResult)
 	if err != nil {
-		return nil, handleEngineErrors(err)
+		return models.Task{}, handleEngineErrors(err)
 	}
-
-	return ba, nil
+	return task, nil
 }
