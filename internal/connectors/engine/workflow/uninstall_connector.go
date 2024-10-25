@@ -61,13 +61,7 @@ func (w Workflow) runUninstallConnector(
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
 		_, err := activities.PluginUninstallConnector(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
-		if err != nil {
-			errChan <- err
-		}
-
-		if err := w.plugins.UnregisterPlugin(uninstallConnector.ConnectorID); err != nil {
-			errChan <- err
-		}
+		errChan <- err
 	})
 
 	wg.Add(1)
@@ -151,6 +145,10 @@ func (w Workflow) runUninstallConnector(
 
 	err := activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
+		return err
+	}
+
+	if err := w.plugins.UnregisterPlugin(uninstallConnector.ConnectorID); err != nil {
 		return err
 	}
 
