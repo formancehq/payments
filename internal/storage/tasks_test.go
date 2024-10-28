@@ -5,71 +5,68 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 )
 
 var (
-	defaultTasksTree = models.Tasks{
+	defaultTasks = []models.Task{
 		{
-			TaskType:     models.TASK_FETCH_ACCOUNTS,
-			Name:         "fetch_accounts",
-			Periodically: true,
-			NextTasks: []models.TaskTree{
-				{
-					TaskType:     models.TASK_FETCH_PAYMENTS,
-					Name:         "fetch_payments",
-					Periodically: true,
-					NextTasks:    []models.TaskTree{},
-				},
-				{
-					TaskType:     models.TASK_FETCH_BALANCES,
-					Name:         "fetch_balances",
-					Periodically: true,
-					NextTasks:    []models.TaskTree{},
-				},
+			ID: models.TaskID{
+				Reference:   "1",
+				ConnectorID: defaultConnector.ID,
 			},
+			ConnectorID: defaultConnector.ID,
+			Status:      "FAILED",
+			CreatedAt:   now.Add(-time.Hour).UTC().Time,
+			UpdatedAt:   now.Add(-time.Hour).UTC().Time,
+			Error:       errors.New("test error"),
 		},
 		{
-			TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
-			Name:         "fetch_beneficiaries",
-			Periodically: true,
-			NextTasks:    []models.TaskTree{},
-		},
-	}
-
-	defaultTasksTree2 = models.Tasks{
-		{
-			TaskType:     models.TASK_FETCH_ACCOUNTS,
-			Name:         "fetch_accounts",
-			Periodically: true,
-			NextTasks: []models.TaskTree{
-				{
-					TaskType:     models.TASK_FETCH_BALANCES,
-					Name:         "fetch_balances",
-					Periodically: true,
-					NextTasks:    []models.TaskTree{},
-				},
-				{
-					TaskType:     models.TASK_FETCH_PAYMENTS,
-					Name:         "fetch_payments",
-					Periodically: true,
-					NextTasks:    []models.TaskTree{},
-				},
-				{
-					TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
-					Name:         "fetch_recipients",
-					Periodically: true,
-					NextTasks:    []models.TaskTree{},
-				},
+			ID: models.TaskID{
+				Reference:   "2",
+				ConnectorID: defaultConnector.ID,
 			},
+			ConnectorID: defaultConnector.ID,
+			Status:      "PROCESSING",
+			CreatedAt:   now.Add(-2 * time.Hour).UTC().Time,
+			UpdatedAt:   now.Add(-2 * time.Hour).UTC().Time,
+		},
+		{
+			ID: models.TaskID{
+				Reference:   "3",
+				ConnectorID: defaultConnector.ID,
+			},
+			ConnectorID:     defaultConnector.ID,
+			Status:          "SUCCEEDED",
+			CreatedAt:       now.Add(-3 * time.Hour).UTC().Time,
+			UpdatedAt:       now.Add(-3 * time.Hour).UTC().Time,
+			CreatedObjectID: pointer.For("test object id"),
+		},
+		{
+			ID: models.TaskID{
+				Reference:   "4",
+				ConnectorID: defaultConnector2.ID,
+			},
+			ConnectorID: defaultConnector2.ID,
+			Status:      "PROCESSING",
+			CreatedAt:   now.Add(-4 * time.Hour).UTC().Time,
+			UpdatedAt:   now.Add(-4 * time.Hour).UTC().Time,
 		},
 	}
 )
 
-func upsertTasksTree(t *testing.T, ctx context.Context, storage Storage, connectorID models.ConnectorID, tasksTree []models.TaskTree) {
-	require.NoError(t, storage.TasksUpsert(ctx, connectorID, tasksTree))
+func upsertTasks(t *testing.T, ctx context.Context, storage Storage, tasks []models.Task) {
+	t.Helper()
+
+	for _, task := range tasks {
+		err := storage.TasksUpsert(ctx, task)
+		require.NoError(t, err)
+	}
 }
 
 func TestTasksUpsert(t *testing.T) {
@@ -79,21 +76,58 @@ func TestTasksUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertTasksTree(t, ctx, store, defaultConnector.ID, defaultTasksTree)
+	upsertConnector(t, ctx, store, defaultConnector2)
+	upsertTasks(t, ctx, store, defaultTasks)
 
-	t.Run("upsert with unknown connector id", func(t *testing.T) {
-		require.Error(t, store.TasksUpsert(ctx, models.ConnectorID{
-			Reference: uuid.New(),
-			Provider:  "unknown",
-		}, defaultTasksTree2))
+	t.Run("same id upsert", func(t *testing.T) {
+		t2 := models.Task{
+			ID:              defaultTasks[1].ID,
+			ConnectorID:     defaultConnector.ID,
+			Status:          "FAILED",
+			CreatedAt:       now.Add(-1 * time.Hour).UTC().Time,
+			UpdatedAt:       now.Add(-1 * time.Hour).UTC().Time,
+			CreatedObjectID: pointer.For("test object id 2"),
+		}
+
+		err := store.TasksUpsert(ctx, t2)
+		require.NoError(t, err)
+
+		t3, err := store.TasksGet(ctx, t2.ID)
+		require.NoError(t, err)
+
+		expectedTask := models.Task{
+			ID:              defaultTasks[1].ID,
+			ConnectorID:     defaultConnector.ID,
+			Status:          "FAILED",
+			CreatedAt:       now.Add(-2 * time.Hour).UTC().Time,
+			UpdatedAt:       now.Add(-1 * time.Hour).UTC().Time,
+			CreatedObjectID: pointer.For("test object id 2"),
+		}
+
+		compareTasks(t, expectedTask, *t3)
 	})
 
-	t.Run("upsert with same connector id", func(t *testing.T) {
-		upsertTasksTree(t, ctx, store, defaultConnector.ID, defaultTasksTree2)
+	t.Run("unknown connector id", func(t *testing.T) {
+		t2 := models.Task{
+			ID: models.TaskID{
+				Reference: "5",
+				ConnectorID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "unknown",
+				},
+			},
+			ConnectorID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  "unknown",
+			},
+			Status:    "FAILED",
+			CreatedAt: now.Add(-1 * time.Hour).UTC().Time,
+			UpdatedAt: now.Add(-1 * time.Hour).UTC().Time,
+			Error:     errors.New("test error"),
+		}
 
-		tasks, err := store.TasksGet(ctx, defaultConnector.ID)
-		require.NoError(t, err)
-		require.Equal(t, defaultTasksTree2, *tasks)
+		err := store.TasksUpsert(ctx, t2)
+		require.Error(t, err)
 	})
 }
 
@@ -104,19 +138,20 @@ func TestTasksGet(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertTasksTree(t, ctx, store, defaultConnector.ID, defaultTasksTree)
+	upsertConnector(t, ctx, store, defaultConnector2)
+	upsertTasks(t, ctx, store, defaultTasks)
 
-	t.Run("get tasks", func(t *testing.T) {
-		tasks, err := store.TasksGet(ctx, defaultConnector.ID)
-		require.NoError(t, err)
-		require.Equal(t, defaultTasksTree, *tasks)
+	t.Run("get task", func(t *testing.T) {
+		for _, task := range defaultTasks {
+			t2, err := store.TasksGet(ctx, task.ID)
+			require.NoError(t, err)
+			compareTasks(t, task, *t2)
+		}
 	})
 
-	t.Run("get tasks with unknown connector id", func(t *testing.T) {
-		_, err := store.TasksGet(ctx, models.ConnectorID{
-			Reference: uuid.New(),
-			Provider:  "unknown",
-		})
+	t.Run("unknown task", func(t *testing.T) {
+		_, err := store.TasksGet(ctx, models.TaskID{})
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Error(t, err)
 	})
 }
@@ -129,32 +164,53 @@ func TestTasksDeleteFromConnectorID(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
-	upsertTasksTree(t, ctx, store, defaultConnector.ID, defaultTasksTree)
-	upsertTasksTree(t, ctx, store, defaultConnector2.ID, defaultTasksTree2)
+	upsertTasks(t, ctx, store, defaultTasks)
 
-	t.Run("delete tasks with unknown connector id", func(t *testing.T) {
-		require.NoError(t, store.TasksDeleteFromConnectorID(ctx, models.ConnectorID{
+	t.Run("unknown connector id", func(t *testing.T) {
+		err := store.TasksDeleteFromConnectorID(ctx, models.ConnectorID{
 			Reference: uuid.New(),
 			Provider:  "unknown",
-		}))
-
-		tasks, err := store.TasksGet(ctx, defaultConnector.ID)
+		})
 		require.NoError(t, err)
-		require.Equal(t, defaultTasksTree, *tasks)
 
-		tasks, err = store.TasksGet(ctx, defaultConnector2.ID)
-		require.NoError(t, err)
-		require.Equal(t, defaultTasksTree2, *tasks)
+		for _, task := range defaultTasks {
+			t2, err := store.TasksGet(ctx, task.ID)
+			require.NoError(t, err)
+			compareTasks(t, task, *t2)
+		}
 	})
 
 	t.Run("delete tasks", func(t *testing.T) {
-		require.NoError(t, store.TasksDeleteFromConnectorID(ctx, defaultConnector.ID))
-
-		_, err := store.TasksGet(ctx, defaultConnector.ID)
-		require.Error(t, err)
-
-		tasks, err := store.TasksGet(ctx, defaultConnector2.ID)
+		err := store.TasksDeleteFromConnectorID(ctx, defaultConnector.ID)
 		require.NoError(t, err)
-		require.Equal(t, defaultTasksTree2, *tasks)
+
+		for _, task := range defaultTasks {
+			if task.ConnectorID == defaultConnector.ID {
+				_, err := store.TasksGet(ctx, task.ID)
+				require.ErrorIs(t, err, ErrNotFound)
+				require.Error(t, err)
+			} else {
+				t2, err := store.TasksGet(ctx, task.ID)
+				require.NoError(t, err)
+				compareTasks(t, task, *t2)
+			}
+		}
 	})
+}
+
+func compareTasks(t *testing.T, expected, actual models.Task) {
+	require.Equal(t, expected.ID, actual.ID)
+	require.Equal(t, expected.ConnectorID, actual.ConnectorID)
+	require.Equal(t, expected.Status, actual.Status)
+	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
+	require.Equal(t, expected.CreatedObjectID, actual.CreatedObjectID)
+
+	switch {
+	case expected.Error == nil && actual.Error == nil:
+	case expected.Error != nil && actual.Error != nil:
+		require.Equal(t, expected.Error.Error(), actual.Error.Error())
+	default:
+		t.Errorf("expected error %v, got %v", expected.Error, actual.Error)
+	}
 }

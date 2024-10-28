@@ -38,7 +38,7 @@ type Engine interface {
 
 	// Forward a bank account to the given connector, which will create it
 	// in the external system (PSP).
-	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error)
+	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 	// Create a transfer between two accounts on the given connector (PSP).
 	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
 	// Create a payout on the given connector (PSP).
@@ -303,11 +303,29 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	return nil
 }
 
-func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID) (*models.BankAccount, error) {
+func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+	id := models.TaskIDReference("create-bank-account", connectorID, bankAccountID.String())
+
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		return models.Task{}, err
+	}
+
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-bank-account-%s-%s", connectorID.String(), bankAccountID.String()),
+			ID:                                       id,
 			TaskQueue:                                connectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -317,21 +335,23 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		},
 		workflow.RunCreateBankAccount,
 		workflow.CreateBankAccount{
+			TaskID:        task.ID,
 			ConnectorID:   connectorID,
 			BankAccountID: bankAccountID,
 		},
 	)
 	if err != nil {
-		return nil, err
+		return models.Task{}, err
 	}
 
-	var bankAccount models.BankAccount
-	// Wait for bank account creation to complete
-	if err := run.Get(ctx, &bankAccount); err != nil {
-		return nil, err
+	if waitResult {
+		// Wait for bank account creation to complete
+		if err := run.Get(ctx, nil); err != nil {
+			return models.Task{}, err
+		}
 	}
 
-	return &bankAccount, nil
+	return task, nil
 }
 
 func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error {

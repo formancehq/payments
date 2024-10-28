@@ -20,7 +20,7 @@ type FetchNextBalances struct {
 func (w Workflow) runFetchNextBalances(
 	ctx workflow.Context,
 	fetchNextBalances FetchNextBalances,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	if err := w.createInstance(ctx, fetchNextBalances.ConnectorID); err != nil {
 		return errors.Wrap(err, "creating instance")
@@ -32,7 +32,7 @@ func (w Workflow) runFetchNextBalances(
 func (w Workflow) fetchBalances(
 	ctx workflow.Context,
 	fetchNextBalances FetchNextBalances,
-	nextTasks []models.TaskTree,
+	nextTasks []models.ConnectorTaskTree,
 ) error {
 	stateReference := models.CAPABILITY_FETCH_BALANCES.String()
 	if fetchNextBalances.FromPayload != nil {

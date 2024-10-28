@@ -95,6 +95,13 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 				})
 			})
 
+			// Tasks
+			r.Route("/tasks", func(r chi.Router) {
+				r.Route("/{taskID}", func(r chi.Router) {
+					r.Get("/", tasksGet(backend))
+				})
+			})
+
 			// Payment Initiations
 			r.Route("/payment-initiations", func(r chi.Router) {
 				r.Post("/", paymentInitiationsCreate(backend))
@@ -146,6 +153,10 @@ func bankAccountID(r *http.Request) string {
 
 func scheduleID(r *http.Request) string {
 	return chi.URLParam(r, "scheduleID")
+}
+
+func taskID(r *http.Request) string {
+	return chi.URLParam(r, "taskID")
 }
 
 func paymentInitiationID(r *http.Request) string {

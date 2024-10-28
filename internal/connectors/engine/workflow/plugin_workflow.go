@@ -18,7 +18,7 @@ func (w Workflow) run(
 	config models.Config,
 	connectorID models.ConnectorID,
 	fromPayload *FromPayload,
-	taskTree []models.TaskTree,
+	taskTree []models.ConnectorTaskTree,
 ) error {
 	var nextWorkflow interface{}
 	var request interface{}

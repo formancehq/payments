@@ -101,12 +101,12 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageStatesDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageTasksTreeStore",
-			Func: a.StorageTasksTreeStore,
+			Name: "StorageConnectorTasksTreeStore",
+			Func: a.StorageConnectorTasksTreeStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageTasksTreeDelete",
-			Func: a.StorageTasksTreeDelete,
+			Name: "StorageConnectorTasksTreeDelete",
+			Func: a.StorageConnectorTasksTreeDelete,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageConnectorsStore",
@@ -203,6 +203,14 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageEventsSentExists",
 			Func: a.StorageEventsSentExists,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageTasksStore",
+			Func: a.StorageTasksStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageTasksDelete",
+			Func: a.StorageTasksDeleteFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",

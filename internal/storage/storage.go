@@ -42,6 +42,11 @@ type Storage interface {
 	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 	ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error
 
+	// Connector Tasks Tree
+	ConnectorTasksTreeUpsert(ctx context.Context, connectorID models.ConnectorID, tasks models.ConnectorTasksTree) error
+	ConnectorTasksTreeGet(ctx context.Context, connectorID models.ConnectorID) (*models.ConnectorTasksTree, error)
+	ConnectorTasksTreeDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
 	// Events Sent
 	EventsSentUpsert(ctx context.Context, event models.EventSent) error
 	EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error)
@@ -93,8 +98,8 @@ type Storage interface {
 	StatesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Tasks
-	TasksUpsert(ctx context.Context, connectorID models.ConnectorID, tasks models.Tasks) error
-	TasksGet(ctx context.Context, connectorID models.ConnectorID) (*models.Tasks, error)
+	TasksUpsert(ctx context.Context, task models.Task) error
+	TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 	TasksDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Webhooks Configs
