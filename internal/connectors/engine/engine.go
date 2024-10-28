@@ -176,7 +176,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("uninstall-%s", connectorID.String()),
-			TaskQueue:                                defaultWorkerName,
+			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -186,7 +186,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
-			DefaultWorkerName: defaultWorkerName,
+			DefaultWorkerName: e.workers.GetDefaultWorker(),
 		},
 	)
 	if err != nil {
@@ -474,7 +474,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-creation-%s", pool.IdempotencyKey()),
-			TaskQueue:                                defaultWorkerName,
+			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -514,7 +514,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s", pool.IdempotencyKey()),
-			TaskQueue:                                defaultWorkerName,
+			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -554,7 +554,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s", pool.IdempotencyKey()),
-			TaskQueue:                                defaultWorkerName,
+			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -583,7 +583,7 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-deletion-%s", poolID.String()),
-			TaskQueue:                                defaultWorkerName,
+			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{

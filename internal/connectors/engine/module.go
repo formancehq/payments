@@ -52,7 +52,7 @@ func Module(pluginPath map[string]string, stack, stackURL, temporalNamespace str
 				activities []temporal.DefinitionSet,
 				options worker.Options,
 			) *Workers {
-				return NewWorkers(logger, temporalClient, workflows, activities, options)
+				return NewWorkers(logger, stack, temporalClient, workflows, activities, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
 		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *Workers) {
