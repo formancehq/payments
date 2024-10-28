@@ -6,7 +6,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool) error {
+func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool, waitResult bool) (models.Task, error) {
 	waitingForValidationAdjustment := models.PaymentInitiationAdjustment{
 		ID: models.PaymentInitiationAdjustmentID{
 			PaymentInitiationID: paymentInitiation.ID,
@@ -19,19 +19,27 @@ func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiatio
 	}
 
 	if !sendToPSP {
-		return newStorageError(s.storage.PaymentInitiationsUpsert(ctx, paymentInitiation, waitingForValidationAdjustment), "cannot create payment initiation")
+		return models.Task{}, newStorageError(s.storage.PaymentInitiationsUpsert(ctx, paymentInitiation, waitingForValidationAdjustment), "cannot create payment initiation")
 	}
 
 	if err := s.storage.PaymentInitiationsUpsert(ctx, paymentInitiation, waitingForValidationAdjustment); err != nil {
-		return newStorageError(err, "cannot create payment initiation")
+		return models.Task{}, newStorageError(err, "cannot create payment initiation")
 	}
 
 	switch paymentInitiation.Type {
 	case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-		return handleEngineErrors(s.engine.CreateTransfer(ctx, paymentInitiation.ID, 1))
+		task, err := s.engine.CreateTransfer(ctx, paymentInitiation.ID, 1, waitResult)
+		if err != nil {
+			return models.Task{}, handleEngineErrors(err)
+		}
+		return task, nil
 	case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-		return handleEngineErrors(s.engine.CreatePayout(ctx, paymentInitiation.ID, 1))
+		task, err := s.engine.CreatePayout(ctx, paymentInitiation.ID, 1, waitResult)
+		if err != nil {
+			return models.Task{}, handleEngineErrors(err)
+		}
+		return task, nil
 	}
 
-	return nil
+	return models.Task{}, nil
 }

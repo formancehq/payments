@@ -40,9 +40,9 @@ type Engine interface {
 	// in the external system (PSP).
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 	// Create a transfer between two accounts on the given connector (PSP).
-	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
+	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
 	// Create a payout on the given connector (PSP).
-	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int) error
+	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
 
 	// We received a webhook, handle it by calling the corresponding plugin to
 	// translate it to a formance object and store it.
@@ -354,11 +354,29 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	return task, nil
 }
 
-func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int) error {
+func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
+	id := models.TaskIDReference(fmt.Sprintf("create-transfer-%d", attempt), piID.ConnectorID, piID.String())
+
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: piID.ConnectorID,
+		},
+		ConnectorID: piID.ConnectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		return models.Task{}, err
+	}
+
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-transfer-%s-%s-%d", piID.ConnectorID.String(), piID.String(), attempt),
+			ID:                                       id,
 			TaskQueue:                                piID.ConnectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -368,27 +386,48 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		},
 		workflow.RunCreateTransfer,
 		workflow.CreateTransfer{
+			TaskID:              task.ID,
 			ConnectorID:         piID.ConnectorID,
 			PaymentInitiationID: piID,
 		},
 	)
 	if err != nil {
-		return err
+		return models.Task{}, err
 	}
 
-	// Wait for bank account creation to complete
-	if err := run.Get(ctx, nil); err != nil {
-		return err
+	if waitResult {
+		// Wait for bank account creation to complete
+		if err := run.Get(ctx, nil); err != nil {
+			return models.Task{}, err
+		}
 	}
 
-	return nil
+	return task, nil
 }
 
-func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int) error {
+func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
+	id := models.TaskIDReference(fmt.Sprintf("create-payout-%d", attempt), piID.ConnectorID, piID.String())
+
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: piID.ConnectorID,
+		},
+		ConnectorID: piID.ConnectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		return models.Task{}, err
+	}
+
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-payout-%s-%s-%d", piID.ConnectorID.String(), piID.String(), attempt),
+			ID:                                       id,
 			TaskQueue:                                piID.ConnectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -398,20 +437,23 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		},
 		workflow.RunCreatePayout,
 		workflow.CreatePayout{
+			TaskID:              task.ID,
 			ConnectorID:         piID.ConnectorID,
 			PaymentInitiationID: piID,
 		},
 	)
 	if err != nil {
-		return err
+		return models.Task{}, err
 	}
 
-	// Wait for bank account creation to complete
-	if err := run.Get(ctx, nil); err != nil {
-		return err
+	if waitResult {
+		// Wait for bank account creation to complete
+		if err := run.Get(ctx, nil); err != nil {
+			return models.Task{}, err
+		}
 	}
 
-	return nil
+	return task, nil
 }
 
 func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {

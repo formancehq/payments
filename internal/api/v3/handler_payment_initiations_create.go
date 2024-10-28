@@ -64,6 +64,11 @@ func (r *paymentInitiationsCreateRequest) Validate() error {
 	return nil
 }
 
+type paymentInitiationsCreateResponse struct {
+	PaymentInitiationID string `json:"paymentInitiationID"`
+	TaskID              string `json:"taskID"`
+}
+
 func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsCreate")
@@ -115,13 +120,16 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			pi.DestinationAccountID = pointer.For(models.MustAccountIDFromString(*payload.DestinationAccountID))
 		}
 
-		err = backend.PaymentInitiationsCreate(ctx, pi, noValidation)
+		task, err := backend.PaymentInitiationsCreate(ctx, pi, noValidation, false)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		api.Created(w, pi)
+		api.Accepted(w, paymentInitiationsCreateResponse{
+			PaymentInitiationID: pi.ID.String(),
+			TaskID:              task.ID.String(),
+		})
 	}
 }

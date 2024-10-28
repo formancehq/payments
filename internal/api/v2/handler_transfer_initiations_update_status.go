@@ -62,7 +62,7 @@ func transferInitiationsUpdateStatus(backend backend.Backend) http.HandlerFunc {
 
 		switch deprecatedStatus(payload.Status) {
 		case VALIDATED:
-			err = backend.PaymentInitiationsApprove(ctx, id)
+			_, err = backend.PaymentInitiationsApprove(ctx, id, true)
 		case REJECTED:
 			err = backend.PaymentInitiationsReject(ctx, id)
 		default:

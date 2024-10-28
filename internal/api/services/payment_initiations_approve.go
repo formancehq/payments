@@ -10,7 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Service) PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID) error {
+func (s *Service) PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error) {
 	cursor, err := s.storage.PaymentInitiationAdjustmentsList(
 		ctx,
 		id,
@@ -20,30 +20,38 @@ func (s *Service) PaymentInitiationsApprove(ctx context.Context, id models.Payme
 		),
 	)
 	if err != nil {
-		return newStorageError(err, "cannot list payment initiation's adjustments")
+		return models.Task{}, newStorageError(err, "cannot list payment initiation's adjustments")
 	}
 
 	if len(cursor.Data) == 0 {
-		return errors.New("payment initiation's adjustments not found")
+		return models.Task{}, errors.New("payment initiation's adjustments not found")
 	}
 
 	lastAdjustment := cursor.Data[0]
 
 	if lastAdjustment.Status != models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION {
-		return fmt.Errorf("cannot approve an already approved payment initiation: %w", ErrValidation)
+		return models.Task{}, fmt.Errorf("cannot approve an already approved payment initiation: %w", ErrValidation)
 	}
 
 	pi, err := s.storage.PaymentInitiationsGet(ctx, id)
 	if err != nil {
-		return newStorageError(err, "cannot get payment initiation")
+		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
 	switch pi.Type {
 	case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-		return handleEngineErrors(s.engine.CreateTransfer(ctx, pi.ID, 1))
+		task, err := s.engine.CreateTransfer(ctx, pi.ID, 1, waitResult)
+		if err != nil {
+			return models.Task{}, handleEngineErrors(err)
+		}
+		return task, nil
 	case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-		return handleEngineErrors(s.engine.CreatePayout(ctx, pi.ID, 1))
+		task, err := s.engine.CreatePayout(ctx, pi.ID, 1, waitResult)
+		if err != nil {
+			return models.Task{}, handleEngineErrors(err)
+		}
+		return task, nil
 	}
 
-	return nil
+	return models.Task{}, nil
 }
