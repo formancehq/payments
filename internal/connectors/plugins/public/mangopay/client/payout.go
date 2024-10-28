@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayoutRequest struct {
@@ -44,10 +45,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "initiate_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payouts/bankwire", c.endpoint, c.clientID)
 
@@ -64,7 +62,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	req.Header.Set("Idempotency-Key", payoutRequest.Reference)
 
 	var payoutResponse PayoutResponse
-	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate payout: %w", err), statusCode)
 	}
@@ -72,10 +70,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 }
 
 func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "get_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payout")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payouts/%s", c.endpoint, c.clientID, payoutID)
 
@@ -85,7 +80,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutRespons
 	}
 
 	var payoutResponse PayoutResponse
-	statusCode, err := c.httpClient.Do(req, &payoutResponse, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payout: %w", err), statusCode)
 	}

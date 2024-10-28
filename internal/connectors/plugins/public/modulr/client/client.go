@@ -67,6 +67,7 @@ func New(apiKey, apiSecret, endpoint string) (Client, error) {
 		return nil, fmt.Errorf("failed to generate headers: %w", err)
 	}
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("modulr"),
 		Transport: &apiTransport{
 			headers:    headers,
 			apiKey:     apiKey,

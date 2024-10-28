@@ -3,13 +3,17 @@ package client
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
 	"github.com/stripe/stripe-go/v79/balance"
 	"github.com/stripe/stripe-go/v79/balancetransaction"
 	"github.com/stripe/stripe-go/v79/bankaccount"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -25,6 +29,8 @@ type client struct {
 	balanceClient            balance.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client
+
+	commonMetricAttributes []attribute.KeyValue
 }
 
 func New(backend stripe.Backend, apiKey string) Client {
@@ -37,7 +43,20 @@ func New(backend stripe.Backend, apiKey string) Client {
 		balanceClient:            balance.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
+		commonMetricAttributes:   CommonMetricsAttributes(),
 	}
+}
+
+// recordMetrics is meant to be called in a defer
+func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
+	registry := metrics.GetMetricsRegistry()
+
+	attrs := c.commonMetricAttributes
+	attrs = append(attrs, attribute.String("operation", operation))
+	opts := metric.WithAttributes(attrs...)
+
+	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
+	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
 }
 
 func limit(wanted int64, have int) *int64 {
@@ -63,4 +82,11 @@ func wrapSDKErr(err error) error {
 
 	}
 	return err
+}
+
+func CommonMetricsAttributes() []attribute.KeyValue {
+	metricsAttributes := []attribute.KeyValue{
+		attribute.String("connector", "stripe"),
+	}
+	return metricsAttributes
 }

@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Transfer struct {
@@ -60,10 +62,7 @@ func (t *Transfer) UnmarshalJSON(data []byte) error {
 }
 
 func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "list_transfers")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transfers")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers"), http.NoBody)
@@ -79,7 +78,7 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 
 	var transfers []Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfers, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfers, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfers: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -157,10 +156,7 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 }
 
 func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "get_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers/"+transferID), http.NoBody)
@@ -170,7 +166,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 
 	var transfer Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -178,11 +174,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 }
 
 func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
-	// TODO(polo): metrics
-	// metrics.GetMetricsRegistry().ConnectorPSPCalls().Add(ctx, 1, metric.WithAttributes([]attribute.KeyValue{
-	// 	attribute.String("connector", "wise"),
-	// 	attribute.String("operation", "initiate_transfer"),
-	// }...))
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"targetAccount":         targetAccount,
@@ -201,7 +193,7 @@ func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount 
 
 	var transfer Transfer
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &transfer, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transfer: %w %w", err, errRes.Error(statusCode).Error())
 	}

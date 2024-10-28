@@ -2,7 +2,6 @@ package plugins
 
 import (
 	"context"
-	"os"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/connectors/grpc/proto"
@@ -16,14 +15,6 @@ type impl struct {
 }
 
 func NewGRPCImplem(plugin models.Plugin) *impl {
-	logger := hclog.New(&hclog.LoggerOptions{
-		Level:      hclog.Debug,
-		Output:     os.Stderr,
-		JSONFormat: true,
-	})
-
-	hclog.SetDefault(logger)
-
 	return &impl{
 		plugin: plugin,
 	}

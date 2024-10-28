@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -24,10 +26,7 @@ type Transaction struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) ([]Transaction, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "modulr", "list_transactions")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("accounts/%s/transactions", accountID), http.NoBody)
 	if err != nil {
@@ -44,7 +43,7 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 
 	var res responseWrapper[[]Transaction]
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}

@@ -2,16 +2,20 @@ package plugins
 
 import (
 	"fmt"
+	"os"
 
+	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
 	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
 
-// TODO(polo): metrics
 func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          fmt.Sprintf("serve %s plugin", name),
@@ -27,13 +31,37 @@ func NewPlugin(name string, pluginConstructorFn models.PluginConstructorFn) *cob
 	return cmd
 }
 
-func runServer(pluginConstructorFn models.PluginConstructorFn) func(cmd *cobra.Command, args []string) error {
+func runServer(
+	pluginConstructorFn models.PluginConstructorFn,
+) func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
-		// TODO initialise logger here?
-		opts := fx.Options(
-			fx.Provide(pluginConstructorFn, NewServer),
+		hlogger := hclog.New(loggerOptions())
+		hclog.SetDefault(hlogger)
+
+		opts := make([]fx.Option, 0)
+		opts = append(opts,
+			otlp.FXModuleFromFlags(cmd),
+			otlpmetrics.FXModuleFromFlags(cmd),
+			fx.Provide(metrics.RegisterMetricsRegistry),
+			fx.Invoke(func(metrics.MetricsRegistry) {}),
+		)
+
+		opts = append(opts,
+			fx.Provide(pluginConstructorFn, func() hclog.Logger { return hlogger }, NewServer),
 			fx.Invoke(func(Server) {}),
 		)
-		return service.New(cmd.OutOrStderr(), opts).Run(cmd)
+
+		logger := logging.NewHcLogLoggerAdapter(hlogger, nil)
+		return service.NewWithLogger(logger, fx.Options(opts...)).Run(cmd)
+	}
+}
+
+func loggerOptions() *hclog.LoggerOptions {
+	// client-side logger settings (internal/connectors/engine/plugins/plugin.go) will override
+	// the output format and verbosity, so we can just make this as verbose as possible
+	return &hclog.LoggerOptions{
+		Level:      hclog.Trace,
+		Output:     os.Stderr,
+		JSONFormat: true,
 	}
 }

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Beneficiary struct {
@@ -15,10 +17,7 @@ type Beneficiary struct {
 }
 
 func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modifiedSince time.Time) ([]Beneficiary, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "modulr", "list_beneficiaries")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_beneficiaries")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("beneficiaries"), http.NoBody)
 	if err != nil {
@@ -35,7 +34,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 
 	var res responseWrapper[[]Beneficiary]
 	var errRes modulrError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get beneficiaries: %w %w", err, errRes.Error())
 	}

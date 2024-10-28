@@ -28,6 +28,7 @@ type client struct {
 
 func New(clientID, apiKey, endpoint string) (*client, error) {
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
 		Transport: &apiTransport{
 			clientID:   clientID,
 			apiKey:     apiKey,

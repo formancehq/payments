@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -15,10 +16,7 @@ type Contact struct {
 }
 
 func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "list_contacts")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_contacts")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err
@@ -39,7 +37,7 @@ func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 
 	res := Contacts{Contacts: make([]*Contact, 0)}
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get contacts %w, %w", err, errRes.Error())
 	}

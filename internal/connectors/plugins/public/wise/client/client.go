@@ -59,6 +59,7 @@ func (c *client) endpoint(path string) string {
 func New(apiKey string) (Client, error) {
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("wise"),
 		Transport: &apiTransport{
 			APIKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),

@@ -62,7 +62,7 @@ func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 
 	var res WebhookSubscriptionResponse
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &res, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create subscription: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -78,7 +78,7 @@ func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 
 	var res []WebhookSubscriptionResponse
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &res, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subscription: %w %w", err, errRes.Error(statusCode).Error())
 	}
@@ -93,7 +93,7 @@ func (c *client) DeleteWebhooks(ctx context.Context, profileID uint64, subscript
 	}
 
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, nil, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, nil, &errRes)
 	if err != nil {
 		return fmt.Errorf("failed to delete webhooks: %w %w", err, errRes.Error(statusCode).Error())
 	}

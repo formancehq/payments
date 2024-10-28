@@ -8,10 +8,8 @@ import (
 )
 
 func (c *Client) ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "generic", "list_beneficiaries")
-	// now := time.Now()
-	// defer f(ctx, now)
+	start := time.Now()
+	defer c.recordMetrics(ctx, start, "list_beneficiaries")
 
 	req := c.apiClient.DefaultApi.
 		GetBeneficiaries(ctx).

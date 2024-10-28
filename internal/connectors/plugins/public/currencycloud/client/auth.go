@@ -6,13 +6,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 func (c *client) authenticate(ctx context.Context) error {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "authenticate")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
 
 	form := make(url.Values)
 
@@ -35,7 +34,7 @@ func (c *client) authenticate(ctx context.Context) error {
 
 	var res response
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return fmt.Errorf("failed to get authenticate: %w, %w", err, errRes.Error())
 	}

@@ -8,7 +8,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.3.7
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
-	github.com/formancehq/go-libs/v2 v2.0.0
+	github.com/formancehq/go-libs/v2 v2.0.1-0.20241024113615-9aed7e642e48
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-chi/chi/v5 v5.1.0
@@ -29,6 +29,7 @@ require (
 	github.com/uptrace/bun/dialect/pgdialect v1.2.3
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.56.0
 	go.opentelemetry.io/otel v1.31.0
+	go.opentelemetry.io/otel/metric v1.31.0
 	go.opentelemetry.io/otel/trace v1.31.0
 	go.temporal.io/api v1.39.0
 	go.temporal.io/sdk v1.29.1
@@ -193,7 +194,6 @@ require (
 	go.opentelemetry.io/otel/exporters/stdout/stdoutmetric v1.31.0 // indirect
 	go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.31.0 // indirect
 	go.opentelemetry.io/otel/log v0.6.0 // indirect
-	go.opentelemetry.io/otel/metric v1.31.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.31.0 // indirect
 	go.opentelemetry.io/otel/sdk/metric v1.31.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect

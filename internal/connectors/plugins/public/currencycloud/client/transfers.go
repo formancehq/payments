@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type TransferRequest struct {
@@ -53,10 +55,7 @@ type TransferResponse struct {
 }
 
 func (c *client) InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "initiate_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err
@@ -72,7 +71,7 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 
 	var res TransferResponse
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &res, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transfer: %w, %w", err, errRes.Error())
 	}

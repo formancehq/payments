@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/google/uuid"
 )
 
@@ -15,10 +16,7 @@ type Quote struct {
 }
 
 func (c *client) CreateQuote(ctx context.Context, profileID, currency string, amount json.Number) (Quote, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "wise", "create_quote")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_quote")
 
 	var quote Quote
 
@@ -43,7 +41,7 @@ func (c *client) CreateQuote(ctx context.Context, profileID, currency string, am
 	req.Header.Set("Content-Type", "application/json")
 
 	var errRes wiseErrors
-	statusCode, err := c.httpClient.Do(req, &quote, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &quote, &errRes)
 	if err != nil {
 		return quote, fmt.Errorf("failed to get response from quote: %w %w", err, errRes.Error(statusCode).Error())
 	}

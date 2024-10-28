@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Funds struct {
@@ -44,10 +45,7 @@ type TransferResponse struct {
 }
 
 func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "initiate_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers", c.endpoint, c.clientID)
 
@@ -65,7 +63,7 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 
 	var transferResponse TransferResponse
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(req, &transferResponse, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error()), statusCode)
 	}
@@ -74,10 +72,7 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 }
 
 func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "get_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers/%s", c.endpoint, c.clientID, transferID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
@@ -86,7 +81,7 @@ func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (Tran
 	}
 
 	var transfer TransferResponse
-	statusCode, err := c.httpClient.Do(req, &transfer, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &transfer, nil)
 	if err != nil {
 		return transfer, errorsutils.NewErrorWithExitCode(
 			fmt.Errorf("failed to get transfer response: %w", err),

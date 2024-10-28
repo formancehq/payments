@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type PayoutRequest struct {
@@ -52,10 +54,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "currencycloud", "initiate_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err
@@ -72,7 +71,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 
 	var payoutResponse PayoutResponse
 	var errRes currencyCloudError
-	_, err = c.httpClient.Do(req, &payoutResponse, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &payoutResponse, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create payout: %w, %w", err, errRes.Error())
 	}

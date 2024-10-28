@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"sync"
 
+	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-hclog"
@@ -31,6 +33,8 @@ type plugins struct {
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
+	// used to pass flags to plugins
+	rawFlags      []string
 	debug         bool
 	jsonFormatter bool
 }
@@ -39,10 +43,16 @@ type pluginInformation struct {
 	client *plugin.Client
 }
 
-func New(pluginsPath map[string]string, debug, jsonFormatter bool) *plugins {
+func New(
+	pluginsPath map[string]string,
+	rawFlags []string,
+	debug bool,
+	jsonFormatter bool,
+) *plugins {
 	return &plugins{
 		pluginsPath:   pluginsPath,
 		plugins:       make(map[string]pluginInformation),
+		rawFlags:      rawFlags,
 		debug:         debug,
 		jsonFormatter: jsonFormatter,
 	}
@@ -76,12 +86,13 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		loggerOptions.JSONFormat = true
 	}
 
+	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
-		Cmd:              exec.Command("sh", "-c", pluginPath),
+		Cmd:              pluginCmd(pluginPath, p.rawFlags, logger),
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
-		Logger:           hclog.New(loggerOptions),
+		Logger:           logger,
 	})
 
 	p.plugins[connectorID.String()] = pluginInformation{
@@ -143,6 +154,21 @@ func getPlugin(client *plugin.Client) (models.Plugin, error) {
 	}
 
 	return impl, nil
+}
+
+func pluginCmd(pluginPath string, rawFlags []string, logger hclog.Logger) *exec.Cmd {
+	flags := make([]string, 0)
+	for _, flag := range rawFlags {
+		if strings.Contains(flag, otlpmetrics.OtelMetricsExporterFlag) {
+			if strings.HasSuffix(flag, otlpmetrics.StdoutExporter) {
+				logger.Debug("reverting to noop exporter as stdout is not supported in plugin", "original_flag", flag)
+				continue
+			}
+		}
+		flags = append(flags, flag)
+	}
+
+	return exec.Command(pluginPath, flags...)
 }
 
 var _ Plugins = &plugins{}

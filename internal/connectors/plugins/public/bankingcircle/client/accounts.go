@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type Account struct {
@@ -37,10 +39,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 		return nil, err
 	}
 
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "list_accounts")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v1/accounts", http.NoBody)
 	if err != nil {
@@ -66,7 +65,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 	}
 
 	res := response{Result: make([]Account, 0)}
-	statusCode, err := c.httpClient.Do(req, &res, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get accounts, status code %d: %w", statusCode, err)
 	}
@@ -77,11 +76,7 @@ func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
-
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "bankingcircle", "get_account")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_account")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/accounts/%s", c.endpoint, accountID), http.NoBody)
 	if err != nil {
@@ -90,7 +85,7 @@ func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	var account Account
-	statusCode, err := c.httpClient.Do(req, &account, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &account, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get account, status code %d: %w", statusCode, err)
 	}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type User struct {
@@ -15,10 +16,7 @@ type User struct {
 }
 
 func (c *client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "list_users")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_users")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users", c.endpoint, c.clientID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
@@ -33,7 +31,7 @@ func (c *client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, 
 	req.URL.RawQuery = q.Encode()
 
 	var users []User
-	statusCode, err := c.httpClient.Do(req, &users, nil)
+	statusCode, err := c.httpClient.Do(ctx, req, &users, nil)
 	if err != nil {
 		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get user response: %w", err), statusCode)
 	}

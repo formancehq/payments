@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
 type recipientsResponse struct {
@@ -23,10 +25,7 @@ type RecipientAttributes struct {
 }
 
 func (c *client) GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error) {
-	// TODO(polo): add metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "list_recipients")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_recipients")
 
 	endpoint := fmt.Sprintf("%s/accounts/%s/recipients", c.endpoint, accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
@@ -44,7 +43,7 @@ func (c *client) GetRecipients(ctx context.Context, accountID string, page int, 
 
 	recipients := recipientsResponse{Recipients: make([]*Recipient, 0)}
 	var errRes moneycorpError
-	_, err = c.httpClient.Do(req, &recipients, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &recipients, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get recipients: %w %w", err, errRes.Error())
 	}
