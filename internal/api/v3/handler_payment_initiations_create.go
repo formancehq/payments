@@ -64,6 +64,11 @@ func (r *paymentInitiationsCreateRequest) Validate() error {
 	return nil
 }
 
+type paymentInitiationsCreateResponse struct {
+	PaymentInitiationID string `json:"paymentInitiationID"`
+	TaskID              string `json:"taskID"`
+}
+
 func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsCreate")
@@ -122,11 +127,9 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		if noValidation {
-			api.Accepted(w, task)
-			return
-		}
-
-		api.Created(w, pi)
+		api.Accepted(w, paymentInitiationsCreateResponse{
+			PaymentInitiationID: pi.ID.String(),
+			TaskID:              task.ID.String(),
+		})
 	}
 }
