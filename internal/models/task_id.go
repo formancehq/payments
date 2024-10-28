@@ -14,6 +14,10 @@ type TaskID struct {
 	ConnectorID ConnectorID
 }
 
+func TaskIDReference(prefix string, connectorID ConnectorID, objectID string) string {
+	return fmt.Sprintf("%s-%s-%s", prefix, connectorID.String(), objectID)
+}
+
 func (aid *TaskID) String() string {
 	if aid == nil || aid.Reference == "" {
 		return ""
