@@ -7,6 +7,7 @@ import (
 )
 
 type CreatePayout struct {
+	TaskID              models.TaskID
 	ConnectorID         models.ConnectorID
 	PaymentInitiationID models.PaymentInitiationID
 }
@@ -15,13 +16,38 @@ func (w Workflow) runCreatePayout(
 	ctx workflow.Context,
 	createPayout CreatePayout,
 ) error {
+	pID, err := w.createPayout(ctx, createPayout)
+	if err != nil {
+		errUpdateTask := w.updateTasksError(
+			ctx,
+			createPayout.TaskID,
+			createPayout.ConnectorID,
+			err,
+		)
+		if errUpdateTask != nil {
+			return errUpdateTask
+		}
+	}
+
+	return w.updateTaskSucces(
+		ctx,
+		createPayout.TaskID,
+		createPayout.ConnectorID,
+		pID.String(),
+	)
+}
+
+func (w Workflow) createPayout(
+	ctx workflow.Context,
+	createPayout CreatePayout,
+) (models.PaymentID, error) {
 	// Get the payment initiation
 	pi, err := activities.StoragePaymentInitiationsGet(
 		infiniteRetryContext(ctx),
 		createPayout.PaymentInitiationID,
 	)
 	if err != nil {
-		return err
+		return models.PaymentID{}, err
 	}
 
 	var sourceAccount *models.Account
@@ -31,7 +57,7 @@ func (w Workflow) runCreatePayout(
 			*pi.SourceAccountID,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 	}
 
@@ -42,7 +68,7 @@ func (w Workflow) runCreatePayout(
 			*pi.DestinationAccountID,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 	}
 
@@ -59,7 +85,7 @@ func (w Workflow) runCreatePayout(
 		nil,
 	)
 	if err != nil {
-		return err
+		return models.PaymentID{}, err
 	}
 
 	createPayoutResponse, errPlugin := activities.PluginCreatePayout(
@@ -78,7 +104,7 @@ func (w Workflow) runCreatePayout(
 			[]models.Payment{payment},
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 
 		err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
@@ -88,7 +114,7 @@ func (w Workflow) runCreatePayout(
 			createPayoutResponse.Payment.CreatedAt,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 
 		err = w.addPIAdjustment(
@@ -102,10 +128,10 @@ func (w Workflow) runCreatePayout(
 			nil,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 
-		return nil
+		return payment.ID, nil
 	default:
 		err = w.addPIAdjustment(
 			ctx,
@@ -118,10 +144,10 @@ func (w Workflow) runCreatePayout(
 			nil,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 
-		return errPlugin
+		return models.PaymentID{}, errPlugin
 	}
 }
 

@@ -115,10 +115,15 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			pi.DestinationAccountID = pointer.For(models.MustAccountIDFromString(*payload.DestinationAccountID))
 		}
 
-		err = backend.PaymentInitiationsCreate(ctx, pi, noValidation)
+		task, err := backend.PaymentInitiationsCreate(ctx, pi, noValidation, false)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
+			return
+		}
+
+		if noValidation {
+			api.Accepted(w, task)
 			return
 		}
 

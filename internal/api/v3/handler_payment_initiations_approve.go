@@ -21,13 +21,13 @@ func paymentInitiationsApprove(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		err = backend.PaymentInitiationsApprove(ctx, id)
+		task, err := backend.PaymentInitiationsApprove(ctx, id, false)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		api.NoContent(w)
+		api.Accepted(w, task)
 	}
 }

@@ -7,6 +7,7 @@ import (
 )
 
 type CreateTransfer struct {
+	TaskID              models.TaskID
 	ConnectorID         models.ConnectorID
 	PaymentInitiationID models.PaymentInitiationID
 }
@@ -15,13 +16,40 @@ func (w Workflow) runCreateTransfer(
 	ctx workflow.Context,
 	createTransfer CreateTransfer,
 ) error {
+	pID, err := w.createTransfer(ctx, createTransfer)
+	if err != nil {
+		errUpdateTask := w.updateTasksError(
+			ctx,
+			createTransfer.TaskID,
+			createTransfer.ConnectorID,
+			err,
+		)
+		if errUpdateTask != nil {
+			return errUpdateTask
+		}
+
+		return err
+	}
+
+	return w.updateTaskSucces(
+		ctx,
+		createTransfer.TaskID,
+		createTransfer.ConnectorID,
+		pID.String(),
+	)
+}
+
+func (w Workflow) createTransfer(
+	ctx workflow.Context,
+	createTransfer CreateTransfer,
+) (models.PaymentID, error) {
 	// Get the payment initiation
 	pi, err := activities.StoragePaymentInitiationsGet(
 		infiniteRetryContext(ctx),
 		createTransfer.PaymentInitiationID,
 	)
 	if err != nil {
-		return err
+		return models.PaymentID{}, err
 	}
 
 	var sourceAccount *models.Account
@@ -31,7 +59,7 @@ func (w Workflow) runCreateTransfer(
 			*pi.SourceAccountID,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 	}
 
@@ -42,7 +70,7 @@ func (w Workflow) runCreateTransfer(
 			*pi.DestinationAccountID,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 	}
 
@@ -59,7 +87,7 @@ func (w Workflow) runCreateTransfer(
 		nil,
 	)
 	if err != nil {
-		return err
+		return models.PaymentID{}, err
 	}
 
 	createTransferResponse, errPlugin := activities.PluginCreateTransfer(
@@ -78,7 +106,7 @@ func (w Workflow) runCreateTransfer(
 			[]models.Payment{payment},
 		)
 		if err != nil {
-			return errPlugin
+			return models.PaymentID{}, errPlugin
 		}
 
 		err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
@@ -88,7 +116,7 @@ func (w Workflow) runCreateTransfer(
 			createTransferResponse.Payment.CreatedAt,
 		)
 		if err != nil {
-			return errPlugin
+			return models.PaymentID{}, errPlugin
 		}
 
 		err = w.addPIAdjustment(
@@ -102,10 +130,10 @@ func (w Workflow) runCreateTransfer(
 			nil,
 		)
 		if err != nil {
-			return errPlugin
+			return models.PaymentID{}, errPlugin
 		}
 
-		return nil
+		return payment.ID, nil
 	default:
 		err := w.addPIAdjustment(
 			ctx,
@@ -118,10 +146,10 @@ func (w Workflow) runCreateTransfer(
 			nil,
 		)
 		if err != nil {
-			return err
+			return models.PaymentID{}, err
 		}
 
-		return errPlugin
+		return models.PaymentID{}, errPlugin
 	}
 }
 
