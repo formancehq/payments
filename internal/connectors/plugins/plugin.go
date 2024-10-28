@@ -13,7 +13,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-hclog"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel/metric"
 	"go.uber.org/fx"
 )
 
@@ -43,10 +42,6 @@ func runServer(
 		opts = append(opts,
 			otlp.FXModuleFromFlags(cmd),
 			otlpmetrics.FXModuleFromFlags(cmd),
-			fx.Decorate(fx.Annotate(func(meterProvider metric.MeterProvider) (metrics.MetricsRegistry, error) {
-				hlogger.Info("decorate metrics registery called")
-				return metrics.RegisterMetricsRegistry(meterProvider)
-			})),
 			fx.Provide(metrics.RegisterMetricsRegistry),
 			fx.Invoke(func(metrics.MetricsRegistry) {}),
 		)
