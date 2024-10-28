@@ -174,11 +174,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 }
 
 func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
-	// TODO(polo): metrics
-	// metrics.GetMetricsRegistry().ConnectorPSPCalls().Add(ctx, 1, metric.WithAttributes([]attribute.KeyValue{
-	// 	attribute.String("connector", "wise"),
-	// 	attribute.String("operation", "initiate_transfer"),
-	// }...))
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"targetAccount":         targetAccount,
