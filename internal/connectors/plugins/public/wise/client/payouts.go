@@ -80,10 +80,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 }
 
 func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
-	// TODO(polo): metrics
 	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
-	// now := time.Now()
-	// defer f(ctx, now)
 
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"targetAccount":         targetAccount,

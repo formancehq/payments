@@ -1,9 +1,7 @@
 package client
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 )
 
 type moneycorpErrors struct {
@@ -28,14 +26,10 @@ func (me *moneycorpError) Error() error {
 	return err
 }
 
-func unmarshalError(statusCode int, body io.ReadCloser) *moneycorpError {
-	var ces moneycorpErrors
-	_ = json.NewDecoder(body).Decode(&ces)
-
+func toError(statusCode int, ces moneycorpErrors) *moneycorpError {
 	if len(ces.Errors) == 0 {
 		return &moneycorpError{
 			StatusCode: statusCode,
-			// WithRetry:  withRetry,
 		}
 	}
 

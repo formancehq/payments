@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -68,10 +67,13 @@ func (t *apiTransport) login(ctx context.Context) error {
 		return fmt.Errorf("failed to marshal login request: %w", err)
 	}
 
-	// TODO(polo): re-introduce metrics
-	// f := connectors.ClientMetrics(ctx, "moneycorp", "login")
-	// now := time.Now()
-	// defer f(ctx, now)
+	config := &httpwrapper.Config{
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
+	}
+	httpClient, err := httpwrapper.NewClient(config)
+	if err != nil {
+		return fmt.Errorf("failed to initialize httpwrapper client: %w", err)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		t.endpoint+"/login", bytes.NewBuffer(requestBody))
@@ -81,34 +83,23 @@ func (t *apiTransport) login(ctx context.Context) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// TODO: default client doesn't have a timeout, so we should be careful about using it here
-	resp, err := http.DefaultClient.Do(req)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
+
+	var res loginResponse
+	var errRes moneycorpErrors
+	statusCode, err := httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return fmt.Errorf("failed to login: %w", err)
 	}
 
-	defer func() {
-		err = resp.Body.Close()
-		if err != nil {
-			hclog.Default().Error("failed to close response body", "error", err)
+	if statusCode != http.StatusOK {
+		if statusCode >= http.StatusInternalServerError {
+			return toError(statusCode, errRes).Error()
 		}
-	}()
-
-	if resp.StatusCode != http.StatusOK {
-		errRes := unmarshalError(resp.StatusCode, resp.Body)
-		if resp.StatusCode >= http.StatusInternalServerError {
-			return errRes.Error()
-		}
-		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, errRes.Error())
-	}
-
-	var res loginResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return fmt.Errorf("failed to decode login response: %w", err)
+		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, toError(statusCode, errRes).Error())
 	}
 
 	t.accessToken = res.Data.AccessToken
 	t.accessTokenExpiresAt = time.Now().Add(time.Duration(res.Data.ExpiresIn) * time.Second)
-
 	return nil
 }
