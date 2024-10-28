@@ -45,12 +45,12 @@ type Backend interface {
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
 
 	// Payment Initiations
-	PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool) error
+	PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool, waitResult bool) (models.Task, error)
 	PaymentInitiationsList(ctx context.Context, query storage.ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error)
 	PaymentInitiationsGet(ctx context.Context, id models.PaymentInitiationID) (*models.PaymentInitiation, error)
-	PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID) error
+	PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error)
 	PaymentInitiationsReject(ctx context.Context, id models.PaymentInitiationID) error
-	PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID) error
+	PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error)
 	PaymentInitiationsDelete(ctx context.Context, id models.PaymentInitiationID) error
 
 	// Payment Initiation Adjustments

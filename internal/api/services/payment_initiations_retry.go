@@ -10,14 +10,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID) error {
+func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error) {
 	adjustments, err := s.getAllPaymentInitiationAdjustments(ctx, id)
 	if err != nil {
-		return err
+		return models.Task{}, err
 	}
 
 	if len(adjustments) == 0 {
-		return errors.New("payment initiation's adjustments not found")
+		return models.Task{}, errors.New("payment initiation's adjustments not found")
 	}
 
 	lastAdjustment := adjustments[0]
@@ -28,29 +28,37 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED:
 		isReversed = true
 	default:
-		return fmt.Errorf("cannot retry an already processed payment initiation: %w", ErrValidation)
+		return models.Task{}, fmt.Errorf("cannot retry an already processed payment initiation: %w", ErrValidation)
 	}
 
 	pi, err := s.storage.PaymentInitiationsGet(ctx, id)
 	if err != nil {
-		return newStorageError(err, "cannot get payment initiation")
+		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
 	attempts := getAttemps(adjustments, isReversed)
 
 	if isReversed {
 		// TODO(polo): implement the reverse retry
-		return fmt.Errorf("cannot retry a reversed payment initiation: %w", ErrValidation)
+		return models.Task{}, fmt.Errorf("cannot retry a reversed payment initiation: %w", ErrValidation)
 	} else {
 		switch pi.Type {
 		case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-			return handleEngineErrors(s.engine.CreateTransfer(ctx, pi.ID, attempts+1))
+			task, err := s.engine.CreateTransfer(ctx, pi.ID, attempts+1, waitResult)
+			if err != nil {
+				return models.Task{}, handleEngineErrors(err)
+			}
+			return task, nil
 		case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-			return handleEngineErrors(s.engine.CreatePayout(ctx, pi.ID, attempts+1))
+			task, err := s.engine.CreatePayout(ctx, pi.ID, attempts+1, waitResult)
+			if err != nil {
+				return models.Task{}, handleEngineErrors(err)
+			}
+			return task, nil
 		}
 	}
 
-	return nil
+	return models.Task{}, nil
 }
 
 func getAttemps(adjustments []models.PaymentInitiationAdjustment, isReversed bool) int {

@@ -24,7 +24,7 @@ func transferInitiationsRetry(backend backend.Backend) http.HandlerFunc {
 
 		span.SetAttributes(attribute.String("transfer.id", id.String()))
 
-		err = backend.PaymentInitiationsRetry(ctx, id)
+		_, err = backend.PaymentInitiationsRetry(ctx, id, true)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

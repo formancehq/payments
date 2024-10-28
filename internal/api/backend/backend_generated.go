@@ -355,31 +355,33 @@ func (mr *MockBackendMockRecorder) PaymentInitiationRelatedPaymentsList(ctx, id,
 }
 
 // PaymentInitiationsApprove mocks base method.
-func (m *MockBackend) PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID) error {
+func (m *MockBackend) PaymentInitiationsApprove(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentInitiationsApprove", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "PaymentInitiationsApprove", ctx, id, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PaymentInitiationsApprove indicates an expected call of PaymentInitiationsApprove.
-func (mr *MockBackendMockRecorder) PaymentInitiationsApprove(ctx, id any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentInitiationsApprove(ctx, id, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsApprove", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsApprove), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsApprove", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsApprove), ctx, id, waitResult)
 }
 
 // PaymentInitiationsCreate mocks base method.
-func (m *MockBackend) PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP bool) error {
+func (m *MockBackend) PaymentInitiationsCreate(ctx context.Context, paymentInitiation models.PaymentInitiation, sendToPSP, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentInitiationsCreate", ctx, paymentInitiation, sendToPSP)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "PaymentInitiationsCreate", ctx, paymentInitiation, sendToPSP, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PaymentInitiationsCreate indicates an expected call of PaymentInitiationsCreate.
-func (mr *MockBackendMockRecorder) PaymentInitiationsCreate(ctx, paymentInitiation, sendToPSP any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentInitiationsCreate(ctx, paymentInitiation, sendToPSP, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsCreate", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsCreate), ctx, paymentInitiation, sendToPSP)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsCreate", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsCreate), ctx, paymentInitiation, sendToPSP, waitResult)
 }
 
 // PaymentInitiationsDelete mocks base method.
@@ -441,17 +443,18 @@ func (mr *MockBackendMockRecorder) PaymentInitiationsReject(ctx, id any) *gomock
 }
 
 // PaymentInitiationsRetry mocks base method.
-func (m *MockBackend) PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID) error {
+func (m *MockBackend) PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentInitiationsRetry", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret := m.ctrl.Call(m, "PaymentInitiationsRetry", ctx, id, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PaymentInitiationsRetry indicates an expected call of PaymentInitiationsRetry.
-func (mr *MockBackendMockRecorder) PaymentInitiationsRetry(ctx, id any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentInitiationsRetry(ctx, id, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsRetry", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsRetry), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsRetry", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsRetry), ctx, id, waitResult)
 }
 
 // PaymentsCreate mocks base method.

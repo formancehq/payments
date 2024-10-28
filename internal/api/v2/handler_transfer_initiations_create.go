@@ -117,7 +117,7 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			pi.DestinationAccountID = pointer.For(models.MustAccountIDFromString(payload.DestinationAccountID))
 		}
 
-		err = backend.PaymentInitiationsCreate(ctx, pi, payload.Validated)
+		_, err = backend.PaymentInitiationsCreate(ctx, pi, payload.Validated, true)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
