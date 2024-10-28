@@ -57,7 +57,9 @@ func (w Workflow) runInstallConnector(
 		w.webhooks.RegisterWebhooks(installConnector.ConnectorID, configs)
 	}
 
-	// Fourth step: launch the workflow tree
+	// Fourth step: launch the workflow tree, do not wait for the result
+	// by using the GetChildWorkflowExecution function that returns a future
+	// which will be ready when the child workflow has successfully started.
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -76,7 +78,7 @@ func (w Workflow) runInstallConnector(
 		installConnector.ConnectorID,
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
-	).Get(ctx, nil); err != nil {
+	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
 		if errors.As(err, &applicationError) {
 			if applicationError.Type() != "ChildWorkflowExecutionAlreadyStartedError" {

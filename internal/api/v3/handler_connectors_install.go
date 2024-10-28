@@ -30,6 +30,6 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, connectorID.String())
+		api.Accepted(w, connectorID.String())
 	}
 }
