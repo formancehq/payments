@@ -72,10 +72,7 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 }
 
 func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
-	// TODO(polo): metrics
-	// f := connectors.ClientMetrics(ctx, "mangopay", "get_transfer")
-	// now := time.Now()
-	// defer f(ctx, now)
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers/%s", c.endpoint, c.clientID, transferID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
