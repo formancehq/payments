@@ -304,7 +304,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 }
 
 func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
-	id := fmt.Sprintf("create-bank-account-%s-%s", connectorID.String(), bankAccountID.String())
+	id := models.TaskIDReference("create-bank-account", connectorID, bankAccountID.String())
 
 	now := time.Now().UTC()
 	task := models.Task{
