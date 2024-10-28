@@ -159,16 +159,14 @@ func getPlugin(client *plugin.Client) (models.Plugin, error) {
 func pluginCmd(pluginPath string, rawFlags []string, logger hclog.Logger) *exec.Cmd {
 	flags := make([]string, 0)
 	for _, flag := range rawFlags {
-		if strings.Contains(flag, otlpmetrics.OtelMetricsExporterOTLPModeFlag) ||
-			strings.Contains(flag, otlpmetrics.OtelMetricsExporterFlag) {
-			logger.Debug("overriding plugin flag", "flagname", flag)
-			continue
+		if strings.Contains(flag, otlpmetrics.OtelMetricsExporterFlag) {
+			if strings.HasSuffix(flag, otlpmetrics.StdoutExporter) {
+				logger.Debug("reverting to noop exporter as stdout is not supported in plugin", "original_flag", flag)
+				continue
+			}
 		}
 		flags = append(flags, flag)
 	}
-	// default settings for metrics interfere with go-plugin so we set grpc mode explictly
-	flags = append(flags, fmt.Sprintf("--%s=otlp", otlpmetrics.OtelMetricsExporterFlag))
-	flags = append(flags, fmt.Sprintf("--%s=grpc", otlpmetrics.OtelMetricsExporterOTLPModeFlag))
 
 	return exec.Command(pluginPath, flags...)
 }
