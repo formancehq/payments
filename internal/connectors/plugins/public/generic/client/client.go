@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/formancehq/payments/genericclient"
@@ -65,10 +64,6 @@ func (c *Client) recordMetrics(ctx context.Context, start time.Time, operation s
 func CommonMetricsAttributes() []attribute.KeyValue {
 	metricsAttributes := []attribute.KeyValue{
 		attribute.String("connector", "generic"),
-	}
-	stack := os.Getenv("STACK")
-	if stack != "" {
-		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
 	}
 	return metricsAttributes
 }
