@@ -65,7 +65,6 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		// TODO(polo): taskID
 		api.Accepted(w, task)
 	}
 }
