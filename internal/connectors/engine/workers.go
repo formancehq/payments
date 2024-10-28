@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -11,12 +12,10 @@ import (
 	temporalworkflow "go.temporal.io/sdk/workflow"
 )
 
-const (
-	defaultWorkerName = "default"
-)
-
 type Workers struct {
 	logger logging.Logger
+
+	stack string
 
 	temporalClient client.Client
 
@@ -33,9 +32,14 @@ type Worker struct {
 	worker worker.Worker
 }
 
-func NewWorkers(logger logging.Logger, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
+func (w *Workers) GetDefaultWorker() string {
+	return fmt.Sprintf("%s-default", w.stack)
+}
+
+func NewWorkers(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
 	workers := &Workers{
 		logger:         logger,
+		stack:          stack,
 		temporalClient: temporalClient,
 		workers:        make(map[string]Worker),
 		workflows:      workflows,
@@ -44,7 +48,7 @@ func NewWorkers(logger logging.Logger, temporalClient client.Client, workflows, 
 	}
 
 	// For all operation outside of connectors handlers
-	workers.AddWorker(defaultWorkerName)
+	workers.AddWorker(workers.GetDefaultWorker())
 
 	return workers
 }
