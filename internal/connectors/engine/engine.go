@@ -304,10 +304,12 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 }
 
 func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+	id := fmt.Sprintf("create-bank-account-%s-%s", connectorID.String(), bankAccountID.String())
+
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
-			Reference:   bankAccountID.String() + "-" + connectorID.String(),
+			Reference:   id,
 			ConnectorID: connectorID,
 		},
 		ConnectorID: connectorID,
@@ -323,7 +325,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	run, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-bank-account-%s-%s", connectorID.String(), bankAccountID.String()),
+			ID:                                       id,
 			TaskQueue:                                connectorID.String(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
