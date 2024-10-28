@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/adyen"
@@ -95,10 +94,6 @@ func (c *client) recordMetrics(ctx context.Context, start time.Time, operation s
 func CommonMetricsAttributes() []attribute.KeyValue {
 	metricsAttributes := []attribute.KeyValue{
 		attribute.String("connector", "adyen"),
-	}
-	stack := os.Getenv("STACK")
-	if stack != "" {
-		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
 	}
 	return metricsAttributes
 }

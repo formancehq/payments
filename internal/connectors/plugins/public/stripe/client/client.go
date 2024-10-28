@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
@@ -88,10 +87,6 @@ func wrapSDKErr(err error) error {
 func CommonMetricsAttributes() []attribute.KeyValue {
 	metricsAttributes := []attribute.KeyValue{
 		attribute.String("connector", "stripe"),
-	}
-	stack := os.Getenv("STACK")
-	if stack != "" {
-		metricsAttributes = append(metricsAttributes, attribute.String("stack", stack))
 	}
 	return metricsAttributes
 }
