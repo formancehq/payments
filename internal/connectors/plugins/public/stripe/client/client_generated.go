@@ -21,7 +21,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -39,6 +38,36 @@ func NewMockClient(ctrl *gomock.Controller) *MockClient {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
+}
+
+// CreatePayout mocks base method.
+func (m *MockClient) CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePayout", ctx, createPayoutRequest)
+	ret0, _ := ret[0].(*stripe.Payout)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePayout indicates an expected call of CreatePayout.
+func (mr *MockClientMockRecorder) CreatePayout(ctx, createPayoutRequest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockClient)(nil).CreatePayout), ctx, createPayoutRequest)
+}
+
+// CreateTransfer mocks base method.
+func (m *MockClient) CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTransfer", ctx, createTransferRequest)
+	ret0, _ := ret[0].(*stripe.Transfer)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTransfer indicates an expected call of CreateTransfer.
+func (mr *MockClientMockRecorder) CreateTransfer(ctx, createTransferRequest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockClient)(nil).CreateTransfer), ctx, createTransferRequest)
 }
 
 // GetAccountBalances mocks base method.
