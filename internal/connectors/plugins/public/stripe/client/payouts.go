@@ -2,9 +2,9 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/payout"
 )
