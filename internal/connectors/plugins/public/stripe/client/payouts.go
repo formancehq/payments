@@ -47,7 +47,7 @@ func (c *client) CreatePayout(ctx context.Context, createPayoutRequest *CreatePa
 
 	payoutResponse, err := payout.New(params)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating transfer")
+		return nil, fmt.Errorf("failed creating payout: %w", err)
 	}
 
 	return payoutResponse, nil
