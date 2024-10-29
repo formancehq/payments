@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -35,8 +36,19 @@ func prepareJSONRequest(method string, a any) *http.Request {
 	return httptest.NewRequest(method, "/", body)
 }
 
+func prepareJSONRequestWithQuery(method string, key string, val string, a any) *http.Request {
+	b, err := json.Marshal(a)
+	Expect(err).To(BeNil())
+	body := bytes.NewReader(b)
+	return prepareQueryRequestWithBody(method, key, val, body)
+}
+
 func prepareQueryRequest(key string, val string) *http.Request {
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	return prepareQueryRequestWithBody(http.MethodGet, key, val, nil)
+}
+
+func prepareQueryRequestWithBody(method string, key string, val string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(method, "/", body)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add(key, val)
 	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
