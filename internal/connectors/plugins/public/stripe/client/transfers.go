@@ -20,7 +20,7 @@ type CreateTransferRequest struct {
 
 func (c *client) CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error) {
 	start := time.Now()
-	defer c.recordMetrics(ctx, start, "create_transfer")
+	defer c.recordMetrics(ctx, start, "initiate_transfer")
 
 	params := &stripe.TransferParams{
 		Params: stripe.Params{
