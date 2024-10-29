@@ -21,7 +21,7 @@ type CreatePayoutRequest struct {
 
 func (c *client) CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error) {
 	start := time.Now()
-	defer c.recordMetrics(ctx, start, "create_payout")
+	defer c.recordMetrics(ctx, start, "initiate_payout")
 
 	params := &stripe.PayoutParams{
 		Params: stripe.Params{
