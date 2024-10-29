@@ -1,7 +1,6 @@
 package stripe
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -26,50 +25,121 @@ var _ = Describe("Stripe Plugin", func() {
 	})
 
 	Context("install", func() {
-		It("reports validation errors in the config", func(ctx SpecContext) {
+		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			req := models.InstallRequest{Config: json.RawMessage(`{}`)}
-			_, err := plg.Install(context.Background(), req)
-			Expect(err).To(MatchError(ContainSubstring("config")))
+			_, err := plg.Install(ctx, req)
+			Expect(err).To(MatchError("missing api key in config: invalid config"))
 		})
-		It("returns valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey":"dummy"}`)}
-			res, err := plg.Install(context.Background(), req)
+
+		It("should return valid install response", func(ctx SpecContext) {
+			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey": "test"}`)}
+			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
+			Expect(res.Capabilities).To(Equal(capabilities))
 			Expect(len(res.Workflow) > 0).To(BeTrue())
-			Expect(res.Workflow[0].Name).To(Equal("fetch_accounts"))
+			Expect(res.Workflow).To(Equal(workflow()))
 		})
 	})
 
 	Context("uninstall", func() {
-		It("returns valid uninstall response", func(ctx SpecContext) {
-			req := models.UninstallRequest{ConnectorID: "dummyID"}
-			_, err := plg.Uninstall(context.Background(), req)
+		It("should return valid uninstall response", func(ctx SpecContext) {
+			req := models.UninstallRequest{ConnectorID: "test"}
+			resp, err := plg.Uninstall(ctx, req)
 			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.UninstallResponse{}))
 		})
 	})
 
-	Context("calling functions on uninstalled plugins", func() {
-		It("fails when fetch next accounts is called before install", func(ctx SpecContext) {
-			req := models.FetchNextAccountsRequest{
-				State: json.RawMessage(`{}`),
-			}
-			_, err := plg.FetchNextAccounts(context.Background(), req)
+	Context("fetch next accounts", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-		It("fails when fetch next balances is called before install", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{
-				State: json.RawMessage(`{}`),
-			}
-			_, err := plg.FetchNextBalances(context.Background(), req)
+
+		// Other tests will be in accounts_test.go
+	})
+
+	Context("fetch next balances", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextBalancesRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-		It("fails when fetch next external accounts is called before install", func(ctx SpecContext) {
-			req := models.FetchNextExternalAccountsRequest{
-				State: json.RawMessage(`{}`),
-			}
-			_, err := plg.FetchNextExternalAccounts(context.Background(), req)
+
+		// Other tests will be in balances_test.go
+	})
+
+	Context("fetch next external accounts", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextExternalAccountsRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in external_accounts_test.go
+	})
+
+	Context("fetch next payments", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in payments_test.go
+	})
+
+	Context("fetch next others", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.FetchNextOthersRequest{State: json.RawMessage(`{}`)}
+			_, err := plg.FetchNextOthers(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
+	Context("create bank account", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.CreateBankAccountRequest{}
+			_, err := plg.CreateBankAccount(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
+	Context("create transfer", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{}
+			_, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in transfers_test.go
+	})
+
+	Context("create payout", func() {
+		It("should fail when called before install", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
+
+		// Other tests will be in payouts_test.go
+	})
+
+	Context("create webhooks", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.CreateWebhooksRequest{}
+			_, err := plg.CreateWebhooks(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
+	Context("translate webhook", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.TranslateWebhookRequest{}
+			_, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 })
