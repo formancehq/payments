@@ -3,7 +3,6 @@ package generic
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -14,7 +13,7 @@ import (
 func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, errors.New("from payload is required")
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("from payload is required: %w", models.ErrInvalidRequest)
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err
