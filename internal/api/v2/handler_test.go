@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -40,16 +41,33 @@ func prepareJSONRequestWithQuery(method string, key string, val string, a any) *
 	b, err := json.Marshal(a)
 	Expect(err).To(BeNil())
 	body := bytes.NewReader(b)
-	return prepareQueryRequestWithBody(method, key, val, body)
+	return prepareQueryRequestWithBody(method, body, key, val)
 }
 
-func prepareQueryRequest(key string, val string) *http.Request {
-	return prepareQueryRequestWithBody(http.MethodGet, key, val, nil)
+func prepareQueryRequest(args ...string) *http.Request {
+	return prepareQueryRequestWithBody(http.MethodGet, nil, args...)
 }
 
-func prepareQueryRequestWithBody(method string, key string, val string, body io.Reader) *http.Request {
+func prepareQueryRequestWithBody(method string, body io.Reader, args ...string) *http.Request {
 	req := httptest.NewRequest(method, "/", body)
 	rctx := chi.NewRouteContext()
-	rctx.URLParams.Add(key, val)
+	appendToRouteContext(rctx, args...)
 	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+}
+
+func prepareQueryRequestWithPath(path string, args ...string) *http.Request {
+	req := httptest.NewRequest(http.MethodGet, path, nil)
+	rctx := chi.NewRouteContext()
+	appendToRouteContext(rctx, args...)
+	return req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))
+}
+
+func appendToRouteContext(rctx *chi.Context, args ...string) {
+	if len(args)%2 != 0 {
+		log.Fatalf("arguments must be provided in key value pairs: %s", args)
+	}
+	for i := 0; i < len(args); i += 2 {
+		val := args[i+1]
+		rctx.URLParams.Add(args[i], val)
+	}
 }
