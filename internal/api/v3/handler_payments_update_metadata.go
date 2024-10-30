@@ -2,6 +2,7 @@ package v3
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
@@ -9,6 +10,13 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 )
+
+func validatePaymentsMetadata(metadata map[string]string) error {
+	if len(metadata) == 0 {
+		return errors.New("metadata must be provided")
+	}
+	return nil
+}
 
 func paymentsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -25,6 +33,11 @@ func paymentsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 		var metadata map[string]string
 		err = json.NewDecoder(r.Body).Decode(&metadata)
 		if err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
+			return
+		}
+		if err := validatePaymentsMetadata(metadata); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
