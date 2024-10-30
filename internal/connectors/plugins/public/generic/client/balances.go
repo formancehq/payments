@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/genericclient"
 )
 
-func (c *Client) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {
+func (c *client) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {
 	start := time.Now()
 	defer c.recordMetrics(ctx, start, "list_balances")
 
