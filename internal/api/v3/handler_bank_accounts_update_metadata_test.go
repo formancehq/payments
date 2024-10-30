@@ -48,7 +48,7 @@ var _ = Describe("API v3 Bank Accounts Update Metadata", func() {
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			expectedErr := errors.New("bank account create err")
+			expectedErr := errors.New("bank account update metadata err")
 			m.EXPECT().BankAccountsUpdateMetadata(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
 			bau = bankAccountsUpdateMetadataRequest{
 				Metadata: map[string]string{"meta": "data"},
