@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/genericclient"
 )
 
-func (c *Client) ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error) {
+func (c *client) ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error) {
 	start := time.Now()
 	defer c.recordMetrics(ctx, start, "list_beneficiaries")
 

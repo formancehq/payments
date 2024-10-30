@@ -13,6 +13,14 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
+type Client interface {
+	ListAccounts(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Account, error)
+	GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error)
+	ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error)
+	ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error)
+}
+
 type apiTransport struct {
 	APIKey     string
 	underlying http.RoundTripper
@@ -24,12 +32,12 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlying.RoundTrip(req)
 }
 
-type Client struct {
+type client struct {
 	apiClient              *genericclient.APIClient
 	commonMetricAttributes []attribute.KeyValue
 }
 
-func New(apiKey, baseURL string) *Client {
+func New(apiKey, baseURL string) Client {
 	httpClient := &http.Client{
 		Transport: &apiTransport{
 			APIKey:     apiKey,
@@ -43,14 +51,14 @@ func New(apiKey, baseURL string) *Client {
 
 	genericClient := genericclient.NewAPIClient(configuration)
 
-	return &Client{
+	return &client{
 		apiClient:              genericClient,
 		commonMetricAttributes: CommonMetricsAttributes(),
 	}
 }
 
 // recordMetrics is meant to be called in a defer
-func (c *Client) recordMetrics(ctx context.Context, start time.Time, operation string) {
+func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
 	registry := metrics.GetMetricsRegistry()
 
 	attrs := c.commonMetricAttributes

@@ -9,7 +9,7 @@ import (
 )
 
 type Plugin struct {
-	client *client.Client
+	client client.Client
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {

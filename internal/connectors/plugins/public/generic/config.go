@@ -2,6 +2,7 @@ package generic
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -14,11 +15,11 @@ type Config struct {
 
 func (c Config) validate() error {
 	if c.APIKey == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing api key in config")
+		return fmt.Errorf("missing api key in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.Endpoint == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing endpoint in config")
+		return fmt.Errorf("missing endpoint in config: %w", models.ErrInvalidConfig)
 	}
 
 	return nil
