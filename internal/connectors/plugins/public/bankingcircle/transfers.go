@@ -43,7 +43,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return models.PSPPayment{}, fmt.Errorf("failed to get source account: %v: %w", err, models.ErrInvalidRequest)
 	}
 	if len(sourceAccount.AccountIdentifiers) == 0 {
-		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for source account: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for source account: %w", models.ErrInvalidRequest)
 	}
 
 	var destinationAccount *client.Account
@@ -52,7 +52,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return models.PSPPayment{}, fmt.Errorf("failed to get destination account: %v: %w", err, models.ErrInvalidRequest)
 	}
 	if len(destinationAccount.AccountIdentifiers) == 0 {
-		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for destination account: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for destination account: %w", models.ErrInvalidRequest)
 	}
 
 	resp, err := p.client.InitiateTransferOrPayouts(

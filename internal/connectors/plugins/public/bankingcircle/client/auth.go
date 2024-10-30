@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-func (c *Client) login(ctx context.Context) error {
+func (c *client) login(ctx context.Context) error {
 	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
@@ -51,7 +51,7 @@ func (c *Client) login(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) ensureAccessTokenIsValid(ctx context.Context) error {
+func (c *client) ensureAccessTokenIsValid(ctx context.Context) error {
 	if c.accessToken == "" {
 		return c.login(ctx)
 	}

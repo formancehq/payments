@@ -20,6 +20,7 @@ func (p Plugin) createBankAccount(req models.CreateBankAccountRequest) (models.C
 			Reference: req.BankAccount.ID.String(),
 			CreatedAt: req.BankAccount.CreatedAt,
 			Name:      &req.BankAccount.Name,
+			Metadata:  req.BankAccount.Metadata,
 			Raw:       raw,
 		},
 	}, nil

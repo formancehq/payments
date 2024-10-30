@@ -2,6 +2,7 @@ package bankingcircle
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -18,27 +19,27 @@ type Config struct {
 
 func (c Config) validate() error {
 	if c.Username == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing username in config")
+		return fmt.Errorf("missing username in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.Password == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing password in config")
+		return fmt.Errorf("missing password in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.Endpoint == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing endpoint in config")
+		return fmt.Errorf("missing endpoint in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.AuthorizationEndpoint == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing authorization endpoint in config")
+		return fmt.Errorf("missing authorization endpoint in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.UserCertificate == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing user certificate in config")
+		return fmt.Errorf("missing user certificate in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.UserCertificateKey == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing user certificate key in config")
+		return fmt.Errorf("missing user certificate key in config: %w", models.ErrInvalidConfig)
 	}
 
 	return nil
