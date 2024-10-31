@@ -18,17 +18,14 @@ type PaymentAccount struct {
 }
 
 type PaymentRequest struct {
-	IdempotencyKey         string         `json:"idempotencyKey"`
-	RequestedExecutionDate time.Time      `json:"requestedExecutionDate"`
-	DebtorAccount          PaymentAccount `json:"debtorAccount"`
-	DebtorReference        string         `json:"debtorReference"`
-	CurrencyOfTransfer     string         `json:"currencyOfTransfer"`
-	Amount                 struct {
-		Currency string      `json:"currency"`
-		Amount   json.Number `json:"amount"`
-	} `json:"amount"`
-	ChargeBearer    string          `json:"chargeBearer"`
-	CreditorAccount *PaymentAccount `json:"creditorAccount"`
+	IdempotencyKey         string          `json:"idempotencyKey"`
+	RequestedExecutionDate time.Time       `json:"requestedExecutionDate"`
+	DebtorAccount          PaymentAccount  `json:"debtorAccount"`
+	DebtorReference        string          `json:"debtorReference"`
+	CurrencyOfTransfer     string          `json:"currencyOfTransfer"`
+	Amount                 Amount          `json:"amount"`
+	ChargeBearer           string          `json:"chargeBearer"`
+	CreditorAccount        *PaymentAccount `json:"creditorAccount"`
 }
 
 type PaymentResponse struct {
@@ -36,7 +33,7 @@ type PaymentResponse struct {
 	Status    string `json:"status"`
 }
 
-func (c *Client) InitiateTransferOrPayouts(ctx context.Context, transferRequest *PaymentRequest) (*PaymentResponse, error) {
+func (c *client) InitiateTransferOrPayouts(ctx context.Context, transferRequest *PaymentRequest) (*PaymentResponse, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}

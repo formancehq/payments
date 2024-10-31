@@ -10,78 +10,86 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-//nolint:tagliatelle // allow for client-side structures
-type Payment struct {
-	PaymentID                    string      `json:"paymentId"`
-	TransactionReference         string      `json:"transactionReference"`
-	ConcurrencyToken             string      `json:"concurrencyToken"`
-	Classification               string      `json:"classification"`
-	Status                       string      `json:"status"`
-	Errors                       interface{} `json:"errors"`
-	ProcessedTimestamp           time.Time   `json:"processedTimestamp"`
-	LatestStatusChangedTimestamp time.Time   `json:"latestStatusChangedTimestamp"`
-	LastChangedTimestamp         time.Time   `json:"lastChangedTimestamp"`
-	DebtorInformation            struct {
-		PaymentBulkID interface{} `json:"paymentBulkId"`
-		AccountID     string      `json:"accountId"`
-		Account       struct {
-			Account              string `json:"account"`
-			FinancialInstitution string `json:"financialInstitution"`
-			Country              string `json:"country"`
-		} `json:"account"`
-		VibanID interface{} `json:"vibanId"`
-		Viban   struct {
-			Account              string `json:"account"`
-			FinancialInstitution string `json:"financialInstitution"`
-			Country              string `json:"country"`
-		} `json:"viban"`
-		InstructedDate interface{} `json:"instructedDate"`
-		DebitAmount    struct {
-			Currency string      `json:"currency"`
-			Amount   json.Number `json:"amount"`
-		} `json:"debitAmount"`
-		DebitValueDate time.Time   `json:"debitValueDate"`
-		FxRate         interface{} `json:"fxRate"`
-		Instruction    interface{} `json:"instruction"`
-	} `json:"debtorInformation"`
-	Transfer struct {
-		DebtorAccount interface{} `json:"debtorAccount"`
-		DebtorName    interface{} `json:"debtorName"`
-		DebtorAddress interface{} `json:"debtorAddress"`
-		Amount        struct {
-			Currency string      `json:"currency"`
-			Amount   json.Number `json:"amount"`
-		} `json:"amount"`
-		ValueDate             interface{} `json:"valueDate"`
-		ChargeBearer          interface{} `json:"chargeBearer"`
-		RemittanceInformation interface{} `json:"remittanceInformation"`
-		CreditorAccount       interface{} `json:"creditorAccount"`
-		CreditorName          interface{} `json:"creditorName"`
-		CreditorAddress       interface{} `json:"creditorAddress"`
-	} `json:"transfer"`
-	CreditorInformation struct {
-		AccountID string `json:"accountId"`
-		Account   struct {
-			Account              string `json:"account"`
-			FinancialInstitution string `json:"financialInstitution"`
-			Country              string `json:"country"`
-		} `json:"account"`
-		VibanID interface{} `json:"vibanId"`
-		Viban   struct {
-			Account              string `json:"account"`
-			FinancialInstitution string `json:"financialInstitution"`
-			Country              string `json:"country"`
-		} `json:"viban"`
-		CreditAmount struct {
-			Currency string      `json:"currency"`
-			Amount   json.Number `json:"amount"`
-		} `json:"creditAmount"`
-		CreditValueDate time.Time   `json:"creditValueDate"`
-		FxRate          interface{} `json:"fxRate"`
-	} `json:"creditorInformation"`
+type DebtorInformation struct {
+	PaymentBulkID interface{} `json:"paymentBulkId"`
+	AccountID     string      `json:"accountId"`
+	Account       struct {
+		Account              string `json:"account"`
+		FinancialInstitution string `json:"financialInstitution"`
+		Country              string `json:"country"`
+	} `json:"account"`
+	VibanID interface{} `json:"vibanId"`
+	Viban   struct {
+		Account              string `json:"account"`
+		FinancialInstitution string `json:"financialInstitution"`
+		Country              string `json:"country"`
+	} `json:"viban"`
+	InstructedDate interface{} `json:"instructedDate"`
+	DebitAmount    struct {
+		Currency string      `json:"currency"`
+		Amount   json.Number `json:"amount"`
+	} `json:"debitAmount"`
+	DebitValueDate time.Time   `json:"debitValueDate"`
+	FxRate         interface{} `json:"fxRate"`
+	Instruction    interface{} `json:"instruction"`
 }
 
-func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Payment, error) {
+type CreditorInformation struct {
+	AccountID string `json:"accountId"`
+	Account   struct {
+		Account              string `json:"account"`
+		FinancialInstitution string `json:"financialInstitution"`
+		Country              string `json:"country"`
+	} `json:"account"`
+	VibanID interface{} `json:"vibanId"`
+	Viban   struct {
+		Account              string `json:"account"`
+		FinancialInstitution string `json:"financialInstitution"`
+		Country              string `json:"country"`
+	} `json:"viban"`
+	CreditAmount struct {
+		Currency string      `json:"currency"`
+		Amount   json.Number `json:"amount"`
+	} `json:"creditAmount"`
+	CreditValueDate time.Time   `json:"creditValueDate"`
+	FxRate          interface{} `json:"fxRate"`
+}
+
+type Amount struct {
+	Currency string      `json:"currency"`
+	Amount   json.Number `json:"amount"`
+}
+
+type Transfer struct {
+	DebtorAccount         interface{} `json:"debtorAccount"`
+	DebtorName            interface{} `json:"debtorName"`
+	DebtorAddress         interface{} `json:"debtorAddress"`
+	Amount                Amount      `json:"amount"`
+	ValueDate             interface{} `json:"valueDate"`
+	ChargeBearer          interface{} `json:"chargeBearer"`
+	RemittanceInformation interface{} `json:"remittanceInformation"`
+	CreditorAccount       interface{} `json:"creditorAccount"`
+	CreditorName          interface{} `json:"creditorName"`
+	CreditorAddress       interface{} `json:"creditorAddress"`
+}
+
+//nolint:tagliatelle // allow for client-side structures
+type Payment struct {
+	PaymentID                    string              `json:"paymentId"`
+	TransactionReference         string              `json:"transactionReference"`
+	ConcurrencyToken             string              `json:"concurrencyToken"`
+	Classification               string              `json:"classification"`
+	Status                       string              `json:"status"`
+	Errors                       interface{}         `json:"errors"`
+	ProcessedTimestamp           time.Time           `json:"processedTimestamp"`
+	LatestStatusChangedTimestamp time.Time           `json:"latestStatusChangedTimestamp"`
+	LastChangedTimestamp         time.Time           `json:"lastChangedTimestamp"`
+	DebtorInformation            DebtorInformation   `json:"debtorInformation"`
+	Transfer                     Transfer            `json:"transfer"`
+	CreditorInformation          CreditorInformation `json:"creditorInformation"`
+}
+
+func (c *client) GetPayments(ctx context.Context, page int, pageSize int) ([]Payment, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
@@ -116,7 +124,7 @@ func (c *Client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 	return res.Result, nil
 }
 
-func (c *Client) GetPayment(ctx context.Context, paymentID string) (*Payment, error) {
+func (c *client) GetPayment(ctx context.Context, paymentID string) (*Payment, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
@@ -141,7 +149,7 @@ type StatusResponse struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) GetPaymentStatus(ctx context.Context, paymentID string) (*StatusResponse, error) {
+func (c *client) GetPaymentStatus(ctx context.Context, paymentID string) (*StatusResponse, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}

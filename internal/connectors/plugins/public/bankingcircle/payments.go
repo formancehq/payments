@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type paymentsState struct {
@@ -27,6 +28,8 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	}
 
 	var payments []models.PSPPayment
+	var latestStatusChangedTimestamps []time.Time
+	needMore := false
 	hasMore := false
 	for page := 1; ; page++ {
 		pagedPayments, err := p.client.GetPayments(ctx, page, req.PageSize)
@@ -34,39 +37,23 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		if len(pagedPayments) == 0 {
+		payments, latestStatusChangedTimestamps, err = fillPayments(pagedPayments, payments, latestStatusChangedTimestamps, oldState)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedPayments, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
 
-		for _, payment := range pagedPayments {
-			switch payment.LatestStatusChangedTimestamp.Compare(oldState.LatestStatusChangedTimestamp) {
-			case -1, 0:
-				continue
-			default:
-			}
+	if !needMore {
+		payments = payments[:req.PageSize]
+	}
 
-			p, err := translatePayment(payment)
-			if err != nil {
-				return models.FetchNextPaymentsResponse{}, err
-			}
-
-			if p != nil {
-				payments = append(payments, *p)
-			}
-
-			if payment.LatestStatusChangedTimestamp.After(newState.LatestStatusChangedTimestamp) {
-				newState.LatestStatusChangedTimestamp = payment.LatestStatusChangedTimestamp
-			}
-
-			if len(payments) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(payments) >= req.PageSize {
-			hasMore = true
-			break
-		}
+	if len(payments) > 0 {
+		newState.LatestStatusChangedTimestamp = latestStatusChangedTimestamps[len(latestStatusChangedTimestamps)-1]
 	}
 
 	payload, err := json.Marshal(newState)
@@ -79,6 +66,33 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillPayments(
+	pagedPayments []client.Payment,
+	payments []models.PSPPayment,
+	latestStatusChangedTimestamps []time.Time,
+	oldState paymentsState,
+) ([]models.PSPPayment, []time.Time, error) {
+	for _, payment := range pagedPayments {
+		switch payment.LatestStatusChangedTimestamp.Compare(oldState.LatestStatusChangedTimestamp) {
+		case -1, 0:
+			continue
+		default:
+		}
+
+		p, err := translatePayment(payment)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if p != nil {
+			payments = append(payments, *p)
+			latestStatusChangedTimestamps = append(latestStatusChangedTimestamps, payment.LatestStatusChangedTimestamp)
+		}
+	}
+
+	return payments, latestStatusChangedTimestamps, nil
 }
 
 func translatePayment(from client.Payment) (*models.PSPPayment, error) {

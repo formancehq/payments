@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const MetricOperationContextKey = "_metric_operation_context_key"
+const MetricOperationContextKey string = "_metric_operation_context_key"
 
 var (
 	ErrStatusCodeUnexpected  = errors.New("unexpected status code")
@@ -73,9 +73,7 @@ func NewClient(config *Config) (Client, error) {
 	}
 
 	metricsAttributes := make([]attribute.KeyValue, 0)
-	for i := range config.CommonMetricsAttributes {
-		metricsAttributes = append(metricsAttributes, config.CommonMetricsAttributes[i])
-	}
+	metricsAttributes = append(metricsAttributes, config.CommonMetricsAttributes...)
 
 	return &client{
 		httpErrorCheckerFn:      config.HttpErrorCheckerFn,

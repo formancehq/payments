@@ -10,31 +10,35 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 )
 
-type Account struct {
-	AccountID          string `json:"accountId"`
-	AccountDescription string `json:"accountDescription"`
-	AccountIdentifiers []struct {
-		Account              string `json:"account"`
-		FinancialInstitution string `json:"financialInstitution"`
-		Country              string `json:"country"`
-	} `json:"accountIdentifiers"`
-	Status           string `json:"status"`
-	Currency         string `json:"currency"`
-	OpeningDate      string `json:"openingDate"`
-	ClosingDate      string `json:"closingDate"`
-	OwnedByCompanyID string `json:"ownedByCompanyId"`
-	ProtectionType   string `json:"protectionType"`
-	Balances         []struct {
-		Type                     string      `json:"type"`
-		Currency                 string      `json:"currency"`
-		BeginOfDayAmount         json.Number `json:"beginOfDayAmount"`
-		FinancialDate            string      `json:"financialDate"`
-		IntraDayAmount           json.Number `json:"intraDayAmount"`
-		LastTransactionTimestamp string      `json:"lastTransactionTimestamp"`
-	} `json:"balances"`
+type Balance struct {
+	Type                     string      `json:"type"`
+	Currency                 string      `json:"currency"`
+	BeginOfDayAmount         json.Number `json:"beginOfDayAmount"`
+	FinancialDate            string      `json:"financialDate"`
+	IntraDayAmount           json.Number `json:"intraDayAmount"`
+	LastTransactionTimestamp string      `json:"lastTransactionTimestamp"`
 }
 
-func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOpeningDate time.Time) ([]Account, error) {
+type AccountIdentifier struct {
+	Account              string `json:"account"`
+	FinancialInstitution string `json:"financialInstitution"`
+	Country              string `json:"country"`
+}
+
+type Account struct {
+	AccountID          string              `json:"accountId"`
+	AccountDescription string              `json:"accountDescription"`
+	AccountIdentifiers []AccountIdentifier `json:"accountIdentifiers"`
+	Status             string              `json:"status"`
+	Currency           string              `json:"currency"`
+	OpeningDate        string              `json:"openingDate"`
+	ClosingDate        string              `json:"closingDate"`
+	OwnedByCompanyID   string              `json:"ownedByCompanyId"`
+	ProtectionType     string              `json:"protectionType"`
+	Balances           []Balance           `json:"balances"`
+}
+
+func (c *client) GetAccounts(ctx context.Context, page int, pageSize int, fromOpeningDate time.Time) ([]Account, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
@@ -72,7 +76,7 @@ func (c *Client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 	return res.Result, nil
 }
 
-func (c *Client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
+func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
