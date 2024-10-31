@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/genericclient"
 )
 
-func (c *Client) ListAccounts(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Account, error) {
+func (c *client) ListAccounts(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Account, error) {
 	start := time.Now()
 	defer c.recordMetrics(ctx, start, "list_accounts")
 

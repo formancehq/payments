@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/genericclient"
 )
 
-func (c *Client) ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error) {
+func (c *client) ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error) {
 	start := time.Now()
 	defer c.recordMetrics(ctx, start, "list_transactions")
 

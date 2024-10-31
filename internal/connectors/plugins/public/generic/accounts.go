@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/formancehq/payments/genericclient"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type accountsState struct {
@@ -24,7 +26,8 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		LastCreatedAtFrom: oldState.LastCreatedAtFrom,
 	}
 
-	accounts := make([]models.PSPAccount, 0, req.PageSize)
+	accounts := make([]models.PSPAccount, 0)
+	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
 		pagedAccounts, err := p.client.ListAccounts(ctx, int64(page), int64(req.PageSize), oldState.LastCreatedAtFrom)
@@ -32,46 +35,23 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		if len(pagedAccounts) == 0 {
+		accounts, err = fillAccounts(pagedAccounts, accounts, oldState)
+		if err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
+		if !needMore || !hasMore {
 			break
 		}
+	}
 
-		for _, account := range pagedAccounts {
-			switch account.CreatedAt.Compare(oldState.LastCreatedAtFrom) {
-			case -1, 0:
-				// Account already ingested, skip
-				continue
-			default:
-			}
+	if !needMore {
+		accounts = accounts[:req.PageSize]
+	}
 
-			raw, err := json.Marshal(account)
-			if err != nil {
-				return models.FetchNextAccountsResponse{}, err
-			}
-
-			accounts = append(accounts, models.PSPAccount{
-				Reference: account.Id,
-				CreatedAt: account.CreatedAt,
-				Name:      &account.AccountName,
-				Metadata:  account.Metadata,
-				Raw:       raw,
-			})
-
-			newState.LastCreatedAtFrom = account.CreatedAt
-
-			if len(accounts) >= req.PageSize {
-				break
-			}
-		}
-
-		if len(pagedAccounts) < req.PageSize {
-			break
-		}
-
-		if len(accounts) >= req.PageSize {
-			hasMore = true
-			break
-		}
+	if len(accounts) > 0 {
+		newState.LastCreatedAtFrom = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -84,4 +64,34 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func fillAccounts(
+	pagedAccounts []genericclient.Account,
+	accounts []models.PSPAccount,
+	oldState accountsState,
+) ([]models.PSPAccount, error) {
+	for _, account := range pagedAccounts {
+		switch account.CreatedAt.Compare(oldState.LastCreatedAtFrom) {
+		case -1, 0:
+			// Account already ingested, skip
+			continue
+		default:
+		}
+
+		raw, err := json.Marshal(account)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: account.Id,
+			CreatedAt: account.CreatedAt,
+			Name:      &account.AccountName,
+			Metadata:  account.Metadata,
+			Raw:       raw,
+		})
+	}
+
+	return accounts, nil
 }
