@@ -246,12 +246,22 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
+	capabilities, err := e.plugins.GetCapabilities(account.ConnectorID)
+	if err != nil {
+		return err
+	}
+
+	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION]
+	if !ok {
+		return errors.New("connector does not support account creation")
+	}
+
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
 		return err
 	}
 
 	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
+	_, err = e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s", account.ConnectorID.String(), account.Reference),
@@ -275,12 +285,22 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 }
 
 func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payment) error {
+	capabilities, err := e.plugins.GetCapabilities(payment.ConnectorID)
+	if err != nil {
+		return err
+	}
+
+	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION]
+	if !ok {
+		return errors.New("connector does not support payment creation")
+	}
+
 	if err := e.storage.PaymentsUpsert(ctx, []models.Payment{payment}); err != nil {
 		return err
 	}
 
 	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
+	_, err = e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s", payment.ConnectorID.String(), payment.Reference),

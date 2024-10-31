@@ -33,6 +33,11 @@ func (w Workflow) runInstallConnector(
 		return errors.Wrap(err, "failed to install connector")
 	}
 
+	// Register connector's capabilities
+	if err := w.plugins.AddCapabilities(installConnector.ConnectorID, installResponse.Capabilities); err != nil {
+		return fmt.Errorf("failed to add capabilities: %w", err)
+	}
+
 	// Third step: store the workflow of the connector
 	err = activities.StorageConnectorTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
 	if err != nil {
@@ -48,7 +53,7 @@ func (w Workflow) runInstallConnector(
 				URLPath:     webhookConfig.URLPath,
 			})
 		}
-		// TODO(polo): store the capabilities
+
 		err = activities.StorageWebhooksConfigsStore(infiniteRetryContext(ctx), configs)
 		if err != nil {
 			return errors.Wrap(err, "failed to store webhooks configs")
