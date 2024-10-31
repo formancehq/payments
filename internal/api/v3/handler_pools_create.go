@@ -2,6 +2,7 @@ package v3
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -17,6 +18,13 @@ type createPoolRequest struct {
 	AccountIDs []string `json:"accountIDs"`
 }
 
+func (r *createPoolRequest) Validate() error {
+	if len(r.AccountIDs) == 0 {
+		return errors.New("one or more account id required")
+	}
+	return nil
+}
+
 func poolsCreate(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_poolsCreate")
@@ -27,6 +35,12 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
+			return
+		}
+
+		if err := createPoolRequest.Validate(); err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
