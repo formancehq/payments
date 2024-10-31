@@ -39,6 +39,20 @@ func (m *MockPlugins) EXPECT() *MockPluginsMockRecorder {
 	return m.recorder
 }
 
+// AddCapabilities mocks base method.
+func (m *MockPlugins) AddCapabilities(connectorID models.ConnectorID, capabilities []models.Capability) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddCapabilities", connectorID, capabilities)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddCapabilities indicates an expected call of AddCapabilities.
+func (mr *MockPluginsMockRecorder) AddCapabilities(connectorID, capabilities any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCapabilities", reflect.TypeOf((*MockPlugins)(nil).AddCapabilities), connectorID, capabilities)
+}
+
 // Get mocks base method.
 func (m *MockPlugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	m.ctrl.T.Helper()
@@ -52,6 +66,21 @@ func (m *MockPlugins) Get(connectorID models.ConnectorID) (models.Plugin, error)
 func (mr *MockPluginsMockRecorder) Get(connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), connectorID)
+}
+
+// GetCapabilities mocks base method.
+func (m *MockPlugins) GetCapabilities(connectorID models.ConnectorID) (map[models.Capability]struct{}, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCapabilities", connectorID)
+	ret0, _ := ret[0].(map[models.Capability]struct{})
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCapabilities indicates an expected call of GetCapabilities.
+func (mr *MockPluginsMockRecorder) GetCapabilities(connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapabilities", reflect.TypeOf((*MockPlugins)(nil).GetCapabilities), connectorID)
 }
 
 // RegisterPlugin mocks base method.
