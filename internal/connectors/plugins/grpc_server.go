@@ -7,7 +7,9 @@ import (
 	"github.com/formancehq/payments/internal/connectors/grpc"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/hashicorp/go-plugin"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.uber.org/fx"
+	ggrpc "google.golang.org/grpc"
 )
 
 type Server interface {
@@ -50,8 +52,10 @@ func (s *server) Serve(wg *sync.WaitGroup, shutdowner fx.Shutdowner) {
 		Plugins: map[string]plugin.Plugin{
 			"psp": &grpc.PSPGRPCPlugin{Impl: NewGRPCImplem(s.plugin)},
 		},
-
-		// A non-nil value here enables gRPC serving for this plugin...
-		GRPCServer: plugin.DefaultGRPCServer,
+		// server instrumented with OTel Contrib middleware
+		GRPCServer: func(opts []ggrpc.ServerOption) *ggrpc.Server {
+			opts = append(opts, ggrpc.StatsHandler(otelgrpc.NewServerHandler()))
+			return ggrpc.NewServer(opts...)
+		},
 	})
 }
