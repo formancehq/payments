@@ -41,6 +41,7 @@ func runServer(
 		opts := make([]fx.Option, 0)
 		opts = append(opts,
 			otlp.FXModuleFromFlags(cmd),
+			otlptraces.FXModuleFromFlags(cmd),
 			otlpmetrics.FXModuleFromFlags(cmd),
 			fx.Provide(metrics.RegisterMetricsRegistry),
 			fx.Invoke(func(metrics.MetricsRegistry) {}),

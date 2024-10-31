@@ -13,6 +13,9 @@ import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-plugin"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/propagation"
+	ggrpc "google.golang.org/grpc"
 )
 
 var (
@@ -89,11 +92,22 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 		loggerOptions.JSONFormat = true
 	}
 
+	dialOpts := []ggrpc.DialOption{
+		ggrpc.WithIdleTimeout(0), // disable grpc idle timeout
+		ggrpc.WithStatsHandler(otelgrpc.NewClientHandler()),
+		ggrpc.WithUnaryInterceptor(otelgrpc.UnaryClientInterceptor(
+			otelgrpc.WithPropagators(
+				propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}),
+			),
+		)),
+	}
+
 	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
 		HandshakeConfig:  grpc.Handshake,
 		Plugins:          grpc.PluginMap,
 		Cmd:              pluginCmd(pluginPath, p.rawFlags, logger),
+		GRPCDialOptions:  dialOpts,
 		AllowedProtocols: []plugin.Protocol{plugin.ProtocolGRPC},
 		Logger:           logger,
 	})
