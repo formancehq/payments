@@ -90,7 +90,7 @@ func (w Workflow) run(
 
 			nextWorkflow = RunCreateWebhooks
 			request = req
-			capability = models.CAPABILITY_WEBHOOKS
+			capability = models.CAPABILITY_CREATE_WEBHOOKS
 
 		default:
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
