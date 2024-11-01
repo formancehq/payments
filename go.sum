@@ -751,8 +751,8 @@ github.com/formancehq/go-libs v1.7.1 h1:9D5cxKWFlVtdX5AYDXeUz1Nb9PdoEfQX0f/yeLsU
 github.com/formancehq/go-libs v1.7.1/go.mod h1:pWTScpoyieF7OoJ6WVmXNG9NhDjbZbAmFqd7UOw85iI=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
-github.com/get-momo/atlar-v1-go-client v1.2.1 h1:sKWd0maMshxBErGXsYVGhGIB+zFxynrWLNHnegB4lXs=
-github.com/get-momo/atlar-v1-go-client v1.2.1/go.mod h1:qcLoXEhjTCOeBqAzG2tucpvxGJS2LYNwaU7WnJYnO64=
+github.com/get-momo/atlar-v1-go-client v1.4.0 h1:DIRwP3gRfvdXAxEeMNua6HPsScXZzDB9nySdYVv5FD0=
+github.com/get-momo/atlar-v1-go-client v1.4.0/go.mod h1:qcLoXEhjTCOeBqAzG2tucpvxGJS2LYNwaU7WnJYnO64=
 github.com/ghodss/yaml v1.0.0/go.mod h1:4dBDuWmgqj2HViK6kFavaiC9ZROes6MMH2rRYeMEF04=
 github.com/gibson042/canonicaljson-go v1.0.3 h1:EAyF8L74AWabkyUmrvEFHEt/AGFQeD6RfwbAuf0j1bI=
 github.com/gibson042/canonicaljson-go v1.0.3/go.mod h1:DsLpJTThXyGNO+KZlI85C1/KDcImpP67k/RKVjcaEqo=
