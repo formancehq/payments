@@ -15,6 +15,10 @@ type Plugin struct {
 	connectorID string
 }
 
+func (p *Plugin) Name() string {
+	return "adyen"
+}
+
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	config, err := unmarshalAndValidateConfig(req.Config)
 	if err != nil {

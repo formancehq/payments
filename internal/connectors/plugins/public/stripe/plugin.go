@@ -15,6 +15,10 @@ type Plugin struct {
 	client           client.Client
 }
 
+func (p *Plugin) Name() string {
+	return "stripe"
+}
+
 func (p *Plugin) SetClient(client client.Client) error {
 	if p.client != nil {
 		return fmt.Errorf("client is not intended to be overwritten after install")
