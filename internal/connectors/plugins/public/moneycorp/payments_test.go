@@ -150,7 +150,7 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 					},
 				},
 			}
-			m.EXPECT().GetTransactions(ctx, "3796", gomock.Any(), pageSize, gomock.Any()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "3796", gomock.Any(), pageSize, gomock.Any()).Return(
 				p,
 				nil,
 			)
@@ -167,12 +167,12 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 				PageSize:    pageSize,
 			}
 
-			m.EXPECT().GetTransactions(ctx, "3796", gomock.Any(), pageSize, gomock.Any()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "3796", gomock.Any(), pageSize, gomock.Any()).Return(
 				samplePayments,
 				nil,
 			)
 
-			m.EXPECT().GetTransfer(ctx, "3796", sampleTransfer.ID).Return(
+			m.EXPECT().GetTransfer(gomock.Any(), "3796", sampleTransfer.ID).Return(
 				sampleTransfer,
 				nil,
 			)
@@ -278,7 +278,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 			}
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
 				[]*client.Transaction{},
 				errors.New("test error"),
 			)
@@ -296,7 +296,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 			}
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
 				[]*client.Transaction{},
 				nil,
 			)
@@ -321,7 +321,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 			}
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 0, 60, time.Time{}).Return(
 				samplePayments,
 				nil,
 			)
@@ -347,7 +347,7 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 			}
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 0, 40, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 0, 40, time.Time{}).Return(
 				samplePayments[:40],
 				nil,
 			)
@@ -373,12 +373,12 @@ var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%d"}`, accRef)),
 			}
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 0, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 0, 40, lastCreatedAt.UTC()).Return(
 				samplePayments[:40],
 				nil,
 			)
 
-			m.EXPECT().GetTransactions(ctx, fmt.Sprintf("%d", accRef), 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), fmt.Sprintf("%d", accRef), 1, 40, lastCreatedAt.UTC()).Return(
 				samplePayments[41:],
 				nil,
 			)

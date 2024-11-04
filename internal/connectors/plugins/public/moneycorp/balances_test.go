@@ -46,7 +46,7 @@ var _ = Describe("Moneycorp Plugin Balances", func() {
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, accRef)),
 				State:       json.RawMessage(`{}`),
 			}
-			m.EXPECT().GetAccountBalances(ctx, accRef).Return(
+			m.EXPECT().GetAccountBalances(gomock.Any(), accRef).Return(
 				[]*client.Balance{sampleBalance},
 				nil,
 			)

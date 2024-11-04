@@ -104,7 +104,7 @@ var _ = Describe("Moneycorp Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				IdempotencyKey:     samplePSPPaymentInitiation.Reference,
 				SourceAccountID:    samplePSPPaymentInitiation.SourceAccount.Reference,
 				ReceivingAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
@@ -138,7 +138,7 @@ var _ = Describe("Moneycorp Plugin Transfers Creation", func() {
 					TransferStatus:     "Cleared",
 				},
 			}
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				IdempotencyKey:     samplePSPPaymentInitiation.Reference,
 				SourceAccountID:    samplePSPPaymentInitiation.SourceAccount.Reference,
 				ReceivingAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
