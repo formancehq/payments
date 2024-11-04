@@ -66,7 +66,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBalances(ctx, 1, 60).Return(
+			m.EXPECT().GetBalances(gomock.Any(), 1, 60).Return(
 				[]*client.Balance{},
 				-1,
 				errors.New("test error"),
@@ -83,7 +83,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBalances(ctx, 1, 60).Return(
+			m.EXPECT().GetBalances(gomock.Any(), 1, 60).Return(
 				[]*client.Balance{},
 				-1,
 				nil,
@@ -101,7 +101,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBalances(ctx, 1, 60).Return(
+			m.EXPECT().GetBalances(gomock.Any(), 1, 60).Return(
 				sampleBalances,
 				-1,
 				nil,
@@ -119,13 +119,13 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 				PageSize: 2,
 			}
 
-			m.EXPECT().GetBalances(ctx, 1, 2).Return(
+			m.EXPECT().GetBalances(gomock.Any(), 1, 2).Return(
 				sampleBalances[:2],
 				2,
 				nil,
 			)
 
-			m.EXPECT().GetBalances(ctx, 2, 2).Return(
+			m.EXPECT().GetBalances(gomock.Any(), 2, 2).Return(
 				sampleBalances[2:],
 				-1,
 				nil,

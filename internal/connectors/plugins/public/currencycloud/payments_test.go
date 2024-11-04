@@ -60,7 +60,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 60, time.Time{}).Return(
 				[]client.Transaction{},
 				-1,
 				errors.New("test error"),
@@ -78,7 +78,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 60, time.Time{}).Return(
 				[]client.Transaction{},
 				-1,
 				nil,
@@ -103,7 +103,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 60, time.Time{}).Return(
 				sampleTransactions,
 				-1,
 				nil,
@@ -128,7 +128,7 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetTransactions(ctx, 1, 40, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 40, time.Time{}).Return(
 				sampleTransactions[:40],
 				2,
 				nil,
@@ -152,13 +152,13 @@ var _ = Describe("CurrencyCloud Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetTransactions(ctx, 1, 40, sampleTransactions[38].UpdatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 1, 40, sampleTransactions[38].UpdatedAt.UTC()).Return(
 				sampleTransactions[:40],
 				2,
 				nil,
 			)
 
-			m.EXPECT().GetTransactions(ctx, 2, 40, sampleTransactions[39].UpdatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 2, 40, sampleTransactions[39].UpdatedAt.UTC()).Return(
 				sampleTransactions[41:],
 				-1,
 				nil,
