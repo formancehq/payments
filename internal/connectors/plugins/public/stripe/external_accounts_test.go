@@ -54,7 +54,7 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 				State:       json.RawMessage(`{}`),
 				PageSize:    pageSize,
 			}
-			m.EXPECT().GetExternalAccounts(ctx, accRef, gomock.Any(), int64(pageSize)).Return(
+			m.EXPECT().GetExternalAccounts(gomock.Any(), accRef, gomock.Any(), int64(pageSize)).Return(
 				sampleExternalAccounts,
 				client.Timeline{LatestID: sampleExternalAccounts[len(sampleExternalAccounts)-1].ID},
 				true,

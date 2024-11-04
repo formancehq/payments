@@ -13,6 +13,10 @@ type impl struct {
 	pluginClient grpc.PSP
 }
 
+func (i *impl) Name() string {
+	return "client"
+}
+
 func (i *impl) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	resp, err := i.pluginClient.Install(ctx, &services.InstallRequest{
 		Config: req.Config,

@@ -7,7 +7,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/grpc/proto"
 	"github.com/formancehq/payments/internal/connectors/grpc/proto/services"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/hashicorp/go-hclog"
+
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type impl struct {
@@ -21,6 +24,8 @@ func NewGRPCImplem(plugin models.Plugin) *impl {
 }
 
 func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*services.InstallResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.Install", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("installing...")
 
 	resp, err := i.plugin.Install(ctx, models.InstallRequest{
@@ -54,6 +59,8 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 }
 
 func (i *impl) Uninstall(ctx context.Context, req *services.UninstallRequest) (*services.UninstallResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.Uninstall", attribute.String("psp", i.plugin.Name()), attribute.String("connector_id", req.ConnectorId))
+	defer span.End()
 	hclog.Default().Info("uninstalling...")
 
 	_, err := i.plugin.Uninstall(ctx, models.UninstallRequest{
@@ -70,6 +77,8 @@ func (i *impl) Uninstall(ctx context.Context, req *services.UninstallRequest) (*
 }
 
 func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAccountsRequest) (*services.FetchNextAccountsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextAccounts", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("fetching next accounts...")
 
 	resp, err := i.plugin.FetchNextAccounts(ctx, models.FetchNextAccountsRequest{
@@ -97,6 +106,8 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 }
 
 func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextExternalAccounts", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("fetching next external accounts...")
 
 	resp, err := i.plugin.FetchNextExternalAccounts(ctx, models.FetchNextExternalAccountsRequest{
@@ -124,6 +135,8 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 }
 
 func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPaymentsRequest) (*services.FetchNextPaymentsResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextPayments", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("fetching next payments...")
 
 	resp, err := i.plugin.FetchNextPayments(ctx, models.FetchNextPaymentsRequest{
@@ -151,6 +164,8 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 }
 
 func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBalancesRequest) (*services.FetchNextBalancesResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextBalances", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("fetching next balances...")
 
 	resp, err := i.plugin.FetchNextBalances(ctx, models.FetchNextBalancesRequest{
@@ -178,6 +193,8 @@ func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBal
 }
 
 func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOthersRequest) (*services.FetchNextOthersResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.FetchNextOthers", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
 	hclog.Default().Info("fetching next others...")
 
 	resp, err := i.plugin.FetchNextOthers(ctx, models.FetchNextOthersRequest{
@@ -209,6 +226,8 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 }
 
 func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateBankAccount", attribute.String("psp", i.plugin.Name()), attribute.String("bankAccount.id", req.BankAccount.Id))
+	defer span.End()
 	hclog.Default().Info("creating bank account...")
 
 	resp, err := i.plugin.CreateBankAccount(ctx, models.CreateBankAccountRequest{
@@ -227,6 +246,8 @@ func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAc
 }
 
 func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferRequest) (*services.CreateTransferResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateTransfer", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiation.Reference))
+	defer span.End()
 	hclog.Default().Info("creating transfer...")
 
 	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
@@ -251,6 +272,8 @@ func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferR
 }
 
 func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreatePayout", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiation.Reference))
+	defer span.End()
 	hclog.Default().Info("creating payout...")
 
 	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
@@ -275,6 +298,8 @@ func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutReque
 }
 
 func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateWebhooks", attribute.String("psp", i.plugin.Name()), attribute.String("connectorID", req.ConnectorId))
+	defer span.End()
 	hclog.Default().Info("creating webhooks...")
 
 	resp, err := i.plugin.CreateWebhooks(ctx, models.CreateWebhooksRequest{
@@ -303,6 +328,8 @@ func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksR
 }
 
 func (i *impl) TranslateWebhook(ctx context.Context, req *services.TranslateWebhookRequest) (*services.TranslateWebhookResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.TranslateWebhook", attribute.String("psp", i.plugin.Name()), attribute.String("translateWebhookRequest.name", req.Name))
+	defer span.End()
 	hclog.Default().Info("translating webhook...")
 
 	resp, err := i.plugin.TranslateWebhook(ctx, models.TranslateWebhookRequest{

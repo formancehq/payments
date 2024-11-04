@@ -67,7 +67,7 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
 
-			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 60).Return(
 				[]*client.Recipient{},
 				errors.New("test error"),
 			)
@@ -85,7 +85,7 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
 
-			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 60).Return(
 				[]*client.Recipient{},
 				nil,
 			)
@@ -111,7 +111,7 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
 
-			m.EXPECT().GetRecipients(ctx, accRef, 0, 60).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 60).Return(
 				sampleExternalAccounts,
 				nil,
 			)
@@ -138,7 +138,7 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
 
-			m.EXPECT().GetRecipients(ctx, accRef, 0, 40).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 40).Return(
 				sampleExternalAccounts[:40],
 				nil,
 			)
@@ -165,12 +165,12 @@ var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
 				FromPayload: []byte(`{"reference": "baseAcc"}`),
 			}
 
-			m.EXPECT().GetRecipients(ctx, accRef, 0, 40).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 0, 40).Return(
 				sampleExternalAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetRecipients(ctx, accRef, 1, 40).Return(
+			m.EXPECT().GetRecipients(gomock.Any(), accRef, 1, 40).Return(
 				sampleExternalAccounts[41:],
 				nil,
 			)

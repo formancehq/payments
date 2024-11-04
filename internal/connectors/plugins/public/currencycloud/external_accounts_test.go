@@ -53,7 +53,7 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 60).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 60).Return(
 				[]*client.Beneficiary{},
 				-1,
 				errors.New("test error"),
@@ -71,7 +71,7 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 60).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 60).Return(
 				[]*client.Beneficiary{},
 				-1,
 				nil,
@@ -97,7 +97,7 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 60).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 60).Return(
 				sampleBeneficiaries,
 				-1,
 				nil,
@@ -123,7 +123,7 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 40).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 40).Return(
 				sampleBeneficiaries[:40],
 				2,
 				nil,
@@ -148,13 +148,13 @@ var _ = Describe("CurrencyCloud Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 40).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 40).Return(
 				sampleBeneficiaries[:40],
 				2,
 				nil,
 			)
 
-			m.EXPECT().GetBeneficiaries(ctx, 2, 40).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 40).Return(
 				sampleBeneficiaries[41:],
 				-1,
 				nil,

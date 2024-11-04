@@ -51,7 +51,7 @@ var _ = Describe("Mangopay Plugin External Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 1, 60).Return(
 				[]client.BankAccount{},
 				errors.New("test error"),
 			)
@@ -68,7 +68,7 @@ var _ = Describe("Mangopay Plugin External Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 1, 60).Return(
 				[]client.BankAccount{},
 				nil,
 			)
@@ -93,7 +93,7 @@ var _ = Describe("Mangopay Plugin External Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 1, 60).Return(
 				sampleBankAccounts,
 				nil,
 			)
@@ -119,7 +119,7 @@ var _ = Describe("Mangopay Plugin External Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 1, 40).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 1, 40).Return(
 				sampleBankAccounts[:40],
 				nil,
 			)
@@ -146,12 +146,12 @@ var _ = Describe("Mangopay Plugin External Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 1, 40).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 1, 40).Return(
 				sampleBankAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetBankAccounts(ctx, "test", 2, 40).Return(
+			m.EXPECT().GetBankAccounts(gomock.Any(), "test", 2, 40).Return(
 				sampleBankAccounts[41:],
 				nil,
 			)

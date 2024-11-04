@@ -104,7 +104,7 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(nil, errors.New("test error"))
 
 			resp, err := plg.CreatePayout(ctx, req)
@@ -118,10 +118,10 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Contact{ID: "1"}, nil)
 
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				OnBehalfOf:      "1",
 				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:        "EUR",
@@ -141,7 +141,7 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Contact{ID: "1"}, nil)
 
 			trResponse := client.PayoutResponse{
@@ -153,7 +153,7 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				Status:        "ready_to_send",
 				CreatedAt:     now,
 			}
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				OnBehalfOf:      "1",
 				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:        "EUR",

@@ -60,7 +60,7 @@ var _ = Describe("Mangopay Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetWallet(ctx, "test").Return(
+			m.EXPECT().GetWallet(gomock.Any(), "test").Return(
 				&sampleBalance,
 				errors.New("test error"),
 			)
@@ -77,7 +77,7 @@ var _ = Describe("Mangopay Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetWallet(ctx, "test").Return(
+			m.EXPECT().GetWallet(gomock.Any(), "test").Return(
 				&sampleBalance,
 				nil,
 			)

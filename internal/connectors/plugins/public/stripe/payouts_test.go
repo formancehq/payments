@@ -96,7 +96,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().CreatePayout(ctx, &client.CreatePayoutRequest{
+			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
 				Currency:       "EUR",
@@ -129,7 +129,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 				Status:      stripe.PayoutStatusInTransit,
 				Metadata:    samplePSPPaymentInitiation.Metadata,
 			}
-			m.EXPECT().CreatePayout(ctx, &client.CreatePayoutRequest{
+			m.EXPECT().CreatePayout(gomock.Any(), &client.CreatePayoutRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
 				Currency:       "EUR",

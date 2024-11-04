@@ -67,7 +67,7 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 				WebhookBaseUrl: webhookBaseUrl,
 			}
 			m.EXPECT().CreateWebhook(
-				ctx,
+				gomock.Any(),
 				expectedProfileID,
 				"test",
 				webhookConfigs["test"].triggerOn,

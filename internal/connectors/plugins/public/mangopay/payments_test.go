@@ -58,7 +58,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 60, time.Time{}).Return(
 				[]client.Payment{},
 				errors.New("test error"),
 			)
@@ -75,7 +75,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 60, time.Time{}).Return(
 				[]client.Payment{},
 				nil,
 			)
@@ -100,7 +100,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 60, time.Time{}).Return(
 				sampleTransactions,
 				nil,
 			)
@@ -126,7 +126,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 40, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 40, time.Time{}).Return(
 				sampleTransactions[:40],
 				nil,
 			)
@@ -153,7 +153,7 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 				FromPayload: json.RawMessage(`{"Reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 10, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 10, lastCreatedAt.UTC()).Return(
 				sampleTransactions[39:49],
 				nil,
 			)

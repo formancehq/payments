@@ -73,7 +73,7 @@ var _ = Describe("Wise Plugin Payments", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 60).Return(
 				[]client.Transfer{},
 				errors.New("test error"),
 			)
@@ -90,7 +90,7 @@ var _ = Describe("Wise Plugin Payments", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 60).Return(
 				[]client.Transfer{},
 				nil,
 			)
@@ -115,7 +115,7 @@ var _ = Describe("Wise Plugin Payments", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 60).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 60).Return(
 				sampleTransfers,
 				nil,
 			)
@@ -140,7 +140,7 @@ var _ = Describe("Wise Plugin Payments", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 40).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 40).Return(
 				sampleTransfers[:40],
 				nil,
 			)
@@ -166,12 +166,12 @@ var _ = Describe("Wise Plugin Payments", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 0, 40).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 0, 40).Return(
 				sampleTransfers[:40],
 				nil,
 			)
 
-			m.EXPECT().GetTransfers(ctx, uint64(0), 40, 40).Return(
+			m.EXPECT().GetTransfers(gomock.Any(), uint64(0), 40, 40).Return(
 				sampleTransfers[40:],
 				nil,
 			)

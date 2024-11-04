@@ -134,7 +134,7 @@ var _ = Describe("Mangopay Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateWalletTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateWalletTransfer(gomock.Any(), &client.TransferRequest{
 				Reference: samplePSPPaymentInitiation.Reference,
 				AuthorID:  "u1",
 				DebitedFunds: client.Funds{
@@ -176,7 +176,7 @@ var _ = Describe("Mangopay Plugin Transfers Creation", func() {
 				DebitedWalletID:  samplePSPPaymentInitiation.SourceAccount.Reference,
 				CreditedWalletID: samplePSPPaymentInitiation.DestinationAccount.Reference,
 			}
-			m.EXPECT().InitiateWalletTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateWalletTransfer(gomock.Any(), &client.TransferRequest{
 				Reference: samplePSPPaymentInitiation.Reference,
 				AuthorID:  "u1",
 				DebitedFunds: client.Funds{

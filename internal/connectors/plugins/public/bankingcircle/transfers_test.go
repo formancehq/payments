@@ -104,7 +104,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(nil, errors.New("test error"))
 
 			resp, err := plg.CreateTransfer(ctx, req)
@@ -118,7 +118,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{},
 				}, nil)
@@ -134,12 +134,12 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{}},
 				}, nil)
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.DestinationAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
 				Return(nil, errors.New("test error"))
 
 			resp, err := plg.CreateTransfer(ctx, req)
@@ -153,12 +153,12 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{}},
 				}, nil)
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.DestinationAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{},
 				}, nil)
@@ -174,7 +174,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{
 						Account:              "123456789",
@@ -183,7 +183,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 					}},
 				}, nil)
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.DestinationAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{
 						Account:              "987654321",
@@ -192,7 +192,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 					}},
 				}, nil)
 
-			m.EXPECT().InitiateTransferOrPayouts(ctx, &client.PaymentRequest{
+			m.EXPECT().InitiateTransferOrPayouts(gomock.Any(), &client.PaymentRequest{
 				IdempotencyKey:         samplePSPPaymentInitiation.Reference,
 				RequestedExecutionDate: samplePSPPaymentInitiation.CreatedAt,
 				DebtorAccount: client.PaymentAccount{
@@ -228,7 +228,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 			pr := client.PaymentResponse{
 				PaymentID: "p1",
 			}
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.SourceAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{
 						Account:              "123456789",
@@ -237,7 +237,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 					}},
 				}, nil)
 
-			m.EXPECT().GetAccount(ctx, samplePSPPaymentInitiation.DestinationAccount.Reference).
+			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
 				Return(&client.Account{
 					AccountIdentifiers: []client.AccountIdentifier{{
 						Account:              "987654321",
@@ -246,7 +246,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 					}},
 				}, nil)
 
-			m.EXPECT().InitiateTransferOrPayouts(ctx, &client.PaymentRequest{
+			m.EXPECT().InitiateTransferOrPayouts(gomock.Any(), &client.PaymentRequest{
 				IdempotencyKey:         samplePSPPaymentInitiation.Reference,
 				RequestedExecutionDate: samplePSPPaymentInitiation.CreatedAt,
 				DebtorAccount: client.PaymentAccount{
@@ -289,7 +289,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 				},
 			}
 
-			m.EXPECT().GetPayment(ctx, "p1").Return(&paymentResponse, nil)
+			m.EXPECT().GetPayment(gomock.Any(), "p1").Return(&paymentResponse, nil)
 
 			raw, err := json.Marshal(&paymentResponse)
 			Expect(err).To(BeNil())

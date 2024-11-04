@@ -52,7 +52,7 @@ var _ = Describe("BankingCircle Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60, time.Time{}).Return(
 				[]client.Account{},
 				errors.New("test error"),
 			)
@@ -69,7 +69,7 @@ var _ = Describe("BankingCircle Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60, time.Time{}).Return(
 				[]client.Account{},
 				nil,
 			)
@@ -94,7 +94,7 @@ var _ = Describe("BankingCircle Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60, time.Time{}).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -119,7 +119,7 @@ var _ = Describe("BankingCircle Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 40, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40, time.Time{}).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -143,12 +143,12 @@ var _ = Describe("BankingCircle Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 40, now.Add(-time.Duration(12)*time.Minute).UTC()).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40, now.Add(-time.Duration(12)*time.Minute).UTC()).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetAccounts(ctx, 2, 40, now.Add(-time.Duration(12)*time.Minute).UTC()).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 40, now.Add(-time.Duration(12)*time.Minute).UTC()).Return(
 				sampleAccounts[40:],
 				nil,
 			)
