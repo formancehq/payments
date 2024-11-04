@@ -12,6 +12,10 @@ type Plugin struct {
 	client client.Client
 }
 
+func (p *Plugin) Name() string {
+	return "bankingcircle"
+}
+
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	config, err := unmarshalAndValidateConfig(req.Config)
 	if err != nil {
