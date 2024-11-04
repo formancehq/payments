@@ -68,7 +68,7 @@ var _ = Describe("BankingCircle Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetPayments(ctx, 1, 60).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 1, 60).Return(
 				[]client.Payment{},
 				errors.New("test error"),
 			)
@@ -85,7 +85,7 @@ var _ = Describe("BankingCircle Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetPayments(ctx, 1, 60).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 1, 60).Return(
 				[]client.Payment{},
 				nil,
 			)
@@ -109,7 +109,7 @@ var _ = Describe("BankingCircle Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetPayments(ctx, 1, 60).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 1, 60).Return(
 				samplePayments,
 				nil,
 			)
@@ -132,7 +132,7 @@ var _ = Describe("BankingCircle Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetPayments(ctx, 1, 40).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 1, 40).Return(
 				samplePayments[:40],
 				nil,
 			)
@@ -155,12 +155,12 @@ var _ = Describe("BankingCircle Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetPayments(ctx, 1, 40).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 1, 40).Return(
 				samplePayments[:40],
 				nil,
 			)
 
-			m.EXPECT().GetPayments(ctx, 2, 40).Return(
+			m.EXPECT().GetPayments(gomock.Any(), 2, 40).Return(
 				samplePayments[40:],
 				nil,
 			)
