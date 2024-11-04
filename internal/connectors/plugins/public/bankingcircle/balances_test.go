@@ -55,7 +55,7 @@ var _ = Describe("BankingCircle Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "123"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "123").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "123").Return(
 				sampleAccount,
 				errors.New("test error"),
 			)
@@ -72,7 +72,7 @@ var _ = Describe("BankingCircle Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "123"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "123").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "123").Return(
 				&client.Account{},
 				nil,
 			)
@@ -90,7 +90,7 @@ var _ = Describe("BankingCircle Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "123"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "123").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "123").Return(
 				sampleAccount,
 				nil,
 			)
@@ -108,7 +108,7 @@ var _ = Describe("BankingCircle Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "123"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "123").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "123").Return(
 				sampleAccount,
 				nil,
 			)
