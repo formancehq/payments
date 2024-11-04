@@ -63,7 +63,7 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetWallets(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 1, 60).Return(
 				[]client.Wallet{},
 				errors.New("test error"),
 			)
@@ -80,7 +80,7 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetWallets(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 1, 60).Return(
 				[]client.Wallet{},
 				nil,
 			)
@@ -105,7 +105,7 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetWallets(ctx, "test", 1, 60).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 1, 60).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -131,7 +131,7 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetWallets(ctx, "test", 1, 40).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 1, 40).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -158,12 +158,12 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 				FromPayload: json.RawMessage(`{"Id": "test"}`),
 			}
 
-			m.EXPECT().GetWallets(ctx, "test", 1, 40).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 1, 40).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetWallets(ctx, "test", 2, 40).Return(
+			m.EXPECT().GetWallets(gomock.Any(), "test", 2, 40).Return(
 				sampleAccounts[41:],
 				nil,
 			)
