@@ -50,7 +50,7 @@ var _ = Describe("Mangopay Plugin Users", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetUsers(ctx, 1, 60).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 1, 60).Return(
 				[]client.User{},
 				errors.New("test error"),
 			)
@@ -67,7 +67,7 @@ var _ = Describe("Mangopay Plugin Users", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetUsers(ctx, 1, 60).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 1, 60).Return(
 				[]client.User{},
 				nil,
 			)
@@ -92,7 +92,7 @@ var _ = Describe("Mangopay Plugin Users", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetUsers(ctx, 1, 60).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 1, 60).Return(
 				sampleUsers,
 				nil,
 			)
@@ -118,7 +118,7 @@ var _ = Describe("Mangopay Plugin Users", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetUsers(ctx, 1, 40).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 1, 40).Return(
 				sampleUsers[:40],
 				nil,
 			)
@@ -145,12 +145,12 @@ var _ = Describe("Mangopay Plugin Users", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetUsers(ctx, 1, 40).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 1, 40).Return(
 				sampleUsers[:40],
 				nil,
 			)
 
-			m.EXPECT().GetUsers(ctx, 2, 40).Return(
+			m.EXPECT().GetUsers(gomock.Any(), 2, 40).Return(
 				sampleUsers[41:],
 				nil,
 			)
