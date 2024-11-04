@@ -69,7 +69,7 @@ var _ = Describe("Generic Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, "test").Return(
+			m.EXPECT().GetBalances(gomock.Any(), "test").Return(
 				&sampleBalance,
 				errors.New("test error"),
 			)
@@ -86,7 +86,7 @@ var _ = Describe("Generic Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, "test").Return(
+			m.EXPECT().GetBalances(gomock.Any(), "test").Return(
 				&sampleBalance,
 				nil,
 			)
