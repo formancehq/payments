@@ -104,7 +104,7 @@ var _ = Describe("Modulr Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
 				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
 				Destination: client.Destination{
@@ -143,7 +143,7 @@ var _ = Describe("Modulr Plugin Transfers Creation", func() {
 					Amount:   "1.00",
 				},
 			}
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
 				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
 				Destination: client.Destination{

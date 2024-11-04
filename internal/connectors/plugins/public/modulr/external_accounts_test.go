@@ -51,7 +51,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 60, time.Time{}).Return(
 				[]client.Beneficiary{},
 				errors.New("test error"),
 			)
@@ -68,7 +68,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 60, time.Time{}).Return(
 				[]client.Beneficiary{},
 				nil,
 			)
@@ -92,7 +92,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 60, time.Time{}).Return(
 				sampleBeneficiaries,
 				nil,
 			)
@@ -117,7 +117,7 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 0, 40, time.Time{}).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 40, time.Time{}).Return(
 				sampleBeneficiaries[:40],
 				nil,
 			)
@@ -142,12 +142,12 @@ var _ = Describe("Modulr Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetBeneficiaries(ctx, 0, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 0, 40, lastCreatedAt.UTC()).Return(
 				sampleBeneficiaries[:40],
 				nil,
 			)
 
-			m.EXPECT().GetBeneficiaries(ctx, 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, 40, lastCreatedAt.UTC()).Return(
 				sampleBeneficiaries[41:],
 				nil,
 			)

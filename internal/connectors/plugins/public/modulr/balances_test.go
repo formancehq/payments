@@ -54,7 +54,7 @@ var _ = Describe("Modulr Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "test").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "test").Return(
 				&sampleBalance,
 				errors.New("test error"),
 			)
@@ -71,7 +71,7 @@ var _ = Describe("Modulr Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetAccount(ctx, "test").Return(
+			m.EXPECT().GetAccount(gomock.Any(), "test").Return(
 				&sampleBalance,
 				nil,
 			)
