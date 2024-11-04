@@ -54,7 +54,7 @@ var _ = Describe("Wise Plugin Profiles", func() {
 				Name:     "fetch_profiles",
 				PageSize: len(profiles),
 			}
-			m.EXPECT().GetProfiles(ctx).Return(
+			m.EXPECT().GetProfiles(gomock.Any()).Return(
 				profiles,
 				nil,
 			)

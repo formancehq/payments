@@ -160,7 +160,7 @@ var _ = Describe("Wise Plugin", func() {
 				},
 			}
 			transfer := client.Transfer{ID: 1, Reference: "ref1", TargetValue: json.Number("25"), TargetCurrency: "EUR"}
-			m.EXPECT().TranslateTransferStateChangedWebhook(ctx, body).Return(transfer, nil)
+			m.EXPECT().TranslateTransferStateChangedWebhook(gomock.Any(), body).Return(transfer, nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -189,7 +189,7 @@ var _ = Describe("Wise Plugin", func() {
 					Amount:            json.Number("43"),
 				},
 			}
-			m.EXPECT().TranslateBalanceUpdateWebhook(ctx, body).Return(balance, nil)
+			m.EXPECT().TranslateBalanceUpdateWebhook(gomock.Any(), body).Return(balance, nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())

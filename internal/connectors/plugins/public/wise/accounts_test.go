@@ -56,7 +56,7 @@ var _ = Describe("Wise Plugin Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, uint64(0)).Return(
+			m.EXPECT().GetBalances(gomock.Any(), uint64(0)).Return(
 				[]client.Balance{},
 				errors.New("test error"),
 			)
@@ -73,7 +73,7 @@ var _ = Describe("Wise Plugin Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, uint64(0)).Return(
+			m.EXPECT().GetBalances(gomock.Any(), uint64(0)).Return(
 				[]client.Balance{},
 				nil,
 			)
@@ -97,7 +97,7 @@ var _ = Describe("Wise Plugin Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, uint64(0)).Return(
+			m.EXPECT().GetBalances(gomock.Any(), uint64(0)).Return(
 				sampleBalances,
 				nil,
 			)
@@ -121,7 +121,7 @@ var _ = Describe("Wise Plugin Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, uint64(0)).Return(
+			m.EXPECT().GetBalances(gomock.Any(), uint64(0)).Return(
 				sampleBalances[:40],
 				nil,
 			)
@@ -145,7 +145,7 @@ var _ = Describe("Wise Plugin Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetBalances(ctx, uint64(0)).Return(
+			m.EXPECT().GetBalances(gomock.Any(), uint64(0)).Return(
 				sampleBalances,
 				nil,
 			)
