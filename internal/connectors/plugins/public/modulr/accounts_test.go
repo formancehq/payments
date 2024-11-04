@@ -52,7 +52,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60, time.Time{}).Return(
 				[]client.Account{},
 				errors.New("test error"),
 			)
@@ -69,7 +69,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60, time.Time{}).Return(
 				[]client.Account{},
 				nil,
 			)
@@ -93,7 +93,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60, time.Time{}).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -118,7 +118,7 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 40, time.Time{}).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 40, time.Time{}).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -143,12 +143,12 @@ var _ = Describe("Modulr Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 40, lastCreatedAt.UTC()).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetAccounts(ctx, 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40, lastCreatedAt.UTC()).Return(
 				sampleAccounts[41:],
 				nil,
 			)
