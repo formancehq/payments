@@ -51,7 +51,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetMerchantAccounts(ctx, int32(1), int32(60)).Return(
+			m.EXPECT().GetMerchantAccounts(gomock.Any(), int32(1), int32(60)).Return(
 				[]management.Merchant{},
 				nil,
 			)
@@ -76,7 +76,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetMerchantAccounts(ctx, int32(1), int32(60)).Return(
+			m.EXPECT().GetMerchantAccounts(gomock.Any(), int32(1), int32(60)).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -101,7 +101,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetMerchantAccounts(ctx, int32(1), int32(40)).Return(
+			m.EXPECT().GetMerchantAccounts(gomock.Any(), int32(1), int32(40)).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -125,12 +125,12 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetMerchantAccounts(ctx, int32(1), int32(40)).Return(
+			m.EXPECT().GetMerchantAccounts(gomock.Any(), int32(1), int32(40)).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetMerchantAccounts(ctx, int32(2), int32(40)).Return(
+			m.EXPECT().GetMerchantAccounts(gomock.Any(), int32(2), int32(40)).Return(
 				sampleAccounts[41:],
 				nil,
 			)
