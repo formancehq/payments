@@ -55,7 +55,7 @@ var _ = Describe("Adyen Plugin", func() {
 		It("should return a valid uninstall response when client is set", func(ctx SpecContext) {
 			req := models.UninstallRequest{ConnectorID: "test"}
 
-			m.EXPECT().DeleteWebhook(ctx, req.ConnectorID).Return(nil)
+			m.EXPECT().DeleteWebhook(gomock.Any(), req.ConnectorID).Return(nil)
 
 			plg := &Plugin{client: m}
 			_, err := plg.Uninstall(ctx, req)
