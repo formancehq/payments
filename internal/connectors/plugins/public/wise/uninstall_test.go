@@ -40,11 +40,11 @@ var _ = Describe("Wise Plugin Uninstall", func() {
 
 		It("deletes webhooks related to accounts", func(ctx SpecContext) {
 			req := models.UninstallRequest{ConnectorID: "dummyID"}
-			m.EXPECT().GetProfiles(ctx).Return(
+			m.EXPECT().GetProfiles(gomock.Any()).Return(
 				profiles,
 				nil,
 			)
-			m.EXPECT().ListWebhooksSubscription(ctx, profiles[0].ID).Return(
+			m.EXPECT().ListWebhooksSubscription(gomock.Any(), profiles[0].ID).Return(
 				[]client.WebhookSubscriptionResponse{
 					{ID: expectedWebhookID, Delivery: client.WebhookDelivery{
 						URL: fmt.Sprintf("http://somesite.fr/%s", req.ConnectorID),
@@ -53,7 +53,7 @@ var _ = Describe("Wise Plugin Uninstall", func() {
 				},
 				nil,
 			)
-			m.EXPECT().ListWebhooksSubscription(ctx, profiles[1].ID).Return(
+			m.EXPECT().ListWebhooksSubscription(gomock.Any(), profiles[1].ID).Return(
 				[]client.WebhookSubscriptionResponse{
 					{ID: expectedWebhookID2, Delivery: client.WebhookDelivery{
 						URL: fmt.Sprintf("http://%s.somesite.com", req.ConnectorID),
@@ -61,8 +61,8 @@ var _ = Describe("Wise Plugin Uninstall", func() {
 				},
 				nil,
 			)
-			m.EXPECT().DeleteWebhooks(ctx, profiles[0].ID, expectedWebhookID).Return(nil)
-			m.EXPECT().DeleteWebhooks(ctx, profiles[1].ID, expectedWebhookID2).Return(nil)
+			m.EXPECT().DeleteWebhooks(gomock.Any(), profiles[0].ID, expectedWebhookID).Return(nil)
+			m.EXPECT().DeleteWebhooks(gomock.Any(), profiles[1].ID, expectedWebhookID2).Return(nil)
 
 			_, err := plg.Uninstall(ctx, req)
 			Expect(err).To(BeNil())

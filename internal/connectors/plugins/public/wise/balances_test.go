@@ -55,7 +55,7 @@ var _ = Describe("Wise Plugin Balances", func() {
 				)),
 				PageSize: 10,
 			}
-			m.EXPECT().GetBalance(ctx, profileVal, expectedProfileID).Return(
+			m.EXPECT().GetBalance(gomock.Any(), profileVal, expectedProfileID).Return(
 				&balance,
 				nil,
 			)
