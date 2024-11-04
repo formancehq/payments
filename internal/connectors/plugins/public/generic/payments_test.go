@@ -60,7 +60,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListTransactions(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				[]genericclient.Transaction{},
 				errors.New("test error"),
 			)
@@ -77,7 +77,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListTransactions(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				[]genericclient.Transaction{},
 				nil,
 			)
@@ -101,7 +101,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListTransactions(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				samplePayments,
 				nil,
 			)
@@ -125,7 +125,7 @@ var _ = Describe("Generic Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().ListTransactions(ctx, int64(0), int64(40), time.Time{}).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(0), int64(40), time.Time{}).Return(
 				samplePayments[:40],
 				nil,
 			)
@@ -148,12 +148,12 @@ var _ = Describe("Generic Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().ListTransactions(ctx, int64(0), int64(40), samplePayments[38].UpdatedAt.UTC()).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(0), int64(40), samplePayments[38].UpdatedAt.UTC()).Return(
 				samplePayments[:40],
 				nil,
 			)
 
-			m.EXPECT().ListTransactions(ctx, int64(1), int64(40), samplePayments[38].UpdatedAt.UTC()).Return(
+			m.EXPECT().ListTransactions(gomock.Any(), int64(1), int64(40), samplePayments[38].UpdatedAt.UTC()).Return(
 				samplePayments[40:],
 				nil,
 			)
