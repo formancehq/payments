@@ -49,7 +49,7 @@ var _ = Describe("Stripe Plugin Accounts", func() {
 				PageSize: pageSize,
 			}
 			// pageSize passed to client is less when we generate a root account
-			m.EXPECT().GetAccounts(ctx, gomock.Any(), int64(pageSize-1)).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), gomock.Any(), int64(pageSize-1)).Return(
 				sampleAccounts,
 				client.Timeline{LatestID: sampleAccounts[len(sampleAccounts)-1].ID},
 				true,

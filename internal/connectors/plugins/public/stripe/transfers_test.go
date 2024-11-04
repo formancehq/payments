@@ -96,7 +96,7 @@ var _ = Describe("Stripe Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().CreateTransfer(ctx, &client.CreateTransferRequest{
+			m.EXPECT().CreateTransfer(gomock.Any(), &client.CreateTransferRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
 				Currency:       "EUR",
@@ -128,7 +128,7 @@ var _ = Describe("Stripe Plugin Transfers Creation", func() {
 				ID:          "t1",
 				Metadata:    samplePSPPaymentInitiation.Metadata,
 			}
-			m.EXPECT().CreateTransfer(ctx, &client.CreateTransferRequest{
+			m.EXPECT().CreateTransfer(gomock.Any(), &client.CreateTransferRequest{
 				IdempotencyKey: samplePSPPaymentInitiation.Reference,
 				Amount:         100,
 				Currency:       "EUR",
