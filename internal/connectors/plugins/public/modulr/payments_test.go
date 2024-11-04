@@ -74,7 +74,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
 				[]client.Transaction{},
 				errors.New("test error"),
 			)
@@ -92,7 +92,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
 				[]client.Transaction{},
 				nil,
 			)
@@ -117,7 +117,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 0, 60, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 60, time.Time{}).Return(
 				sampleTransactions,
 				nil,
 			)
@@ -143,7 +143,7 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 0, 40, time.Time{}).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 40, time.Time{}).Return(
 				sampleTransactions[:40],
 				nil,
 			)
@@ -169,12 +169,12 @@ var _ = Describe("Modulr Plugin Payments", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetTransactions(ctx, "test", 0, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 0, 40, lastCreatedAt.UTC()).Return(
 				sampleTransactions[:40],
 				nil,
 			)
 
-			m.EXPECT().GetTransactions(ctx, "test", 1, 40, lastCreatedAt.UTC()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 40, lastCreatedAt.UTC()).Return(
 				sampleTransactions[41:],
 				nil,
 			)
@@ -356,7 +356,7 @@ var _ = Describe("Modulr Plugin Transaction to Payments", func() {
 		})
 
 		It("should return a transfer payment", func(ctx SpecContext) {
-			m.EXPECT().GetTransfer(ctx, "test").Return(
+			m.EXPECT().GetTransfer(gomock.Any(), "test").Return(
 				sampleTransfer,
 				nil,
 			)

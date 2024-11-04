@@ -104,7 +104,7 @@ var _ = Describe("Modulr Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
 				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
 				Destination: client.Destination{
@@ -143,7 +143,7 @@ var _ = Describe("Modulr Plugin Payouts Creation", func() {
 					Amount:   "1.00",
 				},
 			}
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				IdempotencyKey:  samplePSPPaymentInitiation.Reference,
 				SourceAccountID: samplePSPPaymentInitiation.SourceAccount.Reference,
 				Destination: client.Destination{
