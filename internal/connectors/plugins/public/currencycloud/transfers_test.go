@@ -104,7 +104,7 @@ var _ = Describe("CurrencyCloud Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				SourceAccountID:      samplePSPPaymentInitiation.SourceAccount.Reference,
 				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:             "EUR",
@@ -133,7 +133,7 @@ var _ = Describe("CurrencyCloud Plugin Transfers Creation", func() {
 				Status:               "completed",
 				CreatedAt:            now,
 			}
-			m.EXPECT().InitiateTransfer(ctx, &client.TransferRequest{
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				SourceAccountID:      samplePSPPaymentInitiation.SourceAccount.Reference,
 				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:             "EUR",

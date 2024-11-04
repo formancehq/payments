@@ -52,7 +52,7 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60).Return(
 				[]*client.Account{},
 				-1,
 				errors.New("test error"),
@@ -70,7 +70,7 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60).Return(
 				[]*client.Account{},
 				-1,
 				nil,
@@ -96,7 +96,7 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 60).Return(
 				sampleAccounts,
 				-1,
 				nil,
@@ -122,7 +122,7 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40).Return(
 				sampleAccounts[:40],
 				2,
 				nil,
@@ -147,13 +147,13 @@ var _ = Describe("CurrencyCloud Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 1, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40).Return(
 				sampleAccounts[:40],
 				2,
 				nil,
 			)
 
-			m.EXPECT().GetAccounts(ctx, 2, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 2, 40).Return(
 				sampleAccounts[41:],
 				-1,
 				nil,
