@@ -69,7 +69,7 @@ var _ = Describe("Wise Plugin External Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 60, uint64(0)).Return(
+			m.EXPECT().GetRecipientAccounts(gomock.Any(), uint64(0), 60, uint64(0)).Return(
 				&client.RecipientAccountsResponse{
 					Content:             []*client.RecipientAccount{},
 					SeekPositionForNext: 0,
@@ -96,7 +96,7 @@ var _ = Describe("Wise Plugin External Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 60, uint64(0)).Return(
+			m.EXPECT().GetRecipientAccounts(gomock.Any(), uint64(0), 60, uint64(0)).Return(
 				&client.RecipientAccountsResponse{
 					Content:             sampleRecipientAccounts,
 					SeekPositionForNext: 0,
@@ -122,7 +122,7 @@ var _ = Describe("Wise Plugin External Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 40, uint64(0)).Return(
+			m.EXPECT().GetRecipientAccounts(gomock.Any(), uint64(0), 40, uint64(0)).Return(
 				&client.RecipientAccountsResponse{
 					Content:             sampleRecipientAccounts[:40],
 					SeekPositionForNext: 39,
@@ -149,7 +149,7 @@ var _ = Describe("Wise Plugin External Accounts", func() {
 				FromPayload: []byte(`{"id": 0}`),
 			}
 
-			m.EXPECT().GetRecipientAccounts(ctx, uint64(0), 40, uint64(38)).Return(
+			m.EXPECT().GetRecipientAccounts(gomock.Any(), uint64(0), 40, uint64(38)).Return(
 				&client.RecipientAccountsResponse{
 					Content:             sampleRecipientAccounts[39:],
 					SeekPositionForNext: 49,
