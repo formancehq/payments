@@ -58,7 +58,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			}
 
 			expectedURL := "http://localhost:8080/test/standard"
-			m.EXPECT().CreateWebhook(ctx, expectedURL, req.ConnectorID).Return(nil)
+			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(nil)
 
 			err := plg.createWebhooks(ctx, req)
 			Expect(err).To(BeNil())
