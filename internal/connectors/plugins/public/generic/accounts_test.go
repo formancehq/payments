@@ -55,7 +55,7 @@ var _ = Describe("Generic Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListAccounts(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				[]genericclient.Account{},
 				errors.New("test error"),
 			)
@@ -72,7 +72,7 @@ var _ = Describe("Generic Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListAccounts(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				[]genericclient.Account{},
 				nil,
 			)
@@ -96,7 +96,7 @@ var _ = Describe("Generic Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().ListAccounts(ctx, int64(0), int64(60), time.Time{}).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(0), int64(60), time.Time{}).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -120,7 +120,7 @@ var _ = Describe("Generic Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().ListAccounts(ctx, int64(0), int64(40), time.Time{}).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(0), int64(40), time.Time{}).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -143,12 +143,12 @@ var _ = Describe("Generic Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().ListAccounts(ctx, int64(0), int64(40), sampleAccounts[38].CreatedAt.UTC()).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(0), int64(40), sampleAccounts[38].CreatedAt.UTC()).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().ListAccounts(ctx, int64(1), int64(40), sampleAccounts[38].CreatedAt.UTC()).Return(
+			m.EXPECT().ListAccounts(gomock.Any(), int64(1), int64(40), sampleAccounts[38].CreatedAt.UTC()).Return(
 				sampleAccounts[40:],
 				nil,
 			)
