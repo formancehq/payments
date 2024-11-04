@@ -104,7 +104,7 @@ var _ = Describe("Moneycorp Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				IdempotencyKey:   samplePSPPaymentInitiation.Reference,
 				SourceAccountID:  samplePSPPaymentInitiation.SourceAccount.Reference,
 				RecipientID:      samplePSPPaymentInitiation.DestinationAccount.Reference,
@@ -142,7 +142,7 @@ var _ = Describe("Moneycorp Plugin Payouts Creation", func() {
 					CreatedAt:        now.Format("2006-01-02T15:04:05.999999999"),
 				},
 			}
-			m.EXPECT().InitiatePayout(ctx, &client.PayoutRequest{
+			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
 				IdempotencyKey:   samplePSPPaymentInitiation.Reference,
 				SourceAccountID:  samplePSPPaymentInitiation.SourceAccount.Reference,
 				RecipientID:      samplePSPPaymentInitiation.DestinationAccount.Reference,

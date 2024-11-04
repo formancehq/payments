@@ -41,7 +41,7 @@ var _ = Describe("Moneycorp Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60).Return(
 				[]*client.Account{},
 				errors.New("test error"),
 			)
@@ -58,7 +58,7 @@ var _ = Describe("Moneycorp Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60).Return(
 				[]*client.Account{},
 				nil,
 			)
@@ -83,7 +83,7 @@ var _ = Describe("Moneycorp Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 60).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 60).Return(
 				sampleAccounts,
 				nil,
 			)
@@ -108,7 +108,7 @@ var _ = Describe("Moneycorp Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 40).Return(
 				sampleAccounts[:40],
 				nil,
 			)
@@ -132,12 +132,12 @@ var _ = Describe("Moneycorp Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(ctx, 0, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 0, 40).Return(
 				sampleAccounts[:40],
 				nil,
 			)
 
-			m.EXPECT().GetAccounts(ctx, 1, 40).Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 1, 40).Return(
 				sampleAccounts[41:],
 				nil,
 			)
