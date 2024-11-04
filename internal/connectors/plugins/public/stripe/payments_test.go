@@ -204,7 +204,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 			}
-			m.EXPECT().GetPayments(ctx, accRef, gomock.Any(), int64(pageSize)).Return(
+			m.EXPECT().GetPayments(gomock.Any(), accRef, gomock.Any(), int64(pageSize)).Return(
 				p,
 				client.Timeline{},
 				true,
@@ -221,7 +221,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 				State:       json.RawMessage(`{}`),
 				PageSize:    pageSize,
 			}
-			m.EXPECT().GetPayments(ctx, accRef, gomock.Any(), int64(pageSize)).Return(
+			m.EXPECT().GetPayments(gomock.Any(), accRef, gomock.Any(), int64(pageSize)).Return(
 				samplePayments,
 				client.Timeline{LatestID: samplePayments[len(samplePayments)-1].ID},
 				true,
