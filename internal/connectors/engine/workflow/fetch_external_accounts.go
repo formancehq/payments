@@ -166,8 +166,4 @@ func (w Workflow) fetchExternalAccounts(
 	return nil
 }
 
-var RunFetchNextExternalAccounts any
-
-func init() {
-	RunFetchNextExternalAccounts = Workflow{}.runFetchNextExternalAccounts
-}
+const RunFetchNextExternalAccounts = "FetchExternalAccounts"

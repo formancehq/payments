@@ -153,11 +153,7 @@ func (w Workflow) createTransfer(
 	}
 }
 
-var RunCreateTransfer any
-
-func init() {
-	RunCreateTransfer = Workflow{}.runCreateTransfer
-}
+const RunCreateTransfer = "CreateTransfer"
 
 func (w Workflow) addPIAdjustment(
 	ctx workflow.Context,

@@ -7,13 +7,15 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type Activities struct {
-	storage storage.Storage
-	events  *events.Events
+	storage        storage.Storage
+	events         *events.Events
+	temporalClient client.Client
 
 	plugins plugins.Plugins
 }
@@ -239,14 +241,31 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "EventsSendPoolDeletion",
 			Func: a.EventsSendPoolDeletion,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalScheduleCreate",
+			Func: a.TemporalScheduleCreate,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalDeleteSchedule",
+			Func: a.TemporalScheduleDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalWorkflowTerminate",
+			Func: a.TemporalWorkflowTerminate,
+		}).
+		Append(temporalworker.Definition{
+			Name: "TemporalWorkflowExecutionsList",
+			Func: a.TemporalWorkflowExecutionsList,
 		})
 }
 
-func New(storage storage.Storage, events *events.Events, plugins plugins.Plugins) Activities {
+func New(temporalClient client.Client, storage storage.Storage, events *events.Events, plugins plugins.Plugins) Activities {
 	return Activities{
-		storage: storage,
-		plugins: plugins,
-		events:  events,
+		temporalClient: temporalClient,
+		storage:        storage,
+		plugins:        plugins,
+		events:         events,
 	}
 }
 

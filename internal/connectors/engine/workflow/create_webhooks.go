@@ -79,8 +79,4 @@ func (w Workflow) createWebhooks(
 	return nil
 }
 
-var RunCreateWebhooks any
-
-func init() {
-	RunCreateWebhooks = Workflow{}.runCreateWebhooks
-}
+const RunCreateWebhooks = "RunCreateWebhooks"
