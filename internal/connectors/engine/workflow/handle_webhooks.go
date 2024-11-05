@@ -80,7 +80,7 @@ func (w Workflow) runHandleWebhooks(
 	return nil
 }
 
-var RunHandleWebhooks any
+const RunHandleWebhooks = "RunHandleWebhooks"
 
 type StoreWebhookTranslation struct {
 	ConnectorID     models.ConnectorID
@@ -174,9 +174,4 @@ func (w Workflow) runStoreWebhookTranslation(
 	return nil
 }
 
-var RunStoreWebhookTranslation any
-
-func init() {
-	RunHandleWebhooks = Workflow{}.runHandleWebhooks
-	RunStoreWebhookTranslation = Workflow{}.runStoreWebhookTranslation
-}
+const RunStoreWebhookTranslation = "RunStoreWebhookTranslation"

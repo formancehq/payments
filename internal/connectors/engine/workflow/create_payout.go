@@ -151,8 +151,4 @@ func (w Workflow) createPayout(
 	}
 }
 
-var RunCreatePayout any
-
-func init() {
-	RunCreatePayout = Workflow{}.runCreatePayout
-}
+const RunCreatePayout = "CreatePayout"

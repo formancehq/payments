@@ -162,8 +162,4 @@ func (w Workflow) runUninstallConnector(
 	return nil
 }
 
-var RunUninstallConnector any
-
-func init() {
-	RunUninstallConnector = Workflow{}.runUninstallConnector
-}
+const RunUninstallConnector = "UninstallConnector"

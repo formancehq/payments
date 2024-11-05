@@ -153,11 +153,7 @@ func (w Workflow) runSendEvents(
 	return nil
 }
 
-var RunSendEvents any
-
-func init() {
-	RunSendEvents = Workflow{}.runSendEvents
-}
+const RunSendEvents = "RunSendEvents"
 
 func sendEvent(
 	ctx workflow.Context,
