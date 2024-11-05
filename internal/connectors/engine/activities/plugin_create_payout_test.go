@@ -43,7 +43,7 @@ var _ = Describe("Plugin Create Payout", func() {
 			p = plugins.NewMockPlugins(ctrl)
 			s = storage.NewMockStorage(ctrl)
 			plugin = models.NewMockPlugin(ctrl)
-			act = activities.New(s, evts, p)
+			act = activities.New(nil, s, evts, p)
 			req = activities.CreatePayoutRequest{
 				ConnectorID: models.ConnectorID{
 					Provider: "some_provider",

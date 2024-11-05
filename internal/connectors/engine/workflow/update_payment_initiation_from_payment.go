@@ -48,8 +48,4 @@ func (w Workflow) runUpdatePaymentInitiationFromPayment(
 	return nil
 }
 
-var RunUpdatePaymentInitiationFromPayment any
-
-func init() {
-	RunUpdatePaymentInitiationFromPayment = Workflow{}.runUpdatePaymentInitiationFromPayment
-}
+const RunUpdatePaymentInitiationFromPayment = "RunUpdatePaymentInitiationFromPayment"

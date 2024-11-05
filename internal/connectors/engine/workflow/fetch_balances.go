@@ -165,8 +165,4 @@ func (w Workflow) fetchBalances(
 	return nil
 }
 
-var RunFetchNextBalances any
-
-func init() {
-	RunFetchNextBalances = Workflow{}.runFetchNextBalances
-}
+const RunFetchNextBalances = "FetchBalances"

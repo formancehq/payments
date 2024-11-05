@@ -117,8 +117,4 @@ func (w Workflow) createBankAccount(
 	return account.ID.String(), nil
 }
 
-var RunCreateBankAccount any
-
-func init() {
-	RunCreateBankAccount = Workflow{}.runCreateBankAccount
-}
+const RunCreateBankAccount = "CreateBankAccount"
