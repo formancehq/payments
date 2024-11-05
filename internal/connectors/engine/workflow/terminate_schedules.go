@@ -37,8 +37,7 @@ func (w Workflow) runTerminateSchedules(
 					infiniteRetryContext(ctx),
 					s.ID,
 				); err != nil {
-					// TODO(polo): log error but continue
-					_ = err
+					workflow.GetLogger(ctx).Error("failed to delete schedule", "schedule_id", s.ID, "error", err)
 				}
 			})
 		}
