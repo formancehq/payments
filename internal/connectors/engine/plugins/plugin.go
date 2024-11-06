@@ -24,9 +24,10 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(connectorID models.ConnectorID) error
+	RegisterPlugin(connectorID models.ConnectorID, config models.Config) error
 	AddCapabilities(connectorID models.ConnectorID, capabilities []models.Capability) error
 	GetCapabilities(connectorID models.ConnectorID) (map[models.Capability]struct{}, error)
+	GetConfig(connectorID models.ConnectorID) (models.Config, error)
 	UnregisterPlugin(connectorID models.ConnectorID) error
 	Get(connectorID models.ConnectorID) (models.Plugin, error)
 }
@@ -47,6 +48,7 @@ type plugins struct {
 type pluginInformation struct {
 	client       *plugin.Client
 	capabilities map[models.Capability]struct{}
+	config       models.Config
 }
 
 func New(
@@ -64,7 +66,7 @@ func New(
 	}
 }
 
-func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
+func (p *plugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config) error {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
@@ -115,6 +117,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID) error {
 	p.plugins[connectorID.String()] = pluginInformation{
 		client:       pc,
 		capabilities: make(map[models.Capability]struct{}),
+		config:       config,
 	}
 
 	return nil
@@ -176,6 +179,18 @@ func (p *plugins) GetCapabilities(connectorID models.ConnectorID) (map[models.Ca
 	}
 
 	return pluginInfo.capabilities, nil
+}
+
+func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
+	p.rwMutex.RLock()
+	defer p.rwMutex.RUnlock()
+
+	pluginInfo, ok := p.plugins[connectorID.String()]
+	if !ok {
+		return models.Config{}, ErrNotFound
+	}
+
+	return pluginInfo.config, nil
 }
 
 func getPlugin(client *plugin.Client) (models.Plugin, error) {

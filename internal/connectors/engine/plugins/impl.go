@@ -142,7 +142,12 @@ func (i *impl) FetchNextPayments(ctx context.Context, req models.FetchNextPaymen
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
-		payments = append(payments, p)
+
+		if p == nil {
+			continue
+		}
+
+		payments = append(payments, *p)
 	}
 
 	return models.FetchNextPaymentsResponse{
@@ -206,6 +211,36 @@ func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequ
 
 	return models.CreateTransferResponse{
 		Payment: payment,
+		PollingTransferID: func() *string {
+			if resp.TransferId == nil {
+				return nil
+			}
+			return &resp.TransferId.Value
+		}(),
+	}, nil
+}
+
+func (i *impl) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	resp, err := i.pluginClient.PollTransferStatus(ctx, &services.PollTransferStatusRequest{
+		TransferId: req.TransferID,
+	})
+	if err != nil {
+		return models.PollTransferStatusResponse{}, err
+	}
+
+	payment, err := grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.PollTransferStatusResponse{}, err
+	}
+
+	return models.PollTransferStatusResponse{
+		Payment: payment,
+		Error: func() error {
+			if resp.Error == nil {
+				return nil
+			}
+			return errors.New(resp.Error.Value)
+		}(),
 	}, nil
 }
 
@@ -224,6 +259,36 @@ func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest)
 
 	return models.CreatePayoutResponse{
 		Payment: payment,
+		PollingPayoutID: func() *string {
+			if resp.PayoutId == nil {
+				return nil
+			}
+			return &resp.PayoutId.Value
+		}(),
+	}, nil
+}
+
+func (i *impl) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	resp, err := i.pluginClient.PollPayoutStatus(ctx, &services.PollPayoutStatusRequest{
+		PayoutId: req.PayoutID,
+	})
+	if err != nil {
+		return models.PollPayoutStatusResponse{}, err
+	}
+
+	payment, err := grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.PollPayoutStatusResponse{}, err
+	}
+
+	return models.PollPayoutStatusResponse{
+		Payment: payment,
+		Error: func() error {
+			if resp.Error == nil {
+				return nil
+			}
+			return errors.New(resp.Error.Value)
+		}(),
 	}, nil
 }
 
@@ -271,7 +336,7 @@ func (i *impl) TranslateWebhook(ctx context.Context, req models.TranslateWebhook
 			if err != nil {
 				return models.TranslateWebhookResponse{}, err
 			}
-			r.Payment = &p
+			r.Payment = p
 		case *services.TranslateWebhookResponse_Response_Account:
 			a := grpc.TranslateProtoAccount(v.Account)
 			r.Account = &a

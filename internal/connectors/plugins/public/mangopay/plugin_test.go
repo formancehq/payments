@@ -133,6 +133,14 @@ var _ = Describe("Mangopay Plugin", func() {
 		// Other tests will be in transfers_test.go
 	})
 
+	Context("poll transfer status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollTransferStatusRequest{}
+			_, err := plg.PollTransferStatus(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
 	Context("create payout", func() {
 		It("should fail when called before install", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
@@ -141,6 +149,14 @@ var _ = Describe("Mangopay Plugin", func() {
 		})
 
 		// Other tests will be in payouts_test.go
+	})
+
+	Context("poll payout status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollPayoutStatusRequest{}
+			_, err := plg.PollPayoutStatus(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
 	})
 
 	Context("create webhooks", func() {

@@ -117,6 +117,38 @@ var _ = Describe("Adyen Plugin", func() {
 		})
 	})
 
+	Context("create transfer", func() {
+		It("should fail if client is not set", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{}
+			_, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled.Error()))
+		})
+	})
+
+	Context("poll transfer status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollTransferStatusRequest{}
+			_, err := plg.PollTransferStatus(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
+		})
+	})
+
+	Context("create payout", func() {
+		It("should fail if client is not set", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled.Error()))
+		})
+	})
+
+	Context("poll payout status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollPayoutStatusRequest{}
+			_, err := plg.PollPayoutStatus(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
+		})
+	})
+
 	Context("create webhooks", func() {
 		It("should fail because not yet installed", func(ctx SpecContext) {
 			req := models.CreateWebhooksRequest{}

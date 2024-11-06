@@ -59,8 +59,16 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginCreateTransfer,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginPollTransferStatus",
+			Func: a.PluginPollTransferStatus,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginCreatePayout",
 			Func: a.PluginCreatePayout,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginPollPayoutStatus",
+			Func: a.PluginPollPayoutStatus,
 		}).
 		Append(temporalworker.Definition{
 			Name: "PluginCreateWebhooks",
@@ -127,8 +135,12 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageSchedulesList,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageSchedulesDelete",
+			Name: "StoreSchedulesDelete",
 			Func: a.StorageSchedulesDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageSchedulesDeleteFromConnectorID",
+			Func: a.StorageSchedulesDeleteFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageInstancesStore",

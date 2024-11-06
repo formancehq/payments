@@ -145,7 +145,7 @@ var _ = Describe("Stripe Plugin Payouts Creation", func() {
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
-				Payment: models.PSPPayment{
+				Payment: &models.PSPPayment{
 					Reference:                   "bt1",
 					CreatedAt:                   time.Unix(trResponse.Created, 0),
 					Type:                        models.PAYMENT_TYPE_PAYOUT,

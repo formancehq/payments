@@ -1,8 +1,13 @@
 package workflow
 
 import (
+	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -16,7 +21,7 @@ func (w Workflow) runCreatePayout(
 	ctx workflow.Context,
 	createPayout CreatePayout,
 ) error {
-	pID, err := w.createPayout(ctx, createPayout)
+	err := w.createPayout(ctx, createPayout)
 	if err != nil {
 		errUpdateTask := w.updateTasksError(
 			ctx,
@@ -27,27 +32,24 @@ func (w Workflow) runCreatePayout(
 		if errUpdateTask != nil {
 			return errUpdateTask
 		}
+
+		return err
 	}
 
-	return w.updateTaskSucces(
-		ctx,
-		createPayout.TaskID,
-		createPayout.ConnectorID,
-		pID.String(),
-	)
+	return nil
 }
 
 func (w Workflow) createPayout(
 	ctx workflow.Context,
 	createPayout CreatePayout,
-) (models.PaymentID, error) {
+) error {
 	// Get the payment initiation
 	pi, err := activities.StoragePaymentInitiationsGet(
 		infiniteRetryContext(ctx),
 		createPayout.PaymentInitiationID,
 	)
 	if err != nil {
-		return models.PaymentID{}, err
+		return err
 	}
 
 	var sourceAccount *models.Account
@@ -57,7 +59,7 @@ func (w Workflow) createPayout(
 			*pi.SourceAccountID,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 	}
 
@@ -68,7 +70,7 @@ func (w Workflow) createPayout(
 			*pi.DestinationAccountID,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 	}
 
@@ -85,7 +87,7 @@ func (w Workflow) createPayout(
 		nil,
 	)
 	if err != nil {
-		return models.PaymentID{}, err
+		return err
 	}
 
 	createPayoutResponse, errPlugin := activities.PluginCreatePayout(
@@ -97,41 +99,83 @@ func (w Workflow) createPayout(
 	)
 	switch errPlugin {
 	case nil:
-		payment := models.FromPSPPaymentToPayment(createPayoutResponse.Payment, createPayout.ConnectorID)
+		if createPayoutResponse.Payment != nil {
+			payment := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, createPayout.ConnectorID)
 
-		err = activities.StoragePaymentsStore(
-			infiniteRetryContext(ctx),
-			[]models.Payment{payment},
-		)
-		if err != nil {
-			return models.PaymentID{}, err
+			if err := w.storePIPayment(
+				ctx,
+				payment,
+				createPayout.PaymentInitiationID,
+				createPayout.ConnectorID,
+			); err != nil {
+				return err
+			}
+
+			return w.updateTaskSuccess(
+				ctx,
+				createPayout.TaskID,
+				createPayout.ConnectorID,
+				payment.ID.String(),
+			)
 		}
 
-		err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
-			infiniteRetryContext(ctx),
-			createPayout.PaymentInitiationID,
-			payment.ID,
-			createPayoutResponse.Payment.CreatedAt,
-		)
-		if err != nil {
-			return models.PaymentID{}, err
+		if createPayoutResponse.PollingPayoutID != nil {
+			config, err := w.plugins.GetConfig(createPayout.ConnectorID)
+			if err != nil {
+				return err
+			}
+
+			scheduleID := fmt.Sprintf("polling-payout-%s-%s", createPayout.ConnectorID.String(), *createPayoutResponse.PollingPayoutID)
+			scheduleID, err = activities.TemporalScheduleCreate(
+				infiniteRetryContext(ctx),
+				activities.ScheduleCreateOptions{
+					ScheduleID: scheduleID,
+					Interval: client.ScheduleIntervalSpec{
+						Every: config.PollingPeriod,
+					},
+					Action: client.ScheduleWorkflowAction{
+						Workflow: RunPollTransfer,
+						Args: []interface{}{
+							PollTransfer{
+								TaskID:              createPayout.TaskID,
+								ConnectorID:         createPayout.ConnectorID,
+								PaymentInitiationID: createPayout.PaymentInitiationID,
+								TransferID:          *createPayoutResponse.PollingPayoutID,
+								ScheduleID:          scheduleID,
+							},
+						},
+						TaskQueue: createPayout.ConnectorID.String(),
+						TypedSearchAttributes: temporal.NewSearchAttributes(
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
+						),
+					},
+					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+					TriggerImmediately: true,
+					SearchAttributes: map[string]any{
+						SearchAttributeScheduleID: scheduleID,
+						SearchAttributeStack:      w.stack,
+					},
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+			err = activities.StorageSchedulesStore(
+				infiniteRetryContext(ctx),
+				models.Schedule{
+					ID:          scheduleID,
+					ConnectorID: createPayout.ConnectorID,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+				})
+			if err != nil {
+				return err
+			}
 		}
 
-		err = w.addPIAdjustment(
-			ctx,
-			models.PaymentInitiationAdjustmentID{
-				PaymentInitiationID: createPayout.PaymentInitiationID,
-				CreatedAt:           workflow.Now(ctx),
-				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
-			},
-			nil,
-			nil,
-		)
-		if err != nil {
-			return models.PaymentID{}, err
-		}
+		return nil
 
-		return payment.ID, nil
 	default:
 		err = w.addPIAdjustment(
 			ctx,
@@ -144,10 +188,10 @@ func (w Workflow) createPayout(
 			nil,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 
-		return models.PaymentID{}, errPlugin
+		return errPlugin
 	}
 }
 

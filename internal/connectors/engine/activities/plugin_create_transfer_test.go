@@ -28,7 +28,7 @@ var _ = Describe("Plugin Create Transfer", func() {
 	BeforeEach(func() {
 		evts = &events.Events{}
 		sampleResponse = models.CreateTransferResponse{
-			Payment: models.PSPPayment{Reference: "ref"},
+			Payment: &models.PSPPayment{Reference: "ref"},
 		}
 	})
 

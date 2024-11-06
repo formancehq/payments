@@ -22,37 +22,37 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 	return nil
 }
 
-func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (models.PSPPayment, error) {
+func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (*models.PSPPayment, error) {
 	if err := p.validateTransferRequest(pi); err != nil {
-		return models.PSPPayment{}, err
+		return nil, err
 	}
 
 	curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return nil, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
 	}
 
 	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
+		return nil, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
 	}
 
 	var sourceAccount *client.Account
 	sourceAccount, err = p.client.GetAccount(ctx, pi.SourceAccount.Reference)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get source account: %v: %w", err, models.ErrInvalidRequest)
+		return nil, fmt.Errorf("failed to get source account: %v: %w", err, models.ErrInvalidRequest)
 	}
 	if len(sourceAccount.AccountIdentifiers) == 0 {
-		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for source account: %w", models.ErrInvalidRequest)
+		return nil, fmt.Errorf("no account identifiers provided for source account: %w", models.ErrInvalidRequest)
 	}
 
 	var destinationAccount *client.Account
 	destinationAccount, err = p.client.GetAccount(ctx, pi.DestinationAccount.Reference)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get destination account: %v: %w", err, models.ErrInvalidRequest)
+		return nil, fmt.Errorf("failed to get destination account: %v: %w", err, models.ErrInvalidRequest)
 	}
 	if len(destinationAccount.AccountIdentifiers) == 0 {
-		return models.PSPPayment{}, fmt.Errorf("no account identifiers provided for destination account: %w", models.ErrInvalidRequest)
+		return nil, fmt.Errorf("no account identifiers provided for destination account: %w", models.ErrInvalidRequest)
 	}
 
 	resp, err := p.client.InitiateTransferOrPayouts(
@@ -83,18 +83,18 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		},
 	)
 	if err != nil {
-		return models.PSPPayment{}, err
+		return nil, err
 	}
 
 	payment, err := p.client.GetPayment(ctx, resp.PaymentID)
 	if err != nil {
-		return models.PSPPayment{}, err
+		return nil, err
 	}
 
 	res, err := translatePayment(*payment)
 	if err != nil {
-		return models.PSPPayment{}, err
+		return nil, err
 	}
 
-	return *res, nil
+	return res, nil
 }

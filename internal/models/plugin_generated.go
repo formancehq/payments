@@ -20,7 +20,6 @@ import (
 type MockPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginMockRecorder is the mock recorder for MockPlugin.
@@ -202,6 +201,36 @@ func (m *MockPlugin) Name() string {
 func (mr *MockPluginMockRecorder) Name() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Name", reflect.TypeOf((*MockPlugin)(nil).Name))
+}
+
+// PollPayoutStatus mocks base method.
+func (m *MockPlugin) PollPayoutStatus(arg0 context.Context, arg1 PollPayoutStatusRequest) (PollPayoutStatusResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PollPayoutStatus", arg0, arg1)
+	ret0, _ := ret[0].(PollPayoutStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PollPayoutStatus indicates an expected call of PollPayoutStatus.
+func (mr *MockPluginMockRecorder) PollPayoutStatus(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollPayoutStatus", reflect.TypeOf((*MockPlugin)(nil).PollPayoutStatus), arg0, arg1)
+}
+
+// PollTransferStatus mocks base method.
+func (m *MockPlugin) PollTransferStatus(arg0 context.Context, arg1 PollTransferStatusRequest) (PollTransferStatusResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PollTransferStatus", arg0, arg1)
+	ret0, _ := ret[0].(PollTransferStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PollTransferStatus indicates an expected call of PollTransferStatus.
+func (mr *MockPluginMockRecorder) PollTransferStatus(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollTransferStatus", reflect.TypeOf((*MockPlugin)(nil).PollTransferStatus), arg0, arg1)
 }
 
 // TranslateWebhook mocks base method.

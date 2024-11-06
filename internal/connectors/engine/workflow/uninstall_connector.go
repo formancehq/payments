@@ -78,7 +78,7 @@ func (w Workflow) runUninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
-		err := activities.StorageSchedulesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		err := activities.StorageSchedulesDeleteFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 
