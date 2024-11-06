@@ -20,7 +20,6 @@ import (
 type MockPlugins struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginsMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginsMockRecorder is the mock recorder for MockPlugins.
@@ -84,18 +83,33 @@ func (mr *MockPluginsMockRecorder) GetCapabilities(connectorID any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapabilities", reflect.TypeOf((*MockPlugins)(nil).GetCapabilities), connectorID)
 }
 
-// RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID) error {
+// GetConfig mocks base method.
+func (m *MockPlugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", connectorID)
+	ret := m.ctrl.Call(m, "GetConfig", connectorID)
+	ret0, _ := ret[0].(models.Config)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConfig indicates an expected call of GetConfig.
+func (mr *MockPluginsMockRecorder) GetConfig(connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockPlugins)(nil).GetConfig), connectorID)
+}
+
+// RegisterPlugin mocks base method.
+func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegisterPlugin", connectorID, config)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(connectorID any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) RegisterPlugin(connectorID, config any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), connectorID, config)
 }
 
 // UnregisterPlugin mocks base method.

@@ -87,8 +87,16 @@ func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferReq
 	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
 }
 
+func (p Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
+}
+
 func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+}
+
+func (p Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {

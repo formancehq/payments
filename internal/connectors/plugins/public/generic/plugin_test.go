@@ -121,10 +121,26 @@ var _ = Describe("Generic Plugin", func() {
 		})
 	})
 
+	Context("poll transfer status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollTransferStatusRequest{}
+			_, err := plg.PollTransferStatus(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
 	Context("create payout", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
+	Context("poll payout status", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.PollPayoutStatusRequest{}
+			_, err := plg.PollPayoutStatus(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})

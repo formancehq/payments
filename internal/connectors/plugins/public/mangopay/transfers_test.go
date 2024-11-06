@@ -197,7 +197,7 @@ var _ = Describe("Mangopay Plugin Transfers Creation", func() {
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{
-				Payment: models.PSPPayment{
+				Payment: &models.PSPPayment{
 					Reference:                   "123",
 					CreatedAt:                   time.Unix(trResponse.CreationDate, 0),
 					Type:                        models.PAYMENT_TYPE_TRANSFER,

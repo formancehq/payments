@@ -24,7 +24,6 @@ import (
 type MockStorage struct {
 	ctrl     *gomock.Controller
 	recorder *MockStorageMockRecorder
-	isgomock struct{}
 }
 
 // MockStorageMockRecorder is the mock recorder for MockStorage.
@@ -840,6 +839,20 @@ func (m *MockStorage) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 func (mr *MockStorageMockRecorder) PoolsUpsert(ctx, pool any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsUpsert", reflect.TypeOf((*MockStorage)(nil).PoolsUpsert), ctx, pool)
+}
+
+// SchedulesDelete mocks base method.
+func (m *MockStorage) SchedulesDelete(ctx context.Context, id string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "SchedulesDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// SchedulesDelete indicates an expected call of SchedulesDelete.
+func (mr *MockStorageMockRecorder) SchedulesDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SchedulesDelete", reflect.TypeOf((*MockStorage)(nil).SchedulesDelete), ctx, id)
 }
 
 // SchedulesDeleteFromConnectorID mocks base method.

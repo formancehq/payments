@@ -32,7 +32,7 @@ func (w Workflow) runCreateBankAccount(
 		return err
 	}
 
-	return w.updateTaskSucces(
+	return w.updateTaskSuccess(
 		ctx,
 		createBankAccount.TaskID,
 		createBankAccount.ConnectorID,

@@ -42,6 +42,15 @@ func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID 
 	return e("failed to delete schedule", err)
 }
 
+func (s *store) SchedulesDelete(ctx context.Context, id string) error {
+	_, err := s.db.NewDelete().
+		Model((*schedule)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to delete schedule", err)
+}
+
 func (s *store) SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error) {
 	var schedule schedule
 	err := s.db.NewSelect().

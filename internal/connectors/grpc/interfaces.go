@@ -21,7 +21,9 @@ type PSP interface {
 
 	CreateBankAccount(ctx context.Context, in *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error)
 	CreateTransfer(ctx context.Context, in *services.CreateTransferRequest) (*services.CreateTransferResponse, error)
+	PollTransferStatus(ctx context.Context, in *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error)
 	CreatePayout(ctx context.Context, in *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error)
+	PollPayoutStatus(ctx context.Context, in *services.PollPayoutStatusRequest) (*services.PollPayoutStatusResponse, error)
 
 	CreateWebhooks(ctx context.Context, in *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error)
 	TranslateWebhook(ctx context.Context, in *services.TranslateWebhookRequest) (*services.TranslateWebhookResponse, error)

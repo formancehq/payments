@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/hashicorp/go-hclog"
+	"google.golang.org/protobuf/types/known/wrapperspb"
 
 	"go.opentelemetry.io/otel/attribute"
 )
@@ -151,7 +152,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 
 	payments := make([]*proto.Payment, 0, len(resp.Payments))
 	for _, payment := range resp.Payments {
-		payments = append(payments, grpc.TranslatePayment(payment))
+		payments = append(payments, grpc.TranslatePayment(&payment))
 	}
 
 	hclog.Default().Info("fetched next payments succeeded!")
@@ -268,6 +269,38 @@ func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferR
 
 	return &services.CreateTransferResponse{
 		Payment: grpc.TranslatePayment(resp.Payment),
+		TransferId: func() *wrapperspb.StringValue {
+			if *resp.PollingTransferID == "" {
+				return nil
+			}
+			return wrapperspb.String(*resp.PollingTransferID)
+		}(),
+	}, nil
+}
+
+func (i *impl) PollTransferStatus(ctx context.Context, req *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.PollTransferStatus", attribute.String("psp", i.plugin.Name()), attribute.String("transferID", req.TransferId))
+	defer span.End()
+	hclog.Default().Info("polling transfer status...")
+
+	resp, err := i.plugin.PollTransferStatus(ctx, models.PollTransferStatusRequest{
+		TransferID: req.TransferId,
+	})
+	if err != nil {
+		hclog.Default().Error("polling transfer status failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("polled transfer status succeeded!")
+
+	return &services.PollTransferStatusResponse{
+		Payment: grpc.TranslatePayment(resp.Payment),
+		Error: func() *wrapperspb.StringValue {
+			if resp.Error == nil {
+				return nil
+			}
+			return wrapperspb.String(resp.Error.Error())
+		}(),
 	}, nil
 }
 
@@ -294,6 +327,38 @@ func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutReque
 
 	return &services.CreatePayoutResponse{
 		Payment: grpc.TranslatePayment(resp.Payment),
+		PayoutId: func() *wrapperspb.StringValue {
+			if *resp.PollingPayoutID == "" {
+				return nil
+			}
+			return wrapperspb.String(*resp.PollingPayoutID)
+		}(),
+	}, nil
+}
+
+func (i *impl) PollPayoutStatus(ctx context.Context, req *services.PollPayoutStatusRequest) (*services.PollPayoutStatusResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.PollPayoutStatus", attribute.String("psp", i.plugin.Name()), attribute.String("payoutID", req.PayoutId))
+	defer span.End()
+	hclog.Default().Info("polling payout status...")
+
+	resp, err := i.plugin.PollPayoutStatus(ctx, models.PollPayoutStatusRequest{
+		PayoutID: req.PayoutId,
+	})
+	if err != nil {
+		hclog.Default().Error("polling payout status failed: ", err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("polled payout status succeeded!")
+
+	return &services.PollPayoutStatusResponse{
+		Payment: grpc.TranslatePayment(resp.Payment),
+		Error: func() *wrapperspb.StringValue {
+			if resp.Error == nil {
+				return nil
+			}
+			return wrapperspb.String(resp.Error.Error())
+		}(),
 	}, nil
 }
 
@@ -363,7 +428,7 @@ func (i *impl) TranslateWebhook(ctx context.Context, req *services.TranslateWebh
 
 		if response.Payment != nil {
 			r.Translated = &services.TranslateWebhookResponse_Response_Payment{
-				Payment: grpc.TranslatePayment(*response.Payment),
+				Payment: grpc.TranslatePayment(response.Payment),
 			}
 		}
 
