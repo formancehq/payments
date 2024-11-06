@@ -46,8 +46,16 @@ func (c *GRPCClient) CreateTransfer(ctx context.Context, req *services.CreateTra
 	return c.client.CreateTransfer(ctx, req)
 }
 
+func (c *GRPCClient) PollTransferStatus(ctx context.Context, req *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error) {
+	return c.client.PollTransferStatus(ctx, req)
+}
+
 func (c *GRPCClient) CreatePayout(ctx context.Context, req *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error) {
 	return c.client.CreatePayout(ctx, req)
+}
+
+func (c *GRPCClient) PollPayoutStatus(ctx context.Context, req *services.PollPayoutStatusRequest) (*services.PollPayoutStatusResponse, error) {
+	return c.client.PollPayoutStatus(ctx, req)
 }
 
 func (c *GRPCClient) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error) {

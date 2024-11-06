@@ -28,7 +28,7 @@ var _ = Describe("Plugin Create Payout", func() {
 	BeforeEach(func() {
 		evts = &events.Events{}
 		sampleResponse = models.CreatePayoutResponse{
-			Payment: models.PSPPayment{Reference: "ref"},
+			Payment: &models.PSPPayment{Reference: "ref"},
 		}
 	})
 

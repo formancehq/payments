@@ -156,7 +156,11 @@ func TranslateProtoBalance(balance *proto.Balance) (models.PSPBalance, error) {
 	}, nil
 }
 
-func TranslatePayment(payment models.PSPPayment) *proto.Payment {
+func TranslatePayment(payment *models.PSPPayment) *proto.Payment {
+	if payment == nil {
+		return nil
+	}
+
 	return &proto.Payment{
 		Reference:   payment.Reference,
 		CreatedAt:   timestamppb.New(payment.CreatedAt),
@@ -187,12 +191,16 @@ func TranslatePayment(payment models.PSPPayment) *proto.Payment {
 	}
 }
 
-func TranslateProtoPayment(payment *proto.Payment) (models.PSPPayment, error) {
+func TranslateProtoPayment(payment *proto.Payment) (*models.PSPPayment, error) {
+	if payment == nil {
+		return nil, nil
+	}
+
 	amount, ok := big.NewInt(0).SetString(string(payment.Amount.Amount), 10)
 	if !ok {
-		return models.PSPPayment{}, errors.New("failed to parse amount")
+		return nil, errors.New("failed to parse amount")
 	}
-	return models.PSPPayment{
+	return &models.PSPPayment{
 		Reference: payment.Reference,
 		CreatedAt: payment.CreatedAt.AsTime(),
 		Type:      models.PaymentType(payment.PaymentType),

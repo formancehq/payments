@@ -148,7 +148,7 @@ var _ = Describe("CurrencyCloud Plugin Transfers Creation", func() {
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{
-				Payment: models.PSPPayment{
+				Payment: &models.PSPPayment{
 					Reference:                   "test1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_TRANSFER,

@@ -297,7 +297,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
-				Payment: models.PSPPayment{
+				Payment: &models.PSPPayment{
 					Reference:                   "p1",
 					CreatedAt:                   now.UTC(),
 					Type:                        models.PAYMENT_TYPE_PAYOUT,

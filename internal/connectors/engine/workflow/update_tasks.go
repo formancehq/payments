@@ -23,7 +23,7 @@ func (w Workflow) updateTasksError(
 		})
 }
 
-func (w Workflow) updateTaskSucces(
+func (w Workflow) updateTaskSuccess(
 	ctx workflow.Context,
 	taskID models.TaskID,
 	connectorID models.ConnectorID,

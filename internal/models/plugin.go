@@ -22,7 +22,9 @@ type Plugin interface {
 
 	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
 	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
+	PollTransferStatus(context.Context, PollTransferStatusRequest) (PollTransferStatusResponse, error)
 	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
+	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
@@ -144,7 +146,27 @@ type CreateTransferRequest struct {
 }
 
 type CreateTransferResponse struct {
-	Payment PSPPayment
+	// If payment is immediately available, it will be return here and
+	// the workflow will be terminated
+	Payment *PSPPayment
+	// Otherwise, the payment will be nil and the transfer ID will be returned
+	// to be polled regularly until the payment is available
+	PollingTransferID *string
+}
+
+type PollTransferStatusRequest struct {
+	TransferID string
+}
+
+type PollTransferStatusResponse struct {
+	// If nil, the payment is not yet available and the function will be called
+	// again later
+	// If not, the payment is available and the workflow will be terminated
+	Payment *PSPPayment
+
+	// If not nil, it means that the transfer failed, the payment initiation
+	// will be marked as fail and the workflow will be terminated
+	Error error
 }
 
 type CreatePayoutRequest struct {
@@ -152,5 +174,25 @@ type CreatePayoutRequest struct {
 }
 
 type CreatePayoutResponse struct {
-	Payment PSPPayment
+	// If payment is immediately available, it will be return here and
+	// the workflow will be terminated
+	Payment *PSPPayment
+	// Otherwise, the payment will be nil and the payout ID will be returned
+	// to be polled regularly until the payment is available
+	PollingPayoutID *string
+}
+
+type PollPayoutStatusRequest struct {
+	PayoutID string
+}
+
+type PollPayoutStatusResponse struct {
+	// If nil, the payment is not yet available and the function will be called
+	// again later
+	// If not, the payment is available and the workflow will be terminated
+	Payment *PSPPayment
+
+	// If not nil, it means that the transfer failed, the payment initiation
+	// will be marked as fail and the workflow will be terminated
+	Error error
 }
