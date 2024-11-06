@@ -214,7 +214,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
-				Payment: models.PSPPayment{
+				Payment: &models.PSPPayment{
 					Reference:                   "123",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,

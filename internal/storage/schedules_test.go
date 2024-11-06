@@ -111,6 +111,36 @@ func TestSchedulesDeleteFromConnectorID(t *testing.T) {
 	})
 }
 
+func TestSchedulesDelete(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertSchedule(t, ctx, store, defaultSchedules[0])
+	upsertSchedule(t, ctx, store, defaultSchedules[1])
+	upsertSchedule(t, ctx, store, defaultSchedules[2])
+
+	t.Run("delete unknown schedule", func(t *testing.T) {
+		require.NoError(t, store.SchedulesDelete(ctx, "unknown"))
+
+		for _, sch := range defaultSchedules {
+			actual, err := store.SchedulesGet(ctx, sch.ID, sch.ConnectorID)
+			require.NoError(t, err)
+			require.Equal(t, sch, *actual)
+		}
+	})
+
+	t.Run("delete schedule", func(t *testing.T) {
+		require.NoError(t, store.SchedulesDelete(ctx, defaultSchedules[0].ID))
+
+		_, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+	})
+}
+
 func TestSchedulesGet(t *testing.T) {
 	t.Parallel()
 

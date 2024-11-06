@@ -1,8 +1,13 @@
 package workflow
 
 import (
+	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -16,7 +21,7 @@ func (w Workflow) runCreateTransfer(
 	ctx workflow.Context,
 	createTransfer CreateTransfer,
 ) error {
-	pID, err := w.createTransfer(ctx, createTransfer)
+	err := w.createTransfer(ctx, createTransfer)
 	if err != nil {
 		errUpdateTask := w.updateTasksError(
 			ctx,
@@ -31,25 +36,20 @@ func (w Workflow) runCreateTransfer(
 		return err
 	}
 
-	return w.updateTaskSucces(
-		ctx,
-		createTransfer.TaskID,
-		createTransfer.ConnectorID,
-		pID.String(),
-	)
+	return nil
 }
 
 func (w Workflow) createTransfer(
 	ctx workflow.Context,
 	createTransfer CreateTransfer,
-) (models.PaymentID, error) {
+) error {
 	// Get the payment initiation
 	pi, err := activities.StoragePaymentInitiationsGet(
 		infiniteRetryContext(ctx),
 		createTransfer.PaymentInitiationID,
 	)
 	if err != nil {
-		return models.PaymentID{}, err
+		return err
 	}
 
 	var sourceAccount *models.Account
@@ -59,7 +59,7 @@ func (w Workflow) createTransfer(
 			*pi.SourceAccountID,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 	}
 
@@ -70,7 +70,7 @@ func (w Workflow) createTransfer(
 			*pi.DestinationAccountID,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 	}
 
@@ -87,7 +87,7 @@ func (w Workflow) createTransfer(
 		nil,
 	)
 	if err != nil {
-		return models.PaymentID{}, err
+		return err
 	}
 
 	createTransferResponse, errPlugin := activities.PluginCreateTransfer(
@@ -99,41 +99,85 @@ func (w Workflow) createTransfer(
 	)
 	switch errPlugin {
 	case nil:
-		payment := models.FromPSPPaymentToPayment(createTransferResponse.Payment, createTransfer.ConnectorID)
+		if createTransferResponse.Payment != nil {
+			// payment is already available, storing it
+			payment := models.FromPSPPaymentToPayment(*createTransferResponse.Payment, createTransfer.ConnectorID)
 
-		err := activities.StoragePaymentsStore(
-			infiniteRetryContext(ctx),
-			[]models.Payment{payment},
-		)
-		if err != nil {
-			return models.PaymentID{}, errPlugin
+			if err := w.storePIPayment(
+				ctx,
+				payment,
+				createTransfer.PaymentInitiationID,
+				createTransfer.ConnectorID,
+			); err != nil {
+				return err
+			}
+
+			return w.updateTaskSuccess(
+				ctx,
+				createTransfer.TaskID,
+				createTransfer.ConnectorID,
+				payment.ID.String(),
+			)
 		}
 
-		err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
-			infiniteRetryContext(ctx),
-			createTransfer.PaymentInitiationID,
-			payment.ID,
-			createTransferResponse.Payment.CreatedAt,
-		)
-		if err != nil {
-			return models.PaymentID{}, errPlugin
+		if createTransferResponse.PollingTransferID != nil {
+			// payment not yet available, waiting for the next polling
+			config, err := w.plugins.GetConfig(createTransfer.ConnectorID)
+			if err != nil {
+				return err
+			}
+
+			scheduleID := fmt.Sprintf("polling-transfer-%s-%s", createTransfer.ConnectorID.String(), *createTransferResponse.PollingTransferID)
+			scheduleID, err = activities.TemporalScheduleCreate(
+				infiniteRetryContext(ctx),
+				activities.ScheduleCreateOptions{
+					ScheduleID: scheduleID,
+					Interval: client.ScheduleIntervalSpec{
+						Every: config.PollingPeriod,
+					},
+					Action: client.ScheduleWorkflowAction{
+						Workflow: RunPollTransfer,
+						Args: []interface{}{
+							PollTransfer{
+								TaskID:              createTransfer.TaskID,
+								ConnectorID:         createTransfer.ConnectorID,
+								PaymentInitiationID: createTransfer.PaymentInitiationID,
+								TransferID:          *createTransferResponse.PollingTransferID,
+								ScheduleID:          scheduleID,
+							},
+						},
+						TaskQueue: createTransfer.ConnectorID.String(),
+						TypedSearchAttributes: temporal.NewSearchAttributes(
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
+						),
+					},
+					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+					TriggerImmediately: true,
+					SearchAttributes: map[string]any{
+						SearchAttributeScheduleID: scheduleID,
+						SearchAttributeStack:      w.stack,
+					},
+				},
+			)
+			if err != nil {
+				return err
+			}
+
+			err = activities.StorageSchedulesStore(
+				infiniteRetryContext(ctx),
+				models.Schedule{
+					ID:          scheduleID,
+					ConnectorID: createTransfer.ConnectorID,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+				})
+			if err != nil {
+				return err
+			}
 		}
 
-		err = w.addPIAdjustment(
-			ctx,
-			models.PaymentInitiationAdjustmentID{
-				PaymentInitiationID: createTransfer.PaymentInitiationID,
-				CreatedAt:           workflow.Now(ctx),
-				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
-			},
-			nil,
-			nil,
-		)
-		if err != nil {
-			return models.PaymentID{}, errPlugin
-		}
+		return nil
 
-		return payment.ID, nil
 	default:
 		err := w.addPIAdjustment(
 			ctx,
@@ -146,10 +190,10 @@ func (w Workflow) createTransfer(
 			nil,
 		)
 		if err != nil {
-			return models.PaymentID{}, err
+			return err
 		}
 
-		return models.PaymentID{}, errPlugin
+		return errPlugin
 	}
 }
 

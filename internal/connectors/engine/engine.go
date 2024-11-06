@@ -121,7 +121,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID)
+	err := e.plugins.RegisterPlugin(connector.ID, config)
 	if err != nil {
 		return models.ConnectorID{}, handlePluginError(err)
 	}
@@ -712,7 +712,12 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
 	// after the deletion of the connector entry in the database.
-	err := e.plugins.RegisterPlugin(connector.ID)
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	err := e.plugins.RegisterPlugin(connector.ID, config)
 	if err != nil {
 		return err
 	}
@@ -720,11 +725,6 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	if !connector.ScheduledForDeletion {
 		err = e.workers.AddWorker(connector.ID.String())
 		if err != nil {
-			return err
-		}
-
-		config := models.DefaultConfig()
-		if err := json.Unmarshal(connector.Config, &config); err != nil {
 			return err
 		}
 

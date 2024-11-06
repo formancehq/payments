@@ -80,7 +80,7 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
 		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -91,11 +91,15 @@ func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferReq
 	}
 
 	return models.CreateTransferResponse{
-		Payment: payment,
+		Payment: &payment,
 	}, nil
 }
 
-func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
 		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -106,12 +110,16 @@ func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest
 	}
 
 	return models.CreatePayoutResponse{
-		Payment: payment,
+		Payment: &payment,
 	}, nil
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {

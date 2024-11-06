@@ -91,6 +91,7 @@ type Storage interface {
 	SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpaginate.Cursor[models.Schedule], error)
 	SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error)
 	SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	SchedulesDelete(ctx context.Context, id string) error
 
 	// State
 	StatesUpsert(ctx context.Context, state models.State) error

@@ -2,6 +2,8 @@ syntax = "proto3";
 package formance.payments.grpc.services;
 option go_package = "github.com/formancehq/payments/internal/connectors/grpc/proto/services";
 
+import "google/protobuf/wrappers.proto";
+
 import "account.proto";
 import "balance.proto";
 import "bank_account.proto";
@@ -130,6 +132,16 @@ message CreateTransferRequest {
 
 message CreateTransferResponse {
     formance.payments.connectors.grpc.proto.Payment payment = 1;
+    google.protobuf.StringValue transfer_id = 2;
+}
+
+message PollTransferStatusRequest {
+    string transfer_id = 1;
+}
+
+message PollTransferStatusResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+    google.protobuf.StringValue error = 2;
 }
 
 message CreatePayoutRequest {
@@ -138,6 +150,16 @@ message CreatePayoutRequest {
 
 message CreatePayoutResponse {
     formance.payments.connectors.grpc.proto.Payment payment = 1;
+    google.protobuf.StringValue payout_id = 2;
+}
+
+message PollPayoutStatusRequest {
+    string payout_id = 1;
+}
+
+message PollPayoutStatusResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+    google.protobuf.StringValue error = 2;
 }
 
 service Plugin {
@@ -151,7 +173,9 @@ service Plugin {
     rpc FetchNextBalances(FetchNextBalancesRequest) returns (FetchNextBalancesResponse) {}
     rpc CreateBankAccount(CreateBankAccountRequest) returns (CreateBankAccountResponse) {}
     rpc CreateTransfer(CreateTransferRequest) returns (CreateTransferResponse) {}
+    rpc PollTransferStatus(PollTransferStatusRequest) returns (PollTransferStatusResponse) {}
     rpc CreatePayout(CreatePayoutRequest) returns (CreatePayoutResponse) {}
+    rpc PollPayoutStatus(PollPayoutStatusRequest) returns (PollPayoutStatusResponse) {}
     rpc CreateWebhooks(CreateWebhooksRequest) returns (CreateWebhooksResponse) {}
     rpc TranslateWebhook(TranslateWebhookRequest) returns (TranslateWebhookResponse) {}
 }
