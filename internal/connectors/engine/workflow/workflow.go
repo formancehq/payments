@@ -52,75 +52,75 @@ func New(temporalClient client.Client, temporalNamespace string, plugins plugins
 func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 	return temporalworker.NewDefinitionSet().
 		Append(temporalworker.Definition{
-			Name: "FetchAccounts",
+			Name: RunFetchNextAccounts,
 			Func: w.runFetchNextAccounts,
 		}).
 		Append(temporalworker.Definition{
-			Name: "FetchBalances",
+			Name: RunFetchNextBalances,
 			Func: w.runFetchNextBalances,
 		}).
 		Append(temporalworker.Definition{
-			Name: "FetchExternalAccounts",
+			Name: RunFetchNextExternalAccounts,
 			Func: w.runFetchNextExternalAccounts,
 		}).
 		Append(temporalworker.Definition{
-			Name: "FetchOthers",
+			Name: RunFetchNextOthers,
 			Func: w.runFetchNextOthers,
 		}).
 		Append(temporalworker.Definition{
-			Name: "FetchPayments",
+			Name: RunFetchNextPayments,
 			Func: w.runFetchNextPayments,
 		}).
 		Append(temporalworker.Definition{
-			Name: "TerminateSchedules",
+			Name: RunTerminateSchedules,
 			Func: w.runTerminateSchedules,
 		}).
 		Append(temporalworker.Definition{
-			Name: "TerminateWorkflows",
+			Name: RunTerminateWorkflows,
 			Func: w.runTerminateWorkflows,
 		}).
 		Append(temporalworker.Definition{
-			Name: "InstallConnector",
+			Name: RunInstallConnector,
 			Func: w.runInstallConnector,
 		}).
 		Append(temporalworker.Definition{
-			Name: "UninstallConnector",
+			Name: RunUninstallConnector,
 			Func: w.runUninstallConnector,
 		}).
 		Append(temporalworker.Definition{
-			Name: "CreateBankAccount",
+			Name: RunCreateBankAccount,
 			Func: w.runCreateBankAccount,
 		}).
 		Append(temporalworker.Definition{
-			Name: "CreatePayout",
+			Name: RunCreatePayout,
 			Func: w.runCreatePayout,
 		}).
 		Append(temporalworker.Definition{
-			Name: "CreateTransfer",
+			Name: RunCreateTransfer,
 			Func: w.runCreateTransfer,
 		}).
 		Append(temporalworker.Definition{
-			Name: "Run",
+			Name: Run,
 			Func: w.run,
 		}).
 		Append(temporalworker.Definition{
-			Name: "RunCreateWebhooks",
+			Name: RunCreateWebhooks,
 			Func: w.runCreateWebhooks,
 		}).
 		Append(temporalworker.Definition{
-			Name: "RunHandleWebhooks",
+			Name: RunHandleWebhooks,
 			Func: w.runHandleWebhooks,
 		}).
 		Append(temporalworker.Definition{
-			Name: "RunStoreWebhookTranslation",
+			Name: RunStoreWebhookTranslation,
 			Func: w.runStoreWebhookTranslation,
 		}).
 		Append(temporalworker.Definition{
-			Name: "RunSendEvents",
+			Name: RunSendEvents,
 			Func: w.runSendEvents,
 		}).
 		Append(temporalworker.Definition{
-			Name: "RunUpdatePaymentInitiationFromPayment",
+			Name: RunUpdatePaymentInitiationFromPayment,
 			Func: w.runUpdatePaymentInitiationFromPayment,
 		})
 }

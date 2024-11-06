@@ -1,11 +1,10 @@
 package workflow
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"go.temporal.io/api/enums/v1"
-	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -17,8 +16,8 @@ func (w Workflow) runTerminateWorkflows(
 	var nextPageToken []byte
 
 	for {
-		resp, err := w.temporalClient.WorkflowService().ListWorkflowExecutions(
-			context.Background(),
+		resp, err := activities.TemporalWorkflowExecutionsList(
+			infiniteRetryContext(ctx),
 			&workflowservice.ListWorkflowExecutionsRequest{
 				Namespace:     w.temporalNamespace,
 				PageSize:      100,
@@ -40,19 +39,14 @@ func (w Workflow) runTerminateWorkflows(
 			wg.Add(1)
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
-				if err := w.temporalClient.TerminateWorkflow(
-					context.Background(),
+
+				if err := activities.TemporalWorkflowTerminate(
+					infiniteRetryContext(ctx),
 					e.Execution.WorkflowId,
 					e.Execution.RunId,
 					"uninstalling connector",
 				); err != nil {
-					switch err.(type) {
-					case *serviceerror.NotFound:
-						// Do nothing, the workflow is already terminated
-						return
-					default:
-						errChan <- err
-					}
+					errChan <- err
 				}
 			})
 		}
@@ -76,8 +70,4 @@ func (w Workflow) runTerminateWorkflows(
 	return nil
 }
 
-var RunTerminateWorkflows any
-
-func init() {
-	RunTerminateWorkflows = Workflow{}.runTerminateWorkflows
-}
+const RunTerminateWorkflows = "TerminateWorkflows"

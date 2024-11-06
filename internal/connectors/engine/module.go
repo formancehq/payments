@@ -49,8 +49,8 @@ func Module(
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins, webhooks webhooks.Webhooks) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, plugins, webhooks, stack, stackURL)
 		}),
-		fx.Provide(func(storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
-			return activities.New(storage, events, plugins)
+		fx.Provide(func(temporalClient client.Client, storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
+			return activities.New(temporalClient, storage, events, plugins)
 		}),
 		fx.Provide(
 			fx.Annotate(func(

@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -105,35 +104,35 @@ func (w Workflow) run(
 			} else {
 				scheduleID = fmt.Sprintf("%s-%s-%s", connectorID.String(), capability.String(), fromPayload.ID)
 			}
-			scheduleHandle, err := w.temporalClient.ScheduleClient().Create(context.Background(), client.ScheduleOptions{
-				ID: scheduleID,
-				Spec: client.ScheduleSpec{
-					Intervals: []client.ScheduleIntervalSpec{
-						{
-							Every: config.PollingPeriod,
+
+			scheduleID, err := activities.TemporalScheduleCreate(
+				infiniteRetryContext(ctx),
+				activities.ScheduleCreateOptions{
+					ScheduleID: scheduleID,
+					Interval: client.ScheduleIntervalSpec{
+						Every: config.PollingPeriod,
+					},
+					Action: client.ScheduleWorkflowAction{
+						Workflow: nextWorkflow,
+						Args: []interface{}{
+							request,
+							task.NextTasks,
 						},
+						TaskQueue: connectorID.String(),
+						// Search attributes are used to query workflows
+						TypedSearchAttributes: temporal.NewSearchAttributes(
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
+							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
+						),
+					},
+					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+					TriggerImmediately: true,
+					SearchAttributes: map[string]any{
+						SearchAttributeScheduleID: scheduleID,
+						SearchAttributeStack:      w.stack,
 					},
 				},
-				Action: &client.ScheduleWorkflowAction{
-					Workflow: nextWorkflow,
-					Args: []interface{}{
-						request,
-						task.NextTasks,
-					},
-					TaskQueue: connectorID.String(),
-					// Search attributes are used to query workflows
-					TypedSearchAttributes: temporal.NewSearchAttributes(
-						temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
-						temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-					),
-				},
-				Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
-				TriggerImmediately: true,
-				SearchAttributes: map[string]any{
-					SearchAttributeScheduleID: scheduleID,
-					SearchAttributeStack:      w.stack,
-				},
-			})
+			)
 			if err != nil {
 				return err
 			}
@@ -141,7 +140,7 @@ func (w Workflow) run(
 			err = activities.StorageSchedulesStore(
 				infiniteRetryContext(ctx),
 				models.Schedule{
-					ID:          scheduleHandle.GetID(),
+					ID:          scheduleID,
 					ConnectorID: connectorID,
 					CreatedAt:   workflow.Now(ctx).UTC(),
 				})
@@ -172,8 +171,4 @@ func (w Workflow) run(
 	return nil
 }
 
-var Run any
-
-func init() {
-	Run = Workflow{}.run
-}
+const Run = "Run"

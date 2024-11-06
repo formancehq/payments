@@ -1,8 +1,6 @@
 package workflow
 
 import (
-	"context"
-
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -34,15 +32,14 @@ func (w Workflow) runTerminateSchedules(
 			wg.Add(1)
 			workflow.Go(ctx, func(ctx workflow.Context) {
 				defer wg.Done()
-				// TODO(polo): context.Background() ?
-				scheduleHandler := w.temporalClient.ScheduleClient().GetHandle(context.Background(), s.ID)
-				if err := scheduleHandler.Delete(context.Background()); err != nil {
-					// TODO(polo): log error but continue
-					_ = err
+
+				if err := activities.TemporalScheduleDelete(
+					infiniteRetryContext(ctx),
+					s.ID,
+				); err != nil {
+					workflow.GetLogger(ctx).Error("failed to delete schedule", "schedule_id", s.ID, "error", err)
 				}
 			})
-
-			// TODO(polo): delete workflow execution ?
 		}
 
 		wg.Wait(ctx)
@@ -60,8 +57,4 @@ func (w Workflow) runTerminateSchedules(
 	return nil
 }
 
-var RunTerminateSchedules any
-
-func init() {
-	RunTerminateSchedules = Workflow{}.runTerminateSchedules
-}
+const RunTerminateSchedules = "TerminateSchedules"

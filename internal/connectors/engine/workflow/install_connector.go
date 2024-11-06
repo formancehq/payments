@@ -97,8 +97,4 @@ func (w Workflow) runInstallConnector(
 	return nil
 }
 
-var RunInstallConnector any
-
-func init() {
-	RunInstallConnector = Workflow{}.runInstallConnector
-}
+const RunInstallConnector = "InstallConnector"
