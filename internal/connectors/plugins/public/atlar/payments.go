@@ -236,7 +236,7 @@ func extractPaymentMetadata(transaction *atlar_models.Transaction, account *atla
 		result = result.Merge(computeMetadata("currencyExchange/exchangeRate", transaction.Characteristics.CurrencyExchange.ExchangeRate))
 		result = result.Merge(computeMetadata("currencyExchange/unitCurrency", transaction.Characteristics.CurrencyExchange.UnitCurrency))
 	}
-	if transaction.CounterpartyDetails.MandateReference != "" {
+	if transaction.CounterpartyDetails != nil && transaction.CounterpartyDetails.MandateReference != "" {
 		result = result.Merge(computeMetadata("mandateReference", transaction.CounterpartyDetails.MandateReference))
 	}
 

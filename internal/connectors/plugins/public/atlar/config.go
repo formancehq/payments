@@ -2,6 +2,7 @@ package atlar
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -15,15 +16,15 @@ type Config struct {
 
 func (c Config) validate() error {
 	if c.BaseURL == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing baseURL in config")
+		return fmt.Errorf("missing baseURL in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.AccessKey == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing access key in config")
+		return fmt.Errorf("missing access key in config: %w", models.ErrInvalidConfig)
 	}
 
 	if c.Secret == "" {
-		return errors.Wrap(models.ErrInvalidConfig, "missing secret in config")
+		return fmt.Errorf("missing secret in config: %w", models.ErrInvalidConfig)
 	}
 
 	return nil
