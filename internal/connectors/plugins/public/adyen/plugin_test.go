@@ -121,7 +121,7 @@ var _ = Describe("Adyen Plugin", func() {
 		It("should fail if client is not set", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled.Error()))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
 		})
 	})
 
@@ -137,7 +137,7 @@ var _ = Describe("Adyen Plugin", func() {
 		It("should fail if client is not set", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled.Error()))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
 		})
 	})
 
