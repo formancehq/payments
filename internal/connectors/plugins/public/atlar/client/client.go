@@ -21,6 +21,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetV1Accounts(ctx context.Context, token string, pageSize int64) (*accounts.GetV1AccountsOK, error)
 	GetV1AccountsID(ctx context.Context, id string) (*accounts.GetV1AccountsIDOK, error)

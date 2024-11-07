@@ -3,11 +3,14 @@ package atlar
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
+	"github.com/formancehq/go-libs/v2/metadata"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/get-momo/atlar-v1-go-client/client/accounts"
+	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )
 
 type accountsState struct {
@@ -86,10 +89,39 @@ func (p *Plugin) fillAccounts(
 			CreatedAt:    createdAt,
 			Name:         &account.Name,
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
-			Metadata:     ExtractAccountMetadata(account, thirdPartyResponse.Payload),
+			Metadata:     extractAccountMetadata(account, thirdPartyResponse.Payload),
 			Raw:          raw,
 		})
 	}
 
 	return accounts, nil
+}
+
+func extractAccountMetadata(account *atlar_models.Account, bank *atlar_models.ThirdParty) metadata.Metadata {
+	result := metadata.Metadata{}
+	result = result.Merge(computeMetadataBool("fictive", account.Fictive))
+	result = result.Merge(computeMetadata("bank/id", bank.ID))
+	result = result.Merge(computeMetadata("bank/name", bank.Name))
+	result = result.Merge(computeMetadata("bank/bic", account.Bank.Bic))
+	result = result.Merge(identifiersToMetadata(account.Identifiers))
+	result = result.Merge(computeMetadata("alias", account.Alias))
+	result = result.Merge(computeMetadata("owner/name", account.Owner.Name))
+	return result
+}
+
+func identifiersToMetadata(identifiers []*atlar_models.AccountIdentifier) metadata.Metadata {
+	result := metadata.Metadata{}
+	for _, i := range identifiers {
+		result = result.Merge(computeMetadata(
+			fmt.Sprintf("identifier/%s/%s", *i.Market, *i.Type),
+			*i.Number,
+		))
+		if *i.Type == "IBAN" {
+			result = result.Merge(computeMetadata(
+				fmt.Sprintf("identifier/%s", *i.Type),
+				*i.Number,
+			))
+		}
+	}
+	return result
 }

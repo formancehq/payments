@@ -40,7 +40,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		return models.CreateBankAccountResponse{}, fmt.Errorf("unexpected empty response: %w", models.ErrFailedAccountCreation)
 	}
 
-	newAccount, err := ExternalAccountFromAtlarData(resp.Payload.ExternalAccounts[0], resp.Payload)
+	newAccount, err := externalAccountFromAtlarData(resp.Payload.ExternalAccounts[0], resp.Payload)
 	if err != nil {
 		return models.CreateBankAccountResponse{}, err
 	}
