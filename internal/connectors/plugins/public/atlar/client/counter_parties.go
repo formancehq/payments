@@ -2,9 +2,10 @@ package client
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
@@ -19,11 +20,7 @@ func (c *client) GetV1CounterpartiesID(ctx context.Context, counterPartyID strin
 		ID:      counterPartyID,
 	}
 	counterpartyResponse, err := c.client.Counterparties.GetV1CounterpartiesID(&getCounterpartyParams)
-	if err != nil {
-		return nil, err
-	}
-
-	return counterpartyResponse, nil
+	return counterpartyResponse, wrapSDKErr(err)
 }
 
 func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
@@ -68,12 +65,12 @@ func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccoun
 	}
 	postCounterpartiesResponse, err := c.client.Counterparties.PostV1Counterparties(&postCounterpartiesParams)
 	if err != nil {
-		return nil, err
+		return nil, wrapSDKErr(err)
 	}
 
 	if len(postCounterpartiesResponse.Payload.ExternalAccounts) != 1 {
 		// should never occur, but when in case it happens it's nice to have an error to search for
-		return nil, errors.New("counterparty was not created with exactly one account")
+		return nil, fmt.Errorf("counterparty was not created with exactly one account: %w", httpwrapper.ErrStatusCodeUnexpected)
 	}
 
 	return postCounterpartiesResponse, nil

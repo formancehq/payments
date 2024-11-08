@@ -16,7 +16,8 @@ func (c *client) GetV1AccountsID(ctx context.Context, id string) (*accounts.GetV
 		ID:      id,
 	}
 
-	return c.client.Accounts.GetV1AccountsID(&accountsParams)
+	resp, err := c.client.Accounts.GetV1AccountsID(&accountsParams)
+	return resp, wrapSDKErr(err)
 }
 
 func (c *client) GetV1Accounts(ctx context.Context, token string, pageSize int64) (*accounts.GetV1AccountsOK, error) {
@@ -29,5 +30,6 @@ func (c *client) GetV1Accounts(ctx context.Context, token string, pageSize int64
 		Token:   &token,
 	}
 
-	return c.client.Accounts.GetV1Accounts(&accountsParams)
+	resp, err := c.client.Accounts.GetV1Accounts(&accountsParams)
+	return resp, wrapSDKErr(err)
 }
