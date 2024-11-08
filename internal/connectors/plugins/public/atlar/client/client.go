@@ -2,9 +2,12 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	atlar_client "github.com/get-momo/atlar-v1-go-client/client"
@@ -15,6 +18,7 @@ import (
 	"github.com/get-momo/atlar-v1-go-client/client/third_parties"
 	"github.com/get-momo/atlar-v1-go-client/client/transactions"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
+	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 	"go.opentelemetry.io/otel/attribute"
@@ -84,4 +88,25 @@ func CommonMetricsAttributes() []attribute.KeyValue {
 		attribute.String("connector", "generic"),
 	}
 	return metricsAttributes
+}
+
+// wrap a public error for cases that we don't want to retry
+// so that activities can classify this error for temporal
+func wrapSDKErr(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	atlarErr, ok := err.(*runtime.APIError)
+	if !ok {
+		return err
+	}
+
+	if atlarErr.Code >= http.StatusBadRequest && atlarErr.Code < http.StatusInternalServerError {
+		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeClientError)
+	} else if atlarErr.Code >= http.StatusInternalServerError {
+		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeServerError)
+	}
+
+	return err
 }

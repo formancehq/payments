@@ -204,9 +204,12 @@ func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequ
 		return models.CreateTransferResponse{}, err
 	}
 
-	payment, err := grpc.TranslateProtoPayment(resp.Payment)
-	if err != nil {
-		return models.CreateTransferResponse{}, err
+	var payment *models.PSPPayment
+	if resp.Payment != nil {
+		payment, err = grpc.TranslateProtoPayment(resp.Payment)
+		if err != nil {
+			return models.CreateTransferResponse{}, err
+		}
 	}
 
 	return models.CreateTransferResponse{
@@ -228,9 +231,12 @@ func (i *impl) PollTransferStatus(ctx context.Context, req models.PollTransferSt
 		return models.PollTransferStatusResponse{}, err
 	}
 
-	payment, err := grpc.TranslateProtoPayment(resp.Payment)
-	if err != nil {
-		return models.PollTransferStatusResponse{}, err
+	var payment *models.PSPPayment
+	if resp.Payment != nil {
+		payment, err = grpc.TranslateProtoPayment(resp.Payment)
+		if err != nil {
+			return models.PollTransferStatusResponse{}, err
+		}
 	}
 
 	return models.PollTransferStatusResponse{
@@ -252,9 +258,12 @@ func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest)
 		return models.CreatePayoutResponse{}, err
 	}
 
-	payment, err := grpc.TranslateProtoPayment(resp.Payment)
-	if err != nil {
-		return models.CreatePayoutResponse{}, err
+	var payment *models.PSPPayment
+	if resp.Payment != nil {
+		payment, err = grpc.TranslateProtoPayment(resp.Payment)
+		if err != nil {
+			return models.CreatePayoutResponse{}, err
+		}
 	}
 
 	return models.CreatePayoutResponse{
@@ -276,9 +285,12 @@ func (i *impl) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatus
 		return models.PollPayoutStatusResponse{}, err
 	}
 
-	payment, err := grpc.TranslateProtoPayment(resp.Payment)
-	if err != nil {
-		return models.PollPayoutStatusResponse{}, err
+	var payment *models.PSPPayment
+	if resp.Payment != nil {
+		payment, err = grpc.TranslateProtoPayment(resp.Payment)
+		if err != nil {
+			return models.PollPayoutStatusResponse{}, err
+		}
 	}
 
 	return models.PollPayoutStatusResponse{

@@ -17,11 +17,7 @@ func (c *client) GetV1ExternalAccountsID(ctx context.Context, externalAccountID 
 	}
 
 	externalAccountResponse, err := c.client.ExternalAccounts.GetV1ExternalAccountsID(&getExternalAccountParams)
-	if err != nil {
-		return nil, err
-	}
-
-	return externalAccountResponse, nil
+	return externalAccountResponse, wrapSDKErr(err)
 }
 
 func (c *client) GetV1ExternalAccounts(ctx context.Context, token string, pageSize int64) (*external_accounts.GetV1ExternalAccountsOK, error) {
@@ -34,5 +30,6 @@ func (c *client) GetV1ExternalAccounts(ctx context.Context, token string, pageSi
 		Token:   &token,
 	}
 
-	return c.client.ExternalAccounts.GetV1ExternalAccounts(&externalAccountsParams)
+	resp, err := c.client.ExternalAccounts.GetV1ExternalAccounts(&externalAccountsParams)
+	return resp, wrapSDKErr(err)
 }
