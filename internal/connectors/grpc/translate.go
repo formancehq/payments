@@ -192,10 +192,6 @@ func TranslatePayment(payment *models.PSPPayment) *proto.Payment {
 }
 
 func TranslateProtoPayment(payment *proto.Payment) (*models.PSPPayment, error) {
-	if payment == nil {
-		return nil, nil
-	}
-
 	amount, ok := big.NewInt(0).SetString(string(payment.Amount.Amount), 10)
 	if !ok {
 		return nil, errors.New("failed to parse amount")
