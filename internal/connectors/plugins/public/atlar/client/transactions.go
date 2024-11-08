@@ -17,7 +17,8 @@ func (c *client) GetV1Transactions(ctx context.Context, token string, pageSize i
 		Token:   &token,
 	}
 
-	return c.client.Transactions.GetV1Transactions(&params)
+	resp, err := c.client.Transactions.GetV1Transactions(&params)
+	return resp, wrapSDKErr(err)
 }
 
 func (c *client) GetV1TransactionsID(ctx context.Context, id string) (*transactions.GetV1TransactionsIDOK, error) {
@@ -29,5 +30,6 @@ func (c *client) GetV1TransactionsID(ctx context.Context, id string) (*transacti
 		ID:      id,
 	}
 
-	return c.client.Transactions.GetV1TransactionsID(&params)
+	resp, err := c.client.Transactions.GetV1TransactionsID(&params)
+	return resp, wrapSDKErr(err)
 }
