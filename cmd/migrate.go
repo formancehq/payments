@@ -16,16 +16,16 @@ var (
 
 func newMigrate() *cobra.Command {
 	cmd := bunmigrate.NewDefaultCommand(Migrate, func(cmd *cobra.Command) {
-		cmd.Flags().String(configEncryptionKeyFlag, "", "Config encryption key")
+		cmd.Flags().String(ConfigEncryptionKeyFlag, "", "Config encryption key")
 	})
 
 	return cmd
 }
 
 func Migrate(cmd *cobra.Command, args []string, db *bun.DB) error {
-	cfgEncryptionKey, _ := cmd.Flags().GetString(configEncryptionKeyFlag)
+	cfgEncryptionKey, _ := cmd.Flags().GetString(ConfigEncryptionKeyFlag)
 	if cfgEncryptionKey == "" {
-		cfgEncryptionKey = cmd.Flag(configEncryptionKeyFlag).Value.String()
+		cfgEncryptionKey = cmd.Flag(ConfigEncryptionKeyFlag).Value.String()
 	}
 
 	if cfgEncryptionKey != "" {

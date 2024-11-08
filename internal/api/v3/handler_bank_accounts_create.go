@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type bankAccountsCreateRequest struct {
+type BankAccountsCreateRequest struct {
 	Name string `json:"name"`
 
 	AccountNumber *string `json:"accountNumber"`
@@ -27,7 +27,7 @@ type bankAccountsCreateRequest struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-func (r *bankAccountsCreateRequest) Validate() error {
+func (r *BankAccountsCreateRequest) Validate() error {
 	if r.AccountNumber == nil && r.IBAN == nil {
 		return errors.New("either accountNumber or iban must be provided")
 	}
@@ -44,7 +44,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_bankAccountsCreate")
 		defer span.End()
 
-		var req bankAccountsCreateRequest
+		var req BankAccountsCreateRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
