@@ -18,7 +18,7 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListBankAccountsQuery](r, func() (*storage.ListBankAccountsQuery, error) {
-			options, err := getPagination(r, storage.BankAccountQuery{})
+			options, err := getPagination(span, r, storage.BankAccountQuery{})
 			if err != nil {
 				otel.RecordError(span, err)
 				return nil, err

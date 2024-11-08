@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type bankAccountsForwardToConnectorRequest struct {
@@ -29,6 +30,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_bankAccountsForwardToConnector")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("bankAccountID", bankAccountID(r)))
 		id, err := uuid.Parse(bankAccountID(r))
 		if err != nil {
 			otel.RecordError(span, err)
@@ -43,6 +45,8 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+
+		span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 
 		err = req.Validate()
 		if err != nil {

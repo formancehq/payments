@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func workflowsInstancesList(backend backend.Backend) http.HandlerFunc {
@@ -18,6 +19,7 @@ func workflowsInstancesList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_workflowsInstancesList")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
 		connectorID, err := models.ConnectorIDFromString(connectorID(r))
 		if err != nil {
 			otel.RecordError(span, err)
@@ -25,6 +27,7 @@ func workflowsInstancesList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		span.SetAttributes(attribute.String("scheduleID", scheduleID(r)))
 		scheduleID := scheduleID(r)
 
 		query, err := bunpaginate.Extract[storage.ListInstancesQuery](r, func() (*storage.ListInstancesQuery, error) {
@@ -32,6 +35,7 @@ func workflowsInstancesList(backend backend.Backend) http.HandlerFunc {
 			if err != nil {
 				return nil, err
 			}
+			span.SetAttributes(attribute.Int64("pageSize", int64(pageSize)))
 
 			options := pointer.For(bunpaginate.NewPaginatedQueryOptions(storage.InstanceQuery{}).WithPageSize(pageSize))
 			options = pointer.For(options.WithQueryBuilder(

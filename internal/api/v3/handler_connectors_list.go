@@ -17,7 +17,7 @@ func connectorsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListConnectorsQuery](r, func() (*storage.ListConnectorsQuery, error) {
-			options, err := getPagination(r, storage.ConnectorQuery{})
+			options, err := getPagination(span, r, storage.ConnectorQuery{})
 			if err != nil {
 				return nil, err
 			}

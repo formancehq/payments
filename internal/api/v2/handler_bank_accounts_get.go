@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
@@ -15,6 +16,7 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_bankAccountsGet")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("bankAccountID", bankAccountID(r)))
 		id, err := uuid.Parse(bankAccountID(r))
 		if err != nil {
 			otel.RecordError(span, err)

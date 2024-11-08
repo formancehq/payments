@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func poolsBalancesAt(backend backend.Backend) http.HandlerFunc {
@@ -16,6 +17,7 @@ func poolsBalancesAt(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_poolsBalancesAt")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("poolID", poolID(r)))
 		id, err := uuid.Parse(poolID(r))
 		if err != nil {
 			otel.RecordError(span, err)
@@ -24,6 +26,7 @@ func poolsBalancesAt(backend backend.Backend) http.HandlerFunc {
 		}
 
 		atTime := r.URL.Query().Get("at")
+		span.SetAttributes(attribute.String("atTime", atTime))
 		if atTime == "" {
 			otel.RecordError(span, errors.New("missing atTime"))
 			api.BadRequest(w, ErrValidation, errors.New("missing atTime"))

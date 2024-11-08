@@ -36,14 +36,13 @@ func transferInitiationsUpdateStatus(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_transferInitiationsUpdateStatus")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("transferInitiationID", transferInitiationID(r)))
 		id, err := models.PaymentInitiationIDFromString(transferInitiationID(r))
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrInvalidID, err)
 			return
 		}
-
-		span.SetAttributes(attribute.String("transfer.id", id.String()))
 
 		payload := updateTransferInitiationStatusRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
@@ -52,7 +51,7 @@ func transferInitiationsUpdateStatus(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		span.SetAttributes(attribute.String("request.status", payload.Status))
+		span.SetAttributes(attribute.String("status", payload.Status))
 
 		if err := payload.Validate(); err != nil {
 			otel.RecordError(span, err)

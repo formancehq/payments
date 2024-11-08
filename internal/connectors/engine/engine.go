@@ -14,6 +14,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -89,12 +90,17 @@ func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins
 }
 
 func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfig json.RawMessage) (models.ConnectorID, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.InstallConnector")
+	defer span.End()
+
 	config := models.DefaultConfig()
 	if err := json.Unmarshal(rawConfig, &config); err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
 	if err := config.Validate(); err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
 	}
 
@@ -118,16 +124,19 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	defer e.wg.Done()
 
 	if err := e.storage.ConnectorsInstall(ctx, connector); err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
 	err := e.plugins.RegisterPlugin(connector.ID, config)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, handlePluginError(err)
 	}
 
 	err = e.workers.AddWorker(connector.ID.String())
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
@@ -151,11 +160,13 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
 	// Wait for installation to complete
 	if err := run.Get(ctx, nil); err != nil {
+		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
 
@@ -163,11 +174,16 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 }
 
 func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.UninstallConnector")
+	defer span.End()
+
 	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
 	if err := e.storage.ConnectorsScheduleForDeletion(ctx, connectorID); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -190,6 +206,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -197,8 +214,12 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 }
 
 func (e *engine) ResetConnector(ctx context.Context, connectorID models.ConnectorID) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.ResetConnector")
+	defer span.End()
+
 	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -211,11 +232,13 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	defer e.wg.Done()
 
 	if err := e.UninstallConnector(ctx, connectorID); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
 	_, err = e.InstallConnector(ctx, connectorID.Provider, connector.Config)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -235,10 +258,12 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
 	if err := run.Get(ctx, nil); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -246,17 +271,23 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceAccount")
+	defer span.End()
+
 	capabilities, err := e.plugins.GetCapabilities(account.ConnectorID)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
 	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION]
 	if !ok {
+		otel.RecordError(span, err)
 		return errors.New("connector does not support account creation")
 	}
 
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -278,6 +309,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -285,17 +317,23 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 }
 
 func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payment) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePayment")
+	defer span.End()
+
 	capabilities, err := e.plugins.GetCapabilities(payment.ConnectorID)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
 	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION]
 	if !ok {
+		otel.RecordError(span, err)
 		return errors.New("connector does not support payment creation")
 	}
 
 	if err := e.storage.PaymentsUpsert(ctx, []models.Payment{payment}); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -317,6 +355,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -324,6 +363,9 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 }
 
 func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardBankAccount")
+	defer span.End()
+
 	id := models.TaskIDReference("create-bank-account", connectorID, bankAccountID.String())
 
 	now := time.Now().UTC()
@@ -339,6 +381,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	}
 
 	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
@@ -361,12 +404,14 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
 	if waitResult {
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
+			otel.RecordError(span, err)
 			return models.Task{}, err
 		}
 	}
@@ -375,6 +420,9 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 }
 
 func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateTransfer")
+	defer span.End()
+
 	id := models.TaskIDReference(fmt.Sprintf("create-transfer-%d", attempt), piID.ConnectorID, piID.String())
 
 	now := time.Now().UTC()
@@ -390,6 +438,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 	}
 
 	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
@@ -412,12 +461,14 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
 	if waitResult {
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
+			otel.RecordError(span, err)
 			return models.Task{}, err
 		}
 	}
@@ -426,6 +477,9 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 }
 
 func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePayout")
+	defer span.End()
+
 	id := models.TaskIDReference(fmt.Sprintf("create-payout-%d", attempt), piID.ConnectorID, piID.String())
 
 	now := time.Now().UTC()
@@ -441,6 +495,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 	}
 
 	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
@@ -463,12 +518,14 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
 	if waitResult {
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
+			otel.RecordError(span, err)
 			return models.Task{}, err
 		}
 	}
@@ -477,8 +534,12 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 }
 
 func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
+	defer span.End()
+
 	configs, err := e.webhooks.GetConfigs(webhook.ConnectorID, urlPath)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -493,7 +554,9 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	}
 
 	if config == nil {
-		return errors.New("webhook config not found")
+		err := errors.New("webhook config not found")
+		otel.RecordError(span, err)
+		return err
 	}
 
 	ctx, _ = contextutil.Detached(ctx)
@@ -520,6 +583,7 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 			Webhook:       webhook,
 		},
 	); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -527,7 +591,11 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 }
 
 func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
+	defer span.End()
+
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -549,6 +617,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -556,7 +625,11 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 }
 
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
+	defer span.End()
+
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -568,6 +641,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 
 	pool, err := e.storage.PoolsGet(ctx, id)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -589,6 +663,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -596,7 +671,11 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 }
 
 func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
+	defer span.End()
+
 	if err := e.storage.PoolsRemoveAccount(ctx, id, accountID); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -608,6 +687,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 
 	pool, err := e.storage.PoolsGet(ctx, id)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -629,6 +709,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -636,7 +717,11 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 }
 
 func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
+	defer span.End()
+
 	if err := e.storage.PoolsDelete(ctx, poolID); err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 
@@ -658,6 +743,7 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 		},
 	)
 	if err != nil {
+		otel.RecordError(span, err)
 		return err
 	}
 

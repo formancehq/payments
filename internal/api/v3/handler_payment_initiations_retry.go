@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func paymentInitiationsRetry(backend backend.Backend) http.HandlerFunc {
@@ -14,6 +15,7 @@ func paymentInitiationsRetry(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsRetry")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("paymentInitiationID", paymentInitiationID(r)))
 		id, err := models.PaymentInitiationIDFromString(paymentInitiationID(r))
 		if err != nil {
 			otel.RecordError(span, err)

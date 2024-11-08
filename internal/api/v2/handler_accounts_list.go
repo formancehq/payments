@@ -37,7 +37,7 @@ func accountsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListAccountsQuery](r, func() (*storage.ListAccountsQuery, error) {
-			options, err := getPagination(r, storage.AccountQuery{})
+			options, err := getPagination(span, r, storage.AccountQuery{})
 			if err != nil {
 				return nil, err
 			}
