@@ -34,6 +34,7 @@ func (i *impl) Install(ctx context.Context, req *services.InstallRequest) (*serv
 	})
 	if err != nil {
 		hclog.Default().Error("install failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -69,6 +70,7 @@ func (i *impl) Uninstall(ctx context.Context, req *services.UninstallRequest) (*
 	})
 	if err != nil {
 		hclog.Default().Error("uninstall failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -89,6 +91,7 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req *services.FetchNextAcc
 	})
 	if err != nil {
 		hclog.Default().Error("fetching next accounts failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -118,6 +121,7 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req *services.Fetc
 	})
 	if err != nil {
 		hclog.Default().Error("fetching next external accounts failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -147,6 +151,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req *services.FetchNextPay
 	})
 	if err != nil {
 		hclog.Default().Error("fetching next payments failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -176,6 +181,7 @@ func (i *impl) FetchNextBalances(ctx context.Context, req *services.FetchNextBal
 	})
 	if err != nil {
 		hclog.Default().Error("fetching next balances failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -206,6 +212,7 @@ func (i *impl) FetchNextOthers(ctx context.Context, req *services.FetchNextOther
 	})
 	if err != nil {
 		hclog.Default().Error("fetching next others failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -236,6 +243,7 @@ func (i *impl) CreateBankAccount(ctx context.Context, req *services.CreateBankAc
 	})
 	if err != nil {
 		hclog.Default().Error("creating bank account failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -254,6 +262,7 @@ func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferR
 	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
 	if err != nil {
 		hclog.Default().Error("creating transfer failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -262,6 +271,7 @@ func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferR
 	})
 	if err != nil {
 		hclog.Default().Error("creating transfer failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -312,6 +322,7 @@ func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutReque
 	pi, err := grpc.TranslateProtoPaymentInitiation(req.PaymentInitiation)
 	if err != nil {
 		hclog.Default().Error("creating payout failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -320,6 +331,7 @@ func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutReque
 	})
 	if err != nil {
 		hclog.Default().Error("creating payout failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -374,6 +386,7 @@ func (i *impl) CreateWebhooks(ctx context.Context, req *services.CreateWebhooksR
 	})
 	if err != nil {
 		hclog.Default().Error("creating webhooks failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 
@@ -403,6 +416,7 @@ func (i *impl) TranslateWebhook(ctx context.Context, req *services.TranslateWebh
 	})
 	if err != nil {
 		hclog.Default().Error("translating webhook failed: ", err)
+		otel.RecordError(span, err)
 		return nil, translateErrorToGRPC(err)
 	}
 

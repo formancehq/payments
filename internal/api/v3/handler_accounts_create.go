@@ -3,6 +3,7 @@ package v3
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type createAccountRequest struct {
@@ -71,6 +74,8 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		populateSpanFromCreateAccountRequest(span, req)
+
 		if err := req.validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
@@ -108,5 +113,17 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		api.Created(w, account)
+	}
+}
+
+func populateSpanFromCreateAccountRequest(span trace.Span, req createAccountRequest) {
+	span.SetAttributes(attribute.String("reference", req.Reference))
+	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
+	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))
+	span.SetAttributes(attribute.String("defaultAsset", req.DefaultAsset))
+	span.SetAttributes(attribute.String("accountName", req.AccountName))
+	span.SetAttributes(attribute.String("type", req.Type))
+	for k, v := range req.Metadata {
+		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
 	}
 }

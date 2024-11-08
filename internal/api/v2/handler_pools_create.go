@@ -3,6 +3,7 @@ package v2
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type createPoolRequest struct {
@@ -43,6 +46,8 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+
+		populateSpanFromCreatePoolRequest(span, createPoolRequest)
 
 		if err := createPoolRequest.Validate(); err != nil {
 			otel.RecordError(span, err)
@@ -93,5 +98,12 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 			api.InternalServerError(w, r, err)
 			return
 		}
+	}
+}
+
+func populateSpanFromCreatePoolRequest(span trace.Span, req createPoolRequest) {
+	span.SetAttributes(attribute.String("name", req.Name))
+	for i, acc := range req.AccountIDs {
+		span.SetAttributes(attribute.String(fmt.Sprintf("accountIDs[%d]", i), acc))
 	}
 }

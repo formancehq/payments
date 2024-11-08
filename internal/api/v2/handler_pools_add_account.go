@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type poolsAddAccountRequest struct {
@@ -29,6 +30,7 @@ func poolsAddAccount(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_poolsAddAccount")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("poolID", poolID(r)))
 		id, err := uuid.Parse(poolID(r))
 		if err != nil {
 			otel.RecordError(span, err)
@@ -43,6 +45,8 @@ func poolsAddAccount(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+
+		span.SetAttributes(attribute.String("accountID", poolsAddAccountRequest.AccountID))
 
 		if err := poolsAddAccountRequest.Validate(); err != nil {
 			otel.RecordError(span, err)

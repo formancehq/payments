@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
@@ -16,6 +17,7 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsWebhooks")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
 		connectorID, err := models.ConnectorIDFromString(connectorID(r))
 		if err != nil {
 			otel.RecordError(span, err)

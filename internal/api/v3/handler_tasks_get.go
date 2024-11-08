@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func tasksGet(backend backend.Backend) http.HandlerFunc {
@@ -14,6 +15,7 @@ func tasksGet(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_tasksGet")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("taskID", taskID(r)))
 		id, err := models.TaskIDFromString(taskID(r))
 		if err != nil {
 			otel.RecordError(span, err)

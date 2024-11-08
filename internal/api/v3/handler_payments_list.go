@@ -17,7 +17,7 @@ func paymentsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListPaymentsQuery](r, func() (*storage.ListPaymentsQuery, error) {
-			options, err := getPagination(r, storage.PaymentQuery{})
+			options, err := getPagination(span, r, storage.PaymentQuery{})
 			if err != nil {
 				return nil, err
 			}

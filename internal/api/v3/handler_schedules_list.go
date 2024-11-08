@@ -17,7 +17,7 @@ func schedulesList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
-			options, err := getPagination(r, storage.ScheduleQuery{})
+			options, err := getPagination(span, r, storage.ScheduleQuery{})
 			if err != nil {
 				return nil, err
 			}

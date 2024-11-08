@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 type listTasksResponseElement struct {
@@ -34,6 +35,7 @@ func tasksList(backend backend.Backend) http.HandlerFunc {
 			if err != nil {
 				return nil, err
 			}
+			span.SetAttributes(attribute.Int64("pageSize", int64(pageSize)))
 
 			return pointer.For(storage.NewListSchedulesQuery(bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).WithPageSize(pageSize))), nil
 		})

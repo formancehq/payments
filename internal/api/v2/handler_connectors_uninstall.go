@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
@@ -14,6 +15,7 @@ func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsUninstall")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
 		connectorID, err := models.ConnectorIDFromString(connectorID(r))
 		if err != nil {
 			otel.RecordError(span, err)
