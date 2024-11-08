@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func connectorsInstall(backend backend.Backend) http.HandlerFunc {
@@ -16,6 +17,7 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsInstall")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("provider", connectorProvider(r)))
 		provider := strings.ToLower(connectorProvider(r))
 		if provider == "" {
 			otel.RecordError(span, errors.New("provider is required"))
@@ -29,6 +31,7 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+		span.SetAttributes(attribute.String("config", string(config)))
 
 		connectorID, err := backend.ConnectorsInstall(ctx, provider, config)
 		if err != nil {

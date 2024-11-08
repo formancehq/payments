@@ -17,7 +17,7 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListPoolsQuery](r, func() (*storage.ListPoolsQuery, error) {
-			options, err := getPagination(r, storage.PoolQuery{})
+			options, err := getPagination(span, r, storage.PoolQuery{})
 			if err != nil {
 				return nil, err
 			}

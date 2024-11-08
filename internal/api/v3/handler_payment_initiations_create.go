@@ -3,6 +3,7 @@ package v3
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"time"
@@ -12,6 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type paymentInitiationsCreateRequest struct {
@@ -81,6 +84,8 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		populateSpanFromPaymentInitiationCreateRequest(span, payload)
+
 		if err := payload.Validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
@@ -131,5 +136,24 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			PaymentInitiationID: pi.ID.String(),
 			TaskID:              task.ID.String(),
 		})
+	}
+}
+
+func populateSpanFromPaymentInitiationCreateRequest(span trace.Span, req paymentInitiationsCreateRequest) {
+	span.SetAttributes(attribute.String("reference", req.Reference))
+	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
+	span.SetAttributes(attribute.String("scheduledAt", req.ScheduledAt.String()))
+	span.SetAttributes(attribute.String("description", req.Description))
+	span.SetAttributes(attribute.String("type", req.Type))
+	span.SetAttributes(attribute.String("amount", req.Amount.String()))
+	span.SetAttributes(attribute.String("asset", req.Asset))
+	for k, v := range req.Metadata {
+		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
+	}
+	if req.SourceAccountID != nil {
+		span.SetAttributes(attribute.String("sourceAccountID", *req.SourceAccountID))
+	}
+	if req.DestinationAccountID != nil {
+		span.SetAttributes(attribute.String("destinationAccountID", *req.DestinationAccountID))
 	}
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func validatePaymentsMetadata(metadata map[string]string) error {
@@ -23,6 +24,7 @@ func paymentsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentsUpdateMetadata")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("paymentID", paymentID(r)))
 		id, err := models.PaymentIDFromString(paymentID(r))
 		if err != nil {
 			otel.RecordError(span, err)
@@ -37,6 +39,9 @@ func paymentsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
+
+		populateSpanFromUpdateMetadataRequest(span, metadata)
+
 		if err := validatePaymentsMetadata(metadata); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)

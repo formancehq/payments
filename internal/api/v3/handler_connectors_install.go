@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func connectorsInstall(backend backend.Backend) http.HandlerFunc {
@@ -20,6 +21,9 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+
+		span.SetAttributes(attribute.String("config", string(config)))
+		span.SetAttributes(attribute.String("provider", connector(r)))
 
 		provider := connector(r)
 

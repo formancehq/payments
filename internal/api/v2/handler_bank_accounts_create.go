@@ -3,6 +3,7 @@ package v2
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // NOTE: in order to maintain previous version compatibility, we need to keep the
@@ -71,6 +74,8 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
+
+		populateSpanFromBankAccountCreateRequest(span, req)
 
 		if err := req.Validate(); err != nil {
 			otel.RecordError(span, err)
@@ -164,5 +169,19 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 			api.InternalServerError(w, r, err)
 			return
 		}
+	}
+}
+
+func populateSpanFromBankAccountCreateRequest(span trace.Span, req bankAccountsCreateRequest) {
+	span.SetAttributes(attribute.String("name", req.Name))
+
+	// Do not record sensitive information
+
+	if req.Country != nil {
+		span.SetAttributes(attribute.String("country", *req.Country))
+	}
+
+	for k, v := range req.Metadata {
+		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
 	}
 }

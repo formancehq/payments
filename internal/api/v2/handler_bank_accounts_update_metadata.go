@@ -3,12 +3,15 @@ package v2
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type bankAccountsUpdateMetadataRequest struct {
@@ -43,6 +46,8 @@ func bankAccountsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		populateSpanFromUpdateMetadataRequest(span, req.Metadata)
+
 		err = req.Validate()
 		if err != nil {
 			otel.RecordError(span, err)
@@ -58,5 +63,11 @@ func bankAccountsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 		}
 
 		api.NoContent(w)
+	}
+}
+
+func populateSpanFromUpdateMetadataRequest(span trace.Span, metadata map[string]string) {
+	for k, v := range metadata {
+		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
 	}
 }

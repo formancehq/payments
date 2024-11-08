@@ -15,14 +15,13 @@ func transferInitiationsDelete(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_transferInitiationsDelete")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("transferInitiationID", transferInitiationID(r)))
 		id, err := models.PaymentInitiationIDFromString(transferInitiationID(r))
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrInvalidID, err)
 			return
 		}
-
-		span.SetAttributes(attribute.String("transfer.id", id.String()))
 
 		err = backend.PaymentInitiationsDelete(ctx, id)
 		if err != nil {
