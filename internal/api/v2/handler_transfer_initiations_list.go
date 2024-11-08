@@ -18,7 +18,7 @@ func transferInitiationsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListPaymentInitiationsQuery](r, func() (*storage.ListPaymentInitiationsQuery, error) {
-			options, err := getPagination(r, storage.PaymentInitiationQuery{})
+			options, err := getPagination(span, r, storage.PaymentInitiationQuery{})
 			if err != nil {
 				return nil, err
 			}

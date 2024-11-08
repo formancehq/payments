@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func poolsGet(backend backend.Backend) http.HandlerFunc {
@@ -14,6 +15,7 @@ func poolsGet(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_poolsGet")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("poolID", poolID(r)))
 		id, err := uuid.Parse(poolID(r))
 		if err != nil {
 			otel.RecordError(span, err)

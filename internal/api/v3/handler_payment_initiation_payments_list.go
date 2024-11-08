@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func paymentInitiationPaymentsList(backend backend.Backend) http.HandlerFunc {
@@ -18,7 +19,7 @@ func paymentInitiationPaymentsList(backend backend.Backend) http.HandlerFunc {
 		defer span.End()
 
 		query, err := bunpaginate.Extract[storage.ListPaymentInitiationRelatedPaymentsQuery](r, func() (*storage.ListPaymentInitiationRelatedPaymentsQuery, error) {
-			options, err := getPagination(r, storage.PaymentInitiationRelatedPaymentsQuery{})
+			options, err := getPagination(span, r, storage.PaymentInitiationRelatedPaymentsQuery{})
 			if err != nil {
 				return nil, err
 			}
@@ -30,6 +31,7 @@ func paymentInitiationPaymentsList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		span.SetAttributes(attribute.String("paymentInitiationID", paymentInitiationID(r)))
 		id, err := models.PaymentInitiationIDFromString(paymentInitiationID(r))
 		if err != nil {
 			otel.RecordError(span, err)

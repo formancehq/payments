@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func paymentsGet(backend backend.Backend) http.HandlerFunc {
@@ -14,6 +15,7 @@ func paymentsGet(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentsGet")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("paymentID", paymentID(r)))
 		id, err := models.PaymentIDFromString(paymentID(r))
 		if err != nil {
 			otel.RecordError(span, err)

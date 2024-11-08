@@ -13,6 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type createPaymentRequest struct {
@@ -144,6 +146,8 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		populateSpanFromPaymentCreateRequest(span, req)
+
 		if err := req.validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
@@ -220,5 +224,36 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		api.Created(w, payment)
+	}
+}
+
+func populateSpanFromPaymentCreateRequest(span trace.Span, req createPaymentRequest) {
+	span.SetAttributes(attribute.String("reference", req.Reference))
+	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
+	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))
+	span.SetAttributes(attribute.String("type", req.Type))
+	span.SetAttributes(attribute.String("initialAmount", req.InitialAmount.String()))
+	span.SetAttributes(attribute.String("amount", req.Amount.String()))
+	span.SetAttributes(attribute.String("asset", req.Asset))
+	span.SetAttributes(attribute.String("scheme", req.Scheme))
+	if req.SourceAccountID != nil {
+		span.SetAttributes(attribute.String("sourceAccountID", *req.SourceAccountID))
+	}
+	if req.DestinationAccountID != nil {
+		span.SetAttributes(attribute.String("destinationAccountID", *req.DestinationAccountID))
+	}
+	for k, v := range req.Metadata {
+		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
+	}
+
+	for i, adj := range req.Adjustments {
+		span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].reference", i), adj.Reference))
+		span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].createdAt", i), adj.CreatedAt.String()))
+		span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].status", i), adj.Status))
+		span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].amount", i), adj.Amount.String()))
+		span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].asset", i), *adj.Asset))
+		for k, v := range adj.Metadata {
+			span.SetAttributes(attribute.String(fmt.Sprintf("adjustments[%d].metadata[%s]", i, k), v))
+		}
 	}
 }

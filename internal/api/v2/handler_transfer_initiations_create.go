@@ -155,16 +155,16 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 
 func setSpanAttributesFromRequest(span trace.Span, transfer createTransferInitiationRequest) {
 	span.SetAttributes(
-		attribute.String("request.reference", transfer.Reference),
-		attribute.String("request.scheduledAt", transfer.ScheduledAt.String()),
-		attribute.String("request.description", transfer.Description),
-		attribute.String("request.sourceAccountID", transfer.SourceAccountID),
-		attribute.String("request.destinationAccountID", transfer.DestinationAccountID),
-		attribute.String("request.connectorID", transfer.ConnectorID),
-		attribute.String("request.provider", transfer.Provider),
-		attribute.String("request.type", transfer.Type),
-		attribute.String("request.amount", transfer.Amount.String()),
-		attribute.String("request.asset", transfer.Asset),
-		attribute.String("request.validated", transfer.Asset),
+		attribute.String("reference", transfer.Reference),
+		attribute.String("scheduledAt", transfer.ScheduledAt.String()),
+		attribute.String("description", transfer.Description),
+		attribute.String("sourceAccountID", transfer.SourceAccountID),
+		attribute.String("destinationAccountID", transfer.DestinationAccountID),
+		attribute.String("connectorID", transfer.ConnectorID),
+		attribute.String("provider", transfer.Provider),
+		attribute.String("type", transfer.Type),
+		attribute.String("amount", transfer.Amount.String()),
+		attribute.String("asset", transfer.Asset),
+		attribute.String("validated", transfer.Asset),
 	)
 }

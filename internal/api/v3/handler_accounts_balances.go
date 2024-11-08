@@ -11,6 +11,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func accountsBalances(backend backend.Backend) http.HandlerFunc {
@@ -18,15 +20,15 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_accountsBalances")
 		defer span.End()
 
-		balanceQuery, err := populateBalanceQueryFromRequest(r)
+		balanceQuery, err := populateBalanceQueryFromRequest(span, r)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListBalancesQuery](r, func() (*storage.ListBalancesQuery, error) {
-			options, err := getPagination(r, balanceQuery)
+		query, err := bunpaginate.Extract(r, func() (*storage.ListBalancesQuery, error) {
+			options, err := getPagination(span, r, balanceQuery)
 			if err != nil {
 				return nil, err
 			}
@@ -49,11 +51,13 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateBalanceQueryFromRequest(r *http.Request) (storage.BalanceQuery, error) {
+func populateBalanceQueryFromRequest(span trace.Span, r *http.Request) (storage.BalanceQuery, error) {
 	var balanceQuery storage.BalanceQuery
 
 	balanceQuery = balanceQuery.WithAsset(r.URL.Query().Get("asset"))
+	span.SetAttributes(attribute.String("asset", balanceQuery.Asset))
 
+	span.SetAttributes(attribute.String("accountID", accountID(r)))
 	accountID, err := models.AccountIDFromString(accountID(r))
 	if err != nil {
 		return balanceQuery, err
@@ -92,6 +96,9 @@ func populateBalanceQueryFromRequest(r *http.Request) (storage.BalanceQuery, err
 			WithFrom(startTimeParsed).
 			WithTo(endTimeParsed)
 	}
+
+	span.SetAttributes(attribute.String("from", balanceQuery.From.Format(time.RFC3339Nano)))
+	span.SetAttributes(attribute.String("to", balanceQuery.To.Format(time.RFC3339Nano)))
 
 	return balanceQuery, nil
 }
