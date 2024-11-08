@@ -113,6 +113,9 @@ func (w Workflow) run(
 						Every: config.PollingPeriod,
 					},
 					Action: client.ScheduleWorkflowAction{
+						// Use the same ID as the schedule ID, so we can identify the workflows running.
+						// This is useful for debugging purposes.
+						ID:       scheduleID,
 						Workflow: nextWorkflow,
 						Args: []interface{}{
 							request,

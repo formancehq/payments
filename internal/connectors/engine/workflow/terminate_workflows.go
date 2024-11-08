@@ -4,16 +4,22 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/workflow"
 )
 
+type TerminateWorkflows struct {
+	ConnectorID   models.ConnectorID
+	NextPageToken []byte
+}
+
 func (w Workflow) runTerminateWorkflows(
 	ctx workflow.Context,
-	uninstallConnector UninstallConnector,
+	terminateWorkflows TerminateWorkflows,
 ) error {
-	var nextPageToken []byte
+	var nextPageToken []byte = terminateWorkflows.NextPageToken
 
 	for {
 		resp, err := activities.TemporalWorkflowExecutionsList(
@@ -22,7 +28,7 @@ func (w Workflow) runTerminateWorkflows(
 				Namespace:     w.temporalNamespace,
 				PageSize:      100,
 				NextPageToken: nextPageToken,
-				Query:         fmt.Sprintf("Stack=\"%s\" and TaskQueue=\"%s\"", w.stack, uninstallConnector.ConnectorID.String()),
+				Query:         fmt.Sprintf("Stack=\"%s\" and TaskQueue=\"%s\"", w.stack, terminateWorkflows.ConnectorID.String()),
 			},
 		)
 		if err != nil {
@@ -65,6 +71,18 @@ func (w Workflow) runTerminateWorkflows(
 		}
 
 		nextPageToken = resp.NextPageToken
+
+		workflowInfo := workflow.GetInfo(ctx)
+		if workflowInfo.GetContinueAsNewSuggested() {
+			// Because we can have lots and lots of workflows, sometimes, we
+			// will exceed the maximum history size or length of a workflow.
+			// When that arrive, the workflow will be forced to terminate.
+			// We need to continue as new to avoid this.
+			return workflow.NewContinueAsNewError(ctx, RunTerminateWorkflows, TerminateWorkflows{
+				ConnectorID:   terminateWorkflows.ConnectorID,
+				NextPageToken: nextPageToken,
+			})
+		}
 	}
 
 	return nil

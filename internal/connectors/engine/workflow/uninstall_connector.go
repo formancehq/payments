@@ -37,6 +37,8 @@ func (w Workflow) runUninstallConnector(
 		return fmt.Errorf("terminate schedules: %w", err)
 	}
 
+	// Since we can have lots of workflows running, we don't need to wait for
+	// them to be terminated before proceeding with the uninstallation.
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -49,8 +51,10 @@ func (w Workflow) runUninstallConnector(
 			},
 		),
 		RunTerminateWorkflows,
-		uninstallConnector,
-	).Get(ctx, nil); err != nil {
+		TerminateWorkflows{
+			ConnectorID: uninstallConnector.ConnectorID,
+		},
+	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
 		return fmt.Errorf("terminate workflows: %w", err)
 	}
 
