@@ -26,7 +26,7 @@ type bankAccountRelatedAccountsResponse struct {
 	Provider    string    `json:"provider"`
 }
 
-type bankAccountResponse struct {
+type BankAccountResponse struct {
 	ID              string                                `json:"id"`
 	Name            string                                `json:"name"`
 	CreatedAt       time.Time                             `json:"createdAt"`
@@ -38,7 +38,7 @@ type bankAccountResponse struct {
 	RelatedAccounts []*bankAccountRelatedAccountsResponse `json:"relatedAccounts,omitempty"`
 }
 
-type bankAccountsCreateRequest struct {
+type BankAccountsCreateRequest struct {
 	Name string `json:"name"`
 
 	AccountNumber *string `json:"accountNumber"`
@@ -50,7 +50,7 @@ type bankAccountsCreateRequest struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-func (r *bankAccountsCreateRequest) Validate() error {
+func (r *BankAccountsCreateRequest) Validate() error {
 	if r.AccountNumber == nil && r.IBAN == nil {
 		return errors.New("either accountNumber or iban must be provided")
 	}
@@ -67,7 +67,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_bankAccountsCreate")
 		defer span.End()
 
-		var req bankAccountsCreateRequest
+		var req BankAccountsCreateRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
@@ -128,7 +128,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		data := &bankAccountResponse{
+		data := &BankAccountResponse{
 			ID:        bankAccount.ID.String(),
 			Name:      bankAccount.Name,
 			CreatedAt: bankAccount.CreatedAt,
@@ -161,7 +161,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 			})
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[bankAccountResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[BankAccountResponse]{
 			Data: data,
 		})
 		if err != nil {
@@ -172,7 +172,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromBankAccountCreateRequest(span trace.Span, req bankAccountsCreateRequest) {
+func populateSpanFromBankAccountCreateRequest(span trace.Span, req BankAccountsCreateRequest) {
 	span.SetAttributes(attribute.String("name", req.Name))
 
 	// Do not record sensitive information
