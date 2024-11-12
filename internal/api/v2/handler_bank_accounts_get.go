@@ -31,7 +31,7 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := &bankAccountResponse{
+		data := &BankAccountResponse{
 			ID:        bankAccount.ID.String(),
 			Name:      bankAccount.Name,
 			CreatedAt: bankAccount.CreatedAt,
@@ -64,7 +64,7 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 			})
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[bankAccountResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[BankAccountResponse]{
 			Data: data,
 		})
 		if err != nil {

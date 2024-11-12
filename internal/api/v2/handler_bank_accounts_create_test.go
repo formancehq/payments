@@ -25,7 +25,7 @@ var _ = Describe("API v2 Bank Accounts Create", func() {
 		var (
 			w   *httptest.ResponseRecorder
 			m   *backend.MockBackend
-			bac bankAccountsCreateRequest
+			bac BankAccountsCreateRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -42,19 +42,19 @@ var _ = Describe("API v2 Bank Accounts Create", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(bac bankAccountsCreateRequest) {
+			func(bac BankAccountsCreateRequest) {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &bac))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("account number missing", bankAccountsCreateRequest{}),
-			Entry("iban missing", bankAccountsCreateRequest{AccountNumber: &accountNumber}),
-			Entry("name missing", bankAccountsCreateRequest{AccountNumber: &accountNumber, IBAN: &iban}),
+			Entry("account number missing", BankAccountsCreateRequest{}),
+			Entry("iban missing", BankAccountsCreateRequest{AccountNumber: &accountNumber}),
+			Entry("name missing", BankAccountsCreateRequest{AccountNumber: &accountNumber, IBAN: &iban}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("bank account create err")
 			m.EXPECT().BankAccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
-			bac = bankAccountsCreateRequest{
+			bac = BankAccountsCreateRequest{
 				Name:          "reference",
 				IBAN:          &iban,
 				AccountNumber: &accountNumber,
@@ -65,7 +65,7 @@ var _ = Describe("API v2 Bank Accounts Create", func() {
 
 		It("should return status ok on success", func(ctx SpecContext) {
 			m.EXPECT().BankAccountsCreate(gomock.Any(), gomock.Any()).Return(nil)
-			bac = bankAccountsCreateRequest{
+			bac = BankAccountsCreateRequest{
 				Name:          "reference",
 				IBAN:          &iban,
 				AccountNumber: &accountNumber,

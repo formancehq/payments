@@ -82,7 +82,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromBankAccountCreateRequest(span trace.Span, req bankAccountsCreateRequest) {
+func populateSpanFromBankAccountCreateRequest(span trace.Span, req BankAccountsCreateRequest) {
 	span.SetAttributes(attribute.String("name", req.Name))
 
 	// Do not record sensitive information
