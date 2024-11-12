@@ -125,7 +125,7 @@ func (w Workflow) createPayout(
 				return err
 			}
 
-			scheduleID := fmt.Sprintf("polling-payout-%s-%s", createPayout.ConnectorID.String(), *createPayoutResponse.PollingPayoutID)
+			scheduleID := fmt.Sprintf("polling-payout-%s-%s-%s", w.stack, createPayout.ConnectorID.String(), *createPayoutResponse.PollingPayoutID)
 			scheduleID, err = activities.TemporalScheduleCreate(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
