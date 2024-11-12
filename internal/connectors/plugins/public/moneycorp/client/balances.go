@@ -42,7 +42,12 @@ func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*B
 
 	_, err = c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
+		if errRes.StatusCode == http.StatusNotFound {
+			// No balances found
+			return []*Balance{}, nil
+		}
 		return nil, fmt.Errorf("failed to get account balances: %w %w", err, errRes.Error())
 	}
+
 	return balances.Balances, nil
 }
