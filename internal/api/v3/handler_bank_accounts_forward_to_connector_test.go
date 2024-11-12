@@ -27,7 +27,7 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 		var (
 			w    *httptest.ResponseRecorder
 			m    *backend.MockBackend
-			freq bankAccountsForwardToConnectorRequest
+			freq BankAccountsForwardToConnectorRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -37,12 +37,12 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(expected string, freq bankAccountsForwardToConnectorRequest) {
+			func(expected string, freq BankAccountsForwardToConnectorRequest) {
 				handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "bankAccountID", bankAccountID.String(), &freq))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, expected)
 			},
-			Entry("connector ID missing", ErrMissingOrInvalidBody, bankAccountsForwardToConnectorRequest{}),
-			Entry("connector ID invalid", ErrValidation, bankAccountsForwardToConnectorRequest{ConnectorID: "blah"}),
+			Entry("connector ID missing", ErrMissingOrInvalidBody, BankAccountsForwardToConnectorRequest{}),
+			Entry("connector ID invalid", ErrValidation, BankAccountsForwardToConnectorRequest{ConnectorID: "blah"}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
@@ -50,7 +50,7 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 				models.Task{},
 				fmt.Errorf("bank account forward err"),
 			)
-			freq = bankAccountsForwardToConnectorRequest{
+			freq = BankAccountsForwardToConnectorRequest{
 				ConnectorID: connID.String(),
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "bankAccountID", bankAccountID.String(), &freq))
@@ -62,7 +62,7 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 				models.Task{},
 				nil,
 			)
-			freq = bankAccountsForwardToConnectorRequest{
+			freq = BankAccountsForwardToConnectorRequest{
 				ConnectorID: connID.String(),
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "bankAccountID", bankAccountID.String(), &freq))
