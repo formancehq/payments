@@ -2,8 +2,6 @@ module github.com/formancehq/payments
 
 go 1.22.0
 
-toolchain go1.22.7
-
 require (
 	github.com/ThreeDotsLabs/watermill v1.3.7
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
