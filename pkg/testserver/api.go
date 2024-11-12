@@ -2,14 +2,24 @@ package testserver
 
 import (
 	"context"
-
-	v3 "github.com/formancehq/payments/internal/api/v3"
+	"fmt"
 )
 
-func CreateBankAccount(ctx context.Context, srv *Server, request v3.BankAccountsCreateRequest, res any) error {
-	return srv.Client().Post(ctx, "/v3/bank-accounts", request, res)
+func pathPrefix(version int, path string) string {
+	if version < 3 {
+		return fmt.Sprintf("/%s", path)
+	}
+	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func GetBankAccount(ctx context.Context, srv *Server, id string, res any) error {
-	return srv.Client().Get(ctx, "/v3/bank-accounts/"+id, res)
+func CreateBankAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	return srv.Client().Post(ctx, pathPrefix(ver, "bank-accounts"), reqBody, res)
+}
+
+func GetBankAccount(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "bank-accounts/"+id), res)
+}
+
+func ForwardBankAccount(ctx context.Context, srv *Server, ver int, id string, reqBody any, res any) error {
+	return srv.Client().Post(ctx, pathPrefix(ver, "bank-accounts/"+id+"/forward"), reqBody, res)
 }
