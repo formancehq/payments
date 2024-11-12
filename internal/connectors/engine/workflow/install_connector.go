@@ -69,7 +69,7 @@ func (w Workflow) runInstallConnector(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				WorkflowID:            fmt.Sprintf("run-tasks-%s", installConnector.ConnectorID.String()),
+				WorkflowID:            fmt.Sprintf("run-tasks-%s-%s", w.stack, installConnector.ConnectorID.String()),
 				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 				TaskQueue:             installConnector.ConnectorID.String(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,

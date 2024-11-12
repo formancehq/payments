@@ -49,7 +49,7 @@ func (w Workflow) runHandleWebhooks(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					WorkflowID:            fmt.Sprintf("store-webhook-%s-%s", handleWebhooks.ConnectorID.String(), response.IdempotencyKey),
+					WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s", w.stack, handleWebhooks.ConnectorID.String(), response.IdempotencyKey),
 					TaskQueue:             handleWebhooks.ConnectorID.String(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
