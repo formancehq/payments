@@ -100,9 +100,9 @@ func (w Workflow) run(
 			// TODO(polo): context
 			var scheduleID string
 			if fromPayload == nil {
-				scheduleID = fmt.Sprintf("%s-%s", connectorID.String(), capability.String())
+				scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
 			} else {
-				scheduleID = fmt.Sprintf("%s-%s-%s", connectorID.String(), capability.String(), fromPayload.ID)
+				scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
 			}
 
 			scheduleID, err := activities.TemporalScheduleCreate(
