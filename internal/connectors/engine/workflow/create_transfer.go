@@ -127,7 +127,7 @@ func (w Workflow) createTransfer(
 				return err
 			}
 
-			scheduleID := fmt.Sprintf("polling-transfer-%s-%s", createTransfer.ConnectorID.String(), *createTransferResponse.PollingTransferID)
+			scheduleID := fmt.Sprintf("polling-transfer-%s-%s-%s", w.stack, createTransfer.ConnectorID.String(), *createTransferResponse.PollingTransferID)
 			scheduleID, err = activities.TemporalScheduleCreate(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
