@@ -119,7 +119,7 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 
 	if reqErr != nil {
 		if err = json.Unmarshal(rawBody, errorBody); err != nil {
-			return resp.StatusCode, fmt.Errorf("failed to unmarshal error response with status %d: %w", resp.StatusCode, err)
+			return resp.StatusCode, fmt.Errorf("failed to unmarshal error response (%w) with status %d: %w", err, resp.StatusCode, reqErr)
 		}
 		return resp.StatusCode, reqErr
 	}
