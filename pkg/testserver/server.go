@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -41,6 +42,7 @@ type OTLPConfig struct {
 }
 
 type Configuration struct {
+	Stack                 string
 	PostgresConfiguration bunconnect.ConnectionOptions
 	TemporalNamespace     string
 	TemporalAddress       string
@@ -70,7 +72,7 @@ func (s *Server) Start() error {
 	if err != nil {
 		return fmt.Errorf("error finding wd: %w", err)
 	}
-	pluginsDir := fmt.Sprintf("%s/%s", strings.TrimSuffix(wd, "test/e2e"), "plugins")
+	pluginsDir := path.Join(strings.TrimSuffix(wd, "test/e2e"), "plugins")
 	rootCmd := cmd.NewRootCommand()
 	args := []string{
 		"serve",
@@ -82,6 +84,7 @@ func (s *Server) Start() error {
 		"--" + cmd.PluginsDirectoryPathFlag, pluginsDir,
 		"--" + temporal.TemporalAddressFlag, s.configuration.TemporalAddress,
 		"--" + temporal.TemporalNamespaceFlag, s.configuration.TemporalNamespace,
+		"--" + temporal.TemporalInitSearchAttributesFlag, fmt.Sprintf("stack=%s", s.configuration.Stack),
 	}
 	if s.configuration.PostgresConfiguration.MaxIdleConns != 0 {
 		args = append(

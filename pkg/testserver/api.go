@@ -12,6 +12,14 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
+func InstallConnector(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	path := "connectors/install/generic"
+	if ver == 2 {
+		path = "connectors/generic"
+	}
+	return srv.Client().Post(ctx, pathPrefix(ver, path), reqBody, res)
+}
+
 func CreateBankAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Post(ctx, pathPrefix(ver, "bank-accounts"), reqBody, res)
 }
