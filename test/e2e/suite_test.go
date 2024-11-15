@@ -13,6 +13,7 @@ import (
 	"github.com/formancehq/go-libs/v2/testing/docker"
 	"github.com/formancehq/go-libs/v2/testing/platform/natstesting"
 	"github.com/formancehq/go-libs/v2/testing/platform/pgtesting"
+	"github.com/formancehq/go-libs/v2/testing/platform/temporaltesting"
 	. "github.com/formancehq/go-libs/v2/testing/utils"
 	"github.com/formancehq/payments/internal/storage"
 	. "github.com/onsi/ginkgo/v2"
@@ -25,18 +26,29 @@ func Test(t *testing.T) {
 }
 
 var (
-	dockerPool = NewDeferred[*docker.Pool]()
-	pgServer   = NewDeferred[*pgtesting.PostgresServer]()
-	natsServer = NewDeferred[*natstesting.NatsServer]()
-	debug      = os.Getenv("DEBUG") == "true"
-	logger     = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
+	dockerPool     = NewDeferred[*docker.Pool]()
+	pgServer       = NewDeferred[*pgtesting.PostgresServer]()
+	temporalServer = NewDeferred[*temporaltesting.TemporalServer]()
+	natsServer     = NewDeferred[*natstesting.NatsServer]()
+	debug          = os.Getenv("DEBUG") == "true"
+	logger         = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
+	stack          = "somestackval-abcd"
 
 	DBTemplate = "dbtemplate"
 )
 
+type ConnectorConf struct {
+	Name          string `json:"name"`
+	PollingPeriod string `json:"pollingPeriod"`
+	PageSize      int    `json:"pageSize"`
+	APIKey        string `json:"apiKey"`
+	Endpoint      string `json:"endpoint"`
+}
+
 type ParallelExecutionContext struct {
 	PostgresServer *pgtesting.PostgresServer
 	NatsServer     *natstesting.NatsServer
+	TemporalServer *temporaltesting.TemporalServer
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -71,13 +83,20 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		return ret
 	})
 
+	temporalServer.LoadAsync(func() *temporaltesting.TemporalServer {
+		By("Initializing temporal server")
+		ret := temporaltesting.CreateTemporalServer(GinkgoT(), GinkgoWriter)
+		return ret
+	})
+
 	By("Waiting services alive")
-	Wait(pgServer, natsServer)
+	Wait(pgServer, natsServer, temporalServer)
 	By("All services ready.")
 
 	data, err := json.Marshal(ParallelExecutionContext{
 		PostgresServer: pgServer.GetValue(),
 		NatsServer:     natsServer.GetValue(),
+		TemporalServer: temporalServer.GetValue(),
 	})
 	Expect(err).To(BeNil())
 
@@ -95,6 +114,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	pgServer.SetValue(pec.PostgresServer)
 	natsServer.SetValue(pec.NatsServer)
+	temporalServer.SetValue(pec.TemporalServer)
 })
 
 func UseTemplatedDatabase() *Deferred[*pgtesting.Database] {
