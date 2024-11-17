@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/workflow"
 )
 
 const (
@@ -131,4 +132,9 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Name: RunUpdatePaymentInitiationFromPayment,
 			Func: w.runUpdatePaymentInitiationFromPayment,
 		})
+}
+
+func (w Workflow) shouldContinueAsNew(ctx workflow.Context) bool {
+	workflowInfo := workflow.GetInfo(ctx)
+	return workflowInfo.GetContinueAsNewSuggested()
 }
