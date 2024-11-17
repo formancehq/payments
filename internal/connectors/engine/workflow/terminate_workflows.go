@@ -72,8 +72,7 @@ func (w Workflow) runTerminateWorkflows(
 
 		nextPageToken = resp.NextPageToken
 
-		workflowInfo := workflow.GetInfo(ctx)
-		if workflowInfo.GetContinueAsNewSuggested() {
+		if w.shouldContinueAsNew(ctx) {
 			// Because we can have lots and lots of workflows, sometimes, we
 			// will exceed the maximum history size or length of a workflow.
 			// When that arrive, the workflow will be forced to terminate.
