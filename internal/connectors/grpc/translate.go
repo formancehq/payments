@@ -280,6 +280,46 @@ func TranslateProtoPaymentInitiation(pi *proto.PaymentInitiation) (models.PSPPay
 	}, nil
 }
 
+func TranslatePaymentInitiationReversal(pi models.PSPPaymentInitiationReversal) *proto.PaymentInitiationReversal {
+	return &proto.PaymentInitiationReversal{
+		Reference:         pi.Reference,
+		CreatedAt:         timestamppb.New(pi.CreatedAt),
+		Description:       pi.Description,
+		PaymentInitiation: TranslatePaymentInitiation(pi.RelatedPaymentInitiation),
+		Amount: &proto.Monetary{
+			Asset:  pi.Asset,
+			Amount: []byte(pi.Amount.Text(10)),
+		},
+		Metadata: pi.Metadata,
+	}
+}
+
+func TranslateProtoPaymentInitiationReversal(pi *proto.PaymentInitiationReversal) (models.PSPPaymentInitiationReversal, error) {
+	amount, ok := big.NewInt(0).SetString(string(pi.Amount.Amount), 10)
+	if !ok {
+		return models.PSPPaymentInitiationReversal{}, errors.New("failed to parse amount")
+	}
+
+	var relatedPI models.PSPPaymentInitiation
+	if pi.PaymentInitiation != nil {
+		p, err := TranslateProtoPaymentInitiation(pi.PaymentInitiation)
+		if err != nil {
+			return models.PSPPaymentInitiationReversal{}, err
+		}
+		relatedPI = p
+	}
+
+	return models.PSPPaymentInitiationReversal{
+		Reference:                pi.Reference,
+		CreatedAt:                pi.CreatedAt.AsTime(),
+		Description:              pi.Description,
+		RelatedPaymentInitiation: relatedPI,
+		Amount:                   amount,
+		Asset:                    pi.Amount.Asset,
+		Metadata:                 pi.Metadata,
+	}, nil
+}
+
 func TranslateTask(taskTree models.ConnectorTaskTree) *proto.TaskTree {
 	res := proto.TaskTree{
 		NextTasks:    []*proto.TaskTree{},

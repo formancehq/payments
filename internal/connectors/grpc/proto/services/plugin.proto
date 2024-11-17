@@ -11,6 +11,7 @@ import "capability.proto";
 import "other.proto";
 import "payment.proto";
 import "payment_initiation.proto";
+import "payment_initiation_reversal.proto";
 import "webhook.proto";
 import "workflow.proto";
 
@@ -162,6 +163,22 @@ message PollPayoutStatusResponse {
     google.protobuf.StringValue error = 2;
 }
 
+message ReverseTransferRequest {
+    formance.payments.connectors.grpc.proto.PaymentInitiationReversal payment_initiation_reversal = 1;
+}
+
+message ReverseTransferResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+}
+
+message ReversePayoutRequest {
+    formance.payments.connectors.grpc.proto.PaymentInitiationReversal payment_initiation_reversal = 1;
+}
+
+message ReversePayoutResponse {
+    formance.payments.connectors.grpc.proto.Payment payment = 1;
+}
+
 service Plugin {
     rpc Install(InstallRequest) returns (InstallResponse) {}
     rpc Uninstall(UninstallRequest) returns (UninstallResponse) {}
@@ -171,11 +188,17 @@ service Plugin {
     rpc FetchNextAccounts(FetchNextAccountsRequest) returns (FetchNextAccountsResponse) {}
     rpc FetchNextExternalAccounts(FetchNextExternalAccountsRequest) returns (FetchNextExternalAccountsResponse) {}
     rpc FetchNextBalances(FetchNextBalancesRequest) returns (FetchNextBalancesResponse) {}
+
     rpc CreateBankAccount(CreateBankAccountRequest) returns (CreateBankAccountResponse) {}
+
     rpc CreateTransfer(CreateTransferRequest) returns (CreateTransferResponse) {}
+    rpc ReverseTransfer(ReverseTransferRequest) returns (ReverseTransferResponse) {}
     rpc PollTransferStatus(PollTransferStatusRequest) returns (PollTransferStatusResponse) {}
+
     rpc CreatePayout(CreatePayoutRequest) returns (CreatePayoutResponse) {}
+    rpc ReversePayout(ReversePayoutRequest) returns (ReversePayoutResponse) {}
     rpc PollPayoutStatus(PollPayoutStatusRequest) returns (PollPayoutStatusResponse) {}
+
     rpc CreateWebhooks(CreateWebhooksRequest) returns (CreateWebhooksResponse) {}
     rpc TranslateWebhook(TranslateWebhookRequest) returns (TranslateWebhookResponse) {}
 }

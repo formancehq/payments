@@ -20,9 +20,13 @@ type PSP interface {
 	FetchNextExternalAccounts(ctx context.Context, in *services.FetchNextExternalAccountsRequest) (*services.FetchNextExternalAccountsResponse, error)
 
 	CreateBankAccount(ctx context.Context, in *services.CreateBankAccountRequest) (*services.CreateBankAccountResponse, error)
+
 	CreateTransfer(ctx context.Context, in *services.CreateTransferRequest) (*services.CreateTransferResponse, error)
+	ReverseTransfer(ctx context.Context, in *services.ReverseTransferRequest) (*services.ReverseTransferResponse, error)
 	PollTransferStatus(ctx context.Context, in *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error)
+
 	CreatePayout(ctx context.Context, in *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error)
+	ReversePayout(ctx context.Context, in *services.ReversePayoutRequest) (*services.ReversePayoutResponse, error)
 	PollPayoutStatus(ctx context.Context, in *services.PollPayoutStatusRequest) (*services.PollPayoutStatusResponse, error)
 
 	CreateWebhooks(ctx context.Context, in *services.CreateWebhooksRequest) (*services.CreateWebhooksResponse, error)

@@ -42,8 +42,12 @@ type Engine interface {
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 	// Create a transfer between two accounts on the given connector (PSP).
 	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
+	// Reverse a transfer already done
+	ReverseTransfer(ctx context.Context, reversalID models.PaymentInitiationReversalID, waitResult bool) (models.Task, error)
 	// Create a payout on the given connector (PSP).
 	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
+	// Reverse a payout already done
+	ReversePayout(ctx context.Context, reversalID models.PaymentInitiationReversalID, waitResult bool) (models.Task, error)
 
 	// We received a webhook, handle it by calling the corresponding plugin to
 	// translate it to a formance object and store it.
@@ -476,6 +480,77 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 	return task, nil
 }
 
+func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.ReverseTransfer")
+	defer span.End()
+
+	ctx, _ = contextutil.Detached(ctx)
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	// e.storage.PaymentInitiationReversalsUpsert(
+	// 	ctx,
+	// 	reversal,
+	// 	[]models.PaymentInitiationReversalAdjustment{
+	// 		{
+	// 			ID: models.PaymentInitiationReversalAdjustmentID{
+	// 				PaymentInitiationReversalID: reversal.ID,
+	// 				CreatedAt:                   reversal.CreatedAt,
+	// 				Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
+	// 			},
+	// 			PaymentInitiationReversalID: reversal.ID,
+	// 			CreatedAt:                   reversal.CreatedAt,
+	// 			Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
+	// 			Metadata:                    reversal.Metadata,
+	// 		},
+	// 	},
+	// )
+
+	id := models.TaskIDReference(fmt.Sprintf("reverse-transfer-%s-%s", e.stack, reversal.CreatedAt.String()), reversal.ConnectorID, reversal.ID.String())
+
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: reversal.ConnectorID,
+		},
+		ConnectorID: reversal.ConnectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	run, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                piID.ConnectorID.String(),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateTransfer,
+		workflow.CreateTransfer{
+			TaskID:              task.ID,
+			ConnectorID:         piID.ConnectorID,
+			PaymentInitiationID: piID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
 func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePayout")
 	defer span.End()
@@ -531,6 +606,10 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 	}
 
 	return task, nil
+}
+
+func (e *engine) ReversePayout(ctx context.Context, reversalID models.PaymentInitiationReversalID, waitResult bool) (models.Task, error) {
+	return models.Task{}, nil
 }
 
 func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {

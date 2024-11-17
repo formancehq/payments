@@ -223,6 +223,33 @@ func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequ
 	}, nil
 }
 
+func (i *impl) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	resp, err := i.pluginClient.ReverseTransfer(ctx, &services.ReverseTransferRequest{
+		PaymentInitiationReversal: grpc.TranslatePaymentInitiationReversal(req.PaymentInitiationReversal),
+	})
+	if err != nil {
+		return models.ReverseTransferResponse{}, err
+	}
+
+	var payment *models.PSPPayment
+	if resp.Payment != nil {
+		return models.ReverseTransferResponse{}, errors.New("payment should not be nil when reversing")
+	}
+
+	payment, err = grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.ReverseTransferResponse{}, err
+	}
+
+	if payment == nil {
+		return models.ReverseTransferResponse{}, errors.New("payment should not be nil after translation")
+	}
+
+	return models.ReverseTransferResponse{
+		Payment: *payment,
+	}, nil
+}
+
 func (i *impl) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	resp, err := i.pluginClient.PollTransferStatus(ctx, &services.PollTransferStatusRequest{
 		TransferId: req.TransferID,
@@ -274,6 +301,32 @@ func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest)
 			}
 			return &resp.PayoutId.Value
 		}(),
+	}, nil
+}
+
+func (i *impl) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	resp, err := i.pluginClient.ReversePayout(ctx, &services.ReversePayoutRequest{
+		PaymentInitiationReversal: grpc.TranslatePaymentInitiationReversal(req.PaymentInitiationReversal),
+	})
+	if err != nil {
+		return models.ReversePayoutResponse{}, err
+	}
+
+	if resp.Payment != nil {
+		return models.ReversePayoutResponse{}, errors.New("payment should not be nil when reversing")
+	}
+
+	payment, err := grpc.TranslateProtoPayment(resp.Payment)
+	if err != nil {
+		return models.ReversePayoutResponse{}, err
+	}
+
+	if payment == nil {
+		return models.ReversePayoutResponse{}, errors.New("payment should not be nil after translation")
+	}
+
+	return models.ReversePayoutResponse{
+		Payment: *payment,
 	}, nil
 }
 

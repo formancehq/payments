@@ -11,10 +11,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (p Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
+func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
 	userID := models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayUserIDMetadataKey)
 	if userID == "" {
-		return models.CreateBankAccountResponse{}, fmt.Errorf("missing userID in bank account metadata")
+		return models.CreateBankAccountResponse{}, fmt.Errorf("missing userID in bank account metadata: %s", models.ErrInvalidRequest)
 	}
 
 	ownerAddress := client.OwnerAddress{

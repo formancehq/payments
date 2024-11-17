@@ -868,6 +868,73 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 	})
 }
 
+func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertPayments(t, ctx, store, defaultPayments)
+	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations)
+	upsertPaymentInitiationAdjustments(t, ctx, store, defaultPaymentInitiationAdjustments)
+
+	t.Run("upsert with status not equal", func(t *testing.T) {
+		p := models.PaymentInitiationAdjustment{
+			ID: models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: defaultPaymentInitiations[1].ID,
+				CreatedAt:           now.UTC().Time,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			},
+
+			PaymentInitiationID: defaultPaymentInitiations[1].ID,
+			CreatedAt:           now.UTC().Time,
+			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			Metadata: map[string]string{
+				"foo": "bar",
+			},
+		}
+
+		inserted, err := store.PaymentInitiationAdjustmentsUpsertIfPredicate(
+			ctx,
+			p,
+			func(previous models.PaymentInitiationAdjustment) bool {
+				return previous.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION
+			},
+		)
+		require.NoError(t, err)
+		require.False(t, inserted)
+	})
+
+	t.Run("upsert with status equal", func(t *testing.T) {
+		p := models.PaymentInitiationAdjustment{
+			ID: models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: defaultPaymentInitiations[0].ID,
+				CreatedAt:           now.UTC().Time,
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			},
+
+			PaymentInitiationID: defaultPaymentInitiations[0].ID,
+			CreatedAt:           now.UTC().Time,
+			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			Metadata: map[string]string{
+				"foo": "bar",
+			},
+		}
+
+		inserted, err := store.PaymentInitiationAdjustmentsUpsertIfPredicate(
+			ctx,
+			p,
+			func(previous models.PaymentInitiationAdjustment) bool {
+				return previous.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED
+			},
+		)
+		require.NoError(t, err)
+		require.True(t, inserted)
+	})
+}
+
 func TestPaymentInitiationAdjustmentsGet(t *testing.T) {
 	t.Parallel()
 

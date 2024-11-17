@@ -27,8 +27,10 @@ type PluginClient interface {
 	FetchNextBalances(ctx context.Context, in *FetchNextBalancesRequest, opts ...grpc.CallOption) (*FetchNextBalancesResponse, error)
 	CreateBankAccount(ctx context.Context, in *CreateBankAccountRequest, opts ...grpc.CallOption) (*CreateBankAccountResponse, error)
 	CreateTransfer(ctx context.Context, in *CreateTransferRequest, opts ...grpc.CallOption) (*CreateTransferResponse, error)
+	ReverseTransfer(ctx context.Context, in *ReverseTransferRequest, opts ...grpc.CallOption) (*ReverseTransferResponse, error)
 	PollTransferStatus(ctx context.Context, in *PollTransferStatusRequest, opts ...grpc.CallOption) (*PollTransferStatusResponse, error)
 	CreatePayout(ctx context.Context, in *CreatePayoutRequest, opts ...grpc.CallOption) (*CreatePayoutResponse, error)
+	ReversePayout(ctx context.Context, in *ReversePayoutRequest, opts ...grpc.CallOption) (*ReversePayoutResponse, error)
 	PollPayoutStatus(ctx context.Context, in *PollPayoutStatusRequest, opts ...grpc.CallOption) (*PollPayoutStatusResponse, error)
 	CreateWebhooks(ctx context.Context, in *CreateWebhooksRequest, opts ...grpc.CallOption) (*CreateWebhooksResponse, error)
 	TranslateWebhook(ctx context.Context, in *TranslateWebhookRequest, opts ...grpc.CallOption) (*TranslateWebhookResponse, error)
@@ -123,6 +125,15 @@ func (c *pluginClient) CreateTransfer(ctx context.Context, in *CreateTransferReq
 	return out, nil
 }
 
+func (c *pluginClient) ReverseTransfer(ctx context.Context, in *ReverseTransferRequest, opts ...grpc.CallOption) (*ReverseTransferResponse, error) {
+	out := new(ReverseTransferResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/ReverseTransfer", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *pluginClient) PollTransferStatus(ctx context.Context, in *PollTransferStatusRequest, opts ...grpc.CallOption) (*PollTransferStatusResponse, error) {
 	out := new(PollTransferStatusResponse)
 	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/PollTransferStatus", in, out, opts...)
@@ -135,6 +146,15 @@ func (c *pluginClient) PollTransferStatus(ctx context.Context, in *PollTransferS
 func (c *pluginClient) CreatePayout(ctx context.Context, in *CreatePayoutRequest, opts ...grpc.CallOption) (*CreatePayoutResponse, error) {
 	out := new(CreatePayoutResponse)
 	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/CreatePayout", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *pluginClient) ReversePayout(ctx context.Context, in *ReversePayoutRequest, opts ...grpc.CallOption) (*ReversePayoutResponse, error) {
+	out := new(ReversePayoutResponse)
+	err := c.cc.Invoke(ctx, "/formance.payments.grpc.services.Plugin/ReversePayout", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -181,8 +201,10 @@ type PluginServer interface {
 	FetchNextBalances(context.Context, *FetchNextBalancesRequest) (*FetchNextBalancesResponse, error)
 	CreateBankAccount(context.Context, *CreateBankAccountRequest) (*CreateBankAccountResponse, error)
 	CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error)
+	ReverseTransfer(context.Context, *ReverseTransferRequest) (*ReverseTransferResponse, error)
 	PollTransferStatus(context.Context, *PollTransferStatusRequest) (*PollTransferStatusResponse, error)
 	CreatePayout(context.Context, *CreatePayoutRequest) (*CreatePayoutResponse, error)
+	ReversePayout(context.Context, *ReversePayoutRequest) (*ReversePayoutResponse, error)
 	PollPayoutStatus(context.Context, *PollPayoutStatusRequest) (*PollPayoutStatusResponse, error)
 	CreateWebhooks(context.Context, *CreateWebhooksRequest) (*CreateWebhooksResponse, error)
 	TranslateWebhook(context.Context, *TranslateWebhookRequest) (*TranslateWebhookResponse, error)
@@ -220,11 +242,17 @@ func (UnimplementedPluginServer) CreateBankAccount(context.Context, *CreateBankA
 func (UnimplementedPluginServer) CreateTransfer(context.Context, *CreateTransferRequest) (*CreateTransferResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTransfer not implemented")
 }
+func (UnimplementedPluginServer) ReverseTransfer(context.Context, *ReverseTransferRequest) (*ReverseTransferResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReverseTransfer not implemented")
+}
 func (UnimplementedPluginServer) PollTransferStatus(context.Context, *PollTransferStatusRequest) (*PollTransferStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PollTransferStatus not implemented")
 }
 func (UnimplementedPluginServer) CreatePayout(context.Context, *CreatePayoutRequest) (*CreatePayoutResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePayout not implemented")
+}
+func (UnimplementedPluginServer) ReversePayout(context.Context, *ReversePayoutRequest) (*ReversePayoutResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReversePayout not implemented")
 }
 func (UnimplementedPluginServer) PollPayoutStatus(context.Context, *PollPayoutStatusRequest) (*PollPayoutStatusResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PollPayoutStatus not implemented")
@@ -410,6 +438,24 @@ func _Plugin_CreateTransfer_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Plugin_ReverseTransfer_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReverseTransferRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).ReverseTransfer(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/formance.payments.grpc.services.Plugin/ReverseTransfer",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).ReverseTransfer(ctx, req.(*ReverseTransferRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Plugin_PollTransferStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PollTransferStatusRequest)
 	if err := dec(in); err != nil {
@@ -442,6 +488,24 @@ func _Plugin_CreatePayout_Handler(srv interface{}, ctx context.Context, dec func
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(PluginServer).CreatePayout(ctx, req.(*CreatePayoutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Plugin_ReversePayout_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReversePayoutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PluginServer).ReversePayout(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/formance.payments.grpc.services.Plugin/ReversePayout",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PluginServer).ReversePayout(ctx, req.(*ReversePayoutRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -544,12 +608,20 @@ var Plugin_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Plugin_CreateTransfer_Handler,
 		},
 		{
+			MethodName: "ReverseTransfer",
+			Handler:    _Plugin_ReverseTransfer_Handler,
+		},
+		{
 			MethodName: "PollTransferStatus",
 			Handler:    _Plugin_PollTransferStatus_Handler,
 		},
 		{
 			MethodName: "CreatePayout",
 			Handler:    _Plugin_CreatePayout_Handler,
+		},
+		{
+			MethodName: "ReversePayout",
+			Handler:    _Plugin_ReversePayout_Handler,
 		},
 		{
 			MethodName: "PollPayoutStatus",

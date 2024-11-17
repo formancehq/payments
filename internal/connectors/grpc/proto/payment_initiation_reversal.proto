@@ -1,0 +1,27 @@
+syntax = "proto3";
+package formance.payments.connectors.grpc.proto;
+option go_package = "github.com/formancehq/payments/internal/connectors/grpc/proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "payment_initiation.proto";
+import "monetary.proto";
+
+message PaymentInitiationReversal {
+    // Unique reference for the payment reversal
+    string reference = 1;
+
+    // Timestamp of the payment reversal creation
+    google.protobuf.Timestamp created_at = 2;
+
+    // Description of the payment reversal
+    string description = 3;
+
+    formance.payments.connectors.grpc.proto.PaymentInitiation payment_initiation = 4;
+
+    // Amount and asset of the payment reversal
+    formance.payments.connectors.grpc.proto.Monetary amount = 5;
+
+    // Additional metadata
+    map<string, string> metadata = 6;
+}

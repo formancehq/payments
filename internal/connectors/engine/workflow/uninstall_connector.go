@@ -127,6 +127,20 @@ func (w Workflow) runUninstallConnector(
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
+		err := activities.StoragePaymentInitiationsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StoragePaymentInitiationReversalsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
 		err := activities.StorageStatesDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})

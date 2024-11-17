@@ -46,12 +46,20 @@ func (c *GRPCClient) CreateTransfer(ctx context.Context, req *services.CreateTra
 	return c.client.CreateTransfer(ctx, req)
 }
 
+func (c *GRPCClient) ReverseTransfer(ctx context.Context, req *services.ReverseTransferRequest) (*services.ReverseTransferResponse, error) {
+	return c.client.ReverseTransfer(ctx, req)
+}
+
 func (c *GRPCClient) PollTransferStatus(ctx context.Context, req *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error) {
 	return c.client.PollTransferStatus(ctx, req)
 }
 
 func (c *GRPCClient) CreatePayout(ctx context.Context, req *services.CreatePayoutRequest) (*services.CreatePayoutResponse, error) {
 	return c.client.CreatePayout(ctx, req)
+}
+
+func (c *GRPCClient) ReversePayout(ctx context.Context, req *services.ReversePayoutRequest) (*services.ReversePayoutResponse, error) {
+	return c.client.ReversePayout(ctx, req)
 }
 
 func (c *GRPCClient) PollPayoutStatus(ctx context.Context, req *services.PollPayoutStatusRequest) (*services.PollPayoutStatusResponse, error) {

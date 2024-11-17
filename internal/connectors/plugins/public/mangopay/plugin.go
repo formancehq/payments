@@ -46,39 +46,39 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 	}, nil
 }
 
-func (p Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	return models.UninstallResponse{}, nil
 }
 
-func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
-func (p Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
 		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
-func (p Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextExternalAccounts(ctx, req)
 }
 
-func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
-func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	if p.client == nil {
 		return models.FetchNextOthersResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -91,14 +91,14 @@ func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersR
 	}
 }
 
-func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	if p.client == nil {
 		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.createBankAccount(ctx, req.BankAccount)
 }
 
-func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
 		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -112,11 +112,15 @@ func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferReq
 	}, nil
 }
 
-func (p Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
 		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -131,11 +135,15 @@ func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest
 	}, nil
 }
 
-func (p Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
 	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
 	}
@@ -143,7 +151,7 @@ func (p Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksReq
 	return models.CreateWebhooksResponse{}, err
 }
 
-func (p Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}

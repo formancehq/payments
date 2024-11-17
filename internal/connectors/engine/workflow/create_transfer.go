@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"fmt"
+	"math/big"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -52,29 +53,10 @@ func (w Workflow) createTransfer(
 		return err
 	}
 
-	var sourceAccount *models.Account
-	if pi.SourceAccountID != nil {
-		sourceAccount, err = activities.StorageAccountsGet(
-			infiniteRetryContext(ctx),
-			*pi.SourceAccountID,
-		)
-		if err != nil {
-			return err
-		}
+	pspPI, err := w.getPSPPI(ctx, pi)
+	if err != nil {
+		return err
 	}
-
-	var destinationAccount *models.Account
-	if pi.DestinationAccountID != nil {
-		destinationAccount, err = activities.StorageAccountsGet(
-			infiniteRetryContext(ctx),
-			*pi.DestinationAccountID,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	pspPI := models.FromPaymentInitiationToPSPPaymentInitiation(pi, models.ToPSPAccount(sourceAccount), models.ToPSPAccount(destinationAccount))
 
 	err = w.addPIAdjustment(
 		ctx,
@@ -83,6 +65,8 @@ func (w Workflow) createTransfer(
 			CreatedAt:           workflow.Now(ctx),
 			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 		},
+		pi.Amount,
+		&pi.Asset,
 		nil,
 		nil,
 	)
@@ -94,7 +78,7 @@ func (w Workflow) createTransfer(
 		infiniteRetryContext(ctx),
 		createTransfer.ConnectorID,
 		models.CreateTransferRequest{
-			PaymentInitiation: *pspPI,
+			PaymentInitiation: pspPI,
 		},
 	)
 	switch errPlugin {
@@ -103,10 +87,11 @@ func (w Workflow) createTransfer(
 			// payment is already available, storing it
 			payment := models.FromPSPPaymentToPayment(*createTransferResponse.Payment, createTransfer.ConnectorID)
 
-			if err := w.storePIPayment(
+			if err := w.storePIPaymentWithStatus(
 				ctx,
 				payment,
 				createTransfer.PaymentInitiationID,
+				getPIStatusFromPayment(payment.Status),
 				createTransfer.ConnectorID,
 			); err != nil {
 				return err
@@ -186,6 +171,8 @@ func (w Workflow) createTransfer(
 				CreatedAt:           workflow.Now(ctx),
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 			},
+			pi.Amount,
+			&pi.Asset,
 			errPlugin,
 			nil,
 		)
@@ -197,11 +184,46 @@ func (w Workflow) createTransfer(
 	}
 }
 
+func (w Workflow) getPSPPI(
+	ctx workflow.Context,
+	pi *models.PaymentInitiation,
+) (models.PSPPaymentInitiation, error) {
+	var sourceAccount *models.Account
+	if pi.SourceAccountID != nil {
+		var err error
+		sourceAccount, err = activities.StorageAccountsGet(
+			infiniteRetryContext(ctx),
+			*pi.SourceAccountID,
+		)
+		if err != nil {
+			return models.PSPPaymentInitiation{}, err
+		}
+	}
+
+	var destinationAccount *models.Account
+	if pi.DestinationAccountID != nil {
+		var err error
+		destinationAccount, err = activities.StorageAccountsGet(
+			infiniteRetryContext(ctx),
+			*pi.DestinationAccountID,
+		)
+		if err != nil {
+			return models.PSPPaymentInitiation{}, err
+		}
+	}
+
+	pspPI := models.FromPaymentInitiationToPSPPaymentInitiation(pi, models.ToPSPAccount(sourceAccount), models.ToPSPAccount(destinationAccount))
+
+	return pspPI, nil
+}
+
 const RunCreateTransfer = "CreateTransfer"
 
 func (w Workflow) addPIAdjustment(
 	ctx workflow.Context,
 	adjustmentID models.PaymentInitiationAdjustmentID,
+	amount *big.Int,
+	asset *string,
 	err error,
 	metadata map[string]string,
 ) error {

@@ -67,7 +67,7 @@ type paymentInitiationAdjustment struct {
 func (s *store) PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("update payment metadata", err)
+		return e("upsert payment initiations", err)
 	}
 	defer tx.Rollback()
 
@@ -238,7 +238,7 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, e("failed to fetch payment initiations", err)
 	}
 
 	pis := make([]models.PaymentInitiation, 0, len(cursor.Data))
@@ -352,6 +352,45 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 	return nil
 }
 
+func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
+	ctx context.Context,
+	adj models.PaymentInitiationAdjustment,
+	predicate func(models.PaymentInitiationAdjustment) bool,
+) (bool, error) {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return false, e("upsert payment initiations", err)
+	}
+	defer tx.Rollback()
+
+	var previousAdj paymentInitiationAdjustment
+	err = tx.NewSelect().
+		Model(&previousAdj).
+		Where("payment_initiation_id = ?", adj.PaymentInitiationID).
+		Order("created_at DESC").
+		For("UPDATE"). // Prevent another transaction to select/insert a new adjustment while this one is not committed
+		Limit(1).
+		Scan(ctx)
+	if err != nil {
+		return false, e("failed to get previous payment initiation adjustment", err)
+	}
+
+	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
+		return false, nil
+	}
+
+	toInsert := fromPaymentInitiationAdjustmentModels(adj)
+	_, err = tx.NewInsert().
+		Model(&toInsert).
+		On("CONFLICT (id) DO NOTHING").
+		Exec(ctx)
+	if err != nil {
+		return false, e("failed to insert payment initiation adjustments", err)
+	}
+
+	return true, e("failed to commit transaction", tx.Commit())
+}
+
 func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
 	var adj paymentInitiationAdjustment
 	err := s.db.NewSelect().
@@ -378,10 +417,53 @@ func NewListPaymentInitiationAdjustmentsQuery(opts bunpaginate.PaginatedQueryOpt
 	}
 }
 
+func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (string, []any, error) {
+	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
+		switch {
+		case key == "status":
+			if operator != "$match" {
+				return "", nil, errors.Wrap(ErrValidation, "'type' column can only be used with $match")
+			}
+			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+
+		case metadataRegex.Match([]byte(key)):
+			if operator != "$match" {
+				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+			}
+			match := metadataRegex.FindAllStringSubmatch(key, 3)
+
+			key := "metadata"
+			return key + " @> ?", []any{map[string]any{
+				match[0][1]: value,
+			}}, nil
+		default:
+			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+		}
+	}))
+
+	return where, args, err
+}
+
 func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error) {
+	var (
+		where string
+		args  []any
+		err   error
+	)
+	if q.Options.QueryBuilder != nil {
+		where, args, err = s.paymentsInitiationAdjustmentsQueryContext(q.Options.QueryBuilder)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery], paymentInitiationAdjustment](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationAdjustmentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
+			if where != "" {
+				query = query.Where(where, args...)
+			}
+
 			// TODO(polo): sorter ?
 			query = query.Order("created_at DESC")
 			query.Where("payment_initiation_id = ?", piID)

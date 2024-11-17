@@ -118,9 +118,17 @@ var _ = Describe("Adyen Plugin", func() {
 	})
 
 	Context("create transfer", func() {
-		It("should fail if client is not set", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
+		})
+	})
+
+	Context("reverse transfer", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.ReverseTransferRequest{}
+			_, err := plg.ReverseTransfer(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
 		})
 	})
@@ -134,9 +142,17 @@ var _ = Describe("Adyen Plugin", func() {
 	})
 
 	Context("create payout", func() {
-		It("should fail if client is not set", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
+		})
+	})
+
+	Context("reverse payout", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.ReversePayoutRequest{}
+			_, err := plg.ReversePayout(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotImplemented.Error()))
 		})
 	})

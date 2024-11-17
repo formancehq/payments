@@ -21,9 +21,13 @@ type Plugin interface {
 	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
 
 	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
+
 	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
+	ReverseTransfer(context.Context, ReverseTransferRequest) (ReverseTransferResponse, error)
 	PollTransferStatus(context.Context, PollTransferStatusRequest) (PollTransferStatusResponse, error)
+
 	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
+	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
 	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
@@ -154,6 +158,14 @@ type CreateTransferResponse struct {
 	PollingTransferID *string
 }
 
+type ReverseTransferRequest struct {
+	PaymentInitiationReversal PSPPaymentInitiationReversal
+}
+
+type ReverseTransferResponse struct {
+	Payment PSPPayment
+}
+
 type PollTransferStatusRequest struct {
 	TransferID string
 }
@@ -180,6 +192,14 @@ type CreatePayoutResponse struct {
 	// Otherwise, the payment will be nil and the payout ID will be returned
 	// to be polled regularly until the payment is available
 	PollingPayoutID *string
+}
+
+type ReversePayoutRequest struct {
+	PaymentInitiationReversal PSPPaymentInitiationReversal
+}
+
+type ReversePayoutResponse struct {
+	Payment PSPPayment
 }
 
 type PollPayoutStatusRequest struct {

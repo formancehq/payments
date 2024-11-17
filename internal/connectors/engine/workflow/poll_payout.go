@@ -18,6 +18,28 @@ func (w Workflow) runPollPayout(
 	ctx workflow.Context,
 	pollPayout PollPayout,
 ) error {
+	paymentID, err := w.pollPayout(ctx, pollPayout)
+	if err != nil {
+		return w.updateTasksError(
+			ctx,
+			pollPayout.TaskID,
+			pollPayout.ConnectorID,
+			err,
+		)
+	}
+
+	return w.updateTaskSuccess(
+		ctx,
+		pollPayout.TaskID,
+		pollPayout.ConnectorID,
+		paymentID,
+	)
+}
+
+func (w Workflow) pollPayout(
+	ctx workflow.Context,
+	pollPayout PollPayout,
+) (string, error) {
 	pollPayoutStatusResponse, err := activities.PluginPollPayoutStatus(
 		infiniteRetryContext(ctx),
 		pollPayout.ConnectorID,
@@ -26,35 +48,32 @@ func (w Workflow) runPollPayout(
 		},
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	if pollPayoutStatusResponse.Payment == nil {
 		// payment not yet available, waiting for the next polling
-		return nil
+		return "", nil
 	}
 
 	payment := models.FromPSPPaymentToPayment(*pollPayoutStatusResponse.Payment, pollPayout.ConnectorID)
 
-	if err := w.storePIPayment(ctx, payment, pollPayout.PaymentInitiationID, pollPayout.ConnectorID); err != nil {
-		return err
-	}
-
-	if err := w.updateTaskSuccess(
+	if err := w.storePIPaymentWithStatus(
 		ctx,
-		pollPayout.TaskID,
+		payment,
+		pollPayout.PaymentInitiationID,
+		getPIStatusFromPayment(payment.Status),
 		pollPayout.ConnectorID,
-		payment.ID.String(),
 	); err != nil {
-		return err
+		return "", err
 	}
 
 	// everything is done, delete the related schedule
 	if err := activities.TemporalDeleteSchedule(ctx, pollPayout.ScheduleID); err != nil {
-		return err
+		return "", err
 	}
 
-	return activities.StorageSchedulesDelete(ctx, pollPayout.ScheduleID)
+	return payment.ID.String(), activities.StorageSchedulesDelete(ctx, pollPayout.ScheduleID)
 }
 
 const RunPollPayout = "PollPayout"

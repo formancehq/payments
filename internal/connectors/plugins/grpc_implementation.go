@@ -288,6 +288,34 @@ func (i *impl) CreateTransfer(ctx context.Context, req *services.CreateTransferR
 	}, nil
 }
 
+func (i *impl) ReverseTransfer(ctx context.Context, req *services.ReverseTransferRequest) (*services.ReverseTransferResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.ReverseTransfer", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiationReversal.Reference))
+	defer span.End()
+	hclog.Default().Info("reversing transfer...")
+
+	pi, err := grpc.TranslateProtoPaymentInitiationReversal(req.PaymentInitiationReversal)
+	if err != nil {
+		hclog.Default().Error("reversing transfer failed: ", err)
+		otel.RecordError(span, err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	resp, err := i.plugin.ReverseTransfer(ctx, models.ReverseTransferRequest{
+		PaymentInitiationReversal: pi,
+	})
+	if err != nil {
+		hclog.Default().Error("reversing transfer failed: ", err)
+		otel.RecordError(span, err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("reversed transfer succeeded!")
+
+	return &services.ReverseTransferResponse{
+		Payment: grpc.TranslatePayment(&resp.Payment),
+	}, nil
+}
+
 func (i *impl) PollTransferStatus(ctx context.Context, req *services.PollTransferStatusRequest) (*services.PollTransferStatusResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.PollTransferStatus", attribute.String("psp", i.plugin.Name()), attribute.String("transferID", req.TransferId))
 	defer span.End()
@@ -345,6 +373,34 @@ func (i *impl) CreatePayout(ctx context.Context, req *services.CreatePayoutReque
 			}
 			return wrapperspb.String(*resp.PollingPayoutID)
 		}(),
+	}, nil
+}
+
+func (i *impl) ReversePayout(ctx context.Context, req *services.ReversePayoutRequest) (*services.ReversePayoutResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.ReversePayout", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiationReversal.Reference))
+	defer span.End()
+	hclog.Default().Info("reversing payout...")
+
+	pi, err := grpc.TranslateProtoPaymentInitiationReversal(req.PaymentInitiationReversal)
+	if err != nil {
+		hclog.Default().Error("reversing payout failed: ", err)
+		otel.RecordError(span, err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	resp, err := i.plugin.ReversePayout(ctx, models.ReversePayoutRequest{
+		PaymentInitiationReversal: pi,
+	})
+	if err != nil {
+		hclog.Default().Error("reversing payout failed: ", err)
+		otel.RecordError(span, err)
+		return nil, translateErrorToGRPC(err)
+	}
+
+	hclog.Default().Info("reversed payout succeeded!")
+
+	return &services.ReversePayoutResponse{
+		Payment: grpc.TranslatePayment(&resp.Payment),
 	}, nil
 }
 

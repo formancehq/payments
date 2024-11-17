@@ -71,12 +71,24 @@ type Storage interface {
 
 	// Payment Initiation Adjustments
 	PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationAdjustment) error
+	PaymentInitiationAdjustmentsUpsertIfPredicate(ctx context.Context, adj models.PaymentInitiationAdjustment, predicate func(models.PaymentInitiationAdjustment) bool) (bool, error)
 	PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error)
 	PaymentInitiationAdjustmentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error)
 
 	// Payment Initiation Related Payments
 	PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID models.PaymentInitiationID, pID models.PaymentID, createdAt time.Time) error
 	PaymentInitiationRelatedPaymentsList(ctx context.Context, piID models.PaymentInitiationID, q ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
+
+	// Payment Initiation Reversals
+	PaymentInitiationReversalsUpsert(ctx context.Context, pir models.PaymentInitiationReversal, reversalAdjustments []models.PaymentInitiationReversalAdjustment) error
+	PaymentInitiationReversalsGet(ctx context.Context, id models.PaymentInitiationReversalID) (*models.PaymentInitiationReversal, error)
+	PaymentInitiationReversalsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversal], error)
+
+	// Payment Initiation Reversal Adjustments
+	PaymentInitiationReversalAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationReversalAdjustment) error
+	PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id models.PaymentInitiationReversalAdjustmentID) (*models.PaymentInitiationReversalAdjustment, error)
+	PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment], error)
 
 	// Pools
 	PoolsUpsert(ctx context.Context, pool models.Pool) error
