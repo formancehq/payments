@@ -189,6 +189,18 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		hasMore = paymentsResponse.HasMore
+
+		if w.shouldContinueAsNew(ctx) {
+			// If we have lots and lots of accounts, sometimes, we need to
+			// continue as new to not exeed the maximum history size or length
+			// of a workflow.
+			return workflow.NewContinueAsNewError(
+				ctx,
+				RunFetchNextPayments,
+				fetchNextPayments,
+				nextTasks,
+			)
+		}
 	}
 
 	return nil
