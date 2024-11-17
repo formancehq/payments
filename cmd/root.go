@@ -69,6 +69,9 @@ func NewRootCommand() *cobra.Command {
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	root.AddCommand(server)
 
+	testServer := newTestGenericServer()
+	root.AddCommand(testServer)
+
 	return root
 }
 
