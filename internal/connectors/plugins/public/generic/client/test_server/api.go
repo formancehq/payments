@@ -56,7 +56,7 @@ func (a *API) accountsList() http.HandlerFunc {
 
 func (a *API) balancesList() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		api.RawOk(w, []genericclient.Balance{})
+		api.RawOk(w, genericclient.Balances{})
 	}
 }
 

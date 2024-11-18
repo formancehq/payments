@@ -29,7 +29,7 @@ func (p Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 	accounts := make([]models.PSPAccount, 0)
 	needMore := false
 	hasMore := false
-	for page := 0; ; page++ {
+	for page := 1; ; page++ {
 		pagedAccounts, err := p.client.ListAccounts(ctx, int64(page), int64(req.PageSize), oldState.LastCreatedAtFrom)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
