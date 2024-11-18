@@ -42,7 +42,7 @@ func getMigrator(db *bun.DB, opts ...migrations.Option) *migrations.Migrator {
 func Migrate(ctx context.Context, db bun.IDB) error {
 	d, ok := db.(*bun.DB)
 	if !ok {
-		return fmt.Errorf("db of type %T was not of expected *bun.DB type")
+		return fmt.Errorf("db of type %T was not of expected *bun.DB type", db)
 	}
 	return getMigrator(d).Up(ctx)
 }
