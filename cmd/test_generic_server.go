@@ -23,7 +23,7 @@ func newTestGenericServer() *cobra.Command {
 
 	service.AddFlags(cmd.Flags())
 
-	cmd.Flags().Int(nbAccountsFlag, 10, "number of accounts to create")
+	cmd.Flags().Int(nbAccountsFlag, 500, "number of accounts to create")
 
 	return cmd
 }
