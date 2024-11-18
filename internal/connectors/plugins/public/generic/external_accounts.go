@@ -29,7 +29,7 @@ func (p Plugin) fetchExternalAccounts(ctx context.Context, req models.FetchNextE
 	accounts := make([]models.PSPAccount, 0)
 	needMore := false
 	hasMore := false
-	for page := 0; ; page++ {
+	for page := 1; ; page++ {
 		pagedExternalAccounts, err := p.client.ListBeneficiaries(ctx, int64(page), int64(req.PageSize), oldState.LastCreatedAtFrom)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
