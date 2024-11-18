@@ -33,7 +33,7 @@ func (p Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPayme
 	updatedAts := make([]time.Time, 0)
 	needMore := false
 	hasMore := false
-	for page := 0; ; page++ {
+	for page := 1; ; page++ {
 		pagedPayments, err := p.client.ListTransactions(ctx, int64(page), int64(req.PageSize), oldState.LastUpdatedAtFrom)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
