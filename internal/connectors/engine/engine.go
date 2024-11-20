@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v2/contextutil"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
@@ -117,13 +116,13 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 
 	// Detached the context to avoid being in a weird state if request is
 	// cancelled in the middle of the operation.
-	ctx, _ = contextutil.Detached(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if err := e.storage.ConnectorsInstall(ctx, connector); err != nil {
+	if err := e.storage.ConnectorsInstall(detachedCtx, connector); err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
 	}
@@ -142,7 +141,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 
 	// Launch the workflow
 	run, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
 			TaskQueue:                                connector.ID.String(),
@@ -164,7 +163,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	// Wait for installation to complete
+	// Wait for installation to complete in order to return connector ID through API
 	if err := run.Get(ctx, nil); err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
@@ -225,25 +224,25 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 
 	// Detached the context to avoid being in a weird state if request is
 	// cancelled in the middle of the operation.
-	ctx, _ = contextutil.Detached(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if err := e.UninstallConnector(ctx, connectorID); err != nil {
+	if err := e.UninstallConnector(detachedCtx, connectorID); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	_, err = e.InstallConnector(ctx, connectorID.Provider, connector.Config)
+	_, err = e.InstallConnector(detachedCtx, connectorID.Provider, connector.Config)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
 	run, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                    fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String()),
 			TaskQueue:             connectorID.String(),
@@ -266,7 +265,6 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		otel.RecordError(span, err)
 		return err
 	}
-
 	return nil
 }
 
@@ -559,14 +557,14 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		return err
 	}
 
-	ctx, _ = contextutil.Detached(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
 	if _, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, webhook.ConnectorID.String(), webhook.ID),
 			TaskQueue:                                webhook.ConnectorID.String(),
@@ -633,13 +631,13 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		return err
 	}
 
-	ctx, _ = contextutil.Detached(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	pool, err := e.storage.PoolsGet(ctx, id)
+	pool, err := e.storage.PoolsGet(detachedCtx, id)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -647,7 +645,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 
 	// Do not wait for sending of events
 	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s-%s", e.stack, pool.IdempotencyKey()),
 			TaskQueue:                                e.workers.GetDefaultWorker(),
@@ -679,13 +677,13 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		return err
 	}
 
-	ctx, _ = contextutil.Detached(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	pool, err := e.storage.PoolsGet(ctx, id)
+	pool, err := e.storage.PoolsGet(detachedCtx, id)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -693,7 +691,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 
 	// Do not wait for sending of events
 	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s", e.stack, pool.IdempotencyKey()),
 			TaskQueue:                                e.workers.GetDefaultWorker(),
