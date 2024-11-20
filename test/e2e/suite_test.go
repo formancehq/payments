@@ -22,6 +22,7 @@ import (
 
 func Test(t *testing.T) {
 	RegisterFailHandler(Fail)
+	os.Setenv("PLUGIN_MAGIC_COOKIE", magicCookieVal)
 	RunSpecs(t, "Test Suite")
 }
 
@@ -33,6 +34,7 @@ var (
 	debug          = os.Getenv("DEBUG") == "true"
 	logger         = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
 	stack          = "somestackval-abcd"
+	magicCookieVal = "needed-for-plugin-to-work"
 
 	DBTemplate = "dbtemplate"
 )
