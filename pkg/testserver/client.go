@@ -48,8 +48,7 @@ func (c *Client) Get(ctx context.Context, path string, resBody any) error {
 	return c.wrapError(err, method, path, status, errBody)
 }
 
-func (c *Client) Post(ctx context.Context, path string, body any, resBody any) error {
-	method := http.MethodPost
+func (c *Client) Do(ctx context.Context, method string, path string, body any, resBody any) error {
 	b, err := json.Marshal(body)
 	if err != nil {
 		return err
