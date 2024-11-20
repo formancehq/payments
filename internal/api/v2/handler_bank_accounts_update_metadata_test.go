@@ -24,7 +24,7 @@ var _ = Describe("API v2 Bank Accounts Update Metadata", func() {
 		var (
 			w   *httptest.ResponseRecorder
 			m   *backend.MockBackend
-			bau bankAccountsUpdateMetadataRequest
+			bau BankAccountsUpdateMetadataRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -40,17 +40,17 @@ var _ = Describe("API v2 Bank Accounts Update Metadata", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(bau bankAccountsUpdateMetadataRequest) {
+			func(bau BankAccountsUpdateMetadataRequest) {
 				handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "bankAccountID", bankAccountID.String(), &bau))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("metadata missing", bankAccountsUpdateMetadataRequest{}),
+			Entry("metadata missing", BankAccountsUpdateMetadataRequest{}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("bank account create err")
 			m.EXPECT().BankAccountsUpdateMetadata(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
-			bau = bankAccountsUpdateMetadataRequest{
+			bau = BankAccountsUpdateMetadataRequest{
 				Metadata: map[string]string{"meta": "data"},
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "bankAccountID", bankAccountID.String(), &bau))
@@ -60,7 +60,7 @@ var _ = Describe("API v2 Bank Accounts Update Metadata", func() {
 		It("should return status no content on success", func(ctx SpecContext) {
 			metadata := map[string]string{"meta": "data"}
 			m.EXPECT().BankAccountsUpdateMetadata(gomock.Any(), gomock.Any(), metadata).Return(nil)
-			bau = bankAccountsUpdateMetadataRequest{
+			bau = BankAccountsUpdateMetadataRequest{
 				Metadata: metadata,
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "bankAccountID", bankAccountID.String(), &bau))
