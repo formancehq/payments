@@ -96,9 +96,8 @@ var _ = Context("Payments API Bank Accounts", func() {
 		var (
 			ver                   int
 			bankAccountsCreateRes struct{ Data string }
-			connectorRes          struct{ Data string }
-			connectorConf         ConnectorConf
 			forwardReq            v3.BankAccountsForwardToConnectorRequest
+			connectorRes          struct{ Data string }
 			res                   struct{ Data models.Task }
 			err                   error
 			id                    uuid.UUID
@@ -109,7 +108,8 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(bankAccountsCreateRes.Data)
 			Expect(err).To(BeNil())
-			connectorConf = ConnectorConf{
+
+			connectorConf := ConnectorConf{
 				Name:          fmt.Sprintf("connector-%s", id.String()),
 				PollingPeriod: "2m",
 				PageSize:      30,
@@ -120,16 +120,19 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 		})
 
-		It("should should fail when connector ID is invalid", func() {
+		It("should fail when connector ID is invalid", func() {
 			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: "invalid"}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
-		It("should should be ok when connector is installed", func() {
+		It("should be ok when connector is installed", func() {
 			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
+			Expect(res.Data.ID.Reference).To(ContainSubstring(id.String()))
+			Expect(res.Data.ID.Reference).To(ContainSubstring(connectorRes.Data))
+			Expect(res.Data.ConnectorID.String()).To(ContainSubstring(connectorRes.Data))
 		})
 	})
 
@@ -138,7 +141,8 @@ var _ = Context("Payments API Bank Accounts", func() {
 			ver                   int
 			bankAccountsCreateRes struct{ Data v2.BankAccountResponse }
 			forwardReq            v2.BankAccountsForwardToConnectorRequest
-			res                   struct{ Data models.Task }
+			connectorRes          struct{ Data string }
+			res                   struct{ Data v2.BankAccountResponse }
 			err                   error
 			id                    uuid.UUID
 		)
@@ -148,12 +152,27 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(bankAccountsCreateRes.Data.ID)
 			Expect(err).To(BeNil())
+			connectorConf := ConnectorConf{
+				Name:          fmt.Sprintf("connector-%s", id.String()),
+				PollingPeriod: "2m",
+				PageSize:      30,
+				APIKey:        "key",
+				Endpoint:      "http://example.com",
+			}
+			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
 		})
-		It("should should fail when connector ID is invalid", func() {
+		It("should fail when connector ID is invalid", func() {
 			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: "invalid"}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
+		})
+		It("should fail immediately with error because method is unimplemented on plugin", func() {
+			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("UNIMPLEMENTED"))
 		})
 	})
 })
