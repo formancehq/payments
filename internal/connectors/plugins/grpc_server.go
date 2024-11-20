@@ -48,7 +48,7 @@ func (s *server) Serve(wg *sync.WaitGroup, shutdowner fx.Shutdowner) {
 	}()
 
 	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig: grpc.Handshake,
+		HandshakeConfig: grpc.Handshake(),
 		Plugins: map[string]plugin.Plugin{
 			"psp": &grpc.PSPGRPCPlugin{Impl: NewGRPCImplem(s.plugin)},
 		},

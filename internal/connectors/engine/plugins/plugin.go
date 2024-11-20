@@ -106,7 +106,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID, config models.C
 
 	logger := hclog.New(loggerOptions)
 	pc := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig:  grpc.Handshake,
+		HandshakeConfig:  grpc.Handshake(),
 		Plugins:          grpc.PluginMap,
 		Cmd:              pluginCmd(pluginPath, p.rawFlags, logger),
 		GRPCDialOptions:  dialOpts,
