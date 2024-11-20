@@ -53,9 +53,12 @@ var PluginMap = map[string]plugin.Plugin{
 var _ plugin.GRPCPlugin = &PSPGRPCPlugin{}
 
 // Handshake is a common handshake that is shared by plugin and host.
-var Handshake = plugin.HandshakeConfig{
-	// This isn't required when using VersionedPlugins
-	ProtocolVersion:  1,
-	MagicCookieKey:   "PLUGIN_KEY",
-	MagicCookieValue: os.Getenv("PLUGIN_MAGIC_COOKIE"),
+// called as a function so env variables can be read dynamically at run time in e2e tests
+func Handshake() plugin.HandshakeConfig {
+	return plugin.HandshakeConfig{
+		// This isn't required when using VersionedPlugins
+		ProtocolVersion:  1,
+		MagicCookieKey:   "PLUGIN_KEY",
+		MagicCookieValue: os.Getenv("PLUGIN_MAGIC_COOKIE"),
+	}
 }
