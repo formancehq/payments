@@ -14,10 +14,14 @@ import (
 )
 
 var (
-	poolID1      = uuid.New()
-	poolID2      = uuid.New()
-	poolID3      = uuid.New()
-	defaultPools = []models.Pool{
+	poolID1 = uuid.New()
+	poolID2 = uuid.New()
+	poolID3 = uuid.New()
+)
+
+func defaultPools() []models.Pool {
+	defaultAccounts := defaultAccounts()
+	return []models.Pool{
 		{
 			ID:        poolID1,
 			Name:      "test1",
@@ -56,7 +60,7 @@ var (
 			},
 		},
 	}
-)
+}
 
 func upsertPool(t *testing.T, ctx context.Context, storage Storage, pool models.Pool) {
 	require.NoError(t, storage.PoolsUpsert(ctx, pool))
@@ -69,9 +73,9 @@ func TestPoolsUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
 
 	t.Run("upsert with same name", func(t *testing.T) {
 		poolID3 := uuid.New()
@@ -82,7 +86,7 @@ func TestPoolsUpsert(t *testing.T) {
 			PoolAccounts: []models.PoolAccounts{
 				{
 					PoolID:    poolID3,
-					AccountID: defaultAccounts[2].ID,
+					AccountID: defaultAccounts()[2].ID,
 				},
 			},
 		}
@@ -92,32 +96,32 @@ func TestPoolsUpsert(t *testing.T) {
 	})
 
 	t.Run("upsert with same id", func(t *testing.T) {
-		upsertPool(t, ctx, store, defaultPools[1])
+		upsertPool(t, ctx, store, defaultPools()[1])
 
-		actual, err := store.PoolsGet(ctx, defaultPools[1].ID)
+		actual, err := store.PoolsGet(ctx, defaultPools()[1].ID)
 		require.NoError(t, err)
-		require.Equal(t, defaultPools[1], *actual)
+		require.Equal(t, defaultPools()[1], *actual)
 	})
 
 	t.Run("upsert with same id but more related accounts", func(t *testing.T) {
-		p := defaultPools[0]
+		p := defaultPools()[0]
 		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
 			PoolID:    p.ID,
-			AccountID: defaultAccounts[2].ID,
+			AccountID: defaultAccounts()[2].ID,
 		})
 
 		upsertPool(t, ctx, store, p)
 
-		actual, err := store.PoolsGet(ctx, defaultPools[0].ID)
+		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.NoError(t, err)
 		require.Equal(t, p, *actual)
 	})
 
 	t.Run("upsert with same id, but wrong related account pool id", func(t *testing.T) {
-		p := defaultPools[0]
+		p := defaultPools()[0]
 		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
 			PoolID:    uuid.New(),
-			AccountID: defaultAccounts[2].ID,
+			AccountID: defaultAccounts()[2].ID,
 		})
 
 		err := store.PoolsUpsert(ctx, p)
@@ -125,7 +129,7 @@ func TestPoolsUpsert(t *testing.T) {
 	})
 
 	t.Run("upsert with same id, but wrong related account account id", func(t *testing.T) {
-		p := defaultPools[0]
+		p := defaultPools()[0]
 		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
 			PoolID: p.ID,
 			AccountID: models.AccountID{
@@ -146,13 +150,13 @@ func TestPoolsGet(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
-	upsertPool(t, ctx, store, defaultPools[2])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
+	upsertPool(t, ctx, store, defaultPools()[2])
 
 	t.Run("get existing pool", func(t *testing.T) {
-		for _, p := range defaultPools {
+		for _, p := range defaultPools() {
 			actual, err := store.PoolsGet(ctx, p.ID)
 			require.NoError(t, err)
 			require.Equal(t, p, *actual)
@@ -174,14 +178,14 @@ func TestPoolsDelete(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
-	upsertPool(t, ctx, store, defaultPools[2])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
+	upsertPool(t, ctx, store, defaultPools()[2])
 
 	t.Run("delete unknown pool", func(t *testing.T) {
 		require.NoError(t, store.PoolsDelete(ctx, uuid.New()))
-		for _, p := range defaultPools {
+		for _, p := range defaultPools() {
 			actual, err := store.PoolsGet(ctx, p.ID)
 			require.NoError(t, err)
 			require.Equal(t, p, *actual)
@@ -189,15 +193,15 @@ func TestPoolsDelete(t *testing.T) {
 	})
 
 	t.Run("delete existing pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsDelete(ctx, defaultPools[0].ID))
+		require.NoError(t, store.PoolsDelete(ctx, defaultPools()[0].ID))
 
-		_, err := store.PoolsGet(ctx, defaultPools[0].ID)
+		_, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 
-		actual, err := store.PoolsGet(ctx, defaultPools[1].ID)
+		actual, err := store.PoolsGet(ctx, defaultPools()[1].ID)
 		require.NoError(t, err)
-		require.Equal(t, defaultPools[1], *actual)
+		require.Equal(t, defaultPools()[1], *actual)
 	})
 }
 
@@ -208,12 +212,12 @@ func TestPoolsAddAccount(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
 
 	t.Run("add unknown account to pool", func(t *testing.T) {
-		err := store.PoolsAddAccount(ctx, defaultPools[0].ID, models.AccountID{
+		err := store.PoolsAddAccount(ctx, defaultPools()[0].ID, models.AccountID{
 			Reference:   "unknown",
 			ConnectorID: defaultConnector.ID,
 		})
@@ -221,20 +225,20 @@ func TestPoolsAddAccount(t *testing.T) {
 	})
 
 	t.Run("add account to unknown pool", func(t *testing.T) {
-		err := store.PoolsAddAccount(ctx, uuid.New(), defaultAccounts[0].ID)
+		err := store.PoolsAddAccount(ctx, uuid.New(), defaultAccounts()[0].ID)
 		require.Error(t, err)
 	})
 
 	t.Run("add account to pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsAddAccount(ctx, defaultPools[0].ID, defaultAccounts[2].ID))
+		require.NoError(t, store.PoolsAddAccount(ctx, defaultPools()[0].ID, defaultAccounts()[2].ID))
 
-		p := defaultPools[0]
+		p := defaultPools()[0]
 		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
 			PoolID:    p.ID,
-			AccountID: defaultAccounts[2].ID,
+			AccountID: defaultAccounts()[2].ID,
 		})
 
-		actual, err := store.PoolsGet(ctx, defaultPools[0].ID)
+		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.NoError(t, err)
 		require.Equal(t, p, *actual)
 	})
@@ -247,28 +251,28 @@ func TestPoolsRemoveAccount(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
 
 	t.Run("remove unknown account from pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsRemoveAccount(ctx, defaultPools[0].ID, models.AccountID{
+		require.NoError(t, store.PoolsRemoveAccount(ctx, defaultPools()[0].ID, models.AccountID{
 			Reference:   "unknown",
 			ConnectorID: defaultConnector.ID,
 		}))
 	})
 
 	t.Run("remove account from unknown pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsRemoveAccount(ctx, uuid.New(), defaultAccounts[0].ID))
+		require.NoError(t, store.PoolsRemoveAccount(ctx, uuid.New(), defaultAccounts()[0].ID))
 	})
 
 	t.Run("remove account from pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsRemoveAccount(ctx, defaultPools[0].ID, defaultAccounts[1].ID))
+		require.NoError(t, store.PoolsRemoveAccount(ctx, defaultPools()[0].ID, defaultAccounts()[1].ID))
 
-		p := defaultPools[0]
+		p := defaultPools()[0]
 		p.PoolAccounts = p.PoolAccounts[:1]
 
-		actual, err := store.PoolsGet(ctx, defaultPools[0].ID)
+		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.NoError(t, err)
 		require.Equal(t, p, *actual)
 	})
@@ -281,10 +285,10 @@ func TestPoolsList(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPool(t, ctx, store, defaultPools[0])
-	upsertPool(t, ctx, store, defaultPools[1])
-	upsertPool(t, ctx, store, defaultPools[2])
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+	upsertPool(t, ctx, store, defaultPools()[1])
+	upsertPool(t, ctx, store, defaultPools()[2])
 
 	t.Run("list pools by name", func(t *testing.T) {
 		q := NewListPoolsQuery(
@@ -299,7 +303,7 @@ func TestPoolsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
-		require.Equal(t, []models.Pool{defaultPools[0]}, cursor.Data)
+		require.Equal(t, []models.Pool{defaultPools()[0]}, cursor.Data)
 	})
 
 	t.Run("list pools by unknown name", func(t *testing.T) {
@@ -322,6 +326,7 @@ func TestPoolsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
 				WithPageSize(1),
 		)
+		defaultPools := defaultPools()
 
 		cursor, err := store.PoolsList(ctx, q)
 		require.NoError(t, err)

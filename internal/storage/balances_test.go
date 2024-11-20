@@ -14,8 +14,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	defaultBalances = []models.Balance{
+func defaultBalances() []models.Balance {
+	defaultAccounts := defaultAccounts()
+	return []models.Balance{
 		{
 			AccountID:     defaultAccounts[0].ID,
 			CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
@@ -38,8 +39,11 @@ var (
 			Balance:       big.NewInt(150),
 		},
 	}
+}
 
-	defaultBalances2 = []models.Balance{
+func defaultBalances2() []models.Balance {
+	defaultAccounts := defaultAccounts()
+	return []models.Balance{
 		{
 			AccountID:     defaultAccounts[2].ID,
 			CreatedAt:     now.Add(-59 * time.Minute).UTC().Time,
@@ -55,7 +59,7 @@ var (
 			Balance:       big.NewInt(1000),
 		},
 	}
-)
+}
 
 func upsertBalances(t *testing.T, ctx context.Context, storage Storage, balances []models.Balance) {
 	require.NoError(t, storage.BalancesUpsert(ctx, balances))
@@ -68,13 +72,14 @@ func TestBalancesUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertBalances(t, ctx, store, defaultBalances)
-	upsertBalances(t, ctx, store, defaultBalances2)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertBalances(t, ctx, store, defaultBalances())
+	upsertBalances(t, ctx, store, defaultBalances2())
 
 	t.Run("insert balances with same asset and same balance", func(t *testing.T) {
+		accounts := defaultAccounts()
 		b := models.Balance{
-			AccountID:     defaultAccounts[2].ID,
+			AccountID:     accounts[2].ID,
 			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
 			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
 			Asset:         "USD/2",
@@ -85,14 +90,14 @@ func TestBalancesUpsert(t *testing.T) {
 
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[2].ID),
+				AccountID: pointer.For(accounts[2].ID),
 				Asset:     "USD/2",
 			}).WithPageSize(15),
 		)
 
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-59 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time, // Last updated at should be updated to the new balance value
 				Asset:         "USD/2",
@@ -107,8 +112,9 @@ func TestBalancesUpsert(t *testing.T) {
 	})
 
 	t.Run("insert balances same asset different balance", func(t *testing.T) {
+		accounts := defaultAccounts()
 		b := models.Balance{
-			AccountID:     defaultAccounts[0].ID,
+			AccountID:     accounts[0].ID,
 			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
 			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
 			Asset:         "USD/2",
@@ -119,7 +125,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[0].ID),
+				AccountID: pointer.For(accounts[0].ID),
 				Asset:     "USD/2",
 			}).WithPageSize(15),
 		)
@@ -127,7 +133,7 @@ func TestBalancesUpsert(t *testing.T) {
 		expectedBalances := []models.Balance{
 			// We should have one more balance with the new balance value
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
@@ -135,7 +141,7 @@ func TestBalancesUpsert(t *testing.T) {
 			},
 			// and the old balance should have its updated at to the new balance created at
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
@@ -150,8 +156,9 @@ func TestBalancesUpsert(t *testing.T) {
 	})
 
 	t.Run("insert balances with new asset", func(t *testing.T) {
+		accounts := defaultAccounts()
 		b := models.Balance{
-			AccountID:     defaultAccounts[2].ID,
+			AccountID:     accounts[2].ID,
 			CreatedAt:     now.Add(-10 * time.Minute).UTC().Time,
 			LastUpdatedAt: now.Add(-10 * time.Minute).UTC().Time,
 			Asset:         "EUR/2",
@@ -162,27 +169,27 @@ func TestBalancesUpsert(t *testing.T) {
 
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[2].ID),
+				AccountID: pointer.For(accounts[2].ID),
 			}).WithPageSize(15),
 		)
 
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-10 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-10 * time.Minute).UTC().Time,
 				Asset:         "EUR/2",
 				Balance:       big.NewInt(200),
 			},
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-31 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-31 * time.Minute).UTC().Time,
 				Asset:         "DKK/2",
 				Balance:       big.NewInt(1000),
 			},
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-59 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time, // Because on the first function it was modified
 				Asset:         "USD/2",
@@ -204,9 +211,9 @@ func TestBalancesDeleteFromConnectorID(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertBalances(t, ctx, store, defaultBalances)
-	upsertBalances(t, ctx, store, defaultBalances2)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertBalances(t, ctx, store, defaultBalances())
+	upsertBalances(t, ctx, store, defaultBalances2())
 
 	t.Run("delete balances from unknown connector id", func(t *testing.T) {
 		err := store.BalancesDeleteFromConnectorID(ctx, models.ConnectorID{
@@ -217,12 +224,13 @@ func TestBalancesDeleteFromConnectorID(t *testing.T) {
 	})
 
 	t.Run("delete balances from known connector id", func(t *testing.T) {
+		accounts := defaultAccounts()
 		err := store.BalancesDeleteFromConnectorID(ctx, defaultConnector.ID)
 		require.NoError(t, err)
 
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[0].ID),
+				AccountID: pointer.For(accounts[0].ID),
 			}).WithPageSize(15),
 		)
 
@@ -239,27 +247,28 @@ func TestBalancesList(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertBalances(t, ctx, store, defaultBalances)
-	upsertBalances(t, ctx, store, defaultBalances2)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertBalances(t, ctx, store, defaultBalances())
+	upsertBalances(t, ctx, store, defaultBalances2())
 
 	t.Run("list balances with account id", func(t *testing.T) {
+		accounts := defaultAccounts()
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[0].ID),
+				AccountID: pointer.For(accounts[0].ID),
 			}).WithPageSize(15),
 		)
 
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
 				Asset:         "EUR/2",
 				Balance:       big.NewInt(150),
 			},
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
@@ -281,16 +290,17 @@ func TestBalancesList(t *testing.T) {
 			}).WithPageSize(15),
 		)
 
+		accounts := defaultAccounts()
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-59 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-59 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
 				Balance:       big.NewInt(100),
 			},
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
@@ -312,9 +322,10 @@ func TestBalancesList(t *testing.T) {
 			}).WithPageSize(15),
 		)
 
+		accounts := defaultAccounts()
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-31 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-31 * time.Minute).UTC().Time,
 				Asset:         "DKK/2",
@@ -336,16 +347,17 @@ func TestBalancesList(t *testing.T) {
 			}).WithPageSize(15),
 		)
 
+		accounts := defaultAccounts()
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[1].ID,
+				AccountID:     accounts[1].ID,
 				CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-30 * time.Minute).UTC().Time,
 				Asset:         "EUR/2",
 				Balance:       big.NewInt(1000),
 			},
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-31 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-31 * time.Minute).UTC().Time,
 				Asset:         "DKK/2",
@@ -380,23 +392,24 @@ func TestBalancesList(t *testing.T) {
 			}).WithPageSize(15),
 		)
 
+		accounts := defaultAccounts()
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
 				Asset:         "EUR/2",
 				Balance:       big.NewInt(150),
 			},
 			{
-				AccountID:     defaultAccounts[2].ID,
+				AccountID:     accounts[2].ID,
 				CreatedAt:     now.Add(-59 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-59 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
 				Balance:       big.NewInt(100),
 			},
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
@@ -425,15 +438,15 @@ func TestBalancesList(t *testing.T) {
 	})
 
 	t.Run("list balances test cursor", func(t *testing.T) {
+		accounts := defaultAccounts()
 		q := NewListBalancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(defaultAccounts[0].ID),
+				AccountID: pointer.For(accounts[0].ID),
 			}).WithPageSize(1),
 		)
-
 		expectedBalances1 := []models.Balance{
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
 				Asset:         "EUR/2",
@@ -451,7 +464,7 @@ func TestBalancesList(t *testing.T) {
 
 		expectedBalances2 := []models.Balance{
 			{
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     accounts[0].ID,
 				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
 				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
 				Asset:         "USD/2",
