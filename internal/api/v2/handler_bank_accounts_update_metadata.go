@@ -14,11 +14,11 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type bankAccountsUpdateMetadataRequest struct {
+type BankAccountsUpdateMetadataRequest struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-func (u *bankAccountsUpdateMetadataRequest) Validate() error {
+func (u *BankAccountsUpdateMetadataRequest) Validate() error {
 	if len(u.Metadata) == 0 {
 		return errors.New("metadata must be provided")
 	}
@@ -38,7 +38,7 @@ func bankAccountsUpdateMetadata(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		var req bankAccountsUpdateMetadataRequest
+		var req BankAccountsUpdateMetadataRequest
 		err = json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
