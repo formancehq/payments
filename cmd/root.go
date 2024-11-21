@@ -38,9 +38,9 @@ var (
 )
 
 const (
-	pluginsDirectoryPathFlag = "plugin-directory-path"
-	configEncryptionKeyFlag  = "config-encryption-key"
-	listenFlag               = "listen"
+	PluginsDirectoryPathFlag = "plugin-directory-path"
+	ConfigEncryptionKeyFlag  = "config-encryption-key"
+	ListenFlag               = "listen"
 	stackFlag                = "stack"
 	stackPublicURLFlag       = "stack-public-url"
 )
@@ -53,7 +53,7 @@ func NewRootCommand() *cobra.Command {
 		Version:           Version,
 	}
 
-	root.PersistentFlags().String(configEncryptionKeyFlag, "", "Config encryption key")
+	root.PersistentFlags().String(ConfigEncryptionKeyFlag, "", "Config encryption key")
 
 	version := newVersion()
 	root.AddCommand(version)
@@ -63,8 +63,8 @@ func NewRootCommand() *cobra.Command {
 
 	server := newServer()
 	addAutoMigrateCommand(server)
-	server.Flags().String(listenFlag, ":8080", "Listen address")
-	server.Flags().String(pluginsDirectoryPathFlag, "", "Plugin directory path")
+	server.Flags().String(ListenFlag, ":8080", "Listen address")
+	server.Flags().String(PluginsDirectoryPathFlag, "", "Plugin directory path")
 	server.Flags().String(stackFlag, "", "Stack name")
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	root.AddCommand(server)
@@ -88,7 +88,7 @@ func addAutoMigrateCommand(cmd *cobra.Command) {
 }
 
 func commonOptions(cmd *cobra.Command) (fx.Option, error) {
-	configEncryptionKey, _ := cmd.Flags().GetString(configEncryptionKeyFlag)
+	configEncryptionKey, _ := cmd.Flags().GetString(ConfigEncryptionKeyFlag)
 	if configEncryptionKey == "" {
 		return nil, errors.New("missing config encryption key")
 	}
@@ -98,13 +98,13 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		return nil, err
 	}
 
-	path, _ := cmd.Flags().GetString(pluginsDirectoryPathFlag)
+	path, _ := cmd.Flags().GetString(PluginsDirectoryPathFlag)
 	pluginPaths, err := getPluginsMap(path)
 	if err != nil {
 		return nil, err
 	}
 
-	listen, _ := cmd.Flags().GetString(listenFlag)
+	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(stackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)

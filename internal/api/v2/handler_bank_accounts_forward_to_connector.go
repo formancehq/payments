@@ -13,11 +13,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-type bankAccountsForwardToConnectorRequest struct {
+type BankAccountsForwardToConnectorRequest struct {
 	ConnectorID string `json:"connectorID"`
 }
 
-func (f *bankAccountsForwardToConnectorRequest) Validate() error {
+func (f *BankAccountsForwardToConnectorRequest) Validate() error {
 	if f.ConnectorID == "" {
 		return errors.New("connectorID must be provided")
 	}
@@ -38,7 +38,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		var req bankAccountsForwardToConnectorRequest
+		var req BankAccountsForwardToConnectorRequest
 		err = json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
@@ -76,7 +76,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := &bankAccountResponse{
+		data := &BankAccountResponse{
 			ID:        bankAccount.ID.String(),
 			Name:      bankAccount.Name,
 			CreatedAt: bankAccount.CreatedAt,
@@ -109,7 +109,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 			})
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[bankAccountResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[BankAccountResponse]{
 			Data: data,
 		})
 		if err != nil {

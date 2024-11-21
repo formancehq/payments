@@ -38,9 +38,9 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := make([]*bankAccountResponse, len(cursor.Data))
+		data := make([]*BankAccountResponse, len(cursor.Data))
 		for i := range cursor.Data {
-			data[i] = &bankAccountResponse{
+			data[i] = &BankAccountResponse{
 				ID:        cursor.Data[i].ID.String(),
 				Name:      cursor.Data[i].Name,
 				CreatedAt: cursor.Data[i].CreatedAt,
@@ -75,8 +75,8 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[*bankAccountResponse]{
-			Cursor: &bunpaginate.Cursor[*bankAccountResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[*BankAccountResponse]{
+			Cursor: &bunpaginate.Cursor[*BankAccountResponse]{
 				PageSize: cursor.PageSize,
 				HasMore:  cursor.HasMore,
 				Previous: cursor.Previous,
