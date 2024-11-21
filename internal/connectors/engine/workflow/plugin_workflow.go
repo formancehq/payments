@@ -109,6 +109,7 @@ func (w Workflow) run(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
+					Jitter:     config.PollingPeriod / 2,
 					Interval: client.ScheduleIntervalSpec{
 						Every: config.PollingPeriod,
 					},

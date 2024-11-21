@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"time"
 
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
@@ -13,6 +14,7 @@ type ScheduleCreateOptions struct {
 	Interval           client.ScheduleIntervalSpec
 	Action             client.ScheduleWorkflowAction
 	Overlap            enums.ScheduleOverlapPolicy
+	Jitter             time.Duration
 	TriggerImmediately bool
 	SearchAttributes   map[string]interface{}
 }
@@ -22,6 +24,7 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 		ID: options.ScheduleID,
 		Spec: client.ScheduleSpec{
 			Intervals: []client.ScheduleIntervalSpec{options.Interval},
+			Jitter:    options.Jitter,
 		},
 		Action:             &options.Action,
 		Overlap:            options.Overlap,
