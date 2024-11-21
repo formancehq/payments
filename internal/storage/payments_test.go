@@ -39,8 +39,11 @@ var (
 		},
 		ConnectorID: defaultConnector.ID,
 	}
+)
 
-	defaultPayments = []models.Payment{
+func defaultPayments() []models.Payment {
+	defaultAccounts := defaultAccounts()
+	return []models.Payment{
 		{
 			ID:                   pID1,
 			ConnectorID:          defaultConnector.ID,
@@ -133,7 +136,7 @@ var (
 			},
 		},
 	}
-)
+}
 
 func upsertPayments(t *testing.T, ctx context.Context, storage Storage, payments []models.Payment) {
 	require.NoError(t, storage.PaymentsUpsert(ctx, payments))
@@ -146,15 +149,16 @@ func TestPaymentsUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPayments(t, ctx, store, defaultPayments)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
 
 	t.Run("upsert with unknown connector", func(t *testing.T) {
 		connector := models.ConnectorID{
 			Reference: uuid.New(),
 			Provider:  "unknown",
 		}
-		p := defaultPayments[0]
+		payments := defaultPayments()
+		p := payments[0]
 		p.ID = models.PaymentID{
 			PaymentReference: models.PaymentReference{
 				Reference: "test4",
@@ -169,7 +173,8 @@ func TestPaymentsUpsert(t *testing.T) {
 	})
 
 	t.Run("upsert with same id", func(t *testing.T) {
-		p := defaultPayments[2]
+		payments := defaultPayments()
+		p := payments[2]
 		p.Amount = big.NewInt(200)
 		p.Scheme = models.PAYMENT_SCHEME_A2A
 		upsertPayments(t, ctx, store, []models.Payment{p})
@@ -178,7 +183,7 @@ func TestPaymentsUpsert(t *testing.T) {
 		actual, err := store.PaymentsGet(ctx, p.ID)
 		require.NoError(t, err)
 
-		comparePayments(t, defaultPayments[2], *actual)
+		comparePayments(t, payments[2], *actual)
 	})
 
 	t.Run("upsert with different adjustments", func(t *testing.T) {
@@ -192,7 +197,7 @@ func TestPaymentsUpsert(t *testing.T) {
 			Amount:          big.NewInt(300),
 			Asset:           "DKK/2",
 			Scheme:          models.PAYMENT_SCHEME_A2A,
-			SourceAccountID: &defaultAccounts[1].ID,
+			SourceAccountID: &defaultAccounts()[1].ID,
 			Adjustments: []models.PaymentAdjustment{
 				{
 					ID: models.PaymentAdjustmentID{
@@ -276,8 +281,8 @@ func TestPaymentsUpsert(t *testing.T) {
 			Asset:                "USD/2",
 			Scheme:               models.PAYMENT_SCHEME_OTHER,
 			Status:               models.PAYMENT_STATUS_REFUNDED,
-			SourceAccountID:      &defaultAccounts[0].ID,
-			DestinationAccountID: &defaultAccounts[1].ID,
+			SourceAccountID:      &defaultAccounts()[0].ID,
+			DestinationAccountID: &defaultAccounts()[1].ID,
 			Metadata: map[string]string{
 				"key1": "value1",
 			},
@@ -359,8 +364,8 @@ func TestPaymentsUpsert(t *testing.T) {
 			Asset:                "USD/2",
 			Scheme:               models.PAYMENT_SCHEME_OTHER,
 			Status:               models.PAYMENT_STATUS_REFUNDED,
-			SourceAccountID:      &defaultAccounts[0].ID,
-			DestinationAccountID: &defaultAccounts[1].ID,
+			SourceAccountID:      &defaultAccounts()[0].ID,
+			DestinationAccountID: &defaultAccounts()[1].ID,
 			Metadata: map[string]string{
 				"key1": "value1",
 			},
@@ -488,8 +493,8 @@ func TestPaymentsUpdateMetadata(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPayments(t, ctx, store, defaultPayments)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
 
 	t.Run("update metadata of unknown payment", func(t *testing.T) {
 		require.Error(t, store.PaymentsUpdateMetadata(ctx, models.PaymentID{
@@ -502,10 +507,10 @@ func TestPaymentsUpdateMetadata(t *testing.T) {
 		metadata := map[string]string{
 			"key1": "changed",
 		}
+		payments := defaultPayments()
+		require.NoError(t, store.PaymentsUpdateMetadata(ctx, payments[0].ID, metadata))
 
-		require.NoError(t, store.PaymentsUpdateMetadata(ctx, defaultPayments[0].ID, metadata))
-
-		actual, err := store.PaymentsGet(ctx, defaultPayments[0].ID)
+		actual, err := store.PaymentsGet(ctx, payments[0].ID)
 		require.NoError(t, err)
 		require.Equal(t, len(metadata), len(actual.Metadata))
 		for k, v := range metadata {
@@ -521,9 +526,10 @@ func TestPaymentsUpdateMetadata(t *testing.T) {
 			"key3": "value3",
 		}
 
-		require.NoError(t, store.PaymentsUpdateMetadata(ctx, defaultPayments[1].ID, metadata))
+		payments := defaultPayments()
+		require.NoError(t, store.PaymentsUpdateMetadata(ctx, payments[1].ID, metadata))
 
-		actual, err := store.PaymentsGet(ctx, defaultPayments[1].ID)
+		actual, err := store.PaymentsGet(ctx, payments[1].ID)
 		require.NoError(t, err)
 		require.Equal(t, len(metadata), len(actual.Metadata))
 		for k, v := range metadata {
@@ -541,8 +547,8 @@ func TestPaymentsGet(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPayments(t, ctx, store, defaultPayments)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
 
 	t.Run("get unknown payment", func(t *testing.T) {
 		_, err := store.PaymentsGet(ctx, models.PaymentID{
@@ -554,7 +560,7 @@ func TestPaymentsGet(t *testing.T) {
 	})
 
 	t.Run("get existing payments", func(t *testing.T) {
-		for _, p := range defaultPayments {
+		for _, p := range defaultPayments() {
 			actual, err := store.PaymentsGet(ctx, p.ID)
 			require.NoError(t, err)
 			comparePayments(t, p, *actual)
@@ -569,8 +575,8 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPayments(t, ctx, store, defaultPayments)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
 
 	t.Run("delete from unknown connector", func(t *testing.T) {
 		require.NoError(t, store.PaymentsDeleteFromConnectorID(ctx, models.ConnectorID{
@@ -578,7 +584,7 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 			Provider:  "unknown",
 		}))
 
-		for _, p := range defaultPayments {
+		for _, p := range defaultPayments() {
 			actual, err := store.PaymentsGet(ctx, p.ID)
 			require.NoError(t, err)
 			comparePayments(t, p, *actual)
@@ -588,7 +594,7 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 	t.Run("delete from existing connector", func(t *testing.T) {
 		require.NoError(t, store.PaymentsDeleteFromConnectorID(ctx, defaultConnector.ID))
 
-		for _, p := range defaultPayments {
+		for _, p := range defaultPayments() {
 			_, err := store.PaymentsGet(ctx, p.ID)
 			require.Error(t, err)
 			require.ErrorIs(t, err, ErrNotFound)
@@ -603,8 +609,8 @@ func TestPaymentsList(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertPayments(t, ctx, store, defaultPayments)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
 
 	dps := []models.Payment{
 		{
@@ -618,8 +624,8 @@ func TestPaymentsList(t *testing.T) {
 			Asset:                "USD/2",
 			Scheme:               models.PAYMENT_SCHEME_OTHER,
 			Status:               models.PAYMENT_STATUS_SUCCEEDED,
-			SourceAccountID:      &defaultAccounts[0].ID,
-			DestinationAccountID: &defaultAccounts[1].ID,
+			SourceAccountID:      &defaultAccounts()[0].ID,
+			DestinationAccountID: &defaultAccounts()[1].ID,
 			Metadata: map[string]string{
 				"key1": "value1",
 			},
@@ -635,7 +641,7 @@ func TestPaymentsList(t *testing.T) {
 			Asset:                "EUR/2",
 			Scheme:               models.PAYMENT_SCHEME_OTHER,
 			Status:               models.PAYMENT_STATUS_FAILED,
-			DestinationAccountID: &defaultAccounts[0].ID,
+			DestinationAccountID: &defaultAccounts()[0].ID,
 		},
 		{
 			ID:              pid3,
@@ -648,7 +654,7 @@ func TestPaymentsList(t *testing.T) {
 			Asset:           "DKK/2",
 			Scheme:          models.PAYMENT_SCHEME_A2A,
 			Status:          models.PAYMENT_STATUS_PENDING,
-			SourceAccountID: &defaultAccounts[1].ID,
+			SourceAccountID: &defaultAccounts()[1].ID,
 		},
 	}
 
@@ -821,7 +827,7 @@ func TestPaymentsList(t *testing.T) {
 		q := NewListPaymentsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
-				WithQueryBuilder(query.Match("source_account_id", defaultAccounts[0].ID.String())),
+				WithQueryBuilder(query.Match("source_account_id", defaultAccounts()[0].ID.String())),
 		)
 
 		cursor, err := store.PaymentsList(ctx, q)
@@ -848,7 +854,7 @@ func TestPaymentsList(t *testing.T) {
 		q := NewListPaymentsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
-				WithQueryBuilder(query.Match("destination_account_id", defaultAccounts[0].ID.String())),
+				WithQueryBuilder(query.Match("destination_account_id", defaultAccounts()[0].ID.String())),
 		)
 
 		cursor, err := store.PaymentsList(ctx, q)

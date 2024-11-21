@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var (
-	defaultAccounts = []models.Account{
+func defaultAccounts() []models.Account {
+	return []models.Account{
 		{
 			ID: models.AccountID{
 				Reference:   "test1",
@@ -62,8 +62,10 @@ var (
 			Raw: []byte(`{}`),
 		},
 	}
+}
 
-	defaultAccounts2 = []models.Account{
+func defaultAccounts2() []models.Account {
+	return []models.Account{
 		{
 			ID: models.AccountID{
 				Reference:   "test1",
@@ -81,7 +83,7 @@ var (
 			Raw: []byte(`{}`),
 		},
 	}
-)
+}
 
 func upsertAccounts(t *testing.T, ctx context.Context, storage Storage, accounts []models.Account) {
 	require.NoError(t, storage.AccountsUpsert(ctx, accounts))
@@ -95,7 +97,7 @@ func TestAccountsUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 
 	t.Run("same id insert", func(t *testing.T) {
 		id := models.AccountID{
@@ -125,7 +127,7 @@ func TestAccountsUpsert(t *testing.T) {
 		require.NoError(t, err)
 
 		// Accounts should not have changed
-		require.Equal(t, defaultAccounts[0], *account)
+		require.Equal(t, defaultAccounts()[0], *account)
 	})
 
 	t.Run("unknown connector id", func(t *testing.T) {
@@ -162,10 +164,10 @@ func TestAccountsGet(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 
 	t.Run("get account", func(t *testing.T) {
-		for _, acc := range defaultAccounts {
+		for _, acc := range defaultAccounts() {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.NoError(t, err)
 			require.Equal(t, acc, *account)
@@ -193,8 +195,8 @@ func TestAccountsDelete(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertAccounts(t, ctx, store, defaultAccounts2)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertAccounts(t, ctx, store, defaultAccounts2())
 
 	t.Run("delete account from unknown connector", func(t *testing.T) {
 		unknownConnectorID := models.ConnectorID{
@@ -204,13 +206,13 @@ func TestAccountsDelete(t *testing.T) {
 
 		require.NoError(t, store.AccountsDeleteFromConnectorID(ctx, unknownConnectorID))
 
-		for _, acc := range defaultAccounts {
+		for _, acc := range defaultAccounts() {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.NoError(t, err)
 			require.Equal(t, acc, *account)
 		}
 
-		for _, acc := range defaultAccounts2 {
+		for _, acc := range defaultAccounts2() {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.NoError(t, err)
 			require.Equal(t, acc, *account)
@@ -220,14 +222,14 @@ func TestAccountsDelete(t *testing.T) {
 	t.Run("delete account from default connector", func(t *testing.T) {
 		require.NoError(t, store.AccountsDeleteFromConnectorID(ctx, defaultConnector.ID))
 
-		for _, acc := range defaultAccounts {
+		for _, acc := range defaultAccounts() {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.Error(t, err)
 			require.Nil(t, account)
 			require.ErrorIs(t, err, ErrNotFound)
 		}
 
-		for _, acc := range defaultAccounts2 {
+		for _, acc := range defaultAccounts2() {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.NoError(t, err)
 			require.Equal(t, acc, *account)
@@ -244,8 +246,8 @@ func TestAccountsList(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
-	upsertAccounts(t, ctx, store, defaultAccounts)
-	upsertAccounts(t, ctx, store, defaultAccounts2)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertAccounts(t, ctx, store, defaultAccounts2())
 
 	t.Run("list accounts by reference", func(t *testing.T) {
 		q := NewListAccountsQuery(
@@ -258,8 +260,8 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
-		require.Equal(t, defaultAccounts[0], cursor.Data[1])
+		require.Equal(t, defaultAccounts2()[0], cursor.Data[0])
+		require.Equal(t, defaultAccounts()[0], cursor.Data[1])
 	})
 
 	t.Run("list accounts by reference 2", func(t *testing.T) {
@@ -272,7 +274,7 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts[1], cursor.Data[0])
+		require.Equal(t, defaultAccounts()[1], cursor.Data[0])
 	})
 
 	t.Run("list accounts by unknown reference", func(t *testing.T) {
@@ -294,13 +296,14 @@ func TestAccountsList(t *testing.T) {
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", defaultConnector.ID)),
 		)
+		accounts := defaultAccounts()
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 3)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts[1], cursor.Data[0])
-		require.Equal(t, defaultAccounts[2], cursor.Data[1])
-		require.Equal(t, defaultAccounts[0], cursor.Data[2])
+		require.Equal(t, accounts[1], cursor.Data[0])
+		require.Equal(t, accounts[2], cursor.Data[1])
+		require.Equal(t, accounts[0], cursor.Data[2])
 	})
 
 	t.Run("list accounts by connector id 2", func(t *testing.T) {
@@ -313,7 +316,7 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
+		require.Equal(t, defaultAccounts2()[0], cursor.Data[0])
 	})
 
 	t.Run("list accounts by unknown connector id", func(t *testing.T) {
@@ -339,14 +342,16 @@ func TestAccountsList(t *testing.T) {
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", models.ACCOUNT_TYPE_INTERNAL)),
 		)
+		accounts := defaultAccounts()
+		accounts2 := defaultAccounts2()
 
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 3)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts[1], cursor.Data[0])
-		require.Equal(t, defaultAccounts2[0], cursor.Data[1])
-		require.Equal(t, defaultAccounts[0], cursor.Data[2])
+		require.Equal(t, accounts[1], cursor.Data[0])
+		require.Equal(t, accounts2[0], cursor.Data[1])
+		require.Equal(t, accounts[0], cursor.Data[2])
 	})
 
 	t.Run("list accounts by unknown type", func(t *testing.T) {
@@ -368,13 +373,15 @@ func TestAccountsList(t *testing.T) {
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("default_asset", "USD/2")),
 		)
+		accounts := defaultAccounts()
+		accounts2 := defaultAccounts2()
 
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
-		require.Equal(t, defaultAccounts[0], cursor.Data[1])
+		require.Equal(t, accounts2[0], cursor.Data[0])
+		require.Equal(t, accounts[0], cursor.Data[1])
 	})
 
 	t.Run("list accounts by unknown default asset", func(t *testing.T) {
@@ -397,12 +404,14 @@ func TestAccountsList(t *testing.T) {
 				WithQueryBuilder(query.Match("name", "test1")),
 		)
 
+		accounts := defaultAccounts()
+		accounts2 := defaultAccounts2()
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
-		require.Equal(t, defaultAccounts[0], cursor.Data[1])
+		require.Equal(t, accounts2[0], cursor.Data[0])
+		require.Equal(t, accounts[0], cursor.Data[1])
 	})
 
 	t.Run("list accounts by name 2", func(t *testing.T) {
@@ -416,7 +425,7 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts[2], cursor.Data[0])
+		require.Equal(t, defaultAccounts()[2], cursor.Data[0])
 	})
 
 	t.Run("list accounts by unknown name", func(t *testing.T) {
@@ -443,7 +452,7 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts[0], cursor.Data[0])
+		require.Equal(t, defaultAccounts()[0], cursor.Data[0])
 	})
 
 	t.Run("list accounts by unknown metadata", func(t *testing.T) {
@@ -464,6 +473,8 @@ func TestAccountsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
 				WithPageSize(1),
 		)
+		accounts := defaultAccounts()
+		accounts2 := defaultAccounts2()
 
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -471,7 +482,7 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts[1], cursor.Data[0])
+		require.Equal(t, accounts[1], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
@@ -481,7 +492,7 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts[2], cursor.Data[0])
+		require.Equal(t, accounts[2], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
@@ -491,7 +502,7 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
+		require.Equal(t, accounts2[0], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
@@ -501,7 +512,7 @@ func TestAccountsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts[0], cursor.Data[0])
+		require.Equal(t, accounts[0], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
@@ -511,7 +522,7 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts2[0], cursor.Data[0])
+		require.Equal(t, accounts2[0], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
@@ -521,6 +532,6 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.NotEmpty(t, cursor.Previous)
-		require.Equal(t, defaultAccounts[2], cursor.Data[0])
+		require.Equal(t, accounts[2], cursor.Data[0])
 	})
 }

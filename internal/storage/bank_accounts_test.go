@@ -40,7 +40,7 @@ var (
 		RelatedAccounts: []models.BankAccountRelatedAccount{
 			{
 				BankAccountID: bcID2,
-				AccountID:     defaultAccounts[0].ID,
+				AccountID:     defaultAccounts()[0].ID,
 				ConnectorID:   defaultConnector.ID,
 				CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
 			},
@@ -68,7 +68,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 
@@ -105,7 +105,7 @@ func TestBankAccountsUpsert(t *testing.T) {
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
 					BankAccountID: uuid.New(),
-					AccountID:     defaultAccounts[0].ID,
+					AccountID:     defaultAccounts()[0].ID,
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "unknown",
@@ -129,7 +129,7 @@ func TestBankAccountsUpdateMetadata(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
@@ -180,7 +180,7 @@ func TestBankAccountsUpdateMetadata(t *testing.T) {
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
 					BankAccountID: bcID2,
-					AccountID:     defaultAccounts[0].ID,
+					AccountID:     defaultAccounts()[0].ID,
 					ConnectorID:   defaultConnector.ID,
 					CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
 				},
@@ -231,7 +231,7 @@ func TestBankAccountsGet(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
@@ -288,7 +288,7 @@ func TestBankAccountsGet(t *testing.T) {
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
 					BankAccountID: bcID2,
-					AccountID:     defaultAccounts[0].ID,
+					AccountID:     defaultAccounts()[0].ID,
 					ConnectorID:   defaultConnector.ID,
 					CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
 				},
@@ -333,7 +333,7 @@ func TestBankAccountsList(t *testing.T) {
 	}
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
@@ -528,7 +528,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
@@ -536,7 +536,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	t.Run("add related account when empty", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: defaultBankAccount.ID,
-			AccountID:     defaultAccounts[0].ID,
+			AccountID:     defaultAccounts()[0].ID,
 			ConnectorID:   defaultConnector.ID,
 			CreatedAt:     now.UTC().Time,
 		}
@@ -554,7 +554,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	t.Run("add related account when not empty", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: defaultBankAccount2.ID,
-			AccountID:     defaultAccounts[1].ID,
+			AccountID:     defaultAccounts()[1].ID,
 			ConnectorID:   defaultConnector.ID,
 			CreatedAt:     now.UTC().Time,
 		}
@@ -572,7 +572,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	t.Run("add related account with unknown bank account", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: uuid.New(),
-			AccountID:     defaultAccounts[1].ID,
+			AccountID:     defaultAccounts()[1].ID,
 			ConnectorID:   defaultConnector.ID,
 			CreatedAt:     now.UTC().Time,
 		}
@@ -597,7 +597,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	t.Run("add related account with unknown connector", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: defaultBankAccount2.ID,
-			AccountID:     defaultAccounts[2].ID,
+			AccountID:     defaultAccounts()[2].ID,
 			ConnectorID: models.ConnectorID{
 				Reference: uuid.New(),
 				Provider:  "unknown",
@@ -611,7 +611,7 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 	t.Run("add related account with existing related account", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: defaultBankAccount3.ID,
-			AccountID:     defaultAccounts[0].ID,
+			AccountID:     defaultAccounts()[0].ID,
 			ConnectorID:   defaultConnector.ID,
 			CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
 		}
@@ -640,7 +640,7 @@ func TestBankAccountsDeleteRelatedAccountFromConnectorID(t *testing.T) {
 	store := newStore(t)
 
 	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts)
+	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
