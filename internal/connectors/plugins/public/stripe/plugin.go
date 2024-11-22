@@ -2,38 +2,41 @@ package stripe
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
-	stripesdk "github.com/stripe/stripe-go/v79"
 )
 
+func init() {
+	plugins.RegisterPlugin("stripe", func(rm json.RawMessage) (models.Plugin, error) {
+		return New(rm)
+	})
+}
+
 type Plugin struct {
-	StripeAPIBackend stripesdk.Backend // override in tests to mock
-	client           client.Client
+	client client.Client
+}
+
+func New(rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	client := client.New(nil, config.APIKey)
+
+	return &Plugin{
+		client: client,
+	}, nil
 }
 
 func (p *Plugin) Name() string {
 	return "stripe"
 }
 
-func (p *Plugin) SetClient(client client.Client) error {
-	if p.client != nil {
-		return fmt.Errorf("client is not intended to be overwritten after install")
-	}
-	p.client = client
-	return nil
-}
-
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-
-	p.client = client.New(p.StripeAPIBackend, config.APIKey)
 	return models.InstallResponse{
 		Capabilities: capabilities,
 		Workflow:     workflow(),

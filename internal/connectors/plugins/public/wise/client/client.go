@@ -56,7 +56,7 @@ func (c *client) endpoint(path string) string {
 	return fmt.Sprintf("%s/%s", apiEndpoint, path)
 }
 
-func New(apiKey string) (Client, error) {
+func New(apiKey string) Client {
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
 		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("wise"),
@@ -66,10 +66,9 @@ func New(apiKey string) (Client, error) {
 		},
 	}
 
-	httpClient, err := httpwrapper.NewClient(config)
 	return &client{
-		httpClient:             httpClient,
+		httpClient:             httpwrapper.NewClient(config),
 		mux:                    &sync.Mutex{},
 		recipientAccountsCache: recipientsCache,
-	}, err
+	}
 }

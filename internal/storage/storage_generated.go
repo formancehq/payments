@@ -245,6 +245,35 @@ func (mr *MockStorageMockRecorder) BankAccountsUpsert(ctx, bankAccount any) *gom
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsUpsert", reflect.TypeOf((*MockStorage)(nil).BankAccountsUpsert), ctx, bankAccount)
 }
 
+// CapabilitiesGet mocks base method.
+func (m *MockStorage) CapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CapabilitiesGet", ctx, connectorID)
+	ret0, _ := ret[0].([]models.Capability)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CapabilitiesGet indicates an expected call of CapabilitiesGet.
+func (mr *MockStorageMockRecorder) CapabilitiesGet(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CapabilitiesGet", reflect.TypeOf((*MockStorage)(nil).CapabilitiesGet), ctx, connectorID)
+}
+
+// CapabilitiesUpsert mocks base method.
+func (m *MockStorage) CapabilitiesUpsert(ctx context.Context, connectorID models.ConnectorID, capabilities []models.Capability) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CapabilitiesUpsert", ctx, connectorID, capabilities)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CapabilitiesUpsert indicates an expected call of CapabilitiesUpsert.
+func (mr *MockStorageMockRecorder) CapabilitiesUpsert(ctx, connectorID, capabilities any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CapabilitiesUpsert", reflect.TypeOf((*MockStorage)(nil).CapabilitiesUpsert), ctx, connectorID, capabilities)
+}
+
 // Close mocks base method.
 func (m *MockStorage) Close() error {
 	m.ctrl.T.Helper()
@@ -1026,6 +1055,21 @@ func (m *MockStorage) WebhooksConfigsGet(ctx context.Context, name string, conne
 func (mr *MockStorageMockRecorder) WebhooksConfigsGet(ctx, name, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WebhooksConfigsGet", reflect.TypeOf((*MockStorage)(nil).WebhooksConfigsGet), ctx, name, connectorID)
+}
+
+// WebhooksConfigsGetFromConnectorID mocks base method.
+func (m *MockStorage) WebhooksConfigsGetFromConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.WebhookConfig, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "WebhooksConfigsGetFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].([]models.WebhookConfig)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// WebhooksConfigsGetFromConnectorID indicates an expected call of WebhooksConfigsGetFromConnectorID.
+func (mr *MockStorageMockRecorder) WebhooksConfigsGetFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "WebhooksConfigsGetFromConnectorID", reflect.TypeOf((*MockStorage)(nil).WebhooksConfigsGetFromConnectorID), ctx, connectorID)
 }
 
 // WebhooksConfigsUpsert mocks base method.

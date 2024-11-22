@@ -12,7 +12,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Moneycorp Plugin Accounts", func() {
+var _ = Describe("Moneycorp *Plugin Accounts", func() {
 	Context("fetch next accounts", func() {
 		var (
 			plg *Plugin

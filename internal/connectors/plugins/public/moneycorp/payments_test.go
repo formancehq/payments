@@ -16,7 +16,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion", func() {
+var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion", func() {
 	var (
 		plg *Plugin
 	)
@@ -217,7 +217,7 @@ var _ = Describe("Moneycorp Plugin Payments - check types and minor conversion",
 	})
 })
 
-var _ = Describe("Moneycorp Plugin Payments - check pagination", func() {
+var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 	var (
 		plg *Plugin
 	)

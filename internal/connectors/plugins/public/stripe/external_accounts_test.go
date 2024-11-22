@@ -34,7 +34,7 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg.SetClient(m)
+			plg.client = m
 
 			pageSize = 10
 			accRef = "baseAcc"

@@ -23,10 +23,8 @@ type webhookConfig struct {
 	fn      func(context.Context, webhookTranslateRequest) (models.WebhookResponse, error)
 }
 
-var webhookConfigs map[client.EventType]webhookConfig
-
-func (p Plugin) initWebhookConfig() {
-	webhookConfigs = map[client.EventType]webhookConfig{
+func (p *Plugin) initWebhookConfig() {
+	p.webhookConfigs = map[client.EventType]webhookConfig{
 		client.EventTypeTransferNormalCreated: {
 			urlPath: "/transfer/created",
 			fn:      p.translateTransfer,
@@ -101,7 +99,7 @@ func (p Plugin) initWebhookConfig() {
 	}
 }
 
-func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
 	if req.WebhookBaseUrl == "" {
 		return fmt.Errorf("STACK_PUBLIC_URL is not set: %w", models.ErrInvalidRequest)
 	}
@@ -111,7 +109,7 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 		return err
 	}
 
-	for eventType, config := range webhookConfigs {
+	for eventType, config := range p.webhookConfigs {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return err
@@ -141,7 +139,7 @@ func (p Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksReq
 	return nil
 }
 
-func (p Plugin) getActiveHooks(ctx context.Context) (map[client.EventType]*client.Hook, error) {
+func (p *Plugin) getActiveHooks(ctx context.Context) (map[client.EventType]*client.Hook, error) {
 	alreadyExistingHooks, err := p.client.ListAllHooks(ctx)
 	if err != nil {
 		return nil, err
@@ -158,7 +156,7 @@ func (p Plugin) getActiveHooks(ctx context.Context) (map[client.EventType]*clien
 	return activeHooks, nil
 }
 
-func (p Plugin) translateTransfer(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translateTransfer(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	transfer, err := p.client.GetWalletTransfer(ctx, req.webhook.ResourceID)
 	if err != nil {
 		return models.WebhookResponse{}, err
@@ -202,7 +200,7 @@ func (p Plugin) translateTransfer(ctx context.Context, req webhookTranslateReque
 	}, nil
 }
 
-func (p Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	payout, err := p.client.GetPayout(ctx, req.webhook.ResourceID)
 	if err != nil {
 		return models.WebhookResponse{}, err
@@ -246,7 +244,7 @@ func (p Plugin) translatePayout(ctx context.Context, req webhookTranslateRequest
 	}, nil
 }
 
-func (p Plugin) translatePayin(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translatePayin(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	payin, err := p.client.GetPayin(ctx, req.webhook.ResourceID)
 	if err != nil {
 		return models.WebhookResponse{}, err
@@ -286,7 +284,7 @@ func (p Plugin) translatePayin(ctx context.Context, req webhookTranslateRequest)
 	}, nil
 }
 
-func (p Plugin) translateRefund(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
+func (p *Plugin) translateRefund(ctx context.Context, req webhookTranslateRequest) (models.WebhookResponse, error) {
 	refund, err := p.client.GetRefund(ctx, req.webhook.ResourceID)
 	if err != nil {
 		return models.WebhookResponse{}, err

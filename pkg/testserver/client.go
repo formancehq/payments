@@ -18,10 +18,7 @@ type Client struct {
 
 func NewClient(urlStr string, transport http.RoundTripper) (*Client, error) {
 	config := &httpwrapper.Config{}
-	internalClient, err := httpwrapper.NewClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate wrapper client: %w", err)
-	}
+	internalClient := httpwrapper.NewClient(config)
 	return &Client{
 		baseUrl:        urlStr,
 		transport:      transport,
