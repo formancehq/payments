@@ -30,9 +30,7 @@ type Plugin interface {
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 
-type InstallRequest struct {
-	Config json.RawMessage
-}
+type InstallRequest struct{}
 
 type InstallResponse struct {
 	Capabilities    []Capability

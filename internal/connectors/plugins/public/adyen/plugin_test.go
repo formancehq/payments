@@ -31,17 +31,17 @@ var _ = Describe("Adyen Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config - apiKey", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"companyID": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			_, err := New("adyen", json.RawMessage(`{"companyID": "test"}`))
 			Expect(err).To(MatchError("missing apiKey in config: invalid config"))
 		})
 		It("reports validation errors in the config - companyID", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			_, err := New("adyen", json.RawMessage(`{"apiKey": "test"}`))
 			Expect(err).To(MatchError("missing companyID in config: invalid config"))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey":"test", "companyID": "test"}`)}
+			_, err := New("adyen", json.RawMessage(`{"apiKey":"test", "companyID": "test"}`))
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())

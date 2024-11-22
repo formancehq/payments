@@ -39,6 +39,21 @@ var _ = Describe("Wise Plugin", func() {
 	BeforeEach(func() {
 		plg = &Plugin{}
 
+		plg.webhookConfigs = map[string]webhookConfig{
+			"transfer_state_changed": {
+				triggerOn: "transfers#state-change",
+				urlPath:   "/transferstatechanged",
+				fn:        plg.translateTransferStateChangedWebhook,
+				version:   "2.0.0",
+			},
+			"balance_update": {
+				triggerOn: "balances#update",
+				urlPath:   "/balanceupdate",
+				fn:        plg.translateBalanceUpdateWebhook,
+				version:   "2.2.0",
+			},
+		}
+
 		var err error
 		privatekey, err = rsa.GenerateKey(rand.Reader, 2048)
 		Expect(err).To(BeNil())
@@ -57,14 +72,12 @@ var _ = Describe("Wise Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{}`)}
-			_, err := plg.Install(context.Background(), req)
+			_, err := New("wise", json.RawMessage(`{}`))
 			Expect(err).To(MatchError(ContainSubstring("config")))
 		})
 		It("rejects malformed pem keys", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey":"dummy","webhookPublicKey":"badKey"}`)
-			req := models.InstallRequest{Config: config}
-			_, err := plg.Install(context.Background(), req)
+			_, err := New("wise", config)
 			Expect(err).To(MatchError(ContainSubstring("public key")))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
@@ -74,7 +87,9 @@ var _ = Describe("Wise Plugin", func() {
 			}
 			configJson, err := json.Marshal(config)
 			Expect(err).To(BeNil())
-			req := models.InstallRequest{Config: configJson}
+			_, err = New("wise", configJson)
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
 			res, err := plg.Install(context.Background(), req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
@@ -97,8 +112,7 @@ var _ = Describe("Wise Plugin", func() {
 			}
 			configJson, err := json.Marshal(config)
 			Expect(err).To(BeNil())
-			req := models.InstallRequest{Config: configJson}
-			_, err = plg.Install(context.Background(), req)
+			plg, err = New("wise", configJson)
 			Expect(err).To(BeNil())
 
 			ctrl := gomock.NewController(GinkgoT())

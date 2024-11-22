@@ -5,6 +5,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -12,8 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("Plugin Uninstall", func() {
@@ -68,10 +67,8 @@ var _ = Describe("Plugin Uninstall", func() {
 		})
 
 		It("returns a non-retryable temporal error", func(ctx SpecContext) {
-			newErr := status.Errorf(codes.InvalidArgument, "invalid")
-
 			p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
-			plugin.EXPECT().Uninstall(ctx, models.UninstallRequest{}).Return(sampleResponse, newErr)
+			plugin.EXPECT().Uninstall(ctx, models.UninstallRequest{}).Return(sampleResponse, fmt.Errorf("invalid: %w", pluginsError.ErrInvalidClientRequest))
 			_, err := act.PluginUninstallConnector(ctx, req)
 			Expect(err).ToNot(BeNil())
 			temporalErr, ok := err.(*temporal.ApplicationError)

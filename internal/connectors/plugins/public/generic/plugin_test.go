@@ -26,19 +26,22 @@ var _ = Describe("Generic Plugin", func() {
 
 	Context("install", func() {
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{}`)
+			_, err := New("generic", config)
 			Expect(err).To(MatchError("missing api key in config: invalid config"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"apiKey": "test"}`)
+			_, err := New("generic", config)
 			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)}
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
+			_, err := New("generic", config)
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
