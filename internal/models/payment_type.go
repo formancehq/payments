@@ -14,7 +14,7 @@ const (
 	PAYMENT_TYPE_PAYIN
 	PAYMENT_TYPE_PAYOUT
 	PAYMENT_TYPE_TRANSFER
-	PAYMENT_TYPE_OTHER = 100 // match grpc tag
+	PAYMENT_TYPE_OTHER = 100
 )
 
 func (t PaymentType) String() string {

@@ -58,7 +58,6 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 			},
 		}
 		listener.Handle("connectors", pgxlisten.HandlerFunc(func(ctx context.Context, notification *pgconn.Notification, conn *pgx.Conn) error {
-			s.logger.Info("got connector changes", "payload", notification.Payload)
 			for prefix, handler := range handlers {
 				if strings.HasPrefix(notification.Payload, string(prefix)) {
 					return handler(
@@ -70,7 +69,7 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 			return nil
 		}))
 		go func() {
-			fmt.Println("listening for connectors changes")
+			s.logger.Info("listening for connectors changes")
 			if err := listener.Listen(ctx); err != nil {
 				if errors.Is(err, context.Canceled) {
 					return

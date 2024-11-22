@@ -44,7 +44,11 @@ create table if not exists capabilities (
 
     -- Primary key
     primary key (connector_id, capability)
-)
+);
+alter table capabilities
+    add constraint capabilities_connector_id_fk foreign key (connector_id)
+    references connectors (id)
+    on delete cascade;
 
 -- accounts
 create table if not exists accounts (

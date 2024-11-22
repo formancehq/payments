@@ -39,8 +39,8 @@ func Module(
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)
 		}),
-		fx.Provide(func() plugins.Plugins {
-			return plugins.New(rawFlags, debug, jsonFormatter)
+		fx.Provide(func(logger logging.Logger) plugins.Plugins {
+			return plugins.New(logger, rawFlags, debug, jsonFormatter)
 		}),
 		fx.Provide(func() webhooks.Webhooks {
 			return webhooks.New()
