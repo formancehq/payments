@@ -6,20 +6,23 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	plugins.RegisterPlugin("moneycorp", func(rm json.RawMessage) (models.Plugin, error) {
-		return New(rm)
+	registry.RegisterPlugin("moneycorp", func(name string, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, rm)
 	})
 }
 
 type Plugin struct {
+	name string
+
 	client client.Client
 }
 
-func New(rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -28,12 +31,13 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 	client := client.New(config.ClientID, config.APIKey, config.Endpoint)
 
 	return &Plugin{
+		name:   name,
 		client: client,
 	}, nil
 }
 
 func (p *Plugin) Name() string {
-	return "moneycorp"
+	return p.name
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {

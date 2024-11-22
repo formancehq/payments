@@ -40,7 +40,7 @@ const (
 	PAYMENT_SCHEME_ACH
 	PAYMENT_SCHEME_RTP
 
-	PAYMENT_SCHEME_OTHER = 100 // match grpc tag
+	PAYMENT_SCHEME_OTHER = 100
 )
 
 func (s PaymentScheme) String() string {

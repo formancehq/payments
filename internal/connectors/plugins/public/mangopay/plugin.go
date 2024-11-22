@@ -8,21 +8,24 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	plugins.RegisterPlugin("mangopay", func(rm json.RawMessage) (models.Plugin, error) {
-		return New(rm)
+	registry.RegisterPlugin("mangopay", func(name string, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, rm)
 	})
 }
 
 type Plugin struct {
+	name string
+
 	client         client.Client
 	webhookConfigs map[client.EventType]webhookConfig
 }
 
-func New(rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -31,6 +34,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 	client := client.New(config.ClientID, config.APIKey, config.Endpoint)
 
 	p := &Plugin{
+		name:   name,
 		client: client,
 	}
 
@@ -40,7 +44,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 }
 
 func (p *Plugin) Name() string {
-	return "mangopay"
+	return p.name
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
