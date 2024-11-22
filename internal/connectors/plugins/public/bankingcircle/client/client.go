@@ -53,13 +53,9 @@ func New(
 		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("bankingcircle"),
 		Transport:               tr,
 	}
-	httpClient, err := httpwrapper.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
 
 	c := &client{
-		httpClient: httpClient,
+		httpClient: httpwrapper.NewClient(config),
 
 		username:              username,
 		password:              password,

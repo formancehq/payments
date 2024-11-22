@@ -18,7 +18,6 @@ import (
 )
 
 func Module(
-	pluginPath map[string]string,
 	stack string,
 	stackURL string,
 	temporalNamespace string,
@@ -41,7 +40,7 @@ func Module(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func() plugins.Plugins {
-			return plugins.New(pluginPath, rawFlags, debug, jsonFormatter)
+			return plugins.New(rawFlags, debug, jsonFormatter)
 		}),
 		fx.Provide(func() webhooks.Webhooks {
 			return webhooks.New()

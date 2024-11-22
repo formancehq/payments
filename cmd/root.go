@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
@@ -37,11 +36,10 @@ var (
 )
 
 const (
-	PluginsDirectoryPathFlag = "plugin-directory-path"
-	ConfigEncryptionKeyFlag  = "config-encryption-key"
-	ListenFlag               = "listen"
-	stackFlag                = "stack"
-	stackPublicURLFlag       = "stack-public-url"
+	ConfigEncryptionKeyFlag = "config-encryption-key"
+	ListenFlag              = "listen"
+	stackFlag               = "stack"
+	stackPublicURLFlag      = "stack-public-url"
 )
 
 func NewRootCommand() *cobra.Command {
@@ -63,7 +61,6 @@ func NewRootCommand() *cobra.Command {
 	server := newServer()
 	addAutoMigrateCommand(server)
 	server.Flags().String(ListenFlag, ":8080", "Listen address")
-	server.Flags().String(PluginsDirectoryPathFlag, "", "Plugin directory path")
 	server.Flags().String(stackFlag, "", "Stack name")
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	root.AddCommand(server)
@@ -93,12 +90,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	}
 
 	connectionOptions, err := bunconnect.ConnectionOptionsFromFlags(cmd)
-	if err != nil {
-		return nil, err
-	}
-
-	path, _ := cmd.Flags().GetString(PluginsDirectoryPathFlag)
-	pluginPaths, err := getPluginsMap(path)
 	if err != nil {
 		return nil, err
 	}
@@ -141,30 +132,8 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		profiling.FXModuleFromFlags(cmd),
-		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
+		engine.Module(stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
 	), nil
-}
-
-func getPluginsMap(pluginsDirectoryPath string) (map[string]string, error) {
-	if pluginsDirectoryPath == "" {
-		return nil, errors.New("missing plugin directory path")
-	}
-
-	files, err := os.ReadDir(pluginsDirectoryPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read plugins directory %s", pluginsDirectoryPath)
-	}
-
-	plugins := make(map[string]string)
-	for _, file := range files {
-		if file.IsDir() {
-			continue
-		}
-
-		plugins[file.Name()] = pluginsDirectoryPath + "/" + file.Name()
-	}
-
-	return plugins, nil
 }

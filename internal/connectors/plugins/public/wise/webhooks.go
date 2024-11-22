@@ -24,8 +24,6 @@ type webhookConfig struct {
 	version   string
 }
 
-var webhookConfigs map[string]webhookConfig
-
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	var from client.Profile
 	if req.FromPayload == nil {
@@ -39,8 +37,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, ErrStackPublicUrlMissing
 	}
 
-	others := make([]models.PSPOther, 0, len(webhookConfigs))
-	for name, config := range webhookConfigs {
+	others := make([]models.PSPOther, 0, len(p.webhookConfigs))
+	for name, config := range p.webhookConfigs {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err

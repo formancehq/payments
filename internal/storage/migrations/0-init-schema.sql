@@ -17,6 +17,16 @@ create table if not exists connectors (
 );
 create unique index connectors_unique_name on connectors (name);
 
+-- capabilities
+create table if not exists capabilities (
+    -- Mandatory fields
+    connector_id varchar not null,
+    capability   text not null,
+
+    -- Primary key
+    primary key (connector_id, capability)
+)
+
 -- accounts
 create table if not exists accounts (
     -- Mandatory fields

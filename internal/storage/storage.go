@@ -35,6 +35,10 @@ type Storage interface {
 	BankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error
 	BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
+	// Capabilities
+	CapabilitiesUpsert(ctx context.Context, connectorID models.ConnectorID, capabilities []models.Capability) error
+	CapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error)
+
 	// Connectors
 	ConnectorsInstall(ctx context.Context, c models.Connector) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
@@ -106,6 +110,7 @@ type Storage interface {
 	// Webhooks Configs
 	WebhooksConfigsUpsert(ctx context.Context, webhooksConfigs []models.WebhookConfig) error
 	WebhooksConfigsGet(ctx context.Context, name string, connectorID models.ConnectorID) (*models.WebhookConfig, error)
+	WebhooksConfigsGetFromConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.WebhookConfig, error)
 	WebhooksConfigsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Webhooks
