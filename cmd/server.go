@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v2/licence"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
+	"github.com/formancehq/go-libs/v2/profiling"
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
@@ -32,6 +33,7 @@ func newServer() *cobra.Command {
 	publish.AddFlags(ServiceName, cmd.Flags())
 	bunconnect.AddFlags(cmd.Flags())
 	iam.AddFlags(cmd.Flags())
+	profiling.AddFlags(cmd.Flags())
 	temporal.AddFlags(cmd.Flags())
 	licence.AddFlags(cmd.Flags())
 

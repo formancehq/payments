@@ -40,8 +40,6 @@ const (
 	PluginsDirectoryPathFlag = "plugin-directory-path"
 	ConfigEncryptionKeyFlag  = "config-encryption-key"
 	ListenFlag               = "listen"
-	ListenProfilerFlag       = "listen-profiler"
-	EnableProfilerFlag       = "enable-profiler"
 	stackFlag                = "stack"
 	stackPublicURLFlag       = "stack-public-url"
 )
@@ -65,8 +63,6 @@ func NewRootCommand() *cobra.Command {
 	server := newServer()
 	addAutoMigrateCommand(server)
 	server.Flags().String(ListenFlag, ":8080", "Listen address")
-	server.Flags().String(ListenProfilerFlag, ":9090", "Pprof listen address")
-	server.Flags().Bool(EnableProfilerFlag, true, "Whether or not to enable pprof endpoints")
 	server.Flags().String(PluginsDirectoryPathFlag, "", "Plugin directory path")
 	server.Flags().String(stackFlag, "", "Stack name")
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
@@ -108,8 +104,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	}
 
 	listen, _ := cmd.Flags().GetString(ListenFlag)
-	listenProfiler, _ := cmd.Flags().GetString(ListenProfilerFlag)
-	enableProfiler, _ := cmd.Flags().GetBool(EnableProfilerFlag)
 	stack, _ := cmd.Flags().GetString(stackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
@@ -146,7 +140,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
-		profiling.NewModule(listenProfiler, enableProfiler),
+		profiling.FXModuleFromFlags(cmd),
 		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
