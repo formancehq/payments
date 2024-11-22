@@ -58,7 +58,6 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 				Asset:            currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Amount.Currency),
 			},
 		},
-		NewState: []byte{},
-		HasMore:  false,
+		HasMore: false,
 	}, nil
 }

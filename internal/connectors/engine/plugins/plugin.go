@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	registeredPlugins "github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 )
@@ -16,14 +17,16 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(connectorID models.ConnectorID, config models.Config, rawConfig json.RawMessage) error
-	UnregisterPlugin(connectorID models.ConnectorID) error
-	GetConfig(connectorID models.ConnectorID) (models.Config, error)
-	Get(connectorID models.ConnectorID) (models.Plugin, error)
+	RegisterPlugin(models.ConnectorID, string, models.Config, json.RawMessage) error
+	UnregisterPlugin(models.ConnectorID) error
+	GetConfig(models.ConnectorID) (models.Config, error)
+	Get(models.ConnectorID) (models.Plugin, error)
 }
 
 // Will start, hold, manage and stop *Plugins
 type plugins struct {
+	logger logging.Logger
+
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
@@ -40,11 +43,13 @@ type pluginInformation struct {
 }
 
 func New(
+	logger logging.Logger,
 	rawFlags []string,
 	debug bool,
 	jsonFormatter bool,
 ) *plugins {
 	return &plugins{
+		logger:        logger,
 		plugins:       make(map[string]pluginInformation),
 		rawFlags:      rawFlags,
 		debug:         debug,
@@ -52,7 +57,12 @@ func New(
 	}
 }
 
-func (p *plugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config, rawConfig json.RawMessage) error {
+func (p *plugins) RegisterPlugin(
+	connectorID models.ConnectorID,
+	connectorName string,
+	config models.Config,
+	rawConfig json.RawMessage,
+) error {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
@@ -62,7 +72,7 @@ func (p *plugins) RegisterPlugin(connectorID models.ConnectorID, config models.C
 		return nil
 	}
 
-	plugin, err := registeredPlugins.GetPlugin(connectorID.Provider, rawConfig)
+	plugin, err := registry.GetPlugin(p.logger, connectorID.Provider, connectorName, rawConfig)
 	if err != nil {
 		return fmt.Errorf("%w: %w", err, ErrNotFound)
 	}

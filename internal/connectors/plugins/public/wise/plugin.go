@@ -7,12 +7,13 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	plugins.RegisterPlugin("wise", func(rm json.RawMessage) (models.Plugin, error) {
-		return New(rm)
+	registry.RegisterPlugin("wise", func(name string, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, rm)
 	})
 }
 
@@ -28,12 +29,14 @@ var (
 )
 
 type Plugin struct {
+	name string
+
 	config         Config
 	client         client.Client
 	webhookConfigs map[string]webhookConfig
 }
 
-func New(rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -42,6 +45,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 	client := client.New(config.APIKey)
 
 	p := &Plugin{
+		name:   name,
 		client: client,
 		config: config,
 	}
@@ -65,7 +69,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 }
 
 func (p *Plugin) Name() string {
-	return "wise"
+	return p.name
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {

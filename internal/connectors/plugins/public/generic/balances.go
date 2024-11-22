@@ -42,7 +42,6 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	return models.FetchNextBalancesResponse{
 		Balances: res,
-		NewState: []byte{},
 		HasMore:  false,
 	}, nil
 }
