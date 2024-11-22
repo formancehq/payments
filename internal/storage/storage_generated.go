@@ -533,6 +533,20 @@ func (mr *MockStorageMockRecorder) InstancesUpsert(ctx, instance any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InstancesUpsert", reflect.TypeOf((*MockStorage)(nil).InstancesUpsert), ctx, instance)
 }
 
+// ListenConnectorsChanges mocks base method.
+func (m *MockStorage) ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListenConnectorsChanges", ctx, handler)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ListenConnectorsChanges indicates an expected call of ListenConnectorsChanges.
+func (mr *MockStorageMockRecorder) ListenConnectorsChanges(ctx, handler any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListenConnectorsChanges", reflect.TypeOf((*MockStorage)(nil).ListenConnectorsChanges), ctx, handler)
+}
+
 // PaymentInitiationAdjustmentsGet mocks base method.
 func (m *MockStorage) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
 	m.ctrl.T.Helper()

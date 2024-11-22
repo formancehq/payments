@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -40,6 +41,7 @@ type Storage interface {
 	CapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error)
 
 	// Connectors
+	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
 	ConnectorsInstall(ctx context.Context, c models.Connector) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
@@ -129,12 +131,17 @@ type Storage interface {
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
 
 type store struct {
+	logger              logging.Logger
 	db                  *bun.DB
 	configEncryptionKey string
 }
 
-func newStorage(db *bun.DB, configEncryptionKey string) Storage {
-	return &store{db: db, configEncryptionKey: configEncryptionKey}
+func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) Storage {
+	return &store{
+		logger:              logger,
+		db:                  db,
+		configEncryptionKey: configEncryptionKey,
+	}
 }
 
 func (s *store) Close() error {
