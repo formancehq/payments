@@ -747,6 +747,12 @@ func (e *engine) OnStop(ctx context.Context) {
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
+	e.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
+		storage.ConnectorChangesInsert: e.onInsertPlugin,
+		storage.ConnectorChangesUpdate: e.onUpdatePlugin,
+		storage.ConnectorChangesDelete: e.onDeletePlugin,
+	})
+
 	query := storage.NewListConnectorsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
@@ -773,6 +779,62 @@ func (e *engine) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+
+	return nil
+}
+
+func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		return err
+	}
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	if err := e.plugins.RegisterPlugin(connector.ID, config, connector.Config); err != nil {
+		return err
+	}
+
+	if err := e.workers.AddWorker(connector.ID.String()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return e.onDeletePlugin(ctx, connectorID)
+		}
+		return err
+	}
+
+	// Only react to scheduled for deletion changes
+	if !connector.ScheduledForDeletion {
+		return nil
+	}
+
+	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	if err := e.plugins.UnregisterPlugin(connectorID); err != nil {
+		return err
+	}
+
+	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
+		return err
+	}
+
 	return nil
 }
 
