@@ -13,7 +13,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Moneycorp Plugin Balances", func() {
+var _ = Describe("Moneycorp *Plugin Balances", func() {
 	var (
 		plg *Plugin
 	)

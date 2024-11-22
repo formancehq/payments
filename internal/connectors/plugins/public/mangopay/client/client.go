@@ -40,7 +40,7 @@ type client struct {
 	endpoint string
 }
 
-func New(clientID, apiKey, endpoint string) (Client, error) {
+func New(clientID, apiKey, endpoint string) Client {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	config := &httpwrapper.Config{
@@ -51,13 +51,11 @@ func New(clientID, apiKey, endpoint string) (Client, error) {
 			TokenURL:     endpoint + "/v2.01/oauth/token",
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(config)
 
-	c := &client{
-		httpClient: httpClient,
+	return &client{
+		httpClient: httpwrapper.NewClient(config),
 
 		clientID: clientID,
 		endpoint: endpoint,
 	}
-	return c, err
 }

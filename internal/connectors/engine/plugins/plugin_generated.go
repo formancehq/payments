@@ -10,6 +10,7 @@
 package plugins
 
 import (
+	json "encoding/json"
 	reflect "reflect"
 
 	models "github.com/formancehq/payments/internal/models"
@@ -39,20 +40,6 @@ func (m *MockPlugins) EXPECT() *MockPluginsMockRecorder {
 	return m.recorder
 }
 
-// AddCapabilities mocks base method.
-func (m *MockPlugins) AddCapabilities(connectorID models.ConnectorID, capabilities []models.Capability) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AddCapabilities", connectorID, capabilities)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// AddCapabilities indicates an expected call of AddCapabilities.
-func (mr *MockPluginsMockRecorder) AddCapabilities(connectorID, capabilities any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddCapabilities", reflect.TypeOf((*MockPlugins)(nil).AddCapabilities), connectorID, capabilities)
-}
-
 // Get mocks base method.
 func (m *MockPlugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	m.ctrl.T.Helper()
@@ -66,21 +53,6 @@ func (m *MockPlugins) Get(connectorID models.ConnectorID) (models.Plugin, error)
 func (mr *MockPluginsMockRecorder) Get(connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), connectorID)
-}
-
-// GetCapabilities mocks base method.
-func (m *MockPlugins) GetCapabilities(connectorID models.ConnectorID) (map[models.Capability]struct{}, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCapabilities", connectorID)
-	ret0, _ := ret[0].(map[models.Capability]struct{})
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCapabilities indicates an expected call of GetCapabilities.
-func (mr *MockPluginsMockRecorder) GetCapabilities(connectorID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapabilities", reflect.TypeOf((*MockPlugins)(nil).GetCapabilities), connectorID)
 }
 
 // GetConfig mocks base method.
@@ -99,17 +71,17 @@ func (mr *MockPluginsMockRecorder) GetConfig(connectorID any) *gomock.Call {
 }
 
 // RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config) error {
+func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config, rawConfig json.RawMessage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", connectorID, config)
+	ret := m.ctrl.Call(m, "RegisterPlugin", connectorID, config, rawConfig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(connectorID, config any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) RegisterPlugin(connectorID, config, rawConfig any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), connectorID, config)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), connectorID, config, rawConfig)
 }
 
 // UnregisterPlugin mocks base method.

@@ -26,7 +26,7 @@ type client struct {
 	endpoint   string
 }
 
-func New(clientID, apiKey, endpoint string) (*client, error) {
+func New(clientID, apiKey, endpoint string) *client {
 	config := &httpwrapper.Config{
 		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
 		Transport: &apiTransport{
@@ -49,10 +49,8 @@ func New(clientID, apiKey, endpoint string) (*client, error) {
 	}
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
-	httpClient, err := httpwrapper.NewClient(config)
-	c := &client{
-		httpClient: httpClient,
+	return &client{
+		httpClient: httpwrapper.NewClient(config),
 		endpoint:   endpoint,
 	}
-	return c, err
 }

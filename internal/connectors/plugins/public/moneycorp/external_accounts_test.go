@@ -14,7 +14,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Moneycorp Plugin ExternalAccounts", func() {
+var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 	var (
 		plg *Plugin
 	)

@@ -2,6 +2,7 @@ package adyen
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -9,10 +10,40 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+func init() {
+	plugins.RegisterPlugin("adyen", func(rm json.RawMessage) (models.Plugin, error) {
+		return New(rm)
+	})
+}
+
 type Plugin struct {
-	client client.Client
+	client         client.Client
+	webhookConfigs map[string]webhookConfig
 
 	connectorID string
+}
+
+func New(rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	client := client.New(
+		config.APIKey,
+		config.WebhookUsername,
+		config.WebhookPassword,
+		config.CompanyID,
+		config.LiveEndpointPrefix,
+	)
+
+	p := &Plugin{
+		client: client,
+	}
+
+	p.initWebhookConfig()
+
+	return p, nil
 }
 
 func (p *Plugin) Name() string {
@@ -20,20 +51,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-
-	client, err := client.New(config.APIKey, config.WebhookUsername, config.WebhookPassword, config.CompanyID, config.LiveEndpointPrefix)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-	p.client = client
-
-	p.initWebhookConfig()
 	configs := []models.PSPWebhookConfig{}
-	for name, c := range webhookConfigs {
+	for name, c := range p.webhookConfigs {
 		configs = append(configs, models.PSPWebhookConfig{
 			Name:    name,
 			URLPath: c.urlPath,
@@ -83,19 +102,19 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
+func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
 }
 
-func (p Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
 	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
@@ -113,7 +132,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	config, ok := webhookConfigs[req.Name]
+	config, ok := p.webhookConfigs[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, errors.New("unknown webhook")
 	}

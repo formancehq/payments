@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (p Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	page := 1
 	balances := make([]models.PSPBalance, 0)
 	for {

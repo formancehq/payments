@@ -2,6 +2,7 @@ package atlar
 
 import (
 	"context"
+	"encoding/json"
 	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -9,8 +10,30 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+func init() {
+	plugins.RegisterPlugin("atlar", func(rm json.RawMessage) (models.Plugin, error) {
+		return New(rm)
+	})
+}
+
 type Plugin struct {
 	client client.Client
+}
+
+func New(rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	baseUrl, err := url.Parse(config.BaseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Plugin{
+		client: client.New(baseUrl, config.AccessKey, config.Secret),
+	}, nil
 }
 
 func (p *Plugin) Name() string {
@@ -18,18 +41,6 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-
-	baseUrl, err := url.Parse(config.BaseURL)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-
-	p.client = client.New(baseUrl, config.AccessKey, config.Secret)
-
 	return models.InstallResponse{
 		Capabilities: capabilities,
 		Workflow:     workflow(),

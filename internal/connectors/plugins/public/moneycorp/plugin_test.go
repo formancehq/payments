@@ -14,10 +14,10 @@ import (
 
 func TestPlugin(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Moneycorp Plugin Suite")
+	RunSpecs(t, "Moneycorp *Plugin Suite")
 }
 
-var _ = Describe("Moneycorp Plugin", func() {
+var _ = Describe("Moneycorp *Plugin", func() {
 	var (
 		plg    *moneycorp.Plugin
 		config json.RawMessage

@@ -40,7 +40,7 @@ type client struct {
 	hmacKey         string
 }
 
-func New(apiKey, username, password, companyID string, liveEndpointPrefix string) (Client, error) {
+func New(apiKey, username, password, companyID string, liveEndpointPrefix string) Client {
 	adyenConfig := &common.Config{
 		ApiKey:      apiKey,
 		Environment: common.TestEnv,
@@ -61,7 +61,7 @@ func New(apiKey, username, password, companyID string, liveEndpointPrefix string
 		webhookUsername:        username,
 		webhookPassword:        password,
 		companyID:              companyID,
-	}, nil
+	}
 }
 
 // wrap a public error for cases that we don't want to retry

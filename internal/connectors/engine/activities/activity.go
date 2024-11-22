@@ -91,6 +91,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageAccountsDelete,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageCapabilitiesStore",
+			Func: a.StorageCapabilitiesStore,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePaymentsStore",
 			Func: a.StoragePaymentsStore,
 		}).
@@ -177,6 +181,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StorageWebhooksConfigsStore",
 			Func: a.StorageWebhooksConfigsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageWebhooksConfigsGet",
+			Func: a.StorageWebhooksConfigsGet,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageWebhooksConfigsDelete",

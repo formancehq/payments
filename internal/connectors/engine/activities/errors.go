@@ -3,53 +3,35 @@ package activities
 import (
 	"errors"
 
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/temporal"
-	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const (
-	ErrTypeStorage            = "STORAGE"
-	ErrTypeDefault            = "DEFAULT"
-	ErrTypeFailedPrecondition = "FAILED_PRECONDITON"
-	ErrTypeInvalidArgument    = "INVALID_ARGUMENT"
-	ErrTypePermissionDenied   = "PERMISSION_DENIED"
-	ErrTypeUnimplemented      = "UNIMPLEMENTED"
-	ErrTypeUnauthenticated    = "UNAUTHENTICATED"
+	ErrTypeStorage         = "STORAGE"
+	ErrTypeDefault         = "DEFAULT"
+	ErrTypeInvalidArgument = "INVALID_ARGUMENT"
+	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
 
-var nonRetryableErrorTypes = map[codes.Code]string{
-	codes.FailedPrecondition: ErrTypeFailedPrecondition,
-	codes.InvalidArgument:    ErrTypeInvalidArgument,
-	codes.PermissionDenied:   ErrTypePermissionDenied,
-	codes.Unimplemented:      ErrTypeUnimplemented,
-	codes.Unauthenticated:    ErrTypeUnauthenticated,
-}
-
 func temporalPluginError(err error) error {
-	var reason string
+	switch {
+	// Do not retry the following errors
+	case errors.Is(err, plugins.ErrNotImplemented):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeUnimplemented, err)
+	case errors.Is(err, plugins.ErrInvalidClientRequest):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
+	case errors.Is(err, plugins.ErrCurrencyNotSupported):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 
-	code := status.Code(err)
-	if code == codes.OK {
-		return nil
+	// Retry the following errors
+	case errors.Is(err, plugins.ErrNotYetInstalled):
+		// We want to retry in case of not installed
+		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeDefault, err)
+	default:
+		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeDefault, err)
 	}
-
-	if converted := status.Convert(err); converted != nil {
-		for _, d := range converted.Details() {
-			switch info := d.(type) {
-			case *errdetails.ErrorInfo:
-				reason = info.Reason
-			}
-		}
-	}
-
-	errorType, ok := nonRetryableErrorTypes[code]
-	if !ok {
-		return temporal.NewApplicationErrorWithCause(reason, ErrTypeDefault, err)
-	}
-	return temporal.NewNonRetryableApplicationError(reason, errorType, err)
 }
 
 func temporalStorageError(err error) error {

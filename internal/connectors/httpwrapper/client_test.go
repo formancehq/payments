@@ -36,9 +36,7 @@ var _ = Describe("ClientWrapper", func() {
 
 	BeforeEach(func() {
 		config = &httpwrapper.Config{Timeout: 30 * time.Millisecond}
-		var err error
-		client, err = httpwrapper.NewClient(config)
-		Expect(err).To(BeNil())
+		client = httpwrapper.NewClient(config)
 		server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			params, err := url.ParseQuery(r.URL.RawQuery)
 			Expect(err).To(BeNil())

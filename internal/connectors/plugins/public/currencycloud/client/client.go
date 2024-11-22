@@ -52,7 +52,7 @@ func (c *client) buildEndpoint(path string, args ...interface{}) string {
 const DevAPIEndpoint = "https://devapi.currencycloud.com"
 
 // New creates a new client for the CurrencyCloud API.
-func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) {
+func New(loginID, apiKey, endpoint string) Client {
 	if endpoint == "" {
 		endpoint = DevAPIEndpoint
 	}
@@ -70,10 +70,6 @@ func New(ctx context.Context, loginID, apiKey, endpoint string) (Client, error) 
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(config)
-	if err != nil {
-		return nil, err
-	}
-	c.httpClient = httpClient
-	return c, nil
+	c.httpClient = httpwrapper.NewClient(config)
+	return c
 }

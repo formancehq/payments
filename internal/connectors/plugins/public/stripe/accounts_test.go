@@ -32,7 +32,7 @@ var _ = Describe("Stripe Plugin Accounts", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg.SetClient(m)
+			plg.client = m
 			pageSize = 20
 
 			sampleAccounts = make([]*stripesdk.Account, 0)
