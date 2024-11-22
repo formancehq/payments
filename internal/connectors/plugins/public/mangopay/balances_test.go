@@ -86,7 +86,7 @@ var _ = Describe("Mangopay Plugin Balances", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(1))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			Expect(resp.NewState).To(BeNil())
 			Expect(resp.Balances[0].Amount).To(Equal(big.NewInt(100)))
 			Expect(resp.Balances[0].Asset).To(Equal("EUR/2"))
 			Expect(resp.Balances[0].AccountReference).To(Equal("test"))

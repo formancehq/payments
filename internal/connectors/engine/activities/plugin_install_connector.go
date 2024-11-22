@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/workflow"
@@ -29,13 +28,11 @@ func (a Activities) PluginInstallConnector(ctx context.Context, request InstallC
 
 var PluginInstallConnectorActivity = Activities{}.PluginInstallConnector
 
-func PluginInstallConnector(ctx workflow.Context, connectorID models.ConnectorID, config json.RawMessage) (*models.InstallResponse, error) {
+func PluginInstallConnector(ctx workflow.Context, connectorID models.ConnectorID) (*models.InstallResponse, error) {
 	ret := models.InstallResponse{}
 	if err := executeActivity(ctx, PluginInstallConnectorActivity, &ret, InstallConnectorRequest{
 		ConnectorID: connectorID,
-		Req: models.InstallRequest{
-			Config: config,
-		},
+		Req:         models.InstallRequest{},
 	}); err != nil {
 		return nil, err
 	}

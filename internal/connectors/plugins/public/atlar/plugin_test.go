@@ -26,25 +26,28 @@ var _ = Describe("Atlar Plugin", func() {
 
 	Context("install", func() {
 		It("should report errors in config - baseURL", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"accessKey": "test", "secret": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"accessKey": "test", "secret": "test"}`)
+			_, err := New("atlar", config)
 			Expect(err).To(MatchError("missing baseURL in config: invalid config"))
 		})
 
 		It("should report errors in config - accessKey", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"baseURL": "test", "secret": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"baseURL": "test", "secret": "test"}`)
+			_, err := New("atlar", config)
 			Expect(err).To(MatchError("missing access key in config: invalid config"))
 		})
 
 		It("should report errors in config - secret", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"baseURL": "test", "accessKey": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"baseURL": "test", "accessKey": "test"}`)
+			_, err := New("atlar", config)
 			Expect(err).To(MatchError("missing secret in config: invalid config"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"baseURL": "http://localhost:8080/", "accessKey": "test", "secret": "test"}`)}
+			config := json.RawMessage(`{"baseURL": "http://localhost:8080/", "accessKey": "test", "secret": "test"}`)
+			_, err := New("atlar", config)
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())

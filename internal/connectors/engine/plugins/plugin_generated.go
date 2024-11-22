@@ -41,59 +41,59 @@ func (m *MockPlugins) EXPECT() *MockPluginsMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockPlugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
+func (m *MockPlugins) Get(arg0 models.ConnectorID) (models.Plugin, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", connectorID)
+	ret := m.ctrl.Call(m, "Get", arg0)
 	ret0, _ := ret[0].(models.Plugin)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // Get indicates an expected call of Get.
-func (mr *MockPluginsMockRecorder) Get(connectorID any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) Get(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), arg0)
 }
 
 // GetConfig mocks base method.
-func (m *MockPlugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
+func (m *MockPlugins) GetConfig(arg0 models.ConnectorID) (models.Config, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetConfig", connectorID)
+	ret := m.ctrl.Call(m, "GetConfig", arg0)
 	ret0, _ := ret[0].(models.Config)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetConfig indicates an expected call of GetConfig.
-func (mr *MockPluginsMockRecorder) GetConfig(connectorID any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) GetConfig(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockPlugins)(nil).GetConfig), connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockPlugins)(nil).GetConfig), arg0)
 }
 
 // RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config, rawConfig json.RawMessage) error {
+func (m *MockPlugins) RegisterPlugin(arg0 models.ConnectorID, arg1 string, arg2 models.Config, arg3 json.RawMessage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", connectorID, config, rawConfig)
+	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(connectorID, config, rawConfig any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), connectorID, config, rawConfig)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3)
 }
 
 // UnregisterPlugin mocks base method.
-func (m *MockPlugins) UnregisterPlugin(connectorID models.ConnectorID) error {
+func (m *MockPlugins) UnregisterPlugin(arg0 models.ConnectorID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnregisterPlugin", connectorID)
+	ret := m.ctrl.Call(m, "UnregisterPlugin", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // UnregisterPlugin indicates an expected call of UnregisterPlugin.
-func (mr *MockPluginsMockRecorder) UnregisterPlugin(connectorID any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) UnregisterPlugin(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterPlugin", reflect.TypeOf((*MockPlugins)(nil).UnregisterPlugin), connectorID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterPlugin", reflect.TypeOf((*MockPlugins)(nil).UnregisterPlugin), arg0)
 }
