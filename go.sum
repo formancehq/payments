@@ -646,8 +646,8 @@ github.com/aws/aws-sdk-go-v2/credentials v1.17.46 h1:AU7RcriIo2lXjUfHFnFKYsLCwgb
 github.com/aws/aws-sdk-go-v2/credentials v1.17.46/go.mod h1:1FmYyLGL08KQXQ6mcTlifyFXfJVCNJTVGuQP4m0d/UA=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.20 h1:sDSXIrlsFSFJtWKLQS4PUWRvrT580rrnuLydJrCQ/yA=
 github.com/aws/aws-sdk-go-v2/feature/ec2/imds v1.16.20/go.mod h1:WZ/c+w0ofps+/OUqMwWgnfrgzZH1DZO1RIkktICsqnY=
-github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.4.23 h1:B2qK61ZXCQu8tkD6eG/gUiIt9Vw9tmWFD7Xo02JPdMY=
-github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.4.23/go.mod h1:02rz9vMZsrOX9IwUcpoGZM4jPprFNPmtD6t9Ume9ECY=
+github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.4.24 h1:HfLyPCysN3MqXSQIP83f/0fNTvb8ELXBv76Jaa3LvCs=
+github.com/aws/aws-sdk-go-v2/feature/rds/auth v1.4.24/go.mod h1:WNDtzVHjS5Ct1HJLcVaclQivrWvK3lQWmQkaT7tzr4M=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.24 h1:4usbeaes3yJnCFC7kfeyhkdkPtoRYPa/hTmCqMpKpLI=
 github.com/aws/aws-sdk-go-v2/internal/configsources v1.3.24/go.mod h1:5CI1JemjVwde8m2WG3cz23qHKPOxbpkq0HaoreEgLIY=
 github.com/aws/aws-sdk-go-v2/internal/endpoints/v2 v2.6.24 h1:N1zsICrQglfzaBnrfM0Ys00860C+QFwu6u/5+LomP+o=
@@ -760,8 +760,8 @@ github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/formancehq/go-libs v1.7.2 h1:zPLkMVigMxcdPQiA8Q0HLPgA/al/hKmLxLw9muDPM1U=
 github.com/formancehq/go-libs v1.7.2/go.mod h1:3+crp7AA/Rllpo9M/ZQslaHkYt9EtXtbE4qYasV201Q=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241122142159-3d7afac08d68 h1:lFAJPWVN4MQ4TtIYs7upRizXTnj2x8qcarvLh7X/2XU=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241122142159-3d7afac08d68/go.mod h1:lQfSByVrXNe5vQDmNmitEpLYT89onnL4oE+yfvwR4y8=
+github.com/formancehq/go-libs/v2 v2.0.1-0.20241122171311-bccc4a71188f h1:Vzas64h5W5I5JXOqrl6W3ZsgXepWuUL6Dao9bqRslOo=
+github.com/formancehq/go-libs/v2 v2.0.1-0.20241122171311-bccc4a71188f/go.mod h1:kKy9vN5Yh0HUK8j0NBft5pvZXvx8Apt3BBFyEgKxlXY=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/get-momo/atlar-v1-go-client v1.4.0 h1:DIRwP3gRfvdXAxEeMNua6HPsScXZzDB9nySdYVv5FD0=
