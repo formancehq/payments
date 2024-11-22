@@ -93,7 +93,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(0))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			Expect(resp.NewState).To(BeNil())
 		})
 
 		It("should fetch all balances - page size > sample balances", func(ctx SpecContext) {
@@ -111,7 +111,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(3))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			Expect(resp.NewState).To(BeNil())
 		})
 
 		It("should fetch all balances - page size < sample balances", func(ctx SpecContext) {
@@ -135,7 +135,7 @@ var _ = Describe("CurrencyCloud Plugin Balances", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(3))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			Expect(resp.NewState).To(BeNil())
 		})
 	})
 })

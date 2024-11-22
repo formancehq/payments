@@ -151,7 +151,6 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		workflow.RunInstallConnector,
 		workflow.InstallConnector{
 			ConnectorID: connector.ID,
-			RawConfig:   rawConfig,
 			Config:      config,
 		},
 	)
@@ -874,7 +873,6 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 			workflow.RunInstallConnector,
 			workflow.InstallConnector{
 				ConnectorID: connector.ID,
-				RawConfig:   connector.Config,
 				Config:      config,
 			},
 		)

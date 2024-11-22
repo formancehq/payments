@@ -95,7 +95,7 @@ var _ = Describe("Generic Plugin Balances", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Balances).To(HaveLen(2))
 			Expect(resp.HasMore).To(BeFalse())
-			Expect(resp.NewState).ToNot(BeNil())
+			Expect(resp.NewState).To(BeNil())
 			Expect(resp.Balances[0].Amount).To(Equal(big.NewInt(100)))
 			Expect(resp.Balances[0].Asset).To(Equal("USD/2"))
 			Expect(resp.Balances[1].Amount).To(Equal(big.NewInt(15001)))

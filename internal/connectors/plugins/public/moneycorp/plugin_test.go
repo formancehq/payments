@@ -30,13 +30,14 @@ var _ = Describe("Moneycorp *Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{}`)}
-			_, err := plg.Install(context.Background(), req)
+			config := json.RawMessage(`{}`)
+			_, err := moneycorp.New("moneycorp", config)
 			Expect(err).To(MatchError(ContainSubstring("config")))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: config}
-			res, err := plg.Install(context.Background(), req)
+			_, err := moneycorp.New("moneycorp", config)
+			Expect(err).To(BeNil())
+			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
