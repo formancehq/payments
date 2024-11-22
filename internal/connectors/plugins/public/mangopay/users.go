@@ -15,7 +15,7 @@ type usersState struct {
 	LastCreationDate time.Time `json:"lastCreationDate"`
 }
 
-func (p Plugin) fetchNextUsers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+func (p *Plugin) fetchNextUsers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	var oldState usersState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {

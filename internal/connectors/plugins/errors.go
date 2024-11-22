@@ -6,81 +6,27 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
-	"google.golang.org/genproto/googleapis/rpc/errdetails"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
-)
-
-const (
-	FailureReasonInvalidRequest       = "INVALID_REQUEST"
-	FailureReasonInvalidConfig        = "INVALID_CONFIG"
-	FailureReasonBadRequestToUpstream = "BAD_REQUEST_TO_UPSTREAM"
-	FailureReasonUnimplemented        = "UNIMPLEMENTED"
 )
 
 var (
 	ErrNotImplemented       = errors.New("not implemented")
 	ErrNotYetInstalled      = errors.New("not yet installed")
+	ErrInvalidClientRequest = errors.New("invalid client request")
 	ErrCurrencyNotSupported = errors.New("currency not supported")
 )
 
-type Error struct {
-	RawMessage string
-	Status     *status.Status
-}
-
-func NewError(code codes.Code, reason string, err error) error {
-	st := status.Newf(code, err.Error())
-	var dtErr error
-	st, dtErr = st.WithDetails(&errdetails.ErrorInfo{
-		Reason: reason,
-	})
-	if dtErr != nil {
-		return Error{
-			RawMessage: fmt.Sprintf("%s (%s)", err.Error(), dtErr.Error()),
-			Status:     status.Newf(code, err.Error()),
-		}
-	}
-
-	return Error{
-		RawMessage: err.Error(),
-		Status:     st,
-	}
-}
-
-func (e Error) Error() string {
-	return fmt.Sprintf("PLUGIN ERROR: %d, %s", e.Status.Code(), e.RawMessage)
-}
-
-func (e Error) GRPCStatus() *status.Status {
-	return e.Status
-}
-
-func translateErrorToGRPC(err error) error {
-	var (
-		code   codes.Code
-		reason string
-	)
-
+func translateError(err error) error {
 	switch {
 	case errors.Is(err, ErrNotImplemented):
-		code = codes.Unimplemented
-		reason = FailureReasonUnimplemented
+		return err
 	case errors.Is(err, models.ErrMissingFromPayloadInRequest),
 		errors.Is(err, models.ErrMissingAccountInRequest),
 		errors.Is(err, models.ErrInvalidRequest),
-		errors.Is(err, ErrCurrencyNotSupported):
-		code = codes.FailedPrecondition
-		reason = FailureReasonInvalidRequest
-	case errors.Is(err, models.ErrInvalidConfig):
-		code = codes.FailedPrecondition
-		reason = FailureReasonInvalidConfig
-	case errors.Is(err, httpwrapper.ErrStatusCodeClientError):
-		code = codes.InvalidArgument
-		reason = FailureReasonBadRequestToUpstream
+		errors.Is(err, ErrCurrencyNotSupported),
+		errors.Is(err, httpwrapper.ErrStatusCodeClientError),
+		errors.Is(err, models.ErrInvalidConfig):
+		return fmt.Errorf("%w: %w", err, ErrInvalidClientRequest)
 	default:
-		code = codes.Internal
+		return err
 	}
-
-	return NewError(code, reason, err)
 }

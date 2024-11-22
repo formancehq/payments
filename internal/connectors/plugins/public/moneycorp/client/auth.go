@@ -70,10 +70,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 	config := &httpwrapper.Config{
 		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
 	}
-	httpClient, err := httpwrapper.NewClient(config)
-	if err != nil {
-		return fmt.Errorf("failed to initialize httpwrapper client: %w", err)
-	}
+	httpClient := httpwrapper.NewClient(config)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		t.endpoint+"/login", bytes.NewBuffer(requestBody))

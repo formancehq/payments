@@ -35,12 +35,16 @@ func (w Workflow) runInstallConnector(
 		return errors.Wrap(err, "failed to install connector")
 	}
 
-	// Register connector's capabilities
-	if err := w.plugins.AddCapabilities(installConnector.ConnectorID, installResponse.Capabilities); err != nil {
-		return fmt.Errorf("failed to add capabilities: %w", err)
+	// Third step: store the capabilities of the connector
+	if err := activities.StorageCapabilitiesStore(
+		infiniteRetryContext(ctx),
+		installConnector.ConnectorID,
+		installResponse.Capabilities,
+	); err != nil {
+		return errors.Wrap(err, "failed to store capabilities")
 	}
 
-	// Third step: store the workflow of the connector
+	// Fourth step: store the workflow of the connector
 	err = activities.StorageConnectorTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
 	if err != nil {
 		return errors.Wrap(err, "failed to store tasks tree")
@@ -60,11 +64,9 @@ func (w Workflow) runInstallConnector(
 		if err != nil {
 			return errors.Wrap(err, "failed to store webhooks configs")
 		}
-
-		w.webhooks.RegisterWebhooks(installConnector.ConnectorID, configs)
 	}
 
-	// Fourth step: launch the workflow tree, do not wait for the result
+	// Fifth step: launch the workflow tree, do not wait for the result
 	// by using the GetChildWorkflowExecution function that returns a future
 	// which will be ready when the child workflow has successfully started.
 	if err := workflow.ExecuteChildWorkflow(

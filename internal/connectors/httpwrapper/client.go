@@ -48,7 +48,7 @@ type client struct {
 	httpErrorCheckerFn func(statusCode int) error
 }
 
-func NewClient(config *Config) (Client, error) {
+func NewClient(config *Config) Client {
 	if config.Timeout == 0 {
 		config.Timeout = 10 * time.Second
 	}
@@ -79,7 +79,7 @@ func NewClient(config *Config) (Client, error) {
 		httpErrorCheckerFn:      config.HttpErrorCheckerFn,
 		httpClient:              httpClient,
 		commonMetricsAttributes: metricsAttributes,
-	}, nil
+	}
 }
 
 func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorBody any) (int, error) {

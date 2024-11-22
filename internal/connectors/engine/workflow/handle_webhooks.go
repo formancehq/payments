@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -13,16 +14,38 @@ import (
 )
 
 type HandleWebhooks struct {
-	ConnectorID   models.ConnectorID
-	WebhookConfig models.WebhookConfig
-	Webhook       models.Webhook
+	ConnectorID models.ConnectorID
+	URLPath     string
+	Webhook     models.Webhook
 }
 
 func (w Workflow) runHandleWebhooks(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 ) error {
-	err := activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
+	configs, err := activities.StorageWebhooksConfigsGet(
+		infiniteRetryContext(ctx),
+		handleWebhooks.ConnectorID,
+	)
+	if err != nil {
+		return fmt.Errorf("getting webhook configs: %w", err)
+	}
+
+	var config *models.WebhookConfig
+	for _, c := range configs {
+		if !strings.Contains(handleWebhooks.URLPath, c.URLPath) {
+			continue
+		}
+
+		config = &c
+		break
+	}
+
+	if config == nil {
+		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", err)
+	}
+
+	err = activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
 	if err != nil {
 		return fmt.Errorf("storing webhook: %w", err)
 	}
@@ -31,7 +54,7 @@ func (w Workflow) runHandleWebhooks(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		models.TranslateWebhookRequest{
-			Name: handleWebhooks.WebhookConfig.Name,
+			Name: config.Name,
 			Webhook: models.PSPWebhook{
 				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
 				QueryValues: handleWebhooks.Webhook.QueryValues,

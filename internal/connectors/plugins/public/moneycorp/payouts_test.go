@@ -14,7 +14,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Moneycorp Plugin Payouts Creation", func() {
+var _ = Describe("Moneycorp *Plugin Payouts Creation", func() {
 	var (
 		plg *Plugin
 	)

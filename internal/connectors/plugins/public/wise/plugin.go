@@ -2,13 +2,19 @@ package wise
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
 )
+
+func init() {
+	plugins.RegisterPlugin("wise", func(rm json.RawMessage) (models.Plugin, error) {
+		return New(rm)
+	})
+}
 
 var (
 	HeadersTestNotification = "X-Test-Notification"
@@ -22,28 +28,25 @@ var (
 )
 
 type Plugin struct {
-	config Config
-	client client.Client
+	config         Config
+	client         client.Client
+	webhookConfigs map[string]webhookConfig
 }
 
-func (p *Plugin) Name() string {
-	return "wise"
-}
-
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func New(rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return nil, err
 	}
 
-	client, err := client.New(config.APIKey)
-	if err != nil {
-		return models.InstallResponse{}, fmt.Errorf("failed to install wise plugin %w", err)
-	}
-	p.client = client
-	p.config = config
+	client := client.New(config.APIKey)
 
-	webhookConfigs = map[string]webhookConfig{
+	p := &Plugin{
+		client: client,
+		config: config,
+	}
+
+	p.webhookConfigs = map[string]webhookConfig{
 		"transfer_state_changed": {
 			triggerOn: "transfers#state-change",
 			urlPath:   "/transferstatechanged",
@@ -58,8 +61,16 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 		},
 	}
 
-	configs := make([]models.PSPWebhookConfig, 0, len(webhookConfigs))
-	for name, config := range webhookConfigs {
+	return p, nil
+}
+
+func (p *Plugin) Name() string {
+	return "wise"
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
+	for name, config := range p.webhookConfigs {
 		configs = append(configs, models.PSPWebhookConfig{
 			Name:    name,
 			URLPath: config.urlPath,
@@ -197,7 +208,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, err
 	}
 
-	config, ok := webhookConfigs[req.Name]
+	config, ok := p.webhookConfigs[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, ErrWebhookNameUnknown
 	}

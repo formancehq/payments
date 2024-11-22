@@ -38,7 +38,7 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 
 		BeforeEach(func() {
 			expectedProfileID = 44
-			webhookConfigs = map[string]webhookConfig{
+			plg.webhookConfigs = map[string]webhookConfig{
 				"test": {
 					triggerOn: "transfers#state-change",
 					urlPath:   "/transferstatechanged",
@@ -48,7 +48,7 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 			}
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseUrl = "http://example.com"
-			expectedWebhookPath, err = url.JoinPath(webhookBaseUrl, webhookConfigs["test"].urlPath)
+			expectedWebhookPath, err = url.JoinPath(webhookBaseUrl, plg.webhookConfigs["test"].urlPath)
 			Expect(err).To(BeNil())
 		})
 
@@ -70,9 +70,9 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 				gomock.Any(),
 				expectedProfileID,
 				"test",
-				webhookConfigs["test"].triggerOn,
+				plg.webhookConfigs["test"].triggerOn,
 				expectedWebhookPath,
-				webhookConfigs["test"].version,
+				plg.webhookConfigs["test"].version,
 			).Return(
 				&client.WebhookSubscriptionResponse{ID: expectedWebhookResponseID},
 				nil,
@@ -80,7 +80,7 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Others).To(HaveLen(len(webhookConfigs)))
+			Expect(res.Others).To(HaveLen(len(plg.webhookConfigs)))
 			Expect(res.Others[0].ID).To(Equal(expectedWebhookResponseID))
 		})
 	})

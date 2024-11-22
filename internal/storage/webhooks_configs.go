@@ -43,6 +43,24 @@ func (s *store) WebhooksConfigsGet(ctx context.Context, name string, connectorID
 	return toWebhookConfigModel(webhookConfig), nil
 }
 
+func (s *store) WebhooksConfigsGetFromConnectorID(ctx context.Context, connectorID models.ConnectorID) ([]models.WebhookConfig, error) {
+	var webhookConfigs []webhookConfig
+	err := s.db.NewSelect().
+		Model(&webhookConfigs).
+		Where("connector_id = ?", connectorID).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("get webhook configs", err)
+	}
+
+	res := make([]models.WebhookConfig, 0, len(webhookConfigs))
+	for _, webhookConfig := range webhookConfigs {
+		res = append(res, *toWebhookConfigModel(webhookConfig))
+	}
+
+	return res, nil
+}
+
 func (s *store) WebhooksConfigsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*webhookConfig)(nil)).

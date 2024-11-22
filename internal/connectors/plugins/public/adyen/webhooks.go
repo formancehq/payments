@@ -21,10 +21,8 @@ type webhookConfig struct {
 	fn      func(context.Context, models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error)
 }
 
-var webhookConfigs map[string]webhookConfig
-
 func (p *Plugin) initWebhookConfig() {
-	webhookConfigs = map[string]webhookConfig{
+	p.webhookConfigs = map[string]webhookConfig{
 		"standard": {
 			urlPath: "/standard",
 			fn:      p.translateStandardWebhook,
@@ -37,7 +35,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return errors.New("STACK_PUBLIC_URL is not set")
 	}
 
-	standardConfig := webhookConfigs["standard"]
+	standardConfig := p.webhookConfigs["standard"]
 
 	url, err := url.JoinPath(req.WebhookBaseUrl, standardConfig.urlPath)
 	if err != nil {

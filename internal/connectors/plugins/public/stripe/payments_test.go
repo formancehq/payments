@@ -33,7 +33,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg.SetClient(m)
+			plg.client = m
 
 			pageSize = 15
 			accRef = "baseAcc"

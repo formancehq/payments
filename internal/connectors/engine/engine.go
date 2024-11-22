@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -66,10 +65,9 @@ type Engine interface {
 type engine struct {
 	temporalClient client.Client
 
-	workers  *Workers
-	plugins  plugins.Plugins
-	storage  storage.Storage
-	webhooks webhooks.Webhooks
+	workers *Workers
+	plugins plugins.Plugins
+	storage storage.Storage
 
 	stack string
 
@@ -82,7 +80,6 @@ func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins
 		workers:        workers,
 		plugins:        plugins,
 		storage:        storage,
-		webhooks:       webhooks,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
 	}
@@ -127,7 +124,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, config)
+	err := e.plugins.RegisterPlugin(connector.ID, config, rawConfig)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, handlePluginError(err)
@@ -272,16 +269,24 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceAccount")
 	defer span.End()
 
-	capabilities, err := e.plugins.GetCapabilities(account.ConnectorID)
+	capabilities, err := e.storage.CapabilitiesGet(ctx, account.ConnectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION]
-	if !ok {
+	found := false
+	for _, c := range capabilities {
+		if c == models.CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		err := errors.New("connector does not support account creation")
 		otel.RecordError(span, err)
-		return errors.New("connector does not support account creation")
+		return err
 	}
 
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
@@ -318,16 +323,24 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePayment")
 	defer span.End()
 
-	capabilities, err := e.plugins.GetCapabilities(payment.ConnectorID)
+	capabilities, err := e.storage.CapabilitiesGet(ctx, payment.ConnectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	_, ok := capabilities[models.CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION]
-	if !ok {
+	found := false
+	for _, c := range capabilities {
+		if c == models.CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		err := errors.New("connector does not support payment creation")
 		otel.RecordError(span, err)
-		return errors.New("connector does not support payment creation")
+		return err
 	}
 
 	if err := e.storage.PaymentsUpsert(ctx, []models.Payment{payment}); err != nil {
@@ -535,36 +548,8 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
 
-	configs, err := e.webhooks.GetConfigs(webhook.ConnectorID, urlPath)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	var config *models.WebhookConfig
-	for _, c := range configs {
-		if !strings.Contains(urlPath, c.URLPath) {
-			continue
-		}
-
-		config = &c
-		break
-	}
-
-	if config == nil {
-		err := errors.New("webhook config not found")
-		otel.RecordError(span, err)
-		return err
-	}
-
-	detachedCtx := context.WithoutCancel(ctx)
-	// Since we detached the context, we need to wait for the operation to finish
-	// even if the app is shutting down gracefully.
-	e.wg.Add(1)
-	defer e.wg.Done()
-
 	if _, err := e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
+		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, webhook.ConnectorID.String(), webhook.ID),
 			TaskQueue:                                webhook.ConnectorID.String(),
@@ -576,9 +561,9 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		},
 		workflow.RunHandleWebhooks,
 		workflow.HandleWebhooks{
-			ConnectorID:   webhook.ConnectorID,
-			WebhookConfig: *config,
-			Webhook:       webhook,
+			ConnectorID: webhook.ConnectorID,
+			URLPath:     urlPath,
+			Webhook:     webhook,
 		},
 	); err != nil {
 		otel.RecordError(span, err)
@@ -801,7 +786,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		return err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, config)
+	err := e.plugins.RegisterPlugin(connector.ID, config, connector.Config)
 	if err != nil {
 		return err
 	}

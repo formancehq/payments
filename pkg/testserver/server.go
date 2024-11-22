@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path"
 	"strings"
 	"time"
 
@@ -68,11 +66,6 @@ type Server struct {
 }
 
 func (s *Server) Start() error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("error finding wd: %w", err)
-	}
-	pluginsDir := path.Join(strings.TrimSuffix(wd, "test/e2e"), "plugins")
 	rootCmd := cmd.NewRootCommand()
 	args := []string{
 		"serve",
@@ -81,7 +74,6 @@ func (s *Server) Start() error {
 		"--" + bunconnect.PostgresMaxOpenConnsFlag, fmt.Sprint(s.configuration.PostgresConfiguration.MaxOpenConns),
 		"--" + bunconnect.PostgresConnMaxIdleTimeFlag, fmt.Sprint(s.configuration.PostgresConfiguration.ConnMaxIdleTime),
 		"--" + cmd.ConfigEncryptionKeyFlag, "dummyval",
-		"--" + cmd.PluginsDirectoryPathFlag, pluginsDir,
 		"--" + temporal.TemporalAddressFlag, s.configuration.TemporalAddress,
 		"--" + temporal.TemporalNamespaceFlag, s.configuration.TemporalNamespace,
 		"--" + temporal.TemporalInitSearchAttributesFlag, fmt.Sprintf("stack=%s", s.configuration.Stack),

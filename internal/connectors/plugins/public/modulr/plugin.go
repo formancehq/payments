@@ -2,14 +2,37 @@ package modulr
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
+func init() {
+	plugins.RegisterPlugin("modulr", func(rm json.RawMessage) (models.Plugin, error) {
+		return New(rm)
+	})
+}
+
 type Plugin struct {
 	client client.Client
+}
+
+func New(rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := client.New(config.APIKey, config.APISecret, config.Endpoint)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Plugin{
+		client: client,
+	}, nil
 }
 
 func (p *Plugin) Name() string {
@@ -17,17 +40,6 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-
-	client, err := client.New(config.APIKey, config.APISecret, config.Endpoint)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-	p.client = client
-
 	return models.InstallResponse{
 		Capabilities: capabilities,
 		Workflow:     workflow(),
