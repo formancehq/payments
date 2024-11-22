@@ -7,23 +7,26 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	plugins.RegisterPlugin("adyen", func(rm json.RawMessage) (models.Plugin, error) {
-		return New(rm)
+	registry.RegisterPlugin("adyen", func(name string, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, rm)
 	})
 }
 
 type Plugin struct {
+	name string
+
 	client         client.Client
 	webhookConfigs map[string]webhookConfig
 
 	connectorID string
 }
 
-func New(rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -38,6 +41,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 	)
 
 	p := &Plugin{
+		name:   name,
 		client: client,
 	}
 
@@ -47,7 +51,7 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 }
 
 func (p *Plugin) Name() string {
-	return "adyen"
+	return p.name
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {

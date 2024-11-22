@@ -124,7 +124,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, config, rawConfig)
+	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, rawConfig)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, handlePluginError(err)
@@ -794,7 +794,7 @@ func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.Connecto
 		return err
 	}
 
-	if err := e.plugins.RegisterPlugin(connector.ID, config, connector.Config); err != nil {
+	if err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config); err != nil {
 		return err
 	}
 
@@ -848,7 +848,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		return err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, config, connector.Config)
+	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
 	if err != nil {
 		return err
 	}

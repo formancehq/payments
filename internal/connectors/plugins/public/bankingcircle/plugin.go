@@ -6,20 +6,23 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	plugins.RegisterPlugin("bankingcircle", func(rm json.RawMessage) (models.Plugin, error) {
-		return New(rm)
+	registry.RegisterPlugin("bankingcircle", func(name string, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, rm)
 	})
 }
 
 type Plugin struct {
+	name string
+
 	client client.Client
 }
 
-func New(rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -31,12 +34,13 @@ func New(rawConfig json.RawMessage) (*Plugin, error) {
 	}
 
 	return &Plugin{
+		name:   name,
 		client: client,
 	}, nil
 }
 
 func (p *Plugin) Name() string {
-	return "bankingcircle"
+	return p.name
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
