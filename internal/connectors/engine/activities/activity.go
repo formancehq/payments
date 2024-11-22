@@ -123,6 +123,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageConnectorsStore,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageConnectorsGet",
+			Func: a.StorageConnectorsGet,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageConnectorsDelete",
 			Func: a.StorageConnectorsDelete,
 		}).

@@ -74,13 +74,9 @@ func New(apiKey, apiSecret, endpoint string) (Client, error) {
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
 	}
-	httpClient, err := httpwrapper.NewClient(config)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create modulr client: %w", err)
-	}
 
 	return &client{
-		httpClient: httpClient,
+		httpClient: httpwrapper.NewClient(config),
 		endpoint:   endpoint,
 	}, nil
 }

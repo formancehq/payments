@@ -145,7 +145,7 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) error {
 
 	pluginInfo, ok := p.plugins[connectorID.String()]
 	if !ok {
-		// Nothing to do``
+		// Nothing to do
 		return nil
 	}
 

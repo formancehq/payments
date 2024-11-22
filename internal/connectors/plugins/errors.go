@@ -16,6 +16,7 @@ const (
 	FailureReasonInvalidConfig        = "INVALID_CONFIG"
 	FailureReasonBadRequestToUpstream = "BAD_REQUEST_TO_UPSTREAM"
 	FailureReasonUnimplemented        = "UNIMPLEMENTED"
+	FailureReasonNotYetInstalled      = "NOT_YET_INSTALLED"
 )
 
 var (
@@ -78,6 +79,9 @@ func translateErrorToGRPC(err error) error {
 	case errors.Is(err, httpwrapper.ErrStatusCodeClientError):
 		code = codes.InvalidArgument
 		reason = FailureReasonBadRequestToUpstream
+	case errors.Is(err, ErrNotYetInstalled):
+		code = codes.Internal
+		reason = FailureReasonNotYetInstalled
 	default:
 		code = codes.Internal
 	}

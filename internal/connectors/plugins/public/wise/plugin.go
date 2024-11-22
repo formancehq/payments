@@ -2,8 +2,8 @@ package wise
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
@@ -30,18 +30,22 @@ func (p *Plugin) Name() string {
 	return "wise"
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func (p *Plugin) createClient(config json.RawMessage) error {
+	c, err := unmarshalAndValidateConfig(config)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 
-	client, err := client.New(config.APIKey)
-	if err != nil {
-		return models.InstallResponse{}, fmt.Errorf("failed to install wise plugin %w", err)
+	p.client = client.New(c.APIKey)
+	p.config = c
+
+	return nil
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	if err := p.createClient(req.Config); err != nil {
+		return models.InstallResponse{}, err
 	}
-	p.client = client
-	p.config = config
 
 	webhookConfigs = map[string]webhookConfig{
 		"transfer_state_changed": {
@@ -75,36 +79,51 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	if p.client == nil {
-		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.UninstallResponse{}, err
+		}
 	}
+
 	return p.uninstall(ctx, req)
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextBalancesResponse{}, err
+		}
 	}
+
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchExternalAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
 	}
+
 	return p.fetchNextPayments(ctx, req)
 }
 
@@ -127,7 +146,9 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateTransferResponse{}, err
+		}
 	}
 
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
@@ -165,14 +186,19 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
-		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
 	}
+
 	return p.createWebhooks(ctx, req)
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
-		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.TranslateWebhookResponse{}, err
+		}
 	}
 
 	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]

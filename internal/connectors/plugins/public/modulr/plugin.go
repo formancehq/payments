@@ -2,6 +2,7 @@ package modulr
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client"
@@ -16,17 +17,24 @@ func (p *Plugin) Name() string {
 	return "modulr"
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func (p *Plugin) createClient(rawConfig json.RawMessage) error {
+	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 
 	client, err := client.New(config.APIKey, config.APISecret, config.Endpoint)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 	p.client = client
+	return nil
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	if err := p.createClient(req.Config); err != nil {
+		return models.InstallResponse{}, err
+	}
 
 	return models.InstallResponse{
 		Capabilities: capabilities,
@@ -40,29 +48,41 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextBalancesResponse{}, err
+		}
 	}
+
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextExternalAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
 	}
+
 	return p.fetchNextPayments(ctx, req)
 }
 
@@ -76,8 +96,11 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateTransferResponse{}, err
+		}
 	}
+
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
 	if err != nil {
 		return models.CreateTransferResponse{}, err
@@ -94,12 +117,16 @@ func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransfer
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreatePayoutResponse{}, err
+		}
 	}
+
 	payment, err := p.createPayout(ctx, req.PaymentInitiation)
 	if err != nil {
 		return models.CreatePayoutResponse{}, err
 	}
+
 	return models.CreatePayoutResponse{
 		Payment: payment,
 	}, nil

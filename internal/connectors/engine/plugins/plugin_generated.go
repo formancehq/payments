@@ -98,6 +98,21 @@ func (mr *MockPluginsMockRecorder) GetConfig(connectorID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockPlugins)(nil).GetConfig), connectorID)
 }
 
+// IsInstalled mocks base method.
+func (m *MockPlugins) IsInstalled(connectorID models.ConnectorID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "IsInstalled", connectorID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// IsInstalled indicates an expected call of IsInstalled.
+func (mr *MockPluginsMockRecorder) IsInstalled(connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "IsInstalled", reflect.TypeOf((*MockPlugins)(nil).IsInstalled), connectorID)
+}
+
 // RegisterPlugin mocks base method.
 func (m *MockPlugins) RegisterPlugin(connectorID models.ConnectorID, config models.Config) error {
 	m.ctrl.T.Helper()

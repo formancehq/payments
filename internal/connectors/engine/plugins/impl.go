@@ -2,6 +2,7 @@ package plugins
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/grpc"
@@ -15,6 +16,10 @@ type impl struct {
 
 func (i *impl) Name() string {
 	return "client"
+}
+
+func (i *impl) CreateClient(context.Context, json.RawMessage) error {
+	return nil
 }
 
 func (i *impl) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {

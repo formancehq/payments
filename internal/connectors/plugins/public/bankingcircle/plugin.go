@@ -2,6 +2,7 @@ package bankingcircle
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle/client"
@@ -16,17 +17,32 @@ func (p *Plugin) Name() string {
 	return "bankingcircle"
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func (p *Plugin) createClient(rawConfig json.RawMessage) error {
+	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 
-	client, err := client.New(config.Username, config.Password, config.Endpoint, config.AuthorizationEndpoint, config.UserCertificate, config.UserCertificateKey)
+	client, err := client.New(
+		config.Username,
+		config.Password,
+		config.Endpoint,
+		config.AuthorizationEndpoint,
+		config.UserCertificate,
+		config.UserCertificateKey,
+	)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 	p.client = client
+
+	return nil
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	if err := p.createClient(req.Config); err != nil {
+		return models.InstallResponse{}, err
+	}
 
 	return models.InstallResponse{
 		Capabilities: capabilities,
@@ -40,7 +56,9 @@ func (p Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mod
 
 func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
 	}
 
 	return p.fetchNextAccounts(ctx, req)
@@ -48,7 +66,9 @@ func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccou
 
 func (p Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextBalancesResponse{}, err
+		}
 	}
 	return p.fetchNextBalances(ctx, req)
 }
@@ -59,7 +79,9 @@ func (p Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchN
 
 func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
 	}
 	return p.fetchNextPayments(ctx, req)
 }
@@ -70,14 +92,18 @@ func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersR
 
 func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	if p.client == nil {
-		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateBankAccountResponse{}, err
+		}
 	}
 	return p.createBankAccount(req)
 }
 
 func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateTransferResponse{}, err
+		}
 	}
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
 	if err != nil {
@@ -94,7 +120,9 @@ func (p Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferS
 
 func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreatePayoutResponse{}, err
+		}
 	}
 	payment, err := p.createPayout(ctx, req.PaymentInitiation)
 	if err != nil {

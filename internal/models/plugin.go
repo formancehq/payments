@@ -41,12 +41,14 @@ type InstallResponse struct {
 }
 
 type UninstallRequest struct {
+	Config      json.RawMessage
 	ConnectorID string
 }
 
 type UninstallResponse struct{}
 
 type FetchNextAccountsRequest struct {
+	Config      json.RawMessage
 	FromPayload json.RawMessage
 	State       json.RawMessage
 	PageSize    int
@@ -59,6 +61,7 @@ type FetchNextAccountsResponse struct {
 }
 
 type FetchNextExternalAccountsRequest struct {
+	Config      json.RawMessage
 	FromPayload json.RawMessage
 	State       json.RawMessage
 	PageSize    int
@@ -71,6 +74,7 @@ type FetchNextExternalAccountsResponse struct {
 }
 
 type FetchNextPaymentsRequest struct {
+	Config      json.RawMessage
 	FromPayload json.RawMessage
 	State       json.RawMessage
 	PageSize    int
@@ -83,6 +87,7 @@ type FetchNextPaymentsResponse struct {
 }
 
 type FetchNextOthersRequest struct {
+	Config      json.RawMessage
 	Name        string
 	FromPayload json.RawMessage
 	State       json.RawMessage
@@ -96,6 +101,7 @@ type FetchNextOthersResponse struct {
 }
 
 type FetchNextBalancesRequest struct {
+	Config      json.RawMessage
 	FromPayload json.RawMessage
 	State       json.RawMessage
 	PageSize    int
@@ -108,6 +114,7 @@ type FetchNextBalancesResponse struct {
 }
 
 type CreateBankAccountRequest struct {
+	Config      json.RawMessage
 	BankAccount BankAccount
 }
 
@@ -116,6 +123,7 @@ type CreateBankAccountResponse struct {
 }
 
 type CreateWebhooksRequest struct {
+	Config         json.RawMessage
 	FromPayload    json.RawMessage
 	ConnectorID    string
 	WebhookBaseUrl string
@@ -126,6 +134,7 @@ type CreateWebhooksResponse struct {
 }
 
 type TranslateWebhookRequest struct {
+	Config  json.RawMessage
 	Name    string
 	Webhook PSPWebhook
 }
@@ -142,6 +151,7 @@ type TranslateWebhookResponse struct {
 }
 
 type CreateTransferRequest struct {
+	Config            json.RawMessage
 	PaymentInitiation PSPPaymentInitiation
 }
 
@@ -155,6 +165,7 @@ type CreateTransferResponse struct {
 }
 
 type PollTransferStatusRequest struct {
+	Config     json.RawMessage
 	TransferID string
 }
 
@@ -170,6 +181,7 @@ type PollTransferStatusResponse struct {
 }
 
 type CreatePayoutRequest struct {
+	Config            json.RawMessage
 	PaymentInitiation PSPPaymentInitiation
 }
 
@@ -183,6 +195,7 @@ type CreatePayoutResponse struct {
 }
 
 type PollPayoutStatusRequest struct {
+	Config   json.RawMessage
 	PayoutID string
 }
 

@@ -5,14 +5,29 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/query"
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgxlisten"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
+
+type ConnectorChanges string
+
+const (
+	ConnectorChangesInsert ConnectorChanges = "insert_"
+	ConnectorChangesUpdate ConnectorChanges = "update_"
+	ConnectorChangesDelete ConnectorChanges = "delete_"
+)
+
+type HandlerConnectorsChanges map[ConnectorChanges]func(context.Context, models.ConnectorID) error
 
 type connector struct {
 	bun.BaseModel `bun:"table:connectors"`
@@ -29,6 +44,52 @@ type connector struct {
 
 	// Config is a decrypted config. It is not stored in the database.
 	DecryptedConfig json.RawMessage `bun:"decrypted_config,scanonly"`
+}
+
+func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerConnectorsChanges) error {
+	conn, err := s.db.Conn(ctx)
+	if err != nil {
+		return errors.Wrap(err, "cannot get connection")
+	}
+
+	if err := conn.Raw(func(driverConn any) error {
+		listener := pgxlisten.Listener{
+			Connect: func(ctx context.Context) (*pgx.Conn, error) {
+				return pgx.Connect(ctx, driverConn.(*stdlib.Conn).Conn().Config().ConnString())
+			},
+		}
+
+		listener.Handle("connectors", pgxlisten.HandlerFunc(func(ctx context.Context, notification *pgconn.Notification, conn *pgx.Conn) error {
+			s.logger.Info("got connector changes", "payload", notification.Payload)
+
+			for prefix, handler := range handlers {
+				if strings.HasPrefix(notification.Payload, string(prefix)) {
+					return handler(
+						ctx,
+						models.MustConnectorIDFromString(strings.TrimPrefix(notification.Payload, string(prefix))),
+					)
+				}
+			}
+
+			return nil
+		}))
+
+		go func() {
+			fmt.Println("listening for connectors changes")
+			if err := listener.Listen(ctx); err != nil {
+				if errors.Is(err, context.Canceled) {
+					return
+				}
+
+				// TODO(polo): log error
+			}
+		}()
+
+		return nil
+	}); err != nil {
+		return errors.Wrap(err, "cannot get driver connection")
+	}
+	return nil
 }
 
 func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error {

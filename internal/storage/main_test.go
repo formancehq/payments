@@ -54,5 +54,5 @@ func newStore(t *testing.T) Storage {
 	err = Migrate(context.Background(), db)
 	require.NoError(t, err)
 
-	return newStorage(db, string(key))
+	return newStorage(logging.Testing(), db, string(key))
 }

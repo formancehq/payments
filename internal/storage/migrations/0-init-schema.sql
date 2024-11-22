@@ -17,6 +17,25 @@ create table if not exists connectors (
 );
 create unique index connectors_unique_name on connectors (name);
 
+CREATE OR REPLACE FUNCTION connectors_notify_after_modifications() RETURNS TRIGGER as $$
+BEGIN
+    IF (TG_OP = 'DELETE') THEN
+        PERFORM pg_notify('connectors', 'delete_' || OLD.id);
+        RETURN NULL;
+    ELSIF (TG_OP = 'INSERT') THEN
+        PERFORM pg_notify('connectors', 'insert_' || NEW.id);
+        RETURN NULL;
+    ELSE
+        PERFORM pg_notify('connectors', 'update_' || NEW.id);
+        RETURN NULL;
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER connectors_trigger
+AFTER INSERT OR UPDATE OR DELETE ON connectors FOR EACH ROW
+EXECUTE PROCEDURE connectors_notify_after_modifications();
+
 -- accounts
 create table if not exists accounts (
     -- Mandatory fields

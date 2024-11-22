@@ -18,17 +18,22 @@ func (p *Plugin) Name() string {
 	return "mangopay"
 }
 
-func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func (p *Plugin) createClient(rawConfig []byte) error {
+	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
+		return err
+	}
+
+	p.client = client.New(config.ClientID, config.APIKey, config.Endpoint)
+
+	return nil
+}
+
+func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	if err := p.createClient(req.Config); err != nil {
 		return models.InstallResponse{}, err
 	}
 
-	client, err := client.New(config.ClientID, config.APIKey, config.Endpoint)
-	if err != nil {
-		return models.InstallResponse{}, err
-	}
-	p.client = client
 	p.initWebhookConfig()
 
 	configs := make([]models.PSPWebhookConfig, 0, len(webhookConfigs))
@@ -52,35 +57,49 @@ func (p Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mod
 
 func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextBalancesResponse{}, err
+		}
 	}
+
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextExternalAccounts(ctx, req)
 }
 
 func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
 	}
+
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
 	if p.client == nil {
-		return models.FetchNextOthersResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextOthersResponse{}, err
+		}
 	}
 
 	switch req.Name {
@@ -93,15 +112,21 @@ func (p Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersR
 
 func (p Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	if p.client == nil {
-		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateBankAccountResponse{}, err
+		}
 	}
+
 	return p.createBankAccount(ctx, req.BankAccount)
 }
 
 func (p Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateTransferResponse{}, err
+		}
 	}
+
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
 	if err != nil {
 		return models.CreateTransferResponse{}, err
@@ -118,7 +143,9 @@ func (p Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferS
 
 func (p Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreatePayoutResponse{}, err
+		}
 	}
 
 	payment, err := p.createPayout(ctx, req.PaymentInitiation)
@@ -137,15 +164,20 @@ func (p Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatu
 
 func (p Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
-		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
 	}
+
 	err := p.createWebhooks(ctx, req)
 	return models.CreateWebhooksResponse{}, err
 }
 
 func (p Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
-		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.TranslateWebhookResponse{}, err
+		}
 	}
 
 	// Mangopay does not send us the event inside the body, but using

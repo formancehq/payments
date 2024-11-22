@@ -16,14 +16,21 @@ func (p *Plugin) Name() string {
 	return "generic"
 }
 
-func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	config, err := unmarshalAndValidateConfig(req.Config)
+func (p *Plugin) createClient(rawConfig []byte) error {
+	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
-		return models.InstallResponse{}, err
+		return err
 	}
 
-	client := client.New(config.APIKey, config.Endpoint)
-	p.client = client
+	p.client = client.New(config.APIKey, config.Endpoint)
+
+	return nil
+}
+
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	if err := p.createClient(req.Config); err != nil {
+		return models.InstallResponse{}, err
+	}
 
 	return models.InstallResponse{
 		Capabilities: capabilities,
@@ -37,29 +44,41 @@ func (p Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mod
 
 func (p Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextBalancesResponse{}, err
+		}
 	}
+
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
 	}
+
 	return p.fetchExternalAccounts(ctx, req)
 }
 
 func (p Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+		if err := p.createClient(req.Config); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
 	}
+
 	return p.fetchNextPayments(ctx, req)
 }
 

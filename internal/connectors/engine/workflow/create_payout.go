@@ -43,6 +43,8 @@ func (w Workflow) createPayout(
 	ctx workflow.Context,
 	createPayout CreatePayout,
 ) error {
+	connectorID := createPayout.ConnectorID
+
 	// Get the payment initiation
 	pi, err := activities.StoragePaymentInitiationsGet(
 		infiniteRetryContext(ctx),
@@ -92,7 +94,7 @@ func (w Workflow) createPayout(
 
 	createPayoutResponse, errPlugin := activities.PluginCreatePayout(
 		infiniteRetryContext(ctx),
-		createPayout.ConnectorID,
+		connectorID,
 		models.CreatePayoutRequest{
 			PaymentInitiation: *pspPI,
 		},
@@ -100,13 +102,13 @@ func (w Workflow) createPayout(
 	switch errPlugin {
 	case nil:
 		if createPayoutResponse.Payment != nil {
-			payment := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, createPayout.ConnectorID)
+			payment := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, connectorID)
 
 			if err := w.storePIPayment(
 				ctx,
 				payment,
 				createPayout.PaymentInitiationID,
-				createPayout.ConnectorID,
+				connectorID,
 			); err != nil {
 				return err
 			}
@@ -114,18 +116,18 @@ func (w Workflow) createPayout(
 			return w.updateTaskSuccess(
 				ctx,
 				createPayout.TaskID,
-				createPayout.ConnectorID,
+				connectorID,
 				payment.ID.String(),
 			)
 		}
 
 		if createPayoutResponse.PollingPayoutID != nil {
-			config, err := w.plugins.GetConfig(createPayout.ConnectorID)
+			config, err := w.plugins.GetConfig(connectorID)
 			if err != nil {
 				return err
 			}
 
-			scheduleID := fmt.Sprintf("polling-payout-%s-%s-%s", w.stack, createPayout.ConnectorID.String(), *createPayoutResponse.PollingPayoutID)
+			scheduleID := fmt.Sprintf("polling-payout-%s-%s-%s", w.stack, connectorID.String(), *createPayoutResponse.PollingPayoutID)
 			scheduleID, err = activities.TemporalScheduleCreate(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
@@ -138,13 +140,13 @@ func (w Workflow) createPayout(
 						Args: []interface{}{
 							PollTransfer{
 								TaskID:              createPayout.TaskID,
-								ConnectorID:         createPayout.ConnectorID,
+								ConnectorID:         connectorID,
 								PaymentInitiationID: createPayout.PaymentInitiationID,
 								TransferID:          *createPayoutResponse.PollingPayoutID,
 								ScheduleID:          scheduleID,
 							},
 						},
-						TaskQueue: createPayout.ConnectorID.String(),
+						TaskQueue: connectorID.String(),
 						TypedSearchAttributes: temporal.NewSearchAttributes(
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
@@ -166,7 +168,7 @@ func (w Workflow) createPayout(
 				infiniteRetryContext(ctx),
 				models.Schedule{
 					ID:          scheduleID,
-					ConnectorID: createPayout.ConnectorID,
+					ConnectorID: connectorID,
 					CreatedAt:   workflow.Now(ctx).UTC(),
 				})
 			if err != nil {

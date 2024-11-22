@@ -18,6 +18,7 @@ const (
 	ErrTypePermissionDenied   = "PERMISSION_DENIED"
 	ErrTypeUnimplemented      = "UNIMPLEMENTED"
 	ErrTypeUnauthenticated    = "UNAUTHENTICATED"
+	ErrTypeNotYetInstalled    = "NOT_YET_INSTALLED"
 )
 
 var nonRetryableErrorTypes = map[codes.Code]string{
@@ -43,6 +44,11 @@ func temporalPluginError(err error) error {
 				reason = info.Reason
 			}
 		}
+	}
+
+	if code == codes.Internal && reason == ErrTypeNotYetInstalled {
+		// Special case when the plugin is not yet installed
+		return temporal.NewApplicationErrorWithCause(reason, ErrTypeNotYetInstalled, err)
 	}
 
 	errorType, ok := nonRetryableErrorTypes[code]
