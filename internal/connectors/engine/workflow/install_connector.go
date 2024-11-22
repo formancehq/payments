@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -15,7 +14,6 @@ import (
 type InstallConnector struct {
 	ConnectorID models.ConnectorID
 	Config      models.Config
-	RawConfig   json.RawMessage
 }
 
 func (w Workflow) runInstallConnector(
@@ -29,7 +27,6 @@ func (w Workflow) runInstallConnector(
 		// this also causes API install calls to fail immediately which is more desirable in the case that a plugin is timing out or not compiled correctly
 		maximumAttemptsRetryContext(ctx, 1),
 		installConnector.ConnectorID,
-		installConnector.RawConfig,
 	)
 	if err != nil {
 		return errors.Wrap(err, "failed to install connector")

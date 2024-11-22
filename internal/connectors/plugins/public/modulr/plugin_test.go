@@ -26,25 +26,28 @@ var _ = Describe("Modulr Plugin", func() {
 
 	Context("install", func() {
 		It("should report errors in config - apiSecret", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
+			_, err := New("modulr", config)
 			Expect(err).To(MatchError("missing api secret in config: invalid config"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiSecret": "test", "endpoint": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"apiSecret": "test", "endpoint": "test"}`)
+			_, err := New("modulr", config)
 			Expect(err).To(MatchError("missing api key in config: invalid config"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiSecret": "test", "apiKey": "test"}`)}
-			_, err := plg.Install(ctx, req)
+			config := json.RawMessage(`{"apiSecret": "test", "apiKey": "test"}`)
+			_, err := New("modulr", config)
 			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			req := models.InstallRequest{Config: json.RawMessage(`{"apiSecret": "test", "apiKey": "test", "endpoint": "test"}`)}
+			config := json.RawMessage(`{"apiSecret": "test", "apiKey": "test", "endpoint": "test"}`)
+			_, err := New("modulr", config)
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(len(res.Capabilities) > 0).To(BeTrue())
