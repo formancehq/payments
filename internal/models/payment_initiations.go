@@ -56,7 +56,7 @@ type PaymentInitiation struct {
 	// Destination account of the payment
 	DestinationAccountID *AccountID `json:"destinationAccountID"`
 
-	// Payment current amount (can be changed of reversed, refunded, etc...)
+	// Payment current amount (can be changed in case of reversed, refunded, etc...)
 	Amount *big.Int `json:"amount"`
 	// Asset of the payment
 	Asset string `json:"asset"`
@@ -169,8 +169,8 @@ func (pi *PaymentInitiation) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, sourceAccount, destinationAccount *PSPAccount) *PSPPaymentInitiation {
-	return &PSPPaymentInitiation{
+func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, sourceAccount, destinationAccount *PSPAccount) PSPPaymentInitiation {
+	return PSPPaymentInitiation{
 		Reference:          from.Reference,
 		CreatedAt:          from.ScheduledAt, // Scheduled at should be the creation time of the payment on the PSP
 		Description:        from.Description,
@@ -184,7 +184,7 @@ func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, source
 
 type PaymentInitiationExpanded struct {
 	PaymentInitiation PaymentInitiation
-	Status            string
+	Status            PaymentInitiationAdjustmentStatus
 	Error             error
 }
 
@@ -227,7 +227,7 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 		Amount:   pi.PaymentInitiation.Amount,
 		Asset:    pi.PaymentInitiation.Asset,
 		Metadata: pi.PaymentInitiation.Metadata,
-		Status:   pi.Status,
+		Status:   pi.Status.String(),
 		Error: func() *string {
 			if pi.Error == nil {
 				return nil

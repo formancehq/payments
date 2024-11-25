@@ -233,6 +233,36 @@ func (mr *MockPluginMockRecorder) PollTransferStatus(arg0, arg1 any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollTransferStatus", reflect.TypeOf((*MockPlugin)(nil).PollTransferStatus), arg0, arg1)
 }
 
+// ReversePayout mocks base method.
+func (m *MockPlugin) ReversePayout(arg0 context.Context, arg1 ReversePayoutRequest) (ReversePayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReversePayout", arg0, arg1)
+	ret0, _ := ret[0].(ReversePayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReversePayout indicates an expected call of ReversePayout.
+func (mr *MockPluginMockRecorder) ReversePayout(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReversePayout", reflect.TypeOf((*MockPlugin)(nil).ReversePayout), arg0, arg1)
+}
+
+// ReverseTransfer mocks base method.
+func (m *MockPlugin) ReverseTransfer(arg0 context.Context, arg1 ReverseTransferRequest) (ReverseTransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReverseTransfer", arg0, arg1)
+	ret0, _ := ret[0].(ReverseTransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReverseTransfer indicates an expected call of ReverseTransfer.
+func (mr *MockPluginMockRecorder) ReverseTransfer(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReverseTransfer", reflect.TypeOf((*MockPlugin)(nil).ReverseTransfer), arg0, arg1)
+}
+
 // TranslateWebhook mocks base method.
 func (m *MockPlugin) TranslateWebhook(arg0 context.Context, arg1 TranslateWebhookRequest) (TranslateWebhookResponse, error) {
 	m.ctrl.T.Helper()
