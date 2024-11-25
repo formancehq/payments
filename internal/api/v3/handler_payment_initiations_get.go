@@ -39,7 +39,7 @@ func paymentInitiationsGet(backend backend.Backend) http.HandlerFunc {
 
 		res := models.PaymentInitiationExpanded{
 			PaymentInitiation: *paymentInitiation,
-			Status:            lastAdjustment.Status.String(),
+			Status:            lastAdjustment.Status,
 			Error:             lastAdjustment.Error,
 		}
 

@@ -27,7 +27,6 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
-	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -353,6 +352,21 @@ func (m *MockBackend) PaymentInitiationRelatedPaymentsList(ctx context.Context, 
 func (mr *MockBackendMockRecorder) PaymentInitiationRelatedPaymentsList(ctx, id, query any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationRelatedPaymentsList", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationRelatedPaymentsList), ctx, id, query)
+}
+
+// PaymentInitiationReversalsCreate mocks base method.
+func (m *MockBackend) PaymentInitiationReversalsCreate(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalsCreate", ctx, reversal, waitResult)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationReversalsCreate indicates an expected call of PaymentInitiationReversalsCreate.
+func (mr *MockBackendMockRecorder) PaymentInitiationReversalsCreate(ctx, reversal, waitResult any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalsCreate", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationReversalsCreate), ctx, reversal, waitResult)
 }
 
 // PaymentInitiationsApprove mocks base method.
