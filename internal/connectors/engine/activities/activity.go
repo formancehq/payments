@@ -59,12 +59,20 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginCreateTransfer,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginReverseTransfer",
+			Func: a.PluginReverseTransfer,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginPollTransferStatus",
 			Func: a.PluginPollTransferStatus,
 		}).
 		Append(temporalworker.Definition{
 			Name: "PluginCreatePayout",
 			Func: a.PluginCreatePayout,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginReversePayout",
+			Func: a.PluginReversePayout,
 		}).
 		Append(temporalworker.Definition{
 			Name: "PluginPollPayoutStatus",
@@ -207,8 +215,32 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePaymentInitiationsAdjustmentsStore,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationAdjustmentsList",
+			Func: a.StoragePaymentInitiationAdjustmentsList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationsAdjusmentsIfPredicateStore",
+			Func: a.StoragePaymentInitiationsAdjusmentsIfPredicateStore,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePaymentInitiationIDsListFromPaymentID",
 			Func: a.StoragePaymentInitiationIDsListFromPaymentID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationsDelete",
+			Func: a.StoragePaymentInitiationsDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationReversalsGet",
+			Func: a.StoragePaymentInitiationReversalsGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationReversalsDelete",
+			Func: a.StoragePaymentInitiationReversalsDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationReversalsAdjustmentsStore",
+			Func: a.StoragePaymentInitiationReversalsAdjustmentsStore,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageEventsSentStore",
