@@ -16,6 +16,7 @@ import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
+	"github.com/formancehq/go-libs/v2/profiling"
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
@@ -27,8 +28,6 @@ import (
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
-
-// TODO(polo/crimson): add profiling
 
 var (
 	ServiceName = "payments"
@@ -141,6 +140,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
+		profiling.FXModuleFromFlags(cmd),
 		engine.Module(pluginPaths, stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
 		v2.NewModule(),
 		v3.NewModule(),
