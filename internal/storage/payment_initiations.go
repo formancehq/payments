@@ -364,6 +364,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		return false, e("upsert payment initiations", err)
 	}
 	defer tx.Rollback()
+
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().
 		Model(&previousAdj).
@@ -375,9 +376,11 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("failed to get previous payment initiation adjustment", err)
 	}
+
 	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
 		return false, nil
 	}
+
 	toInsert := fromPaymentInitiationAdjustmentModels(adj)
 	_, err = tx.NewInsert().
 		Model(&toInsert).
@@ -386,6 +389,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("failed to insert payment initiation adjustments", err)
 	}
+
 	return true, e("failed to commit transaction", tx.Commit())
 }
 

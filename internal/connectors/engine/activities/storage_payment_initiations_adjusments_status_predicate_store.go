@@ -23,6 +23,6 @@ var StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity = Activities{}
 
 func StoragePaymentInitiationsAdjusmentsIfPredicateStore(ctx workflow.Context, adj models.PaymentInitiationAdjustment, unAcceptablePreviousStatus []models.PaymentInitiationAdjustmentStatus) (bool, error) {
 	var result bool
-	err := executeActivity(ctx, StoragePaymentInitiationsAdjustmentsStoreActivity, &result, adj, unAcceptablePreviousStatus)
+	err := executeActivity(ctx, StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity, &result, adj, unAcceptablePreviousStatus)
 	return result, err
 }
