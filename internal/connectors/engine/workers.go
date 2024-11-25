@@ -32,8 +32,11 @@ type Worker struct {
 	worker worker.Worker
 }
 
+// Returns the default worker name and create it if it doesn't exist yet.
 func (w *Workers) GetDefaultWorker() string {
-	return fmt.Sprintf("%s-default", w.stack)
+	defaultWorker := fmt.Sprintf("%s-default", w.stack)
+	w.AddWorker(defaultWorker)
+	return defaultWorker
 }
 
 func NewWorkers(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
@@ -46,9 +49,6 @@ func NewWorkers(logger logging.Logger, stack string, temporalClient client.Clien
 		activities:     activities,
 		options:        options,
 	}
-
-	// For all operation outside of connectors handlers
-	workers.AddWorker(workers.GetDefaultWorker())
 
 	return workers
 }
