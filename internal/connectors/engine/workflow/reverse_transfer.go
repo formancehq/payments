@@ -134,6 +134,22 @@ func (w Workflow) reverseTransfer(
 			return "", err
 		}
 
+		err = w.addPIAdjustment(
+			ctx,
+			models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: pi.ID,
+				CreatedAt:           workflow.Now(ctx),
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED,
+			},
+			pi.Amount,
+			&pi.Asset,
+			nil,
+			nil,
+		)
+		if err != nil {
+			return "", err
+		}
+
 		return "", errPlugin
 	}
 }

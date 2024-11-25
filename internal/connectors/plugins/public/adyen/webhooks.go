@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
 	"net/url"
 	"strings"
@@ -41,8 +40,6 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	if err != nil {
 		return err
 	}
-
-	log.Println(url)
 
 	return p.client.CreateWebhook(ctx, url, req.ConnectorID)
 }

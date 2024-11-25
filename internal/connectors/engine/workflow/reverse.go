@@ -29,12 +29,12 @@ func (w Workflow) validateReverse(
 		return err
 	}
 
-	err = w.validateOnlyReverse(ctx, validateReverse)
+	err = w.validateReverseAmount(ctx, validateReverse)
 	if err != nil {
 		return err
 	}
 
-	err = w.validateReverseAmount(ctx, validateReverse)
+	err = w.validateOnlyReverse(ctx, validateReverse)
 	if err != nil {
 		return err
 	}
