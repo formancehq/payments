@@ -14,6 +14,7 @@ import (
 	"github.com/stripe/stripe-go/v79/bankaccount"
 	"github.com/stripe/stripe-go/v79/payout"
 	"github.com/stripe/stripe-go/v79/transfer"
+	"github.com/stripe/stripe-go/v79/transferreversal"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -26,12 +27,14 @@ type Client interface {
 	GetPayments(ctx context.Context, accountID string, timeline Timeline, pageSize int64) ([]*stripe.BalanceTransaction, Timeline, bool, error)
 	CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error)
 	CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error)
+	ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error)
 }
 
 type client struct {
 	accountClient            account.Client
 	balanceClient            balance.Client
 	transferClient           transfer.Client
+	transferReversalClient   transferreversal.Client
 	payoutClient             payout.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client

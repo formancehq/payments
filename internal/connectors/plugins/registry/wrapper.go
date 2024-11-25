@@ -187,6 +187,24 @@ func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequ
 	return resp, nil
 }
 
+func (i *impl) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.ReverseTransfer", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiationReversal.Reference))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("reversing transfer...")
+
+	resp, err := i.plugin.ReverseTransfer(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("reversing transfer failed: %v", err)
+		otel.RecordError(span, err)
+		return models.ReverseTransferResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("reversed transfer succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.PollTransferStatus", attribute.String("psp", i.plugin.Name()), attribute.String("transferID", req.TransferID))
 	defer span.End()
@@ -219,6 +237,24 @@ func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest)
 	}
 
 	i.logger.WithField("name", i.plugin.Name()).Info("created payout succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.ReversePayout", attribute.String("psp", i.plugin.Name()), attribute.String("reference", req.PaymentInitiationReversal.Reference))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("reversing payout...")
+
+	resp, err := i.plugin.ReversePayout(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("reversing payout failed: %v", err)
+		otel.RecordError(span, err)
+		return models.ReversePayoutResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("reversed payout succeeded!")
 
 	return resp, nil
 }
