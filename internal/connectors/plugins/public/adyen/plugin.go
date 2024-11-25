@@ -14,7 +14,7 @@ import (
 func init() {
 	registry.RegisterPlugin("adyen", func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
-	})
+	}, capabilities)
 }
 
 type Plugin struct {
@@ -64,7 +64,6 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	}
 
 	return models.InstallResponse{
-		Capabilities:    capabilities,
 		Workflow:        workflow(),
 		WebhooksConfigs: configs,
 	}, nil

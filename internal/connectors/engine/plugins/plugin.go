@@ -37,9 +37,8 @@ type plugins struct {
 }
 
 type pluginInformation struct {
-	client       models.Plugin
-	capabilities map[models.Capability]struct{}
-	config       models.Config
+	client models.Plugin
+	config models.Config
 }
 
 func New(
@@ -78,9 +77,8 @@ func (p *plugins) RegisterPlugin(
 	}
 
 	p.plugins[connectorID.String()] = pluginInformation{
-		client:       plugin,
-		capabilities: make(map[models.Capability]struct{}),
-		config:       config,
+		client: plugin,
+		config: config,
 	}
 
 	return nil

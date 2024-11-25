@@ -33,7 +33,6 @@ type Plugin interface {
 type InstallRequest struct{}
 
 type InstallResponse struct {
-	Capabilities    []Capability
 	Workflow        ConnectorTasksTree
 	WebhooksConfigs []PSPWebhookConfig
 }

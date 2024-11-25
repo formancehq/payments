@@ -39,8 +39,6 @@ var _ = Describe("Moneycorp *Plugin", func() {
 			Expect(err).To(BeNil())
 			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())
-			Expect(len(res.Capabilities) > 0).To(BeTrue())
-			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow[0].Name).To(Equal("fetch_accounts"))
 		})
 	})

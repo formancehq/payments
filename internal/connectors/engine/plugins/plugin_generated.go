@@ -55,6 +55,21 @@ func (mr *MockPluginsMockRecorder) Get(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), arg0)
 }
 
+// GetCapabilities mocks base method.
+func (m *MockPlugins) GetCapabilities(arg0 models.ConnectorID) ([]models.Capability, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetCapabilities", arg0)
+	ret0, _ := ret[0].([]models.Capability)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetCapabilities indicates an expected call of GetCapabilities.
+func (mr *MockPluginsMockRecorder) GetCapabilities(arg0 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapabilities", reflect.TypeOf((*MockPlugins)(nil).GetCapabilities), arg0)
+}
+
 // GetConfig mocks base method.
 func (m *MockPlugins) GetConfig(arg0 models.ConnectorID) (models.Config, error) {
 	m.ctrl.T.Helper()

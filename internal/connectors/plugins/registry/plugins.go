@@ -11,26 +11,43 @@ import (
 
 type PluginCreateFunction func(string, json.RawMessage) (models.Plugin, error)
 
+type PluginInformation struct {
+	capabilities []models.Capability
+	createFunc   PluginCreateFunction
+}
+
 var (
-	pluginsRegistry map[string]PluginCreateFunction = make(map[string]PluginCreateFunction)
+	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
 
 	ErrPluginNotFound = errors.New("plugin not found")
 )
 
-func RegisterPlugin(name string, createFunc PluginCreateFunction) {
-	pluginsRegistry[name] = createFunc
+func RegisterPlugin(name string, createFunc PluginCreateFunction, capabilities []models.Capability) {
+	pluginsRegistry[name] = PluginInformation{
+		capabilities: capabilities,
+		createFunc:   createFunc,
+	}
 }
 
 func GetPlugin(logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
-	createFunc, ok := pluginsRegistry[strings.ToLower(provider)]
+	info, ok := pluginsRegistry[strings.ToLower(provider)]
 	if !ok {
 		return nil, ErrPluginNotFound
 	}
 
-	p, err := createFunc(connectorName, rawConfig)
+	p, err := info.createFunc(connectorName, rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return New(logger, p), nil
+}
+
+func GetCapabilities(provider string) ([]models.Capability, error) {
+	info, ok := pluginsRegistry[strings.ToLower(provider)]
+	if !ok {
+		return nil, ErrPluginNotFound
+	}
+
+	return info.capabilities, nil
 }
