@@ -26,7 +26,7 @@ var _ = Describe("Plugin Install Connector", func() {
 
 	BeforeEach(func() {
 		evts = &events.Events{}
-		sampleResponse = models.InstallResponse{Capabilities: make([]models.Capability, 0)}
+		sampleResponse = models.InstallResponse{}
 	})
 
 	Context("plugin install connector", func() {
@@ -51,9 +51,8 @@ var _ = Describe("Plugin Install Connector", func() {
 		It("calls underlying plugin", func(ctx SpecContext) {
 			p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
 			plugin.EXPECT().Install(ctx, req.Req).Return(sampleResponse, nil)
-			res, err := act.PluginInstallConnector(ctx, req)
+			_, err := act.PluginInstallConnector(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Capabilities).To(Equal(sampleResponse.Capabilities))
 		})
 
 		It("returns a retryable temporal error", func(ctx SpecContext) {

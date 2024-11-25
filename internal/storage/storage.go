@@ -36,10 +36,6 @@ type Storage interface {
 	BankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error
 	BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
-	// Capabilities
-	CapabilitiesUpsert(ctx context.Context, connectorID models.ConnectorID, capabilities []models.Capability) error
-	CapabilitiesGet(ctx context.Context, connectorID models.ConnectorID) ([]models.Capability, error)
-
 	// Connectors
 	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
 	ConnectorsInstall(ctx context.Context, c models.Connector) error

@@ -32,16 +32,7 @@ func (w Workflow) runInstallConnector(
 		return errors.Wrap(err, "failed to install connector")
 	}
 
-	// Third step: store the capabilities of the connector
-	if err := activities.StorageCapabilitiesStore(
-		infiniteRetryContext(ctx),
-		installConnector.ConnectorID,
-		installResponse.Capabilities,
-	); err != nil {
-		return errors.Wrap(err, "failed to store capabilities")
-	}
-
-	// Fourth step: store the workflow of the connector
+	// Third step: store the workflow of the connector
 	err = activities.StorageConnectorTasksTreeStore(infiniteRetryContext(ctx), installConnector.ConnectorID, installResponse.Workflow)
 	if err != nil {
 		return errors.Wrap(err, "failed to store tasks tree")

@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
@@ -268,7 +269,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceAccount")
 	defer span.End()
 
-	capabilities, err := e.storage.CapabilitiesGet(ctx, account.ConnectorID)
+	capabilities, err := registry.GetCapabilities(account.ConnectorID.Provider)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -322,7 +323,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePayment")
 	defer span.End()
 
-	capabilities, err := e.storage.CapabilitiesGet(ctx, payment.ConnectorID)
+	capabilities, err := registry.GetCapabilities(payment.ConnectorID.Provider)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err

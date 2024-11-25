@@ -50,8 +50,6 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(len(res.Capabilities) > 0).To(BeTrue())
-			Expect(res.Capabilities).To(Equal(capabilities))
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 		})

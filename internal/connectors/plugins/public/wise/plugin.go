@@ -14,7 +14,7 @@ import (
 func init() {
 	registry.RegisterPlugin("wise", func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
-	})
+	}, capabilities)
 }
 
 var (
@@ -82,7 +82,6 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 	}
 
 	return models.InstallResponse{
-		Capabilities:    capabilities,
 		Workflow:        workflow(),
 		WebhooksConfigs: configs,
 	}, nil
