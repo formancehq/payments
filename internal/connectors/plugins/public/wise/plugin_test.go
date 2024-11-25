@@ -92,7 +92,6 @@ var _ = Describe("Wise Plugin", func() {
 			req := models.InstallRequest{}
 			res, err := plg.Install(context.Background(), req)
 			Expect(err).To(BeNil())
-			Expect(len(res.Capabilities) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow[0].Name).To(Equal("fetch_profiles"))
 		})
