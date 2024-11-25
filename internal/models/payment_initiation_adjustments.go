@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"errors"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/pointer"
@@ -18,6 +19,10 @@ type PaymentInitiationAdjustment struct {
 	CreatedAt time.Time `json:"createdAt"`
 	// Last status of the adjustment
 	Status PaymentInitiationAdjustmentStatus `json:"status"`
+	// Amount of the adjustment in case we have a refund, reverse etc...
+	Amount *big.Int `json:"amount"`
+	// Currency of the adjustment in case we have a refund, reverse etc...
+	Asset *string `json:"asset"`
 	// Error description if we had one
 	Error error `json:"error"`
 	// Additional metadata
@@ -30,6 +35,8 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 		PaymentInitiationID string                            `json:"paymentInitiationID"`
 		CreatedAt           time.Time                         `json:"createdAt"`
 		Status              PaymentInitiationAdjustmentStatus `json:"status"`
+		Amount              *big.Int                          `json:"amount,omitempty"`
+		Asset               *string                           `json:"asset,omitempty"`
 		Error               *string                           `json:"error,omitempty"`
 		Metadata            map[string]string                 `json:"metadata"`
 	}{
@@ -37,6 +44,8 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 		PaymentInitiationID: pia.PaymentInitiationID.String(),
 		CreatedAt:           pia.CreatedAt,
 		Status:              pia.Status,
+		Amount:              pia.Amount,
+		Asset:               pia.Asset,
 		Error: func() *string {
 			if pia.Error == nil {
 				return nil
@@ -54,6 +63,8 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 		PaymentInitiationID string                            `json:"paymentInitiationID"`
 		CreatedAt           time.Time                         `json:"createdAt"`
 		Status              PaymentInitiationAdjustmentStatus `json:"status"`
+		Amount              *big.Int                          `json:"amount"`
+		Asset               *string                           `json:"asset"`
 		Error               *string                           `json:"error"`
 		Metadata            map[string]string                 `json:"metadata"`
 	}
@@ -76,6 +87,8 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 	pia.PaymentInitiationID = piID
 	pia.CreatedAt = aux.CreatedAt
 	pia.Status = aux.Status
+	pia.Amount = aux.Amount
+	pia.Asset = aux.Asset
 	if aux.Error != nil {
 		pia.Error = errors.New(*aux.Error)
 	}
