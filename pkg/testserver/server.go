@@ -11,6 +11,8 @@ import (
 
 	"github.com/nats-io/nats.go"
 
+	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
+
 	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/publish"
