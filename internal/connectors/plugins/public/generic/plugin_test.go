@@ -122,6 +122,14 @@ var _ = Describe("Generic Plugin", func() {
 		})
 	})
 
+	Context("reverse transfer", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.ReverseTransferRequest{}
+			_, err := plg.ReverseTransfer(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
 	Context("poll transfer status", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.PollTransferStatusRequest{}
@@ -134,6 +142,14 @@ var _ = Describe("Generic Plugin", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+		})
+	})
+
+	Context("reverse payout", func() {
+		It("should fail because not implemented", func(ctx SpecContext) {
+			req := models.ReversePayoutRequest{}
+			_, err := plg.ReversePayout(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
