@@ -48,7 +48,7 @@ func paymentInitiationsList(backend backend.Backend) http.HandlerFunc {
 
 			pis = append(pis, models.PaymentInitiationExpanded{
 				PaymentInitiation: pi,
-				Status:            lastAdjustment.Status.String(),
+				Status:            lastAdjustment.Status,
 				Error:             lastAdjustment.Error,
 			})
 		}

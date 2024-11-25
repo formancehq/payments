@@ -97,8 +97,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 					r.Post("/status", transferInitiationsUpdateStatus(backend))
 					r.Post("/retry", transferInitiationsRetry(backend))
-					// TODO(polo): add reverse
-					// r.Post("/reverse", transferInitiationsReverse(backend))
+					r.Post("/reverse", transferInitiationsReverse(backend))
 				})
 			})
 		})

@@ -44,7 +44,7 @@ var _ = Describe("API v2 pools add account", func() {
 		})
 
 		It("should return a bad request error when poolID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "poolID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)

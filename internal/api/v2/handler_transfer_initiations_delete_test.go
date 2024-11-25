@@ -35,7 +35,7 @@ var _ = Describe("API v2 Payment Initiation Deletion", func() {
 		})
 
 		It("should return a bad request error when transferInitiationID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("transferInitiationID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "transferInitiationID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -44,13 +44,13 @@ var _ = Describe("API v2 Payment Initiation Deletion", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("payment initiation delete err")
 			m.EXPECT().PaymentInitiationsDelete(gomock.Any(), gomock.Any()).Return(expectedErr)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status no content on success", func(ctx SpecContext) {
 			m.EXPECT().PaymentInitiationsDelete(gomock.Any(), paymentID).Return(nil)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
 	})

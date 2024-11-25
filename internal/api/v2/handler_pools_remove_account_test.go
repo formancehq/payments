@@ -37,14 +37,14 @@ var _ = Describe("API v2 pools remove account", func() {
 		})
 
 		It("should return a bad request error when poolID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "poolID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return a bad request error when accountID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", poolID.String(), "accountID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "poolID", poolID.String(), "accountID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -53,13 +53,13 @@ var _ = Describe("API v2 pools remove account", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("pool remove account err")
 			m.EXPECT().PoolsRemoveAccount(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
-			handlerFn(w, prepareQueryRequest("poolID", poolID.String(), "accountID", accID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "poolID", poolID.String(), "accountID", accID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status no content on success", func(ctx SpecContext) {
 			m.EXPECT().PoolsRemoveAccount(gomock.Any(), poolID, accID).Return(nil)
-			handlerFn(w, prepareQueryRequest("poolID", poolID.String(), "accountID", accID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "poolID", poolID.String(), "accountID", accID.String()))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
 	})
