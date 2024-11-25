@@ -21,7 +21,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -135,4 +134,19 @@ func (m *MockClient) GetPayments(ctx context.Context, accountID string, timeline
 func (mr *MockClientMockRecorder) GetPayments(ctx, accountID, timeline, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPayments", reflect.TypeOf((*MockClient)(nil).GetPayments), ctx, accountID, timeline, pageSize)
+}
+
+// ReverseTransfer mocks base method.
+func (m *MockClient) ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReverseTransfer", ctx, reverseTransferRequest)
+	ret0, _ := ret[0].(*stripe.TransferReversal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReverseTransfer indicates an expected call of ReverseTransfer.
+func (mr *MockClientMockRecorder) ReverseTransfer(ctx, reverseTransferRequest any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReverseTransfer", reflect.TypeOf((*MockClient)(nil).ReverseTransfer), ctx, reverseTransferRequest)
 }

@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/stripe/stripe-go/v79"
@@ -45,7 +44,7 @@ func (c *client) CreateTransfer(ctx context.Context, createTransferRequest *Crea
 
 	transferResponse, err := c.transferClient.New(params)
 	if err != nil {
-		return nil, fmt.Errorf("creating transfer: %w", err)
+		return nil, wrapSDKErr(err)
 	}
 
 	return transferResponse, nil
