@@ -562,6 +562,21 @@ func (mr *MockStorageMockRecorder) PaymentInitiationAdjustmentsUpsert(ctx, adj a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationAdjustmentsUpsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationAdjustmentsUpsert), ctx, adj)
 }
 
+// PaymentInitiationAdjustmentsUpsertIfPredicate mocks base method.
+func (m *MockStorage) PaymentInitiationAdjustmentsUpsertIfPredicate(ctx context.Context, adj models.PaymentInitiationAdjustment, predicate func(models.PaymentInitiationAdjustment) bool) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationAdjustmentsUpsertIfPredicate", ctx, adj, predicate)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationAdjustmentsUpsertIfPredicate indicates an expected call of PaymentInitiationAdjustmentsUpsertIfPredicate.
+func (mr *MockStorageMockRecorder) PaymentInitiationAdjustmentsUpsertIfPredicate(ctx, adj, predicate any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationAdjustmentsUpsertIfPredicate", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationAdjustmentsUpsertIfPredicate), ctx, adj, predicate)
+}
+
 // PaymentInitiationIDsListFromPaymentID mocks base method.
 func (m *MockStorage) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id models.PaymentID) ([]models.PaymentInitiationID, error) {
 	m.ctrl.T.Helper()
@@ -604,6 +619,108 @@ func (m *MockStorage) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context
 func (mr *MockStorageMockRecorder) PaymentInitiationRelatedPaymentsUpsert(ctx, piID, pID, createdAt any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationRelatedPaymentsUpsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationRelatedPaymentsUpsert), ctx, piID, pID, createdAt)
+}
+
+// PaymentInitiationReversalAdjustmentsGet mocks base method.
+func (m *MockStorage) PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id models.PaymentInitiationReversalAdjustmentID) (*models.PaymentInitiationReversalAdjustment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalAdjustmentsGet", ctx, id)
+	ret0, _ := ret[0].(*models.PaymentInitiationReversalAdjustment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationReversalAdjustmentsGet indicates an expected call of PaymentInitiationReversalAdjustmentsGet.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalAdjustmentsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalAdjustmentsGet", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalAdjustmentsGet), ctx, id)
+}
+
+// PaymentInitiationReversalAdjustmentsList mocks base method.
+func (m *MockStorage) PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalAdjustmentsList", ctx, piID, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationReversalAdjustmentsList indicates an expected call of PaymentInitiationReversalAdjustmentsList.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalAdjustmentsList(ctx, piID, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalAdjustmentsList", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalAdjustmentsList), ctx, piID, q)
+}
+
+// PaymentInitiationReversalAdjustmentsUpsert mocks base method.
+func (m *MockStorage) PaymentInitiationReversalAdjustmentsUpsert(ctx context.Context, adj models.PaymentInitiationReversalAdjustment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalAdjustmentsUpsert", ctx, adj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationReversalAdjustmentsUpsert indicates an expected call of PaymentInitiationReversalAdjustmentsUpsert.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalAdjustmentsUpsert(ctx, adj any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalAdjustmentsUpsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalAdjustmentsUpsert), ctx, adj)
+}
+
+// PaymentInitiationReversalsDeleteFromConnectorID mocks base method.
+func (m *MockStorage) PaymentInitiationReversalsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalsDeleteFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationReversalsDeleteFromConnectorID indicates an expected call of PaymentInitiationReversalsDeleteFromConnectorID.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalsDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalsDeleteFromConnectorID), ctx, connectorID)
+}
+
+// PaymentInitiationReversalsGet mocks base method.
+func (m *MockStorage) PaymentInitiationReversalsGet(ctx context.Context, id models.PaymentInitiationReversalID) (*models.PaymentInitiationReversal, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalsGet", ctx, id)
+	ret0, _ := ret[0].(*models.PaymentInitiationReversal)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationReversalsGet indicates an expected call of PaymentInitiationReversalsGet.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalsGet", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalsGet), ctx, id)
+}
+
+// PaymentInitiationReversalsList mocks base method.
+func (m *MockStorage) PaymentInitiationReversalsList(ctx context.Context, q ListPaymentInitiationReversalsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversal], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalsList", ctx, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentInitiationReversal])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentInitiationReversalsList indicates an expected call of PaymentInitiationReversalsList.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalsList(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalsList", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalsList), ctx, q)
+}
+
+// PaymentInitiationReversalsUpsert mocks base method.
+func (m *MockStorage) PaymentInitiationReversalsUpsert(ctx context.Context, pir models.PaymentInitiationReversal, reversalAdjustments []models.PaymentInitiationReversalAdjustment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentInitiationReversalsUpsert", ctx, pir, reversalAdjustments)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationReversalsUpsert indicates an expected call of PaymentInitiationReversalsUpsert.
+func (mr *MockStorageMockRecorder) PaymentInitiationReversalsUpsert(ctx, pir, reversalAdjustments any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationReversalsUpsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationReversalsUpsert), ctx, pir, reversalAdjustments)
 }
 
 // PaymentInitiationsDelete mocks base method.
