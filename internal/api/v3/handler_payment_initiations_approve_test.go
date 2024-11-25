@@ -35,7 +35,7 @@ var _ = Describe("API v3 Payment Initiation Approval", func() {
 		})
 
 		It("should return a bad request error when paymentInitiationID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentInitiationID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "paymentInitiationID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -47,7 +47,7 @@ var _ = Describe("API v3 Payment Initiation Approval", func() {
 				models.Task{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("paymentInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -56,7 +56,7 @@ var _ = Describe("API v3 Payment Initiation Approval", func() {
 				models.Task{},
 				nil,
 			)
-			handlerFn(w, prepareQueryRequest("paymentInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusAccepted, "data")
 		})
 	})

@@ -35,14 +35,14 @@ var _ = Describe("API v3 Accounts", func() {
 		})
 
 		It("should return an invalid ID error when account ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "accountID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", accID.String())
+			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().AccountsGet(gomock.Any(), accID).Return(
 				&models.Account{}, fmt.Errorf("accounts get error"),
 			)
@@ -52,7 +52,7 @@ var _ = Describe("API v3 Accounts", func() {
 		})
 
 		It("should return data object", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", accID.String())
+			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().AccountsGet(gomock.Any(), accID).Return(
 				&models.Account{}, nil,
 			)
