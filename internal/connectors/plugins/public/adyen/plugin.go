@@ -109,12 +109,20 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
 }
 
+func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+}
+
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {

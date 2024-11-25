@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/stripe/stripe-go/v79"
@@ -47,7 +46,7 @@ func (c *client) CreatePayout(ctx context.Context, createPayoutRequest *CreatePa
 
 	payoutResponse, err := payout.New(params)
 	if err != nil {
-		return nil, fmt.Errorf("failed creating payout: %w", err)
+		return nil, wrapSDKErr(err)
 	}
 
 	return payoutResponse, nil
