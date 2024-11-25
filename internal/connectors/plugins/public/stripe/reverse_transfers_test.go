@@ -15,6 +15,7 @@ import (
 	"github.com/stripe/stripe-go/v79"
 	gomock "go.uber.org/mock/gomock"
 )
+
 var _ = Describe("Stripe Plugin Transfers Reversal", func() {
 	var (
 		plg *Plugin
@@ -65,6 +66,7 @@ var _ = Describe("Stripe Plugin Transfers Reversal", func() {
 				},
 			}
 		})
+
 		It("should return an error - validation error - missing metadata", func(ctx SpecContext) {
 			c := samplePSPPaymentInitiationReversal
 			delete(c.Metadata, "com.stripe.spec/transfer_id")
