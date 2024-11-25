@@ -37,7 +37,7 @@ var _ = Describe("API v2 Connector Webhooks", func() {
 		})
 
 		It("should return a bad request error when connector ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "connectorID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)

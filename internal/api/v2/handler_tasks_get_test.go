@@ -36,14 +36,14 @@ var _ = Describe("API v2 Get Task", func() {
 		})
 
 		It("should return an invalid ID error when connectorID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "connectorID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", connID.String(), "taskID", taskID.String())
+			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String(), "taskID", taskID.String())
 			m.EXPECT().SchedulesGet(gomock.Any(), taskID.String(), connID).Return(
 				&models.Schedule{}, fmt.Errorf("task get error"),
 			)
@@ -53,7 +53,7 @@ var _ = Describe("API v2 Get Task", func() {
 		})
 
 		It("should return data object", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", connID.String(), "taskID", taskID.String())
+			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String(), "taskID", taskID.String())
 			m.EXPECT().SchedulesGet(gomock.Any(), taskID.String(), connID).Return(
 				&models.Schedule{}, nil,
 			)

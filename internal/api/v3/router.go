@@ -113,8 +113,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 					r.Post("/retry", paymentInitiationsRetry(backend))
 					r.Post("/approve", paymentInitiationsApprove(backend))
 					r.Post("/reject", paymentInitiationsReject(backend))
-					// TODO(polo): add reverse
-					// r.Post("/reverse", paymentInitiationsReverse(backend))
+					r.Post("/reverse", paymentInitiationsReverse(backend))
 
 					r.Get("/adjustments", paymentInitiationAdjustmentsList(backend))
 					r.Get("/payments", paymentInitiationPaymentsList(backend))

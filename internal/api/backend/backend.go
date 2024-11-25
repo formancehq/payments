@@ -53,6 +53,9 @@ type Backend interface {
 	PaymentInitiationsRetry(ctx context.Context, id models.PaymentInitiationID, waitResult bool) (models.Task, error)
 	PaymentInitiationsDelete(ctx context.Context, id models.PaymentInitiationID) error
 
+	// Payment Initiation Reversals
+	PaymentInitiationReversalsCreate(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
+
 	// Payment Initiation Adjustments
 	PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error)
 	PaymentInitiationAdjustmentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.PaymentInitiationAdjustment, error)
