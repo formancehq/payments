@@ -35,7 +35,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 		})
 
 		It("should return a bad request error when transferInitiationID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("transferInitiationID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "transferInitiationID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -47,7 +47,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				&models.PaymentInitiation{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -61,7 +61,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				[]models.Payment{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -79,7 +79,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				[]models.PaymentInitiationAdjustment{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -96,7 +96,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				[]models.PaymentInitiationAdjustment{},
 				nil,
 			)
-			handlerFn(w, prepareQueryRequest("transferInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "transferInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusOK, "data")
 		})
 	})
