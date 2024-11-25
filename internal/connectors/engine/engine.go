@@ -495,7 +495,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 	ctx, span := otel.Tracer().Start(ctx, "engine.ReverseTransfer")
 	defer span.End()
 
-	ctx = context.WithoutCancel(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	e.wg.Add(1)
 	defer e.wg.Done()
 
@@ -511,13 +511,13 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+	if err := e.storage.TasksUpsert(detachedCtx, task); err != nil {
 		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
 	run, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			TaskQueue:                                reversal.ConnectorID.String(),
@@ -541,6 +541,8 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 
 	if waitResult {
 		// Wait for bank account creation to complete
+		// use ctx instead of detachedCtx to allow the caller to cancel the operation
+		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
 			return models.Task{}, err
@@ -611,7 +613,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 	ctx, span := otel.Tracer().Start(ctx, "engine.ReversePayout")
 	defer span.End()
 
-	ctx = context.WithoutCancel(ctx)
+	detachedCtx := context.WithoutCancel(ctx)
 	e.wg.Add(1)
 	defer e.wg.Done()
 
@@ -628,13 +630,13 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		UpdatedAt:   now,
 	}
 
-	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+	if err := e.storage.TasksUpsert(detachedCtx, task); err != nil {
 		otel.RecordError(span, err)
 		return models.Task{}, err
 	}
 
 	run, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			TaskQueue:                                reversal.ConnectorID.String(),
@@ -658,6 +660,8 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 
 	if waitResult {
 		// Wait for bank account creation to complete
+		// use ctx instead of detachedCtx to allow the caller to cancel the operation
+		// and not wait for the result
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
 			return models.Task{}, err

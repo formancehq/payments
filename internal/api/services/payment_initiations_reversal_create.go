@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
 )
@@ -10,6 +11,10 @@ func (s *Service) PaymentInitiationReversalsCreate(ctx context.Context, reversal
 	pi, err := s.storage.PaymentInitiationsGet(ctx, reversal.PaymentInitiationID)
 	if err != nil {
 		return models.Task{}, newStorageError(err, "cannot create payment initiation reversal")
+	}
+
+	if pi.Asset != reversal.Asset {
+		return models.Task{}, fmt.Errorf("invalid asset for payment initiation reversal: %w", ErrValidation)
 	}
 
 	if err := s.storage.PaymentInitiationReversalsUpsert(
