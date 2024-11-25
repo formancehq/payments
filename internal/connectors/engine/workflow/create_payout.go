@@ -52,29 +52,10 @@ func (w Workflow) createPayout(
 		return err
 	}
 
-	var sourceAccount *models.Account
-	if pi.SourceAccountID != nil {
-		sourceAccount, err = activities.StorageAccountsGet(
-			infiniteRetryContext(ctx),
-			*pi.SourceAccountID,
-		)
-		if err != nil {
-			return err
-		}
+	pspPI, err := w.getPSPPI(ctx, pi)
+	if err != nil {
+		return err
 	}
-
-	var destinationAccount *models.Account
-	if pi.DestinationAccountID != nil {
-		destinationAccount, err = activities.StorageAccountsGet(
-			infiniteRetryContext(ctx),
-			*pi.DestinationAccountID,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	pspPI := models.FromPaymentInitiationToPSPPaymentInitiation(pi, models.ToPSPAccount(sourceAccount), models.ToPSPAccount(destinationAccount))
 
 	err = w.addPIAdjustment(
 		ctx,
@@ -83,6 +64,8 @@ func (w Workflow) createPayout(
 			CreatedAt:           workflow.Now(ctx),
 			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 		},
+		pi.Amount,
+		&pi.Asset,
 		nil,
 		nil,
 	)
@@ -94,7 +77,7 @@ func (w Workflow) createPayout(
 		infiniteRetryContext(ctx),
 		createPayout.ConnectorID,
 		models.CreatePayoutRequest{
-			PaymentInitiation: *pspPI,
+			PaymentInitiation: pspPI,
 		},
 	)
 	switch errPlugin {
@@ -102,10 +85,11 @@ func (w Workflow) createPayout(
 		if createPayoutResponse.Payment != nil {
 			payment := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, createPayout.ConnectorID)
 
-			if err := w.storePIPayment(
+			if err := w.storePIPaymentWithStatus(
 				ctx,
 				payment,
 				createPayout.PaymentInitiationID,
+				getPIStatusFromPayment(payment.Status),
 				createPayout.ConnectorID,
 			); err != nil {
 				return err
@@ -184,6 +168,8 @@ func (w Workflow) createPayout(
 				CreatedAt:           workflow.Now(ctx),
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 			},
+			pi.Amount,
+			&pi.Asset,
 			err,
 			nil,
 		)
