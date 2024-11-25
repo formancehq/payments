@@ -36,14 +36,14 @@ var _ = Describe("API v3 Payment Initiation Payments List", func() {
 		})
 
 		It("should return a validation request error when paymentInitiationID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentInitiationID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "paymentInitiationID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentInitiationID", paymentID.String())
+			req := prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String())
 			m.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), paymentID, gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Payment]{}, fmt.Errorf("payment initiation payments list error"),
 			)
@@ -53,7 +53,7 @@ var _ = Describe("API v3 Payment Initiation Payments List", func() {
 		})
 
 		It("should return a cursor object", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentInitiationID", paymentID.String())
+			req := prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String())
 			m.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), paymentID, gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Payment]{}, nil,
 			)

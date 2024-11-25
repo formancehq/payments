@@ -44,8 +44,8 @@ func prepareJSONRequestWithQuery(method string, key string, val string, a any) *
 	return prepareQueryRequestWithBody(method, body, key, val)
 }
 
-func prepareQueryRequest(args ...string) *http.Request {
-	return prepareQueryRequestWithBody(http.MethodGet, nil, args...)
+func prepareQueryRequest(method string, args ...string) *http.Request {
+	return prepareQueryRequestWithBody(method, nil, args...)
 }
 
 func prepareQueryRequestWithBody(method string, body io.Reader, args ...string) *http.Request {
