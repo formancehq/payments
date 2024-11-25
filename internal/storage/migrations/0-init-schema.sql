@@ -368,7 +368,9 @@ create table if not exists payment_initiation_adjustments(
     status                text not null,
 
     -- Optional fields
-    error                 text,
+    error  text,
+    amount numeric,
+    asset  text,
 
      -- Optional fields with default
     metadata jsonb not null default '{}'::jsonb,
@@ -379,6 +381,49 @@ create table if not exists payment_initiation_adjustments(
 alter table payment_initiation_adjustments
     add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
+    on delete cascade;
+
+-- Payment Initiations reversals
+create table if not exists payment_initiation_reversals (
+    -- Mandatory fields
+    id                     text not null,
+    connector_id           varchar not null,
+    payment_initiation_id  varchar not null,
+    reference              text not null,
+    created_at             timestamp without time zone not null,
+    description            text not null,
+    amount                 numeric not null,
+    asset                  text not null,
+    -- Optional fields with default
+    metadata jsonb not null default '{}'::jsonb,
+    -- Primary key
+    primary key (id)
+);
+alter table payment_initiation_reversals
+    add constraint payment_initiation_reversals_connector_id_fk foreign key (connector_id)
+    references connectors (id)
+    on delete cascade;
+alter table payment_initiation_reversals
+    add constraint payment_initiation_reversals_payment_initiation_id_fk foreign key (payment_initiation_id)
+    references payment_initiations (id)
+    on delete cascade;
+-- Payment Initiation Reversal Adjustments
+create table if not exists payment_initiation_reversal_adjustments(
+    -- Mandatory fields
+    id                             varchar not null,
+    payment_initiation_reversal_id varchar not null,
+    created_at                     timestamp without time zone not null,
+    status                         text not null,
+    -- Optional fields
+    error                 text,
+     -- Optional fields with default
+    metadata jsonb not null default '{}'::jsonb,
+    -- Primary key
+    primary key (id)
+);
+alter table payment_initiation_reversal_adjustments
+    add constraint payment_initiation_reversal_adjustments_payment_initiation_id_fk foreign key (payment_initiation_reversal_id)
+    references payment_initiation_reversals (id)
     on delete cascade;
 
 -- Events sent
