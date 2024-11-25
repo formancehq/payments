@@ -35,7 +35,7 @@ var _ = Describe("API v3 Payment Initiation Get", func() {
 		})
 
 		It("should return a bad request error when paymentInitiationID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentInitiationID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "paymentInitiationID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -47,7 +47,7 @@ var _ = Describe("API v3 Payment Initiation Get", func() {
 				&models.PaymentInitiation{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("paymentInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -61,7 +61,7 @@ var _ = Describe("API v3 Payment Initiation Get", func() {
 				&models.PaymentInitiationAdjustment{},
 				expectedErr,
 			)
-			handlerFn(w, prepareQueryRequest("paymentInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
@@ -74,7 +74,7 @@ var _ = Describe("API v3 Payment Initiation Get", func() {
 				&models.PaymentInitiationAdjustment{},
 				nil,
 			)
-			handlerFn(w, prepareQueryRequest("paymentInitiationID", paymentID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusOK, "data")
 		})
 	})

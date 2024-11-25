@@ -36,14 +36,14 @@ var _ = Describe("API v3 Payments", func() {
 		})
 
 		It("should return an invalid ID error when payment ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "paymentID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentID", payID.String())
+			req := prepareQueryRequest(http.MethodGet, "paymentID", payID.String())
 			m.EXPECT().PaymentsGet(gomock.Any(), payID).Return(
 				&models.Payment{}, fmt.Errorf("payments get error"),
 			)
@@ -53,7 +53,7 @@ var _ = Describe("API v3 Payments", func() {
 		})
 
 		It("should return data object", func(ctx SpecContext) {
-			req := prepareQueryRequest("paymentID", payID.String())
+			req := prepareQueryRequest(http.MethodGet, "paymentID", payID.String())
 			m.EXPECT().PaymentsGet(gomock.Any(), payID).Return(
 				&models.Payment{}, nil,
 			)

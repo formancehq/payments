@@ -34,7 +34,7 @@ var _ = Describe("API v3 Connectors uninstall", func() {
 		})
 
 		It("should return a bad request error when connector ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "connectorID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -43,13 +43,13 @@ var _ = Describe("API v3 Connectors uninstall", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("connectors uninstall err")
 			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(expectedErr)
-			handlerFn(w, prepareQueryRequest("connectorID", connID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status accepted on success", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsUninstall(gomock.Any(), connID).Return(nil)
-			handlerFn(w, prepareQueryRequest("connectorID", connID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusAccepted, connID.String())
 		})
 	})

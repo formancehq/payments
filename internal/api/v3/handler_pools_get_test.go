@@ -34,14 +34,14 @@ var _ = Describe("API v3 Get Pool", func() {
 		})
 
 		It("should return an invalid ID error when poolID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "poolID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", poolID.String())
+			req := prepareQueryRequest(http.MethodGet, "poolID", poolID.String())
 			m.EXPECT().PoolsGet(gomock.Any(), poolID).Return(
 				&models.Pool{}, fmt.Errorf("pool get error"),
 			)
@@ -51,7 +51,7 @@ var _ = Describe("API v3 Get Pool", func() {
 		})
 
 		It("should return data object", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", poolID.String())
+			req := prepareQueryRequest(http.MethodGet, "poolID", poolID.String())
 			m.EXPECT().PoolsGet(gomock.Any(), poolID).Return(
 				&models.Pool{}, nil,
 			)

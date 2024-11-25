@@ -33,7 +33,7 @@ var _ = Describe("API v3 Pool Deletion", func() {
 		})
 
 		It("should return a bad request error when poolID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("poolID", "invalid")
+			req := prepareQueryRequest(http.MethodGet, "poolID", "invalid")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
@@ -42,13 +42,13 @@ var _ = Describe("API v3 Pool Deletion", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("payment initiation delete err")
 			m.EXPECT().PoolsDelete(gomock.Any(), gomock.Any()).Return(expectedErr)
-			handlerFn(w, prepareQueryRequest("poolID", poolID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "poolID", poolID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status no content on success", func(ctx SpecContext) {
 			m.EXPECT().PoolsDelete(gomock.Any(), poolID).Return(nil)
-			handlerFn(w, prepareQueryRequest("poolID", poolID.String()))
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "poolID", poolID.String()))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
 	})

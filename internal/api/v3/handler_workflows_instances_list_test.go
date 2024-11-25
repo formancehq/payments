@@ -35,14 +35,14 @@ var _ = Describe("API v3 WorkflowInstances List", func() {
 		})
 
 		It("should return an invalid ID error when connectorID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "connectorID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", connID.String())
+			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String())
 			m.EXPECT().WorkflowsInstancesList(gomock.Any(), gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Instance]{}, fmt.Errorf("workflowsInstances list error"),
 			)
@@ -52,7 +52,7 @@ var _ = Describe("API v3 WorkflowInstances List", func() {
 		})
 
 		It("should return a cursor object", func(ctx SpecContext) {
-			req := prepareQueryRequest("connectorID", connID.String())
+			req := prepareQueryRequest(http.MethodGet, "connectorID", connID.String())
 			m.EXPECT().WorkflowsInstancesList(gomock.Any(), gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Instance]{}, nil,
 			)
