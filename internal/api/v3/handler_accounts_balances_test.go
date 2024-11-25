@@ -36,14 +36,14 @@ var _ = Describe("API v3 Accounts Balances", func() {
 		})
 
 		It("should return a validation request error when account ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet, "accountID", "invalidvalue")
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", accID.String())
+			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().BalancesList(gomock.Any(), gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Balance]{}, fmt.Errorf("balances list error"),
 			)
@@ -53,7 +53,7 @@ var _ = Describe("API v3 Accounts Balances", func() {
 		})
 
 		It("should return a cursor object", func(ctx SpecContext) {
-			req := prepareQueryRequest("accountID", accID.String())
+			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
 			m.EXPECT().BalancesList(gomock.Any(), gomock.Any()).Return(
 				&bunpaginate.Cursor[models.Balance]{}, nil,
 			)
