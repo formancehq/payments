@@ -13,7 +13,7 @@ import (
 func init() {
 	registry.RegisterPlugin("generic", func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
-	})
+	}, capabilities)
 }
 
 type Plugin struct {
@@ -42,8 +42,7 @@ func (p *Plugin) Name() string {
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	return models.InstallResponse{
-		Capabilities: capabilities,
-		Workflow:     workflow(),
+		Workflow: workflow(),
 	}, nil
 }
 

@@ -15,7 +15,7 @@ import (
 func init() {
 	registry.RegisterPlugin("mangopay", func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
-	})
+	}, capabilities)
 }
 
 type Plugin struct {
@@ -57,7 +57,6 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 	}
 
 	return models.InstallResponse{
-		Capabilities:    capabilities,
 		WebhooksConfigs: configs,
 		Workflow:        workflow(),
 	}, nil

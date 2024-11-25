@@ -36,20 +36,6 @@ CREATE TRIGGER connectors_trigger
 AFTER INSERT OR UPDATE OR DELETE ON connectors FOR EACH ROW
 EXECUTE PROCEDURE connectors_notify_after_modifications();
 
--- capabilities
-create table if not exists capabilities (
-    -- Mandatory fields
-    connector_id varchar not null,
-    capability   text not null,
-
-    -- Primary key
-    primary key (connector_id, capability)
-);
-alter table capabilities
-    add constraint capabilities_connector_id_fk foreign key (connector_id)
-    references connectors (id)
-    on delete cascade;
-
 -- accounts
 create table if not exists accounts (
     -- Mandatory fields
