@@ -5,6 +5,9 @@ IMPORT github.com/formancehq/earthly:tags/v0.16.2 AS core
 
 FROM core+base-image
 
+postgres:
+    FROM postgres:15-alpine
+
 sources:
     WORKDIR src
     WORKDIR /src
@@ -60,11 +63,25 @@ build-image:
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag
 
 tests:
-    FROM core+builder-image
+    FROM +tidy
     COPY (+sources/*) /src
     WORKDIR /src
-    WITH DOCKER --pull=postgres:15-alpine
-        DO --pass-args core+GO_TESTS
+    ARG includeIntegrationTests="true"
+
+    ENV CGO_ENABLED=1 # required for -race
+
+    LET goFlags="-race"
+    IF [ "$includeIntegrationTests" = "true" ]
+        COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
+        COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
+        SET goFlags="$goFlags -tags it"
+        WITH DOCKER --load=postgres:15-alpine=+postgres
+            RUN go test $goFlags ./...
+        END
+    ELSE
+        WITH DOCKER --pull=postgres:15-alpine
+            DO --pass-args +GO_TESTS
+        END
     END
 
 deploy:
@@ -104,6 +121,7 @@ tidy:
     FROM core+builder-image
     COPY --pass-args (+sources/src) /src
     WORKDIR /src
+    COPY --dir test .
     DO --pass-args core+GO_TIDY
 
 generate:

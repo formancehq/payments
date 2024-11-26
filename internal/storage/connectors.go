@@ -51,6 +51,11 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 	if err != nil {
 		return errors.Wrap(err, "cannot get connection")
 	}
+
+	s.rwMutex.Lock()
+	s.conns = append(s.conns, conn)
+	s.rwMutex.Unlock()
+
 	if err := conn.Raw(func(driverConn any) error {
 		listener := pgxlisten.Listener{
 			Connect: func(ctx context.Context) (*pgx.Conn, error) {

@@ -12,7 +12,6 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 
-	"github.com/formancehq/payments/pkg/testserver"
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -28,10 +27,10 @@ var _ = Context("Payments API Bank Accounts", func() {
 		createRequest   v3.BankAccountsCreateRequest
 		v2createRequest v2.BankAccountsCreateRequest
 
-		app *utils.Deferred[*testserver.Server]
+		app *utils.Deferred[*Server]
 	)
 
-	app = testserver.NewTestServer(func() Configuration {
+	app = NewTestServer(func() Configuration {
 		return Configuration{
 			Stack:                 stack,
 			PostgresConfiguration: db.GetValue().ConnectionOptions(),

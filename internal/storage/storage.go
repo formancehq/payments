@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
@@ -142,6 +143,9 @@ type store struct {
 	logger              logging.Logger
 	db                  *bun.DB
 	configEncryptionKey string
+
+	conns   []bun.Conn
+	rwMutex sync.RWMutex
 }
 
 func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) Storage {
@@ -153,5 +157,18 @@ func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) S
 }
 
 func (s *store) Close() error {
-	return s.db.Close()
+	s.rwMutex.Lock()
+	defer s.rwMutex.Unlock()
+
+	if err := s.db.Close(); err != nil {
+		return err
+	}
+
+	for _, conn := range s.conns {
+		if err := conn.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
