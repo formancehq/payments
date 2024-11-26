@@ -63,6 +63,10 @@ func (c Config) Validate() error {
 		return errors.New("name is required")
 	}
 
+	if c.PollingPeriod.Seconds() < 30 {
+		return errors.New("polling period must be at least 30 seconds")
+	}
+
 	return nil
 }
 
