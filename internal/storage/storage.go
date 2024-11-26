@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
@@ -141,8 +142,10 @@ const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
 type store struct {
 	logger              logging.Logger
 	db                  *bun.DB
-	conns               []bun.Conn
 	configEncryptionKey string
+
+	conns   []bun.Conn
+	rwMutex sync.RWMutex
 }
 
 func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) Storage {
@@ -154,6 +157,9 @@ func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) S
 }
 
 func (s *store) Close() error {
+	s.rwMutex.Lock()
+	defer s.rwMutex.Unlock()
+
 	if err := s.db.Close(); err != nil {
 		return err
 	}
