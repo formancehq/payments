@@ -13,7 +13,7 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func InstallConnector(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+func ConnectorInstall(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	path := "connectors/install/generic"
 	if ver == 2 {
 		path = "connectors/generic"
@@ -21,7 +21,7 @@ func InstallConnector(ctx context.Context, srv *Server, ver int, reqBody any, re
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), reqBody, res)
 }
 
-func UninstallConnector(ctx context.Context, srv *Server, ver int, id string, res any) error {
+func ConnectorUninstall(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	path := "connectors/" + id
 	if ver == 2 {
 		path = "connectors/generic/" + id
@@ -33,6 +33,14 @@ func ConnectorConfig(ctx context.Context, srv *Server, ver int, id string, res a
 	path := "connectors/" + id + "/config"
 	if ver == 2 {
 		path = "connectors/generic/" + id + "/config"
+	}
+	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
+}
+
+func ConnectorSchedules(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	path := "connectors/" + id + "/schedules"
+	if ver == 2 {
+		path = "connectors/generic/" + id + "/schedules"
 	}
 	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
 }
