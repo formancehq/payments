@@ -141,6 +141,7 @@ const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
 type store struct {
 	logger              logging.Logger
 	db                  *bun.DB
+	conns               []bun.Conn
 	configEncryptionKey string
 }
 
@@ -153,5 +154,15 @@ func newStorage(logger logging.Logger, db *bun.DB, configEncryptionKey string) S
 }
 
 func (s *store) Close() error {
-	return s.db.Close()
+	if err := s.db.Close(); err != nil {
+		return err
+	}
+
+	for _, conn := range s.conns {
+		if err := conn.Close(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
