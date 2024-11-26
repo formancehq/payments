@@ -12,28 +12,28 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 
-	"github.com/formancehq/payments/pkg/testserver"
+	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Context("Payments API Bank Accounts", func() {
 	var (
-		postgres = UseTemplatedDatabase()
-		ctx      = logging.TestingContext()
+		db  = UseTemplatedDatabase()
+		ctx = logging.TestingContext()
 
 		accountNumber   = "123456789"
 		iban            = "DE89370400440532013000"
 		createRequest   v3.BankAccountsCreateRequest
 		v2createRequest v2.BankAccountsCreateRequest
 
-		app *utils.Deferred[*testserver.Server]
+		app *utils.Deferred[*Server]
 	)
 
-	app = testserver.NewTestServer(func() testserver.Configuration {
-		return testserver.Configuration{
+	app = NewTestServer(func() Configuration {
+		return Configuration{
 			Stack:                 stack,
-			PostgresConfiguration: postgres.GetValue().ConnectionOptions(),
+			PostgresConfiguration: db.GetValue().ConnectionOptions(),
 			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
@@ -60,13 +60,13 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 3
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createResponse)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createResponse)
 		})
 		It("should be ok", func() {
 			Expect(err).To(BeNil())
 			id, err := uuid.Parse(createResponse.Data)
 			Expect(err).To(BeNil())
-			err = testserver.GetBankAccount(ctx, app.GetValue(), ver, id.String(), &getResponse)
+			err = GetBankAccount(ctx, app.GetValue(), ver, id.String(), &getResponse)
 			Expect(err).To(BeNil())
 			Expect(getResponse.Data.ID.String()).To(Equal(id.String()))
 		})
@@ -81,13 +81,13 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 2
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, v2createRequest, &createResponse)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, v2createRequest, &createResponse)
 		})
 		It("should be ok", func() {
 			Expect(err).To(BeNil())
 			id, err := uuid.Parse(createResponse.Data.ID)
 			Expect(err).To(BeNil())
-			err = testserver.GetBankAccount(ctx, app.GetValue(), ver, id.String(), &getResponse)
+			err = GetBankAccount(ctx, app.GetValue(), ver, id.String(), &getResponse)
 			Expect(err).To(BeNil())
 			Expect(getResponse.Data.ID.String()).To(Equal(id.String()))
 		})
@@ -105,7 +105,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 3
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data)
 			Expect(err).To(BeNil())
@@ -117,19 +117,19 @@ var _ = Context("Payments API Bank Accounts", func() {
 				APIKey:        "key",
 				Endpoint:      "http://example.com",
 			}
-			err := testserver.InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 
 		It("should fail when connector ID is invalid", func() {
 			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: "invalid"}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok when connector is installed", func() {
 			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.ID.Reference).To(ContainSubstring(id.String()))
 			Expect(res.Data.ID.Reference).To(ContainSubstring(connectorRes.Data))
@@ -149,7 +149,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 2
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
 			Expect(err).To(BeNil())
@@ -160,18 +160,18 @@ var _ = Context("Payments API Bank Accounts", func() {
 				APIKey:        "key",
 				Endpoint:      "http://example.com",
 			}
-			err := testserver.InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 		It("should fail when connector ID is invalid", func() {
 			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: "invalid"}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should fail immediately with error because method is unimplemented on plugin", func() {
 			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("UNIMPLEMENTED"))
 		})
@@ -188,7 +188,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 3
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data)
 			Expect(err).To(BeNil())
@@ -196,15 +196,15 @@ var _ = Context("Payments API Bank Accounts", func() {
 
 		It("should fail when metadata is invalid", func() {
 			req = v3.BankAccountsUpdateMetadataRequest{}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &req, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &req, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok when metadata is valid", func() {
 			req = v3.BankAccountsUpdateMetadataRequest{Metadata: map[string]string{"key": "val"}}
-			err = testserver.UpdateBankAccountMetadata(ctx, app.GetValue(), ver, id.String(), &req, nil)
+			err = UpdateBankAccountMetadata(ctx, app.GetValue(), ver, id.String(), &req, nil)
 			Expect(err).To(BeNil())
-			err = testserver.GetBankAccount(ctx, app.GetValue(), ver, id.String(), &res)
+			err = GetBankAccount(ctx, app.GetValue(), ver, id.String(), &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.ID.String()).To(Equal(id.String()))
 			Expect(res.Data.Metadata).To(Equal(req.Metadata))
@@ -222,7 +222,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		)
 		JustBeforeEach(func() {
 			ver = 2
-			err = testserver.CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
+			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
 			Expect(err).To(BeNil())
@@ -230,15 +230,15 @@ var _ = Context("Payments API Bank Accounts", func() {
 
 		It("should fail when metadata is invalid", func() {
 			req = v2.BankAccountsUpdateMetadataRequest{}
-			err = testserver.ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &req, &res)
+			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &req, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok when metadata is valid", func() {
 			req = v2.BankAccountsUpdateMetadataRequest{Metadata: map[string]string{"key": "val"}}
-			err = testserver.UpdateBankAccountMetadata(ctx, app.GetValue(), ver, id.String(), &req, nil)
+			err = UpdateBankAccountMetadata(ctx, app.GetValue(), ver, id.String(), &req, nil)
 			Expect(err).To(BeNil())
-			err = testserver.GetBankAccount(ctx, app.GetValue(), ver, id.String(), &res)
+			err = GetBankAccount(ctx, app.GetValue(), ver, id.String(), &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.ID.String()).To(Equal(id.String()))
 			Expect(res.Data.Metadata).To(Equal(req.Metadata))
