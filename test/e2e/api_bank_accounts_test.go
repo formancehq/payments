@@ -117,7 +117,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 				APIKey:        "key",
 				Endpoint:      "http://example.com",
 			}
-			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 
@@ -160,7 +160,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 				APIKey:        "key",
 				Endpoint:      "http://example.com",
 			}
-			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 		It("should fail when connector ID is invalid", func() {
