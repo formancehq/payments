@@ -1,6 +1,8 @@
 package storage
 
 import (
+	"context"
+
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/service"
@@ -14,6 +16,13 @@ func Module(cmd *cobra.Command, connectionOptions bunconnect.ConnectionOptions, 
 		bunconnect.Module(connectionOptions, service.IsDebug(cmd)),
 		fx.Provide(func(logger logging.Logger, db *bun.DB) Storage {
 			return newStorage(logger, db, configEncryptionKey)
+		}),
+		fx.Invoke(func(s Storage, lc fx.Lifecycle) {
+			lc.Append(fx.Hook{
+				OnStop: func(ctx context.Context) error {
+					return s.Close()
+				},
+			})
 		}),
 	)
 }
