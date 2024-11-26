@@ -74,4 +74,48 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(getRes.Data).To(Equal(connectorConf))
 		})
 	})
+
+	When("uninstalling a connector", func() {
+		var (
+			connectorRes struct{ Data string }
+			id           uuid.UUID
+		)
+		JustBeforeEach(func() {
+			id = uuid.New()
+		})
+
+		It("should be ok with v3", func() {
+			ver := 3
+			connectorConf := ConnectorConf{
+				Name:          fmt.Sprintf("connector-%s", id.String()),
+				PollingPeriod: "2m",
+				PageSize:      30,
+				APIKey:        "key",
+				Endpoint:      "http://example.com",
+			}
+			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+
+			delRes := struct{ Data string }{}
+			err = UninstallConnector(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
+			Expect(err).To(BeNil())
+			Expect(delRes.Data).To(Equal(connectorRes.Data))
+		})
+
+		It("should be ok with v2", func() {
+			ver := 2
+			connectorConf := ConnectorConf{
+				Name:          fmt.Sprintf("connector-%s", id.String()),
+				PollingPeriod: "2m",
+				PageSize:      30,
+				APIKey:        "key",
+				Endpoint:      "http://example.com",
+			}
+			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+
+			err = UninstallConnector(ctx, app.GetValue(), ver, connectorRes.Data, nil)
+			Expect(err).To(BeNil())
+		})
+	})
 })

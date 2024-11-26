@@ -21,6 +21,14 @@ func InstallConnector(ctx context.Context, srv *Server, ver int, reqBody any, re
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), reqBody, res)
 }
 
+func UninstallConnector(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	path := "connectors/" + id
+	if ver == 2 {
+		path = "connectors/generic/" + id
+	}
+	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, path), nil, res)
+}
+
 func ConnectorConfig(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	path := "connectors/" + id + "/config"
 	if ver == 2 {
