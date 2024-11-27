@@ -38,7 +38,7 @@ var (
 const (
 	ConfigEncryptionKeyFlag = "config-encryption-key"
 	ListenFlag              = "listen"
-	stackFlag               = "stack"
+	StackFlag               = "stack"
 	stackPublicURLFlag      = "stack-public-url"
 )
 
@@ -61,7 +61,7 @@ func NewRootCommand() *cobra.Command {
 	server := newServer()
 	addAutoMigrateCommand(server)
 	server.Flags().String(ListenFlag, ":8080", "Listen address")
-	server.Flags().String(stackFlag, "", "Stack name")
+	server.Flags().String(StackFlag, "", "Stack name")
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	root.AddCommand(server)
 
@@ -95,7 +95,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	}
 
 	listen, _ := cmd.Flags().GetString(ListenFlag)
-	stack, _ := cmd.Flags().GetString(stackFlag)
+	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
 	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)

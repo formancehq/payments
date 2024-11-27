@@ -79,6 +79,7 @@ func (s *Server) Start() error {
 		"--" + temporal.TemporalAddressFlag, s.configuration.TemporalAddress,
 		"--" + temporal.TemporalNamespaceFlag, s.configuration.TemporalNamespace,
 		"--" + temporal.TemporalInitSearchAttributesFlag, fmt.Sprintf("stack=%s", s.configuration.Stack),
+		"--" + cmd.StackFlag, s.configuration.Stack,
 	}
 	if s.configuration.PostgresConfiguration.MaxIdleConns != 0 {
 		args = append(
