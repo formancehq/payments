@@ -4,6 +4,8 @@ package test_suite
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
@@ -20,18 +22,26 @@ import (
 
 var _ = Context("Payments API Connectors", func() {
 	var (
-		db              = UseTemplatedDatabase()
-		ctx             = logging.TestingContext()
-		connectorConfFn = func(id uuid.UUID) ConnectorConf {
-			return ConnectorConf{
-				Name:          fmt.Sprintf("connector-%s", id.String()),
-				PollingPeriod: "2m",
-				PageSize:      30,
-				APIKey:        "key",
-				Endpoint:      "http://example.com",
-			}
-		}
+		db  = UseTemplatedDatabase()
+		ctx = logging.TestingContext()
 	)
+
+	connectorConfFn := func(id uuid.UUID) ConnectorConf {
+		pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `[]`)
+		}))
+		GinkgoT().Cleanup(func() {
+			pspServer.Close()
+		})
+		return ConnectorConf{
+			Name:          fmt.Sprintf("connector-%s", id.String()),
+			PollingPeriod: "2m",
+			PageSize:      30,
+			APIKey:        "key",
+			Endpoint:      pspServer.URL,
+		}
+	}
 
 	app := NewTestServer(func() Configuration {
 		return Configuration{
