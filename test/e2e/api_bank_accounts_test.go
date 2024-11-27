@@ -4,6 +4,8 @@ package test_suite
 
 import (
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
@@ -110,14 +112,21 @@ var _ = Context("Payments API Bank Accounts", func() {
 			id, err = uuid.Parse(createRes.Data)
 			Expect(err).To(BeNil())
 
+			pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				fmt.Fprintf(w, `[]`)
+			}))
+			GinkgoT().Cleanup(func() {
+				pspServer.Close()
+			})
 			connectorConf := ConnectorConf{
 				Name:          fmt.Sprintf("connector-%s", id.String()),
 				PollingPeriod: "2m",
 				PageSize:      30,
 				APIKey:        "key",
-				Endpoint:      "http://example.com",
+				Endpoint:      pspServer.URL,
 			}
-			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 
@@ -160,7 +169,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 				APIKey:        "key",
 				Endpoint:      "http://example.com",
 			}
-			err := InstallConnector(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
 		It("should fail when connector ID is invalid", func() {
