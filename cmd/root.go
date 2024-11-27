@@ -14,6 +14,7 @@ import (
 	"github.com/formancehq/go-libs/v2/licence"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/otlp"
+	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
 	"github.com/formancehq/go-libs/v2/profiling"
 	"github.com/formancehq/go-libs/v2/publish"
@@ -23,6 +24,7 @@ import (
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/connectors/engine"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
@@ -118,6 +120,9 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		}),
 		otlp.FXModuleFromFlags(cmd),
 		otlptraces.FXModuleFromFlags(cmd),
+		otlpmetrics.FXModuleFromFlags(cmd),
+		fx.Provide(metrics.RegisterMetricsRegistry),
+		fx.Invoke(func(metrics.MetricsRegistry) {}),
 		temporal.FXModuleFromFlags(
 			cmd,
 			engine.Tracer,
