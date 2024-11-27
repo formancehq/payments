@@ -92,7 +92,7 @@ func (w *Workers) AddWorker(name string) error {
 	}
 
 	go func() {
-		err := worker.Run(nil)
+		err := worker.Start()
 		if err != nil {
 			w.logger.Errorf("worker loop stopped: %v", err)
 		}
