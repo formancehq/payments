@@ -3,6 +3,7 @@
 package test_suite
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -78,8 +79,7 @@ var _ = Context("Payments API Connectors", func() {
 					break
 				}
 			}
-			Expect(workflowID).NotTo(Equal(""))
-			Expect(workflowID).To(ContainSubstring(connectorRes.Data))
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
 
 			getRes := struct{ Data ConnectorConf }{}
 			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data, &getRes)
@@ -119,6 +119,7 @@ var _ = Context("Payments API Connectors", func() {
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
 			Expect(err).To(BeNil())
 			Expect(delRes.Data).To(Equal(connectorRes.Data))
+			blockTillWorkflowComplete(ctx, "uninstall")
 		})
 
 		It("should be ok with v2", func() {
@@ -129,6 +130,7 @@ var _ = Context("Payments API Connectors", func() {
 
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, nil)
 			Expect(err).To(BeNil())
+			blockTillWorkflowComplete(ctx, "uninstall")
 		})
 	})
 
@@ -136,8 +138,6 @@ var _ = Context("Payments API Connectors", func() {
 		var (
 			connectorRes  struct{ Data string }
 			id            uuid.UUID
-			workflowID    string
-			runID         string
 			ver           int
 			expectedTypes = map[string]struct{}{
 				"FetchAccounts":         {},
@@ -153,22 +153,8 @@ var _ = Context("Payments API Connectors", func() {
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			cl := temporalServer.GetValue().DefaultClient()
-			req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
-			workflowRes, err := cl.ListOpenWorkflow(ctx, req)
-			for _, info := range workflowRes.Executions {
-				if strings.HasPrefix(info.Execution.WorkflowId, "run-tasks-") {
-					workflowID = info.Execution.WorkflowId
-					runID = info.Execution.RunId
-					break
-				}
-			}
-			Expect(workflowID).NotTo(Equal(""))
-			Expect(workflowID).To(ContainSubstring(connectorRes.Data))
-
-			workflowRun := cl.GetWorkflow(ctx, workflowID, runID)
-			err = workflowRun.Get(ctx, nil) // blocks to ensure schedule creation has happened
-			Expect(err).To(BeNil())
+			workflowID := blockTillWorkflowComplete(ctx, "run-tasks-")
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
 		})
 
 		It("should be ok with v3", func(ctx SpecContext) {
@@ -197,3 +183,30 @@ var _ = Context("Payments API Connectors", func() {
 		})
 	})
 })
+
+func blockTillWorkflowComplete(ctx context.Context, searchKeyword string) string {
+	var (
+		workflowID string
+		runID      string
+	)
+
+	cl := temporalServer.GetValue().DefaultClient()
+	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
+	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
+	for _, info := range workflowRes.Executions {
+		if strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
+			workflowID = info.Execution.WorkflowId
+			runID = info.Execution.RunId
+			break
+		}
+	}
+
+	// if we couldn't find it either it's already done or it wasn't scheduled
+	if workflowID == "" {
+		return ""
+	}
+	workflowRun := cl.GetWorkflow(ctx, workflowID, runID)
+	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
+	Expect(err).To(BeNil())
+	return workflowID
+}
