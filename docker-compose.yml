@@ -94,5 +94,4 @@ services:
       CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
       TEMPORAL_ADDRESS: temporal:7233
       PLUGIN_MAGIC_COOKIE: mysupercookie
-      PLUGIN_DIRECTORY_PATH: /app/components/payments/plugins
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
