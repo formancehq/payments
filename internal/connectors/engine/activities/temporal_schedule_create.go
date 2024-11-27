@@ -6,6 +6,7 @@ import (
 
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -20,6 +21,19 @@ type ScheduleCreateOptions struct {
 }
 
 func (a Activities) TemporalScheduleCreate(ctx context.Context, options ScheduleCreateOptions) (string, error) {
+	attributes := make([]temporal.SearchAttributeUpdate, 0, len(options.SearchAttributes))
+	for key, value := range options.SearchAttributes {
+		v, ok := value.(string)
+		if !ok {
+			continue
+		}
+
+		attributes = append(attributes,
+			temporal.NewSearchAttributeKeyKeyword(key).ValueSet(v),
+		)
+	}
+	options.Action.TypedSearchAttributes = temporal.NewSearchAttributes(attributes...)
+
 	handle, err := a.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
 		ID: options.ScheduleID,
 		Spec: client.ScheduleSpec{
