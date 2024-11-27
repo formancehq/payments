@@ -8,7 +8,6 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -123,11 +122,6 @@ func (w Workflow) run(
 							task.NextTasks,
 						},
 						TaskQueue: connectorID.String(),
-						// Search attributes are used to query workflows
-						TypedSearchAttributes: temporal.NewSearchAttributes(
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
-							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),
-						),
 					},
 					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 					TriggerImmediately: true,
