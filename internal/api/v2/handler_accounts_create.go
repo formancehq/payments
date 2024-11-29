@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createAccountRequest struct {
+type CreateAccountRequest struct {
 	Reference    string            `json:"reference"`
 	ConnectorID  string            `json:"connectorID"`
 	CreatedAt    time.Time         `json:"createdAt"`
@@ -25,7 +25,7 @@ type createAccountRequest struct {
 	Metadata     map[string]string `json:"metadata"`
 }
 
-func (r *createAccountRequest) validate() error {
+func (r *CreateAccountRequest) validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -66,7 +66,7 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_accountsCreate")
 		defer span.End()
 
-		var req createAccountRequest
+		var req CreateAccountRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
@@ -144,7 +144,7 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromAccountCreateRequest(span trace.Span, req createAccountRequest) {
+func populateSpanFromAccountCreateRequest(span trace.Span, req CreateAccountRequest) {
 	span.SetAttributes(attribute.String("reference", req.Reference))
 	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))

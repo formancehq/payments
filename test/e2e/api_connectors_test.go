@@ -27,23 +27,6 @@ var _ = Context("Payments API Connectors", func() {
 		ctx = logging.TestingContext()
 	)
 
-	connectorConfFn := func(id uuid.UUID) ConnectorConf {
-		pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `[]`)
-		}))
-		GinkgoT().Cleanup(func() {
-			pspServer.Close()
-		})
-		return ConnectorConf{
-			Name:          fmt.Sprintf("connector-%s", id.String()),
-			PollingPeriod: "2m",
-			PageSize:      30,
-			APIKey:        "key",
-			Endpoint:      pspServer.URL,
-		}
-	}
-
 	app := NewTestServer(func() Configuration {
 		return Configuration{
 			Stack:                 stack,
@@ -66,7 +49,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v3", func() {
 			ver := 3
-			connectorConf := connectorConfFn(id)
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
@@ -89,7 +72,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v2", func() {
 			ver := 2
-			connectorConf := connectorConfFn(id)
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
@@ -111,7 +94,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v3", func() {
 			ver := 3
-			connectorConf := connectorConfFn(id)
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
@@ -124,7 +107,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v2", func() {
 			ver := 2
-			connectorConf := connectorConfFn(id)
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
@@ -149,7 +132,7 @@ var _ = Context("Payments API Connectors", func() {
 			ver = 3
 			id = uuid.New()
 
-			connectorConf := connectorConfFn(id)
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
@@ -209,4 +192,23 @@ func blockTillWorkflowComplete(ctx context.Context, searchKeyword string) string
 	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
 	Expect(err).To(BeNil())
 	return workflowID
+}
+
+func newConnectorConfigurationFn() func(id uuid.UUID) ConnectorConf {
+	return func(id uuid.UUID) ConnectorConf {
+		pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			fmt.Fprintf(w, `[]`)
+		}))
+		GinkgoT().Cleanup(func() {
+			pspServer.Close()
+		})
+		return ConnectorConf{
+			Name:          fmt.Sprintf("connector-%s", id.String()),
+			PollingPeriod: "2m",
+			PageSize:      30,
+			APIKey:        "key",
+			Endpoint:      pspServer.URL,
+		}
+	}
 }
