@@ -45,6 +45,14 @@ func ConnectorSchedules(ctx context.Context, srv *Server, ver int, id string, re
 	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
 }
 
+func CreateAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "accounts"), reqBody, res)
+}
+
+func GetAccount(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "accounts/"+id), res)
+}
+
 func CreateBankAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "bank-accounts"), reqBody, res)
 }
