@@ -758,8 +758,8 @@ github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/formancehq/go-libs v1.7.2 h1:zPLkMVigMxcdPQiA8Q0HLPgA/al/hKmLxLw9muDPM1U=
 github.com/formancehq/go-libs v1.7.2/go.mod h1:3+crp7AA/Rllpo9M/ZQslaHkYt9EtXtbE4qYasV201Q=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241126160659-bf27f8b34f95 h1:50OOE+v+Unc+L88HJsNZ6bEYwf1da+Dq2wIh9V+lTBQ=
-github.com/formancehq/go-libs/v2 v2.0.1-0.20241126160659-bf27f8b34f95/go.mod h1:9vUYQuSFB7kmbIlBGAbVBbiav0mkvvkOLIDRcNf0Dgg=
+github.com/formancehq/go-libs/v2 v2.0.1-0.20241128191336-ae97d7d27bf4 h1:6Ubz3Xhrd8vOxE9xH5odFwij2okVDzIJaje5+x8aJfc=
+github.com/formancehq/go-libs/v2 v2.0.1-0.20241128191336-ae97d7d27bf4/go.mod h1:yKik5nzTVomyytlW3KwaVdaN/5hbZIQBQ8LZjfi/MYY=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/get-momo/atlar-v1-go-client v1.4.0 h1:DIRwP3gRfvdXAxEeMNua6HPsScXZzDB9nySdYVv5FD0=
@@ -1146,8 +1146,8 @@ github.com/puzpuzpuz/xsync/v3 v3.4.0/go.mod h1:VjzYrABPabuM4KyBh1Ftq6u8nhwY5tBPK
 github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475 h1:N/ElC8H3+5XpJzTSTfLsJV/mx9Q9g7kxmchpfZyxgzM=
 github.com/rcrowley/go-metrics v0.0.0-20201227073835-cf1acfcdf475/go.mod h1:bCqnVzQkZxMG4s8nGwiZ5l3QUCyqpo9Y+/ZMZ9VjZe4=
 github.com/remyoudompheng/bigfft v0.0.0-20200410134404-eec4a21b6bb0/go.mod h1:qqbHyh8v60DhA7CoWK5oRCqLrMHRGoxYCSS9EjAz6Eo=
-github.com/riandyrn/otelchi v0.10.1 h1:x86f8M0pGvjW3tJUxpva4cpdNtMydLPnarIXHssYUy4=
-github.com/riandyrn/otelchi v0.10.1/go.mod h1:SWarhA5rdeiCNq+Ygc4p59ZGM5AtYCiyPU/3Q5rzT0M=
+github.com/riandyrn/otelchi v0.11.0 h1:x9MFoTgHcwCC2DdWkTEEZ2ZQFkbl6z7GXLQtTANN6Gk=
+github.com/riandyrn/otelchi v0.11.0/go.mod h1:FlBYmG9fBQu0jFRvZZrATP4mDvLX2H5gwELfpZvNlxY=
 github.com/robfig/cron v1.2.0 h1:ZjScXvvxeQ63Dbyxy76Fj3AT3Ut0aKsyd2/tl3DTMuQ=
 github.com/robfig/cron v1.2.0/go.mod h1:JGuDeoQd7Z6yL4zQhZ3OPEVHB7fL6Ka6skscFHfmt2k=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
