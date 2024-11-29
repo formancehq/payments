@@ -26,7 +26,7 @@ var _ = Describe("API v2 Accounts Create", func() {
 		var (
 			w   *httptest.ResponseRecorder
 			m   *backend.MockBackend
-			cra createAccountRequest
+			cra CreateAccountRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -43,21 +43,21 @@ var _ = Describe("API v2 Accounts Create", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(cra createAccountRequest) {
+			func(cra CreateAccountRequest) {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &cra))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("reference missing", createAccountRequest{}),
-			Entry("connectorID missing", createAccountRequest{Reference: "reference"}),
-			Entry("createdAt missing", createAccountRequest{Reference: "reference", ConnectorID: "id"}),
-			Entry("accountName missing", createAccountRequest{Reference: "reference", ConnectorID: "id", CreatedAt: time.Now()}),
-			Entry("type missing", createAccountRequest{
+			Entry("reference missing", CreateAccountRequest{}),
+			Entry("connectorID missing", CreateAccountRequest{Reference: "reference"}),
+			Entry("createdAt missing", CreateAccountRequest{Reference: "reference", ConnectorID: "id"}),
+			Entry("accountName missing", CreateAccountRequest{Reference: "reference", ConnectorID: "id", CreatedAt: time.Now()}),
+			Entry("type missing", CreateAccountRequest{
 				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), AccountName: "accountName",
 			}),
-			Entry("connectorID invalid", createAccountRequest{
+			Entry("connectorID invalid", CreateAccountRequest{
 				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), AccountName: "accountName", Type: "type",
 			}),
-			Entry("type invalid", createAccountRequest{
+			Entry("type invalid", CreateAccountRequest{
 				Reference: "reference", ConnectorID: connID.String(), CreatedAt: time.Now(), AccountName: "accountName", Type: "type",
 			}),
 		)
@@ -65,7 +65,7 @@ var _ = Describe("API v2 Accounts Create", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("account create err")
 			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
-			cra = createAccountRequest{
+			cra = CreateAccountRequest{
 				Reference:   "reference",
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
@@ -78,7 +78,7 @@ var _ = Describe("API v2 Accounts Create", func() {
 
 		It("should return status created on success", func(ctx SpecContext) {
 			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(nil)
-			cra = createAccountRequest{
+			cra = CreateAccountRequest{
 				Reference:   "reference",
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
