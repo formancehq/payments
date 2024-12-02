@@ -121,7 +121,7 @@ func (w Workflow) run(
 							request,
 							task.NextTasks,
 						},
-						TaskQueue: connectorID.String(),
+						TaskQueue: w.getConnectorTaskQueue(connectorID),
 					},
 					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 					TriggerImmediately: true,
@@ -151,7 +151,7 @@ func (w Workflow) run(
 				workflow.WithChildOptions(
 					ctx,
 					workflow.ChildWorkflowOptions{
-						TaskQueue:         connectorID.String(),
+						TaskQueue:         w.getConnectorTaskQueue(connectorID),
 						ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 						SearchAttributes: map[string]interface{}{
 							SearchAttributeStack: w.stack,

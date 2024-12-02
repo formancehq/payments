@@ -89,7 +89,7 @@ func (w Workflow) fetchExternalAccounts(
 					workflow.WithChildOptions(
 						ctx,
 						workflow.ChildWorkflowOptions{
-							TaskQueue:         fetchNextExternalAccount.ConnectorID.String(),
+							TaskQueue:         w.getConnectorTaskQueue(fetchNextExternalAccount.ConnectorID),
 							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 							SearchAttributes: map[string]interface{}{
 								SearchAttributeStack: w.stack,
@@ -122,7 +122,7 @@ func (w Workflow) fetchExternalAccounts(
 					workflow.WithChildOptions(
 						ctx,
 						workflow.ChildWorkflowOptions{
-							TaskQueue:         fetchNextExternalAccount.ConnectorID.String(),
+							TaskQueue:         w.getConnectorTaskQueue(fetchNextExternalAccount.ConnectorID),
 							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 							SearchAttributes: map[string]interface{}{
 								SearchAttributeStack: w.stack,
