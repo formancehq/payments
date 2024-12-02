@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"fmt"
 	"math/big"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -29,7 +30,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         connectorID.String(),
+				TaskQueue:         w.getConnectorTaskQueue(connectorID),
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
 					SearchAttributeStack: w.stack,
@@ -148,4 +149,8 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 	default:
 		return models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
 	}
+}
+
+func (w Workflow) getConnectorTaskQueue(connectorID models.ConnectorID) string {
+	return fmt.Sprintf("%s-%s", w.stack, connectorID.String())
 }
