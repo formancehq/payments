@@ -56,7 +56,7 @@ func (w Workflow) createWebhooks(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         createWebhooks.ConnectorID.String(),
+					TaskQueue:         w.getConnectorTaskQueue(createWebhooks.ConnectorID),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
 						SearchAttributeStack: w.stack,

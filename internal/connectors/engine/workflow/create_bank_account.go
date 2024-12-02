@@ -99,7 +99,7 @@ func (w Workflow) createBankAccount(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         relatedAccount.ConnectorID.String(),
+				TaskQueue:         w.getConnectorTaskQueue(relatedAccount.ConnectorID),
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
 					SearchAttributeStack: w.stack,
