@@ -4,14 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"os"
 	"path"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 )
 
 type Client interface {
-	FetchAccounts(ctx context.Context, page int, pageSize int) ([]models.PSPAccount, int, error)
+	FetchAccounts(ctx context.Context, startToken int, pageSize int) ([]models.PSPAccount, int, error)
+	FetchBalance(ctx context.Context, accountID string) (*models.PSPBalance, error)
 }
 
 type client struct {
@@ -24,7 +27,7 @@ func New(dir string) Client {
 	}
 }
 
-func (c *client) FetchAccounts(ctx context.Context, page int, pageSize int) ([]models.PSPAccount, int, error) {
+func (c *client) FetchAccounts(ctx context.Context, startToken int, pageSize int) ([]models.PSPAccount, int, error) {
 	b, err := c.readFile("accounts.json")
 	if err != nil {
 		return []models.PSPAccount{}, 0, fmt.Errorf("failed to fetch accounts: %w", err)
@@ -38,9 +41,9 @@ func (c *client) FetchAccounts(ctx context.Context, page int, pageSize int) ([]m
 
 	next := -1
 	pspAccounts := make([]models.PSPAccount, 0, pageSize)
-	for i := page; i < len(accounts); i++ {
+	for i := startToken; i < len(accounts); i++ {
 		if len(pspAccounts) >= pageSize {
-			if len(accounts)-page > len(pspAccounts) {
+			if len(accounts)-startToken > len(pspAccounts) {
 				next = i
 			}
 			break
@@ -48,10 +51,39 @@ func (c *client) FetchAccounts(ctx context.Context, page int, pageSize int) ([]m
 
 		account := accounts[i]
 		pspAccounts = append(pspAccounts, models.PSPAccount{
-			Name: &account.Name,
+			Reference:    account.ID,
+			CreatedAt:    account.OpeningDate,
+			Name:         &account.Name,
+			DefaultAsset: &account.Currency,
 		})
 	}
 	return pspAccounts, next, nil
+}
+
+func (c *client) FetchBalance(ctx context.Context, accountID string) (*models.PSPBalance, error) {
+	b, err := c.readFile("balances.json")
+	if err != nil {
+		return &models.PSPBalance{}, fmt.Errorf("failed to fetch balances: %w", err)
+	}
+
+	balances := make([]Balance, 0)
+	err = json.Unmarshal(b, &balances)
+	if err != nil {
+		return &models.PSPBalance{}, fmt.Errorf("failed to unmarshal balances: %w", err)
+	}
+
+	for _, balance := range balances {
+		if balance.AccountID != accountID {
+			continue
+		}
+		return &models.PSPBalance{
+			AccountReference: balance.AccountID,
+			CreatedAt:        time.Now().Truncate(time.Second),
+			Asset:            balance.Currency,
+			Amount:           big.NewInt(balance.AmountInMinors),
+		}, nil
+	}
+	return &models.PSPBalance{}, nil
 }
 
 func (c *client) readFile(filename string) (b []byte, err error) {

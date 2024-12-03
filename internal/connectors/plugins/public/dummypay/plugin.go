@@ -48,25 +48,61 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
+type accountsState struct {
+	NextToken int `json:"nextToken"`
+}
+
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	accounts, next, err := p.client.FetchAccounts(ctx, 0, req.PageSize)
+	var oldState accountsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			return models.FetchNextAccountsResponse{}, err
+		}
+	}
+
+	accounts, next, err := p.client.FetchAccounts(ctx, oldState.NextToken, req.PageSize)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to fetch accounts from client: %w", err)
 	}
 
-	hasMore := false
-	if next > 0 {
-		hasMore = true
+	newState := accountsState{
+		NextToken: next,
+	}
+	payload, err := json.Marshal(newState)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
 	}
 
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
-		HasMore:  hasMore,
+		NewState: payload,
+		HasMore:  next > 0,
 	}, nil
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	return models.FetchNextBalancesResponse{}, plugins.ErrNotImplemented
+	var from models.PSPAccount
+	if req.FromPayload == nil {
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
+	}
+	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
+
+	balance, err := p.client.FetchBalance(ctx, from.Reference)
+	if err != nil {
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to fetch balance from client: %w", err)
+	}
+
+	balances := make([]models.PSPBalance, 0, 1)
+	if balance != nil {
+		balances = append(balances, *balance)
+	}
+
+	return models.FetchNextBalancesResponse{
+		Balances: balances,
+		HasMore:  false,
+	}, nil
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
