@@ -38,10 +38,8 @@ func (p *Plugin) Name() string {
 	return p.name
 }
 
-func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	return models.InstallResponse{
-		Workflow: workflow(),
-	}, nil
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	return p.install(ctx, req)
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
