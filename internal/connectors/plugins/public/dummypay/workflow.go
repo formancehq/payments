@@ -2,6 +2,7 @@ package dummypay
 
 import "github.com/formancehq/payments/internal/models"
 
+//nolint:unused
 func workflow() models.ConnectorTasksTree {
 	return []models.ConnectorTaskTree{
 		{
