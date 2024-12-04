@@ -3,8 +3,6 @@
 package test_suite
 
 import (
-	"fmt"
-
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v2 "github.com/formancehq/payments/internal/api/v2"
@@ -147,13 +145,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
 			Expect(err).To(BeNil())
-			connectorConf := ConnectorConf{
-				Name:          fmt.Sprintf("connector-%s", id.String()),
-				PollingPeriod: "2m",
-				PageSize:      30,
-				APIKey:        "key",
-				Endpoint:      "http://example.com",
-			}
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
