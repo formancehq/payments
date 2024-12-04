@@ -5,8 +5,7 @@ package test_suite
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
+	"os"
 	"strings"
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
@@ -126,6 +125,7 @@ var _ = Context("Payments API Connectors", func() {
 				"FetchAccounts":         {},
 				"FetchExternalAccounts": {},
 				"FetchPayments":         {},
+				"FetchBalances":         {},
 			}
 		)
 		JustBeforeEach(func() {
@@ -148,6 +148,9 @@ var _ = Context("Payments API Connectors", func() {
 
 			for list.HasNext() {
 				schedule, err := list.Next()
+				if !strings.Contains(schedule.ID, connectorRes.Data) {
+					continue
+				}
 				Expect(err).To(BeNil())
 				_, ok := expectedTypes[schedule.WorkflowType.Name]
 				Expect(ok).To(BeTrue())
@@ -161,7 +164,7 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(len(res.Cursor.Data) > 0).To(BeTrue())
 			for _, schedule := range res.Cursor.Data {
 				Expect(schedule.ConnectorID.String()).To(Equal(connectorRes.Data))
-				Expect(schedule.ConnectorID.Provider).To(Equal("generic"))
+				Expect(schedule.ConnectorID.Provider).To(Equal("dummypay"))
 			}
 		})
 	})
@@ -196,19 +199,17 @@ func blockTillWorkflowComplete(ctx context.Context, searchKeyword string) string
 
 func newConnectorConfigurationFn() func(id uuid.UUID) ConnectorConf {
 	return func(id uuid.UUID) ConnectorConf {
-		pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			fmt.Fprintf(w, `[]`)
-		}))
+		dir, err := os.MkdirTemp("", "dummypay")
+		Expect(err).To(BeNil())
 		GinkgoT().Cleanup(func() {
-			pspServer.Close()
+			os.RemoveAll(dir)
 		})
+
 		return ConnectorConf{
 			Name:          fmt.Sprintf("connector-%s", id.String()),
-			PollingPeriod: "2m",
+			PollingPeriod: "30s",
 			PageSize:      30,
-			APIKey:        "key",
-			Endpoint:      pspServer.URL,
+			Directory:     dir,
 		}
 	}
 }

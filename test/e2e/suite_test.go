@@ -43,8 +43,7 @@ type ConnectorConf struct {
 	Name          string `json:"name"`
 	PollingPeriod string `json:"pollingPeriod"`
 	PageSize      int    `json:"pageSize"`
-	APIKey        string `json:"apiKey"`
-	Endpoint      string `json:"endpoint"`
+	Directory     string `json:"directory"`
 }
 
 type ParallelExecutionContext struct {
