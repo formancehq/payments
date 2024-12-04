@@ -87,7 +87,6 @@ var _ = Context("Payments API Accounts", func() {
 
 	When("fetching account balances", func() {
 		var (
-			ver          int
 			connectorRes struct{ Data string }
 			accountsRes  struct {
 				Cursor bunpaginate.Cursor[models.Account]
@@ -98,33 +97,36 @@ var _ = Context("Payments API Accounts", func() {
 			cl  client.Client
 			err error
 		)
-		JustBeforeEach(func() {
-			cl = temporalServer.GetValue().DefaultClient()
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			GeneratePSPData(connectorConf.Directory)
-			Expect(err).To(BeNil())
-			ver = 3
 
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
-			Expect(err).To(BeNil())
+		DescribeTable("should be successful",
+			func(ver int) {
+				cl = temporalServer.GetValue().DefaultClient()
+				connectorConf := newConnectorConfigurationFn()(uuid.New())
+				GeneratePSPData(connectorConf.Directory)
+				Expect(err).To(BeNil())
+				ver = 3
 
-			waitForAccountImport(ctx, cl, connectorRes.Data)
-		})
+				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				Expect(err).To(BeNil())
 
-		It("should be successful", func(ctx SpecContext) {
-			err = ListAccounts(ctx, app.GetValue(), ver, &accountsRes)
-			Expect(err).To(BeNil())
-			Expect(len(accountsRes.Cursor.Data) > 0).To(BeTrue())
+				waitForAccountImport(ctx, cl, connectorRes.Data)
 
-			account := accountsRes.Cursor.Data[0]
-			err = GetAccountBalances(ctx, app.GetValue(), ver, account.ID.String(), &res)
-			Expect(err).To(BeNil())
-			Expect(res.Cursor.Data).To(HaveLen(1))
+				err = ListAccounts(ctx, app.GetValue(), ver, &accountsRes)
+				Expect(err).To(BeNil())
+				Expect(len(accountsRes.Cursor.Data) > 0).To(BeTrue())
 
-			balance := res.Cursor.Data[0]
-			Expect(balance.AccountID.String()).To(Equal(account.ID.String()))
-			Expect(balance.Balance).NotTo(BeNil())
-		})
+				account := accountsRes.Cursor.Data[0]
+				err = GetAccountBalances(ctx, app.GetValue(), ver, account.ID.String(), &res)
+				Expect(err).To(BeNil())
+				Expect(res.Cursor.Data).To(HaveLen(1))
+
+				balance := res.Cursor.Data[0]
+				Expect(balance.AccountID.String()).To(Equal(account.ID.String()))
+				Expect(balance.Balance).NotTo(BeNil())
+			},
+			Entry("with v2", 2),
+			Entry("with v3", 3),
+		)
 	})
 })
 
