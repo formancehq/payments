@@ -3,10 +3,6 @@
 package test_suite
 
 import (
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v2 "github.com/formancehq/payments/internal/api/v2"
@@ -112,20 +108,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			id, err = uuid.Parse(createRes.Data)
 			Expect(err).To(BeNil())
 
-			pspServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				fmt.Fprintf(w, `[]`)
-			}))
-			GinkgoT().Cleanup(func() {
-				pspServer.Close()
-			})
-			connectorConf := ConnectorConf{
-				Name:          fmt.Sprintf("connector-%s", id.String()),
-				PollingPeriod: "2m",
-				PageSize:      30,
-				APIKey:        "key",
-				Endpoint:      pspServer.URL,
-			}
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})
@@ -162,13 +145,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
 			Expect(err).To(BeNil())
-			connectorConf := ConnectorConf{
-				Name:          fmt.Sprintf("connector-%s", id.String()),
-				PollingPeriod: "2m",
-				PageSize:      30,
-				APIKey:        "key",
-				Endpoint:      "http://example.com",
-			}
+			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 		})

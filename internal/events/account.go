@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type accountMessagePayload struct {
+type AccountMessagePayload struct {
 	ID           string            `json:"id"`
 	CreatedAt    time.Time         `json:"createdAt"`
 	Reference    string            `json:"reference"`
@@ -23,7 +23,7 @@ type accountMessagePayload struct {
 }
 
 func (e Events) NewEventSavedAccounts(account models.Account) publish.EventMessage {
-	payload := accountMessagePayload{
+	payload := AccountMessagePayload{
 		ID:          account.ID.String(),
 		ConnectorID: account.ConnectorID.String(),
 		Provider:    account.ConnectorID.Provider,
