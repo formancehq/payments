@@ -71,7 +71,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		bunDB, err := bunconnect.OpenSQLDB(context.Background(), templateDatabase.ConnectionOptions())
 		Expect(err).To(BeNil())
 
-		err = storage.Migrate(context.Background(), bunDB)
+		err = storage.Migrate(context.Background(), bunDB, "test")
 		Expect(err).To(BeNil())
 		Expect(bunDB.Close()).To(BeNil())
 

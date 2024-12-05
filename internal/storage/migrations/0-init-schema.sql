@@ -235,10 +235,6 @@ alter table pool_accounts
     add constraint pool_accounts_pool_id_fk foreign key (pool_id)
     references pools (id)
     on delete cascade;
-alter table pool_accounts
-    add constraint pool_accounts_account_id_fk foreign key (account_id)
-    references accounts (id)
-    on delete cascade;
 
 -- schedules
 create table if not exists schedules (
@@ -421,10 +417,6 @@ create index payment_initiation_related_payments_created_at_sort_id on payment_i
 alter table payment_initiation_related_payments
     add constraint payment_initiation_related_payments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
-    on delete cascade;
-alter table payment_initiation_related_payments
-    add constraint payment_initiation_related_payments_payment_id_fk foreign key (payment_id)
-    references payments (id)
     on delete cascade;
 
 -- Payment Initiation Adjustments
