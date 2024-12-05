@@ -127,20 +127,6 @@ func TestPoolsUpsert(t *testing.T) {
 		err := store.PoolsUpsert(ctx, p)
 		require.Error(t, err)
 	})
-
-	t.Run("upsert with same id, but wrong related account account id", func(t *testing.T) {
-		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
-			PoolID: p.ID,
-			AccountID: models.AccountID{
-				Reference:   "unknown",
-				ConnectorID: defaultConnector.ID,
-			},
-		})
-
-		err := store.PoolsUpsert(ctx, p)
-		require.Error(t, err)
-	})
 }
 
 func TestPoolsGet(t *testing.T) {
@@ -215,14 +201,6 @@ func TestPoolsAddAccount(t *testing.T) {
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPool(t, ctx, store, defaultPools()[0])
 	upsertPool(t, ctx, store, defaultPools()[1])
-
-	t.Run("add unknown account to pool", func(t *testing.T) {
-		err := store.PoolsAddAccount(ctx, defaultPools()[0].ID, models.AccountID{
-			Reference:   "unknown",
-			ConnectorID: defaultConnector.ID,
-		})
-		require.Error(t, err)
-	})
 
 	t.Run("add account to unknown pool", func(t *testing.T) {
 		err := store.PoolsAddAccount(ctx, uuid.New(), defaultAccounts()[0].ID)

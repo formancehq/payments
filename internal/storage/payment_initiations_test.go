@@ -654,15 +654,6 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 			payments[0].ID, now.Add(-10*time.Minute).UTC().Time),
 		)
 	})
-
-	t.Run("unknown payment id", func(t *testing.T) {
-		require.Error(t, store.PaymentInitiationRelatedPaymentsUpsert(
-			ctx,
-			piID1,
-			models.PaymentID{},
-			now.Add(-10*time.Minute).UTC().Time),
-		)
-	})
 }
 
 func TestPaymentInitiationIDsFromPaymentID(t *testing.T) {

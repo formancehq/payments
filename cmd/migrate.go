@@ -32,5 +32,5 @@ func Migrate(cmd *cobra.Command, args []string, db *bun.DB) error {
 		storage.EncryptionKey = cfgEncryptionKey
 	}
 
-	return storage.Migrate(cmd.Context(), db)
+	return storage.Migrate(cmd.Context(), db, cfgEncryptionKey)
 }
