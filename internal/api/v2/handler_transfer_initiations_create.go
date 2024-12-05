@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createTransferInitiationRequest struct {
+type CreateTransferInitiationRequest struct {
 	Reference            string            `json:"reference"`
 	ScheduledAt          time.Time         `json:"scheduledAt"`
 	Description          string            `json:"description"`
@@ -31,7 +31,7 @@ type createTransferInitiationRequest struct {
 	Metadata             map[string]string `json:"metadata"`
 }
 
-func (r *createTransferInitiationRequest) Validate() error {
+func (r *CreateTransferInitiationRequest) Validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -71,7 +71,7 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_transferInitiationsCreate")
 		defer span.End()
 
-		payload := createTransferInitiationRequest{}
+		payload := CreateTransferInitiationRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
@@ -153,7 +153,7 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func setSpanAttributesFromRequest(span trace.Span, transfer createTransferInitiationRequest) {
+func setSpanAttributesFromRequest(span trace.Span, transfer CreateTransferInitiationRequest) {
 	span.SetAttributes(
 		attribute.String("reference", transfer.Reference),
 		attribute.String("scheduledAt", transfer.ScheduledAt.String()),

@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type paymentInitiationsCreateRequest struct {
+type PaymentInitiationsCreateRequest struct {
 	Reference   string    `json:"reference"`
 	ScheduledAt time.Time `json:"scheduledAt"`
 	ConnectorID string    `json:"connectorID"`
@@ -32,7 +32,7 @@ type paymentInitiationsCreateRequest struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-func (r *paymentInitiationsCreateRequest) Validate() error {
+func (r *PaymentInitiationsCreateRequest) Validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -67,7 +67,7 @@ func (r *paymentInitiationsCreateRequest) Validate() error {
 	return nil
 }
 
-type paymentInitiationsCreateResponse struct {
+type PaymentInitiationsCreateResponse struct {
 	PaymentInitiationID string `json:"paymentInitiationID"`
 	TaskID              string `json:"taskID"`
 }
@@ -77,7 +77,7 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsCreate")
 		defer span.End()
 
-		payload := paymentInitiationsCreateRequest{}
+		payload := PaymentInitiationsCreateRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
@@ -132,14 +132,14 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Accepted(w, paymentInitiationsCreateResponse{
+		api.Accepted(w, PaymentInitiationsCreateResponse{
 			PaymentInitiationID: pi.ID.String(),
 			TaskID:              task.ID.String(),
 		})
 	}
 }
 
-func populateSpanFromPaymentInitiationCreateRequest(span trace.Span, req paymentInitiationsCreateRequest) {
+func populateSpanFromPaymentInitiationCreateRequest(span trace.Span, req PaymentInitiationsCreateRequest) {
 	span.SetAttributes(attribute.String("reference", req.Reference))
 	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 	span.SetAttributes(attribute.String("scheduledAt", req.ScheduledAt.String()))
