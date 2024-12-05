@@ -13,7 +13,7 @@ type eventSent struct {
 	bun.BaseModel `bun:"table:events_sent"`
 
 	ID          models.EventID      `bun:"id,pk,type:character varying,notnull"`
-	ConnectorID *models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
+	ConnectorID *models.ConnectorID `bun:"connector_id,type:character varying"`
 	SentAt      time.Time           `bun:"sent_at,type:timestamp without time zone,notnull"`
 }
 
