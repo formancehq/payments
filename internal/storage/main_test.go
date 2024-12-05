@@ -51,7 +51,7 @@ func newStore(t *testing.T) Storage {
 	_, err = rand.Read(key)
 	require.NoError(t, err)
 
-	err = Migrate(context.Background(), db)
+	err = Migrate(context.Background(), db, "test")
 	require.NoError(t, err)
 
 	return newStorage(logging.Testing(), db, string(key))
