@@ -15,6 +15,7 @@ import (
 type Client interface {
 	FetchAccounts(ctx context.Context, startToken int, pageSize int) ([]models.PSPAccount, int, error)
 	FetchBalance(ctx context.Context, accountID string) (*models.PSPBalance, error)
+	CreateTransfer(ctx context.Context, paymentInit models.PSPPaymentInitiation) (*models.PSPPayment, error)
 }
 
 type client struct {
@@ -86,11 +87,55 @@ func (c *client) FetchBalance(ctx context.Context, accountID string) (*models.PS
 	return &models.PSPBalance{}, nil
 }
 
+func (c *client) CreateTransfer(ctx context.Context, paymentInit models.PSPPaymentInitiation) (*models.PSPPayment, error) {
+	balance := Balance{
+		AccountID:      paymentInit.SourceAccount.Reference,
+		AmountInMinors: paymentInit.Amount.Int64(),
+		Currency:       paymentInit.Asset,
+	}
+	b, err := json.Marshal(&balance)
+	if err != nil {
+		return &models.PSPPayment{}, fmt.Errorf("failed to marshal new balance: %w", err)
+	}
+
+	err = c.writeFile("balances.json", b)
+	if err != nil {
+		return &models.PSPPayment{}, fmt.Errorf("failed to write balance: %w", err)
+	}
+
+	return &models.PSPPayment{
+		Reference:                   paymentInit.Reference,
+		CreatedAt:                   paymentInit.CreatedAt,
+		Amount:                      paymentInit.Amount,
+		Asset:                       paymentInit.Asset,
+		Type:                        models.PAYMENT_TYPE_TRANSFER,
+		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
+		Scheme:                      models.PAYMENT_SCHEME_OTHER,
+		SourceAccountReference:      &paymentInit.SourceAccount.Reference,
+		DestinationAccountReference: &paymentInit.DestinationAccount.Reference,
+	}, nil
+}
+
+func (c *client) writeFile(filename string, b []byte) error {
+	filePath := path.Join(c.directory, filename)
+	file, err := os.Open(filePath)
+	if err != nil {
+		return fmt.Errorf("failed to open %q for write: %w", filePath, err)
+	}
+	defer file.Close()
+
+	_, err = file.Write(b)
+	if err != nil {
+		return fmt.Errorf("failed to read file %q: %w", filePath, err)
+	}
+	return nil
+}
+
 func (c *client) readFile(filename string) (b []byte, err error) {
 	filePath := path.Join(c.directory, filename)
 	file, err := os.Open(filePath)
 	if err != nil {
-		return b, fmt.Errorf("failed to create %q: %w", filePath, err)
+		return b, fmt.Errorf("failed to open %q for read: %w", filePath, err)
 	}
 	defer file.Close()
 
