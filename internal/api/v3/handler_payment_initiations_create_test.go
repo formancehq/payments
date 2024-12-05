@@ -34,7 +34,7 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 		var (
 			w    *httptest.ResponseRecorder
 			m    *backend.MockBackend
-			picr paymentInitiationsCreateRequest
+			picr PaymentInitiationsCreateRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -51,15 +51,15 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(r paymentInitiationsCreateRequest) {
+			func(r PaymentInitiationsCreateRequest) {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &r))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("reference missing", paymentInitiationsCreateRequest{}),
-			Entry("type missing", paymentInitiationsCreateRequest{Reference: "type", SourceAccountID: &sourceID, DestinationAccountID: &destID}),
-			Entry("amount missing", paymentInitiationsCreateRequest{Reference: "amount", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER"}),
-			Entry("asset missing", paymentInitiationsCreateRequest{Reference: "asset", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER", Amount: big.NewInt(1313)}),
-			Entry("connectorID missing", paymentInitiationsCreateRequest{Reference: "connector", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER", Amount: big.NewInt(1717), Asset: "USD"}),
+			Entry("reference missing", PaymentInitiationsCreateRequest{}),
+			Entry("type missing", PaymentInitiationsCreateRequest{Reference: "type", SourceAccountID: &sourceID, DestinationAccountID: &destID}),
+			Entry("amount missing", PaymentInitiationsCreateRequest{Reference: "amount", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER"}),
+			Entry("asset missing", PaymentInitiationsCreateRequest{Reference: "asset", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER", Amount: big.NewInt(1313)}),
+			Entry("connectorID missing", PaymentInitiationsCreateRequest{Reference: "connector", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER", Amount: big.NewInt(1717), Asset: "USD"}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
@@ -68,7 +68,7 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 				models.Task{},
 				expectedErr,
 			)
-			picr = paymentInitiationsCreateRequest{
+			picr = PaymentInitiationsCreateRequest{
 				Reference:            "ref-err",
 				ConnectorID:          connID.String(),
 				SourceAccountID:      &sourceID,
@@ -86,7 +86,7 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 				models.Task{},
 				nil,
 			)
-			picr = paymentInitiationsCreateRequest{
+			picr = PaymentInitiationsCreateRequest{
 				Reference:            "ref-ok",
 				ConnectorID:          connID.String(),
 				SourceAccountID:      &sourceID,
