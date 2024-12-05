@@ -120,7 +120,11 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.CreateTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, fmt.Errorf("failed to create transfer using client: %w", err)
+	}
+	return models.CreateTransferResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
