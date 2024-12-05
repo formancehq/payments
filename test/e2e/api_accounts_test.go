@@ -15,7 +15,6 @@ import (
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
 
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -131,23 +130,7 @@ var _ = Context("Payments API Accounts", func() {
 })
 
 func waitForAccountImport(ctx context.Context, cl client.Client, connectorID string) {
-	var workflowID string
-	var runID string
-
-	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
-	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
-	for _, info := range workflowRes.Executions {
-		if strings.Contains(info.Execution.WorkflowId, "run-tasks") && strings.Contains(info.Execution.WorkflowId, connectorID) {
-			workflowID = info.Execution.WorkflowId
-			runID = info.Execution.RunId
-			break
-		}
-	}
-
-	Expect(workflowID).NotTo(Equal(""))
-	workflowRun := cl.GetWorkflow(ctx, workflowID, runID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
-	Expect(err).To(BeNil())
+	blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 	itr, err := cl.ScheduleClient().List(ctx, client.ScheduleListOptions{})
 	Expect(err).To(BeNil())
@@ -172,9 +155,11 @@ func waitForAccountImport(ctx context.Context, cl client.Client, connectorID str
 		accountRunID = action.StartWorkflowResult.FirstExecutionRunID
 	}
 
-	workflowRun = cl.GetWorkflow(ctx, accountWorkflowID, accountRunID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
-	Expect(err).To(BeNil())
+	if accountWorkflowID != "" {
+		workflowRun := cl.GetWorkflow(ctx, accountWorkflowID, accountRunID)
+		err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
+		Expect(err).To(BeNil())
+	}
 
 	itr, err = cl.ScheduleClient().List(ctx, client.ScheduleListOptions{})
 	Expect(err).To(BeNil())
@@ -199,7 +184,7 @@ func waitForAccountImport(ctx context.Context, cl client.Client, connectorID str
 		balanceRunID = action.StartWorkflowResult.FirstExecutionRunID
 	}
 
-	workflowRun = cl.GetWorkflow(ctx, balanceWorkflowID, balanceRunID)
+	workflowRun := cl.GetWorkflow(ctx, balanceWorkflowID, balanceRunID)
 	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
 	Expect(err).To(BeNil())
 }
