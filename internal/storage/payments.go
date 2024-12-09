@@ -205,7 +205,7 @@ func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.P
 	err = s.db.NewSelect().
 		Model(&ajs).
 		Where("payment_id = ?", id).
-		Order("created_at DESC").
+		Order("created_at DESC", "sort_id DESC").
 		Scan(ctx)
 	if err != nil {
 		return nil, e("failed to get payment adjustments", err)
@@ -314,7 +314,7 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 			) apd on true`)
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},

@@ -178,7 +178,7 @@ func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymen
 			}
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},
@@ -246,7 +246,7 @@ func (s *store) PaymentInitiationReversalAdjustmentsList(ctx context.Context, pi
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationReversalAdjustmentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 			query.Where("payment_initiation_reversal_id = ?", piID)
 
 			return query

@@ -211,7 +211,7 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 			query = query.ColumnExpr("*, pgp_sym_decrypt(config, ?, ?) AS decrypted_config", s.configEncryptionKey, encryptionOptions)
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},
