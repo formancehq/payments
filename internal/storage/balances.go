@@ -58,7 +58,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 	err := tx.NewSelect().
 		Model(&lastBalance).
 		Where("account_id = ? AND asset = ?", balance.AccountID, balance.Asset).
-		Order("created_at DESC").
+		Order("created_at DESC", "sort_id DESC").
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpagi
 
 			query = applyBalanceQuery(query, q.Options.Options)
 
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},
@@ -246,7 +246,7 @@ func (s *store) balancesGetAtByAsset(ctx context.Context, accountID models.Accou
 		Where("asset = ?", asset).
 		Where("created_at <= ?", at).
 		Where("last_updated_at >= ?", at).
-		Order("created_at DESC").
+		Order("created_at DESC", "sort_id DESC").
 		Limit(1).
 		Scan(ctx)
 	if err != nil {

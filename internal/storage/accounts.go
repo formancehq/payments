@@ -134,7 +134,7 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 			}
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},
