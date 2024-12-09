@@ -38,10 +38,11 @@ var (
 )
 
 const (
-	ConfigEncryptionKeyFlag = "config-encryption-key"
-	ListenFlag              = "listen"
-	StackFlag               = "stack"
-	stackPublicURLFlag      = "stack-public-url"
+	ConfigEncryptionKeyFlag                      = "config-encryption-key"
+	ListenFlag                                   = "listen"
+	StackFlag                                    = "stack"
+	stackPublicURLFlag                           = "stack-public-url"
+	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 )
 
 func NewRootCommand() *cobra.Command {
@@ -65,6 +66,11 @@ func NewRootCommand() *cobra.Command {
 	server.Flags().String(ListenFlag, ":8080", "Listen address")
 	server.Flags().String(StackFlag, "", "Stack name")
 	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
+	// MaxConcurrentWorkflowTaskPollers should not be set to a number < 2, otherwise
+	// temporal will panic.
+	// After meeting with the temporal team, we decided to set it to 20 as per
+	// their recommendation.
+	server.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
 	root.AddCommand(server)
 
 	return root
@@ -102,6 +108,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
 	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
+	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 
 	if len(os.Args) < 2 {
 		// this shouldn't happen as long as this function is called by a subcommand
@@ -137,7 +144,15 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		profiling.FXModuleFromFlags(cmd),
-		engine.Module(stack, stackPublicURL, temporalNamespace, rawFlags, debug, jsonFormatter),
+		engine.Module(
+			stack,
+			stackPublicURL,
+			temporalNamespace,
+			temporalMaxConcurrentWorkflowTaskPollers,
+			rawFlags,
+			debug,
+			jsonFormatter,
+		),
 		v2.NewModule(),
 		v3.NewModule(),
 	), nil
