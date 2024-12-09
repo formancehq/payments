@@ -230,7 +230,7 @@ create table if not exists pool_accounts (
     -- Primary key
     primary key (pool_id, account_id)
 );
-create index pool_accounts_created_at_sort_id on pool_accounts (created_at, sort_id);
+create unique index pool_accounts_unique_sort_id on pool_accounts (sort_id);
 alter table pool_accounts
     add constraint pool_accounts_pool_id_fk foreign key (pool_id)
     references pools (id)
@@ -274,7 +274,7 @@ create table if not exists states (
     -- Primary key
     primary key (id)
 );
-create index states_created_at_sort_id on states (created_at, sort_id);
+create unique index states_unique_sort_id on states (sort_id);
 alter table states
     add constraint states_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -292,7 +292,7 @@ create table if not exists connector_tasks_tree (
     -- Primary key
     primary key (connector_id)
 );
-create index connector_tasks_tree_created_at_sort_id on connector_tasks_tree (created_at, sort_id);
+create unique index connector_tasks_tree_unique_sort_id on connector_tasks_tree (sort_id);
 alter table connector_tasks_tree
     add constraint connector_tasks_tree_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -343,7 +343,7 @@ create table if not exists webhooks_configs (
     -- Primary key
     primary key (name, connector_id)
 );
-create index webhooks_configs_created_at_sort_id on webhooks_configs (created_at, sort_id);
+create unique index webhooks_configs_unique_sort_id on webhooks_configs (sort_id);
 alter table webhooks_configs
     add constraint webhooks_configs_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -366,7 +366,7 @@ create table if not exists webhooks (
     -- Primary key
     primary key (id)
 );
-create index webhooks_created_at_sort_id on webhooks (created_at, sort_id);
+create unique index webhooks_unique_sort_id on webhooks (sort_id);
 alter table webhooks
     add constraint webhooks_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -521,7 +521,7 @@ create table if not exists events_sent (
     -- Primary key
     primary key (id)
 );
-create index events_sent_created_at_sort_id on events_sent (created_at, sort_id);
+create unique index events_sent_unique_sort_id on events_sent (sort_id);
 alter table events_sent
     add constraint events_sent_connector_id_fk foreign key (connector_id)
     references connectors (id)
