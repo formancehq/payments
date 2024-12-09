@@ -21,12 +21,15 @@ func Module(
 	stack string,
 	stackURL string,
 	temporalNamespace string,
+	temporalMaxConcurrentWorkflowTaskPollers int,
 	rawFlags []string,
 	debug bool,
 	jsonFormatter bool,
 ) fx.Option {
 	ret := []fx.Option{
-		fx.Supply(worker.Options{}),
+		fx.Supply(worker.Options{
+			MaxConcurrentWorkflowTaskPollers: temporalMaxConcurrentWorkflowTaskPollers,
+		}),
 		fx.Provide(func(
 			temporalClient client.Client,
 			workers *Workers,
