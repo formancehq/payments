@@ -85,6 +85,44 @@ func defaultAccounts2() []models.Account {
 	}
 }
 
+func defaultAccounts3() []models.Account {
+	createdAt := time.Now().Truncate(time.Second).Add(-2 * time.Minute).UTC()
+	return []models.Account{
+		{
+			ID: models.AccountID{
+				Reference:   "sort-test",
+				ConnectorID: defaultConnector2.ID,
+			},
+			ConnectorID:  defaultConnector2.ID,
+			Reference:    "sort-test",
+			CreatedAt:    createdAt,
+			Type:         models.ACCOUNT_TYPE_INTERNAL,
+			Name:         pointer.For("sort-test"),
+			DefaultAsset: pointer.For("EUR/2"),
+			Metadata: map[string]string{
+				"unrelated": "keyval",
+			},
+			Raw: []byte(`{}`),
+		},
+		{
+			ID: models.AccountID{
+				Reference:   "sort-test2",
+				ConnectorID: defaultConnector2.ID,
+			},
+			ConnectorID:  defaultConnector2.ID,
+			Reference:    "sort-test2",
+			CreatedAt:    createdAt,
+			Type:         models.ACCOUNT_TYPE_INTERNAL,
+			Name:         pointer.For("sort-test2"),
+			DefaultAsset: pointer.For("EUR/2"),
+			Metadata: map[string]string{
+				"metadata": "keyval",
+			},
+			Raw: []byte(`{}`),
+		},
+	}
+}
+
 func upsertAccounts(t *testing.T, ctx context.Context, storage Storage, accounts []models.Account) {
 	require.NoError(t, storage.AccountsUpsert(ctx, accounts))
 }
@@ -248,6 +286,7 @@ func TestAccountsList(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector2)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertAccounts(t, ctx, store, defaultAccounts2())
+	upsertAccounts(t, ctx, store, defaultAccounts3())
 
 	t.Run("list accounts by reference", func(t *testing.T) {
 		q := NewListAccountsQuery(
@@ -314,9 +353,11 @@ func TestAccountsList(t *testing.T) {
 		)
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
-		require.Len(t, cursor.Data, 1)
+		require.Len(t, cursor.Data, 3)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, defaultAccounts2()[0], cursor.Data[0])
+		require.Equal(t, defaultAccounts3()[1], cursor.Data[0])
+		require.Equal(t, defaultAccounts3()[0], cursor.Data[1])
+		require.Equal(t, defaultAccounts2()[0], cursor.Data[2])
 	})
 
 	t.Run("list accounts by unknown connector id", func(t *testing.T) {
@@ -344,14 +385,17 @@ func TestAccountsList(t *testing.T) {
 		)
 		accounts := defaultAccounts()
 		accounts2 := defaultAccounts2()
+		accounts3 := defaultAccounts3()
 
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
-		require.Len(t, cursor.Data, 3)
+		require.Len(t, cursor.Data, 5)
 		require.False(t, cursor.HasMore)
-		require.Equal(t, accounts[1], cursor.Data[0])
-		require.Equal(t, accounts2[0], cursor.Data[1])
-		require.Equal(t, accounts[0], cursor.Data[2])
+		require.Equal(t, accounts3[1], cursor.Data[0])
+		require.Equal(t, accounts3[0], cursor.Data[1])
+		require.Equal(t, accounts[1], cursor.Data[2])
+		require.Equal(t, accounts2[0], cursor.Data[3])
+		require.Equal(t, accounts[0], cursor.Data[4])
 	})
 
 	t.Run("list accounts by unknown type", func(t *testing.T) {
@@ -475,6 +519,7 @@ func TestAccountsList(t *testing.T) {
 		)
 		accounts := defaultAccounts()
 		accounts2 := defaultAccounts2()
+		accounts3 := defaultAccounts3()
 
 		cursor, err := store.AccountsList(ctx, q)
 		require.NoError(t, err)
@@ -482,6 +527,26 @@ func TestAccountsList(t *testing.T) {
 		require.True(t, cursor.HasMore)
 		require.NotEmpty(t, cursor.Next)
 		require.Empty(t, cursor.Previous)
+		require.Equal(t, accounts3[1], cursor.Data[0])
+
+		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		require.NoError(t, err)
+		cursor, err = store.AccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.True(t, cursor.HasMore)
+		require.NotEmpty(t, cursor.Next)
+		require.NotEmpty(t, cursor.Previous)
+		require.Equal(t, accounts3[0], cursor.Data[0])
+
+		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
+		require.NoError(t, err)
+		cursor, err = store.AccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.True(t, cursor.HasMore)
+		require.NotEmpty(t, cursor.Next)
+		require.NotEmpty(t, cursor.Previous)
 		require.Equal(t, accounts[1], cursor.Data[0])
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)

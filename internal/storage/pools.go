@@ -176,7 +176,7 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 				query = query.Where(where, args...)
 			}
 
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},

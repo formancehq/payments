@@ -2,6 +2,9 @@ create extension if not exists pgcrypto;
 
 -- connectors
 create table if not exists connectors (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id         varchar not null,
     name       text not null,
@@ -15,6 +18,7 @@ create table if not exists connectors (
     -- Primary key
     primary key (id)
 );
+create index connectors_created_at_sort_id on connectors (created_at, sort_id);
 create unique index connectors_unique_name on connectors (name);
 
 CREATE OR REPLACE FUNCTION connectors_notify_after_modifications() RETURNS TRIGGER as $$
@@ -38,6 +42,9 @@ EXECUTE PROCEDURE connectors_notify_after_modifications();
 
 -- accounts
 create table if not exists accounts (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id           varchar not null,
     connector_id varchar not null,
@@ -56,6 +63,7 @@ create table if not exists accounts (
     -- Primary key
     primary key (id)
 );
+create index accounts_created_at_sort_id on accounts (created_at, sort_id);
 alter table accounts 
     add constraint accounts_connector_id_fk foreign key (connector_id) 
     references connectors (id)
@@ -63,6 +71,9 @@ alter table accounts
 
 -- balances
 create table if not exists balances (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     account_id      varchar not null,
     connector_id    varchar not null,
@@ -74,6 +85,7 @@ create table if not exists balances (
     -- Primary key
     primary key (account_id, created_at, asset)
 );
+create index balances_created_at_sort_id on balances (created_at, sort_id);
 create index balances_account_id_created_at_asset on balances (account_id, last_updated_at desc, asset);
 alter table balances
     add constraint balances_connector_id foreign key (connector_id)
@@ -82,6 +94,9 @@ alter table balances
 
 -- bank accounts
 create table if not exists bank_accounts (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id uuid    not null,
     created_at timestamp without time zone not null,
@@ -99,7 +114,11 @@ create table if not exists bank_accounts (
     -- Primary key
     primary key (id)
 );
+create index bank_accounts_created_at_sort_id on bank_accounts (created_at, sort_id);
 create table if not exists bank_accounts_related_accounts (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     bank_account_id uuid not null,
     account_id      varchar not null,
@@ -109,6 +128,7 @@ create table if not exists bank_accounts_related_accounts (
     -- Primary key
     primary key (bank_account_id, account_id)
 );
+create index bank_accounts_related_accounts_created_at_sort_id on bank_accounts_related_accounts (created_at, sort_id);
 alter table bank_accounts_related_accounts
     add constraint bank_accounts_related_accounts_bank_account_id_fk foreign key (bank_account_id)
     references bank_accounts (id)
@@ -124,6 +144,9 @@ alter table bank_accounts_related_accounts
 
 -- payments
 create table if not exists payments (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id             varchar not null,
     connector_id   varchar not null,
@@ -145,6 +168,7 @@ create table if not exists payments (
     -- Primary key
     primary key (id)
 );
+create index payments_created_at_sort_id on payments (created_at, sort_id);
 alter table payments
     add constraint payments_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -152,6 +176,9 @@ alter table payments
 
 -- payment adjustments
 create table if not exists payment_adjustments (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id          varchar not null,
     payment_id  varchar not null,
@@ -170,6 +197,7 @@ create table if not exists payment_adjustments (
     -- Primary key
     primary key (id)
 );
+create index payment_adjustments_created_at_sort_id on payment_adjustments (created_at, sort_id);
 alter table payment_adjustments
     add constraint payment_adjustments_payment_id_fk foreign key (payment_id)
     references payments (id)
@@ -177,6 +205,9 @@ alter table payment_adjustments
 
 -- pools
 create table if not exists pools (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id         uuid not null,
     name       text not null,
@@ -185,9 +216,13 @@ create table if not exists pools (
     -- Primary key
     primary key (id)
 );
+create index pools_created_at_sort_id on pools (created_at, sort_id);
 create unique index pools_unique_name on pools (name);
 
 create table if not exists pool_accounts (
+    -- Autoincrement fields
+    sort_id     bigserial not null,
+
     -- Mandatory fields
     pool_id     uuid not null,
     account_id  varchar not null,
@@ -195,6 +230,7 @@ create table if not exists pool_accounts (
     -- Primary key
     primary key (pool_id, account_id)
 );
+create unique index pool_accounts_unique_sort_id on pool_accounts (sort_id);
 alter table pool_accounts
     add constraint pool_accounts_pool_id_fk foreign key (pool_id)
     references pools (id)
@@ -206,14 +242,18 @@ alter table pool_accounts
 
 -- schedules
 create table if not exists schedules (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id text not null,
     connector_id varchar not null,
     created_at timestamp without time zone not null,
-    
+
     -- Primary key
     primary key (id, connector_id)
 );
+create index schedules_created_at_sort_id on schedules (created_at, sort_id);
 alter table schedules
     add constraint schedules_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -221,6 +261,9 @@ alter table schedules
 
 -- states
 create table if not exists states (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id           varchar not null,
     connector_id varchar not null,
@@ -231,6 +274,7 @@ create table if not exists states (
     -- Primary key
     primary key (id)
 );
+create unique index states_unique_sort_id on states (sort_id);
 alter table states
     add constraint states_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -238,6 +282,9 @@ alter table states
 
 -- connector tasks tree
 create table if not exists connector_tasks_tree (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     connector_id varchar not null,
     tasks        json not null,
@@ -245,6 +292,7 @@ create table if not exists connector_tasks_tree (
     -- Primary key
     primary key (connector_id)
 );
+create unique index connector_tasks_tree_unique_sort_id on connector_tasks_tree (sort_id);
 alter table connector_tasks_tree
     add constraint connector_tasks_tree_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -252,6 +300,9 @@ alter table connector_tasks_tree
 
 -- Workflow instance
 create table if not exists workflows_instances (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id           text not null,
     schedule_id  text not null,
@@ -269,6 +320,7 @@ create table if not exists workflows_instances (
     -- Primary key
     primary key (id, schedule_id, connector_id)
 );
+create index workflows_instances_created_at_sort_id on workflows_instances (created_at, sort_id);
 alter table workflows_instances
     add constraint workflows_instances_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -280,6 +332,9 @@ alter table workflows_instances
 
 -- Webhook configs
 create table if not exists webhooks_configs (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     name         text not null,
     connector_id varchar not null,
@@ -288,6 +343,7 @@ create table if not exists webhooks_configs (
     -- Primary key
     primary key (name, connector_id)
 );
+create unique index webhooks_configs_unique_sort_id on webhooks_configs (sort_id);
 alter table webhooks_configs
     add constraint webhooks_configs_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -295,6 +351,9 @@ alter table webhooks_configs
 
 -- Webhooks
 create table if not exists webhooks (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id           text not null,
     connector_id varchar not null,
@@ -307,6 +366,7 @@ create table if not exists webhooks (
     -- Primary key
     primary key (id)
 );
+create unique index webhooks_unique_sort_id on webhooks (sort_id);
 alter table webhooks
     add constraint webhooks_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -314,6 +374,9 @@ alter table webhooks
 
 -- Payment Initiations
 create table if not exists payment_initiations (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id                     text not null,
     connector_id           varchar not null,
@@ -335,6 +398,7 @@ create table if not exists payment_initiations (
     -- Primary key
     primary key (id)
 );
+create index payment_initiations_created_at_sort_id on payment_initiations (created_at, sort_id);
 alter table payment_initiations
     add constraint payment_initiations_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -342,6 +406,9 @@ alter table payment_initiations
 
 -- Payment Initiation Related Payments
 create table if not exists payment_initiation_related_payments(
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     payment_initiation_id varchar not null,
     payment_id            varchar not null,
@@ -350,6 +417,7 @@ create table if not exists payment_initiation_related_payments(
     -- Primary key
     primary key (payment_initiation_id, payment_id)
 );
+create index payment_initiation_related_payments_created_at_sort_id on payment_initiation_related_payments (created_at, sort_id);
 alter table payment_initiation_related_payments
     add constraint payment_initiation_related_payments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
@@ -361,6 +429,9 @@ alter table payment_initiation_related_payments
 
 -- Payment Initiation Adjustments
 create table if not exists payment_initiation_adjustments(
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id                    varchar not null,
     payment_initiation_id varchar not null,
@@ -378,6 +449,7 @@ create table if not exists payment_initiation_adjustments(
     -- Primary key
     primary key (id)
 );
+create index payment_initiation_adjustments_created_at_sort_id on payment_initiation_adjustments (created_at, sort_id);
 alter table payment_initiation_adjustments
     add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
@@ -385,6 +457,9 @@ alter table payment_initiation_adjustments
 
 -- Payment Initiations reversals
 create table if not exists payment_initiation_reversals (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id                     text not null,
     connector_id           varchar not null,
@@ -399,6 +474,7 @@ create table if not exists payment_initiation_reversals (
     -- Primary key
     primary key (id)
 );
+create index payment_initiation_reversals_created_at_sort_id on payment_initiation_reversals (created_at, sort_id);
 alter table payment_initiation_reversals
     add constraint payment_initiation_reversals_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -409,6 +485,9 @@ alter table payment_initiation_reversals
     on delete cascade;
 -- Payment Initiation Reversal Adjustments
 create table if not exists payment_initiation_reversal_adjustments(
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id                             varchar not null,
     payment_initiation_reversal_id varchar not null,
@@ -421,6 +500,7 @@ create table if not exists payment_initiation_reversal_adjustments(
     -- Primary key
     primary key (id)
 );
+create index payment_initiation_reversal_adjustments_created_at_sort_id on payment_initiation_reversal_adjustments (created_at, sort_id);
 alter table payment_initiation_reversal_adjustments
     add constraint payment_initiation_reversal_adjustments_payment_initiation_id_fk foreign key (payment_initiation_reversal_id)
     references payment_initiation_reversals (id)
@@ -428,6 +508,9 @@ alter table payment_initiation_reversal_adjustments
 
 -- Events sent
 create table if not exists events_sent (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id           varchar not null,
     sent_at      timestamp without time zone not null,
@@ -438,6 +521,7 @@ create table if not exists events_sent (
     -- Primary key
     primary key (id)
 );
+create unique index events_sent_unique_sort_id on events_sent (sort_id);
 alter table events_sent
     add constraint events_sent_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -445,6 +529,9 @@ alter table events_sent
 
 -- tasks
 create table if not exists tasks (
+    -- Autoincrement fields
+    sort_id bigserial not null,
+
     -- Mandatory fields
     id varchar not null,
     connector_id varchar not null,
@@ -459,6 +546,7 @@ create table if not exists tasks (
     -- Primary key
     primary key (id)
 );
+create index tasks_created_at_sort_id on tasks (created_at, sort_id);
 alter table tasks
     add constraint tasks_connector_id_fk foreign key (connector_id)
     references connectors (id)
