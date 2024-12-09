@@ -131,7 +131,7 @@ func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpa
 				query = query.Where(where, args...)
 			}
 
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},

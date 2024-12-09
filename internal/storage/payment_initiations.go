@@ -234,7 +234,7 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 			}
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 
 			return query
 		},
@@ -311,7 +311,7 @@ func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID m
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationRelatedPaymentsQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 			query.Where("payment_initiation_id = ?", piID)
 
 			return query
@@ -369,7 +369,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	err = tx.NewSelect().
 		Model(&previousAdj).
 		Where("payment_initiation_id = ?", adj.PaymentInitiationID).
-		Order("created_at DESC").
+		Order("created_at DESC", "sort_id DESC").
 		For("UPDATE"). // Prevent another transaction to select/insert a new adjustment while this one is not committed
 		Limit(1).
 		Scan(ctx)
@@ -464,7 +464,7 @@ func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID model
 			}
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC")
+			query = query.Order("created_at DESC", "sort_id DESC")
 			query.Where("payment_initiation_id = ?", piID)
 
 			return query
