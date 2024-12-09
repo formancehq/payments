@@ -18,7 +18,7 @@ create table if not exists connectors (
     -- Primary key
     primary key (id)
 );
-create unique index connectors_unique_sort_id on connectors (sort_id);
+create index connectors_created_at_sort_id on connectors (created_at, sort_id);
 create unique index connectors_unique_name on connectors (name);
 
 CREATE OR REPLACE FUNCTION connectors_notify_after_modifications() RETURNS TRIGGER as $$
@@ -63,7 +63,7 @@ create table if not exists accounts (
     -- Primary key
     primary key (id)
 );
-create unique index accounts_unique_sort_id on accounts (sort_id);
+create index accounts_created_at_sort_id on accounts (created_at, sort_id);
 alter table accounts 
     add constraint accounts_connector_id_fk foreign key (connector_id) 
     references connectors (id)
@@ -85,7 +85,7 @@ create table if not exists balances (
     -- Primary key
     primary key (account_id, created_at, asset)
 );
-create unique index balances_unique_sort_id on balances (sort_id);
+create index balances_created_at_sort_id on balances (created_at, sort_id);
 create index balances_account_id_created_at_asset on balances (account_id, last_updated_at desc, asset);
 alter table balances
     add constraint balances_connector_id foreign key (connector_id)
@@ -114,7 +114,7 @@ create table if not exists bank_accounts (
     -- Primary key
     primary key (id)
 );
-create unique index bank_accounts_unique_sort_id on bank_accounts (sort_id);
+create index bank_accounts_created_at_sort_id on bank_accounts (created_at, sort_id);
 create table if not exists bank_accounts_related_accounts (
     -- Autoincrement fields
     sort_id bigserial not null,
@@ -128,7 +128,7 @@ create table if not exists bank_accounts_related_accounts (
     -- Primary key
     primary key (bank_account_id, account_id)
 );
-create unique index bank_accounts_related_accounts_unique_sort_id on bank_accounts_related_accounts (sort_id);
+create index bank_accounts_related_accounts_created_at_sort_id on bank_accounts_related_accounts (created_at, sort_id);
 alter table bank_accounts_related_accounts
     add constraint bank_accounts_related_accounts_bank_account_id_fk foreign key (bank_account_id)
     references bank_accounts (id)
@@ -168,7 +168,7 @@ create table if not exists payments (
     -- Primary key
     primary key (id)
 );
-create unique index payments_unique_sort_id on payments (sort_id);
+create index payments_created_at_sort_id on payments (created_at, sort_id);
 alter table payments
     add constraint payments_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -197,7 +197,7 @@ create table if not exists payment_adjustments (
     -- Primary key
     primary key (id)
 );
-create unique index payment_adjustments_unique_sort_id on payment_adjustments (sort_id);
+create index payment_adjustments_created_at_sort_id on payment_adjustments (created_at, sort_id);
 alter table payment_adjustments
     add constraint payment_adjustments_payment_id_fk foreign key (payment_id)
     references payments (id)
@@ -216,7 +216,7 @@ create table if not exists pools (
     -- Primary key
     primary key (id)
 );
-create unique index pools_unique_sort_id on pools (sort_id);
+create index pools_created_at_sort_id on pools (created_at, sort_id);
 create unique index pools_unique_name on pools (name);
 
 create table if not exists pool_accounts (
@@ -230,7 +230,7 @@ create table if not exists pool_accounts (
     -- Primary key
     primary key (pool_id, account_id)
 );
-create unique index pool_accounts_unique_sort_id on pool_accounts (sort_id);
+create index pool_accounts_created_at_sort_id on pool_accounts (created_at, sort_id);
 alter table pool_accounts
     add constraint pool_accounts_pool_id_fk foreign key (pool_id)
     references pools (id)
@@ -253,7 +253,7 @@ create table if not exists schedules (
     -- Primary key
     primary key (id, connector_id)
 );
-create unique index schedules_unique_sort_id on schedules (sort_id);
+create index schedules_created_at_sort_id on schedules (created_at, sort_id);
 alter table schedules
     add constraint schedules_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -274,7 +274,7 @@ create table if not exists states (
     -- Primary key
     primary key (id)
 );
-create unique index states_unique_sort_id on states (sort_id);
+create index states_created_at_sort_id on states (created_at, sort_id);
 alter table states
     add constraint states_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -292,7 +292,7 @@ create table if not exists connector_tasks_tree (
     -- Primary key
     primary key (connector_id)
 );
-create unique index connector_tasks_tree_unique_sort_id on connector_tasks_tree (sort_id);
+create index connector_tasks_tree_created_at_sort_id on connector_tasks_tree (created_at, sort_id);
 alter table connector_tasks_tree
     add constraint connector_tasks_tree_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -320,7 +320,7 @@ create table if not exists workflows_instances (
     -- Primary key
     primary key (id, schedule_id, connector_id)
 );
-create unique index workflows_instances_unique_sort_id on workflows_instances (sort_id);
+create index workflows_instances_created_at_sort_id on workflows_instances (created_at, sort_id);
 alter table workflows_instances
     add constraint workflows_instances_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -343,7 +343,7 @@ create table if not exists webhooks_configs (
     -- Primary key
     primary key (name, connector_id)
 );
-create unique index webhooks_configs_unique_sort_id on webhooks_configs (sort_id);
+create index webhooks_configs_created_at_sort_id on webhooks_configs (created_at, sort_id);
 alter table webhooks_configs
     add constraint webhooks_configs_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -366,7 +366,7 @@ create table if not exists webhooks (
     -- Primary key
     primary key (id)
 );
-create unique index webhooks_unique_sort_id on webhooks (sort_id);
+create index webhooks_created_at_sort_id on webhooks (created_at, sort_id);
 alter table webhooks
     add constraint webhooks_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -398,7 +398,7 @@ create table if not exists payment_initiations (
     -- Primary key
     primary key (id)
 );
-create unique index payment_initiations_unique_sort_id on payment_initiations (sort_id);
+create index payment_initiations_created_at_sort_id on payment_initiations (created_at, sort_id);
 alter table payment_initiations
     add constraint payment_initiations_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -417,7 +417,7 @@ create table if not exists payment_initiation_related_payments(
     -- Primary key
     primary key (payment_initiation_id, payment_id)
 );
-create unique index payment_initiation_related_payments_unique_sort_id on payment_initiation_related_payments (sort_id);
+create index payment_initiation_related_payments_created_at_sort_id on payment_initiation_related_payments (created_at, sort_id);
 alter table payment_initiation_related_payments
     add constraint payment_initiation_related_payments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
@@ -449,7 +449,7 @@ create table if not exists payment_initiation_adjustments(
     -- Primary key
     primary key (id)
 );
-create unique index payment_initiation_adjustments_unique_sort_id on payment_initiation_adjustments (sort_id);
+create index payment_initiation_adjustments_created_at_sort_id on payment_initiation_adjustments (created_at, sort_id);
 alter table payment_initiation_adjustments
     add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
@@ -474,7 +474,7 @@ create table if not exists payment_initiation_reversals (
     -- Primary key
     primary key (id)
 );
-create unique index payment_initiation_reversals_unique_sort_id on payment_initiation_reversals (sort_id);
+create index payment_initiation_reversals_created_at_sort_id on payment_initiation_reversals (created_at, sort_id);
 alter table payment_initiation_reversals
     add constraint payment_initiation_reversals_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -500,7 +500,7 @@ create table if not exists payment_initiation_reversal_adjustments(
     -- Primary key
     primary key (id)
 );
-create unique index payment_initiation_reversal_adjustments_unique_sort_id on payment_initiation_reversal_adjustments (sort_id);
+create index payment_initiation_reversal_adjustments_created_at_sort_id on payment_initiation_reversal_adjustments (created_at, sort_id);
 alter table payment_initiation_reversal_adjustments
     add constraint payment_initiation_reversal_adjustments_payment_initiation_id_fk foreign key (payment_initiation_reversal_id)
     references payment_initiation_reversals (id)
@@ -521,7 +521,7 @@ create table if not exists events_sent (
     -- Primary key
     primary key (id)
 );
-create unique index events_sent_unique_sort_id on events_sent (sort_id);
+create index events_sent_created_at_sort_id on events_sent (created_at, sort_id);
 alter table events_sent
     add constraint events_sent_connector_id_fk foreign key (connector_id)
     references connectors (id)
@@ -546,7 +546,7 @@ create table if not exists tasks (
     -- Primary key
     primary key (id)
 );
-create unique index tasks_unique_sort_id on tasks (sort_id);
+create index tasks_created_at_sort_id on tasks (created_at, sort_id);
 alter table tasks
     add constraint tasks_connector_id_fk foreign key (connector_id)
     references connectors (id)
