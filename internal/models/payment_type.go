@@ -34,7 +34,7 @@ func (t PaymentType) String() string {
 
 func PaymentTypeFromString(value string) (PaymentType, error) {
 	switch value {
-	case "PAYIN":
+	case "PAY-IN", "PAYIN":
 		return PAYMENT_TYPE_PAYIN, nil
 	case "PAYOUT":
 		return PAYMENT_TYPE_PAYOUT, nil
