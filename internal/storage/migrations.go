@@ -23,10 +23,10 @@ var initSchema string
 //go:embed migrations/4-migrate-bank-accounts-from-v2.sql
 var migrateBankAccountsFromV2 string
 
-//go:embed migrations/5-migrate-transfer-initiations-from-v2.sql
+//go:embed migrations/6-migrate-transfer-initiations-from-v2.sql
 var migrateTransferInitiationsFromV2 string
 
-//go:embed migrations/7-migrate-pools-from-v2.sql
+//go:embed migrations/8-migrate-pools-from-v2.sql
 var migratePoolsFromV2 string
 
 func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
@@ -57,6 +57,14 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			},
 		},
 		migrations.Migration{
+			Name: "migrate payments adjustments events from v2",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					return paymentsMigration.MigratePaymentsAdjustmentsFromV2(ctx, db)
+				})
+			},
+		},
+		migrations.Migration{
 			Name: "migrate payments events from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
@@ -70,6 +78,14 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 					_, err := tx.ExecContext(ctx, migrateBankAccountsFromV2)
 					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "fix missing reference for v2 transfer initiations",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					return paymentsMigration.FixMissingReferenceTransferInitiation(ctx, db)
 				})
 			},
 		},
