@@ -116,7 +116,16 @@ func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthers
 }
 
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
+	name := "dummypay-account"
+	bankAccount := models.PSPAccount{
+		Reference: fmt.Sprintf("dummypay-%s", req.BankAccount.ID.String()),
+		CreatedAt: req.BankAccount.CreatedAt,
+		Name:      &name,
+		Raw:       json.RawMessage(`{}`),
+	}
+	return models.CreateBankAccountResponse{
+		RelatedAccount: bankAccount,
+	}, nil
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
