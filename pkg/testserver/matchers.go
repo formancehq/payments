@@ -27,40 +27,39 @@ func (n NoOpPayloadMatcher) Match(interface{}) error {
 
 var _ PayloadMatcher = (*NoOpPayloadMatcher)(nil)
 
+type CallbackMatcher struct {
+	expected any
+	callback func(b []byte) error
+}
+
+func (m CallbackMatcher) Match(payload interface{}) error {
+	marshaledPayload, err := rawJson(m.expected, payload)
+	if err != nil {
+		return fmt.Errorf("unable to marshal payload: %s", err)
+	}
+	return m.callback(marshaledPayload)
+}
+
+func WithCallback(expected any, callback func(b []byte) error) CallbackMatcher {
+	return CallbackMatcher{
+		expected: expected,
+		callback: callback,
+	}
+}
+
+var _ PayloadMatcher = (*CallbackMatcher)(nil)
+
 type StructPayloadMatcher struct {
 	expected any
 }
 
-func (e StructPayloadMatcher) Match(payload interface{}) error {
-	rawSchema := jsonschema.Reflect(e.expected)
-	data, err := json.Marshal(rawSchema)
-	if err != nil {
-		return fmt.Errorf("unable to marshal schema: %s", err)
-	}
-
-	schemaJSONLoader := gojsonschema.NewStringLoader(string(data))
-	schema, err := gojsonschema.NewSchema(schemaJSONLoader)
-	if err != nil {
-		return fmt.Errorf("unable to load json schema: %s", err)
-	}
-
-	dataJsonLoader := gojsonschema.NewRawLoader(payload)
-
-	validate, err := schema.Validate(dataJsonLoader)
-	if err != nil {
-		return err
-	}
-
-	if !validate.Valid() {
-		return fmt.Errorf("%s", validate.Errors())
-	}
-
-	marshaledPayload, err := json.Marshal(payload)
+func (s StructPayloadMatcher) Match(payload interface{}) error {
+	marshaledPayload, err := rawJson(s.expected, payload)
 	if err != nil {
 		return fmt.Errorf("unable to marshal payload: %s", err)
 	}
 
-	unmarshalledPayload := reflect.New(reflect.TypeOf(e.expected)).Interface()
+	unmarshalledPayload := reflect.New(reflect.TypeOf(s.expected)).Interface()
 	if err := json.Unmarshal(marshaledPayload, unmarshalledPayload); err != nil {
 		return fmt.Errorf("unable to unmarshal payload: %s", err)
 	}
@@ -69,7 +68,7 @@ func (e StructPayloadMatcher) Match(payload interface{}) error {
 	// as it is seen as "any" by the code, we use reflection to get the targeted valud
 	unmarshalledPayload = reflect.ValueOf(unmarshalledPayload).Elem().Interface()
 
-	diff := cmp.Diff(unmarshalledPayload, e.expected, cmp.Comparer(func(v1 *big.Int, v2 *big.Int) bool {
+	diff := cmp.Diff(unmarshalledPayload, s.expected, cmp.Comparer(func(v1 *big.Int, v2 *big.Int) bool {
 		return v1.String() == v2.String()
 	}))
 	if diff != "" {
@@ -133,4 +132,35 @@ func Event(eventName string, matchers ...PayloadMatcher) types.GomegaMatcher {
 		matchers:  matchers,
 		eventName: eventName,
 	}
+}
+
+func rawJson(expected any, payload interface{}) (b []byte, err error) {
+	rawSchema := jsonschema.Reflect(expected)
+	data, err := json.Marshal(rawSchema)
+	if err != nil {
+		return b, fmt.Errorf("unable to marshal schema: %s", err)
+	}
+
+	schemaJSONLoader := gojsonschema.NewStringLoader(string(data))
+	schema, err := gojsonschema.NewSchema(schemaJSONLoader)
+	if err != nil {
+		return b, fmt.Errorf("unable to load json schema: %s", err)
+	}
+
+	dataJsonLoader := gojsonschema.NewRawLoader(payload)
+
+	validate, err := schema.Validate(dataJsonLoader)
+	if err != nil {
+		return b, err
+	}
+
+	if !validate.Valid() {
+		return b, fmt.Errorf("%s", validate.Errors())
+	}
+
+	marshaledPayload, err := json.Marshal(payload)
+	if err != nil {
+		return b, fmt.Errorf("unable to marshal payload: %s", err)
+	}
+	return marshaledPayload, nil
 }
