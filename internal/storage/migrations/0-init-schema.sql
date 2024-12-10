@@ -134,10 +134,6 @@ alter table bank_accounts_related_accounts
     references bank_accounts (id)
     on delete cascade;
 alter table bank_accounts_related_accounts
-    add constraint bank_accounts_related_accounts_account_id_fk foreign key (account_id)
-    references accounts (id)
-    on delete cascade;
-alter table bank_accounts_related_accounts
     add constraint bank_accounts_related_accounts_connector_id_fk foreign key (connector_id)
     references connectors (id)
     on delete cascade;
