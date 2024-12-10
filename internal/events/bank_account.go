@@ -8,7 +8,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type bankAccountMessagePayload struct {
+type BankAccountMessagePayload struct {
 	ID              string                              `json:"id"`
 	CreatedAt       time.Time                           `json:"createdAt"`
 	Name            string                              `json:"name"`
@@ -16,10 +16,10 @@ type bankAccountMessagePayload struct {
 	IBAN            string                              `json:"iban"`
 	SwiftBicCode    string                              `json:"swiftBicCode"`
 	Country         string                              `json:"country"`
-	RelatedAccounts []bankAccountRelatedAccountsPayload `json:"adjustments"`
+	RelatedAccounts []BankAccountRelatedAccountsPayload `json:"adjustments"`
 }
 
-type bankAccountRelatedAccountsPayload struct {
+type BankAccountRelatedAccountsPayload struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	AccountID   string    `json:"accountID"`
 	ConnectorID string    `json:"connectorID"`
@@ -29,7 +29,7 @@ type bankAccountRelatedAccountsPayload struct {
 func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publish.EventMessage {
 	bankAccount.Offuscate()
 
-	payload := bankAccountMessagePayload{
+	payload := BankAccountMessagePayload{
 		ID:        bankAccount.ID.String(),
 		CreatedAt: bankAccount.CreatedAt,
 		Name:      bankAccount.Name,
@@ -52,7 +52,7 @@ func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publis
 	}
 
 	for _, relatedAccount := range bankAccount.RelatedAccounts {
-		relatedAccount := bankAccountRelatedAccountsPayload{
+		relatedAccount := BankAccountRelatedAccountsPayload{
 			CreatedAt:   relatedAccount.CreatedAt,
 			AccountID:   relatedAccount.AccountID.String(),
 			Provider:    relatedAccount.ConnectorID.Provider,
