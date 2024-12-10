@@ -14,7 +14,7 @@ DO $$
         IF (SELECT count(*) FROM information_schema.tables WHERE table_schema ='accounts' AND table_name ='bank_account_related_accounts') > 0
         THEN
             INSERT INTO bank_accounts_related_accounts (bank_account_id, account_id, connector_id, created_at)
-            SELECT id, account_id, connector_id, created_at from accounts.bank_account_related_accounts
+            SELECT bank_account_id, account_id, connector_id, created_at from accounts.bank_account_related_accounts
             ON CONFLICT (bank_account_id, account_id) DO NOTHING;
         END IF;
     END;
