@@ -108,7 +108,11 @@ func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.Fetch
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	return models.FetchNextPaymentsResponse{}, plugins.ErrNotImplemented
+	return models.FetchNextPaymentsResponse{
+		Payments: []models.PSPPayment{},
+		NewState: json.RawMessage(`{}`),
+		HasMore:  false,
+	}, nil
 }
 
 func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
