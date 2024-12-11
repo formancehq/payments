@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createPaymentRequest struct {
+type CreatePaymentRequest struct {
 	Reference            string                             `json:"reference"`
 	ConnectorID          string                             `json:"connectorID"`
 	CreatedAt            time.Time                          `json:"createdAt"`
@@ -29,10 +29,10 @@ type createPaymentRequest struct {
 	SourceAccountID      *string                            `json:"sourceAccountID"`
 	DestinationAccountID *string                            `json:"destinationAccountID"`
 	Metadata             map[string]string                  `json:"metadata"`
-	Adjustments          []createPaymentsAdjustmentsRequest `json:"adjustments"`
+	Adjustments          []CreatePaymentsAdjustmentsRequest `json:"adjustments"`
 }
 
-type createPaymentsAdjustmentsRequest struct {
+type CreatePaymentsAdjustmentsRequest struct {
 	Reference string            `json:"reference"`
 	CreatedAt time.Time         `json:"createdAt"`
 	Status    string            `json:"status"`
@@ -41,7 +41,7 @@ type createPaymentsAdjustmentsRequest struct {
 	Metadata  map[string]string `json:"metadata"`
 }
 
-func (r *createPaymentRequest) validate() error {
+func (r *CreatePaymentRequest) validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -105,7 +105,7 @@ func (r *createPaymentRequest) validate() error {
 	return nil
 }
 
-func (r *createPaymentsAdjustmentsRequest) validate() error {
+func (r *CreatePaymentsAdjustmentsRequest) validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -138,7 +138,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_paymentsCreate")
 		defer span.End()
 
-		var req createPaymentRequest
+		var req CreatePaymentRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
@@ -227,7 +227,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromPaymentCreateRequest(span trace.Span, req createPaymentRequest) {
+func populateSpanFromPaymentCreateRequest(span trace.Span, req CreatePaymentRequest) {
 	span.SetAttributes(attribute.String("reference", req.Reference))
 	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))
