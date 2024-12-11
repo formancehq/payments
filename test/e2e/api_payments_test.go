@@ -22,9 +22,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
 
-		createRequest v3.CreateAccountRequest
-		creditorRes   struct{ Data models.Account }
-		debtorRes     struct{ Data models.Account }
+		creditorRequest v3.CreateAccountRequest
+		creditorRes     struct{ Data models.Account }
+		debtorRes       struct{ Data models.Account }
 
 		app *utils.Deferred[*Server]
 	)
@@ -41,7 +41,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 	})
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
-	createRequest = v3.CreateAccountRequest{
+	creditorRequest = v3.CreateAccountRequest{
 		Reference:    "creditor",
 		AccountName:  "creditor",
 		CreatedAt:    createdAt,
@@ -56,6 +56,10 @@ var _ = Context("Payments API Payment Initiation", func() {
 			e   chan *nats.Msg
 			err error
 
+			debtorID   string
+			creditorID string
+			payReq     v3.PaymentInitiationsCreateRequest
+
 			connectorRes struct{ Data string }
 			initRes      struct {
 				Data v3.PaymentInitiationsCreateResponse
@@ -69,29 +73,27 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			createRequest.ConnectorID = connectorRes.Data
-			err = CreateAccount(ctx, app.GetValue(), ver, createRequest, &creditorRes)
+			creditorRequest.ConnectorID = connectorRes.Data
+			err = CreateAccount(ctx, app.GetValue(), ver, creditorRequest, &creditorRes)
 			Expect(err).To(BeNil())
 
-			createRequest = v3.CreateAccountRequest{
+			debtorRequest := v3.CreateAccountRequest{
 				Reference:    "debtor",
 				AccountName:  "debtor",
-				ConnectorID:  createRequest.ConnectorID,
+				ConnectorID:  connectorRes.Data,
 				CreatedAt:    createdAt,
 				DefaultAsset: "EUR",
 				Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
 				Metadata:     map[string]string{"ping": "pong"},
 			}
-			err = CreateAccount(ctx, app.GetValue(), ver, createRequest, &debtorRes)
+			err = CreateAccount(ctx, app.GetValue(), ver, debtorRequest, &debtorRes)
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-		})
 
-		It("can be processed", func() {
-			debtorID := debtorRes.Data.ID.String()
-			creditorID := creditorRes.Data.ID.String()
-			payReq := v3.PaymentInitiationsCreateRequest{
-				Reference:            "paymentref",
+			debtorID = debtorRes.Data.ID.String()
+			creditorID = creditorRes.Data.ID.String()
+			payReq = v3.PaymentInitiationsCreateRequest{
+				Reference:            uuid.New().String(),
 				ScheduledAt:          time.Now(),
 				ConnectorID:          connectorRes.Data,
 				Description:          "some description",
@@ -102,9 +104,13 @@ var _ = Context("Payments API Payment Initiation", func() {
 				DestinationAccountID: &creditorID,
 				Metadata:             map[string]string{"key": "val"},
 			}
+
 			err := CreatePaymentInitiation(ctx, app.GetValue(), ver, payReq, &initRes)
 			Expect(err).To(BeNil())
 			Expect(initRes.Data.TaskID).To(Equal("")) // task nil when not sending to PSP
+		})
+
+		It("can be processed", func() {
 			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
 			Expect(err).To(BeNil())
 
@@ -132,6 +138,21 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
 			Expect(err).To(BeNil())
 			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED))
+		})
+
+		It("can be rejected", func() {
+			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			Expect(err).To(BeNil())
+
+			err = RejectPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String())
+			Expect(err).To(BeNil())
+
+			var paymentRes struct {
+				Data models.PaymentInitiationExpanded
+			}
+			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			Expect(err).To(BeNil())
+			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED))
 		})
 	})
 })
