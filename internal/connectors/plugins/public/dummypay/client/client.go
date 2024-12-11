@@ -118,7 +118,7 @@ func (c *client) CreateTransfer(ctx context.Context, paymentInit models.PSPPayme
 
 func (c *client) writeFile(filename string, b []byte) error {
 	filePath := path.Join(c.directory, filename)
-	file, err := os.Open(filePath)
+	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to open %q for write: %w", filePath, err)
 	}
