@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
@@ -153,6 +154,73 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
 			Expect(err).To(BeNil())
 			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED))
+		})
+
+		It("cannot be reversed if the payment is unprocessed", func() {
+			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			Expect(err).To(BeNil())
+
+			req := v3.PaymentInitiationsReverseRequest{
+				Reference:   uuid.New().String(),
+				Description: payReq.Description,
+				Amount:      payReq.Amount,
+				Asset:       payReq.Asset,
+				Metadata:    map[string]string{"reversal": "data"},
+			}
+
+			var res struct {
+				Data v3.PaymentInitiationsReverseResponse
+			}
+			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			Expect(err).To(BeNil())
+			Expect(res.Data.TaskID).NotTo(BeNil())
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(res.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_FAILED, WithError(workflow.ErrPaymentInitiationNotProcessed)))
+		})
+
+		It("can be reversed", func() {
+			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			Expect(err).To(BeNil())
+
+			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
+			Expect(err).To(BeNil())
+
+			var msg = struct {
+				ConnectorID          string `json:"connectorId"`
+				SourceAccountID      string `json:"sourceAccountId,omitempty"`
+				DestinationAccountID string `json:"destinationAccountId,omitempty"`
+			}{
+				ConnectorID:          connectorRes.Data,
+				SourceAccountID:      debtorID,
+				DestinationAccountID: creditorID,
+			}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+
+			req := v3.PaymentInitiationsReverseRequest{
+				Reference:   uuid.New().String(),
+				Description: payReq.Description,
+				Amount:      payReq.Amount,
+				Asset:       payReq.Asset,
+				Metadata:    map[string]string{"reversal": "data"},
+			}
+
+			var res struct {
+				Data v3.PaymentInitiationsReverseResponse
+			}
+			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			Expect(err).To(BeNil())
+			Expect(res.Data.TaskID).NotTo(BeNil())
+			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-transfer")
+			Eventually(taskPoller(res.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+
+			var paymentRes struct {
+				Data models.PaymentInitiationExpanded
+			}
+			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			Expect(err).To(BeNil())
+			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED))
 		})
 	})
 })
