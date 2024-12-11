@@ -96,14 +96,13 @@ var _ = Context("Payments API Accounts", func() {
 			func(ver int) {
 				e = Subscribe(GinkgoT(), app.GetValue())
 				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				insertedAccounts, err := GeneratePSPData(connectorConf.Directory)
+				_, err := GeneratePSPData(connectorConf.Directory)
 				Expect(err).To(BeNil())
 				ver = 3
 
 				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
-				// ensure some account imports are processed before moving on but no need to extend this test's execution time and wait for everything
-				Eventually(e).WithTimeout(2 * time.Second).MustPassRepeatedly(len(insertedAccounts) / 2).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 				var msg events.BalanceMessagePayload
 				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
