@@ -13,6 +13,8 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
+var ErrPaymentInitiationNotProcessed = errors.New("payment initiation not processed")
+
 type ValidateReverse struct {
 	ConnectorID models.ConnectorID
 	PI          *models.PaymentInitiation
@@ -102,9 +104,7 @@ func (w Workflow) validatePaymentInitiationProcessed(
 		// Payment initiation has been processed
 		return nil
 	}
-
-	err = errors.New("payment initiation not processed")
-	return temporal.NewNonRetryableApplicationError(err.Error(), "PAYMENT_INITIATION_NOT_PROCESSED", err)
+	return temporal.NewNonRetryableApplicationError("no adjustments found", "PAYMENT_INITIATION_NOT_PROCESSED", ErrPaymentInitiationNotProcessed)
 }
 
 func (w Workflow) validateReverseAmount(
