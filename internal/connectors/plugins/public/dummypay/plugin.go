@@ -133,7 +133,7 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	pspPayment, err := p.client.CreateTransfer(ctx, req.PaymentInitiation)
+	pspPayment, err := p.client.CreatePayment(ctx, models.PAYMENT_TYPE_TRANSFER, req.PaymentInitiation)
 	if err != nil {
 		return models.CreateTransferResponse{}, fmt.Errorf("failed to create transfer using client: %w", err)
 	}
@@ -141,7 +141,7 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	pspPayment, err := p.client.ReverseTransfer(ctx, req.PaymentInitiationReversal)
+	pspPayment, err := p.client.ReversePayment(ctx, models.PAYMENT_TYPE_TRANSFER, req.PaymentInitiationReversal)
 	if err != nil {
 		return models.ReverseTransferResponse{}, fmt.Errorf("failed to reverse transfer using client: %w", err)
 	}
@@ -153,11 +153,19 @@ func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransfer
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.CreatePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, fmt.Errorf("failed to create transfer using client: %w", err)
+	}
+	return models.CreatePayoutResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.ReversePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiationReversal)
+	if err != nil {
+		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse transfer using client: %w", err)
+	}
+	return models.ReversePayoutResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
