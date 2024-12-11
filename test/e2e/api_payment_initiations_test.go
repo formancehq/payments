@@ -77,6 +77,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			creditorRequest.ConnectorID = connectorRes.Data
 			err = CreateAccount(ctx, app.GetValue(), ver, creditorRequest, &creditorRes)
 			Expect(err).To(BeNil())
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 			debtorRequest := v3.CreateAccountRequest{
 				Reference:    "debtor",
