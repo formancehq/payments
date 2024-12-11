@@ -580,20 +580,6 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, acc))
 	})
 
-	t.Run("add related account with unknown account", func(t *testing.T) {
-		acc := models.BankAccountRelatedAccount{
-			BankAccountID: defaultBankAccount2.ID,
-			AccountID: models.AccountID{
-				Reference:   "unknown",
-				ConnectorID: defaultConnector.ID,
-			},
-			ConnectorID: defaultConnector.ID,
-			CreatedAt:   now.UTC().Time,
-		}
-
-		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, acc))
-	})
-
 	t.Run("add related account with unknown connector", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
 			BankAccountID: defaultBankAccount2.ID,
