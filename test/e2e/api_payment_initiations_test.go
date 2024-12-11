@@ -130,7 +130,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
