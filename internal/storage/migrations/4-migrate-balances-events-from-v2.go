@@ -2,6 +2,7 @@ package migrations
 
 import (
 	"context"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
@@ -9,15 +10,18 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type v2Accounts struct {
-	bun.BaseModel `bun:"accounts.account"`
+type v2Balance struct {
+	bun.BaseModel `bun:"accounts.balances"`
 
-	ID        models.AccountID `bun:"id,pk,type:character varying,nullzero"`
-	CreatedAt time.Time        `bun:"created_at,type:timestamp with time zone,notnull"`
+	AccountID     models.AccountID `bun:"account_id"`
+	Asset         string           `bun:"currency"`
+	Balance       *big.Int         `bun:"balance"`
+	CreatedAt     time.Time        `bun:"created_at"`
+	LastUpdatedAt time.Time        `bun:"last_updated_at"`
 }
 
-func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
-	exist, err := isTableExisting(ctx, db, "accounts", "account")
+func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
+	exist, err := isTableExisting(ctx, db, "accounts", "balances")
 	if err != nil {
 		return err
 	}
@@ -28,7 +32,7 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 	}
 
 	_, err = db.ExecContext(ctx, `
-		ALTER TABLE accounts.account ADD COLUMN IF NOT EXISTS sort_id bigserial;
+		ALTER TABLE accounts.balances ADD COLUMN IF NOT EXISTS sort_id bigserial;
 	`)
 	if err != nil {
 		return err
@@ -36,13 +40,13 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 
 	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]]{
 		Order:    bunpaginate.OrderAsc,
-		PageSize: 1000,
+		PageSize: 100,
 		Options: bunpaginate.PaginatedQueryOptions[any]{
-			PageSize: 1000,
+			PageSize: 100,
 		},
 	}
 	for {
-		cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[any], v2Accounts](
+		cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[any], v2Balance](
 			ctx,
 			db,
 			(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]])(&q),
@@ -55,14 +59,22 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 		}
 
 		events := make([]v3eventSent, 0, len(cursor.Data))
-		for _, account := range cursor.Data {
+		for _, balance := range cursor.Data {
+			b := models.Balance{
+				AccountID:     balance.AccountID,
+				CreatedAt:     balance.CreatedAt,
+				LastUpdatedAt: balance.LastUpdatedAt,
+				Asset:         balance.Asset,
+				Balance:       balance.Balance,
+			}
+
 			events = append(events, v3eventSent{
 				ID: models.EventID{
-					EventIdempotencyKey: account.ID.String(),
-					ConnectorID:         &account.ID.ConnectorID,
+					EventIdempotencyKey: b.IdempotencyKey(),
+					ConnectorID:         &balance.AccountID.ConnectorID,
 				},
-				ConnectorID: &account.ID.ConnectorID,
-				SentAt:      account.CreatedAt,
+				ConnectorID: &balance.AccountID.ConnectorID,
+				SentAt:      balance.LastUpdatedAt,
 			})
 		}
 

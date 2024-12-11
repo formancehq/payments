@@ -132,9 +132,9 @@ func MigratePaymentsFromV2(ctx context.Context, db bun.IDB) error {
 
 	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]]{
 		Order:    bunpaginate.OrderAsc,
-		PageSize: 100,
+		PageSize: 1000,
 		Options: bunpaginate.PaginatedQueryOptions[any]{
-			PageSize: 100,
+			PageSize: 1000,
 		},
 	}
 	for {
