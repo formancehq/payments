@@ -15,8 +15,8 @@ import (
 type Client interface {
 	FetchAccounts(ctx context.Context, startToken int, pageSize int) ([]models.PSPAccount, int, error)
 	FetchBalance(ctx context.Context, accountID string) (*models.PSPBalance, error)
-	CreateTransfer(ctx context.Context, paymentInit models.PSPPaymentInitiation) (*models.PSPPayment, error)
-	ReverseTransfer(ctx context.Context, reversal models.PSPPaymentInitiationReversal) (models.PSPPayment, error)
+	CreatePayment(ctx context.Context, paymentType models.PaymentType, paymentInit models.PSPPaymentInitiation) (*models.PSPPayment, error)
+	ReversePayment(ctx context.Context, paymentType models.PaymentType, reversal models.PSPPaymentInitiationReversal) (models.PSPPayment, error)
 }
 
 type client struct {
@@ -96,7 +96,11 @@ func (c *client) FetchBalance(ctx context.Context, accountID string) (*models.PS
 	return &models.PSPBalance{}, nil
 }
 
-func (c *client) CreateTransfer(ctx context.Context, paymentInit models.PSPPaymentInitiation) (*models.PSPPayment, error) {
+func (c *client) CreatePayment(
+	ctx context.Context,
+	paymentType models.PaymentType,
+	paymentInit models.PSPPaymentInitiation,
+) (*models.PSPPayment, error) {
 	balances := []Balance{
 		{
 			AccountID:      paymentInit.SourceAccount.Reference,
@@ -119,7 +123,7 @@ func (c *client) CreateTransfer(ctx context.Context, paymentInit models.PSPPayme
 		CreatedAt:                   paymentInit.CreatedAt,
 		Amount:                      paymentInit.Amount,
 		Asset:                       paymentInit.Asset,
-		Type:                        models.PAYMENT_TYPE_TRANSFER,
+		Type:                        paymentType,
 		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		SourceAccountReference:      &paymentInit.SourceAccount.Reference,
@@ -127,7 +131,11 @@ func (c *client) CreateTransfer(ctx context.Context, paymentInit models.PSPPayme
 	}, nil
 }
 
-func (c *client) ReverseTransfer(ctx context.Context, reversal models.PSPPaymentInitiationReversal) (models.PSPPayment, error) {
+func (c *client) ReversePayment(
+	ctx context.Context,
+	paymentType models.PaymentType,
+	reversal models.PSPPaymentInitiationReversal,
+) (models.PSPPayment, error) {
 	b, err := c.readFile("balances.json")
 	if err != nil {
 		return models.PSPPayment{}, fmt.Errorf("failed to fetch balances: %w", err)
@@ -174,7 +182,7 @@ func (c *client) ReverseTransfer(ctx context.Context, reversal models.PSPPayment
 		CreatedAt:                   reversal.CreatedAt,
 		Amount:                      reversal.Amount,
 		Asset:                       reversal.Asset,
-		Type:                        models.PAYMENT_TYPE_TRANSFER,
+		Type:                        paymentType,
 		Status:                      models.PAYMENT_STATUS_REFUNDED,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		SourceAccountReference:      &reversal.RelatedPaymentInitiation.SourceAccount.Reference,
