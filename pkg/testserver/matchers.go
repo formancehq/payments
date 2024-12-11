@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"reflect"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/payments/internal/models"
@@ -158,6 +159,7 @@ func (t *TaskMatcher) Match(actual any) (success bool, err error) {
 	}
 
 	if task.Status != t.status {
+		t.err = fmt.Errorf("found task with status %s and error: %w", task.Status, task.Error)
 		return false, nil
 	}
 
@@ -185,6 +187,35 @@ func HaveTaskStatus(status models.TaskStatus, matchers ...PayloadMatcher) types.
 		status:   status,
 	}
 }
+
+type TaskErrorMatcher struct {
+	expected error
+}
+
+func (m TaskErrorMatcher) Match(actual interface{}) error {
+	task, ok := actual.(models.Task)
+	if !ok {
+		return fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if task.Error == nil {
+		return fmt.Errorf("task with status %q did not contain an error", task.Status)
+	}
+
+	// not guaranteed to be able to unwrap the error, so just string match
+	if !strings.Contains(task.Error.Error(), m.expected.Error()) {
+		return fmt.Errorf("found unexpected error: %w", task.Error)
+	}
+	return nil
+}
+
+func WithError(expected error) TaskErrorMatcher {
+	return TaskErrorMatcher{
+		expected: expected,
+	}
+}
+
+var _ PayloadMatcher = (*TaskErrorMatcher)(nil)
 
 func rawJson(expected any, payload interface{}, strict bool) (b []byte, err error) {
 	rawSchema := jsonschema.Reflect(expected)
