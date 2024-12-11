@@ -8,6 +8,7 @@ import (
 	"reflect"
 
 	"github.com/formancehq/go-libs/v2/publish"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/google/go-cmp/cmp"
 	"github.com/invopop/jsonschema"
 	"github.com/nats-io/nats.go"
@@ -33,9 +34,9 @@ type CallbackMatcher struct {
 }
 
 func (m CallbackMatcher) Match(payload interface{}) error {
-	marshaledPayload, err := rawJson(m.expected, payload)
+	marshaledPayload, err := rawJson(m.expected, payload, true)
 	if err != nil {
-		return fmt.Errorf("unable to marshal payload: %s", err)
+		return fmt.Errorf("failed to process payload: %s", err)
 	}
 	return m.callback(marshaledPayload)
 }
@@ -51,12 +52,13 @@ var _ PayloadMatcher = (*CallbackMatcher)(nil)
 
 type StructPayloadMatcher struct {
 	expected any
+	strict   bool
 }
 
 func (s StructPayloadMatcher) Match(payload interface{}) error {
-	marshaledPayload, err := rawJson(s.expected, payload)
+	marshaledPayload, err := rawJson(s.expected, payload, s.strict)
 	if err != nil {
-		return fmt.Errorf("unable to marshal payload: %s", err)
+		return fmt.Errorf("failed to process payload: %s", err)
 	}
 
 	unmarshalledPayload := reflect.New(reflect.TypeOf(s.expected)).Interface()
@@ -81,6 +83,15 @@ func (s StructPayloadMatcher) Match(payload interface{}) error {
 func WithPayload(v any) StructPayloadMatcher {
 	return StructPayloadMatcher{
 		expected: v,
+		strict:   true,
+	}
+}
+
+// WithPayloadSubset is able to match partial structs
+func WithPayloadSubset(v any) StructPayloadMatcher {
+	return StructPayloadMatcher{
+		expected: v,
+		strict:   false,
 	}
 }
 
@@ -134,7 +145,48 @@ func Event(eventName string, matchers ...PayloadMatcher) types.GomegaMatcher {
 	}
 }
 
-func rawJson(expected any, payload interface{}) (b []byte, err error) {
+type TaskMatcher struct {
+	status   models.TaskStatus
+	matchers []PayloadMatcher
+	err      error
+}
+
+func (t *TaskMatcher) Match(actual any) (success bool, err error) {
+	task, ok := actual.(models.Task)
+	if !ok {
+		return false, fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if task.Status != t.status {
+		return false, nil
+	}
+
+	for _, matcher := range t.matchers {
+		if t.err = matcher.Match(task); t.err != nil {
+			return false, nil
+		}
+	}
+	return true, nil
+}
+
+func (t *TaskMatcher) FailureMessage(_ any) (message string) {
+	return fmt.Sprintf("event does not match expectations: %s", t.err)
+}
+
+func (t *TaskMatcher) NegatedFailureMessage(_ any) (message string) {
+	return "event should not match"
+}
+
+var _ types.GomegaMatcher = (*TaskMatcher)(nil)
+
+func HaveTaskStatus(status models.TaskStatus, matchers ...PayloadMatcher) types.GomegaMatcher {
+	return &TaskMatcher{
+		matchers: matchers,
+		status:   status,
+	}
+}
+
+func rawJson(expected any, payload interface{}, strict bool) (b []byte, err error) {
 	rawSchema := jsonschema.Reflect(expected)
 	data, err := json.Marshal(rawSchema)
 	if err != nil {
@@ -149,13 +201,15 @@ func rawJson(expected any, payload interface{}) (b []byte, err error) {
 
 	dataJsonLoader := gojsonschema.NewRawLoader(payload)
 
-	validate, err := schema.Validate(dataJsonLoader)
-	if err != nil {
-		return b, err
-	}
+	if strict {
+		validate, err := schema.Validate(dataJsonLoader)
+		if err != nil {
+			return b, fmt.Errorf("failed to validate: %w", err)
+		}
 
-	if !validate.Valid() {
-		return b, fmt.Errorf("%s", validate.Errors())
+		if !validate.Valid() {
+			return b, fmt.Errorf("validation errors: %s", validate.Errors())
+		}
 	}
 
 	marshaledPayload, err := json.Marshal(payload)

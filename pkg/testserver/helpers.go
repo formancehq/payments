@@ -1,6 +1,7 @@
 package testserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	dummy "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
@@ -34,6 +36,10 @@ func Subscribe(t T, testServer *Server) chan *nats.Msg {
 	})
 
 	return ch
+}
+
+func TaskPoller(ctx context.Context, t T, testServer *Server) func(id string) func() models.Task {
+	return testServer.Client().PollTask(ctx, t)
 }
 
 func GeneratePSPData(dir string) error {

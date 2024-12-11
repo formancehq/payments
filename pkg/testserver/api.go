@@ -81,6 +81,10 @@ func CreatePaymentInitiation(ctx context.Context, srv *Server, ver int, reqBody 
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations"), reqBody, res)
 }
 
+func GetPaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "payment-initiations/"+id), res)
+}
+
 func ApprovePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/approve"), nil, res)
 }
