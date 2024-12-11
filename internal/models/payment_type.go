@@ -20,7 +20,7 @@ const (
 func (t PaymentType) String() string {
 	switch t {
 	case PAYMENT_TYPE_PAYIN:
-		return "PAYIN"
+		return "PAY-IN"
 	case PAYMENT_TYPE_PAYOUT:
 		return "PAYOUT"
 	case PAYMENT_TYPE_TRANSFER:
@@ -34,7 +34,7 @@ func (t PaymentType) String() string {
 
 func PaymentTypeFromString(value string) (PaymentType, error) {
 	switch value {
-	case "PAY-IN", "PAYIN":
+	case "PAY-IN":
 		return PAYMENT_TYPE_PAYIN, nil
 	case "PAYOUT":
 		return PAYMENT_TYPE_PAYOUT, nil

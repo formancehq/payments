@@ -20,13 +20,13 @@ var EncryptionKey string
 //go:embed migrations/0-init-schema.sql
 var initSchema string
 
-//go:embed migrations/4-migrate-bank-accounts-from-v2.sql
+//go:embed migrations/5-migrate-bank-accounts-from-v2.sql
 var migrateBankAccountsFromV2 string
 
-//go:embed migrations/6-migrate-transfer-initiations-from-v2.sql
+//go:embed migrations/7-migrate-transfer-initiations-from-v2.sql
 var migrateTransferInitiationsFromV2 string
 
-//go:embed migrations/8-migrate-pools-from-v2.sql
+//go:embed migrations/9-migrate-pools-from-v2.sql
 var migratePoolsFromV2 string
 
 func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
@@ -69,6 +69,14 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 					return paymentsMigration.MigratePaymentsFromV2(ctx, db)
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "migrate balances events from v2",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					return paymentsMigration.MigrateBalancesFromV2(ctx, db)
 				})
 			},
 		},
