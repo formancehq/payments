@@ -16,7 +16,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type paymentInitiationsReverseRequest struct {
+type PaymentInitiationsReverseRequest struct {
 	Reference   string            `json:"reference"`
 	Description string            `json:"description"`
 	Amount      *big.Int          `json:"amount"`
@@ -24,7 +24,7 @@ type paymentInitiationsReverseRequest struct {
 	Metadata    map[string]string `json:"metadata"`
 }
 
-func (r *paymentInitiationsReverseRequest) Validate() error {
+func (r *PaymentInitiationsReverseRequest) Validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -40,7 +40,7 @@ func (r *paymentInitiationsReverseRequest) Validate() error {
 	return nil
 }
 
-type paymentInitiationsReverseResponse struct {
+type PaymentInitiationsReverseResponse struct {
 	PaymentInitiationReversalID string `json:"paymentInitiationReversalID"`
 	TaskID                      string `json:"taskID"`
 }
@@ -58,7 +58,7 @@ func paymentInitiationsReverse(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		payload := paymentInitiationsReverseRequest{}
+		payload := PaymentInitiationsReverseRequest{}
 		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
@@ -94,14 +94,14 @@ func paymentInitiationsReverse(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Accepted(w, paymentInitiationsReverseResponse{
+		api.Accepted(w, PaymentInitiationsReverseResponse{
 			PaymentInitiationReversalID: reversalID.String(),
 			TaskID:                      task.ID.String(),
 		})
 	}
 }
 
-func populateSpanFromPaymentInitiationsReverseRequest(span trace.Span, r paymentInitiationsReverseRequest) {
+func populateSpanFromPaymentInitiationsReverseRequest(span trace.Span, r PaymentInitiationsReverseRequest) {
 	span.SetAttributes(
 		attribute.String("reference", r.Reference),
 		attribute.String("description", r.Description),
