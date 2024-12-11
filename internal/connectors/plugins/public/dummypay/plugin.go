@@ -141,7 +141,11 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.ReverseTransfer(ctx, req.PaymentInitiationReversal)
+	if err != nil {
+		return models.ReverseTransferResponse{}, fmt.Errorf("failed to reverse transfer using client: %w", err)
+	}
+	return models.ReverseTransferResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
