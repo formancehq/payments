@@ -89,21 +89,21 @@ var _ = Context("Payments API Accounts", func() {
 			res          struct {
 				Cursor bunpaginate.Cursor[models.Balance]
 			}
-			e   chan *nats.Msg
-			err error
+			e chan *nats.Msg
 		)
 
 		DescribeTable("should be successful",
 			func(ver int) {
 				e = Subscribe(GinkgoT(), app.GetValue())
 				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				GeneratePSPData(connectorConf.Directory)
+				insertedAccounts, err := GeneratePSPData(connectorConf.Directory)
 				Expect(err).To(BeNil())
 				ver = 3
 
 				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
-				Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+				// ensure some account imports are processed before moving on but no need to extend this test's execution time and wait for everything
+				Eventually(e).MustPassRepeatedly(len(insertedAccounts) / 2).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 				var msg events.BalanceMessagePayload
 				Eventually(e).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
