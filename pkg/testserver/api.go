@@ -89,6 +89,10 @@ func ApprovePaymentInitiation(ctx context.Context, srv *Server, ver int, id stri
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/approve"), nil, res)
 }
 
+func RejectPaymentInitiation(ctx context.Context, srv *Server, ver int, id string) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reject"), nil, nil)
+}
+
 func GetTask(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	return srv.Client().Get(ctx, pathPrefix(ver, "tasks/"+id), res)
 }
