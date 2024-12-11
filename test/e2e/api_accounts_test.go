@@ -103,10 +103,10 @@ var _ = Context("Payments API Accounts", func() {
 				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
 				// ensure some account imports are processed before moving on but no need to extend this test's execution time and wait for everything
-				Eventually(e).MustPassRepeatedly(len(insertedAccounts) / 2).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+				Eventually(e).WithTimeout(2 * time.Second).MustPassRepeatedly(len(insertedAccounts) / 2).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 				var msg events.BalanceMessagePayload
-				Eventually(e).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
 					msg,
 					func(b []byte) error {
 						return json.Unmarshal(b, &msg)
