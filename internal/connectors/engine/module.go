@@ -31,13 +31,14 @@ func Module(
 			MaxConcurrentWorkflowTaskPollers: temporalMaxConcurrentWorkflowTaskPollers,
 		}),
 		fx.Provide(func(
+			logger logging.Logger,
 			temporalClient client.Client,
 			workers *Workers,
 			plugins plugins.Plugins,
 			storage storage.Storage,
 			webhooks webhooks.Webhooks,
 		) Engine {
-			return New(temporalClient, workers, plugins, storage, webhooks, stack)
+			return New(logger, temporalClient, workers, plugins, storage, webhooks, stack)
 		}),
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)

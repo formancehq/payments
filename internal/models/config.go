@@ -40,9 +40,13 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	pollingPeriod, err := time.ParseDuration(raw.PollingPeriod)
-	if err != nil {
-		return err
+	pollingPeriod := defaultPollingPeriod
+	if raw.PollingPeriod != "" {
+		p, err := time.ParseDuration(raw.PollingPeriod)
+		if err != nil {
+			return err
+		}
+		pollingPeriod = p
 	}
 
 	c.Name = raw.Name
