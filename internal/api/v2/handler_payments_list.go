@@ -14,7 +14,7 @@ import (
 	"github.com/formancehq/payments/internal/storage"
 )
 
-type paymentResponse struct {
+type PaymentResponse struct {
 	ID                   string              `json:"id"`
 	Reference            string              `json:"reference"`
 	SourceAccountID      string              `json:"sourceAccountID"`
@@ -67,9 +67,9 @@ func paymentsList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := make([]*paymentResponse, len(cursor.Data))
+		data := make([]*PaymentResponse, len(cursor.Data))
 		for i := range cursor.Data {
-			data[i] = &paymentResponse{
+			data[i] = &PaymentResponse{
 				ID:            cursor.Data[i].ID.String(),
 				Reference:     cursor.Data[i].Reference,
 				Type:          cursor.Data[i].Type.String(),
@@ -105,8 +105,8 @@ func paymentsList(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[*paymentResponse]{
-			Cursor: &bunpaginate.Cursor[*paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[*PaymentResponse]{
+			Cursor: &bunpaginate.Cursor[*PaymentResponse]{
 				PageSize: cursor.PageSize,
 				HasMore:  cursor.HasMore,
 				Previous: cursor.Previous,

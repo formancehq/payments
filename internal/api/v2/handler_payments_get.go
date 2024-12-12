@@ -31,7 +31,7 @@ func paymentsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := paymentResponse{
+		data := PaymentResponse{
 			ID:            payment.ID.String(),
 			Reference:     payment.Reference,
 			Type:          payment.Type.String(),
@@ -65,7 +65,7 @@ func paymentsGet(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[PaymentResponse]{
 			Data: &data,
 		})
 		if err != nil {
