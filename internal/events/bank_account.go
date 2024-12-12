@@ -16,7 +16,7 @@ type BankAccountMessagePayload struct {
 	IBAN            string                              `json:"iban"`
 	SwiftBicCode    string                              `json:"swiftBicCode"`
 	Country         string                              `json:"country"`
-	RelatedAccounts []BankAccountRelatedAccountsPayload `json:"adjustments"`
+	RelatedAccounts []BankAccountRelatedAccountsPayload `json:"relatedAccounts"`
 }
 
 type BankAccountRelatedAccountsPayload struct {
