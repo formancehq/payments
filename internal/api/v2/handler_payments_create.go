@@ -184,7 +184,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		// Compatibility with old API
-		data := paymentResponse{
+		data := PaymentResponse{
 			ID:            payment.ID.String(),
 			Reference:     payment.Reference,
 			Type:          payment.Type.String(),
@@ -218,7 +218,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[PaymentResponse]{
 			Data: &data,
 		})
 		if err != nil {
