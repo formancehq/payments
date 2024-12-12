@@ -28,8 +28,9 @@ type pool struct {
 type poolAccounts struct {
 	bun.BaseModel `bun:"table:pool_accounts"`
 
-	PoolID    uuid.UUID        `bun:"pool_id,pk,type:uuid,notnull"`
-	AccountID models.AccountID `bun:"account_id,pk,type:character varying,notnull"`
+	PoolID      uuid.UUID          `bun:"pool_id,pk,type:uuid,notnull"`
+	AccountID   models.AccountID   `bun:"account_id,pk,type:character varying,notnull"`
+	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 }
 
 func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
@@ -103,8 +104,9 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) error {
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	_, err := s.db.NewInsert().
 		Model(&poolAccounts{
-			PoolID:    id,
-			AccountID: accountID,
+			PoolID:      id,
+			AccountID:   accountID,
+			ConnectorID: accountID.ConnectorID,
 		}).
 		On("CONFLICT (pool_id, account_id) DO NOTHING").
 		Exec(ctx)
@@ -121,6 +123,17 @@ func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID 
 		Exec(ctx)
 	if err != nil {
 		return e("delete pool account: %w", err)
+	}
+	return nil
+}
+
+func (s *store) PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	_, err := s.db.NewDelete().
+		Model((*poolAccounts)(nil)).
+		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+	if err != nil {
+		return e("delete pool accounts: %w", err)
 	}
 	return nil
 }
@@ -209,8 +222,9 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 	var accounts []poolAccounts
 	for _, pa := range from.PoolAccounts {
 		accounts = append(accounts, poolAccounts{
-			PoolID:    pa.PoolID,
-			AccountID: pa.AccountID,
+			PoolID:      pa.PoolID,
+			AccountID:   pa.AccountID,
+			ConnectorID: pa.AccountID.ConnectorID,
 		})
 	}
 
