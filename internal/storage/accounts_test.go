@@ -225,35 +225,6 @@ func TestAccountsGet(t *testing.T) {
 	})
 }
 
-func TestAccountsExists(t *testing.T) {
-	t.Parallel()
-
-	ctx := logging.TestingContext()
-	store := newStore(t)
-
-	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts())
-
-	t.Run("account exists", func(t *testing.T) {
-		for _, acc := range defaultAccounts() {
-			exists, err := store.AccountsExists(ctx, acc.ID)
-			require.NoError(t, err)
-			require.True(t, exists)
-		}
-	})
-
-	t.Run("account does not exist", func(t *testing.T) {
-		acc := models.AccountID{
-			Reference:   "unknown",
-			ConnectorID: defaultConnector.ID,
-		}
-
-		exists, err := store.AccountsExists(ctx, acc)
-		require.NoError(t, err)
-		require.False(t, exists)
-	})
-}
-
 func TestAccountsDelete(t *testing.T) {
 	t.Parallel()
 

@@ -57,21 +57,6 @@ func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorID(ctx, connectorI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorID), ctx, connectorID)
 }
 
-// AccountsExists mocks base method.
-func (m *MockStorage) AccountsExists(ctx context.Context, id models.AccountID) (bool, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "AccountsExists", ctx, id)
-	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// AccountsExists indicates an expected call of AccountsExists.
-func (mr *MockStorageMockRecorder) AccountsExists(ctx, id any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsExists", reflect.TypeOf((*MockStorage)(nil).AccountsExists), ctx, id)
-}
-
 // AccountsGet mocks base method.
 func (m *MockStorage) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	m.ctrl.T.Helper()
