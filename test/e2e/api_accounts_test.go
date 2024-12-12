@@ -3,20 +3,18 @@
 package test_suite
 
 import (
-	"context"
-	"strings"
+	"encoding/json"
 	"time"
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
-	"go.temporal.io/api/workflowservice/v1"
-	"go.temporal.io/sdk/client"
 
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
@@ -88,118 +86,45 @@ var _ = Context("Payments API Accounts", func() {
 	When("fetching account balances", func() {
 		var (
 			connectorRes struct{ Data string }
-			accountsRes  struct {
-				Cursor bunpaginate.Cursor[models.Account]
-			}
-			res struct {
+			res          struct {
 				Cursor bunpaginate.Cursor[models.Balance]
 			}
-			cl  client.Client
-			err error
+			e chan *nats.Msg
 		)
 
 		DescribeTable("should be successful",
 			func(ver int) {
-				cl = temporalServer.GetValue().DefaultClient()
+				e = Subscribe(GinkgoT(), app.GetValue())
 				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				GeneratePSPData(connectorConf.Directory)
+				_, err := GeneratePSPData(connectorConf.Directory)
 				Expect(err).To(BeNil())
 				ver = 3
 
 				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
+				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
-				waitForAccountImport(ctx, cl, connectorRes.Data)
+				var msg events.BalanceMessagePayload
+				// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
+				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+					msg,
+					func(b []byte) error {
+						return json.Unmarshal(b, &msg)
+					},
+				))))
 
-				err = ListAccounts(ctx, app.GetValue(), ver, &accountsRes)
-				Expect(err).To(BeNil())
-				Expect(len(accountsRes.Cursor.Data) > 0).To(BeTrue())
-
-				account := accountsRes.Cursor.Data[0]
-				err = GetAccountBalances(ctx, app.GetValue(), ver, account.ID.String(), &res)
+				err = GetAccountBalances(ctx, app.GetValue(), ver, msg.AccountID, &res)
 				Expect(err).To(BeNil())
 				Expect(res.Cursor.Data).To(HaveLen(1))
 
 				balance := res.Cursor.Data[0]
-				Expect(balance.AccountID.String()).To(Equal(account.ID.String()))
-				Expect(balance.Balance).NotTo(BeNil())
+				Expect(balance.AccountID.String()).To(Equal(msg.AccountID))
+				Expect(balance.Balance).To(Equal(msg.Balance))
+				Expect(balance.Asset).To(Equal(msg.Asset))
+				Expect(balance.CreatedAt).To(Equal(msg.CreatedAt.UTC().Truncate(time.Second)))
 			},
 			Entry("with v2", 2),
 			Entry("with v3", 3),
 		)
 	})
 })
-
-func waitForAccountImport(ctx context.Context, cl client.Client, connectorID string) {
-	var workflowID string
-	var runID string
-
-	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
-	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
-	for _, info := range workflowRes.Executions {
-		if strings.Contains(info.Execution.WorkflowId, "run-tasks") && strings.Contains(info.Execution.WorkflowId, connectorID) {
-			workflowID = info.Execution.WorkflowId
-			runID = info.Execution.RunId
-			break
-		}
-	}
-
-	Expect(workflowID).NotTo(Equal(""))
-	workflowRun := cl.GetWorkflow(ctx, workflowID, runID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
-	Expect(err).To(BeNil())
-
-	itr, err := cl.ScheduleClient().List(ctx, client.ScheduleListOptions{})
-	Expect(err).To(BeNil())
-	Expect(itr.HasNext()).To(BeTrue())
-
-	var accountsSchedule *client.ScheduleListEntry
-	for itr.HasNext() {
-		schedule, err := itr.Next()
-		Expect(err).To(BeNil())
-		if strings.Contains(schedule.ID, "FETCH_ACCOUNTS") && strings.Contains(schedule.ID, connectorID) {
-			accountsSchedule = schedule
-			break
-		}
-	}
-	Expect(accountsSchedule).NotTo(BeNil())
-	Expect(len(accountsSchedule.RecentActions) > 0).To(BeTrue())
-
-	var accountWorkflowID string
-	var accountRunID string
-	for _, action := range accountsSchedule.RecentActions {
-		accountWorkflowID = action.StartWorkflowResult.WorkflowID
-		accountRunID = action.StartWorkflowResult.FirstExecutionRunID
-	}
-
-	workflowRun = cl.GetWorkflow(ctx, accountWorkflowID, accountRunID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
-	Expect(err).To(BeNil())
-
-	itr, err = cl.ScheduleClient().List(ctx, client.ScheduleListOptions{})
-	Expect(err).To(BeNil())
-	Expect(itr.HasNext()).To(BeTrue())
-
-	var balancesSchedule *client.ScheduleListEntry
-	for itr.HasNext() {
-		schedule, err := itr.Next()
-		Expect(err).To(BeNil())
-		if strings.Contains(schedule.ID, "FETCH_BALANCES") && strings.Contains(schedule.ID, connectorID) {
-			balancesSchedule = schedule
-			break
-		}
-	}
-	Expect(balancesSchedule).NotTo(BeNil())
-	Expect(len(balancesSchedule.RecentActions) > 0).To(BeTrue())
-
-	var balanceWorkflowID string
-	var balanceRunID string
-	for _, action := range balancesSchedule.RecentActions {
-		balanceWorkflowID = action.StartWorkflowResult.WorkflowID
-		balanceRunID = action.StartWorkflowResult.FirstExecutionRunID
-	}
-
-	workflowRun = cl.GetWorkflow(ctx, balanceWorkflowID, balanceRunID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
-	Expect(err).To(BeNil())
-}

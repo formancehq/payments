@@ -108,7 +108,11 @@ func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.Fetch
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	return models.FetchNextPaymentsResponse{}, plugins.ErrNotImplemented
+	return models.FetchNextPaymentsResponse{
+		Payments: []models.PSPPayment{},
+		NewState: json.RawMessage(`{}`),
+		HasMore:  false,
+	}, nil
 }
 
 func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
@@ -116,15 +120,32 @@ func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthers
 }
 
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
+	name := "dummypay-account"
+	bankAccount := models.PSPAccount{
+		Reference: fmt.Sprintf("dummypay-%s", req.BankAccount.ID.String()),
+		CreatedAt: req.BankAccount.CreatedAt,
+		Name:      &name,
+		Raw:       json.RawMessage(`{}`),
+	}
+	return models.CreateBankAccountResponse{
+		RelatedAccount: bankAccount,
+	}, nil
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.CreatePayment(ctx, models.PAYMENT_TYPE_TRANSFER, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, fmt.Errorf("failed to create transfer using client: %w", err)
+	}
+	return models.CreateTransferResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.ReversePayment(ctx, models.PAYMENT_TYPE_TRANSFER, req.PaymentInitiationReversal)
+	if err != nil {
+		return models.ReverseTransferResponse{}, fmt.Errorf("failed to reverse transfer using client: %w", err)
+	}
+	return models.ReverseTransferResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
@@ -132,11 +153,19 @@ func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransfer
 }
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.CreatePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, fmt.Errorf("failed to create transfer using client: %w", err)
+	}
+	return models.CreatePayoutResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
+	pspPayment, err := p.client.ReversePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiationReversal)
+	if err != nil {
+		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse payout using client: %w", err)
+	}
+	return models.ReversePayoutResponse{Payment: pspPayment}, nil
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {

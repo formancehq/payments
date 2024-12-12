@@ -3,13 +3,18 @@
 package test_suite
 
 import (
+	"fmt"
+
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 
+	evts "github.com/formancehq/payments/pkg/events"
 	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -31,6 +36,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 	app = NewTestServer(func() Configuration {
 		return Configuration{
 			Stack:                 stack,
+			NatsURL:               natsServer.GetValue().ClientURL(),
 			PostgresConfiguration: db.GetValue().ConnectionOptions(),
 			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
 			TemporalAddress:       temporalServer.GetValue().Address(),
@@ -99,10 +105,12 @@ var _ = Context("Payments API Bank Accounts", func() {
 			connectorRes struct{ Data string }
 			res          struct{ Data models.Task }
 			err          error
+			e            chan *nats.Msg
 			id           uuid.UUID
 		)
 		JustBeforeEach(func() {
 			ver = 3
+			e = Subscribe(GinkgoT(), app.GetValue())
 			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data)
@@ -125,7 +133,39 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			Expect(res.Data.ID.Reference).To(ContainSubstring(id.String()))
 			Expect(res.Data.ID.Reference).To(ContainSubstring(connectorRes.Data))
-			Expect(res.Data.ConnectorID.String()).To(ContainSubstring(connectorRes.Data))
+
+			connectorID, err := models.ConnectorIDFromString(connectorRes.Data)
+			Expect(err).To(BeNil())
+
+			var getResponse struct{ Data models.BankAccount }
+			err = GetBankAccount(ctx, app.GetValue(), ver, id.String(), &getResponse)
+			Expect(err).To(BeNil())
+
+			accountNumber := *createRequest.AccountNumber
+			iban := *createRequest.IBAN
+
+			accountID := models.AccountID{
+				Reference:   fmt.Sprintf("dummypay-%s", id.String()),
+				ConnectorID: connectorID,
+			}
+
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
+				events.BankAccountMessagePayload{
+					ID:            id.String(),
+					Name:          createRequest.Name,
+					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:len(accountNumber)]),
+					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:len(iban)]),
+					CreatedAt:     getResponse.Data.CreatedAt,
+					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
+						{
+							AccountID:   accountID.String(),
+							CreatedAt:   getResponse.Data.CreatedAt,
+							ConnectorID: connectorID.String(),
+							Provider:    "dummypay",
+						},
+					},
+				},
+			))))
 		})
 	})
 
@@ -136,11 +176,13 @@ var _ = Context("Payments API Bank Accounts", func() {
 			forwardReq   v2.BankAccountsForwardToConnectorRequest
 			connectorRes struct{ Data string }
 			res          struct{ Data v2.BankAccountResponse }
+			e            chan *nats.Msg
 			err          error
 			id           uuid.UUID
 		)
 		JustBeforeEach(func() {
 			ver = 2
+			e = Subscribe(GinkgoT(), app.GetValue())
 			err = CreateBankAccount(ctx, app.GetValue(), ver, createRequest, &createRes)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
@@ -155,11 +197,14 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
-		It("should fail immediately with error because method is unimplemented on plugin", func() {
+		It("should be ok", func() {
 			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring("UNIMPLEMENTED"))
+			Expect(err).To(BeNil())
+			Expect(res.Data.RelatedAccounts).To(HaveLen(1))
+			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorRes.Data))
+
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount)))
 		})
 	})
 

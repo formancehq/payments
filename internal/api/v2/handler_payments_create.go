@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createPaymentRequest struct {
+type CreatePaymentRequest struct {
 	Reference            string            `json:"reference"`
 	ConnectorID          string            `json:"connectorID"`
 	CreatedAt            time.Time         `json:"createdAt"`
@@ -31,7 +31,7 @@ type createPaymentRequest struct {
 	Metadata             map[string]string `json:"metadata"`
 }
 
-func (r *createPaymentRequest) validate() error {
+func (r *CreatePaymentRequest) validate() error {
 	if r.Reference == "" {
 		return errors.New("reference is required")
 	}
@@ -98,7 +98,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_paymentsCreate")
 		defer span.End()
 
-		var req createPaymentRequest
+		var req CreatePaymentRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			otel.RecordError(span, err)
@@ -184,7 +184,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		// Compatibility with old API
-		data := paymentResponse{
+		data := PaymentResponse{
 			ID:            payment.ID.String(),
 			Reference:     payment.Reference,
 			Type:          payment.Type.String(),
@@ -218,7 +218,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[paymentResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[PaymentResponse]{
 			Data: &data,
 		})
 		if err != nil {
@@ -229,7 +229,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromPaymentCreateRequest(span trace.Span, req createPaymentRequest) {
+func populateSpanFromPaymentCreateRequest(span trace.Span, req CreatePaymentRequest) {
 	span.SetAttributes(attribute.String("reference", req.Reference))
 	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))

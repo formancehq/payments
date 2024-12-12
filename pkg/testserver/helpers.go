@@ -1,6 +1,7 @@
 package testserver
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	dummy "github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
@@ -36,11 +38,15 @@ func Subscribe(t T, testServer *Server) chan *nats.Msg {
 	return ch
 }
 
-func GeneratePSPData(dir string) error {
-	num := 10
+func TaskPoller(ctx context.Context, t T, testServer *Server) func(id string) func() models.Task {
+	return testServer.Client().PollTask(ctx, t)
+}
+
+func GeneratePSPData(dir string) ([]dummy.Account, error) {
+	num := 5
 	_, err := os.Stat(dir)
 	if err != nil {
-		return fmt.Errorf("path %q does not exist: %w", dir, err)
+		return []dummy.Account{}, fmt.Errorf("path %q does not exist: %w", dir, err)
 	}
 
 	accounts := make([]dummy.Account, 0, num)
@@ -64,14 +70,14 @@ func GeneratePSPData(dir string) error {
 	accountsFilePath := path.Join(dir, "accounts.json")
 	err = persistData(accountsFilePath, accounts)
 	if err != nil {
-		return err
+		return []dummy.Account{}, err
 	}
 	balancesFilePath := path.Join(dir, "balances.json")
 	err = persistData(balancesFilePath, balances)
 	if err != nil {
-		return err
+		return accounts, err
 	}
-	return nil
+	return accounts, nil
 }
 
 func persistData(filePath string, data any) error {

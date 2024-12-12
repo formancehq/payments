@@ -101,7 +101,7 @@ var _ = Context("Payments API Connectors", func() {
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
 			Expect(err).To(BeNil())
 			Expect(delRes.Data).To(Equal(connectorRes.Data))
-			blockTillWorkflowComplete(ctx, "uninstall")
+			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
 		})
 
 		It("should be ok with v2", func() {
@@ -112,7 +112,7 @@ var _ = Context("Payments API Connectors", func() {
 
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, nil)
 			Expect(err).To(BeNil())
-			blockTillWorkflowComplete(ctx, "uninstall")
+			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
 		})
 	})
 
@@ -136,7 +136,7 @@ var _ = Context("Payments API Connectors", func() {
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			workflowID := blockTillWorkflowComplete(ctx, "run-tasks-")
+			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
 			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
 		})
 
@@ -170,7 +170,7 @@ var _ = Context("Payments API Connectors", func() {
 	})
 })
 
-func blockTillWorkflowComplete(ctx context.Context, searchKeyword string) string {
+func blockTillWorkflowComplete(ctx context.Context, connectorID string, searchKeyword string) string {
 	var (
 		workflowID string
 		runID      string
@@ -180,7 +180,7 @@ func blockTillWorkflowComplete(ctx context.Context, searchKeyword string) string
 	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
 	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
 	for _, info := range workflowRes.Executions {
-		if strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
+		if strings.Contains(info.Execution.WorkflowId, connectorID) && strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
 			workflowID = info.Execution.WorkflowId
 			runID = info.Execution.RunId
 			break

@@ -77,12 +77,32 @@ func UpdateBankAccountMetadata(ctx context.Context, srv *Server, ver int, id str
 	return srv.Client().Do(ctx, http.MethodPatch, pathPrefix(ver, "bank-accounts/"+id+"/metadata"), reqBody, res)
 }
 
+func CreatePayment(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payments"), reqBody, res)
+}
+
+func GetPayment(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "payments/"+id), res)
+}
+
 func CreatePaymentInitiation(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations"), reqBody, res)
 }
 
+func GetPaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "payment-initiations/"+id), res)
+}
+
 func ApprovePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/approve"), nil, res)
+}
+
+func RejectPaymentInitiation(ctx context.Context, srv *Server, ver int, id string) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reject"), nil, nil)
+}
+
+func ReversePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reverse"), reqBody, res)
 }
 
 func GetTask(ctx context.Context, srv *Server, ver int, id string, res any) error {
