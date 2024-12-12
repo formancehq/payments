@@ -86,7 +86,7 @@ func defaultAccounts2() []models.Account {
 }
 
 func defaultAccounts3() []models.Account {
-	createdAt := time.Now().Truncate(time.Second).Add(-2 * time.Minute).UTC().Round(time.Microsecond)
+	createdAt := time.Now().UTC().Truncate(time.Minute).Add(-2 * time.Minute).UTC()
 	return []models.Account{
 		{
 			ID: models.AccountID{
