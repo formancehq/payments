@@ -20,7 +20,6 @@ type Storage interface {
 	// Accounts
 	AccountsUpsert(ctx context.Context, accounts []models.Account) error
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
-	AccountsExists(ctx context.Context, id models.AccountID) (bool, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
