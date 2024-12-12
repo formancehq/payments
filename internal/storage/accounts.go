@@ -67,6 +67,19 @@ func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.A
 	return &res, nil
 }
 
+func (s *store) AccountsExists(ctx context.Context, accountID models.AccountID) (bool, error) {
+	exists, err := s.db.NewSelect().
+		Model((*account)(nil)).
+		Where("id = ?", accountID).
+		Limit(1).
+		Exists(ctx)
+	if err != nil {
+		return false, e("failed to get event sent", err)
+	}
+
+	return exists, nil
+}
+
 func (s *store) AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*account)(nil)).

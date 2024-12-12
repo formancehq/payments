@@ -256,6 +256,36 @@ func TestPoolsRemoveAccount(t *testing.T) {
 	})
 }
 
+func TestPoolsRemoveAccountFromConnectorID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPool(t, ctx, store, defaultPools()[0])
+
+	t.Run("remove accounts from unknown connector", func(t *testing.T) {
+		require.NoError(t, store.PoolsRemoveAccountsFromConnectorID(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		}))
+
+		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
+		require.NoError(t, err)
+		require.Equal(t, defaultPools()[0], *actual)
+	})
+
+	t.Run("remove accounts from connector", func(t *testing.T) {
+		require.NoError(t, store.PoolsRemoveAccountsFromConnectorID(ctx, defaultConnector.ID))
+
+		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
+		require.NoError(t, err)
+		require.Len(t, actual.PoolAccounts, 0)
+	})
+}
+
 func TestPoolsList(t *testing.T) {
 	t.Parallel()
 

@@ -220,8 +220,9 @@ create table if not exists pool_accounts (
     sort_id     bigserial not null,
 
     -- Mandatory fields
-    pool_id     uuid not null,
-    account_id  varchar not null,
+    pool_id      uuid not null,
+    account_id   varchar not null,
+    connector_id varchar not null,
 
     -- Primary key
     primary key (pool_id, account_id)

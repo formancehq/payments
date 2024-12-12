@@ -263,6 +263,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageTasksDeleteFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePoolsRemoveAccountsFromConnectorID",
+			Func: a.StoragePoolsRemoveAccountsFromConnectorID,
+		}).
+		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",
 			Func: a.EventsSendAccount,
 		}).
