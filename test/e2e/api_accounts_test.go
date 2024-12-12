@@ -105,7 +105,8 @@ var _ = Context("Payments API Accounts", func() {
 				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 				var msg events.BalanceMessagePayload
-				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
+				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
 					msg,
 					func(b []byte) error {
 						return json.Unmarshal(b, &msg)

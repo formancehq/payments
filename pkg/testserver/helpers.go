@@ -43,7 +43,7 @@ func TaskPoller(ctx context.Context, t T, testServer *Server) func(id string) fu
 }
 
 func GeneratePSPData(dir string) ([]dummy.Account, error) {
-	num := 10
+	num := 5
 	_, err := os.Stat(dir)
 	if err != nil {
 		return []dummy.Account{}, fmt.Errorf("path %q does not exist: %w", dir, err)
