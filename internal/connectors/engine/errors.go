@@ -1,6 +1,8 @@
 package engine
 
 import (
+	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/pkg/errors"
 )
@@ -17,7 +19,9 @@ func handlePluginError(err error) error {
 
 	switch {
 	case errors.Is(err, plugins.ErrNotFound):
-		return errors.Wrap(ErrNotFound, err.Error())
+		return fmt.Errorf("%w: %w", ErrNotFound, err)
+	case errors.Is(err, plugins.ErrValidation):
+		return fmt.Errorf("%w: %w", ErrValidation, err)
 	default:
 		return err
 	}

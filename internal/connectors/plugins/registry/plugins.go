@@ -37,7 +37,7 @@ func GetPlugin(logger logging.Logger, provider string, connectorName string, raw
 
 	p, err := info.createFunc(connectorName, rawConfig)
 	if err != nil {
-		return nil, err
+		return nil, translateError(err)
 	}
 
 	return New(logger, p), nil

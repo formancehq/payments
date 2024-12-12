@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
@@ -68,6 +69,8 @@ type Engine interface {
 }
 
 type engine struct {
+	logger logging.Logger
+
 	temporalClient client.Client
 
 	workers *Workers
@@ -79,8 +82,17 @@ type engine struct {
 	wg sync.WaitGroup
 }
 
-func New(temporalClient client.Client, workers *Workers, plugins plugins.Plugins, storage storage.Storage, webhooks webhooks.Webhooks, stack string) Engine {
+func New(
+	logger logging.Logger,
+	temporalClient client.Client,
+	workers *Workers,
+	plugins plugins.Plugins,
+	storage storage.Storage,
+	webhooks webhooks.Webhooks,
+	stack string,
+) Engine {
 	return &engine{
+		logger:         logger,
 		temporalClient: temporalClient,
 		workers:        workers,
 		plugins:        plugins,
@@ -966,6 +978,14 @@ func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) error {
+	defer func() {
+		// errors or not, we still need to start the default worker if
+		// the connector is scheduled for deletion
+		if connector.ScheduledForDeletion {
+			e.workers.GetDefaultWorker()
+		}
+	}()
+
 	// Even if the connector is scheduled for deletion, we still need to register
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
@@ -977,7 +997,12 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 
 	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
 	if err != nil {
-		return err
+		e.logger.Errorf("failed to register plugin: %w", err)
+		// We don't want to crash the pod if the plugin registration fails,
+		// otherwise, the client will not be able to remove the failing
+		// connector from the database because of the crashes.
+		// We just log the error and continue.
+		return nil
 	}
 
 	if !connector.ScheduledForDeletion {

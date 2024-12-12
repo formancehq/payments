@@ -6,13 +6,15 @@ import (
 	"sync"
 
 	"github.com/formancehq/go-libs/v2/logging"
+	pluginserrors "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 )
 
 var (
-	ErrNotFound = errors.New("plugin not found")
+	ErrNotFound   = errors.New("plugin not found")
+	ErrValidation = errors.New("validation error")
 )
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
@@ -72,8 +74,12 @@ func (p *plugins) RegisterPlugin(
 	}
 
 	plugin, err := registry.GetPlugin(p.logger, connectorID.Provider, connectorName, rawConfig)
-	if err != nil {
-		return fmt.Errorf("%w: %w", err, ErrNotFound)
+	switch {
+	case errors.Is(err, pluginserrors.ErrNotImplemented),
+		errors.Is(err, pluginserrors.ErrInvalidClientRequest):
+		return fmt.Errorf("%w: %w", err, ErrValidation)
+	case err != nil:
+		return err
 	}
 
 	p.plugins[connectorID.String()] = pluginInformation{
