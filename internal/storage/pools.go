@@ -42,6 +42,21 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 
 	poolToInsert, accountsToInsert := fromPoolModel(pool)
 
+	for i := range accountsToInsert {
+		exists, err := tx.NewSelect().
+			Model((*account)(nil)).
+			Where("id = ?", accountsToInsert[i].AccountID).
+			Limit(1).
+			Exists(ctx)
+		if err != nil {
+			return e("check account exists: %w", err)
+		}
+
+		if !exists {
+			return e("account does not exist: %w", ErrNotFound)
+		}
+	}
+
 	_, err = tx.NewInsert().
 		Model(&poolToInsert).
 		On("CONFLICT (id) DO NOTHING").
@@ -102,7 +117,26 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
-	_, err := s.db.NewInsert().
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return e("begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	exists, err := tx.NewSelect().
+		Model((*account)(nil)).
+		Where("id = ?", accountID).
+		Limit(1).
+		Exists(ctx)
+	if err != nil {
+		return e("check account exists: %w", err)
+	}
+
+	if !exists {
+		return e("account does not exist: %w", ErrNotFound)
+	}
+
+	_, err = tx.NewInsert().
 		Model(&poolAccounts{
 			PoolID:      id,
 			AccountID:   accountID,
@@ -113,7 +147,8 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	if err != nil {
 		return e("insert pool account: %w", err)
 	}
-	return nil
+
+	return e("commit transaction: %w", tx.Commit())
 }
 
 func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {

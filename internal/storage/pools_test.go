@@ -127,6 +127,20 @@ func TestPoolsUpsert(t *testing.T) {
 		err := store.PoolsUpsert(ctx, p)
 		require.Error(t, err)
 	})
+
+	t.Run("upsert but account does not exist", func(t *testing.T) {
+		p := defaultPools()[0]
+		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
+			PoolID: p.ID,
+			AccountID: models.AccountID{
+				Reference:   "unknown",
+				ConnectorID: defaultConnector.ID,
+			},
+		})
+
+		err := store.PoolsUpsert(ctx, p)
+		require.Error(t, err)
+	})
 }
 
 func TestPoolsGet(t *testing.T) {
@@ -219,6 +233,14 @@ func TestPoolsAddAccount(t *testing.T) {
 		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.NoError(t, err)
 		require.Equal(t, p, *actual)
+	})
+
+	t.Run("add account to pool but account does not exist", func(t *testing.T) {
+		err := store.PoolsAddAccount(ctx, defaultPools()[0].ID, models.AccountID{
+			Reference:   "unknown",
+			ConnectorID: defaultConnector.ID,
+		})
+		require.Error(t, err)
 	})
 }
 
