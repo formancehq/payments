@@ -163,7 +163,7 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
 	pspPayment, err := p.client.ReversePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiationReversal)
 	if err != nil {
-		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse transfer using client: %w", err)
+		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse payout using client: %w", err)
 	}
 	return models.ReversePayoutResponse{Payment: pspPayment}, nil
 }
