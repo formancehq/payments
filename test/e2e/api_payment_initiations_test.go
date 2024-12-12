@@ -23,10 +23,6 @@ var _ = Context("Payments API Payment Initiation", func() {
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
 
-		creditorRequest v3.CreateAccountRequest
-		creditorRes     struct{ Data models.Account }
-		debtorRes       struct{ Data models.Account }
-
 		app *utils.Deferred[*Server]
 	)
 
@@ -42,14 +38,6 @@ var _ = Context("Payments API Payment Initiation", func() {
 	})
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
-	creditorRequest = v3.CreateAccountRequest{
-		Reference:    "creditor",
-		AccountName:  "creditor",
-		CreatedAt:    createdAt,
-		DefaultAsset: "EUR",
-		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
-		Metadata:     map[string]string{"key": "val"},
-	}
 
 	When("initiating a new transfer with v3", func() {
 		var (
@@ -74,26 +62,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			creditorRequest.ConnectorID = connectorRes.Data
-			err = CreateAccount(ctx, app.GetValue(), ver, creditorRequest, &creditorRes)
-			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-
-			debtorRequest := v3.CreateAccountRequest{
-				Reference:    "debtor",
-				AccountName:  "debtor",
-				ConnectorID:  connectorRes.Data,
-				CreatedAt:    createdAt,
-				DefaultAsset: "EUR",
-				Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
-				Metadata:     map[string]string{"ping": "pong"},
-			}
-			err = CreateAccount(ctx, app.GetValue(), ver, debtorRequest, &debtorRes)
-			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-
-			debtorID = debtorRes.Data.ID.String()
-			creditorID = creditorRes.Data.ID.String()
+			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
 				ScheduledAt:          time.Now(),
@@ -248,26 +217,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			creditorRequest.ConnectorID = connectorRes.Data
-			err = CreateAccount(ctx, app.GetValue(), ver, creditorRequest, &creditorRes)
-			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-
-			debtorRequest := v3.CreateAccountRequest{
-				Reference:    "debtor",
-				AccountName:  "debtor",
-				ConnectorID:  connectorRes.Data,
-				CreatedAt:    createdAt,
-				DefaultAsset: "EUR",
-				Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
-				Metadata:     map[string]string{"ping": "pong"},
-			}
-			err = CreateAccount(ctx, app.GetValue(), ver, debtorRequest, &debtorRes)
-			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-
-			debtorID = debtorRes.Data.ID.String()
-			creditorID = creditorRes.Data.ID.String()
+			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
 				ScheduledAt:          time.Now(),
