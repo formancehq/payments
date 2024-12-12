@@ -145,6 +145,13 @@ func (w Workflow) runUninstallConnector(
 		errChan <- err
 	})
 
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StoragePoolsRemoveAccountsFromConnectorID(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
 	wg.Wait(ctx)
 	close(errChan)
 

@@ -57,6 +57,21 @@ func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorID(ctx, connectorI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorID), ctx, connectorID)
 }
 
+// AccountsExists mocks base method.
+func (m *MockStorage) AccountsExists(ctx context.Context, id models.AccountID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsExists", ctx, id)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// AccountsExists indicates an expected call of AccountsExists.
+func (mr *MockStorageMockRecorder) AccountsExists(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsExists", reflect.TypeOf((*MockStorage)(nil).AccountsExists), ctx, id)
+}
+
 // AccountsGet mocks base method.
 func (m *MockStorage) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	m.ctrl.T.Helper()
@@ -956,6 +971,20 @@ func (m *MockStorage) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, acco
 func (mr *MockStorageMockRecorder) PoolsRemoveAccount(ctx, id, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccount", reflect.TypeOf((*MockStorage)(nil).PoolsRemoveAccount), ctx, id, accountID)
+}
+
+// PoolsRemoveAccountsFromConnectorID mocks base method.
+func (m *MockStorage) PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsRemoveAccountsFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PoolsRemoveAccountsFromConnectorID indicates an expected call of PoolsRemoveAccountsFromConnectorID.
+func (mr *MockStorageMockRecorder) PoolsRemoveAccountsFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsRemoveAccountsFromConnectorID", reflect.TypeOf((*MockStorage)(nil).PoolsRemoveAccountsFromConnectorID), ctx, connectorID)
 }
 
 // PoolsUpsert mocks base method.

@@ -20,6 +20,7 @@ type Storage interface {
 	// Accounts
 	AccountsUpsert(ctx context.Context, accounts []models.Account) error
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
+	AccountsExists(ctx context.Context, id models.AccountID) (bool, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
@@ -99,6 +100,7 @@ type Storage interface {
 	PoolsDelete(ctx context.Context, id uuid.UUID) error
 	PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
+	PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
 
 	// Schedules
