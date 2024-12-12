@@ -716,6 +716,20 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
+	for _, poolAccount := range pool.PoolAccounts {
+		exists, err := e.storage.AccountsExists(ctx, poolAccount.AccountID)
+		if err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
+
+		if !exists {
+			err := errors.New("account does not exist")
+			otel.RecordError(span, err)
+			return err
+		}
+	}
+
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -749,6 +763,18 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
+
+	exists, err := e.storage.AccountsExists(ctx, accountID)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if !exists {
+		err := errors.New("account does not exist")
+		otel.RecordError(span, err)
+		return err
+	}
 
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
