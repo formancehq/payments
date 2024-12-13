@@ -111,6 +111,10 @@ func CreatePool(ctx context.Context, srv *Server, ver int, reqBody any, res any)
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools"), reqBody, res)
 }
 
+func RemovePool(ctx context.Context, srv *Server, ver int, id string) error {
+	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, "pools/"+id), nil, nil)
+}
+
 func GetPool(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	return srv.Client().Get(ctx, pathPrefix(ver, "pools/"+id), res)
 }

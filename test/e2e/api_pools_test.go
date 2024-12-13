@@ -67,12 +67,8 @@ var _ = Context("Payments API Pools", func() {
 			Expect(err).To(BeNil())
 
 			poolID := res.Data
-			var msg2 = struct {
-				ID string `json:"id"`
-			}{
-				ID: poolID,
-			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg2))))
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			var getRes struct{ Data models.Pool }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -93,6 +89,34 @@ var _ = Context("Payments API Pools", func() {
 			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("404"))
+		})
+
+		It("should be possible to delete a pool", func() {
+			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
+			req := v3.CreatePoolRequest{
+				Name:       "some-pool",
+				AccountIDs: accountIDs,
+			}
+			var res struct{ Data string }
+			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			Expect(err).To(BeNil())
+
+			poolID := res.Data
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			err = RemovePool(ctx, app.GetValue(), ver, poolID)
+			Expect(err).To(BeNil())
+			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
+		})
+
+		It("should not fail when attempting to delete a pool that doesn't exist", func() {
+			poolID := uuid.New().String()
+			err := RemovePool(ctx, app.GetValue(), ver, poolID)
+			Expect(err).To(BeNil())
+
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 	})
 
@@ -124,12 +148,8 @@ var _ = Context("Payments API Pools", func() {
 			Expect(err).To(BeNil())
 
 			poolID := res.Data.ID
-			var msg2 = struct {
-				ID string `json:"id"`
-			}{
-				ID: poolID,
-			}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg2))))
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			var getRes struct{ Data v2.PoolResponse }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -151,13 +171,37 @@ var _ = Context("Payments API Pools", func() {
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("404"))
 		})
+
+		It("should be possible to delete a pool", func() {
+			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
+			req := v2.CreatePoolRequest{
+				Name:       "some-pool",
+				AccountIDs: accountIDs,
+			}
+			var res struct{ Data v2.PoolResponse }
+			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			Expect(err).To(BeNil())
+
+			poolID := res.Data.ID
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+
+			err = RemovePool(ctx, app.GetValue(), ver, poolID)
+			Expect(err).To(BeNil())
+			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
+		})
+
+		It("should not fail when attempting to delete a pool that doesn't exist", func() {
+			poolID := uuid.New().String()
+			err := RemovePool(ctx, app.GetValue(), ver, poolID)
+			Expect(err).To(BeNil())
+
+			var msg = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
+		})
 	})
 
 	When("adding and removing accounts to a pool with v3", func() {
-		type EventPayload struct {
-			ID string `json:"id"`
-		}
-
 		var (
 			connectorRes    struct{ Data string }
 			connectorID     string
@@ -167,7 +211,7 @@ var _ = Context("Payments API Pools", func() {
 			e               chan *nats.Msg
 			ver             int
 
-			eventPayload EventPayload
+			eventPayload GenericEventPayload
 		)
 
 		JustBeforeEach(func() {
@@ -190,7 +234,7 @@ var _ = Context("Payments API Pools", func() {
 			err = CreatePool(ctx, app.GetValue(), ver, req, &res)
 			Expect(err).To(BeNil())
 			poolID = res.Data
-			eventPayload = EventPayload{ID: poolID}
+			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
@@ -229,10 +273,6 @@ var _ = Context("Payments API Pools", func() {
 	})
 
 	When("adding and removing accounts to a pool with v2", func() {
-		type EventPayload struct {
-			ID string `json:"id"`
-		}
-
 		var (
 			connectorRes    struct{ Data string }
 			connectorID     string
@@ -242,7 +282,7 @@ var _ = Context("Payments API Pools", func() {
 			e               chan *nats.Msg
 			ver             int
 
-			eventPayload EventPayload
+			eventPayload GenericEventPayload
 		)
 
 		JustBeforeEach(func() {
@@ -265,7 +305,7 @@ var _ = Context("Payments API Pools", func() {
 			err = CreatePool(ctx, app.GetValue(), ver, req, &res)
 			Expect(err).To(BeNil())
 			poolID = res.Data.ID
-			eventPayload = EventPayload{ID: poolID}
+			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
