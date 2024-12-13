@@ -105,6 +105,14 @@ func ReversePaymentInitiation(ctx context.Context, srv *Server, ver int, id stri
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reverse"), reqBody, res)
 }
 
+func CreatePool(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools"), reqBody, res)
+}
+
+func GetPool(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "pools/"+id), res)
+}
+
 func GetTask(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	return srv.Client().Get(ctx, pathPrefix(ver, "tasks/"+id), res)
 }
