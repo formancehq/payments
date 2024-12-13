@@ -10,14 +10,13 @@ import (
 
 	"github.com/formancehq/go-libs/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/google/uuid"
-	"go.temporal.io/api/workflowservice/v1"
-	"go.temporal.io/sdk/client"
-
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/formancehq/payments/pkg/testserver"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.temporal.io/api/workflowservice/v1"
+	"go.temporal.io/sdk/client"
 )
 
 var _ = Context("Payments API Connectors", func() {
@@ -97,10 +96,12 @@ var _ = Context("Payments API Connectors", func() {
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			delRes := struct{ Data string }{}
+			delRes := struct {
+				Data models.Task `json:"data"`
+			}{}
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
 			Expect(err).To(BeNil())
-			Expect(delRes.Data).To(Equal(connectorRes.Data))
+			Expect(delRes.Data.ID.String()).ToNot(BeEmpty())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
 		})
 
