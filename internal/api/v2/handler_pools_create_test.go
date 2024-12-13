@@ -28,7 +28,7 @@ var _ = Describe("API v2 Pools Create", func() {
 		var (
 			w   *httptest.ResponseRecorder
 			m   *backend.MockBackend
-			cpr createPoolRequest
+			cpr CreatePoolRequest
 		)
 		BeforeEach(func() {
 			w = httptest.NewRecorder()
@@ -45,18 +45,18 @@ var _ = Describe("API v2 Pools Create", func() {
 		})
 
 		DescribeTable("validation errors",
-			func(cpr createPoolRequest) {
+			func(cpr CreatePoolRequest) {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("accountIDs missing", createPoolRequest{}),
-			Entry("accountIDs invalid", createPoolRequest{AccountIDs: []string{"invalid"}}),
+			Entry("accountIDs missing", CreatePoolRequest{}),
+			Entry("accountIDs invalid", CreatePoolRequest{AccountIDs: []string{"invalid"}}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("payment create err")
 			m.EXPECT().PoolsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
-			cpr = createPoolRequest{
+			cpr = CreatePoolRequest{
 				Name:       "name",
 				AccountIDs: []string{accID.String()},
 			}
@@ -66,7 +66,7 @@ var _ = Describe("API v2 Pools Create", func() {
 
 		It("should return status ok on success", func(ctx SpecContext) {
 			m.EXPECT().PoolsCreate(gomock.Any(), gomock.Any()).Return(nil)
-			cpr = createPoolRequest{
+			cpr = CreatePoolRequest{
 				Name:       "name",
 				AccountIDs: []string{accID.String(), accID2.String()},
 			}
