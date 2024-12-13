@@ -266,11 +266,12 @@ func (mr *MockBackendMockRecorder) ConnectorsReset(ctx, connectorID any) *gomock
 }
 
 // ConnectorsUninstall mocks base method.
-func (m *MockBackend) ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) error {
+func (m *MockBackend) ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectorsUninstall", ctx, connectorID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ConnectorsUninstall indicates an expected call of ConnectorsUninstall.

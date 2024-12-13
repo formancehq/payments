@@ -21,7 +21,7 @@ func (w Workflow) runReverseTransfer(
 		errUpdateTask := w.updateTasksError(
 			ctx,
 			reverseTransfer.TaskID,
-			reverseTransfer.ConnectorID,
+			&reverseTransfer.ConnectorID,
 			err,
 		)
 		if errUpdateTask != nil {
@@ -34,7 +34,7 @@ func (w Workflow) runReverseTransfer(
 	return w.updateTaskSuccess(
 		ctx,
 		reverseTransfer.TaskID,
-		reverseTransfer.ConnectorID,
+		&reverseTransfer.ConnectorID,
 		paymentID,
 	)
 }

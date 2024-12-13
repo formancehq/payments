@@ -23,12 +23,13 @@ func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		if err := backend.ConnectorsUninstall(ctx, connectorID); err != nil {
+		task, err := backend.ConnectorsUninstall(ctx, connectorID)
+		if err != nil {
 			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
 		}
 
-		api.Accepted(w, connectorID.String())
+		api.Accepted(w, task)
 	}
 }

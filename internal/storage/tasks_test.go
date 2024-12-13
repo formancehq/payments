@@ -20,7 +20,7 @@ var (
 				Reference:   "1",
 				ConnectorID: defaultConnector.ID,
 			},
-			ConnectorID: defaultConnector.ID,
+			ConnectorID: &defaultConnector.ID,
 			Status:      "FAILED",
 			CreatedAt:   now.Add(-time.Hour).UTC().Time,
 			UpdatedAt:   now.Add(-time.Hour).UTC().Time,
@@ -31,7 +31,7 @@ var (
 				Reference:   "2",
 				ConnectorID: defaultConnector.ID,
 			},
-			ConnectorID: defaultConnector.ID,
+			ConnectorID: &defaultConnector.ID,
 			Status:      "PROCESSING",
 			CreatedAt:   now.Add(-2 * time.Hour).UTC().Time,
 			UpdatedAt:   now.Add(-2 * time.Hour).UTC().Time,
@@ -41,7 +41,7 @@ var (
 				Reference:   "3",
 				ConnectorID: defaultConnector.ID,
 			},
-			ConnectorID:     defaultConnector.ID,
+			ConnectorID:     &defaultConnector.ID,
 			Status:          "SUCCEEDED",
 			CreatedAt:       now.Add(-3 * time.Hour).UTC().Time,
 			UpdatedAt:       now.Add(-3 * time.Hour).UTC().Time,
@@ -52,7 +52,7 @@ var (
 				Reference:   "4",
 				ConnectorID: defaultConnector2.ID,
 			},
-			ConnectorID: defaultConnector2.ID,
+			ConnectorID: &defaultConnector2.ID,
 			Status:      "PROCESSING",
 			CreatedAt:   now.Add(-4 * time.Hour).UTC().Time,
 			UpdatedAt:   now.Add(-4 * time.Hour).UTC().Time,
@@ -82,7 +82,7 @@ func TestTasksUpsert(t *testing.T) {
 	t.Run("same id upsert", func(t *testing.T) {
 		t2 := models.Task{
 			ID:              defaultTasks[1].ID,
-			ConnectorID:     defaultConnector.ID,
+			ConnectorID:     &defaultConnector.ID,
 			Status:          "FAILED",
 			CreatedAt:       now.Add(-1 * time.Hour).UTC().Time,
 			UpdatedAt:       now.Add(-1 * time.Hour).UTC().Time,
@@ -97,7 +97,7 @@ func TestTasksUpsert(t *testing.T) {
 
 		expectedTask := models.Task{
 			ID:              defaultTasks[1].ID,
-			ConnectorID:     defaultConnector.ID,
+			ConnectorID:     &defaultConnector.ID,
 			Status:          "FAILED",
 			CreatedAt:       now.Add(-2 * time.Hour).UTC().Time,
 			UpdatedAt:       now.Add(-1 * time.Hour).UTC().Time,
@@ -116,7 +116,7 @@ func TestTasksUpsert(t *testing.T) {
 					Provider:  "unknown",
 				},
 			},
-			ConnectorID: models.ConnectorID{
+			ConnectorID: &models.ConnectorID{
 				Reference: uuid.New(),
 				Provider:  "unknown",
 			},
@@ -185,7 +185,7 @@ func TestTasksDeleteFromConnectorID(t *testing.T) {
 		require.NoError(t, err)
 
 		for _, task := range defaultTasks {
-			if task.ConnectorID == defaultConnector.ID {
+			if task.ConnectorID != nil && *task.ConnectorID == defaultConnector.ID {
 				_, err := store.TasksGet(ctx, task.ID)
 				require.ErrorIs(t, err, ErrNotFound)
 				require.Error(t, err)

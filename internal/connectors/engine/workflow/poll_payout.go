@@ -23,14 +23,14 @@ func (w Workflow) runPollPayout(
 		return w.updateTasksError(
 			ctx,
 			pollPayout.TaskID,
-			pollPayout.ConnectorID,
+			&pollPayout.ConnectorID,
 			err,
 		)
 	}
 	return w.updateTaskSuccess(
 		ctx,
 		pollPayout.TaskID,
-		pollPayout.ConnectorID,
+		&pollPayout.ConnectorID,
 		paymentID,
 	)
 }

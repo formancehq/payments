@@ -523,12 +523,12 @@ create table if not exists tasks (
 
     -- Mandatory fields
     id varchar not null,
-    connector_id varchar not null,
     status text not null,
     created_at timestamp without time zone not null,
     updated_at timestamp without time zone not null,
 
     -- Optional fields
+    connector_id varchar,
     created_object_id varchar,
     error text,
 
