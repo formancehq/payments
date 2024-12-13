@@ -6,11 +6,12 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (s *Service) ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) error {
+func (s *Service) ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	_, err := s.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
-		return newStorageError(err, "get connector")
+		return models.Task{}, newStorageError(err, "get connector")
 	}
 
-	return handleEngineErrors(s.engine.UninstallConnector(ctx, connectorID))
+	task, err := s.engine.UninstallConnector(ctx, connectorID)
+	return task, handleEngineErrors(err)
 }

@@ -14,15 +14,15 @@ type task struct {
 	bun.BaseModel `bun:"table:tasks"`
 
 	// Mandatory fields
-	ID          models.TaskID      `bun:"id,pk,type:character varying,notnull"`
-	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
-	Status      models.TaskStatus  `bun:"status,type:text,notnull"`
-	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
-	UpdatedAt   time.Time          `bun:"updated_at,type:timestamp without time zone,notnull"`
+	ID        models.TaskID     `bun:"id,pk,type:character varying,notnull"`
+	Status    models.TaskStatus `bun:"status,type:text,notnull"`
+	CreatedAt time.Time         `bun:"created_at,type:timestamp without time zone,notnull"`
+	UpdatedAt time.Time         `bun:"updated_at,type:timestamp without time zone,notnull"`
 
 	// Optional fields
-	CreatedObjectID *string `bun:"created_object_id,type:character varying"`
-	Error           *string `bun:"error,type:text"`
+	ConnectorID     *models.ConnectorID `bun:"connector_id,type:character varying"`
+	CreatedObjectID *string             `bun:"created_object_id,type:character varying"`
+	Error           *string             `bun:"error,type:text"`
 }
 
 func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {

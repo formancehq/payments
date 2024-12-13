@@ -12,9 +12,36 @@ import (
 type UninstallConnector struct {
 	ConnectorID       models.ConnectorID
 	DefaultWorkerName string
+	TaskID            models.TaskID
 }
 
 func (w Workflow) runUninstallConnector(
+	ctx workflow.Context,
+	uninstallConnector UninstallConnector,
+) error {
+	err := w.uninstallConnector(ctx, uninstallConnector)
+	if err != nil {
+		if errUpdateTask := w.updateTasksError(
+			ctx,
+			uninstallConnector.TaskID,
+			&uninstallConnector.ConnectorID,
+			err,
+		); errUpdateTask != nil {
+			return errUpdateTask
+		}
+
+		return err
+	}
+
+	return w.updateTaskSuccess(
+		ctx,
+		uninstallConnector.TaskID,
+		&uninstallConnector.ConnectorID,
+		uninstallConnector.ConnectorID.String(),
+	)
+}
+
+func (w Workflow) uninstallConnector(
 	ctx workflow.Context,
 	uninstallConnector UninstallConnector,
 ) error {

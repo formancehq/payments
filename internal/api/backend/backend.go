@@ -35,7 +35,7 @@ type Backend interface {
 	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
 	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
-	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) error
+	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Payments

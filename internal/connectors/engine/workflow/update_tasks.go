@@ -9,7 +9,7 @@ import (
 func (w Workflow) updateTasksError(
 	ctx workflow.Context,
 	taskID models.TaskID,
-	connectorID models.ConnectorID,
+	connectorID *models.ConnectorID,
 	err error,
 ) error {
 	return activities.StorageTasksStore(
@@ -26,7 +26,7 @@ func (w Workflow) updateTasksError(
 func (w Workflow) updateTaskSuccess(
 	ctx workflow.Context,
 	taskID models.TaskID,
-	connectorID models.ConnectorID,
+	connectorID *models.ConnectorID,
 	relatedObjectID string,
 ) error {
 	return activities.StorageTasksStore(

@@ -26,7 +26,7 @@ func (w Workflow) runCreatePayout(
 		errUpdateTask := w.updateTasksError(
 			ctx,
 			createPayout.TaskID,
-			createPayout.ConnectorID,
+			&createPayout.ConnectorID,
 			err,
 		)
 		if errUpdateTask != nil {
@@ -98,7 +98,7 @@ func (w Workflow) createPayout(
 			return w.updateTaskSuccess(
 				ctx,
 				createPayout.TaskID,
-				createPayout.ConnectorID,
+				&createPayout.ConnectorID,
 				payment.ID.String(),
 			)
 		}
