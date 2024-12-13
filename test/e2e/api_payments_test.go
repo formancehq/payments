@@ -10,12 +10,11 @@ import (
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/google/uuid"
-	"github.com/nats-io/nats.go"
-
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	. "github.com/formancehq/payments/pkg/testserver"
+	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
