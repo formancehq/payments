@@ -27,16 +27,16 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
-	github.com/stretchr/testify v1.9.0
+	github.com/stretchr/testify v1.10.0
 	github.com/stripe/stripe-go/v72 v72.122.0
 	github.com/uptrace/bun v1.2.3
 	github.com/uptrace/bun/dialect/pgdialect v1.2.3
 	github.com/uptrace/bun/extra/bundebug v1.2.3
-	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.44.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.55.0
-	go.opentelemetry.io/otel v1.30.0
-	go.opentelemetry.io/otel/metric v1.30.0
-	go.opentelemetry.io/otel/trace v1.30.0
+	go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux v0.58.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0
+	go.opentelemetry.io/otel v1.33.0
+	go.opentelemetry.io/otel/metric v1.33.0
+	go.opentelemetry.io/otel/trace v1.33.0
 	go.uber.org/dig v1.18.0
 	go.uber.org/fx v1.22.2
 	go.uber.org/mock v0.4.0
@@ -172,6 +172,7 @@ require (
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	github.com/zitadel/oidc/v2 v2.12.2 // indirect
 	go.mongodb.org/mongo-driver v1.12.0 // indirect
+	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/host v0.55.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/runtime v0.55.0 // indirect
 	go.opentelemetry.io/contrib/propagators/b3 v1.30.0 // indirect
