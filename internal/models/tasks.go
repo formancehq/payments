@@ -35,7 +35,7 @@ type Task struct {
 func (t Task) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID              string     `json:"id"`
-		ConnectorID     string     `json:"connectorID"`
+		ConnectorID     string     `json:"connectorID,omitempty"`
 		Status          TaskStatus `json:"status"`
 		CreatedAt       time.Time  `json:"createdAt"`
 		UpdatedAt       time.Time  `json:"updatedAt"`
@@ -61,7 +61,7 @@ func (t Task) MarshalJSON() ([]byte, error) {
 func (t *Task) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID              string     `json:"id"`
-		ConnectorID     *string    `json:"connectorID"`
+		ConnectorID     *string    `json:"connectorID,omitempty"`
 		Status          TaskStatus `json:"status"`
 		CreatedAt       time.Time  `json:"createdAt"`
 		UpdatedAt       time.Time  `json:"updatedAt"`

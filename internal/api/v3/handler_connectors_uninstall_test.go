@@ -42,15 +42,15 @@ var _ = Describe("API v3 Connectors uninstall", func() {
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("connectors uninstall err")
-			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(expectedErr)
+			m.EXPECT().ConnectorsUninstall(gomock.Any(), gomock.Any()).Return(models.Task{}, expectedErr)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status accepted on success", func(ctx SpecContext) {
-			m.EXPECT().ConnectorsUninstall(gomock.Any(), connID).Return(nil)
+			m.EXPECT().ConnectorsUninstall(gomock.Any(), connID).Return(models.Task{}, nil)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
-			assertExpectedResponse(w.Result(), http.StatusAccepted, connID.String())
+			assertExpectedResponse(w.Result(), http.StatusAccepted, "data")
 		})
 	})
 })
