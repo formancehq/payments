@@ -23,7 +23,7 @@ func (w Workflow) runCreateBankAccount(
 		if errUpdateTask := w.updateTasksError(
 			ctx,
 			createBankAccount.TaskID,
-			createBankAccount.ConnectorID,
+			&createBankAccount.ConnectorID,
 			err,
 		); errUpdateTask != nil {
 			return errUpdateTask
@@ -35,7 +35,7 @@ func (w Workflow) runCreateBankAccount(
 	return w.updateTaskSuccess(
 		ctx,
 		createBankAccount.TaskID,
-		createBankAccount.ConnectorID,
+		&createBankAccount.ConnectorID,
 		accountID,
 	)
 }

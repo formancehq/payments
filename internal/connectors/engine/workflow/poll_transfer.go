@@ -23,14 +23,14 @@ func (w Workflow) runPollTransfer(
 		return w.updateTasksError(
 			ctx,
 			pollTransfer.TaskID,
-			pollTransfer.ConnectorID,
+			&pollTransfer.ConnectorID,
 			err,
 		)
 	}
 	return w.updateTaskSuccess(
 		ctx,
 		pollTransfer.TaskID,
-		pollTransfer.ConnectorID,
+		&pollTransfer.ConnectorID,
 		paymentID,
 	)
 }

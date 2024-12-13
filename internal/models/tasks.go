@@ -20,7 +20,7 @@ type Task struct {
 	// Unique identifier of the task
 	ID TaskID `json:"id"`
 	// Related Connector ID
-	ConnectorID ConnectorID `json:"connectorID"`
+	ConnectorID *ConnectorID `json:"connectorID"`
 	// Status of the task
 	Status TaskStatus `json:"status"`
 	// Time when the task was created
@@ -61,7 +61,7 @@ func (t Task) MarshalJSON() ([]byte, error) {
 func (t *Task) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID              string     `json:"id"`
-		ConnectorID     string     `json:"connectorID"`
+		ConnectorID     *string    `json:"connectorID"`
 		Status          TaskStatus `json:"status"`
 		CreatedAt       time.Time  `json:"createdAt"`
 		UpdatedAt       time.Time  `json:"updatedAt"`
@@ -78,9 +78,13 @@ func (t *Task) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	connectorID, err := ConnectorIDFromString(aux.ConnectorID)
-	if err != nil {
-		return err
+	var connectorID *ConnectorID
+	if aux.ConnectorID != nil {
+		c, err := ConnectorIDFromString(*aux.ConnectorID)
+		if err != nil {
+			return err
+		}
+		connectorID = &c
 	}
 
 	t.ID = *id

@@ -26,7 +26,7 @@ type Engine interface {
 	// Install a connector with the given provider and configuration.
 	InstallConnector(ctx context.Context, provider string, rawConfig json.RawMessage) (models.ConnectorID, error)
 	// Uninstall a connector with the given ID.
-	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error
+	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	// Reset a connector with the given ID, by uninstalling and reinstalling it.
 	ResetConnector(ctx context.Context, connectorID models.ConnectorID) error
 
@@ -185,25 +185,49 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	return connector.ID, nil
 }
 
-func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) error {
+func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.UninstallConnector")
 	defer span.End()
 
 	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
 		otel.RecordError(span, err)
-		return err
+		return models.Task{}, err
 	}
 
-	if err := e.storage.ConnectorsScheduleForDeletion(ctx, connectorID); err != nil {
+	detachedCtx := context.WithoutCancel(ctx)
+	// Since we detached the context, we need to wait for the operation to finish
+	// even if the app is shutting down gracefully.
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	if err := e.storage.ConnectorsScheduleForDeletion(detachedCtx, connectorID); err != nil {
 		otel.RecordError(span, err)
-		return err
+		return models.Task{}, err
+	}
+
+	now := time.Now()
+	id := fmt.Sprintf("uninstall-%s-%s", e.stack, connectorID.String())
+	task := models.Task{
+		// Do not fill the connector ID as it will be deleted
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		Status:    models.TASK_STATUS_PROCESSING,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
 	}
 
 	// Launch the uninstallation in background
 	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
+		detachedCtx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("uninstall-%s-%s", e.stack, connectorID.String()),
+			ID:                                       id,
 			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -215,14 +239,21 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
 			DefaultWorkerName: e.workers.GetDefaultWorker(),
+			TaskID:            task.ID,
 		},
 	)
 	if err != nil {
+		task.Status = models.TASK_STATUS_FAILED
+		task.UpdatedAt = time.Now()
+		if err := e.storage.TasksUpsert(ctx, task); err != nil {
+			e.logger.Errorf("failed to update task status to failed: %v", err)
+		}
+
 		otel.RecordError(span, err)
-		return err
+		return models.Task{}, err
 	}
 
-	return nil
+	return task, nil
 }
 
 func (e *engine) ResetConnector(ctx context.Context, connectorID models.ConnectorID) error {
@@ -243,7 +274,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if err := e.UninstallConnector(detachedCtx, connectorID); err != nil {
+	if _, err := e.UninstallConnector(detachedCtx, connectorID); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -401,7 +432,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 			Reference:   id,
 			ConnectorID: connectorID,
 		},
-		ConnectorID: connectorID,
+		ConnectorID: &connectorID,
 		Status:      models.TASK_STATUS_PROCESSING,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -458,7 +489,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 			Reference:   id,
 			ConnectorID: piID.ConnectorID,
 		},
-		ConnectorID: piID.ConnectorID,
+		ConnectorID: &piID.ConnectorID,
 		Status:      models.TASK_STATUS_PROCESSING,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -518,7 +549,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 			Reference:   id,
 			ConnectorID: reversal.ConnectorID,
 		},
-		ConnectorID: reversal.ConnectorID,
+		ConnectorID: &reversal.ConnectorID,
 		Status:      models.TASK_STATUS_PROCESSING,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -576,7 +607,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 			Reference:   id,
 			ConnectorID: piID.ConnectorID,
 		},
-		ConnectorID: piID.ConnectorID,
+		ConnectorID: &piID.ConnectorID,
 		Status:      models.TASK_STATUS_PROCESSING,
 		CreatedAt:   now,
 		UpdatedAt:   now,
@@ -636,7 +667,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 			Reference:   id,
 			ConnectorID: reversal.ConnectorID,
 		},
-		ConnectorID: reversal.ConnectorID,
+		ConnectorID: &reversal.ConnectorID,
 		Status:      models.TASK_STATUS_PROCESSING,
 		CreatedAt:   now,
 		UpdatedAt:   now,

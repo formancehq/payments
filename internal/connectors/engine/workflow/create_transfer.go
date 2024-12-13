@@ -26,7 +26,7 @@ func (w Workflow) runCreateTransfer(
 		errUpdateTask := w.updateTasksError(
 			ctx,
 			createTransfer.TaskID,
-			createTransfer.ConnectorID,
+			&createTransfer.ConnectorID,
 			err,
 		)
 		if errUpdateTask != nil {
@@ -99,7 +99,7 @@ func (w Workflow) createTransfer(
 			return w.updateTaskSuccess(
 				ctx,
 				createTransfer.TaskID,
-				createTransfer.ConnectorID,
+				&createTransfer.ConnectorID,
 				payment.ID.String(),
 			)
 		}

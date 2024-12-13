@@ -21,7 +21,7 @@ func (w Workflow) runReversePayout(
 		errUpdateTask := w.updateTasksError(
 			ctx,
 			reversePayout.TaskID,
-			reversePayout.ConnectorID,
+			&reversePayout.ConnectorID,
 			err,
 		)
 		if errUpdateTask != nil {
@@ -34,7 +34,7 @@ func (w Workflow) runReversePayout(
 	return w.updateTaskSuccess(
 		ctx,
 		reversePayout.TaskID,
-		reversePayout.ConnectorID,
+		&reversePayout.ConnectorID,
 		paymentID,
 	)
 }
