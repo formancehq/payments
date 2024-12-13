@@ -16,19 +16,19 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createPoolRequest struct {
+type CreatePoolRequest struct {
 	Name       string   `json:"name"`
 	AccountIDs []string `json:"accountIDs"`
 }
 
-func (r *createPoolRequest) Validate() error {
+func (r *CreatePoolRequest) Validate() error {
 	if len(r.AccountIDs) == 0 {
 		return errors.New("one or more account id required")
 	}
 	return nil
 }
 
-type poolResponse struct {
+type PoolResponse struct {
 	ID       string   `json:"id"`
 	Name     string   `json:"name"`
 	Accounts []string `json:"accounts"`
@@ -39,17 +39,17 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_poolsBalancesAt")
 		defer span.End()
 
-		var createPoolRequest createPoolRequest
-		err := json.NewDecoder(r.Body).Decode(&createPoolRequest)
+		var CreatePoolRequest CreatePoolRequest
+		err := json.NewDecoder(r.Body).Decode(&CreatePoolRequest)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
 
-		populateSpanFromCreatePoolRequest(span, createPoolRequest)
+		populateSpanFromCreatePoolRequest(span, CreatePoolRequest)
 
-		if err := createPoolRequest.Validate(); err != nil {
+		if err := CreatePoolRequest.Validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
@@ -57,12 +57,12 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 
 		pool := models.Pool{
 			ID:        uuid.New(),
-			Name:      createPoolRequest.Name,
+			Name:      CreatePoolRequest.Name,
 			CreatedAt: time.Now().UTC(),
 		}
 
-		accounts := make([]models.PoolAccounts, len(createPoolRequest.AccountIDs))
-		for i, accountID := range createPoolRequest.AccountIDs {
+		accounts := make([]models.PoolAccounts, len(CreatePoolRequest.AccountIDs))
+		for i, accountID := range CreatePoolRequest.AccountIDs {
 			aID, err := models.AccountIDFromString(accountID)
 			if err != nil {
 				otel.RecordError(span, err)
@@ -84,13 +84,13 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := &poolResponse{
+		data := &PoolResponse{
 			ID:       pool.ID.String(),
 			Name:     pool.Name,
-			Accounts: createPoolRequest.AccountIDs,
+			Accounts: CreatePoolRequest.AccountIDs,
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[poolResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[PoolResponse]{
 			Data: data,
 		})
 		if err != nil {
@@ -101,7 +101,7 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromCreatePoolRequest(span trace.Span, req createPoolRequest) {
+func populateSpanFromCreatePoolRequest(span trace.Span, req CreatePoolRequest) {
 	span.SetAttributes(attribute.String("name", req.Name))
 	for i, acc := range req.AccountIDs {
 		span.SetAttributes(attribute.String(fmt.Sprintf("accountIDs[%d]", i), acc))

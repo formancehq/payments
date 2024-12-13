@@ -16,12 +16,12 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-type createPoolRequest struct {
+type CreatePoolRequest struct {
 	Name       string   `json:"name"`
 	AccountIDs []string `json:"accountIDs"`
 }
 
-func (r *createPoolRequest) Validate() error {
+func (r *CreatePoolRequest) Validate() error {
 	if len(r.AccountIDs) == 0 {
 		return errors.New("one or more account id required")
 	}
@@ -33,17 +33,17 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_poolsCreate")
 		defer span.End()
 
-		var createPoolRequest createPoolRequest
-		err := json.NewDecoder(r.Body).Decode(&createPoolRequest)
+		var CreatePoolRequest CreatePoolRequest
+		err := json.NewDecoder(r.Body).Decode(&CreatePoolRequest)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
 
-		populateSpanFromCreatePoolRequest(span, createPoolRequest)
+		populateSpanFromCreatePoolRequest(span, CreatePoolRequest)
 
-		if err := createPoolRequest.Validate(); err != nil {
+		if err := CreatePoolRequest.Validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
@@ -51,12 +51,12 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 
 		pool := models.Pool{
 			ID:        uuid.New(),
-			Name:      createPoolRequest.Name,
+			Name:      CreatePoolRequest.Name,
 			CreatedAt: time.Now().UTC(),
 		}
 
-		accounts := make([]models.PoolAccounts, len(createPoolRequest.AccountIDs))
-		for i, accountID := range createPoolRequest.AccountIDs {
+		accounts := make([]models.PoolAccounts, len(CreatePoolRequest.AccountIDs))
+		for i, accountID := range CreatePoolRequest.AccountIDs {
 			aID, err := models.AccountIDFromString(accountID)
 			if err != nil {
 				otel.RecordError(span, err)
@@ -82,7 +82,7 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 	}
 }
 
-func populateSpanFromCreatePoolRequest(span trace.Span, req createPoolRequest) {
+func populateSpanFromCreatePoolRequest(span trace.Span, req CreatePoolRequest) {
 	span.SetAttributes(attribute.String("name", req.Name))
 	for i, acc := range req.AccountIDs {
 		span.SetAttributes(attribute.String(fmt.Sprintf("accountIDs[%d]", i), acc))
