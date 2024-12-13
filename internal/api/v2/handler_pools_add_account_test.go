@@ -17,7 +17,7 @@ var _ = Describe("API v2 pools add account", func() {
 		handlerFn http.HandlerFunc
 		accID     models.AccountID
 		poolID    uuid.UUID
-		paar      poolsAddAccountRequest
+		paar      PoolsAddAccountRequest
 	)
 	BeforeEach(func() {
 		connID := models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
@@ -53,7 +53,7 @@ var _ = Describe("API v2 pools add account", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("pool add account err")
 			m.EXPECT().PoolsAddAccount(gomock.Any(), gomock.Any(), gomock.Any()).Return(expectedErr)
-			paar = poolsAddAccountRequest{
+			paar = PoolsAddAccountRequest{
 				AccountID: accID.String(),
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "poolID", poolID.String(), &paar))
@@ -62,7 +62,7 @@ var _ = Describe("API v2 pools add account", func() {
 
 		It("should return status no content on success", func(ctx SpecContext) {
 			m.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accID).Return(nil)
-			paar = poolsAddAccountRequest{
+			paar = PoolsAddAccountRequest{
 				AccountID: accID.String(),
 			}
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "poolID", poolID.String(), &paar))

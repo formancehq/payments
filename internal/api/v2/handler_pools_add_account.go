@@ -13,11 +13,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-type poolsAddAccountRequest struct {
+type PoolsAddAccountRequest struct {
 	AccountID string `json:"accountID"`
 }
 
-func (c *poolsAddAccountRequest) Validate() error {
+func (c *PoolsAddAccountRequest) Validate() error {
 	if c.AccountID == "" {
 		return errors.New("accountID is required")
 	}
@@ -38,23 +38,23 @@ func poolsAddAccount(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		var poolsAddAccountRequest poolsAddAccountRequest
-		err = json.NewDecoder(r.Body).Decode(&poolsAddAccountRequest)
+		var PoolsAddAccountRequest PoolsAddAccountRequest
+		err = json.NewDecoder(r.Body).Decode(&PoolsAddAccountRequest)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
 
-		span.SetAttributes(attribute.String("accountID", poolsAddAccountRequest.AccountID))
+		span.SetAttributes(attribute.String("accountID", PoolsAddAccountRequest.AccountID))
 
-		if err := poolsAddAccountRequest.Validate(); err != nil {
+		if err := PoolsAddAccountRequest.Validate(); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
-		accountID, err := models.AccountIDFromString(poolsAddAccountRequest.AccountID)
+		accountID, err := models.AccountIDFromString(PoolsAddAccountRequest.AccountID)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrInvalidID, err)
