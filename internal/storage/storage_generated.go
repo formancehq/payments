@@ -901,11 +901,12 @@ func (mr *MockStorageMockRecorder) PoolsAddAccount(ctx, id, accountID any) *gomo
 }
 
 // PoolsDelete mocks base method.
-func (m *MockStorage) PoolsDelete(ctx context.Context, id uuid.UUID) error {
+func (m *MockStorage) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PoolsDelete", ctx, id)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // PoolsDelete indicates an expected call of PoolsDelete.

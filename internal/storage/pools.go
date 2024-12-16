@@ -90,19 +90,19 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 	return pointer.For(toPoolModel(pool)), nil
 }
 
-func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) error {
+func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return false, e("begin transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	_, err = tx.NewDelete().
+	res, err := tx.NewDelete().
 		Model((*pool)(nil)).
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool: %w", err)
+		return false, e("delete pool: %w", err)
 	}
 
 	_, err = tx.NewDelete().
@@ -110,10 +110,15 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) error {
 		Where("pool_id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool accounts: %w", err)
+		return false, e("delete pool accounts: %w", err)
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return false, e("get rows affected: %w", err)
+	}
+
+	return rowsAffected > 0, e("commit transaction: %w", tx.Commit())
 }
 
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {

@@ -873,31 +873,34 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
 
-	if err := e.storage.PoolsDelete(ctx, poolID); err != nil {
+	deleted, err := e.storage.PoolsDelete(ctx, poolID)
+	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
-	// Do not wait for sending of events
-	_, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-			TaskQueue:                                e.workers.GetDefaultWorker(),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
+	if deleted {
+		// Do not wait for sending of events
+		_, err = e.temporalClient.ExecuteWorkflow(
+			ctx,
+			client.StartWorkflowOptions{
+				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
+				TaskQueue:                                e.workers.GetDefaultWorker(),
+				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+				WorkflowExecutionErrorWhenAlreadyStarted: false,
+				SearchAttributes: map[string]interface{}{
+					workflow.SearchAttributeStack: e.stack,
+				},
 			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			PoolsDeletion: &poolID,
-		},
-	)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
+			workflow.RunSendEvents,
+			workflow.SendEvents{
+				PoolsDeletion: &poolID,
+			},
+		)
+		if err != nil {
+			otel.RecordError(span, err)
+			return err
+		}
 	}
 
 	return nil

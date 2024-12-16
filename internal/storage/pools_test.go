@@ -184,7 +184,9 @@ func TestPoolsDelete(t *testing.T) {
 	upsertPool(t, ctx, store, defaultPools()[2])
 
 	t.Run("delete unknown pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsDelete(ctx, uuid.New()))
+		deleted, err := store.PoolsDelete(ctx, uuid.New())
+		require.NoError(t, err)
+		require.False(t, deleted)
 		for _, p := range defaultPools() {
 			actual, err := store.PoolsGet(ctx, p.ID)
 			require.NoError(t, err)
@@ -193,9 +195,11 @@ func TestPoolsDelete(t *testing.T) {
 	})
 
 	t.Run("delete existing pool", func(t *testing.T) {
-		require.NoError(t, store.PoolsDelete(ctx, defaultPools()[0].ID))
+		deleted, err := store.PoolsDelete(ctx, defaultPools()[0].ID)
+		require.NoError(t, err)
+		require.True(t, deleted)
 
-		_, err := store.PoolsGet(ctx, defaultPools()[0].ID)
+		_, err = store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 
