@@ -1,6 +1,7 @@
 package models
 
 import (
+	//nolint:gosec
 	"crypto/sha1"
 	"fmt"
 
@@ -12,6 +13,7 @@ func IdempotencyKey(u any) string {
 	if err != nil {
 		panic(err)
 	}
+	//nolint:gosec
 	hash := sha1.Sum(data)
 	return fmt.Sprintf("%x", hash)
 }
