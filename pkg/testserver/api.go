@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	v2 "github.com/formancehq/payments/internal/api/v2"
 )
 
 func pathPrefix(version int, path string) string {
@@ -103,6 +105,30 @@ func RejectPaymentInitiation(ctx context.Context, srv *Server, ver int, id strin
 
 func ReversePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reverse"), reqBody, res)
+}
+
+func CreatePool(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools"), reqBody, res)
+}
+
+func RemovePool(ctx context.Context, srv *Server, ver int, id string) error {
+	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, "pools/"+id), nil, nil)
+}
+
+func GetPool(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	return srv.Client().Get(ctx, pathPrefix(ver, "pools/"+id), res)
+}
+
+func RemovePoolAccount(ctx context.Context, srv *Server, ver int, id string, accountID string) error {
+	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, "pools/"+id+"/accounts/"+accountID), nil, nil)
+}
+
+func AddPoolAccount(ctx context.Context, srv *Server, ver int, id string, accountID string) error {
+	if ver == 2 {
+		req := v2.PoolsAddAccountRequest{AccountID: accountID}
+		return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools/"+id+"/accounts"), &req, nil)
+	}
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools/"+id+"/accounts/"+accountID), nil, nil)
 }
 
 func GetTask(ctx context.Context, srv *Server, ver int, id string, res any) error {

@@ -31,7 +31,7 @@ func poolsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := &poolResponse{
+		data := &PoolResponse{
 			ID:   pool.ID.String(),
 			Name: pool.Name,
 		}
@@ -42,7 +42,7 @@ func poolsGet(backend backend.Backend) http.HandlerFunc {
 		}
 		data.Accounts = accounts
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[poolResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[PoolResponse]{
 			Data: data,
 		})
 		if err != nil {

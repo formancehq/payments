@@ -37,9 +37,9 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		data := make([]*poolResponse, len(cursor.Data))
+		data := make([]*PoolResponse, len(cursor.Data))
 		for i := range cursor.Data {
-			data[i] = &poolResponse{
+			data[i] = &PoolResponse{
 				ID:   cursor.Data[i].ID.String(),
 				Name: cursor.Data[i].Name,
 			}
@@ -52,8 +52,8 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 			data[i].Accounts = accounts
 		}
 
-		err = json.NewEncoder(w).Encode(api.BaseResponse[*poolResponse]{
-			Cursor: &bunpaginate.Cursor[*poolResponse]{
+		err = json.NewEncoder(w).Encode(api.BaseResponse[*PoolResponse]{
+			Cursor: &bunpaginate.Cursor[*PoolResponse]{
 				PageSize: cursor.PageSize,
 				HasMore:  cursor.HasMore,
 				Previous: cursor.Previous,

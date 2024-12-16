@@ -756,7 +756,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.IdempotencyKey()),
+			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
 			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -802,7 +802,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 	_, err = e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-add-account-%s-%s", e.stack, pool.IdempotencyKey()),
+			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
 			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -848,7 +848,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	_, err = e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s", e.stack, pool.IdempotencyKey()),
+			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
 			TaskQueue:                                e.workers.GetDefaultWorker(),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,

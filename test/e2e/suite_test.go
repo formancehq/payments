@@ -39,6 +39,10 @@ var (
 	DBTemplate = "dbtemplate"
 )
 
+type GenericEventPayload struct {
+	ID string `json:"id"`
+}
+
 type ConnectorConf struct {
 	Name          string `json:"name"`
 	PollingPeriod string `json:"pollingPeriod"`
