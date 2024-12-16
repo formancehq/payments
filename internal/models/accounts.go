@@ -79,7 +79,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 }
 
 func (a *Account) IdempotencyKey() string {
-	return a.ID.String()
+	return IdempotencyKey(a.ID)
 }
 
 func (a *Account) UnmarshalJSON(data []byte) error {

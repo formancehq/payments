@@ -1,12 +1,9 @@
 package models
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"math/big"
 	"time"
-
-	"github.com/gibson042/canonicaljson-go"
 )
 
 type PSPBalance struct {
@@ -48,13 +45,7 @@ func (b *Balance) IdempotencyKey() string {
 		CreatedAt:     b.CreatedAt.UnixNano(),
 		LastUpdatedAt: b.LastUpdatedAt.UnixNano(),
 	}
-
-	data, err := canonicaljson.Marshal(ik)
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
+	return IdempotencyKey(ik)
 }
 
 func (b Balance) MarshalJSON() ([]byte, error) {

@@ -1,10 +1,8 @@
 package models
 
 import (
-	"encoding/base64"
 	"time"
 
-	"github.com/gibson042/canonicaljson-go"
 	"github.com/google/uuid"
 )
 
@@ -28,11 +26,5 @@ func (p *Pool) IdempotencyKey() string {
 		ID:              p.ID.String(),
 		RelatedAccounts: relatedAccounts,
 	}
-
-	data, err := canonicaljson.Marshal(ik)
-	if err != nil {
-		panic(err)
-	}
-
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
+	return IdempotencyKey(ik)
 }

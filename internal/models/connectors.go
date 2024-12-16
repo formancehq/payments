@@ -22,7 +22,7 @@ type Connector struct {
 }
 
 func (c *Connector) IdempotencyKey() string {
-	return c.ID.String()
+	return IdempotencyKey(c.ID)
 }
 
 func (c Connector) MarshalJSON() ([]byte, error) {

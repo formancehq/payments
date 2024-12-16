@@ -34,7 +34,7 @@ type BankAccount struct {
 }
 
 func (b *BankAccount) IdempotencyKey() string {
-	return b.ID.String()
+	return IdempotencyKey(b.ID)
 }
 
 func (a *BankAccount) Offuscate() error {
