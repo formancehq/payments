@@ -101,7 +101,10 @@ var _ = Context("Payments API Connectors", func() {
 			}{}
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
 			Expect(err).To(BeNil())
-			Expect(delRes.Data.ID.String()).ToNot(BeEmpty())
+			Expect(delRes.Data).NotTo(BeNil())
+			Expect(delRes.Data.ID.Reference).To(ContainSubstring("uninstall"))
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			Eventually(taskPoller(delRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
 		})
 
