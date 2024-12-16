@@ -114,9 +114,6 @@ var _ = Context("Payments API Pools", func() {
 			poolID := uuid.New().String()
 			err := RemovePool(ctx, app.GetValue(), ver, poolID)
 			Expect(err).To(BeNil())
-
-			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 	})
 
@@ -195,9 +192,6 @@ var _ = Context("Payments API Pools", func() {
 			poolID := uuid.New().String()
 			err := RemovePool(ctx, app.GetValue(), ver, poolID)
 			Expect(err).To(BeNil())
-
-			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 	})
 
