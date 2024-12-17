@@ -20,7 +20,7 @@ type ScheduleCreateOptions struct {
 	SearchAttributes   map[string]interface{}
 }
 
-func (a Activities) TemporalScheduleCreate(ctx context.Context, options ScheduleCreateOptions) (string, error) {
+func (a Activities) TemporalScheduleCreate(ctx context.Context, options ScheduleCreateOptions) error {
 	attributes := make([]temporal.SearchAttributeUpdate, 0, len(options.SearchAttributes))
 	for key, value := range options.SearchAttributes {
 		v, ok := value.(string)
@@ -34,7 +34,7 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 	}
 	options.Action.TypedSearchAttributes = temporal.NewSearchAttributes(attributes...)
 
-	handle, err := a.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
+	_, err := a.temporalClient.ScheduleClient().Create(ctx, client.ScheduleOptions{
 		ID: options.ScheduleID,
 		Spec: client.ScheduleSpec{
 			Intervals: []client.ScheduleIntervalSpec{options.Interval},
@@ -46,17 +46,17 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 		SearchAttributes:   options.SearchAttributes,
 	})
 	if err != nil {
-		return "", err
+		return err
 	}
-	return handle.GetID(), nil
+
+	return nil
 }
 
 var TemporalScheduleCreateActivity = Activities{}.TemporalScheduleCreate
 
-func TemporalScheduleCreate(ctx workflow.Context, options ScheduleCreateOptions) (string, error) {
-	var scheduleID string
-	if err := executeActivity(ctx, TemporalScheduleCreateActivity, &scheduleID, options); err != nil {
-		return "", err
+func TemporalScheduleCreate(ctx workflow.Context, options ScheduleCreateOptions) error {
+	if err := executeActivity(ctx, TemporalScheduleCreateActivity, nil, options); err != nil {
+		return err
 	}
-	return scheduleID, nil
+	return nil
 }

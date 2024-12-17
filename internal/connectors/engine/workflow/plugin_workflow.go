@@ -104,7 +104,18 @@ func (w Workflow) run(
 				scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
 			}
 
-			scheduleID, err := activities.TemporalScheduleCreate(
+			err := activities.StorageSchedulesStore(
+				infiniteRetryContext(ctx),
+				models.Schedule{
+					ID:          scheduleID,
+					ConnectorID: connectorID,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+				})
+			if err != nil {
+				return err
+			}
+
+			err = activities.TemporalScheduleCreate(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
@@ -135,16 +146,6 @@ func (w Workflow) run(
 				return err
 			}
 
-			err = activities.StorageSchedulesStore(
-				infiniteRetryContext(ctx),
-				models.Schedule{
-					ID:          scheduleID,
-					ConnectorID: connectorID,
-					CreatedAt:   workflow.Now(ctx).UTC(),
-				})
-			if err != nil {
-				return err
-			}
 		} else {
 			// Run next workflow immediately
 			if err := workflow.ExecuteChildWorkflow(
