@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/formancehq/go-libs/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/formancehq/payments/pkg/testserver"
