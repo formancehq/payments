@@ -68,7 +68,7 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := res.Data
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			var getRes struct{ Data models.Pool }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
