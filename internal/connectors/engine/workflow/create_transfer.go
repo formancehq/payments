@@ -112,7 +112,19 @@ func (w Workflow) createTransfer(
 			}
 
 			scheduleID := fmt.Sprintf("polling-transfer-%s-%s-%s", w.stack, createTransfer.ConnectorID.String(), *createTransferResponse.PollingTransferID)
-			scheduleID, err = activities.TemporalScheduleCreate(
+
+			err = activities.StorageSchedulesStore(
+				infiniteRetryContext(ctx),
+				models.Schedule{
+					ID:          scheduleID,
+					ConnectorID: createTransfer.ConnectorID,
+					CreatedAt:   workflow.Now(ctx).UTC(),
+				})
+			if err != nil {
+				return err
+			}
+
+			err = activities.TemporalScheduleCreate(
 				infiniteRetryContext(ctx),
 				activities.ScheduleCreateOptions{
 					ScheduleID: scheduleID,
@@ -148,16 +160,6 @@ func (w Workflow) createTransfer(
 				return err
 			}
 
-			err = activities.StorageSchedulesStore(
-				infiniteRetryContext(ctx),
-				models.Schedule{
-					ID:          scheduleID,
-					ConnectorID: createTransfer.ConnectorID,
-					CreatedAt:   workflow.Now(ctx).UTC(),
-				})
-			if err != nil {
-				return err
-			}
 		}
 
 		return nil
