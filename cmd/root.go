@@ -73,6 +73,10 @@ func NewRootCommand() *cobra.Command {
 	server.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
 	root.AddCommand(server)
 
+	purge := newPurge()
+	purge.Flags().String(StackFlag, "", "Stack name")
+	root.AddCommand(purge)
+
 	return root
 }
 
