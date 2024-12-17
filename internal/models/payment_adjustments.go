@@ -36,7 +36,7 @@ type PaymentAdjustment struct {
 }
 
 func (p *PaymentAdjustment) IdempotencyKey() string {
-	return p.ID.String()
+	return IdempotencyKey(p.ID)
 }
 
 func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
