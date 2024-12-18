@@ -2,11 +2,8 @@ package cmd
 
 import (
 	"errors"
-	"log"
-	"os"
 
 	"github.com/bombsimon/logrusr/v3"
-	sharedapi "github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/aws/iam"
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
@@ -20,9 +17,6 @@ import (
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
-	"github.com/formancehq/payments/internal/api"
-	v2 "github.com/formancehq/payments/internal/api/v2"
-	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/storage"
@@ -62,7 +56,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		return nil, err
 	}
 
-	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
@@ -70,20 +63,9 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 
-	if len(os.Args) < 2 {
-		// this shouldn't happen as long as this function is called by a subcommand
-		log.Fatalf("os arguments does not contain command name: %s", os.Args)
-	}
-	rawFlags := os.Args[2:]
-
 	return fx.Options(
 		fx.Provide(func() *bunconnect.ConnectionOptions {
 			return connectionOptions
-		}),
-		fx.Provide(func() sharedapi.ServiceInfo {
-			return sharedapi.ServiceInfo{
-				Version: Version,
-			}
 		}),
 		otlp.FXModuleFromFlags(cmd),
 		otlptraces.FXModuleFromFlags(cmd),
@@ -97,23 +79,18 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 				SearchAttributes: engine.SearchAttributes,
 			},
 		),
-		auth.FXModuleFromFlags(cmd),
 		health.Module(),
 		publish.FXModuleFromFlags(cmd, service.IsDebug(cmd)),
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
-		api.NewModule(listen, service.IsDebug(cmd)),
 		profiling.FXModuleFromFlags(cmd),
 		engine.Module(
 			stack,
 			stackPublicURL,
 			temporalNamespace,
 			temporalMaxConcurrentWorkflowTaskPollers,
-			rawFlags,
 			debug,
 			jsonFormatter,
 		),
-		v2.NewModule(),
-		v3.NewModule(),
 	), nil
 }

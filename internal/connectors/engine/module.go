@@ -22,7 +22,6 @@ func Module(
 	stackURL string,
 	temporalNamespace string,
 	temporalMaxConcurrentWorkflowTaskPollers int,
-	rawFlags []string,
 	debug bool,
 	jsonFormatter bool,
 ) fx.Option {
@@ -44,7 +43,7 @@ func Module(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func(logger logging.Logger) plugins.Plugins {
-			return plugins.New(logger, rawFlags, debug, jsonFormatter)
+			return plugins.New(logger, debug, jsonFormatter)
 		}),
 		fx.Provide(func() webhooks.Webhooks {
 			return webhooks.New()
