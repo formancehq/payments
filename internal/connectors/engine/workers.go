@@ -37,15 +37,17 @@ func (w *Workers) getDefaultWorkerName() string {
 	return defaultWorker
 }
 
-func (w *Workers) CreateDefaultWorker() {
-	w.AddWorker(w.getDefaultWorkerName())
+func (w *Workers) CreateDefaultWorker() error {
+	return w.AddWorker(w.getDefaultWorkerName())
 }
 
 // Returns the default worker name and create it if it doesn't exist yet.
-func (w *Workers) GetDefaultWorker() string {
+func (w *Workers) GetDefaultWorker() (string, error) {
 	defaultWorker := w.getDefaultWorkerName()
-	w.AddWorker(defaultWorker)
-	return defaultWorker
+	if err := w.AddWorker(defaultWorker); err != nil {
+		return "", err
+	}
+	return defaultWorker, nil
 }
 
 func NewWorkers(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
