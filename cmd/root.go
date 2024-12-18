@@ -40,14 +40,6 @@ func NewRootCommand() *cobra.Command {
 
 	server := newServer()
 	addAutoMigrateCommand(server)
-	server.Flags().String(ListenFlag, ":8080", "Listen address")
-	server.Flags().String(StackFlag, "", "Stack name")
-	server.Flags().String(stackPublicURLFlag, "", "Stack public url")
-	// MaxConcurrentWorkflowTaskPollers should not be set to a number < 2, otherwise
-	// temporal will panic.
-	// After meeting with the temporal team, we decided to set it to 20 as per
-	// their recommendation.
-	server.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
 	root.AddCommand(server)
 
 	purge := newPurge()
