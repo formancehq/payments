@@ -32,9 +32,18 @@ type Worker struct {
 	worker worker.Worker
 }
 
+func (w *Workers) getDefaultWorkerName() string {
+	defaultWorker := fmt.Sprintf("%s-default", w.stack)
+	return defaultWorker
+}
+
+func (w *Workers) CreateDefaultWorker() {
+	w.AddWorker(w.getDefaultWorkerName())
+}
+
 // Returns the default worker name and create it if it doesn't exist yet.
 func (w *Workers) GetDefaultWorker() string {
-	defaultWorker := fmt.Sprintf("%s-default", w.stack)
+	defaultWorker := w.getDefaultWorkerName()
 	w.AddWorker(defaultWorker)
 	return defaultWorker
 }
