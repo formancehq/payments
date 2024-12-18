@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/bombsimon/logrusr/v3"
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/aws/iam"
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
@@ -12,9 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel"
 )
 
 func newServer() *cobra.Command {
@@ -51,9 +48,4 @@ func runServer() func(cmd *cobra.Command, args []string) error {
 
 		return service.New(cmd.OutOrStdout(), options).Run(cmd)
 	}
-}
-
-func setLogger() {
-	// Add a dedicated logger for opentelemetry in case of error
-	otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
 }
