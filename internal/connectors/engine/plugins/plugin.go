@@ -32,8 +32,6 @@ type plugins struct {
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
-	// used to pass flags to plugins
-	rawFlags      []string
 	debug         bool
 	jsonFormatter bool
 }
@@ -45,14 +43,12 @@ type pluginInformation struct {
 
 func New(
 	logger logging.Logger,
-	rawFlags []string,
 	debug bool,
 	jsonFormatter bool,
 ) *plugins {
 	return &plugins{
 		logger:        logger,
 		plugins:       make(map[string]pluginInformation),
-		rawFlags:      rawFlags,
 		debug:         debug,
 		jsonFormatter: jsonFormatter,
 	}
