@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -23,6 +24,7 @@ var (
 )
 
 func RegisterPlugin(name string, createFunc PluginCreateFunction, capabilities []models.Capability) {
+	fmt.Println("Registering plugin", name)
 	pluginsRegistry[name] = PluginInformation{
 		capabilities: capabilities,
 		createFunc:   createFunc,
@@ -30,6 +32,7 @@ func RegisterPlugin(name string, createFunc PluginCreateFunction, capabilities [
 }
 
 func GetPlugin(logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
+	fmt.Println("get plugin", provider, connectorName)
 	info, ok := pluginsRegistry[strings.ToLower(provider)]
 	if !ok {
 		return nil, ErrPluginNotFound
