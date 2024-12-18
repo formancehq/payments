@@ -155,7 +155,7 @@ func translatePaymentInitiationToResponse(from *models.PaymentInitiation) transf
 		SourceAccountID:      from.SourceAccountID.String(),
 		DestinationAccountID: from.DestinationAccountID.String(),
 		ConnectorID:          from.ConnectorID.String(),
-		Provider:             from.ConnectorID.Provider,
+		Provider:             toV2Provider(from.ConnectorID.Provider),
 		Type:                 from.Type.String(),
 		Amount:               from.Amount,
 		InitialAmount:        from.Amount,

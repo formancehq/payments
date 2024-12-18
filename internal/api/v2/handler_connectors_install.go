@@ -17,8 +17,9 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsInstall")
 		defer span.End()
 
-		span.SetAttributes(attribute.String("provider", connectorProvider(r)))
-		provider := strings.ToLower(connectorProvider(r))
+		provider := strings.ToLower(toV3Provider(connectorProvider(r)))
+
+		span.SetAttributes(attribute.String("provider", provider))
 		if provider == "" {
 			otel.RecordError(span, errors.New("provider is required"))
 			api.BadRequest(w, ErrValidation, errors.New("provider is required"))

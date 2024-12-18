@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	SearchAttributeWorkflowID = "PaymentWorkflowID"
 	SearchAttributeScheduleID = "PaymentScheduleID"
 	SearchAttributeStack      = "Stack"
 )

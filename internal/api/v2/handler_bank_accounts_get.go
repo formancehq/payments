@@ -60,7 +60,7 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 				CreatedAt:   relatedAccount.CreatedAt,
 				AccountID:   relatedAccount.AccountID.String(),
 				ConnectorID: relatedAccount.ConnectorID.String(),
-				Provider:    relatedAccount.ConnectorID.Provider,
+				Provider:    toV2Provider(relatedAccount.ConnectorID.Provider),
 			})
 		}
 

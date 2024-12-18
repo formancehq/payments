@@ -97,10 +97,12 @@ lint:
     COPY --pass-args +tidy/go.* .
     WORKDIR /src
     DO --pass-args core+GO_LINT
+    COPY (+compile-plugins/list.go) .
     SAVE ARTIFACT cmd AS LOCAL cmd
     SAVE ARTIFACT internal AS LOCAL internal
     SAVE ARTIFACT pkg AS LOCAL pkg
     SAVE ARTIFACT main.go AS LOCAL main.go
+    SAVE ARTIFACT list.go AS LOCAL internal/connectors/plugins/public/list.go
 
 pre-commit:
     WAIT

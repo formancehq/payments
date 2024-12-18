@@ -36,7 +36,7 @@ func accountsGet(backend backend.Backend) http.HandlerFunc {
 			Reference:   account.Reference,
 			CreatedAt:   account.CreatedAt,
 			ConnectorID: account.ConnectorID.String(),
-			Provider:    account.ConnectorID.Provider,
+			Provider:    toV2Provider(account.ConnectorID.Provider),
 			Type:        string(account.Type),
 			Metadata:    account.Metadata,
 			Raw:         account.Raw,

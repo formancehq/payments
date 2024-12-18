@@ -63,7 +63,7 @@ func accountsList(backend backend.Backend) http.HandlerFunc {
 				Reference:   cursor.Data[i].Reference,
 				CreatedAt:   cursor.Data[i].CreatedAt,
 				ConnectorID: cursor.Data[i].ConnectorID.String(),
-				Provider:    cursor.Data[i].ConnectorID.Provider,
+				Provider:    toV2Provider(cursor.Data[i].ConnectorID.Provider),
 				Type:        string(cursor.Data[i].Type),
 				Metadata:    cursor.Data[i].Metadata,
 				Raw:         cursor.Data[i].Raw,

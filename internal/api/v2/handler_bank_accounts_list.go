@@ -70,7 +70,7 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 					CreatedAt:   cursor.Data[i].RelatedAccounts[j].CreatedAt,
 					AccountID:   cursor.Data[i].RelatedAccounts[j].AccountID.String(),
 					ConnectorID: cursor.Data[i].RelatedAccounts[j].ConnectorID.String(),
-					Provider:    cursor.Data[i].RelatedAccounts[j].ConnectorID.Provider,
+					Provider:    toV2Provider(cursor.Data[i].RelatedAccounts[j].ConnectorID.Provider),
 				}
 			}
 		}
