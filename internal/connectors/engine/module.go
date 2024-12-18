@@ -32,7 +32,7 @@ func Module(
 		fx.Provide(func(
 			logger logging.Logger,
 			temporalClient client.Client,
-			workers *Workers,
+			workers *WorkerPool,
 			plugins plugins.Plugins,
 			storage storage.Storage,
 			webhooks webhooks.Webhooks,
@@ -61,11 +61,11 @@ func Module(
 				workflows,
 				activities []temporal.DefinitionSet,
 				options worker.Options,
-			) *Workers {
-				return NewWorkers(logger, stack, temporalClient, workflows, activities, options)
+			) *WorkerPool {
+				return NewWorkerPool(logger, stack, temporalClient, workflows, activities, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
-		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *Workers) {
+		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *WorkerPool) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					return engine.OnStart(ctx)

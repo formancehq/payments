@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -12,7 +11,7 @@ import (
 	temporalworkflow "go.temporal.io/sdk/workflow"
 )
 
-type Workers struct {
+type WorkerPool struct {
 	logger logging.Logger
 
 	stack string
@@ -32,26 +31,8 @@ type Worker struct {
 	worker worker.Worker
 }
 
-func (w *Workers) getDefaultWorkerName() string {
-	defaultWorker := fmt.Sprintf("%s-default", w.stack)
-	return defaultWorker
-}
-
-func (w *Workers) CreateDefaultWorker() error {
-	return w.AddWorker(w.getDefaultWorkerName())
-}
-
-// Returns the default worker name and create it if it doesn't exist yet.
-func (w *Workers) GetDefaultWorker() (string, error) {
-	defaultWorker := w.getDefaultWorkerName()
-	if err := w.AddWorker(defaultWorker); err != nil {
-		return "", err
-	}
-	return defaultWorker, nil
-}
-
-func NewWorkers(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
-	workers := &Workers{
+func NewWorkerPool(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *WorkerPool {
+	workers := &WorkerPool{
 		logger:         logger,
 		stack:          stack,
 		temporalClient: temporalClient,
@@ -65,7 +46,7 @@ func NewWorkers(logger logging.Logger, stack string, temporalClient client.Clien
 }
 
 // Close is called when app is terminated
-func (w *Workers) Close() {
+func (w *WorkerPool) Close() {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
@@ -74,9 +55,13 @@ func (w *Workers) Close() {
 	}
 }
 
+func (w *WorkerPool) AddDefaultWorker() error {
+	return w.AddWorker(getDefaultTaskQueue(w.stack))
+}
+
 // Installing a new connector lauches a new worker
 // A default one is instantiated when the workers struct is created
-func (w *Workers) AddWorker(name string) error {
+func (w *WorkerPool) AddWorker(name string) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
@@ -119,7 +104,7 @@ func (w *Workers) AddWorker(name string) error {
 }
 
 // Uninstalling a connector stops the worker
-func (w *Workers) RemoveWorker(name string) error {
+func (w *WorkerPool) RemoveWorker(name string) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
