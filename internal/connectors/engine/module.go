@@ -22,7 +22,6 @@ func Module(
 	stackURL string,
 	temporalNamespace string,
 	temporalMaxConcurrentWorkflowTaskPollers int,
-	rawFlags []string,
 	debug bool,
 	jsonFormatter bool,
 ) fx.Option {
@@ -33,7 +32,7 @@ func Module(
 		fx.Provide(func(
 			logger logging.Logger,
 			temporalClient client.Client,
-			workers *Workers,
+			workers *WorkerPool,
 			plugins plugins.Plugins,
 			storage storage.Storage,
 			webhooks webhooks.Webhooks,
@@ -44,7 +43,7 @@ func Module(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func(logger logging.Logger) plugins.Plugins {
-			return plugins.New(logger, rawFlags, debug, jsonFormatter)
+			return plugins.New(logger, debug, jsonFormatter)
 		}),
 		fx.Provide(func() webhooks.Webhooks {
 			return webhooks.New()
@@ -62,11 +61,11 @@ func Module(
 				workflows,
 				activities []temporal.DefinitionSet,
 				options worker.Options,
-			) *Workers {
-				return NewWorkers(logger, stack, temporalClient, workflows, activities, options)
+			) *WorkerPool {
+				return NewWorkerPool(logger, stack, temporalClient, workflows, activities, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
-		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *Workers) {
+		fx.Invoke(func(lc fx.Lifecycle, engine Engine, workers *WorkerPool) {
 			lc.Append(fx.Hook{
 				OnStart: func(ctx context.Context) error {
 					return engine.OnStart(ctx)

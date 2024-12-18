@@ -1,20 +1,16 @@
 package cmd
 
 import (
-	"github.com/bombsimon/logrusr/v3"
+	"fmt"
+
+	sharedapi "github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
-	"github.com/formancehq/go-libs/v2/aws/iam"
-	"github.com/formancehq/go-libs/v2/bun/bunconnect"
-	"github.com/formancehq/go-libs/v2/licence"
-	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
-	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
-	"github.com/formancehq/go-libs/v2/profiling"
-	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/go-libs/v2/service"
-	"github.com/formancehq/go-libs/v2/temporal"
-	"github.com/sirupsen/logrus"
+	"github.com/formancehq/payments/internal/api"
+	v2 "github.com/formancehq/payments/internal/api/v2"
+	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/spf13/cobra"
-	"go.opentelemetry.io/otel"
+	"go.uber.org/fx"
 )
 
 func newServer() *cobra.Command {
@@ -25,18 +21,14 @@ func newServer() *cobra.Command {
 		SilenceUsage: true,
 		RunE:         runServer(),
 	}
-
-	service.AddFlags(cmd.Flags())
-	otlpmetrics.AddFlags(cmd.Flags())
-	otlptraces.AddFlags(cmd.Flags())
-	auth.AddFlags(cmd.Flags())
-	publish.AddFlags(ServiceName, cmd.Flags())
-	bunconnect.AddFlags(cmd.Flags())
-	iam.AddFlags(cmd.Flags())
-	profiling.AddFlags(cmd.Flags())
-	temporal.AddFlags(cmd.Flags())
-	licence.AddFlags(cmd.Flags())
-
+	commonFlags(cmd)
+	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
+	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
+	// MaxConcurrentWorkflowTaskPollers should not be set to a number < 2, otherwise
+	// temporal will panic.
+	// After meeting with the temporal team, we decided to set it to 20 as per
+	// their recommendation.
+	cmd.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
 	return cmd
 }
 
@@ -44,16 +36,34 @@ func runServer() func(cmd *cobra.Command, args []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		setLogger()
 
-		options, err := commonOptions(cmd)
+		opts := []fx.Option{}
+		commonOpts, err := commonOptions(cmd)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to configure common options for server: %w", err)
 		}
+		opts = append(opts, commonOpts)
 
-		return service.New(cmd.OutOrStdout(), options).Run(cmd)
+		serverOpts, err := serverOptions(cmd)
+		if err != nil {
+			return fmt.Errorf("failed to configure options for server: %w", err)
+		}
+		opts = append(opts, serverOpts)
+
+		return service.New(cmd.OutOrStdout(), fx.Options(opts...)).Run(cmd)
 	}
 }
 
-func setLogger() {
-	// Add a dedicated logger for opentelemetry in case of error
-	otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
+func serverOptions(cmd *cobra.Command) (fx.Option, error) {
+	listen, _ := cmd.Flags().GetString(ListenFlag)
+	return fx.Options(
+		fx.Provide(func() sharedapi.ServiceInfo {
+			return sharedapi.ServiceInfo{
+				Version: Version,
+			}
+		}),
+		auth.FXModuleFromFlags(cmd),
+		api.NewModule(listen, service.IsDebug(cmd)),
+		v2.NewModule(),
+		v3.NewModule(),
+	), nil
 }
