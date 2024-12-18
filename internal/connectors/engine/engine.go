@@ -931,12 +931,14 @@ func (e *engine) OnStart(ctx context.Context) error {
 			WithPageSize(100),
 	)
 
+	shouldCreateDefaultWorker := false
 	for {
 		connectors, err := e.storage.ConnectorsList(ctx, query)
 		if err != nil {
 			return err
 		}
 
+		shouldCreateDefaultWorker = shouldCreateDefaultWorker || len(connectors.Data) > 0
 		for _, connector := range connectors.Data {
 			if err := e.onStartPlugin(ctx, connector); err != nil {
 				return err
@@ -951,6 +953,13 @@ func (e *engine) OnStart(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	if shouldCreateDefaultWorker {
+		// If we have at least one connector, we need to create the default worker
+		// to handle the possible tasks that are not related to a specific connector.
+		// (ex: pools, bank accounts, uninstallation etc...)
+		e.workers.CreateDefaultWorker()
 	}
 
 	return nil
@@ -1012,14 +1021,6 @@ func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.Connecto
 }
 
 func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) error {
-	defer func() {
-		// errors or not, we still need to start the default worker if
-		// the connector is scheduled for deletion
-		if connector.ScheduledForDeletion {
-			e.workers.GetDefaultWorker()
-		}
-	}()
-
 	// Even if the connector is scheduled for deletion, we still need to register
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
