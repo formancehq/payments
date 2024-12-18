@@ -62,7 +62,7 @@ func toV2Provider(provider string) string {
 	case "adyen":
 		return connectorAdyen
 	case "atlar":
-		return connectorAdyen
+		return connectorAtlar
 	case "bankingcircle":
 		return connectorBankingCircle
 	case "currencycloud":
