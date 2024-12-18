@@ -42,6 +42,9 @@ func NewRootCommand() *cobra.Command {
 	addAutoMigrateCommand(server)
 	root.AddCommand(server)
 
+	worker := newWorker()
+	root.AddCommand(worker)
+
 	purge := newPurge()
 	purge.Flags().String(StackFlag, "", "Stack name")
 	root.AddCommand(purge)

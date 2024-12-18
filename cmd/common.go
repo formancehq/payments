@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
 	"github.com/formancehq/go-libs/v2/health"
 	"github.com/formancehq/go-libs/v2/licence"
-	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
 	"github.com/formancehq/go-libs/v2/otlp/otlptraces"
@@ -59,7 +58,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
-	jsonFormatter, _ := cmd.Flags().GetBool(logging.JsonFormattingLoggerFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 
@@ -90,7 +88,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 			temporalNamespace,
 			temporalMaxConcurrentWorkflowTaskPollers,
 			debug,
-			jsonFormatter,
 		),
 	), nil
 }
