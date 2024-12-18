@@ -193,7 +193,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			Status:        payment.Status.String(),
 			Amount:        payment.Amount,
 			InitialAmount: payment.InitialAmount,
-			Scheme:        payment.Scheme.String(),
+			Scheme:        toV2PaymentScheme(payment.Scheme),
 			Asset:         payment.Asset,
 			CreatedAt:     payment.CreatedAt,
 			Metadata:      payment.Metadata,
