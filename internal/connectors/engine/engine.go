@@ -73,7 +73,7 @@ type engine struct {
 
 	temporalClient client.Client
 
-	workers *Workers
+	workers *WorkerPool
 	plugins plugins.Plugins
 	storage storage.Storage
 
@@ -85,7 +85,7 @@ type engine struct {
 func New(
 	logger logging.Logger,
 	temporalClient client.Client,
-	workers *Workers,
+	workers *WorkerPool,
 	plugins plugins.Plugins,
 	storage storage.Storage,
 	webhooks webhooks.Webhooks,
@@ -189,8 +189,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	ctx, span := otel.Tracer().Start(ctx, "engine.UninstallConnector")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
+	if err := e.workers.AddDefaultWorker(); err != nil {
 		return models.Task{}, err
 	}
 
@@ -229,11 +228,11 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	}
 
 	// Launch the uninstallation in background
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -243,7 +242,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
-			DefaultWorkerName: defaultWorker,
+			DefaultWorkerName: getDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
 	)
@@ -754,8 +753,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
+	if err := e.workers.AddDefaultWorker(); err != nil {
 		return err
 	}
 
@@ -765,11 +763,11 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	}
 
 	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -793,8 +791,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
+	if err := e.workers.AddDefaultWorker(); err != nil {
 		return err
 	}
 
@@ -820,7 +817,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -844,8 +841,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
+	if err := e.workers.AddDefaultWorker(); err != nil {
 		return err
 	}
 
@@ -871,7 +867,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -895,8 +891,7 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
+	if err := e.workers.AddDefaultWorker(); err != nil {
 		return err
 	}
 
@@ -908,11 +903,11 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 
 	if deleted {
 		// Do not wait for sending of events
-		_, err = e.temporalClient.ExecuteWorkflow(
+		_, err := e.temporalClient.ExecuteWorkflow(
 			ctx,
 			client.StartWorkflowOptions{
 				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-				TaskQueue:                                defaultWorker,
+				TaskQueue:                                getDefaultTaskQueue(e.stack),
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: false,
 				SearchAttributes: map[string]interface{}{
@@ -986,7 +981,7 @@ func (e *engine) OnStart(ctx context.Context) error {
 		// If we have at least one connector, we need to create the default worker
 		// to handle the possible tasks that are not related to a specific connector.
 		// (ex: pools, bank accounts, uninstallation etc...)
-		if err := e.workers.CreateDefaultWorker(); err != nil {
+		if err := e.workers.AddDefaultWorker(); err != nil {
 			return err
 		}
 	}
