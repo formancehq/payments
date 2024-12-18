@@ -33,7 +33,12 @@ compile-configs:
     FROM core+builder-image
     COPY (+sources/*) /src
     WORKDIR /src/internal/connectors/plugins/public
-    RUN jq -s 'reduce .[] as $item ({}; . * $item)' */config.json > configs.json
+    FOR c IN $(ls -d */ | sed 's#/##')
+        RUN echo "{\"$c\":" >> raw_configs.json
+        RUN cat /src/internal/connectors/plugins/public/$c/config.json >> raw_configs.json
+        RUN echo "}" >> raw_configs.json
+    END
+    RUN jq --slurp 'add' raw_configs.json > configs.json
     SAVE ARTIFACT /src/internal/connectors/plugins/public/configs.json /configs.json
 
 compile:
@@ -98,11 +103,13 @@ lint:
     WORKDIR /src
     DO --pass-args core+GO_LINT
     COPY (+compile-plugins/list.go) .
+    COPY (+compile-configs/configs.json) .
     SAVE ARTIFACT cmd AS LOCAL cmd
     SAVE ARTIFACT internal AS LOCAL internal
     SAVE ARTIFACT pkg AS LOCAL pkg
     SAVE ARTIFACT main.go AS LOCAL main.go
     SAVE ARTIFACT list.go AS LOCAL internal/connectors/plugins/public/list.go
+    SAVE ARTIFACT configs.json AS LOCAL internal/connectors/plugins/configs.json
 
 pre-commit:
     WAIT
