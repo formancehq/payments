@@ -8,6 +8,7 @@ import (
 	"github.com/bombsimon/logrusr/v3"
 	sharedapi "github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
+	"github.com/formancehq/go-libs/v2/aws/iam"
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
 	"github.com/formancehq/go-libs/v2/health"
 	"github.com/formancehq/go-libs/v2/licence"
@@ -34,6 +35,20 @@ import (
 func setLogger() {
 	// Add a dedicated logger for opentelemetry in case of error
 	otel.SetLogger(logrusr.New(logrus.New().WithField("component", "otlp")))
+}
+
+func commonFlags(cmd *cobra.Command) {
+	cmd.Flags().String(StackFlag, "", "Stack name")
+	service.AddFlags(cmd.Flags())
+	otlpmetrics.AddFlags(cmd.Flags())
+	otlptraces.AddFlags(cmd.Flags())
+	auth.AddFlags(cmd.Flags())
+	publish.AddFlags(ServiceName, cmd.Flags())
+	bunconnect.AddFlags(cmd.Flags())
+	iam.AddFlags(cmd.Flags())
+	profiling.AddFlags(cmd.Flags())
+	temporal.AddFlags(cmd.Flags())
+	licence.AddFlags(cmd.Flags())
 }
 
 func commonOptions(cmd *cobra.Command) (fx.Option, error) {
