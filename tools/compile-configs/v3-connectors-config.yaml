@@ -1,0 +1,254 @@
+components:
+    schemas:
+        V3ConnectorConfig:
+            anyOf:
+                - $ref: '#/components/schemas/AdyenConfig'
+                - $ref: '#/components/schemas/AtlarConfig'
+                - $ref: '#/components/schemas/BankingcircleConfig'
+                - $ref: '#/components/schemas/CurrencycloudConfig'
+                - $ref: '#/components/schemas/DummypayConfig'
+                - $ref: '#/components/schemas/GenericConfig'
+                - $ref: '#/components/schemas/MangopayConfig'
+                - $ref: '#/components/schemas/ModulrConfig'
+                - $ref: '#/components/schemas/MoneycorpConfig'
+                - $ref: '#/components/schemas/StripeConfig'
+                - $ref: '#/components/schemas/WiseConfig'
+        AdyenConfig:
+            type: object
+            required:
+                - name
+                - webhookPassword
+                - companyID
+                - liveEndpointPrefix
+                - apiKey
+                - webhookUsername
+            properties:
+                apiKey:
+                    type: string
+                companyID:
+                    type: string
+                liveEndpointPrefix:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                webhookPassword:
+                    type: string
+                webhookUsername:
+                    type: string
+        AtlarConfig:
+            type: object
+            required:
+                - name
+                - baseURL
+                - accessKey
+                - secret
+            properties:
+                accessKey:
+                    type: string
+                baseURL:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                secret:
+                    type: string
+        BankingcircleConfig:
+            type: object
+            required:
+                - name
+                - password
+                - endpoint
+                - authorizationEndpoint
+                - userCertificate
+                - userCertificateKey
+                - username
+            properties:
+                authorizationEndpoint:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                password:
+                    type: string
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                userCertificate:
+                    type: string
+                userCertificateKey:
+                    type: string
+                username:
+                    type: string
+        CurrencycloudConfig:
+            type: object
+            required:
+                - name
+                - endpoint
+                - loginID
+                - apiKey
+            properties:
+                apiKey:
+                    type: string
+                endpoint:
+                    type: string
+                loginID:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        DummypayConfig:
+            type: object
+            required:
+                - name
+                - directory
+            properties:
+                directory:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        GenericConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - endpoint
+            properties:
+                apiKey:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        MangopayConfig:
+            type: object
+            required:
+                - name
+                - clientID
+                - apiKey
+                - endpoint
+            properties:
+                apiKey:
+                    type: string
+                clientID:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        ModulrConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - apiSecret
+                - endpoint
+            properties:
+                apiKey:
+                    type: string
+                apiSecret:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        MoneycorpConfig:
+            type: object
+            required:
+                - name
+                - clientID
+                - apiKey
+                - endpoint
+            properties:
+                apiKey:
+                    type: string
+                clientID:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        StripeConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+            properties:
+                apiKey:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+        WiseConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - webhookPublicKey
+            properties:
+                apiKey:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                webhookPublicKey:
+                    type: string
