@@ -1,0 +1,150 @@
+openapi: 3.0.3
+info:
+  title: Payments API
+  version: v3
+
+components:
+  parameters:
+    V3AccountID:
+      name: accountID
+      in: path
+      required: true
+      description: The account ID
+      schema:
+        type: string
+
+    V3BankAccountID:
+      name: bankAccountID
+      in: path
+      required: true
+      description: The bank account ID
+      schema:
+        type: string
+
+    V3PaymentID:
+      name: paymentID
+      in: path
+      required: true
+      description: The payment ID
+      schema:
+        type: string
+
+    V3PaymentInitiationID:
+      name: paymentInitiationID
+      in: path
+      required: true
+      description: The payment initiation ID
+      schema:
+        type: string
+
+    V3ConnectorID:
+      name: connectorID
+      in: path
+      required: true
+      description: The connector ID
+      schema:
+        type: string
+
+    V3ScheduleID:
+      name: scheduleID
+      in: path
+      required: true
+      description: The schedule ID
+      schema:
+        type: string
+
+    V3PoolID:
+      name: poolID
+      in: path
+      required: true
+      description: The pool ID
+      schema:
+        type: string
+
+    V3TaskID:
+      name: taskID
+      in: path
+      required: true
+      description: The task ID
+      schema:
+        type: string
+
+    V3Connector:
+      name: connector
+      in: path
+      required: true
+      description: The connector to filter by
+      schema:
+        type: string
+
+    V3NoValidation:
+      name: noValidation
+      in: query
+      required: false
+      description: >
+            If set to true, the request will not have to be validated.
+            This is useful if we want to directly forward the request
+            to the PSP.
+      schema:
+        type: boolean
+        default: false
+
+    V3At:
+      name: at
+      in: query
+      required: false
+      description: The time to filter by
+      schema:
+        type: string
+        format: date-time
+    
+    V3Asset:
+      name: asset
+      in: query
+      required: false
+      description: The asset to filter by
+      schema:
+        type: string
+
+    V3FromTimestamp:
+      name: fromTimestamp
+      in: query
+      required: false
+      description: The start of the time range to filter by
+      schema:
+        type: string
+        format: date-time
+
+    V3ToTimestamp:
+      name: toTimestamp
+      in: query
+      required: false
+      description: The end of the time range to filter by
+      schema:
+        type: string
+        format: date-time
+
+    V3PageSize:
+      name: pageSize
+      in: query
+      description: The number of items to return
+      required: false
+      example: 100
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 1000
+
+    V3Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: >
+            Parameter used in pagination requests.
+            Set to the value of next for the next page of results.
+            Set to the value of previous for the previous page of results.
+            No other parameters can be set when this parameter is set.
+      example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
+      schema:
+        type: string

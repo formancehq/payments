@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Payments API
-  version: PAYMENTS_VERSION
+  version: v1
 paths:
   /_info:
     get:
@@ -10,7 +10,7 @@ paths:
       tags:
         - payments.v1
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/ServerInfo'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -27,7 +27,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/Payment'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Payment'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -45,7 +45,7 @@ paths:
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Query'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Payments'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -61,7 +61,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PaymentId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Payment'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -79,7 +79,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/UpdateMetadata'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -98,7 +98,7 @@ paths:
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Query'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/TransferInitiations'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -114,7 +114,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/TransferInitiation'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/TransferInitiation'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -130,7 +130,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/TransferId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/TransferInitiation'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -146,7 +146,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/TransferId'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -165,7 +165,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/UpdateTransferInitiationStatus'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -184,7 +184,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ReverseTransferInitiation'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -201,7 +201,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/TransferId'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -220,7 +220,7 @@ paths:
         - $ref: '#/components/parameters/Sort'
         - $ref: '#/components/parameters/Query'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Pools'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -236,7 +236,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/Pool'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Pool'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -252,7 +252,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PoolId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Pool'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -268,7 +268,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/PoolId'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -287,7 +287,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/AddAccountToPool'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -305,7 +305,7 @@ paths:
         - $ref: '#/components/parameters/PoolId'
         - $ref: '#/components/parameters/AccountId'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -329,7 +329,7 @@ paths:
             type: string
             format: date-time
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/PoolBalances'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -346,7 +346,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/Account'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Account'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -370,7 +370,7 @@ paths:
               type: object
               additionalProperties: true
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Accounts'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -386,7 +386,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/AccountId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Account'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -438,7 +438,7 @@ paths:
         - $ref: '#/components/parameters/Cursor'
         - $ref: '#/components/parameters/Sort'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/AccountBalances'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -455,7 +455,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/BankAccount'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/BankAccount'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -473,7 +473,7 @@ paths:
         - $ref: '#/components/parameters/Sort'
       description: List all bank accounts created by user on Formance.
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/BankAccounts'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -489,7 +489,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/BankAccountId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/BankAccount'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -507,7 +507,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ForwardBankAccount'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/BankAccount'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -525,7 +525,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/UpdateBankAccountMetadata'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -540,7 +540,7 @@ paths:
         - payments.v1
       description: List all installed connectors.
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Connectors'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -555,7 +555,7 @@ paths:
         - payments.v1
       description: List the configs of each available connector.
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/ConnectorsConfigs'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -574,7 +574,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ConnectorConfig'
       responses:
-        '201':
+        "201":
           $ref: '#/components/responses/ConnectorInstalled'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -591,7 +591,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Connector'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -609,7 +609,7 @@ paths:
         - $ref: '#/components/parameters/Connector'
         - $ref: '#/components/parameters/ConnectorID'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -627,7 +627,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Connector'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/ConnectorConfig'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -647,7 +647,7 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/ConnectorConfig'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -664,7 +664,7 @@ paths:
         - $ref: '#/components/parameters/Connector'
         - $ref: '#/components/parameters/ConnectorID'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/ConnectorConfig'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -684,7 +684,7 @@ paths:
       parameters:
         - $ref: '#/components/parameters/Connector'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -704,7 +704,7 @@ paths:
         - $ref: '#/components/parameters/Connector'
         - $ref: '#/components/parameters/ConnectorID'
       responses:
-        '204':
+        "204":
           $ref: '#/components/responses/NoContent'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -724,7 +724,7 @@ paths:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Tasks'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -744,7 +744,7 @@ paths:
         - $ref: '#/components/parameters/PageSize'
         - $ref: '#/components/parameters/Cursor'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Tasks'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -763,7 +763,7 @@ paths:
         - $ref: '#/components/parameters/Connector'
         - $ref: '#/components/parameters/TaskId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Task'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -782,7 +782,7 @@ paths:
         - $ref: '#/components/parameters/ConnectorID'
         - $ref: '#/components/parameters/TaskId'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Task'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
@@ -801,328 +801,1018 @@ paths:
       requestBody:
         $ref: '#/components/requestBodies/Transfer'
       responses:
-        '200':
+        "200":
           $ref: '#/components/responses/Transfer'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
       security:
         - Authorization:
             - payments:write
+  /v3/_info:
+    get:
+      tags:
+        - payments.v3
+      summary: Show server information
+      operationId: getInfo
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConfigInfoResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/accounts:
+    post:
+      tags:
+        - payments.v3
+      summary: |
+        Create a formance account object. This object will not be forwarded to the connector. It is only used for internal purposes.
+      operationId: createAccount1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3CreateAccountRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3CreateAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all accounts
+      operationId: listAccounts1
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3AccountsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/accounts/{accountID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get an account by ID
+      operationId: getAccount1
+      parameters:
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/accounts/{accountID}/balances:
+    get:
+      tags:
+        - payments.v3
+      summary: Get account balances
+      operationId: getAccountBalances1
+      parameters:
+        - $ref: '#/components/parameters/V3AccountID'
+        - $ref: '#/components/parameters/V3Asset'
+        - $ref: '#/components/parameters/V3FromTimestamp'
+        - $ref: '#/components/parameters/V3ToTimestamp'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3BalancesCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/bank-accounts:
+    post:
+      tags:
+        - payments.v3
+      summary: |
+        Create a formance bank account object. This object will not be forwarded to the connector until you called the forwardBankAccount method.
+      operationId: createBankAccount1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3CreateBankAccountRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3CreateBankAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/scomponents/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all bank accounts
+      operationId: listBankAccounts1
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3BankAccountsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/bank-accounts/{bankAccountID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a Bank Account by ID
+      operationId: getBankAccount1
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetBankAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+  /v3/bank-accounts/{bankAccountID}/metadata:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update a bank account's metadata
+      operationId: updateBankAccountMetadata1
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3UpdateBankAccountMetadataRequest'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+  /v3/bank-accounts/{bankAccountID}/forward:
+    post:
+      tags:
+        - payments.v3
+      summary: Forward a Bank Account to a PSP for creation
+      operationId: forwardBankAccount1
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3ForwardBankAccountRequest'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ForwardBankAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+  /v3/connectors:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connectors
+      operationId: listConnectors
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/connectors/install/{connector}:
+    post:
+      tags:
+        - payments.v3
+      summary: Install a connector
+      operationId: installConnector1
+      parameters:
+        - $ref: '#/components/parameters/V3Connector'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3InstallConnectorRequest'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3InstallConnectorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/connectors/configs:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector configurations
+      operationId: listConnectorConfigs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorConfigsResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/connectors/{connectorID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Uninstall a connector
+      operationId: uninstallConnector1
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3UninstallConnectorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/connectors/{connectorID}/config:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a connector configuration by ID
+      operationId: getConnectorConfig
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetConnectorConfigResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/connectors/{connectorID}/reset:
+    post:
+      tags:
+        - payments.v3
+      summary: Reset a connector
+      operationId: resetConnector1
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ResetConnectorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/connectors/{connectorID}/schedules:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector schedules
+      operationId: listConnectorSchedules
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorSchedulesCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/connectors/{connectorID}/schedules/{scheduleID}/instances:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector schedule instances
+      operationId: listConnectorScheduleInstances
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3ScheduleID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorScheduleInstancesCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payments:
+    post:
+      tags:
+        - payments.v3
+      summary: |
+        Create a formance payment object. This object will not be forwarded to the connector. It is only used for internal purposes.
+      operationId: createPayment1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3CreatePaymentRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3CreatePaymentResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payments
+      operationId: listPayments1
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PaymentsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payments/{paymentID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment by ID
+      operationId: getPayment1
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetPaymentResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payments/{paymentID}/metadata:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update a payment's metadata
+      operationId: updatePaymentMetadata
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3UpdatePaymentMetadataRequest'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-initiations:
+    post:
+      tags:
+        - payments.v3
+      summary: Initiate a payment
+      operationId: initiatePayment
+      parameters:
+        - $ref: '#/components/parameters/V3NoValidation'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3InitiatePaymentRequest'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3InitiatePaymentResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment initiations
+      operationId: listPaymentInitiations
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PaymentInitiationsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payment-initiations/{paymentInitiationID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a payment initiation by ID
+      operationId: deletePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment initiation by ID
+      operationId: getPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetPaymentInitiationResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payment-initiations/{paymentInitiationID}/retry:
+    post:
+      tags:
+        - payments.v3
+      summary: Retry a payment initiation
+      operationId: retryPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3RetryPaymentInitiationResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-initiations/{paymentInitiationID}/approve:
+    post:
+      tags:
+        - payments.v3
+      summary: Approve a payment initiation
+      operationId: approvePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ApprovePaymentInitiationResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-initiations/{paymentInitiationID}/reject:
+    post:
+      tags:
+        - payments.v3
+      summary: Reject a payment initiation
+      operationId: rejectPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-initiations/{paymentInitiationID}/reverse:
+    post:
+      tags:
+        - payments.v3
+      summary: Reverse a payment initiation
+      operationId: reversePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3ReversePaymentInitiationRequest'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ReversePaymentInitiationResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-initiations/{paymentInitiationID}/adjustments:
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment initiation adjustments
+      operationId: listPaymentInitiationAdjustments
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PaymentInitiationAdjustmentsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payment-initiations/{paymentInitiationID}/payments:
+    get:
+      tags:
+        - payments.v3
+      summary: List all payments related to a payment initiation
+      operationId: listPaymentInitiationRelatedPayments
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PaymentInitiationRelatedPaymentsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/pools:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a formance pool object
+      operationId: createPool1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3CreatePoolRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3CreatePoolResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all pools
+      operationId: listPools1
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PoolsCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/pools/{poolID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a pool by ID
+      operationId: getPool1
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetPoolResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a pool by ID
+      operationId: deletePool1
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/pools/{poolID}/balances:
+    get:
+      tags:
+        - payments.v3
+      summary: Get pool balances
+      operationId: getPoolBalances1
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3At'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PoolBalancesResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/pools/{poolID}/accounts/{accountID}:
+    post:
+      tags:
+        - payments.v3
+      summary: Add an account to a pool
+      operationId: addAccountToPool1
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    delete:
+      tags:
+        - payments.v3
+      summary: Remove an account from a pool
+      operationId: removeAccountFromPool1
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/tasks/{taskID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a task and its result by ID
+      operationId: getTask
+      parameters:
+        - ref: '#/components/parameters/V3TaskID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetTaskResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/sschemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
 components:
-  parameters:
-    Query:
-      name: query
-      in: query
-      required: false
-      description: |
-        Filters used to filter resources.
-      schema:
-        type: string
-    PageSize:
-      name: pageSize
-      in: query
-      description: |
-        The maximum number of results to return per page.
-      example: 100
-      schema:
-        type: integer
-        format: int64
-        minimum: 1
-        maximum: 1000
-        default: 15
-    Cursor:
-      name: cursor
-      in: query
-      description: |
-        Parameter used in pagination requests. Maximum page size is set to 15.
-        Set to the value of next for the next page of results.
-        Set to the value of previous for the previous page of results.
-        No other parameters can be set when this parameter is set.
-      schema:
-        type: string
-        example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
-    Sort:
-      name: sort
-      in: query
-      schema:
-        type: array
-        items:
-          type: string
-      description: Fields used to sort payments (default is date:desc).
-      example:
-        - date:asc
-        - status:desc
-    PaymentId:
-      name: paymentId
-      in: path
-      schema:
-        type: string
-      description: The payment ID.
-      example: XXX
-      required: true
-    AccountId:
-      name: accountId
-      in: path
-      schema:
-        type: string
-      description: The account ID.
-      example: XXX
-      required: true
-    ConnectorID:
-      name: connectorId
-      in: path
-      schema:
-        type: string
-      description: The connector ID.
-      example: XXX
-      required: true
-    PoolId:
-      name: poolId
-      in: path
-      schema:
-        type: string
-      description: The pool ID.
-      example: XXX
-      required: true
-    TransferId:
-      name: transferId
-      in: path
-      schema:
-        type: string
-      description: The transfer ID.
-      example: XXX
-      required: true
-    BankAccountId:
-      name: bankAccountId
-      in: path
-      schema:
-        type: string
-      description: The bank account ID.
-      example: XXX
-      required: true
-    Connector:
-      name: connector
-      description: The name of the connector.
-      in: path
-      schema:
-        $ref: '#/components/schemas/Connector'
-      required: true
-    TaskId:
-      name: taskId
-      description: The task ID.
-      example: task1
-      in: path
-      schema:
-        type: string
-      required: true
-  responses:
-    NoContent:
-      description: No content
-    PaymentsErrorResponse:
-      description: Error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentsErrorResponse'
-    ServerInfo:
-      description: Server information
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ServerInfo'
-    Payments:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentsCursor'
-    Payment:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentResponse'
-    Pools:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolsCursor'
-    Pool:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolResponse'
-    PoolBalances:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolBalancesResponse'
-    TransferInitiations:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferInitiationsCursor'
-    TransferInitiation:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferInitiationResponse'
-    Accounts:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AccountsCursor'
-    Account:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AccountResponse'
-    AccountBalances:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BalancesCursor'
-    ConnectorInstalled:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorResponse'
-    Connectors:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorsResponse'
-    BankAccounts:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccountsCursor'
-    BankAccount:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccountResponse'
-    ConnectorsConfigs:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorsConfigsResponse'
-    ConnectorConfig:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorConfigResponse'
-    Tasks:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TasksCursor'
-    Task:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TaskResponse'
-    Transfer:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferResponse'
-  requestBodies:
-    ConnectorConfig:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorConfig'
-    UpdateMetadata:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentMetadata'
-    Payment:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentRequest'
-    Account:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AccountRequest'
-    Pool:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolRequest'
-    AddAccountToPool:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AddAccountToPoolRequest'
-    TransferInitiation:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferInitiationRequest'
-    ForwardBankAccount:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ForwardBankAccountRequest'
-    UpdateBankAccountMetadata:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UpdateBankAccountMetadataRequest'
-    BankAccount:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccountRequest'
-    UpdateTransferInitiationStatus:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UpdateTransferInitiationStatusRequest'
-    ReverseTransferInitiation:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ReverseTransferInitiationRequest'
-    Transfer:
-      required: true
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferRequest'
   schemas:
     CursorBase:
       type: object
@@ -1145,7 +1835,7 @@ components:
           example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
         next:
           type: string
-          example: ''
+          example: ""
     PaymentsCursor:
       type: object
       required:
@@ -1448,9 +2138,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from Stripe API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from Stripe API.
           default: 120s
         apiKey:
           type: string
@@ -1475,9 +2164,7 @@ components:
         filePollingPeriod:
           type: string
           example: 60s
-          description: >-
-            The frequency at which the connector will try to fetch new payment
-            objects from the directory
+          description: The frequency at which the connector will try to fetch new payment objects from the directory
           default: 10s
         directory:
           type: string
@@ -1505,9 +2192,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from Wise API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from Wise API.
           default: 120s
     ModulrConfig:
       type: object
@@ -1531,9 +2217,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from Modulr API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from Modulr API.
           default: 120s
     BankingCircleConfig:
       type: object
@@ -1570,9 +2255,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from Banking Circle API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from Banking Circle API.
           default: 120s
     GenericConfig:
       type: object
@@ -1593,9 +2277,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from the API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from the API.
           default: 120s
     MangoPayConfig:
       type: object
@@ -1611,9 +2294,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from MangoPay API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from MangoPay API.
           default: 120s
         clientID:
           type: string
@@ -1647,9 +2329,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from MoneyCorp API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from MoneyCorp API.
           default: 120s
     CurrencyCloudConfig:
       type: object
@@ -1676,9 +2357,7 @@ components:
         endpoint:
           type: string
           example: XXX
-          description: >-
-            The endpoint to use for the API. Defaults to
-            https://devapi.currencycloud.com
+          description: The endpoint to use for the API. Defaults to https://devapi.currencycloud.com
     AdyenConfig:
       type: object
       required:
@@ -1701,9 +2380,8 @@ components:
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector will try to fetch new
-            BalanceTransaction objects from Adyen API.
+          description: |
+            The frequency at which the connector will try to fetch new BalanceTransaction objects from Adyen API.
           default: 120s
     AtlarConfig:
       type: object
@@ -1719,41 +2397,32 @@ components:
           type: string
           example: https://api.example.com
           default: https://api.atlar.com
-          description: >
-            The base URL the client uses for making requests towards the Atlar
-            API.
+          description: |
+            The base URL the client uses for making requests towards the Atlar API.
         pollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector tries to fetch new Transaction
-            objects from the Atlar API.
+          description: |
+            The frequency at which the connector tries to fetch new Transaction objects from the Atlar API.
           default: 120s
         transferInitiationStatusPollingPeriod:
           type: string
           example: 60s
-          description: >
-            The frequency at which the connector tries to fetch the status of
-            payment initiations from the Atlar API.
+          description: |
+            The frequency at which the connector tries to fetch the status of payment initiations from the Atlar API.
           default: 120s
         accessKey:
           type: string
           example: XXX
-          description: >
-            The access key used by the connector for authorizing requests to the
-            Atlar API.
-
-            You can obtain it along with the associated secret from the Atlar
-            dashboard.
+          description: |
+            The access key used by the connector for authorizing requests to the Atlar API.
+            You can obtain it along with the associated secret from the Atlar dashboard.
         secret:
           type: string
           example: XXX
-          description: >
-            The secret used by the connector for authorizing requests to the
-            Atlar API.
-
-            You can obtain it along with the associated access key from the
-            Atlar dashboard.
+          description: |
+            The secret used by the connector for authorizing requests to the Atlar API.
+            You can obtain it along with the associated access key from the Atlar dashboard.
         pageSize:
           type: integer
           format: int64
@@ -2590,3 +3259,1856 @@ components:
         - VALIDATION
         - NOT_FOUND
       example: VALIDATION
+    V3ConfigInfoResponse:
+      $ref: '#/components/schemas/V3ConfigInfo'
+    V3ConfigInfo:
+      type: object
+      properties:
+        debug:
+          type: boolean
+        version:
+          type: string
+      required:
+        - version
+    V3AccountsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Account'
+    V3GetAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Account'
+    V3CreateAccountsRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - createdAt
+        - name
+        - type
+      properties:
+        reference:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/V3AccountTypeEnum'
+        defaultAsset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3CreateAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created account
+          type: string
+    V3Account:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - type
+        - raw
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/V3AccountTypeEnum'
+        name:
+          type: string
+        defaultAsset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        raw:
+          type: object
+    V3AccountTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - INTERNAL
+        - EXTERNAL
+    V3BalancesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Balance'
+    V3Balance:
+      type: object
+      required:
+        - accountID
+        - createdAt
+        - lastUpdatedAt
+        - asset
+        - balance
+      properties:
+        accountID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        asset:
+          type: string
+        balance:
+          type: integer
+          format: bigint
+    V3CreateBankAccountRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        swiftBicCode:
+          type: string
+        country:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3CreateBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created bank account
+          type: string
+    V3UpdateBankAccountMetadataRequest:
+      type: object
+      required:
+        - metadata
+      properties:
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3ForwardBankAccountRequest:
+      type: object
+      required:
+        - connectorID
+      properties:
+        connectorID:
+          type: string
+    V3ForwardBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: |
+            Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.
+          type: string
+    V3BankAccountsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3BankAccount'
+    V3GetBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3BankAccount'
+    V3BankAccount:
+      type: object
+      required:
+        - id
+        - createdAt
+        - name
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        swiftBicCode:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        relatedAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3BankAccountRelatedAccount'
+    V3BankAccountRelatedAccount:
+      type: object
+      required:
+        - accountID
+        - createdAt
+      properties:
+        accountID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    V3InstallConnectorRequest:
+      $ref: '#/components/schemas/V3ConnectorConfig'
+    V3InstallConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created connector
+          type: string
+    V3UninstallConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: |
+            Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results.
+          type: string
+    V3ResetConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: |
+            Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the results.
+          type: string
+    V3ConnectorConfigsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - connector
+          properties:
+            connector:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: object
+                  required:
+                    - dataType
+                    - required
+                  properties:
+                    dataType:
+                      type: string
+                    required:
+                      type: boolean
+    V3GetConnectorConfigResponse:
+      $ref: '#/components/schemas/V3ConnectorConfig'
+    V3ConnectorsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Connector'
+    V3ConnectorSchedulesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Schedule'
+    V3ConnectorScheduleInstancesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Instance'
+    V3Connector:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+        - provider
+        - scheduledForDeletion
+        - config
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
+        scheduledForDeletion:
+          type: boolean
+        config:
+          type: object
+    V3Schedule:
+      type: object
+      required:
+        - id
+        - connectorID
+        - createdAt
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    V3Instance:
+      type: object
+      required:
+        - id
+        - connectorID
+        - createdAt
+        - udpatedAt
+        - terminated
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        terminated:
+          type: boolean
+        terminatedAt:
+          type: string
+          format: date-time
+        error:
+          type: string
+    V3CreatePaymentRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - createdAt
+        - type
+        - initialAmount
+        - amount
+        - asset
+        - scheme
+      properties:
+        reference:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/V3PaymentTypeEnum'
+        initialAmount:
+          type: integer
+          format: bigint
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        scheme:
+          type: string
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        adjustments:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3CreatePaymentAdjustmentRequest'
+    V3CreatePaymentAdjustmentRequest:
+      type: object
+      required:
+        - reference
+        - createdAt
+        - status
+      properties:
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3CreatePaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created payment
+          type: string
+    V3UpdatePaymentMetadataRequest:
+      type: object
+      required:
+        - metadata
+      properties:
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3PaymentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Payment'
+    V3GetPaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Payment'
+    V3Payment:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - type
+        - initialAmount
+        - amount
+        - asset
+        - scheme
+        - status
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: '#/components/schemas/V3PaymentTypeEnum'
+        initialAmount:
+          type: integer
+          format: bigint
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        scheme:
+          type: string
+        status:
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        adjustments:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3PaymentAdjustment'
+    V3PaymentAdjustment:
+      type: object
+      required:
+        - id
+        - reference
+        - createdAt
+        - status
+        - raw
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        raw:
+          type: object
+    V3PaymentTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PAY-IN
+        - PAYOUT
+        - TRANSFER
+        - OTHER
+    V3PaymentStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PENDING
+        - SUCCEEDED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - REFUND_REVERSED
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - AMOUNT_ADJUSTEMENT
+        - AUTHORISATION
+        - CAPTURE
+        - CAPTURE_FAILED
+        - OTHER
+    V3InitiatePaymentRequest:
+      type: object
+      required:
+        - reference
+        - scheduledAt
+        - connectorID
+        - description
+        - type
+        - amount
+        - asset
+      properties:
+        reference:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        connectorID:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3InitiatePaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          properties:
+            paymentInitiationID:
+              description: |
+                Related payment initiation object ID created.
+              type: string
+            taskID:
+              description: |
+                Will be filled if the noValidation query parameter is set to true. Since this call is asynchronous, the response will contain the ID of the task that was created to create the payment on the PSP. You can use the task API to check the status of the task and get the resulting payment ID
+              type: string
+    V3RetryPaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: |
+            Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.
+          type: string
+    V3ApprovePaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: |
+            Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.
+          type: string
+    V3ReversePaymentInitiationRequest:
+      type: object
+      required:
+        - reference
+        - description
+        - amount
+        - asset
+      properties:
+        reference:
+          type: string
+        description:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3ReversePaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.
+              type: string
+            paymentInitiationReversalID:
+              description: |
+                Related payment initiation reversal object ID created.
+              type: string
+    V3PaymentInitiationsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentInitiation'
+    V3PaymentInitiationAdjustmentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentInitiationAdjustment'
+    V3PaymentInitiationRelatedPaymentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Payment'
+    V3PaymentInitiation:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - scheduledAt
+        - description
+        - type
+        - amount
+        - asset
+        - status
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        scheduledAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        type:
+          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        status:
+          $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        error:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3PaymentInitiationAdjustment:
+      type: object
+      required:
+        - id
+        - createdAt
+        - status
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3PaymentInitiationAdjustmentStatusEnum'
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        error:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3GetPaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3PaymentInitiation'
+    V3PaymentInitiationStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - WAITING_FOR_VALIDATION
+        - PROCESSING
+        - PROCESSED
+        - FAILED
+        - REJECTED
+        - REVERSE_PROCESSING
+        - REVERSE_FAILED
+        - REVERSED
+    V3PaymentInitiationTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - TRANSFER
+        - PAYOUT
+    V3CreatePoolRequest:
+      type: object
+      required:
+        - name
+        - accountIDs
+      properties:
+        name:
+          type: string
+        accountIDs:
+          type: array
+          items:
+            type: string
+    V3CreatePoolResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created pool
+          type: string
+    V3PoolsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3Pool'
+    V3GetPoolResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Pool'
+    V3PoolBalancesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3PoolBalances'
+    V3Pool:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+        - poolAccounts
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        poolAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/V3AccountID'
+    V3PoolBalances:
+      type: array
+      items:
+        $ref: '#/components/schemas/V3PoolBalance'
+    V3PoolBalance:
+      type: object
+      required:
+        - asset
+        - amount
+      properties:
+        asset:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+    V3GetTaskResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3Task'
+    V3Task:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        status:
+          $ref: '#/components/schemas/V3TaskStatusEnum'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        connectorID:
+          type: string
+        createdObjectID:
+          type: string
+        error:
+          type: string
+    V3TaskStatusEnum:
+      type: string
+      enum:
+        - PROCESSING
+        - SUCCEEDED
+        - FAILED
+    V3QueryBuilder:
+      type: object
+      additionalProperties: true
+    V3Metadata:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+    V3ErrorResponse:
+      type: object
+      required:
+        - errorCode
+        - errorMessage
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/V3ErrorsEnum'
+        errorMessage:
+          type: string
+          example: '[VALIDATION] missing required config field: pollingPeriod'
+        details:
+          type: string
+    V3ErrorsEnum:
+      type: string
+      enum:
+        - INTERNAL
+        - VALIDATION
+        - INVALID_ID
+        - MISSING_OR_INVALID_BODY
+        - CONFLICT
+        - NOT_FOUND
+      example: VALIDATION
+    V3ConnectorConfig:
+      anyOf:
+        - $ref: '#/components/schemas/V3AdyenConfig'
+        - $ref: '#/components/schemas/V3AtlarConfig'
+        - $ref: '#/components/schemas/V3BankingcircleConfig'
+        - $ref: '#/components/schemas/V3CurrencycloudConfig'
+        - $ref: '#/components/schemas/V3DummypayConfig'
+        - $ref: '#/components/schemas/V3GenericConfig'
+        - $ref: '#/components/schemas/V3MangopayConfig'
+        - $ref: '#/components/schemas/V3ModulrConfig'
+        - $ref: '#/components/schemas/V3MoneycorpConfig'
+        - $ref: '#/components/schemas/V3StripeConfig'
+        - $ref: '#/components/schemas/V3WiseConfig'
+    V3AdyenConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - webhookUsername
+        - webhookPassword
+        - companyID
+        - liveEndpointPrefix
+      properties:
+        apiKey:
+          type: string
+        companyID:
+          type: string
+        liveEndpointPrefix:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+        webhookPassword:
+          type: string
+        webhookUsername:
+          type: string
+    V3AtlarConfig:
+      type: object
+      required:
+        - name
+        - baseURL
+        - accessKey
+        - secret
+      properties:
+        accessKey:
+          type: string
+        baseURL:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+        secret:
+          type: string
+    V3BankingcircleConfig:
+      type: object
+      required:
+        - name
+        - username
+        - password
+        - endpoint
+        - authorizationEndpoint
+        - userCertificate
+        - userCertificateKey
+      properties:
+        authorizationEndpoint:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        password:
+          type: string
+        pollingPeriod:
+          type: string
+          default: 2m
+        userCertificate:
+          type: string
+        userCertificateKey:
+          type: string
+        username:
+          type: string
+    V3CurrencycloudConfig:
+      type: object
+      required:
+        - name
+        - loginID
+        - apiKey
+        - endpoint
+      properties:
+        apiKey:
+          type: string
+        endpoint:
+          type: string
+        loginID:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3DummypayConfig:
+      type: object
+      required:
+        - name
+        - directory
+      properties:
+        directory:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3GenericConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - endpoint
+      properties:
+        apiKey:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3MangopayConfig:
+      type: object
+      required:
+        - name
+        - endpoint
+        - clientID
+        - apiKey
+      properties:
+        apiKey:
+          type: string
+        clientID:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3ModulrConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - apiSecret
+        - endpoint
+      properties:
+        apiKey:
+          type: string
+        apiSecret:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3MoneycorpConfig:
+      type: object
+      required:
+        - name
+        - clientID
+        - apiKey
+        - endpoint
+      properties:
+        apiKey:
+          type: string
+        clientID:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3StripeConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+      properties:
+        apiKey:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+    V3WiseConfig:
+      type: object
+      required:
+        - name
+        - apiKey
+        - webhookPublicKey
+      properties:
+        apiKey:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+        webhookPublicKey:
+          type: string
+  responses:
+    NoContent:
+      description: No content
+    PaymentsErrorResponse:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentsErrorResponse'
+    ServerInfo:
+      description: Server information
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServerInfo'
+    Payments:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentsCursor'
+    Payment:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentResponse'
+    Pools:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolsCursor'
+    Pool:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolResponse'
+    PoolBalances:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolBalancesResponse'
+    TransferInitiations:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferInitiationsCursor'
+    TransferInitiation:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferInitiationResponse'
+    Accounts:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountsCursor'
+    Account:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountResponse'
+    AccountBalances:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalancesCursor'
+    ConnectorInstalled:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorResponse'
+    Connectors:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorsResponse'
+    BankAccounts:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BankAccountsCursor'
+    BankAccount:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BankAccountResponse'
+    ConnectorsConfigs:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorsConfigsResponse'
+    ConnectorConfig:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorConfigResponse'
+    Tasks:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TasksCursor'
+    Task:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TaskResponse'
+    Transfer:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferResponse'
+  parameters:
+    Query:
+      name: query
+      in: query
+      required: false
+      description: |
+        Filters used to filter resources.
+      schema:
+        type: string
+    PageSize:
+      name: pageSize
+      in: query
+      description: |
+        The maximum number of results to return per page.
+      example: 100
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 1000
+        default: 15
+    Cursor:
+      name: cursor
+      in: query
+      description: |
+        Parameter used in pagination requests. Maximum page size is set to 15.
+        Set to the value of next for the next page of results.
+        Set to the value of previous for the previous page of results.
+        No other parameters can be set when this parameter is set.
+      schema:
+        type: string
+        example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
+    Sort:
+      name: sort
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+      description: Fields used to sort payments (default is date:desc).
+      example:
+        - date:asc
+        - status:desc
+    PaymentId:
+      name: paymentId
+      in: path
+      schema:
+        type: string
+      description: The payment ID.
+      example: XXX
+      required: true
+    AccountId:
+      name: accountId
+      in: path
+      schema:
+        type: string
+      description: The account ID.
+      example: XXX
+      required: true
+    ConnectorID:
+      name: connectorId
+      in: path
+      schema:
+        type: string
+      description: The connector ID.
+      example: XXX
+      required: true
+    PoolId:
+      name: poolId
+      in: path
+      schema:
+        type: string
+      description: The pool ID.
+      example: XXX
+      required: true
+    TransferId:
+      name: transferId
+      in: path
+      schema:
+        type: string
+      description: The transfer ID.
+      example: XXX
+      required: true
+    BankAccountId:
+      name: bankAccountId
+      in: path
+      schema:
+        type: string
+      description: The bank account ID.
+      example: XXX
+      required: true
+    Connector:
+      name: connector
+      description: The name of the connector.
+      in: path
+      schema:
+        $ref: '#/components/schemas/Connector'
+      required: true
+    TaskId:
+      name: taskId
+      description: The task ID.
+      example: task1
+      in: path
+      schema:
+        type: string
+      required: true
+    V3AccountID:
+      name: accountID
+      in: path
+      required: true
+      description: The account ID
+      schema:
+        type: string
+    V3BankAccountID:
+      name: bankAccountID
+      in: path
+      required: true
+      description: The bank account ID
+      schema:
+        type: string
+    V3PaymentID:
+      name: paymentID
+      in: path
+      required: true
+      description: The payment ID
+      schema:
+        type: string
+    V3PaymentInitiationID:
+      name: paymentInitiationID
+      in: path
+      required: true
+      description: The payment initiation ID
+      schema:
+        type: string
+    V3ConnectorID:
+      name: connectorID
+      in: path
+      required: true
+      description: The connector ID
+      schema:
+        type: string
+    V3ScheduleID:
+      name: scheduleID
+      in: path
+      required: true
+      description: The schedule ID
+      schema:
+        type: string
+    V3PoolID:
+      name: poolID
+      in: path
+      required: true
+      description: The pool ID
+      schema:
+        type: string
+    V3TaskID:
+      name: taskID
+      in: path
+      required: true
+      description: The task ID
+      schema:
+        type: string
+    V3Connector:
+      name: connector
+      in: path
+      required: true
+      description: The connector to filter by
+      schema:
+        type: string
+    V3NoValidation:
+      name: noValidation
+      in: query
+      required: false
+      description: |
+        If set to true, the request will not have to be validated. This is useful if we want to directly forward the request to the PSP.
+      schema:
+        type: boolean
+        default: false
+    V3At:
+      name: at
+      in: query
+      required: false
+      description: The time to filter by
+      schema:
+        type: string
+        format: date-time
+    V3Asset:
+      name: asset
+      in: query
+      required: false
+      description: The asset to filter by
+      schema:
+        type: string
+    V3FromTimestamp:
+      name: fromTimestamp
+      in: query
+      required: false
+      description: The start of the time range to filter by
+      schema:
+        type: string
+        format: date-time
+    V3ToTimestamp:
+      name: toTimestamp
+      in: query
+      required: false
+      description: The end of the time range to filter by
+      schema:
+        type: string
+        format: date-time
+    V3PageSize:
+      name: pageSize
+      in: query
+      description: The number of items to return
+      required: false
+      example: 100
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+        maximum: 1000
+    V3Cursor:
+      name: cursor
+      in: query
+      required: false
+      description: |
+        Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+      example: aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==
+      schema:
+        type: string
+  requestBodies:
+    ConnectorConfig:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorConfig'
+    UpdateMetadata:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentMetadata'
+    Payment:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentRequest'
+    Account:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountRequest'
+    Pool:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolRequest'
+    AddAccountToPool:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AddAccountToPoolRequest'
+    TransferInitiation:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferInitiationRequest'
+    ForwardBankAccount:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ForwardBankAccountRequest'
+    UpdateBankAccountMetadata:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateBankAccountMetadataRequest'
+    BankAccount:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BankAccountRequest'
+    UpdateTransferInitiationStatus:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UpdateTransferInitiationStatusRequest'
+    ReverseTransferInitiation:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ReverseTransferInitiationRequest'
+    Transfer:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferRequest'

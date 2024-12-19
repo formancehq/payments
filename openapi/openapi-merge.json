@@ -1,0 +1,21 @@
+{
+    "inputs": [
+      {
+        "inputFile": "./v1-2/v1-2.yaml"
+      },
+      {
+        "inputFile": "./v3/v3-api.yaml"
+      },
+      {
+        "inputFile": "./v3/v3-parameters.yaml"
+      },
+      {
+        "inputFile": "./v3/v3-schemas.yaml"
+      },
+      {
+        "inputFile": "./v3/v3-connectors-config.yaml"
+      }
+    ],
+    "output": "./../openapi.json"
+  }
+  
