@@ -46,6 +46,8 @@ require (
 	go.uber.org/mock v0.5.0
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/sync v0.10.0
+	golang.org/x/text v0.20.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -220,7 +222,6 @@ require (
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0 // indirect
 	golang.org/x/net v0.30.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
-	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.7.0 // indirect
 	golang.org/x/tools v0.26.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
@@ -229,5 +230,4 @@ require (
 	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/go-jose/go-jose.v2 v2.6.3 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
