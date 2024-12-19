@@ -73,7 +73,6 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 						CreatedAt: now.UTC(),
 						Status:    PAYMENT_STATUS_CANCELLED,
 					},
-					PaymentID: pid,
 					Reference: "test1",
 					CreatedAt: now.UTC(),
 					Status:    PAYMENT_STATUS_CANCELLED,
@@ -144,7 +143,6 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 						CreatedAt: now.UTC(),
 						Status:    PAYMENT_STATUS_SUCCEEDED,
 					},
-					PaymentID: pid,
 					Reference: "test1",
 					CreatedAt: now.UTC(),
 					Status:    PAYMENT_STATUS_SUCCEEDED,
@@ -204,7 +202,6 @@ func compareAdjustments(t *testing.T, expected, actual []PaymentAdjustment) {
 	require.Equal(t, len(expected), len(actual))
 	for i := range expected {
 		require.Equal(t, expected[i].ID, actual[i].ID)
-		require.Equal(t, expected[i].PaymentID, actual[i].PaymentID)
 		require.Equal(t, expected[i].Reference, actual[i].Reference)
 		require.Equal(t, expected[i].CreatedAt, actual[i].CreatedAt)
 		require.Equal(t, expected[i].Status, actual[i].Status)

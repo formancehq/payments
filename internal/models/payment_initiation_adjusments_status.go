@@ -158,9 +158,8 @@ func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiat
 			CreatedAt:           from.CreatedAt,
 			Status:              status,
 		},
-		PaymentInitiationID: piID,
-		CreatedAt:           from.CreatedAt,
-		Status:              status,
-		Error:               err,
+		CreatedAt: from.CreatedAt,
+		Status:    status,
+		Error:     err,
 	}
 }

@@ -375,7 +375,7 @@ func toPaymentModels(payment payment, status models.PaymentStatus) models.Paymen
 func fromPaymentAdjustmentModels(from models.PaymentAdjustment) paymentAdjustment {
 	return paymentAdjustment{
 		ID:        from.ID,
-		PaymentID: from.PaymentID,
+		PaymentID: from.ID.PaymentID,
 		Reference: from.Reference,
 		CreatedAt: time.New(from.CreatedAt),
 		Status:    from.Status,
@@ -389,7 +389,6 @@ func fromPaymentAdjustmentModels(from models.PaymentAdjustment) paymentAdjustmen
 func toPaymentAdjustmentModels(from paymentAdjustment) models.PaymentAdjustment {
 	return models.PaymentAdjustment{
 		ID:        from.ID,
-		PaymentID: from.PaymentID,
 		Reference: from.Reference,
 		CreatedAt: from.CreatedAt.Time,
 		Status:    from.Status,

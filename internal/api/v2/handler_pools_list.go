@@ -46,7 +46,7 @@ func poolsList(backend backend.Backend) http.HandlerFunc {
 
 			accounts := make([]string, len(cursor.Data[i].PoolAccounts))
 			for j := range cursor.Data[i].PoolAccounts {
-				accounts[j] = cursor.Data[i].PoolAccounts[j].AccountID.String()
+				accounts[j] = cursor.Data[i].PoolAccounts[j].String()
 			}
 
 			data[i].Accounts = accounts

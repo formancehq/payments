@@ -368,7 +368,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().
 		Model(&previousAdj).
-		Where("payment_initiation_id = ?", adj.PaymentInitiationID).
+		Where("payment_initiation_id = ?", adj.ID.PaymentInitiationID).
 		Order("created_at DESC", "sort_id DESC").
 		For("UPDATE"). // Prevent another transaction to select/insert a new adjustment while this one is not committed
 		Limit(1).
@@ -525,7 +525,7 @@ func toPaymentInitiationModels(from paymentInitiation) models.PaymentInitiation 
 func fromPaymentInitiationAdjustmentModels(from models.PaymentInitiationAdjustment) paymentInitiationAdjustment {
 	return paymentInitiationAdjustment{
 		ID:                  from.ID,
-		PaymentInitiationID: from.PaymentInitiationID,
+		PaymentInitiationID: from.ID.PaymentInitiationID,
 		CreatedAt:           time.New(from.CreatedAt),
 		Status:              from.Status,
 		Amount:              from.Amount,
@@ -542,12 +542,11 @@ func fromPaymentInitiationAdjustmentModels(from models.PaymentInitiationAdjustme
 
 func toPaymentInitiationAdjustmentModels(from paymentInitiationAdjustment) models.PaymentInitiationAdjustment {
 	return models.PaymentInitiationAdjustment{
-		ID:                  from.ID,
-		PaymentInitiationID: from.PaymentInitiationID,
-		CreatedAt:           from.CreatedAt.Time,
-		Status:              from.Status,
-		Amount:              from.Amount,
-		Asset:               from.Asset,
+		ID:        from.ID,
+		CreatedAt: from.CreatedAt.Time,
+		Status:    from.Status,
+		Amount:    from.Amount,
+		Asset:     from.Asset,
 		Error: func() error {
 			if from.Error == nil {
 				return nil

@@ -165,7 +165,6 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 					CreatedAt: req.CreatedAt,
 					Status:    status,
 				},
-				PaymentID: pid,
 				Reference: req.Reference,
 				CreatedAt: req.CreatedAt,
 				Status:    status,

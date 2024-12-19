@@ -10,11 +10,10 @@ import (
 )
 
 const (
-	ErrUniqueReference      = "CONFLICT"
-	ErrNotFound             = "NOT_FOUND"
+	ErrValidation           = "VALIDATION"
 	ErrInvalidID            = "INVALID_ID"
 	ErrMissingOrInvalidBody = "MISSING_OR_INVALID_BODY"
-	ErrValidation           = "VALIDATION"
+	ErrUniqueReference      = "CONFLICT"
 )
 
 func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {

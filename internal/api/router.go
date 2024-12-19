@@ -15,7 +15,7 @@ import (
 
 type Version struct {
 	Version int
-	Builder func(backend backend.Backend, a auth.Authenticator, debug bool) *chi.Mux
+	Builder func(backend backend.Backend, info api.ServiceInfo, a auth.Authenticator, debug bool) *chi.Mux
 }
 
 type versionsSlice []Version
@@ -48,17 +48,16 @@ func NewRouter(
 		})
 	})
 	r.Get("/_healthcheck", healthController.Check)
-	r.Get("/_info", api.InfoHandler(info))
 
 	sortedVersions := versionsSlice(versions)
 	sort.Stable(sortedVersions)
 
 	for _, version := range sortedVersions[1:] {
 		prefix := fmt.Sprintf("/v%d", version.Version)
-		r.Handle(prefix+"/*", http.StripPrefix(prefix, version.Builder(backend, a, debug)))
+		r.Handle(prefix+"/*", http.StripPrefix(prefix, version.Builder(backend, info, a, debug)))
 	}
 
-	r.Handle("/*", versions[0].Builder(backend, a, debug)) // V1 and V2 have no prefix
+	r.Handle("/*", versions[0].Builder(backend, info, a, debug)) // V1 and V2 have no prefix
 
 	return r
 }

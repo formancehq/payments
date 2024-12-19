@@ -14,11 +14,10 @@ func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiatio
 			CreatedAt:           paymentInitiation.CreatedAt,
 			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
 		},
-		PaymentInitiationID: paymentInitiation.ID,
-		CreatedAt:           paymentInitiation.CreatedAt,
-		Amount:              paymentInitiation.Amount,
-		Asset:               &paymentInitiation.Asset,
-		Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
+		CreatedAt: paymentInitiation.CreatedAt,
+		Amount:    paymentInitiation.Amount,
+		Asset:     &paymentInitiation.Asset,
+		Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
 	}
 
 	if !sendToPSP {

@@ -104,8 +104,8 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 				ID:          "",
 				CreatedAt:   relatedAccount.CreatedAt,
 				AccountID:   relatedAccount.AccountID.String(),
-				ConnectorID: relatedAccount.ConnectorID.String(),
-				Provider:    relatedAccount.ConnectorID.Provider,
+				ConnectorID: relatedAccount.AccountID.ConnectorID.String(),
+				Provider:    relatedAccount.AccountID.ConnectorID.Provider,
 			})
 		}
 

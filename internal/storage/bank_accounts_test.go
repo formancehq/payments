@@ -39,10 +39,8 @@ var (
 		},
 		RelatedAccounts: []models.BankAccountRelatedAccount{
 			{
-				BankAccountID: bcID2,
-				AccountID:     defaultAccounts()[0].ID,
-				ConnectorID:   defaultConnector.ID,
-				CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+				AccountID: defaultAccounts()[0].ID,
+				CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
 			},
 		},
 	}
@@ -104,11 +102,12 @@ func TestBankAccountsUpsert(t *testing.T) {
 			},
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
-					BankAccountID: uuid.New(),
-					AccountID:     defaultAccounts()[0].ID,
-					ConnectorID: models.ConnectorID{
-						Reference: uuid.New(),
-						Provider:  "unknown",
+					AccountID: models.AccountID{
+						Reference: "unknown",
+						ConnectorID: models.ConnectorID{
+							Reference: uuid.New(),
+							Provider:  "unknown",
+						},
 					},
 					CreatedAt: now.UTC().Time,
 				},
@@ -179,10 +178,8 @@ func TestBankAccountsUpdateMetadata(t *testing.T) {
 			},
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
-					BankAccountID: bcID2,
-					AccountID:     defaultAccounts()[0].ID,
-					ConnectorID:   defaultConnector.ID,
-					CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+					AccountID: defaultAccounts()[0].ID,
+					CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
 				},
 			},
 		}
@@ -287,10 +284,8 @@ func TestBankAccountsGet(t *testing.T) {
 			},
 			RelatedAccounts: []models.BankAccountRelatedAccount{
 				{
-					BankAccountID: bcID2,
-					AccountID:     defaultAccounts()[0].ID,
-					ConnectorID:   defaultConnector.ID,
-					CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+					AccountID: defaultAccounts()[0].ID,
+					CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
 				},
 			},
 		}
@@ -535,16 +530,14 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 
 	t.Run("add related account when empty", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
-			BankAccountID: defaultBankAccount.ID,
-			AccountID:     defaultAccounts()[0].ID,
-			ConnectorID:   defaultConnector.ID,
-			CreatedAt:     now.UTC().Time,
+			AccountID: defaultAccounts()[0].ID,
+			CreatedAt: now.UTC().Time,
 		}
 
 		ba := defaultBankAccount
 		ba.RelatedAccounts = append(ba.RelatedAccounts, acc)
 
-		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, ba.ID, acc))
 
 		actual, err := store.BankAccountsGet(ctx, defaultBankAccount.ID, true)
 		require.NoError(t, err)
@@ -553,16 +546,14 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 
 	t.Run("add related account when not empty", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
-			BankAccountID: defaultBankAccount2.ID,
-			AccountID:     defaultAccounts()[1].ID,
-			ConnectorID:   defaultConnector.ID,
-			CreatedAt:     now.UTC().Time,
+			AccountID: defaultAccounts()[1].ID,
+			CreatedAt: now.UTC().Time,
 		}
 
 		ba := defaultBankAccount2
 		ba.RelatedAccounts = append(ba.RelatedAccounts, acc)
 
-		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, defaultBankAccount2.ID, acc))
 
 		actual, err := store.BankAccountsGet(ctx, defaultBankAccount2.ID, true)
 		require.NoError(t, err)
@@ -571,47 +562,44 @@ func TestBankAccountsAddRelatedAccount(t *testing.T) {
 
 	t.Run("add related account with unknown bank account", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
-			BankAccountID: uuid.New(),
-			AccountID:     defaultAccounts()[1].ID,
-			ConnectorID:   defaultConnector.ID,
-			CreatedAt:     now.UTC().Time,
+			AccountID: defaultAccounts()[1].ID,
+			CreatedAt: now.UTC().Time,
 		}
 
-		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, uuid.New(), acc))
 	})
 
 	t.Run("add related account with unknown connector", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
-			BankAccountID: defaultBankAccount2.ID,
-			AccountID:     defaultAccounts()[2].ID,
-			ConnectorID: models.ConnectorID{
-				Reference: uuid.New(),
-				Provider:  "unknown",
+			AccountID: models.AccountID{
+				Reference: "unknown",
+				ConnectorID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "unknown",
+				},
 			},
 			CreatedAt: now.UTC().Time,
 		}
 
-		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.Error(t, store.BankAccountsAddRelatedAccount(ctx, defaultBankAccount.ID, acc))
 	})
 
 	t.Run("add related account with existing related account", func(t *testing.T) {
 		acc := models.BankAccountRelatedAccount{
-			BankAccountID: defaultBankAccount3.ID,
-			AccountID:     defaultAccounts()[0].ID,
-			ConnectorID:   defaultConnector.ID,
-			CreatedAt:     now.Add(-30 * time.Minute).UTC().Time,
+			AccountID: defaultAccounts()[0].ID,
+			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
 		}
 
 		ba := defaultBankAccount3
 		ba.RelatedAccounts = append(ba.RelatedAccounts, acc)
 
-		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, defaultBankAccount3.ID, acc))
 
 		actual, err := store.BankAccountsGet(ctx, defaultBankAccount3.ID, true)
 		require.NoError(t, err)
 		compareBankAccounts(t, ba, *actual)
 
-		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, acc))
+		require.NoError(t, store.BankAccountsAddRelatedAccount(ctx, defaultBankAccount3.ID, acc))
 
 		actual, err = store.BankAccountsGet(ctx, defaultBankAccount3.ID, true)
 		require.NoError(t, err)

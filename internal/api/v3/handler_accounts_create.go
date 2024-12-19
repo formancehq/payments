@@ -20,7 +20,7 @@ type CreateAccountRequest struct {
 	ConnectorID  string            `json:"connectorID"`
 	CreatedAt    time.Time         `json:"createdAt"`
 	DefaultAsset string            `json:"defaultAsset"`
-	AccountName  string            `json:"accountName"`
+	Name         string            `json:"name"`
 	Type         string            `json:"type"`
 	Metadata     map[string]string `json:"metadata"`
 }
@@ -38,7 +38,7 @@ func (r *CreateAccountRequest) validate() error {
 		return errors.New("createdAt is empty or in the future")
 	}
 
-	if r.AccountName == "" {
+	if r.Name == "" {
 		return errors.New("accountName is required")
 	}
 
@@ -99,7 +99,7 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 			Reference:    req.Reference,
 			CreatedAt:    req.CreatedAt,
 			Type:         models.AccountType(req.Type),
-			Name:         &req.AccountName,
+			Name:         &req.Name,
 			DefaultAsset: &req.DefaultAsset,
 			Metadata:     req.Metadata,
 			Raw:          raw,
@@ -112,7 +112,7 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, account)
+		api.Created(w, account.ID.String())
 	}
 }
 
@@ -121,7 +121,7 @@ func populateSpanFromCreateAccountRequest(span trace.Span, req CreateAccountRequ
 	span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 	span.SetAttributes(attribute.String("createdAt", req.CreatedAt.String()))
 	span.SetAttributes(attribute.String("defaultAsset", req.DefaultAsset))
-	span.SetAttributes(attribute.String("accountName", req.AccountName))
+	span.SetAttributes(attribute.String("accountName", req.Name))
 	span.SetAttributes(attribute.String("type", req.Type))
 	for k, v := range req.Metadata {
 		span.SetAttributes(attribute.String(fmt.Sprintf("metadata[%s]", k), v))
