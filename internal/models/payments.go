@@ -292,7 +292,6 @@ func FromPSPPaymentToPaymentAdjustement(from PSPPayment, connectorID ConnectorID
 			CreatedAt: from.CreatedAt,
 			Status:    from.Status,
 		},
-		PaymentID: paymentID,
 		Reference: from.Reference,
 		CreatedAt: from.CreatedAt,
 		Status:    from.Status,

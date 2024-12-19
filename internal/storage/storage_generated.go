@@ -160,17 +160,17 @@ func (mr *MockStorageMockRecorder) BalancesUpsert(ctx, balances any) *gomock.Cal
 }
 
 // BankAccountsAddRelatedAccount mocks base method.
-func (m *MockStorage) BankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error {
+func (m *MockStorage) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID, relatedAccount models.BankAccountRelatedAccount) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BankAccountsAddRelatedAccount", ctx, relatedAccount)
+	ret := m.ctrl.Call(m, "BankAccountsAddRelatedAccount", ctx, bID, relatedAccount)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // BankAccountsAddRelatedAccount indicates an expected call of BankAccountsAddRelatedAccount.
-func (mr *MockStorageMockRecorder) BankAccountsAddRelatedAccount(ctx, relatedAccount any) *gomock.Call {
+func (mr *MockStorageMockRecorder) BankAccountsAddRelatedAccount(ctx, bID, relatedAccount any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsAddRelatedAccount", reflect.TypeOf((*MockStorage)(nil).BankAccountsAddRelatedAccount), ctx, relatedAccount)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BankAccountsAddRelatedAccount", reflect.TypeOf((*MockStorage)(nil).BankAccountsAddRelatedAccount), ctx, bID, relatedAccount)
 }
 
 // BankAccountsDeleteRelatedAccountFromConnectorID mocks base method.

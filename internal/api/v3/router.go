@@ -3,14 +3,17 @@ package v3
 import (
 	"net/http"
 
+	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/go-chi/chi/v5"
 )
 
-func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.Mux {
+func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticator, debug bool) *chi.Mux {
 	r := chi.NewRouter()
+
+	r.Get("/_info", api.InfoHandler(info))
 
 	r.Group(func(r chi.Router) {
 		r.Use(service.OTLPMiddleware("payments", debug))
@@ -49,8 +52,8 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 			// Payments
 			r.Route("/payments", func(r chi.Router) {
-				r.Get("/", paymentsList(backend))
 				r.Post("/", paymentsCreate(backend))
+				r.Get("/", paymentsList(backend))
 
 				r.Route("/{paymentID}", func(r chi.Router) {
 					r.Get("/", paymentsGet(backend))

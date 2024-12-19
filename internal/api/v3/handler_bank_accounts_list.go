@@ -36,6 +36,14 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		for i := range cursor.Data {
+			if err := cursor.Data[i].Offuscate(); err != nil {
+				otel.RecordError(span, err)
+				api.InternalServerError(w, r, err)
+				return
+			}
+		}
+
 		api.RenderCursor(w, *cursor)
 	}
 }

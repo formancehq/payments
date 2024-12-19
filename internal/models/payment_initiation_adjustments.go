@@ -13,8 +13,6 @@ type PaymentInitiationAdjustment struct {
 	// Unique ID
 	ID PaymentInitiationAdjustmentID `json:"id"`
 
-	// Related Payment Initiation ID
-	PaymentInitiationID PaymentInitiationID `json:"paymentInitiationID"`
 	// Creation date of the adjustment
 	CreatedAt time.Time `json:"createdAt"`
 	// Last status of the adjustment
@@ -31,21 +29,19 @@ type PaymentInitiationAdjustment struct {
 
 func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID                  string                            `json:"id"`
-		PaymentInitiationID string                            `json:"paymentInitiationID"`
-		CreatedAt           time.Time                         `json:"createdAt"`
-		Status              PaymentInitiationAdjustmentStatus `json:"status"`
-		Amount              *big.Int                          `json:"amount,omitempty"`
-		Asset               *string                           `json:"asset,omitempty"`
-		Error               *string                           `json:"error,omitempty"`
-		Metadata            map[string]string                 `json:"metadata"`
+		ID        string                            `json:"id"`
+		CreatedAt time.Time                         `json:"createdAt"`
+		Status    PaymentInitiationAdjustmentStatus `json:"status"`
+		Amount    *big.Int                          `json:"amount,omitempty"`
+		Asset     *string                           `json:"asset,omitempty"`
+		Error     *string                           `json:"error,omitempty"`
+		Metadata  map[string]string                 `json:"metadata"`
 	}{
-		ID:                  pia.ID.String(),
-		PaymentInitiationID: pia.PaymentInitiationID.String(),
-		CreatedAt:           pia.CreatedAt,
-		Status:              pia.Status,
-		Amount:              pia.Amount,
-		Asset:               pia.Asset,
+		ID:        pia.ID.String(),
+		CreatedAt: pia.CreatedAt,
+		Status:    pia.Status,
+		Amount:    pia.Amount,
+		Asset:     pia.Asset,
 		Error: func() *string {
 			if pia.Error == nil {
 				return nil
@@ -59,14 +55,13 @@ func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 
 func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID                  string                            `json:"id"`
-		PaymentInitiationID string                            `json:"paymentInitiationID"`
-		CreatedAt           time.Time                         `json:"createdAt"`
-		Status              PaymentInitiationAdjustmentStatus `json:"status"`
-		Amount              *big.Int                          `json:"amount"`
-		Asset               *string                           `json:"asset"`
-		Error               *string                           `json:"error"`
-		Metadata            map[string]string                 `json:"metadata"`
+		ID        string                            `json:"id"`
+		CreatedAt time.Time                         `json:"createdAt"`
+		Status    PaymentInitiationAdjustmentStatus `json:"status"`
+		Amount    *big.Int                          `json:"amount"`
+		Asset     *string                           `json:"asset"`
+		Error     *string                           `json:"error"`
+		Metadata  map[string]string                 `json:"metadata"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -78,13 +73,7 @@ func (pia *PaymentInitiationAdjustment) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	piID, err := PaymentInitiationIDFromString(aux.PaymentInitiationID)
-	if err != nil {
-		return err
-	}
-
 	pia.ID = id
-	pia.PaymentInitiationID = piID
 	pia.CreatedAt = aux.CreatedAt
 	pia.Status = aux.Status
 	pia.Amount = aux.Amount

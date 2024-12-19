@@ -351,7 +351,7 @@ func setupAccounts(
 		var accountResponse struct{ Data models.Account }
 		accountRequest := v3.CreateAccountRequest{
 			Reference:   fmt.Sprintf("account%d-ref", i),
-			AccountName: fmt.Sprintf("account%d-name", i),
+			Name:        fmt.Sprintf("account%d-name", i),
 			ConnectorID: connectorID,
 			CreatedAt:   time.Now().Truncate(time.Second),
 			Type:        string(models.ACCOUNT_TYPE_INTERNAL),

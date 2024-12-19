@@ -31,6 +31,12 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		if err := bankAccount.Offuscate(); err != nil {
+			otel.RecordError(span, err)
+			api.InternalServerError(w, r, err)
+			return
+		}
+
 		data := &BankAccountResponse{
 			ID:        bankAccount.ID.String(),
 			Name:      bankAccount.Name,
@@ -59,8 +65,8 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 				ID:          "",
 				CreatedAt:   relatedAccount.CreatedAt,
 				AccountID:   relatedAccount.AccountID.String(),
-				ConnectorID: relatedAccount.ConnectorID.String(),
-				Provider:    toV2Provider(relatedAccount.ConnectorID.Provider),
+				ConnectorID: relatedAccount.AccountID.ConnectorID.String(),
+				Provider:    toV2Provider(relatedAccount.AccountID.ConnectorID.Provider),
 			})
 		}
 

@@ -79,14 +79,13 @@ func (w Workflow) createBankAccount(
 	}
 
 	relatedAccount := models.BankAccountRelatedAccount{
-		BankAccountID: createBankAccount.BankAccountID,
-		AccountID:     account.ID,
-		ConnectorID:   createBankAccount.ConnectorID,
-		CreatedAt:     createBAResponse.RelatedAccount.CreatedAt,
+		AccountID: account.ID,
+		CreatedAt: createBAResponse.RelatedAccount.CreatedAt,
 	}
 
 	err = activities.StorageBankAccountsAddRelatedAccount(
 		infiniteRetryContext(ctx),
+		createBankAccount.BankAccountID,
 		relatedAccount,
 	)
 	if err != nil {
@@ -99,7 +98,7 @@ func (w Workflow) createBankAccount(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getConnectorTaskQueue(relatedAccount.ConnectorID),
+				TaskQueue:         w.getConnectorTaskQueue(createBankAccount.ConnectorID),
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
 					SearchAttributeStack: w.stack,

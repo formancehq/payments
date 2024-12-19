@@ -9,8 +9,6 @@ import (
 type PaymentAdjustment struct {
 	// Unique ID of the payment adjustment
 	ID PaymentAdjustmentID `json:"id"`
-	// Related Payment ID
-	PaymentID PaymentID `json:"paymentID"`
 
 	// Reference of the adjustment. If we do not have a new reference for the
 	// adjustment, it will be the same as the payment reference.
@@ -42,7 +40,6 @@ func (p *PaymentAdjustment) IdempotencyKey() string {
 func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID        string            `json:"id"`
-		PaymentID string            `json:"paymentID"`
 		CreatedAt time.Time         `json:"createdAt"`
 		Status    PaymentStatus     `json:"status"`
 		Amount    *big.Int          `json:"amount"`
@@ -51,7 +48,6 @@ func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 		Raw       json.RawMessage   `json:"raw"`
 	}{
 		ID:        c.ID.String(),
-		PaymentID: c.PaymentID.String(),
 		CreatedAt: c.CreatedAt,
 		Status:    c.Status,
 		Amount:    c.Amount,
@@ -64,7 +60,6 @@ func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 func (c *PaymentAdjustment) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID        string            `json:"id"`
-		PaymentID string            `json:"paymentID"`
 		CreatedAt time.Time         `json:"createdAt"`
 		Status    PaymentStatus     `json:"status"`
 		Amount    *big.Int          `json:"amount"`
@@ -77,18 +72,12 @@ func (c *PaymentAdjustment) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	paymentID, err := PaymentIDFromString(aux.PaymentID)
-	if err != nil {
-		return err
-	}
-
 	adjustmentID, err := PaymentAdjustmentIDFromString(aux.ID)
 	if err != nil {
 		return err
 	}
 
 	c.ID = *adjustmentID
-	c.PaymentID = paymentID
 	c.CreatedAt = aux.CreatedAt
 	c.Status = aux.Status
 	c.Amount = aux.Amount
