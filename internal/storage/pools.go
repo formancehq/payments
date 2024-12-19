@@ -260,11 +260,11 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 	}
 
 	var accounts []poolAccounts
-	for _, pa := range from.PoolAccounts {
+	for i := range from.PoolAccounts {
 		accounts = append(accounts, poolAccounts{
-			PoolID:      pa.PoolID,
-			AccountID:   pa.AccountID,
-			ConnectorID: pa.AccountID.ConnectorID,
+			PoolID:      from.ID,
+			AccountID:   from.PoolAccounts[i],
+			ConnectorID: from.PoolAccounts[i].ConnectorID,
 		})
 	}
 
@@ -272,12 +272,9 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 }
 
 func toPoolModel(from pool) models.Pool {
-	var accounts []models.PoolAccounts
-	for _, pa := range from.PoolAccounts {
-		accounts = append(accounts, models.PoolAccounts{
-			PoolID:    pa.PoolID,
-			AccountID: pa.AccountID,
-		})
+	var accounts []models.AccountID
+	for i := range from.PoolAccounts {
+		accounts = append(accounts, from.PoolAccounts[i].AccountID)
 	}
 
 	return models.Pool{

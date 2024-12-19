@@ -52,13 +52,13 @@ var _ = Describe("API v3 Accounts Create", func() {
 			Entry("createdAt missing", CreateAccountRequest{Reference: "reference", ConnectorID: "id"}),
 			Entry("accountName missing", CreateAccountRequest{Reference: "reference", ConnectorID: "id", CreatedAt: time.Now()}),
 			Entry("type missing", CreateAccountRequest{
-				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), AccountName: "accountName",
+				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), Name: "accountName",
 			}),
 			Entry("connectorID invalid", CreateAccountRequest{
-				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), AccountName: "accountName", Type: "type",
+				Reference: "reference", ConnectorID: "id", CreatedAt: time.Now(), Name: "accountName", Type: "type",
 			}),
 			Entry("type invalid", CreateAccountRequest{
-				Reference: "reference", ConnectorID: connID.String(), CreatedAt: time.Now(), AccountName: "accountName", Type: "type",
+				Reference: "reference", ConnectorID: connID.String(), CreatedAt: time.Now(), Name: "accountName", Type: "type",
 			}),
 		)
 
@@ -69,7 +69,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 				Reference:   "reference",
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
-				AccountName: "accountName",
+				Name:        "accountName",
 				Type:        string(models.ACCOUNT_TYPE_EXTERNAL),
 			}
 			handlerFn(w, prepareJSONRequest(http.MethodPost, &cra))
@@ -82,7 +82,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 				Reference:   "reference",
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
-				AccountName: "accountName",
+				Name:        "accountName",
 				Type:        string(models.ACCOUNT_TYPE_EXTERNAL),
 			}
 			handlerFn(w, prepareJSONRequest(http.MethodPost, &cra))

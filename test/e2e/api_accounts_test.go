@@ -45,7 +45,7 @@ var _ = Context("Payments API Accounts", func() {
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
 	createRequest = v3.CreateAccountRequest{
 		Reference:    "ref",
-		AccountName:  "foo",
+		Name:         "foo",
 		CreatedAt:    createdAt,
 		DefaultAsset: "USD",
 		Type:         string(models.ACCOUNT_TYPE_INTERNAL),

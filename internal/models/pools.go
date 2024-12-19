@@ -11,13 +11,13 @@ type Pool struct {
 	Name      string    `json:"name"`
 	CreatedAt time.Time `json:"createdAt"`
 
-	PoolAccounts []PoolAccounts `json:"poolAccounts"`
+	PoolAccounts []AccountID `json:"poolAccounts"`
 }
 
 func (p *Pool) IdempotencyKey() string {
 	relatedAccounts := make([]string, len(p.PoolAccounts))
 	for i := range p.PoolAccounts {
-		relatedAccounts[i] = p.PoolAccounts[i].AccountID.String()
+		relatedAccounts[i] = p.PoolAccounts[i].String()
 	}
 	var ik = struct {
 		ID              string

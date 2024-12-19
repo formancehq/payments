@@ -205,7 +205,6 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 					CreatedAt: adj.CreatedAt.UTC(),
 					Status:    status,
 				},
-				PaymentID: pid,
 				Reference: adj.Reference,
 				CreatedAt: adj.CreatedAt,
 				Status:    status,
@@ -223,7 +222,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, payment)
+		api.Created(w, payment.ID.String())
 	}
 }
 

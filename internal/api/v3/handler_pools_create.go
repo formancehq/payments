@@ -55,7 +55,7 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 			CreatedAt: time.Now().UTC(),
 		}
 
-		accounts := make([]models.PoolAccounts, len(CreatePoolRequest.AccountIDs))
+		accounts := make([]models.AccountID, len(CreatePoolRequest.AccountIDs))
 		for i, accountID := range CreatePoolRequest.AccountIDs {
 			aID, err := models.AccountIDFromString(accountID)
 			if err != nil {
@@ -64,10 +64,7 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 				return
 			}
 
-			accounts[i] = models.PoolAccounts{
-				PoolID:    pool.ID,
-				AccountID: aID,
-			}
+			accounts[i] = aID
 		}
 		pool.PoolAccounts = accounts
 

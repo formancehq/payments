@@ -171,7 +171,7 @@ func setupDebtorAndCreditorAccounts(
 
 	creditorRequest := v3.CreateAccountRequest{
 		Reference:    "creditor",
-		AccountName:  "creditor",
+		Name:         "creditor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt.Add(-time.Hour),
 		DefaultAsset: "USD",
@@ -184,7 +184,7 @@ func setupDebtorAndCreditorAccounts(
 
 	debtorRequest := v3.CreateAccountRequest{
 		Reference:    "debtor",
-		AccountName:  "debtor",
+		Name:         "debtor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt,
 		DefaultAsset: "USD",

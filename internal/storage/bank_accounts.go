@@ -235,8 +235,8 @@ type bankAccountRelatedAccount struct {
 	CreatedAt     time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 }
 
-func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, relatedAccount models.BankAccountRelatedAccount) error {
-	toInsert := fromBankAccountRelatedAccountModels(relatedAccount)
+func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID, relatedAccount models.BankAccountRelatedAccount) error {
+	toInsert := fromBankAccountRelatedAccountModels(relatedAccount, bID)
 
 	_, err := s.db.NewInsert().
 		Model(&toInsert).
@@ -284,7 +284,7 @@ func fromBankAccountModels(from models.BankAccount) bankAccount {
 
 	relatedAccounts := make([]*bankAccountRelatedAccount, 0, len(from.RelatedAccounts))
 	for _, ra := range from.RelatedAccounts {
-		relatedAccounts = append(relatedAccounts, pointer.For(fromBankAccountRelatedAccountModels(ra)))
+		relatedAccounts = append(relatedAccounts, pointer.For(fromBankAccountRelatedAccountModels(ra, from.ID)))
 	}
 	ba.RelatedAccounts = relatedAccounts
 
@@ -321,20 +321,18 @@ func toBankAccountModels(from bankAccount) models.BankAccount {
 	return ba
 }
 
-func fromBankAccountRelatedAccountModels(from models.BankAccountRelatedAccount) bankAccountRelatedAccount {
+func fromBankAccountRelatedAccountModels(from models.BankAccountRelatedAccount, bID uuid.UUID) bankAccountRelatedAccount {
 	return bankAccountRelatedAccount{
-		BankAccountID: from.BankAccountID,
+		BankAccountID: bID,
 		AccountID:     from.AccountID,
-		ConnectorID:   from.ConnectorID,
+		ConnectorID:   from.AccountID.ConnectorID,
 		CreatedAt:     time.New(from.CreatedAt),
 	}
 }
 
 func toBankAccountRelatedAccountModels(from bankAccountRelatedAccount) models.BankAccountRelatedAccount {
 	return models.BankAccountRelatedAccount{
-		BankAccountID: from.BankAccountID,
-		AccountID:     from.AccountID,
-		ConnectorID:   from.ConnectorID,
-		CreatedAt:     from.CreatedAt.Time,
+		AccountID: from.AccountID,
+		CreatedAt: from.CreatedAt.Time,
 	}
 }

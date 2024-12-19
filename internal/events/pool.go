@@ -24,8 +24,8 @@ func (e Events) NewEventSavedPool(pool models.Pool) publish.EventMessage {
 	}
 
 	payload.AccountIDs = make([]string, len(pool.PoolAccounts))
-	for i, a := range pool.PoolAccounts {
-		payload.AccountIDs[i] = a.AccountID.String()
+	for i := range pool.PoolAccounts {
+		payload.AccountIDs[i] = pool.PoolAccounts[i].String()
 	}
 
 	return publish.EventMessage{

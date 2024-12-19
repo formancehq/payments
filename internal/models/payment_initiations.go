@@ -196,7 +196,7 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 		CreatedAt            time.Time             `json:"createdAt"`
 		ScheduledAt          time.Time             `json:"scheduledAt"`
 		Description          string                `json:"description"`
-		Type                 PaymentInitiationType `json:"paymentInitiationType"`
+		Type                 PaymentInitiationType `json:"type"`
 		SourceAccountID      *string               `json:"sourceAccountID,omitempty"`
 		DestinationAccountID *string               `json:"destinationAccountID,omitempty"`
 		Amount               *big.Int              `json:"amount"`

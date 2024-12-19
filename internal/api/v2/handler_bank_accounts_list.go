@@ -40,6 +40,12 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 
 		data := make([]*BankAccountResponse, len(cursor.Data))
 		for i := range cursor.Data {
+			if err := cursor.Data[i].Offuscate(); err != nil {
+				otel.RecordError(span, err)
+				api.InternalServerError(w, r, err)
+				return
+			}
+
 			data[i] = &BankAccountResponse{
 				ID:        cursor.Data[i].ID.String(),
 				Name:      cursor.Data[i].Name,
@@ -69,8 +75,8 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 					ID:          "",
 					CreatedAt:   cursor.Data[i].RelatedAccounts[j].CreatedAt,
 					AccountID:   cursor.Data[i].RelatedAccounts[j].AccountID.String(),
-					ConnectorID: cursor.Data[i].RelatedAccounts[j].ConnectorID.String(),
-					Provider:    toV2Provider(cursor.Data[i].RelatedAccounts[j].ConnectorID.Provider),
+					ConnectorID: cursor.Data[i].RelatedAccounts[j].AccountID.ConnectorID.String(),
+					Provider:    toV2Provider(cursor.Data[i].RelatedAccounts[j].AccountID.ConnectorID.Provider),
 				}
 			}
 		}

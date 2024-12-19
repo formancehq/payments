@@ -787,35 +787,32 @@ var (
 func defaultPaymentInitiationAdjustments() []models.PaymentInitiationAdjustment {
 	return []models.PaymentInitiationAdjustment{
 		{
-			ID:                  piAdjID1,
-			PaymentInitiationID: defaultPaymentInitiations()[0].ID,
-			CreatedAt:           now.Add(-10 * time.Minute).UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
-			Amount:              big.NewInt(100),
-			Asset:               pointer.For("EUR/2"),
+			ID:        piAdjID1,
+			CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
+			Amount:    big.NewInt(100),
+			Asset:     pointer.For("EUR/2"),
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
 		},
 		{
-			ID:                  piAdjID2,
-			PaymentInitiationID: defaultPaymentInitiations()[0].ID,
-			CreatedAt:           now.Add(-5 * time.Minute).UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
-			Error:               errors.New("test"),
-			Amount:              big.NewInt(200),
-			Asset:               pointer.For("USD/2"),
+			ID:        piAdjID2,
+			CreatedAt: now.Add(-5 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+			Error:     errors.New("test"),
+			Amount:    big.NewInt(200),
+			Asset:     pointer.For("USD/2"),
 			Metadata: map[string]string{
 				"foo2": "bar2",
 			},
 		},
 		{
-			ID:                  piAdjID3,
-			PaymentInitiationID: defaultPaymentInitiations()[1].ID,
-			CreatedAt:           now.Add(-7 * time.Minute).UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
-			Amount:              big.NewInt(300),
-			Asset:               pointer.For("DKK/2"),
+			ID:        piAdjID3,
+			CreatedAt: now.Add(-7 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			Amount:    big.NewInt(300),
+			Asset:     pointer.For("DKK/2"),
 			Metadata: map[string]string{
 				"foo3": "bar3",
 			},
@@ -843,10 +840,9 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	t.Run("upsert with unknown payment initiation", func(t *testing.T) {
 		p := models.PaymentInitiationAdjustment{
-			ID:                  models.PaymentInitiationAdjustmentID{},
-			PaymentInitiationID: models.PaymentInitiationID{},
-			CreatedAt:           now.Add(-10 * time.Minute).UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
+			ID:        models.PaymentInitiationAdjustmentID{},
+			CreatedAt: now.Add(-10 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
@@ -857,10 +853,9 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	t.Run("upsert with same id", func(t *testing.T) {
 		p := models.PaymentInitiationAdjustment{
-			ID:                  piAdjID1,
-			PaymentInitiationID: defaultPaymentInitiationAdjustments()[0].PaymentInitiationID,
-			CreatedAt:           now.Add(-30 * time.Minute).UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+			ID:        piAdjID1,
+			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
 			Metadata: map[string]string{
 				"foo": "changed",
 			},
@@ -892,9 +887,8 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 				CreatedAt:           now.UTC().Time,
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			},
-			PaymentInitiationID: defaultPaymentInitiations()[1].ID,
-			CreatedAt:           now.UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			CreatedAt: now.UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
@@ -916,9 +910,8 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 				CreatedAt:           now.UTC().Time,
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			},
-			PaymentInitiationID: defaultPaymentInitiations()[0].ID,
-			CreatedAt:           now.UTC().Time,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
+			CreatedAt: now.UTC().Time,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
@@ -994,7 +987,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 				WithPageSize(1),
 		)
 
-		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].PaymentInitiationID, q)
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.True(t, cursor.HasMore)
@@ -1004,7 +997,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 		err = bunpaginate.UnmarshalCursor(cursor.Next, &q)
 		require.NoError(t, err)
-		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].PaymentInitiationID, q)
+		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
@@ -1014,7 +1007,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 		err = bunpaginate.UnmarshalCursor(cursor.Previous, &q)
 		require.NoError(t, err)
-		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].PaymentInitiationID, q)
+		cursor, err = store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.True(t, cursor.HasMore)
@@ -1055,7 +1048,6 @@ func comparePaymentInitiations(t *testing.T, expected, actual models.PaymentInit
 
 func comparePaymentInitiationAdjustments(t *testing.T, expected, actual models.PaymentInitiationAdjustment) {
 	require.Equal(t, expected.ID, actual.ID)
-	require.Equal(t, expected.PaymentInitiationID, actual.PaymentInitiationID)
 	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
 	require.Equal(t, expected.Status, actual.Status)
 

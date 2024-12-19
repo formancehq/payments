@@ -43,9 +43,8 @@ func (s *Service) PaymentInitiationsReject(ctx context.Context, id models.Paymen
 				CreatedAt:           now,
 				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED,
 			},
-			PaymentInitiationID: id,
-			CreatedAt:           now,
-			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED,
+			CreatedAt: now,
+			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED,
 		},
 	), "cannot reject payment initiation")
 }
