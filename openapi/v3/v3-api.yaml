@@ -1,0 +1,1053 @@
+openapi: 3.0.3
+info:
+  title: Payments API
+  version: v3
+paths:
+
+  # INFO
+  /v3/_info:
+    get:
+      tags:
+        - payments.v3
+      summary: Show server information
+      operationId: getInfo
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/V3ConfigInfoResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+          - payments:read
+
+  # ACCOUNTS
+  /v3/accounts:
+    post:
+      tags:
+        - payments.v3
+      summary: >
+        Create a formance account object. This object will not be forwarded to
+        the connector. It is only used for internal purposes.
+      operationId: createAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreateAccountRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreateAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all accounts
+      operationId: listAccounts
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3AccountsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/accounts/{accountID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get an account by ID
+      operationId: getAccount
+      parameters:
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/accounts/{accountID}/balances:
+    get:
+      tags:
+        - payments.v3
+      summary: Get account balances
+      operationId: getAccountBalances
+      parameters:
+        - $ref: '#/components/parameters/V3AccountID'
+        - $ref: '#/components/parameters/V3Asset'
+        - $ref: '#/components/parameters/V3FromTimestamp'
+        - $ref: '#/components/parameters/V3ToTimestamp'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3BalancesCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  # BANK ACCOUNTS
+  /v3/bank-accounts:
+    post:
+      tags:
+        - payments.v3
+      summary: >
+        Create a formance bank account object. This object will not be forwarded
+        to the connector until you called the forwardBankAccount method.
+      operationId: createBankAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreateBankAccountRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreateBankAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/scomponents/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all bank accounts
+      operationId: listBankAccounts
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3BankAccountsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/bank-accounts/{bankAccountID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a Bank Account by ID
+      operationId: getBankAccount
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetBankAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+
+  /v3/bank-accounts/{bankAccountID}/metadata:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update a bank account's metadata
+      operationId: updateBankAccountMetadata
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3UpdateBankAccountMetadataRequest"
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+
+  /v3/bank-accounts/{bankAccountID}/forward:
+    post:
+      tags:
+        - payments.v3
+      summary: Forward a Bank Account to a PSP for creation
+      operationId: forwardBankAccount
+      parameters:
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3ForwardBankAccountRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ForwardBankAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+
+  # CONNECTORS
+  /v3/connectors:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connectors
+      operationId: listConnectors
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ConnectorsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/install/{connector}:
+    post:
+      tags:
+        - payments.v3
+      summary: Install a connector
+      operationId: installConnector
+      parameters:
+        - $ref: '#/components/parameters/V3Connector'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3InstallConnectorRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3InstallConnectorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/connectors/configs:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector configurations
+      operationId: listConnectorConfigs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ConnectorConfigsResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Uninstall a connector
+      operationId: uninstallConnector
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3UninstallConnectorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+  
+  /v3/connectors/{connectorID}/config:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a connector configuration by ID
+      operationId: getConnectorConfig
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetConnectorConfigResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/reset:
+    post:
+      tags:
+        - payments.v3
+      summary: Reset a connector
+      operationId: resetConnector
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ResetConnectorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/connectors/{connectorID}/schedules:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector schedules
+      operationId: listConnectorSchedules
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ConnectorSchedulesCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/schedules/{scheduleID}/instances:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connector schedule instances
+      operationId: listConnectorScheduleInstances
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3ScheduleID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ConnectorScheduleInstancesCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  # PAYMENTS
+  /v3/payments:
+    post:
+      tags:
+        - payments.v3
+      summary: >
+        Create a formance payment object. This object will not be forwarded to
+        the connector. It is only used for internal purposes.
+      operationId: createPayment
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreatePaymentRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreatePaymentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payments
+      operationId: listPayments
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payments/{paymentID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment by ID
+      operationId: getPayment
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetPaymentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payments/{paymentID}/metadata:
+    patch:
+      tags:
+        - payments.v3
+      summary: Update a payment's metadata
+      operationId: updatePaymentMetadata
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3UpdatePaymentMetadataRequest"
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  # PAYMENT INITIATIONS
+  /v3/payment-initiations:
+    post:
+      tags:
+        - payments.v3
+      summary: Initiate a payment
+      operationId: initiatePayment
+      parameters:
+        - $ref: '#/components/parameters/V3NoValidation'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3InitiatePaymentRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3InitiatePaymentResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment initiations
+      operationId: listPaymentInitiations
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentInitiationsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-initiations/{paymentInitiationID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a payment initiation by ID
+      operationId: deletePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment initiation by ID
+      operationId: getPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetPaymentInitiationResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+  
+  /v3/payment-initiations/{paymentInitiationID}/retry:
+    post:
+      tags:
+        - payments.v3
+      summary: Retry a payment initiation
+      operationId: retryPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3RetryPaymentInitiationResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-initiations/{paymentInitiationID}/approve:
+    post:
+      tags:
+        - payments.v3
+      summary: Approve a payment initiation
+      operationId: approvePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ApprovePaymentInitiationResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-initiations/{paymentInitiationID}/reject:
+    post:
+      tags:
+        - payments.v3
+      summary: Reject a payment initiation
+      operationId: rejectPaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-initiations/{paymentInitiationID}/reverse:
+    post:
+      tags:
+        - payments.v3
+      summary: Reverse a payment initiation
+      operationId: reversePaymentInitiation
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3ReversePaymentInitiationRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ReversePaymentInitiationResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-initiations/{paymentInitiationID}/adjustments:
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment initiation adjustments
+      operationId: listPaymentInitiationAdjustments
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentInitiationAdjustmentsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-initiations/{paymentInitiationID}/payments:
+    get:
+      tags:
+        - payments.v3
+      summary: List all payments related to a payment initiation
+      operationId: listPaymentInitiationRelatedPayments
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentInitiationRelatedPaymentsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  # POOLS
+  /v3/pools:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a formance pool object
+      operationId: createPool
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreatePoolRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreatePoolResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all pools
+      operationId: listPools
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PoolsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/pools/{poolID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a pool by ID
+      operationId: getPool
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetPoolResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a pool by ID
+      operationId: deletePool
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/pools/{poolID}/balances:
+    get:
+      tags:
+        - payments.v3
+      summary: Get pool balances
+      operationId: getPoolBalances
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3At'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PoolBalancesResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/pools/{poolID}/accounts/{accountID}:
+    post:
+      tags:
+        - payments.v3
+      summary: Add an account to a pool
+      operationId: addAccountToPool
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    delete:
+      tags:
+        - payments.v3
+      summary: Remove an account from a pool
+      operationId: removeAccountFromPool
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: '#/components/parameters/V3AccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  # TASKS
+  /v3/tasks/{taskID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a task and its result by ID
+      operationId: getTask
+      parameters:
+        - ref: '#/components/parameters/V3TaskID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetTaskResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/sschemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+  

@@ -82,14 +82,13 @@ func (w Workflow) addPIAdjustment(
 	metadata map[string]string,
 ) error {
 	adj := models.PaymentInitiationAdjustment{
-		ID:                  adjustmentID,
-		PaymentInitiationID: adjustmentID.PaymentInitiationID,
-		CreatedAt:           workflow.Now(ctx),
-		Status:              adjustmentID.Status,
-		Amount:              amount,
-		Asset:               asset,
-		Error:               err,
-		Metadata:            metadata,
+		ID:        adjustmentID,
+		CreatedAt: workflow.Now(ctx),
+		Status:    adjustmentID.Status,
+		Amount:    amount,
+		Asset:     asset,
+		Error:     err,
+		Metadata:  metadata,
 	}
 
 	return activities.StoragePaymentInitiationsAdjustmentsStore(

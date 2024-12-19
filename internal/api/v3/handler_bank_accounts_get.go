@@ -30,6 +30,12 @@ func bankAccountsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		if err := bankAccount.Offuscate(); err != nil {
+			otel.RecordError(span, err)
+			api.InternalServerError(w, r, err)
+			return
+		}
+
 		api.Ok(w, bankAccount)
 	}
 }

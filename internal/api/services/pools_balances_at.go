@@ -15,8 +15,8 @@ func (s *Service) PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time
 		return nil, newStorageError(err, "getting pool")
 	}
 	res := make(map[string]*big.Int)
-	for _, poolAccount := range pool.PoolAccounts {
-		balances, err := s.storage.BalancesGetAt(ctx, poolAccount.AccountID, at)
+	for i := range pool.PoolAccounts {
+		balances, err := s.storage.BalancesGetAt(ctx, pool.PoolAccounts[i], at)
 		if err != nil {
 			return nil, newStorageError(err, "getting balances")
 		}

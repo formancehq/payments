@@ -23,41 +23,22 @@ func defaultPools() []models.Pool {
 	defaultAccounts := defaultAccounts()
 	return []models.Pool{
 		{
-			ID:        poolID1,
-			Name:      "test1",
-			CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
-			PoolAccounts: []models.PoolAccounts{
-				{
-					PoolID:    poolID1,
-					AccountID: defaultAccounts[0].ID,
-				},
-				{
-					PoolID:    poolID1,
-					AccountID: defaultAccounts[1].ID,
-				},
-			},
+			ID:           poolID1,
+			Name:         "test1",
+			CreatedAt:    now.Add(-60 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts[0].ID, defaultAccounts[1].ID},
 		},
 		{
-			ID:        poolID2,
-			Name:      "test2",
-			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
-			PoolAccounts: []models.PoolAccounts{
-				{
-					PoolID:    poolID2,
-					AccountID: defaultAccounts[2].ID,
-				},
-			},
+			ID:           poolID2,
+			Name:         "test2",
+			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
 		},
 		{
-			ID:        poolID3,
-			Name:      "test3",
-			CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
-			PoolAccounts: []models.PoolAccounts{
-				{
-					PoolID:    poolID3,
-					AccountID: defaultAccounts[2].ID,
-				},
-			},
+			ID:           poolID3,
+			Name:         "test3",
+			CreatedAt:    now.Add(-55 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts[2].ID},
 		},
 	}
 }
@@ -80,15 +61,10 @@ func TestPoolsUpsert(t *testing.T) {
 	t.Run("upsert with same name", func(t *testing.T) {
 		poolID3 := uuid.New()
 		p := models.Pool{
-			ID:        poolID3,
-			Name:      "test1",
-			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
-			PoolAccounts: []models.PoolAccounts{
-				{
-					PoolID:    poolID3,
-					AccountID: defaultAccounts()[2].ID,
-				},
-			},
+			ID:           poolID3,
+			Name:         "test1",
+			CreatedAt:    now.Add(-30 * time.Minute).UTC().Time,
+			PoolAccounts: []models.AccountID{defaultAccounts()[2].ID},
 		}
 
 		err := store.PoolsUpsert(ctx, p)
@@ -105,10 +81,7 @@ func TestPoolsUpsert(t *testing.T) {
 
 	t.Run("upsert with same id but more related accounts", func(t *testing.T) {
 		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
-			PoolID:    p.ID,
-			AccountID: defaultAccounts()[2].ID,
-		})
+		p.PoolAccounts = append(p.PoolAccounts, defaultAccounts()[2].ID)
 
 		upsertPool(t, ctx, store, p)
 
@@ -119,10 +92,7 @@ func TestPoolsUpsert(t *testing.T) {
 
 	t.Run("upsert with same id, but wrong related account pool id", func(t *testing.T) {
 		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
-			PoolID:    uuid.New(),
-			AccountID: defaultAccounts()[2].ID,
-		})
+		p.PoolAccounts = append(p.PoolAccounts, defaultAccounts()[2].ID)
 
 		err := store.PoolsUpsert(ctx, p)
 		require.Error(t, err)
@@ -130,12 +100,9 @@ func TestPoolsUpsert(t *testing.T) {
 
 	t.Run("upsert but account does not exist", func(t *testing.T) {
 		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
-			PoolID: p.ID,
-			AccountID: models.AccountID{
-				Reference:   "unknown",
-				ConnectorID: defaultConnector.ID,
-			},
+		p.PoolAccounts = append(p.PoolAccounts, models.AccountID{
+			Reference:   "unknown",
+			ConnectorID: defaultConnector.ID,
 		})
 
 		err := store.PoolsUpsert(ctx, p)
@@ -229,10 +196,7 @@ func TestPoolsAddAccount(t *testing.T) {
 		require.NoError(t, store.PoolsAddAccount(ctx, defaultPools()[0].ID, defaultAccounts()[2].ID))
 
 		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, models.PoolAccounts{
-			PoolID:    p.ID,
-			AccountID: defaultAccounts()[2].ID,
-		})
+		p.PoolAccounts = append(p.PoolAccounts, defaultAccounts()[2].ID)
 
 		actual, err := store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.NoError(t, err)

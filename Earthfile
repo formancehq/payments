@@ -12,7 +12,7 @@ sources:
     WORKDIR src
     WORKDIR /src
     COPY go.* .
-    COPY --dir cmd pkg internal .
+    COPY --dir cmd pkg internal tools .
     COPY main.go .
     SAVE ARTIFACT /src
 
@@ -40,6 +40,7 @@ compile-configs:
     END
     RUN jq --slurp 'add' raw_configs.json > configs.json
     SAVE ARTIFACT /src/internal/connectors/plugins/public/configs.json /configs.json
+
 
 compile:
     FROM core+builder-image
@@ -117,9 +118,24 @@ pre-commit:
     END
     BUILD --pass-args +lint
 
+compile-openapi-configs:
+    FROM core+builder-image
+    COPY (+sources/*) /src
+    WORKDIR /src/tools/compile-configs
+    RUN go build -o compile-configs
+    RUN ./compile-configs --path /src/internal/connectors/plugins/public --output ./v3-connectors-config.yaml
+    SAVE ARTIFACT ./v3-connectors-config.yaml /v3-connectors-config.yaml
+
 openapi:
-    COPY ./openapi.yaml .
-    SAVE ARTIFACT ./openapi.yaml
+    FROM node:20-alpine
+    RUN apk update && apk add yq
+    RUN npm install -g openapi-merge-cli
+    WORKDIR /src
+    COPY --dir openapi openapi
+    COPY (+compile-openapi-configs/v3-connectors-config.yaml) ./openapi/v3/v3-connectors-config.yaml
+    RUN openapi-merge-cli --config ./openapi/openapi-merge.json
+    RUN yq -oy ./openapi.json > openapi.yaml
+    SAVE ARTIFACT ./openapi.yaml AS LOCAL ./openapi.yaml
 
 tidy:
     FROM core+builder-image

@@ -1,0 +1,1268 @@
+openapi: 3.0.3
+info:
+  title: Payments API
+  version: v3
+
+components:
+  schemas:
+    # INFO
+    V3ConfigInfoResponse:
+      $ref: "#/components/schemas/V3ConfigInfo"
+    V3ConfigInfo:
+      type: object
+      properties:
+        debug:
+          type: boolean
+        version:
+          type: string
+      required:
+        - version
+
+    # ACCOUNTS
+    V3AccountsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Account"
+
+    V3GetAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3Account"
+
+    V3CreateAccountsRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - createdAt
+        - name
+        - type
+      properties:
+        reference:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/V3AccountTypeEnum"
+        defaultAsset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3CreateAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created account
+          type: string
+
+    V3Account:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - type
+        - raw
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/V3AccountTypeEnum"
+        name:
+          type: string
+        defaultAsset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        raw:
+          type: object
+    V3AccountTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - INTERNAL
+        - EXTERNAL
+
+    # BALANCES
+    V3BalancesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Balance"
+    V3Balance:
+      type: object
+      required:
+        - accountID
+        - createdAt
+        - lastUpdatedAt
+        - asset
+        - balance
+      properties:
+        accountID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastUpdatedAt:
+          type: string
+          format: date-time
+        asset:
+          type: string
+        balance:
+          type: integer
+          format: bigint
+
+    # BANK ACCOUNTS
+    V3CreateBankAccountRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        swiftBicCode:
+          type: string
+        country:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3CreateBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created bank account
+          type: string
+
+    V3UpdateBankAccountMetadataRequest:
+      type: object
+      required:
+        - metadata
+      properties:
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3ForwardBankAccountRequest:
+      type: object
+      required:
+        - connectorID
+      properties:
+        connectorID:
+          type: string
+
+    V3ForwardBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: >
+            Since this call is asynchronous, the response will contain the ID of
+            the task that was created to forward the bank account to the PSP.
+            You can use the task API to check the status of the task and get
+            the resulting bank account ID.
+          type: string
+
+    V3BankAccountsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3BankAccount"
+
+    V3GetBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3BankAccount"
+    
+    V3BankAccount:
+      type: object
+      required:
+        - id
+        - createdAt
+        - name
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        name:
+          type: string
+        accountNumber:
+          type: string
+        iban:
+          type: string
+        swiftBicCode:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        relatedAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/V3BankAccountRelatedAccount"
+
+    V3BankAccountRelatedAccount:
+      type: object
+      required:
+        - accountID
+        - createdAt
+      properties:
+        accountID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    # CONNECTORS
+    V3InstallConnectorRequest:
+      $ref: "#/components/schemas/V3ConnectorConfig"
+
+    V3InstallConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created connector
+          type: string
+
+    V3UninstallConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: >
+            Since this call is asynchronous, the response will contain the ID of
+            the task that was created to uninstall the connector.
+            You can use the task API to check the status of the task and get
+            the results.
+          type: string
+
+    V3ResetConnectorResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: >
+            Since this call is asynchronous, the response will contain the ID of
+            the task that was created to reset the connector.
+            You can use the task API to check the status of the task and get
+            the results.
+          type: string
+
+    V3ConnectorConfigsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - connector
+          properties:
+            connector:
+              type: object
+              required:
+                - key
+              properties:
+                key:
+                  type: object
+                  required:
+                    - dataType
+                    - required
+                  properties:
+                    dataType:
+                      type: string
+                    required:
+                      type: boolean
+
+    V3GetConnectorConfigResponse:
+      $ref: "#/components/schemas/V3ConnectorConfig"
+
+    V3ConnectorsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Connector"
+
+    V3ConnectorSchedulesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Schedule"
+
+    V3ConnectorScheduleInstancesCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Instance"
+
+    V3Connector:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+        - provider
+        - scheduledForDeletion
+        - config
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
+        scheduledForDeletion:
+          type: boolean
+        config:
+          type: object
+
+    V3Schedule:
+      type: object
+      required:
+        - id
+        - connectorID
+        - createdAt
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    V3Instance:
+      type: object
+      required:
+        - id
+        - connectorID
+        - createdAt
+        - udpatedAt
+        - terminated
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        terminated:
+          type: boolean
+        terminatedAt:
+          type: string
+          format: date-time
+        error:
+          type: string
+
+    # PAYMENTS
+    V3CreatePaymentRequest:
+      type: object
+      required:
+        - reference
+        - connectorID
+        - createdAt
+        - type
+        - initialAmount
+        - amount
+        - asset
+        - scheme
+      properties:
+        reference:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/V3PaymentTypeEnum"
+        initialAmount:
+          type: integer
+          format: bigint
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        scheme:
+          type: string
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/V3CreatePaymentAdjustmentRequest"
+    
+    V3CreatePaymentAdjustmentRequest:
+      type: object
+      required:
+        - reference
+        - createdAt
+        - status
+      properties:
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3CreatePaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created payment
+          type: string
+
+    V3UpdatePaymentMetadataRequest:
+      type: object
+      required:
+        - metadata
+      properties:
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3PaymentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Payment"
+
+    V3GetPaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3Payment"
+
+    V3Payment:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - type
+        - initialAmount
+        - amount
+        - asset
+        - scheme
+        - status
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        type:
+          $ref: "#/components/schemas/V3PaymentTypeEnum"
+        initialAmount:
+          type: integer
+          format: bigint
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        scheme:
+          type: string
+        status:
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        adjustments:
+          type: array
+          items:
+            $ref: "#/components/schemas/V3PaymentAdjustment"
+
+    V3PaymentAdjustment:
+      type: object
+      required:
+        - id
+        - reference
+        - createdAt
+        - status
+        - raw
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+        raw:
+          type: object
+
+    V3PaymentTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PAY-IN
+        - PAYOUT
+        - TRANSFER
+        - OTHER
+
+    V3PaymentStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - PENDING
+        - SUCCEEDED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - REFUND_REVERSED
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - AMOUNT_ADJUSTEMENT
+        - AUTHORISATION
+        - CAPTURE
+        - CAPTURE_FAILED
+        - OTHER
+
+    # PAYMENT INITIATIONS
+    V3InitiatePaymentRequest:
+      type: object
+      required:
+        - reference
+        - scheduledAt
+        - connectorID
+        - description
+        - type
+        - amount
+        - asset
+      properties:
+        reference:
+          type: string
+        scheduledAt:
+          type: string
+          format: date-time
+        connectorID:
+          type: string
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3InitiatePaymentResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          properties:
+            paymentInitiationID:
+              description: >
+                Related payment initiation object ID created.
+              type: string
+            taskID:
+              description: >
+                Will be filled if the noValidation query parameter is set to true.
+                Since this call is asynchronous, the response will contain the ID of
+                the task that was created to create the payment on the PSP.
+                You can use the task API to check the status of the task and get
+                the resulting payment ID
+              type: string
+
+    V3RetryPaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: >
+            Since this call is asynchronous, the response will contain the ID of
+            the task that was created to retry the payment initiation to the PSP.
+            You can use the task API to check the status of the task and get
+            the resulting payment ID.
+          type: string
+
+    V3ApprovePaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: >
+            Since this call is asynchronous, the response will contain the ID of
+            the task that was created to approve the payment initiation.
+            You can use the task API to check the status of the task and get
+            the resulting payment ID.
+          type: string
+
+    V3ReversePaymentInitiationRequest:
+      type: object
+      required:
+        - reference
+        - description
+        - amount
+        - asset
+      properties:
+        reference:
+          type: string
+        description:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3ReversePaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          properties:
+            taskID:
+              description: >
+                Since this call is asynchronous, the response will contain the ID of
+                the task that was created to reverse the payment initiation.
+                You can use the task API to check the status of the task and get
+                the resulting payment ID.
+              type: string
+            paymentInitiationReversalID:
+              description: >
+                Related payment initiation reversal object ID created.
+              type: string
+
+    V3PaymentInitiationsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3PaymentInitiation"
+
+    V3PaymentInitiationAdjustmentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3PaymentInitiationAdjustment"
+
+    V3PaymentInitiationRelatedPaymentsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Payment"
+
+    V3PaymentInitiation:
+      type: object
+      required:
+        - id
+        - connectorID
+        - reference
+        - createdAt
+        - scheduledAt
+        - description
+        - type
+        - amount
+        - asset
+        - status
+      properties:
+        id:
+          type: string
+        connectorID:
+          type: string
+        reference:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        scheduledAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        type:
+          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        status:
+          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
+        sourceAccountID:
+          type: string
+        destinationAccountID:
+          type: string
+        error:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3PaymentInitiationAdjustment:
+      type: object
+      required:
+        - id
+        - createdAt
+        - status
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: "#/components/schemas/V3PaymentInitiationAdjustmentStatusEnum"
+        amount:
+          type: integer
+          format: bigint
+        asset:
+          type: string
+        error:
+          type: string
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3GetPaymentInitiationResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3PaymentInitiation"
+
+    V3PaymentInitiationStatusEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - WAITING_FOR_VALIDATION
+        - PROCESSING
+        - PROCESSED
+        - FAILED
+        - REJECTED
+        - REVERSE_PROCESSING
+        - REVERSE_FAILED
+        - REVERSED
+    
+    V3PaymentInitiationTypeEnum:
+      type: string
+      enum:
+        - UNKNOWN
+        - TRANSFER
+        - PAYOUT
+
+    # POOLS
+    V3CreatePoolRequest:
+      type: object
+      required:
+        - name
+        - accountIDs
+      properties:
+        name:
+          type: string
+        accountIDs:
+          type: array
+          items:
+            type: string
+
+    V3CreatePoolResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created pool
+          type: string
+
+    V3PoolsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: ""
+            data:
+              type: array
+              items:
+                $ref: "#/components/schemas/V3Pool"
+
+    V3GetPoolResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3Pool"
+
+    V3PoolBalancesResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3PoolBalances"
+          
+    V3Pool:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+        - poolAccounts
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        poolAccounts:
+          type: array
+          items:
+            $ref: "#/components/schemas/V3AccountID"
+
+    V3PoolBalances:
+      type: array
+      items:
+        $ref: "#/components/schemas/V3PoolBalance"
+
+    V3PoolBalance:
+      type: object
+      required:
+        - asset
+        - amount
+      properties:
+        asset:
+          type: string
+        amount:
+          type: integer
+          format: bigint
+
+    # TASKS
+    V3GetTaskResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3Task"
+
+    V3Task:
+      type: object
+      required:
+        - id
+        - status
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+        status:
+          $ref: "#/components/schemas/V3TaskStatusEnum"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        connectorID:
+          type: string
+        createdObjectID:
+          type: string
+        error:
+          type: string
+
+    V3TaskStatusEnum:
+      type: string
+      enum:
+        - PROCESSING
+        - SUCCEEDED
+        - FAILED
+
+    # OTHERS
+    V3QueryBuilder:
+      type: object
+      additionalProperties: true
+
+    V3Metadata:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+
+    V3ErrorResponse:
+      type: object
+      required:
+        - errorCode
+        - errorMessage
+      properties:
+        errorCode:
+          $ref: '#/components/schemas/V3ErrorsEnum'
+        errorMessage:
+          type: string
+          example: '[VALIDATION] missing required config field: pollingPeriod'
+        details:
+          type: string
+    V3ErrorsEnum:
+      type: string
+      enum:
+        - INTERNAL
+        - VALIDATION
+        - INVALID_ID
+        - MISSING_OR_INVALID_BODY
+        - CONFLICT
+        - NOT_FOUND
+      example: VALIDATION

@@ -30,6 +30,6 @@ func connectorsUninstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Accepted(w, task)
+		api.Accepted(w, task.ID.String())
 	}
 }
