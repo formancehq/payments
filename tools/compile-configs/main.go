@@ -3,8 +3,11 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -84,9 +87,22 @@ func main() {
 }
 
 func readConfig(name string) (V3Config, error) {
-	f, err := os.Open(*path + "/" + name + "/" + "config.json")
+	f, err := os.Open(filepath.Join(*path, name, "config.json"))
 	if err != nil {
 		return V3Config{}, err
+	}
+
+	// Verify the opened file is within the intended directory
+	absPath, err := filepath.Abs(*path)
+	if err != nil {
+		return V3Config{}, err
+	}
+	absFile, err := filepath.Abs(filepath.Join(*path, name, "config.json"))
+	if err != nil {
+		return V3Config{}, err
+	}
+	if !strings.HasPrefix(absFile, absPath) {
+		return V3Config{}, fmt.Errorf("invalid path: %s", name)
 	}
 	defer f.Close()
 

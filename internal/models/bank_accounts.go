@@ -37,7 +37,7 @@ func (b *BankAccount) IdempotencyKey() string {
 	return IdempotencyKey(b.ID)
 }
 
-func (a *BankAccount) Offuscate() error {
+func (a *BankAccount) Obfuscate() error {
 	if a.IBAN != nil {
 		length := len(*a.IBAN)
 		if length < 8 {

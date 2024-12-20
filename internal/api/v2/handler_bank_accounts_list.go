@@ -40,7 +40,7 @@ func bankAccountsList(backend backend.Backend) http.HandlerFunc {
 
 		data := make([]*BankAccountResponse, len(cursor.Data))
 		for i := range cursor.Data {
-			if err := cursor.Data[i].Offuscate(); err != nil {
+			if err := cursor.Data[i].Obfuscate(); err != nil {
 				otel.RecordError(span, err)
 				api.InternalServerError(w, r, err)
 				return
