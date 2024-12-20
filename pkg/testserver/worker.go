@@ -23,6 +23,7 @@ func NewWorker(configuration Configuration, logger Logger) *Worker {
 	return &Worker{
 		configuration: configuration,
 		logger:        logger,
+		errorChan:     make(chan error, 1),
 	}
 }
 
@@ -45,7 +46,13 @@ func (w *Worker) Start(args []string) error {
 	ctx = service.ContextWithLifecycle(ctx)
 	ctx, cancel := context.WithCancel(ctx)
 
+	go func() {
+		w.errorChan <- rootCmd.ExecuteContext(ctx)
+	}()
+
 	select {
+	case <-ctx.Done():
+		return errors.New("unexpected context cancel before worker ready")
 	case <-service.Ready(ctx):
 	case err := <-w.errorChan:
 		cancel()

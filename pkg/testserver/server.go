@@ -198,6 +198,8 @@ func (s *Server) Start() error {
 	}()
 
 	select {
+	case <-ctx.Done():
+		return errors.New("unexpected context cancel before server ready")
 	case <-service.Ready(ctx):
 	case err := <-s.errorChan:
 		cancel()
