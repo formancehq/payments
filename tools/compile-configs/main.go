@@ -18,6 +18,12 @@ var (
 
 func main() {
 	flag.Parse()
+	if *path == "" {
+		log.Fatal("path flag is required")
+	}
+	if *outputFilename == "" {
+		log.Fatal("output flag is required")
+	}
 	caser := cases.Title(language.English)
 
 	entries, err := os.ReadDir(*path)
