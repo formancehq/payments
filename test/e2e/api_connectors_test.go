@@ -10,6 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
+	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
@@ -97,15 +98,17 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(err).To(BeNil())
 
 			delRes := struct {
-				Data models.Task `json:"data"`
+				Data v3.ConnectorUninstallResponse `json:"data"`
 			}{}
 			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
 			Expect(err).To(BeNil())
 			Expect(delRes.Data).NotTo(BeNil())
-			Expect(delRes.Data.ID.Reference).To(ContainSubstring("uninstall"))
+			taskID, err := models.TaskIDFromString(delRes.Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring("uninstall"))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
-			Eventually(taskPoller(delRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(delRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
 		It("should be ok with v2", func() {

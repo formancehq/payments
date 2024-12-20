@@ -103,10 +103,12 @@ var _ = Context("Payments API Bank Accounts", func() {
 			createRes    struct{ Data string }
 			forwardReq   v3.BankAccountsForwardToConnectorRequest
 			connectorRes struct{ Data string }
-			res          struct{ Data models.Task }
-			err          error
-			e            chan *nats.Msg
-			id           uuid.UUID
+			res          struct {
+				Data v3.BankAccountsForwardToConnectorResponse
+			}
+			err error
+			e   chan *nats.Msg
+			id  uuid.UUID
 		)
 		JustBeforeEach(func() {
 			ver = 3
@@ -131,8 +133,10 @@ var _ = Context("Payments API Bank Accounts", func() {
 			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
-			Expect(res.Data.ID.Reference).To(ContainSubstring(id.String()))
-			Expect(res.Data.ID.Reference).To(ContainSubstring(connectorRes.Data))
+			taskID, err := models.TaskIDFromString(res.Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring(id.String()))
+			Expect(taskID.Reference).To(ContainSubstring(connectorRes.Data))
 
 			connectorID, err := models.ConnectorIDFromString(connectorRes.Data)
 			Expect(err).To(BeNil())
