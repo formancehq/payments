@@ -10,6 +10,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+type PaymentInitiationsRetryResponse struct {
+	TaskID string `json:"taskID"`
+}
+
 func paymentInitiationsRetry(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsRetry")
@@ -30,6 +34,8 @@ func paymentInitiationsRetry(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Accepted(w, task.ID.String())
+		api.Accepted(w, PaymentInitiationsRetryResponse{
+			TaskID: task.ID.String(),
+		})
 	}
 }

@@ -3471,9 +3471,14 @@ components:
         - data
       properties:
         data:
-          description: |
-            Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.
-          type: string
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.
+              type: string
     V3BankAccountsCursorResponse:
       type: object
       required:
@@ -3564,9 +3569,14 @@ components:
         - data
       properties:
         data:
-          description: |
-            Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results.
-          type: string
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results.
+              type: string
     V3ResetConnectorResponse:
       type: object
       required:
@@ -4027,18 +4037,28 @@ components:
         - data
       properties:
         data:
-          description: |
-            Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.
-          type: string
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.
+              type: string
     V3ApprovePaymentInitiationResponse:
       type: object
       required:
         - data
       properties:
         data:
-          description: |
-            Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.
-          type: string
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.
+              type: string
     V3ReversePaymentInitiationRequest:
       type: object
       required:
@@ -4440,11 +4460,11 @@ components:
       type: object
       required:
         - name
-        - apiKey
-        - webhookUsername
         - webhookPassword
         - companyID
         - liveEndpointPrefix
+        - apiKey
+        - webhookUsername
       properties:
         apiKey:
           type: string
@@ -4490,12 +4510,12 @@ components:
       type: object
       required:
         - name
-        - username
         - password
         - endpoint
         - authorizationEndpoint
         - userCertificate
         - userCertificateKey
+        - username
       properties:
         authorizationEndpoint:
           type: string
@@ -4578,9 +4598,9 @@ components:
       type: object
       required:
         - name
-        - endpoint
         - clientID
         - apiKey
+        - endpoint
       properties:
         apiKey:
           type: string
