@@ -5,7 +5,6 @@ import (
 
 	temporalworker "github.com/formancehq/go-libs/v2/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
-	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 )
@@ -31,19 +30,17 @@ type Workflow struct {
 	temporalNamespace string
 	temporalClient    client.Client
 
-	plugins  plugins.Plugins
-	webhooks webhooks.Webhooks
+	plugins plugins.Plugins
 
 	stackPublicURL string
 	stack          string
 }
 
-func New(temporalClient client.Client, temporalNamespace string, plugins plugins.Plugins, webhooks webhooks.Webhooks, stack string, stackPublicURL string) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, plugins plugins.Plugins, stack string, stackPublicURL string) Workflow {
 	return Workflow{
 		temporalClient:    temporalClient,
 		temporalNamespace: temporalNamespace,
 		plugins:           plugins,
-		webhooks:          webhooks,
 		stack:             stack,
 		stackPublicURL:    stackPublicURL,
 	}
