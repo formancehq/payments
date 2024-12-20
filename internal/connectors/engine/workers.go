@@ -142,6 +142,7 @@ func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connect
 }
 
 func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got insert notification for %q", connectorID.String())
 	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
 		return err
@@ -160,10 +161,18 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
+	// If we have at least one connector, we need to create the default worker
+	// to handle the possible tasks that are not related to a specific connector.
+	// (ex: pools, bank accounts, uninstallation etc...)
+	if err := w.AddDefaultWorker(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got update notification for %q", connectorID.String())
 	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -185,6 +194,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 }
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
 	if err := w.plugins.UnregisterPlugin(connectorID); err != nil {
 		return err
 	}
