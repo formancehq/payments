@@ -532,6 +532,7 @@ components:
       required:
         - id
         - connectorID
+        - scheduleID
         - createdAt
         - udpatedAt
         - terminated
@@ -539,6 +540,8 @@ components:
         id:
           type: string
         connectorID:
+          type: string
+        scheduleID:
           type: string
         createdAt:
           type: string
