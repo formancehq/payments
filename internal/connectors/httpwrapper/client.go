@@ -126,7 +126,6 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 
 	// TODO: assuming json bodies for now, but may need to handle other body types
 	if err = json.Unmarshal(rawBody, expectedBody); err != nil {
-		fmt.Println("TOTO" + string(rawBody))
 		return resp.StatusCode, fmt.Errorf("failed to unmarshal response with status %d: %w", resp.StatusCode, err)
 	}
 	return resp.StatusCode, nil
