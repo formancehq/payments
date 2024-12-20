@@ -3337,8 +3337,7 @@ components:
         - data
       properties:
         data:
-          description: The ID of the created account
-          type: string
+          $ref: '#/components/schemas/V3Account'
     V3Account:
       type: object
       required:
@@ -3837,8 +3836,7 @@ components:
         - data
       properties:
         data:
-          description: The ID of the created payment
-          type: string
+          $ref: '#/components/schemas/V3Payment'
     V3UpdatePaymentMetadataRequest:
       type: object
       required:
@@ -4513,12 +4511,12 @@ components:
       type: object
       required:
         - name
-        - password
-        - endpoint
         - authorizationEndpoint
         - userCertificate
         - userCertificateKey
         - username
+        - password
+        - endpoint
       properties:
         authorizationEndpoint:
           type: string
@@ -4544,9 +4542,9 @@ components:
       type: object
       required:
         - name
-        - apiKey
         - endpoint
         - loginID
+        - apiKey
       properties:
         apiKey:
           type: string
@@ -4623,9 +4621,9 @@ components:
       type: object
       required:
         - name
+        - endpoint
         - apiKey
         - apiSecret
-        - endpoint
       properties:
         apiKey:
           type: string
@@ -4683,8 +4681,8 @@ components:
       type: object
       required:
         - name
-        - webhookPublicKey
         - apiKey
+        - webhookPublicKey
       properties:
         apiKey:
           type: string
