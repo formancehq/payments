@@ -21,7 +21,7 @@ type Client struct {
 }
 
 func NewClient(urlStr string, transport http.RoundTripper) (*Client, error) {
-	config := &httpwrapper.Config{}
+	config := &httpwrapper.Config{Timeout: time.Second}
 	internalClient := httpwrapper.NewClient(config)
 	return &Client{
 		baseUrl:        urlStr,
