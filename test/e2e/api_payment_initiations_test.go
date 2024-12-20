@@ -53,7 +53,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			initRes      struct {
 				Data v3.PaymentInitiationsCreateResponse
 			}
-			approveRes struct{ Data models.Task }
+			approveRes struct {
+				Data v3.PaymentInitiationsApproveResponse
+			}
 		)
 
 		JustBeforeEach(func() {
@@ -88,7 +90,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
 			Expect(err).To(BeNil())
 			Expect(approveRes.Data).NotTo(BeNil())
-			Expect(approveRes.Data.ID.Reference).To(ContainSubstring("create-transfer"))
+			taskID, err := models.TaskIDFromString(approveRes.Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring("create-transfer"))
 
 			var msg = struct {
 				ConnectorID          string `json:"connectorId"`
@@ -101,7 +105,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
 				Data models.PaymentInitiationExpanded
@@ -166,7 +170,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			req := v3.PaymentInitiationsReverseRequest{
 				Reference:   uuid.New().String(),
@@ -208,7 +212,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			initRes      struct {
 				Data v3.PaymentInitiationsCreateResponse
 			}
-			approveRes struct{ Data models.Task }
+			approveRes struct {
+				Data v3.PaymentInitiationsApproveResponse
+			}
 		)
 
 		JustBeforeEach(func() {
@@ -243,7 +249,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
 			Expect(err).To(BeNil())
 			Expect(approveRes.Data).NotTo(BeNil())
-			Expect(approveRes.Data.ID.Reference).To(ContainSubstring("create-payout"))
+			taskID, err := models.TaskIDFromString(approveRes.Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring("create-payout"))
 
 			var msg = struct {
 				ConnectorID          string `json:"connectorId"`
@@ -256,7 +264,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
 				Data models.PaymentInitiationExpanded
@@ -321,7 +329,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.ID.String())).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			req := v3.PaymentInitiationsReverseRequest{
 				Reference:   uuid.New().String(),

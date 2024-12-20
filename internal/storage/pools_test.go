@@ -90,14 +90,6 @@ func TestPoolsUpsert(t *testing.T) {
 		require.Equal(t, p, *actual)
 	})
 
-	t.Run("upsert with same id, but wrong related account pool id", func(t *testing.T) {
-		p := defaultPools()[0]
-		p.PoolAccounts = append(p.PoolAccounts, defaultAccounts()[2].ID)
-
-		err := store.PoolsUpsert(ctx, p)
-		require.Error(t, err)
-	})
-
 	t.Run("upsert but account does not exist", func(t *testing.T) {
 		p := defaultPools()[0]
 		p.PoolAccounts = append(p.PoolAccounts, models.AccountID{

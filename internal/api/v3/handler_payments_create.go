@@ -222,7 +222,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, payment.ID.String())
+		api.Created(w, payment)
 	}
 }
 

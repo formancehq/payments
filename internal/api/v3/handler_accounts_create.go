@@ -112,7 +112,7 @@ func accountsCreate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, account.ID.String())
+		api.Created(w, account)
 	}
 }
 

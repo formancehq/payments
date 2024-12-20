@@ -241,7 +241,7 @@ var _ = Context("Payments API Pools", func() {
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data.PoolAccounts).To(HaveLen(len(accountIDs) - 1))
-			Expect(getRes.Data.PoolAccounts[0].AccountID.String()).To(Equal(accountIDs[1]))
+			Expect(getRes.Data.PoolAccounts[0].String()).To(Equal(accountIDs[1]))
 		})
 
 		It("should not fail even when removing underlying account not attached to pool", func() {
