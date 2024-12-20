@@ -27,7 +27,7 @@ type BankAccountRelatedAccountsPayload struct {
 }
 
 func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publish.EventMessage {
-	bankAccount.Offuscate()
+	bankAccount.Obfuscate()
 
 	payload := BankAccountMessagePayload{
 		ID:        bankAccount.ID.String(),

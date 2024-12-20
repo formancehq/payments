@@ -128,7 +128,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		if err := bankAccount.Offuscate(); err != nil {
+		if err := bankAccount.Obfuscate(); err != nil {
 			otel.RecordError(span, err)
 			api.InternalServerError(w, r, err)
 			return
