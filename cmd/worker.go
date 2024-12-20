@@ -19,12 +19,12 @@ func newWorker() *cobra.Command {
 		RunE:         runWorker(),
 	}
 	commonFlags(cmd)
-	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	// MaxConcurrentWorkflowTaskPollers should not be set to a number < 2, otherwise
 	// temporal will panic.
 	// After meeting with the temporal team, we decided to set it to 20 as per
 	// their recommendation.
 	cmd.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
+	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	return cmd
 }
 

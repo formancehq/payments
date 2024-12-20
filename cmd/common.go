@@ -55,12 +55,6 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		return nil, err
 	}
 
-	stack, _ := cmd.Flags().GetString(StackFlag)
-	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
-	debug, _ := cmd.Flags().GetBool(service.DebugFlag)
-	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
-	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
-
 	return fx.Options(
 		fx.Provide(func() *bunconnect.ConnectionOptions {
 			return connectionOptions
@@ -82,12 +76,5 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 		licence.FXModuleFromFlags(cmd, ServiceName),
 		storage.Module(cmd, *connectionOptions, configEncryptionKey),
 		profiling.FXModuleFromFlags(cmd),
-		engine.Module(
-			stack,
-			stackPublicURL,
-			temporalNamespace,
-			temporalMaxConcurrentWorkflowTaskPollers,
-			debug,
-		),
 	), nil
 }

@@ -16,13 +16,7 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(
-	stack string,
-	stackURL string,
-	temporalNamespace string,
-	temporalMaxConcurrentWorkflowTaskPollers int,
-	debug bool,
-) fx.Option {
+func Module(stack string, debug bool) fx.Option {
 	ret := []fx.Option{
 		fx.Provide(func(
 			logger logging.Logger,
