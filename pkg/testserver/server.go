@@ -3,11 +3,9 @@ package testserver
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -16,8 +14,6 @@ import (
 
 	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
-	"github.com/formancehq/go-libs/v2/publish"
-	"github.com/formancehq/go-libs/v2/temporal"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
@@ -59,6 +55,7 @@ type Logger interface {
 }
 
 type Server struct {
+	id            string
 	configuration Configuration
 	logger        Logger
 	worker        *Worker
@@ -66,117 +63,11 @@ type Server struct {
 	cancel        func()
 	ctx           context.Context
 	errorChan     chan error
-	id            string
 }
 
 func (s *Server) Start() error {
 	rootCmd := cmd.NewRootCommand()
-	args := []string{
-		"serve",
-		"--" + cmd.ListenFlag, ":0",
-		"--" + bunconnect.PostgresURIFlag, s.configuration.PostgresConfiguration.DatabaseSourceName,
-		"--" + bunconnect.PostgresMaxOpenConnsFlag, fmt.Sprint(s.configuration.PostgresConfiguration.MaxOpenConns),
-		"--" + bunconnect.PostgresConnMaxIdleTimeFlag, fmt.Sprint(s.configuration.PostgresConfiguration.ConnMaxIdleTime),
-		"--" + cmd.ConfigEncryptionKeyFlag, "dummyval",
-		"--" + temporal.TemporalAddressFlag, s.configuration.TemporalAddress,
-		"--" + temporal.TemporalNamespaceFlag, s.configuration.TemporalNamespace,
-		"--" + temporal.TemporalInitSearchAttributesFlag, fmt.Sprintf("stack=%s", s.configuration.Stack),
-		"--" + cmd.StackFlag, s.configuration.Stack,
-	}
-	if s.configuration.PostgresConfiguration.MaxIdleConns != 0 {
-		args = append(
-			args,
-			"--"+bunconnect.PostgresMaxIdleConnsFlag,
-			fmt.Sprint(s.configuration.PostgresConfiguration.MaxIdleConns),
-		)
-	}
-	if s.configuration.PostgresConfiguration.MaxOpenConns != 0 {
-		args = append(
-			args,
-			"--"+bunconnect.PostgresMaxOpenConnsFlag,
-			fmt.Sprint(s.configuration.PostgresConfiguration.MaxOpenConns),
-		)
-	}
-	if s.configuration.PostgresConfiguration.ConnMaxIdleTime != 0 {
-		args = append(
-			args,
-			"--"+bunconnect.PostgresConnMaxIdleTimeFlag,
-			fmt.Sprint(s.configuration.PostgresConfiguration.ConnMaxIdleTime),
-		)
-	}
-	if s.configuration.NatsURL != "" {
-		args = append(
-			args,
-			"--"+publish.PublisherNatsEnabledFlag,
-			"--"+publish.PublisherNatsURLFlag, s.configuration.NatsURL,
-			"--"+publish.PublisherTopicMappingFlag, fmt.Sprintf("*:%s", s.id),
-		)
-	}
-	if s.configuration.OTLPConfig != nil {
-		if s.configuration.OTLPConfig.Metrics != nil {
-			args = append(
-				args,
-				"--"+otlpmetrics.OtelMetricsExporterFlag, s.configuration.OTLPConfig.Metrics.Exporter,
-			)
-			if s.configuration.OTLPConfig.Metrics.KeepInMemory {
-				args = append(
-					args,
-					"--"+otlpmetrics.OtelMetricsKeepInMemoryFlag,
-				)
-			}
-			if s.configuration.OTLPConfig.Metrics.OTLPConfig != nil {
-				args = append(
-					args,
-					"--"+otlpmetrics.OtelMetricsExporterOTLPEndpointFlag, s.configuration.OTLPConfig.Metrics.OTLPConfig.Endpoint,
-					"--"+otlpmetrics.OtelMetricsExporterOTLPModeFlag, s.configuration.OTLPConfig.Metrics.OTLPConfig.Mode,
-				)
-				if s.configuration.OTLPConfig.Metrics.OTLPConfig.Insecure {
-					args = append(args, "--"+otlpmetrics.OtelMetricsExporterOTLPInsecureFlag)
-				}
-			}
-			if s.configuration.OTLPConfig.Metrics.RuntimeMetrics {
-				args = append(args, "--"+otlpmetrics.OtelMetricsRuntimeFlag)
-			}
-			if s.configuration.OTLPConfig.Metrics.MinimumReadMemStatsInterval != 0 {
-				args = append(
-					args,
-					"--"+otlpmetrics.OtelMetricsRuntimeMinimumReadMemStatsIntervalFlag,
-					s.configuration.OTLPConfig.Metrics.MinimumReadMemStatsInterval.String(),
-				)
-			}
-			if s.configuration.OTLPConfig.Metrics.PushInterval != 0 {
-				args = append(
-					args,
-					"--"+otlpmetrics.OtelMetricsExporterPushIntervalFlag,
-					s.configuration.OTLPConfig.Metrics.PushInterval.String(),
-				)
-			}
-			if len(s.configuration.OTLPConfig.Metrics.ResourceAttributes) > 0 {
-				args = append(
-					args,
-					"--"+otlp.OtelResourceAttributesFlag,
-					strings.Join(s.configuration.OTLPConfig.Metrics.ResourceAttributes, ","),
-				)
-			}
-		}
-		if s.configuration.OTLPConfig.BaseConfig.ServiceName != "" {
-			args = append(args, "--"+otlp.OtelServiceNameFlag, s.configuration.OTLPConfig.BaseConfig.ServiceName)
-		}
-	}
-
-	if s.configuration.Debug {
-		args = append(args, "--"+service.DebugFlag)
-	}
-
-	// ensure we have one worker running
-	wg := &sync.WaitGroup{}
-	defer wg.Wait()
-	go func() {
-		wg.Add(1)
-		s.worker = NewWorker(s.configuration, s.logger)
-		s.worker.Start(args)
-		wg.Done()
-	}()
+	args := Flags("serve", s.id, s.configuration)
 
 	s.logger.Logf("Starting application with flags: %s", strings.Join(args, " "))
 	rootCmd.SetArgs(args)
@@ -230,14 +121,6 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	wg := &sync.WaitGroup{}
-	defer wg.Wait()
-	go func() {
-		wg.Add(1)
-		s.worker.Stop(ctx)
-		wg.Done()
-	}()
-
 	if s.cancel == nil {
 		return nil
 	}
@@ -312,10 +195,14 @@ func (s *Server) URL() string {
 func New(t T, configuration Configuration) *Server {
 	t.Helper()
 
+	serverID := uuid.NewString()[:8]
+	worker := NewWorker(t, configuration, serverID)
+
 	srv := &Server{
+		id:            serverID,
 		logger:        t,
 		configuration: configuration,
-		id:            uuid.NewString()[:8],
+		worker:        worker,
 		errorChan:     make(chan error, 1),
 	}
 	t.Logf("Start testing server")

@@ -32,6 +32,7 @@ func setLogger() {
 
 func commonFlags(cmd *cobra.Command) {
 	cmd.Flags().String(StackFlag, "", "Stack name")
+	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
 	service.AddFlags(cmd.Flags())
 	otlpmetrics.AddFlags(cmd.Flags())
 	otlptraces.AddFlags(cmd.Flags())

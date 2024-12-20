@@ -5,10 +5,13 @@ import (
 	"errors"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/profiling"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/cmd"
+	"github.com/stretchr/testify/require"
 )
 
 type Worker struct {
@@ -17,23 +20,39 @@ type Worker struct {
 	cancel        func()
 	ctx           context.Context
 	errorChan     chan error
+	id            string
 }
 
-func NewWorker(configuration Configuration, logger Logger) *Worker {
-	return &Worker{
+func NewWorker(t T, configuration Configuration, serverID string) *Worker {
+	t.Helper()
+
+	worker := &Worker{
+		id:            serverID,
+		logger:        t,
 		configuration: configuration,
-		logger:        logger,
 		errorChan:     make(chan error, 1),
 	}
+	t.Logf("Start testing worker")
+	require.NoError(t, worker.Start())
+	t.Cleanup(func() {
+		t.Logf("Stop testing worker")
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+
+		require.NoError(t, worker.Stop(ctx))
+	})
+
+	return worker
 }
 
-func (w *Worker) Start(args []string) error {
+func (w *Worker) Start() error {
 	rootCmd := cmd.NewRootCommand()
-	workerArgs := []string{"run-worker"}
-	workerArgs = append(workerArgs, args...)
+	args := Flags("worker", w.id, w.configuration)
+	args = append(args, "--"+profiling.ProfilerListenFlag)
+	args = append(args, ":9191")
 
-	w.logger.Logf("Starting worker with flags: %s", strings.Join(workerArgs, " "))
-	rootCmd.SetArgs(workerArgs)
+	w.logger.Logf("Starting worker with flags: %s", strings.Join(args, " "))
+	rootCmd.SetArgs(args)
 	rootCmd.SilenceErrors = true
 	output := w.configuration.Output
 	if output == nil {

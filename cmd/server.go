@@ -23,7 +23,6 @@ func newServer() *cobra.Command {
 		RunE:         runServer(),
 	}
 	commonFlags(cmd)
-	cmd.Flags().String(ListenFlag, ":8080", "Listen address")
 	return cmd
 }
 
