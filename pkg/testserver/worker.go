@@ -17,7 +17,6 @@ type Worker struct {
 	cancel        func()
 	ctx           context.Context
 	errorChan     chan error
-	id            string
 }
 
 func NewWorker(configuration Configuration, logger Logger) *Worker {
