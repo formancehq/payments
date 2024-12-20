@@ -64,7 +64,7 @@ components:
         - reference
         - connectorID
         - createdAt
-        - name
+        - accountName
         - type
       properties:
         reference:
@@ -74,7 +74,7 @@ components:
         createdAt:
           type: string
           format: date-time
-        name:
+        accountName:
           type: string
         type:
           $ref: "#/components/schemas/V3AccountTypeEnum"

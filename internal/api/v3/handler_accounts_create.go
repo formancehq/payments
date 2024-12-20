@@ -20,7 +20,7 @@ type CreateAccountRequest struct {
 	ConnectorID  string            `json:"connectorID"`
 	CreatedAt    time.Time         `json:"createdAt"`
 	DefaultAsset string            `json:"defaultAsset"`
-	Name         string            `json:"name"`
+	Name         string            `json:"accountName"`
 	Type         string            `json:"type"`
 	Metadata     map[string]string `json:"metadata"`
 }
