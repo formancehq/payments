@@ -9,8 +9,6 @@ import (
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
-	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
@@ -72,10 +70,7 @@ type engine struct {
 	logger logging.Logger
 
 	temporalClient client.Client
-
-	workers *WorkerPool
-	plugins plugins.Plugins
-	storage storage.Storage
+	storage        storage.Storage
 
 	stack string
 
@@ -85,17 +80,12 @@ type engine struct {
 func New(
 	logger logging.Logger,
 	temporalClient client.Client,
-	workers *WorkerPool,
-	plugins plugins.Plugins,
 	storage storage.Storage,
-	webhooks webhooks.Webhooks,
 	stack string,
 ) Engine {
 	return &engine{
 		logger:         logger,
 		temporalClient: temporalClient,
-		workers:        workers,
-		plugins:        plugins,
 		storage:        storage,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
@@ -141,18 +131,6 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, rawConfig)
-	if err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, handlePluginError(err)
-	}
-
-	err = e.workers.AddWorker(getConnectorTaskQueue(e.stack, connector.ID))
-	if err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, err
-	}
-
 	// Launch the workflow
 	run, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
@@ -188,15 +166,6 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.UninstallConnector")
 	defer span.End()
-
-	if err := e.workers.AddDefaultWorker(); err != nil {
-		return models.Task{}, err
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		otel.RecordError(span, err)
-		return models.Task{}, err
-	}
 
 	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
@@ -753,10 +722,6 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
-	if err := e.workers.AddDefaultWorker(); err != nil {
-		return err
-	}
-
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -790,10 +755,6 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
-
-	if err := e.workers.AddDefaultWorker(); err != nil {
-		return err
-	}
 
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
@@ -841,10 +802,6 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
 	defer span.End()
 
-	if err := e.workers.AddDefaultWorker(); err != nil {
-		return err
-	}
-
 	if err := e.storage.PoolsRemoveAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -890,10 +847,6 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
-
-	if err := e.workers.AddDefaultWorker(); err != nil {
-		return err
-	}
 
 	deleted, err := e.storage.PoolsDelete(ctx, poolID)
 	if err != nil {
@@ -942,25 +895,17 @@ func (e *engine) OnStop(ctx context.Context) {
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
-	e.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
-		storage.ConnectorChangesInsert: e.onInsertPlugin,
-		storage.ConnectorChangesUpdate: e.onUpdatePlugin,
-		storage.ConnectorChangesDelete: e.onDeletePlugin,
-	})
-
 	query := storage.NewListConnectorsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
 	)
 
-	shouldCreateDefaultWorker := false
 	for {
 		connectors, err := e.storage.ConnectorsList(ctx, query)
 		if err != nil {
 			return err
 		}
 
-		shouldCreateDefaultWorker = shouldCreateDefaultWorker || len(connectors.Data) > 0
 		for _, connector := range connectors.Data {
 			if err := e.onStartPlugin(ctx, connector); err != nil {
 				return err
@@ -976,71 +921,6 @@ func (e *engine) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
-
-	if shouldCreateDefaultWorker {
-		// If we have at least one connector, we need to create the default worker
-		// to handle the possible tasks that are not related to a specific connector.
-		// (ex: pools, bank accounts, uninstallation etc...)
-		if err := e.workers.AddDefaultWorker(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
-	if err != nil {
-		return err
-	}
-
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	if err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config); err != nil {
-		return err
-	}
-
-	if err := e.workers.AddWorker(getConnectorTaskQueue(e.stack, connector.ID)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
-	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return e.onDeletePlugin(ctx, connectorID)
-		}
-		return err
-	}
-
-	// Only react to scheduled for deletion changes
-	if !connector.ScheduledForDeletion {
-		return nil
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	if err := e.plugins.UnregisterPlugin(connectorID); err != nil {
-		return err
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -1054,24 +934,9 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		return err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
-	if err != nil {
-		e.logger.Errorf("failed to register plugin: %w", err)
-		// We don't want to crash the pod if the plugin registration fails,
-		// otherwise, the client will not be able to remove the failing
-		// connector from the database because of the crashes.
-		// We just log the error and continue.
-		return nil
-	}
-
 	if !connector.ScheduledForDeletion {
-		err = e.workers.AddWorker(getConnectorTaskQueue(e.stack, connector.ID))
-		if err != nil {
-			return err
-		}
-
 		// Launch the workflow
-		_, err = e.temporalClient.ExecuteWorkflow(
+		_, err := e.temporalClient.ExecuteWorkflow(
 			ctx,
 			client.StartWorkflowOptions{
 				ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),

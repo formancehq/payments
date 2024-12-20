@@ -27,12 +27,12 @@ type WorkerPool struct {
 
 	workers map[string]Worker
 	storage storage.Storage
-	plugins plugins.Plugins
 	rwMutex sync.RWMutex
 
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
 
+	plugins plugins.Plugins
 	options worker.Options
 }
 
@@ -58,6 +58,7 @@ func NewWorkerPool(
 		workflows:      workflows,
 		activities:     activities,
 		storage:        storage,
+		plugins:        plugins,
 		options:        options,
 	}
 

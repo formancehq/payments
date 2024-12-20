@@ -95,3 +95,29 @@ services:
       TEMPORAL_ADDRESS: temporal:7233
       PLUGIN_MAGIC_COOKIE: mysupercookie
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
+
+  payments-worker:
+    image: golang:1.23.4-alpine
+    command: go run ./ worker
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      payments-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "9191:9090"
+    volumes:
+      - .:/app/components/payments
+    working_dir: /app/components/payments
+    environment:
+      DEBUG: true
+      POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
+      CONFIG_ENCRYPTION_KEY: mysuperencryptionkey
+      TEMPORAL_ADDRESS: temporal:7233
+      PLUGIN_MAGIC_COOKIE: mysupercookie
+      TEMPORAL_INIT_SEARCH_ATTRIBUTES: false

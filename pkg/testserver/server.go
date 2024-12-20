@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nats-io/nats.go"
@@ -60,6 +61,7 @@ type Logger interface {
 type Server struct {
 	configuration Configuration
 	logger        Logger
+	worker        *Worker
 	httpClient    *Client
 	cancel        func()
 	ctx           context.Context
@@ -166,6 +168,16 @@ func (s *Server) Start() error {
 		args = append(args, "--"+service.DebugFlag)
 	}
 
+	// ensure we have one worker running
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	go func() {
+		wg.Add(1)
+		s.worker = NewWorker(s.configuration, s.logger)
+		s.worker.Start(args)
+		wg.Done()
+	}()
+
 	s.logger.Logf("Starting application with flags: %s", strings.Join(args, " "))
 	rootCmd.SetArgs(args)
 	rootCmd.SilenceErrors = true
@@ -216,6 +228,14 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
+	wg := &sync.WaitGroup{}
+	defer wg.Wait()
+	go func() {
+		wg.Add(1)
+		s.worker.Stop(ctx)
+		wg.Done()
+	}()
+
 	if s.cancel == nil {
 		return nil
 	}
