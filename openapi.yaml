@@ -3745,6 +3745,7 @@ components:
       required:
         - id
         - connectorID
+        - scheduleID
         - createdAt
         - udpatedAt
         - terminated
@@ -3752,6 +3753,8 @@ components:
         id:
           type: string
         connectorID:
+          type: string
+        scheduleID:
           type: string
         createdAt:
           type: string
@@ -4510,12 +4513,12 @@ components:
       type: object
       required:
         - name
-        - userCertificate
-        - userCertificateKey
-        - username
         - password
         - endpoint
         - authorizationEndpoint
+        - userCertificate
+        - userCertificateKey
+        - username
       properties:
         authorizationEndpoint:
           type: string
@@ -4541,9 +4544,9 @@ components:
       type: object
       required:
         - name
-        - loginID
         - apiKey
         - endpoint
+        - loginID
       properties:
         apiKey:
           type: string
@@ -4598,9 +4601,9 @@ components:
       type: object
       required:
         - name
+        - clientID
         - apiKey
         - endpoint
-        - clientID
       properties:
         apiKey:
           type: string
@@ -4680,8 +4683,8 @@ components:
       type: object
       required:
         - name
-        - apiKey
         - webhookPublicKey
+        - apiKey
       properties:
         apiKey:
           type: string

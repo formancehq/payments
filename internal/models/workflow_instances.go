@@ -19,6 +19,7 @@ type Instance struct {
 func (i Instance) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID           string     `json:"id"`
+		ScheduleID   string     `json:"scheduleID"`
 		ConnectorID  string     `json:"connectorID"`
 		CreatedAt    time.Time  `json:"createdAt"`
 		UpdatedAt    time.Time  `json:"updatedAt"`
@@ -27,6 +28,7 @@ func (i Instance) MarshalJSON() ([]byte, error) {
 		Error        *string    `json:"error,omitempty"`
 	}{
 		ID:           i.ID,
+		ScheduleID:   i.ScheduleID,
 		ConnectorID:  i.ConnectorID.String(),
 		CreatedAt:    i.CreatedAt,
 		UpdatedAt:    i.UpdatedAt,
@@ -39,6 +41,7 @@ func (i Instance) MarshalJSON() ([]byte, error) {
 func (i *Instance) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID           string     `json:"id"`
+		ScheduleID   string     `json:"scheduleID"`
 		ConnectorID  string     `json:"connectorID"`
 		CreatedAt    time.Time  `json:"createdAt"`
 		UpdatedAt    time.Time  `json:"updatedAt"`
@@ -58,6 +61,7 @@ func (i *Instance) UnmarshalJSON(data []byte) error {
 
 	i.ID = aux.ID
 	i.ConnectorID = connectorID
+	i.ScheduleID = aux.ScheduleID
 	i.CreatedAt = aux.CreatedAt
 	i.UpdatedAt = aux.UpdatedAt
 	i.Terminated = aux.Terminated
