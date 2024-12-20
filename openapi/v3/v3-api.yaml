@@ -10,7 +10,7 @@ paths:
       tags:
         - payments.v3
       summary: Show server information
-      operationId: getInfo
+      operationId: v3GetInfo
       responses:
         "200":
           description: OK
@@ -36,7 +36,7 @@ paths:
       summary: >
         Create a formance account object. This object will not be forwarded to
         the connector. It is only used for internal purposes.
-      operationId: createAccount
+      operationId: v3CreateAccount
       requestBody:
         content:
           application/json:
@@ -62,7 +62,7 @@ paths:
       tags:
         - payments.v3
       summary: List all accounts
-      operationId: listAccounts
+      operationId: v3ListAccounts
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -93,7 +93,7 @@ paths:
       tags:
         - payments.v3
       summary: Get an account by ID
-      operationId: getAccount
+      operationId: v3GetAccount
       parameters:
         - $ref: '#/components/parameters/V3AccountID'
       responses:
@@ -118,7 +118,7 @@ paths:
       tags:
         - payments.v3
       summary: Get account balances
-      operationId: getAccountBalances
+      operationId: v3GetAccountBalances
       parameters:
         - $ref: '#/components/parameters/V3AccountID'
         - $ref: '#/components/parameters/V3Asset'
@@ -151,7 +151,7 @@ paths:
       summary: >
         Create a formance bank account object. This object will not be forwarded
         to the connector until you called the forwardBankAccount method.
-      operationId: createBankAccount
+      operationId: v3CreateBankAccount
       requestBody:
         content:
           application/json:
@@ -169,7 +169,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/scomponents/schemas/V3ErrorResponse"
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -177,7 +177,7 @@ paths:
       tags:
         - payments.v3
       summary: List all bank accounts
-      operationId: listBankAccounts
+      operationId: v3ListBankAccounts
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -208,7 +208,7 @@ paths:
       tags:
         - payments.v3
       summary: Get a Bank Account by ID
-      operationId: getBankAccount
+      operationId: v3GetBankAccount
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       responses:
@@ -230,7 +230,7 @@ paths:
       tags:
         - payments.v3
       summary: Update a bank account's metadata
-      operationId: updateBankAccountMetadata
+      operationId: v3UpdateBankAccountMetadata
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       requestBody:
@@ -253,7 +253,7 @@ paths:
       tags:
         - payments.v3
       summary: Forward a Bank Account to a PSP for creation
-      operationId: forwardBankAccount
+      operationId: v3ForwardBankAccount
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       requestBody:
@@ -281,7 +281,7 @@ paths:
       tags:
         - payments.v3
       summary: List all connectors
-      operationId: listConnectors
+      operationId: v3ListConnectors
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -307,7 +307,7 @@ paths:
       tags:
         - payments.v3
       summary: Install a connector
-      operationId: installConnector
+      operationId: v3InstallConnector
       parameters:
         - $ref: '#/components/parameters/V3Connector'
       requestBody:
@@ -337,7 +337,7 @@ paths:
       tags:
         - payments.v3
       summary: List all connector configurations
-      operationId: listConnectorConfigs
+      operationId: v3ListConnectorConfigs
       responses:
         "200":
           description: OK
@@ -360,7 +360,7 @@ paths:
       tags:
         - payments.v3
       summary: Uninstall a connector
-      operationId: uninstallConnector
+      operationId: v3UninstallConnector
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -385,7 +385,7 @@ paths:
       tags:
         - payments.v3
       summary: Get a connector configuration by ID
-      operationId: getConnectorConfig
+      operationId: v3GetConnectorConfig
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -410,7 +410,7 @@ paths:
       tags:
         - payments.v3
       summary: Reset a connector
-      operationId: resetConnector
+      operationId: v3ResetConnector
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -435,7 +435,7 @@ paths:
       tags:
         - payments.v3
       summary: List all connector schedules
-      operationId: listConnectorSchedules
+      operationId: v3ListConnectorSchedules
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -462,7 +462,7 @@ paths:
       tags:
         - payments.v3
       summary: List all connector schedule instances
-      operationId: listConnectorScheduleInstances
+      operationId: v3ListConnectorScheduleInstances
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3ScheduleID'
@@ -493,7 +493,7 @@ paths:
       summary: >
         Create a formance payment object. This object will not be forwarded to
         the connector. It is only used for internal purposes.
-      operationId: createPayment
+      operationId: v3CreatePayment
       requestBody:
         content:
           application/json:
@@ -519,7 +519,7 @@ paths:
       tags:
         - payments.v3
       summary: List all payments
-      operationId: listPayments
+      operationId: v3ListPayments
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -550,7 +550,7 @@ paths:
       tags:
         - payments.v3
       summary: Get a payment by ID
-      operationId: getPayment
+      operationId: v3GetPayment
       parameters:
         - $ref: '#/components/parameters/V3PaymentID'
       responses:
@@ -575,7 +575,7 @@ paths:
       tags:
         - payments.v3
       summary: Update a payment's metadata
-      operationId: updatePaymentMetadata
+      operationId: v3UpdatePaymentMetadata
       parameters:
         - $ref: '#/components/parameters/V3PaymentID'
       requestBody:
@@ -602,7 +602,7 @@ paths:
       tags:
         - payments.v3
       summary: Initiate a payment
-      operationId: initiatePayment
+      operationId: v3InitiatePayment
       parameters:
         - $ref: '#/components/parameters/V3NoValidation'
       requestBody:
@@ -630,7 +630,7 @@ paths:
       tags:
         - payments.v3
       summary: List all payment initiations
-      operationId: listPaymentInitiations
+      operationId: v3ListPaymentInitiations
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -661,7 +661,7 @@ paths:
       tags:
         - payments.v3
       summary: Delete a payment initiation by ID
-      operationId: deletePaymentInitiation
+      operationId: v3DeletePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -680,7 +680,7 @@ paths:
       tags:
         - payments.v3
       summary: Get a payment initiation by ID
-      operationId: getPaymentInitiation
+      operationId: v3GetPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -705,7 +705,7 @@ paths:
       tags:
         - payments.v3
       summary: Retry a payment initiation
-      operationId: retryPaymentInitiation
+      operationId: v3RetryPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -730,7 +730,7 @@ paths:
       tags:
         - payments.v3
       summary: Approve a payment initiation
-      operationId: approvePaymentInitiation
+      operationId: v3ApprovePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -755,7 +755,7 @@ paths:
       tags:
         - payments.v3
       summary: Reject a payment initiation
-      operationId: rejectPaymentInitiation
+      operationId: v3RejectPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -776,7 +776,7 @@ paths:
       tags:
         - payments.v3
       summary: Reverse a payment initiation
-      operationId: reversePaymentInitiation
+      operationId: v3ReversePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       requestBody:
@@ -806,7 +806,7 @@ paths:
       tags:
         - payments.v3
       summary: List all payment initiation adjustments
-      operationId: listPaymentInitiationAdjustments
+      operationId: v3ListPaymentInitiationAdjustments
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -833,7 +833,7 @@ paths:
       tags:
         - payments.v3
       summary: List all payments related to a payment initiation
-      operationId: listPaymentInitiationRelatedPayments
+      operationId: v3ListPaymentInitiationRelatedPayments
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -861,7 +861,7 @@ paths:
       tags:
         - payments.v3
       summary: Create a formance pool object
-      operationId: createPool
+      operationId: v3CreatePool
       requestBody:
         content:
           application/json:
@@ -887,7 +887,7 @@ paths:
       tags:
         - payments.v3
       summary: List all pools
-      operationId: listPools
+      operationId: v3ListPools
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -918,7 +918,7 @@ paths:
       tags:
         - payments.v3
       summary: Get a pool by ID
-      operationId: getPool
+      operationId: v3GetPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
       responses:
@@ -941,7 +941,7 @@ paths:
       tags:
         - payments.v3
       summary: Delete a pool by ID
-      operationId: deletePool
+      operationId: v3DeletePool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
       responses:
@@ -962,7 +962,7 @@ paths:
       tags:
         - payments.v3
       summary: Get pool balances
-      operationId: getPoolBalances
+      operationId: v3GetPoolBalances
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3At'
@@ -988,7 +988,7 @@ paths:
       tags:
         - payments.v3
       summary: Add an account to a pool
-      operationId: addAccountToPool
+      operationId: v3AddAccountToPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3AccountID'
@@ -1008,7 +1008,7 @@ paths:
       tags:
         - payments.v3
       summary: Remove an account from a pool
-      operationId: removeAccountFromPool
+      operationId: v3RemoveAccountFromPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3AccountID'
@@ -1031,9 +1031,9 @@ paths:
       tags:
         - payments.v3
       summary: Get a task and its result by ID
-      operationId: getTask
+      operationId: v3GetTask
       parameters:
-        - ref: '#/components/parameters/V3TaskID'
+        - $ref: '#/components/parameters/V3TaskID'
       responses:
         "200":
           description: OK
@@ -1046,7 +1046,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/sschemas/V3ErrorResponse"
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read

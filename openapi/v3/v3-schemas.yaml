@@ -19,6 +19,9 @@ components:
         - version
 
     # ACCOUNTS
+    V3AccountID:
+      type: string
+
     V3AccountsCursorResponse:
       type: object
       required:
@@ -58,7 +61,7 @@ components:
         data:
           $ref: "#/components/schemas/V3Account"
 
-    V3CreateAccountsRequest:
+    V3CreateAccountRequest:
       type: object
       required:
         - reference
@@ -1066,7 +1069,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: "#/components/schemas/V3PaymentInitiationAdjustmentStatusEnum"
+          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
         amount:
           type: integer
           format: bigint
@@ -1097,7 +1100,7 @@ components:
         - REVERSE_PROCESSING
         - REVERSE_FAILED
         - REVERSED
-    
+
     V3PaymentInitiationTypeEnum:
       type: string
       enum:
