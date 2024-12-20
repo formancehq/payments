@@ -2495,6 +2495,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/TransferInitiationPayments'
+          nullable: true
         relatedAdjustments:
           type: array
           items:
