@@ -3313,7 +3313,7 @@ components:
         - reference
         - connectorID
         - createdAt
-        - name
+        - accountName
         - type
       properties:
         reference:
@@ -3323,7 +3323,7 @@ components:
         createdAt:
           type: string
           format: date-time
-        name:
+        accountName:
           type: string
         type:
           $ref: '#/components/schemas/V3AccountTypeEnum'
@@ -4460,11 +4460,11 @@ components:
       type: object
       required:
         - name
+        - apiKey
+        - webhookUsername
         - webhookPassword
         - companyID
         - liveEndpointPrefix
-        - apiKey
-        - webhookUsername
       properties:
         apiKey:
           type: string
@@ -4510,12 +4510,12 @@ components:
       type: object
       required:
         - name
-        - password
-        - endpoint
-        - authorizationEndpoint
         - userCertificate
         - userCertificateKey
         - username
+        - password
+        - endpoint
+        - authorizationEndpoint
       properties:
         authorizationEndpoint:
           type: string
@@ -4598,9 +4598,9 @@ components:
       type: object
       required:
         - name
-        - clientID
         - apiKey
         - endpoint
+        - clientID
       properties:
         apiKey:
           type: string
