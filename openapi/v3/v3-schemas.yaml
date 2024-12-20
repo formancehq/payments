@@ -89,8 +89,7 @@ components:
         - data
       properties:
         data:
-          description: The ID of the created account
-          type: string
+          $ref: "#/components/schemas/V3Account"
 
     V3Account:
       type: object
@@ -628,8 +627,7 @@ components:
         - data
       properties:
         data:
-          description: The ID of the created payment
-          type: string
+          $ref: "#/components/schemas/V3Payment"
 
     V3UpdatePaymentMetadataRequest:
       type: object
