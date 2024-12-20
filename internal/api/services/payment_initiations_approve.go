@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/payments/internal/models"
@@ -38,15 +39,21 @@ func (s *Service) PaymentInitiationsApprove(ctx context.Context, id models.Payme
 		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
+	startDelay := 0 * time.Second
+	now := time.Now()
+	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
+		startDelay = pi.ScheduledAt.Sub(now)
+	}
+
 	switch pi.Type {
 	case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-		task, err := s.engine.CreateTransfer(ctx, pi.ID, 1, waitResult)
+		task, err := s.engine.CreateTransfer(ctx, pi.ID, startDelay, 1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}
 		return task, nil
 	case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-		task, err := s.engine.CreatePayout(ctx, pi.ID, 1, waitResult)
+		task, err := s.engine.CreatePayout(ctx, pi.ID, startDelay, 1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}
