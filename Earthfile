@@ -62,6 +62,18 @@ build-image:
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag
 
+build-worker-image:
+    FROM core+final-image
+    ENTRYPOINT ["/bin/payments"]
+    CMD ["worker"]
+    COPY (+compile/main) /bin/payments
+    FOR c IN $(ls /plugins/*)
+        RUN chmod +x $c
+    END
+    ARG REPOSITORY=ghcr.io
+    ARG tag=latest
+    DO core+SAVE_IMAGE --COMPONENT=payments-worker --REPOSITORY=${REPOSITORY} --TAG=$tag
+
 tests:
     FROM +tidy
     COPY (+sources/*) /src
@@ -89,9 +101,11 @@ deploy:
     LET tag=$(tar cf - /src | sha1sum | awk '{print $1}')
     WAIT
         BUILD --pass-args +build-image --tag=$tag
+        BUILD --pass-args +build-worker-image --tag=$tag
     END
     FROM --pass-args core+vcluster-deployer-image
     RUN kubectl patch Versions.formance.com default -p "{\"spec\":{\"payments\": \"${tag}\"}}" --type=merge
+    RUN kubectl patch Versions.formance.com default -p "{\"spec\":{\"payments-worker\": \"${tag}\"}}" --type=merge
 
 deploy-staging:
     BUILD --pass-args core+deploy-staging
