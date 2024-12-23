@@ -5,7 +5,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
-	"github.com/formancehq/payments/internal/connectors/engine"
+	"github.com/formancehq/payments/internal/worker"
 	"github.com/spf13/cobra"
 	"go.uber.org/fx"
 )
@@ -50,12 +50,14 @@ func runWorker() func(cmd *cobra.Command, args []string) error {
 }
 
 func workerOptions(cmd *cobra.Command) (fx.Option, error) {
+	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 	return fx.Options(
-		engine.WorkerModule(
+		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
+		worker.NewModule(
 			stack,
 			stackPublicURL,
 			temporalNamespace,

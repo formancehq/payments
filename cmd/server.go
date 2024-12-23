@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	sharedapi "github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/api"
@@ -51,11 +50,6 @@ func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	return fx.Options(
-		fx.Provide(func() sharedapi.ServiceInfo {
-			return sharedapi.ServiceInfo{
-				Version: Version,
-			}
-		}),
 		auth.FXModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		v2.NewModule(),

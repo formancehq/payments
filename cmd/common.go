@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/bombsimon/logrusr/v3"
+	sharedapi "github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/aws/iam"
 	"github.com/formancehq/go-libs/v2/bun/bunconnect"
@@ -72,6 +73,11 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 				SearchAttributes: engine.SearchAttributes,
 			},
 		),
+		fx.Provide(func() sharedapi.ServiceInfo {
+			return sharedapi.ServiceInfo{
+				Version: Version,
+			}
+		}),
 		health.Module(),
 		publish.FXModuleFromFlags(cmd, service.IsDebug(cmd)),
 		licence.FXModuleFromFlags(cmd, ServiceName),
