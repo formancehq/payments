@@ -7,7 +7,7 @@ import (
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-    // TODO: if needed, uncomment the following lines to get the related account in request
+	// TODO: if needed, uncomment the following lines to get the related account in request
 	// var from models.PSPAccount
 	// if req.FromPayload == nil {
 	// 	return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
@@ -23,8 +23,8 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 
 	var accountBalances []models.PSPBalance
 	for _, balance := range balances {
-        // TODO: You can use the following method to extract the amount and the
-        // asset from the PSP data if you're not already in minor units currency.
+		// TODO: You can use the following method to extract the amount and the
+		// asset from the PSP data if you're not already in minor units currency.
 		// precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
 		// if err != nil {
 		// 	return models.FetchNextBalancesResponse{}, err
@@ -35,7 +35,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		// 	return models.FetchNextBalancesResponse{}, err
 		// }
 
-        // asset := currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
+		// asset := currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
 
 		// TODO: translate PSP balance to formance balance object
 		_ = balance

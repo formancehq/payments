@@ -13,6 +13,6 @@ type TransferResponse struct {}
 func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
 	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
 
-    // TODO: call PSP to create transfer
+	// TODO: call PSP to create transfer
     return nil, nil
 }

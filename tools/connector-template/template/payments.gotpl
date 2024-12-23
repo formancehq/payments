@@ -9,9 +9,14 @@ import (
 )
 
 type paymentsState struct {
-    // TODO: paymentsState will be used to know at what point we're at when
-    // fetching the PSP payments. We highly recommend to use this state to not
-    // poll data already polled.
+	// TODO: paymentsState will be used to know at what point we're at when
+	// fetching the PSP payments. We highly recommend to use this state to not
+	// poll data already polled.
+	// This struct will be stored as a raw json, you're free to put whatever
+	// you want.
+	// Example:
+	// LastPage int `json:"lastPage"`
+	// LastIDCreated int64 `json:"lastIDCreated"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -22,7 +27,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-    // TODO: if needed, uncomment the following lines to get the related account in request
+	// TODO: if needed, uncomment the following lines to get the related account in request
 	// var from models.PSPAccount
 	// if req.FromPayload == nil {
 	// 	return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
@@ -44,8 +49,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-        // TODO: transfer PSP object into formance object
-        payments = append(payments, models.PSPPayment{})
+		// TODO: transfer PSP object into formance object
+		payments = append(payments, models.PSPPayment{})
 
 		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
 		if !needMore || !hasMore {
