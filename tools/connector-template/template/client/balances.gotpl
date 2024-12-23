@@ -1,0 +1,16 @@
+package client
+
+import (
+	"context"
+
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+)
+
+type Balance struct {}
+
+func (c *client) GetAccountBalances(ctx context.Context) ([]*Balance, error) {
+	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_account_balances")
+
+    // TODO: call PSP to have balances
+	return nil, nil
+}

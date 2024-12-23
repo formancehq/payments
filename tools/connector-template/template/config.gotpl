@@ -1,0 +1,27 @@
+package {{ .Connector }}
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/formancehq/payments/internal/models"
+)
+
+type Config struct {
+    // TODO: fill Config struct
+}
+
+func (c Config) validate() error {
+    // TODO: validate the Config struct
+
+	return nil
+}
+
+func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
+	var config Config
+	if err := json.Unmarshal(payload, &config); err != nil {
+		return Config{}, fmt.Errorf("%w: %w", err, models.ErrInvalidConfig)
+	}
+
+	return config, config.validate()
+}
