@@ -2493,9 +2493,9 @@ components:
           nullable: true
         relatedPayments:
           type: array
+          nullable: true
           items:
             $ref: '#/components/schemas/TransferInitiationPayments'
-          nullable: true
         relatedAdjustments:
           type: array
           items:
@@ -4514,12 +4514,12 @@ components:
       type: object
       required:
         - name
-        - userCertificate
-        - userCertificateKey
         - username
         - password
         - endpoint
         - authorizationEndpoint
+        - userCertificate
+        - userCertificateKey
       properties:
         authorizationEndpoint:
           type: string
@@ -4545,9 +4545,9 @@ components:
       type: object
       required:
         - name
-        - endpoint
         - loginID
         - apiKey
+        - endpoint
       properties:
         apiKey:
           type: string
@@ -4602,9 +4602,9 @@ components:
       type: object
       required:
         - name
+        - endpoint
         - clientID
         - apiKey
-        - endpoint
       properties:
         apiKey:
           type: string
@@ -4646,9 +4646,9 @@ components:
       type: object
       required:
         - name
+        - clientID
         - apiKey
         - endpoint
-        - clientID
       properties:
         apiKey:
           type: string
