@@ -77,10 +77,6 @@ func workflow() models.ConnectorTasksTree {
 	// 		NextTasks:    []models.ConnectorTaskTree{},
 	// 	},
 	// }
-	// In this example, FetchNextAccounts, FetchNextPayments and
-	// FetchNextExternalAccounts will be called in parallel and periodically.
-	// For every accounts returned in FetchNextAccounts, the FetchNextBalances
-	// method will be called periodically.
 
     return []models.ConnectorTaskTree{}
 }
