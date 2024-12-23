@@ -19,8 +19,6 @@ func Flags(command string, serverID string, configuration Configuration) []strin
 		command,
 		"--" + cmd.ListenFlag, ":0",
 		"--" + bunconnect.PostgresURIFlag, configuration.PostgresConfiguration.DatabaseSourceName,
-		"--" + bunconnect.PostgresMaxOpenConnsFlag, fmt.Sprint(configuration.PostgresConfiguration.MaxOpenConns),
-		"--" + bunconnect.PostgresConnMaxIdleTimeFlag, fmt.Sprint(configuration.PostgresConfiguration.ConnMaxIdleTime),
 		"--" + cmd.ConfigEncryptionKeyFlag, "dummyval",
 		"--" + temporal.TemporalAddressFlag, configuration.TemporalAddress,
 		"--" + temporal.TemporalNamespaceFlag, configuration.TemporalNamespace,

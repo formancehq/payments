@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/bombsimon/logrusr/v3"
 	sharedapi "github.com/formancehq/go-libs/v2/api"
@@ -54,7 +55,7 @@ func commonOptions(cmd *cobra.Command) (fx.Option, error) {
 
 	connectionOptions, err := bunconnect.ConnectionOptionsFromFlags(cmd)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to get connection options: %w", err)
 	}
 
 	return fx.Options(
