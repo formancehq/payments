@@ -13,6 +13,6 @@ type PayoutResponse struct {}
 func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
 
-    // TODO: call PSP to create payout
+	// TODO: call PSP to create payout
     return nil, nil
 }

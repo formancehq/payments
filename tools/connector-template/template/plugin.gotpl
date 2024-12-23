@@ -28,7 +28,7 @@ func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 		return nil, err
 	}
 
-    _ = config // TODO: use config to create client and remove this line
+	_ = config // TODO: use config to create client and remove this line
 	client := client.New()
 
 	return &Plugin{

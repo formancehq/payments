@@ -10,8 +10,12 @@ import (
 
 type accountsState struct {
 	// TODO: accountsState will be used to know at what point we're at when
-    // fetching the PSP accounts. We highly recommend to use this state to not
-    // poll data already polled.
+	// fetching the PSP accounts.
+	// This struct will be stored as a raw json, you're free to put whatever
+	// you want.
+	// Example:
+	// LastPage int `json:"lastPage"`
+	// LastIDCreated int64 `json:"lastIDCreated"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {

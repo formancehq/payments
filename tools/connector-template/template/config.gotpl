@@ -8,11 +8,16 @@ import (
 )
 
 type Config struct {
-    // TODO: fill Config struct
+	// TODO: fill Config struct
+	// This is the config a user will pass when installing this connector.
+	// You need to add all needed config useful for your connector, example:
+	// ClientID string `json:"clientID"`
+	// APIKey   string `json:"apiKey"`
+	// Endpoint string `json:"endpoint"`
 }
 
 func (c Config) validate() error {
-    // TODO: validate the Config struct
+	// TODO: validate the Config struct
 
 	return nil
 }

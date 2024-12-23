@@ -19,19 +19,20 @@ type Client interface {
 type client struct {
 	httpClient httpwrapper.Client
 
-    // TODO: fill config parameters
+	// TODO: fill config parameters
+	// You may need fields here for authentication purpose
 }
 
 func New(/* TODO: fill config parameters */) *client {
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
-        // TODO: you can use your own http transport for auth for example
+		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("{{ .Connector }}"),
+		// TODO: you can use your own http transport for auth for example
 		//Transport: &apiTransport{
 		//	underlying: otelhttp.NewTransport(http.DefaultTransport),
 		//},
-        // TODO: you can also use your own http error checker to send the right
-        // error for your PSP
-        // HttpErrorCheckerFn: func(statusCode int) error {
+		// TODO: you can also use your own http error checker to send the right
+		// error for your PSP
+		// HttpErrorCheckerFn: func(statusCode int) error {
 		// 	if statusCode == http.StatusNotFound {
 		// 		return nil
 		// 	} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {

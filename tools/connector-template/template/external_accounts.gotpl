@@ -10,8 +10,13 @@ import (
 
 type externalAccountsState struct {
 	// TODO: externalAccountsState will be used to know at what point we're at
-    // when fetching the PSP external accounts. We highly recommend to use this
-    // state to not poll data already polled.
+	// when fetching the PSP external accounts. We highly recommend to use this
+	// state to not poll data already polled.
+	// This struct will be stored as a raw json, you're free to put whatever
+	// you want.
+	// Example:
+	// LastPage int `json:"lastPage"`
+	// LastIDCreated int64 `json:"lastIDCreated"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -22,7 +27,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		}
 	}
 
-    // TODO: if needed, uncomment the following lines to get the related account in request
+	// TODO: if needed, uncomment the following lines to get the related account in request
 	// var from models.PSPAccount
 	// if req.FromPayload == nil {
 	// 	return models.FetchNextExternalAccountsResponse{}, models.ErrMissingFromPayloadInRequest
@@ -44,7 +49,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-        // TODO: transfer PSP object into formance object
+		// TODO: transfer PSP object into formance object
 		accounts = append(accounts, models.PSPAccount{})
 
 		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, req.PageSize)
