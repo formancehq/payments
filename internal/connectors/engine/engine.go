@@ -9,8 +9,6 @@ import (
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
-	"github.com/formancehq/payments/internal/connectors/engine/webhooks"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
@@ -72,10 +70,7 @@ type engine struct {
 	logger logging.Logger
 
 	temporalClient client.Client
-
-	workers *Workers
-	plugins plugins.Plugins
-	storage storage.Storage
+	storage        storage.Storage
 
 	stack string
 
@@ -85,17 +80,12 @@ type engine struct {
 func New(
 	logger logging.Logger,
 	temporalClient client.Client,
-	workers *Workers,
-	plugins plugins.Plugins,
 	storage storage.Storage,
-	webhooks webhooks.Webhooks,
 	stack string,
 ) Engine {
 	return &engine{
 		logger:         logger,
 		temporalClient: temporalClient,
-		workers:        workers,
-		plugins:        plugins,
 		storage:        storage,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
@@ -141,24 +131,12 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, rawConfig)
-	if err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, handlePluginError(err)
-	}
-
-	err = e.workers.AddWorker(e.getConnectorTaskQueue(connector.ID))
-	if err != nil {
-		otel.RecordError(span, err)
-		return models.ConnectorID{}, err
-	}
-
 	// Launch the workflow
 	run, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
-			TaskQueue:                                e.getConnectorTaskQueue(connector.ID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, connector.ID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -188,16 +166,6 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 func (e *engine) UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.UninstallConnector")
 	defer span.End()
-
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
-		return models.Task{}, err
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		otel.RecordError(span, err)
-		return models.Task{}, err
-	}
 
 	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
@@ -229,11 +197,11 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	}
 
 	// Launch the uninstallation in background
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -243,7 +211,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
-			DefaultWorkerName: defaultWorker,
+			DefaultWorkerName: getDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
 	)
@@ -294,7 +262,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                    fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String()),
-			TaskQueue:             e.getConnectorTaskQueue(connectorID),
+			TaskQueue:             getConnectorTaskQueue(e.stack, connectorID),
 			WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			SearchAttributes: map[string]interface{}{
 				workflow.SearchAttributeStack: e.stack,
@@ -351,7 +319,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s-%s", e.stack, account.ConnectorID.String(), account.Reference),
-			TaskQueue:                                e.getConnectorTaskQueue(account.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, account.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -405,7 +373,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s-%s", e.stack, payment.ConnectorID.String(), payment.Reference),
-			TaskQueue:                                e.getConnectorTaskQueue(payment.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, payment.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -452,7 +420,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                e.getConnectorTaskQueue(connectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, connectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -510,7 +478,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			StartDelay:                               startDelay,
-			TaskQueue:                                e.getConnectorTaskQueue(piID.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -569,7 +537,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                e.getConnectorTaskQueue(reversal.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, reversal.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -629,7 +597,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			StartDelay:                               startDelay,
-			TaskQueue:                                e.getConnectorTaskQueue(piID.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, piID.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -689,7 +657,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                e.getConnectorTaskQueue(reversal.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, reversal.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -729,7 +697,7 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, webhook.ConnectorID.String(), webhook.ID),
-			TaskQueue:                                e.getConnectorTaskQueue(webhook.ConnectorID),
+			TaskQueue:                                getConnectorTaskQueue(e.stack, webhook.ConnectorID),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -754,22 +722,17 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
-		return err
-	}
-
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
 
 	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -793,11 +756,6 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
-		return err
-	}
-
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -820,7 +778,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -844,11 +802,6 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 	ctx, span := otel.Tracer().Start(ctx, "engine.RemoveAccountFromPool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
-		return err
-	}
-
 	if err := e.storage.PoolsRemoveAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -871,7 +824,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                defaultWorker,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -895,11 +848,6 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.DeletePool")
 	defer span.End()
 
-	defaultWorker, err := e.workers.GetDefaultWorker()
-	if err != nil {
-		return err
-	}
-
 	deleted, err := e.storage.PoolsDelete(ctx, poolID)
 	if err != nil {
 		otel.RecordError(span, err)
@@ -908,11 +856,11 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 
 	if deleted {
 		// Do not wait for sending of events
-		_, err = e.temporalClient.ExecuteWorkflow(
+		_, err := e.temporalClient.ExecuteWorkflow(
 			ctx,
 			client.StartWorkflowOptions{
 				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-				TaskQueue:                                defaultWorker,
+				TaskQueue:                                getDefaultTaskQueue(e.stack),
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: false,
 				SearchAttributes: map[string]interface{}{
@@ -947,25 +895,17 @@ func (e *engine) OnStop(ctx context.Context) {
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
-	e.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
-		storage.ConnectorChangesInsert: e.onInsertPlugin,
-		storage.ConnectorChangesUpdate: e.onUpdatePlugin,
-		storage.ConnectorChangesDelete: e.onDeletePlugin,
-	})
-
 	query := storage.NewListConnectorsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
 	)
 
-	shouldCreateDefaultWorker := false
 	for {
 		connectors, err := e.storage.ConnectorsList(ctx, query)
 		if err != nil {
 			return err
 		}
 
-		shouldCreateDefaultWorker = shouldCreateDefaultWorker || len(connectors.Data) > 0
 		for _, connector := range connectors.Data {
 			if err := e.onStartPlugin(ctx, connector); err != nil {
 				return err
@@ -981,71 +921,6 @@ func (e *engine) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
-
-	if shouldCreateDefaultWorker {
-		// If we have at least one connector, we need to create the default worker
-		// to handle the possible tasks that are not related to a specific connector.
-		// (ex: pools, bank accounts, uninstallation etc...)
-		if err := e.workers.CreateDefaultWorker(); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (e *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
-	if err != nil {
-		return err
-	}
-
-	config := models.DefaultConfig()
-	if err := json.Unmarshal(connector.Config, &config); err != nil {
-		return err
-	}
-
-	if err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config); err != nil {
-		return err
-	}
-
-	if err := e.workers.AddWorker(e.getConnectorTaskQueue(connector.ID)); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
-	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
-			return e.onDeletePlugin(ctx, connectorID)
-		}
-		return err
-	}
-
-	// Only react to scheduled for deletion changes
-	if !connector.ScheduledForDeletion {
-		return nil
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
-	if err := e.plugins.UnregisterPlugin(connectorID); err != nil {
-		return err
-	}
-
-	if err := e.workers.RemoveWorker(connectorID.String()); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -1059,28 +934,13 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 		return err
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
-	if err != nil {
-		e.logger.Errorf("failed to register plugin: %w", err)
-		// We don't want to crash the pod if the plugin registration fails,
-		// otherwise, the client will not be able to remove the failing
-		// connector from the database because of the crashes.
-		// We just log the error and continue.
-		return nil
-	}
-
 	if !connector.ScheduledForDeletion {
-		err = e.workers.AddWorker(e.getConnectorTaskQueue(connector.ID))
-		if err != nil {
-			return err
-		}
-
 		// Launch the workflow
-		_, err = e.temporalClient.ExecuteWorkflow(
+		_, err := e.temporalClient.ExecuteWorkflow(
 			ctx,
 			client.StartWorkflowOptions{
 				ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
-				TaskQueue:                                e.getConnectorTaskQueue(connector.ID),
+				TaskQueue:                                getConnectorTaskQueue(e.stack, connector.ID),
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: false,
 				SearchAttributes: map[string]interface{}{
@@ -1099,10 +959,6 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	return nil
-}
-
-func (e *engine) getConnectorTaskQueue(connectorID models.ConnectorID) string {
-	return fmt.Sprintf("%s-%s", e.stack, connectorID.String())
 }
 
 var _ Engine = &engine{}

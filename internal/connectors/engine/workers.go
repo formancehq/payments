@@ -1,18 +1,24 @@
 package engine
 
 import (
-	"fmt"
+	"context"
+	"encoding/json"
 	"sync"
 
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/temporal"
+	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"
 	temporalworkflow "go.temporal.io/sdk/workflow"
 )
 
-type Workers struct {
+type WorkerPool struct {
 	logger logging.Logger
 
 	stack string
@@ -20,11 +26,13 @@ type Workers struct {
 	temporalClient client.Client
 
 	workers map[string]Worker
+	storage storage.Storage
 	rwMutex sync.RWMutex
 
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
 
+	plugins plugins.Plugins
 	options worker.Options
 }
 
@@ -32,40 +40,174 @@ type Worker struct {
 	worker worker.Worker
 }
 
-func (w *Workers) getDefaultWorkerName() string {
-	defaultWorker := fmt.Sprintf("%s-default", w.stack)
-	return defaultWorker
-}
-
-func (w *Workers) CreateDefaultWorker() error {
-	return w.AddWorker(w.getDefaultWorkerName())
-}
-
-// Returns the default worker name and create it if it doesn't exist yet.
-func (w *Workers) GetDefaultWorker() (string, error) {
-	defaultWorker := w.getDefaultWorkerName()
-	if err := w.AddWorker(defaultWorker); err != nil {
-		return "", err
-	}
-	return defaultWorker, nil
-}
-
-func NewWorkers(logger logging.Logger, stack string, temporalClient client.Client, workflows, activities []temporal.DefinitionSet, options worker.Options) *Workers {
-	workers := &Workers{
+func NewWorkerPool(
+	logger logging.Logger,
+	stack string,
+	temporalClient client.Client,
+	workflows,
+	activities []temporal.DefinitionSet,
+	storage storage.Storage,
+	plugins plugins.Plugins,
+	options worker.Options,
+) *WorkerPool {
+	workers := &WorkerPool{
 		logger:         logger,
 		stack:          stack,
 		temporalClient: temporalClient,
 		workers:        make(map[string]Worker),
 		workflows:      workflows,
 		activities:     activities,
+		storage:        storage,
+		plugins:        plugins,
 		options:        options,
 	}
 
 	return workers
 }
 
+func (w *WorkerPool) OnStart(ctx context.Context) error {
+	w.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
+		storage.ConnectorChangesInsert: w.onInsertPlugin,
+		storage.ConnectorChangesUpdate: w.onUpdatePlugin,
+		storage.ConnectorChangesDelete: w.onDeletePlugin,
+	})
+
+	query := storage.NewListConnectorsQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
+			WithPageSize(100),
+	)
+
+	shouldCreateDefaultWorker := false
+	for {
+		connectors, err := w.storage.ConnectorsList(ctx, query)
+		if err != nil {
+			return err
+		}
+
+		shouldCreateDefaultWorker = shouldCreateDefaultWorker || len(connectors.Data) > 0
+		for _, connector := range connectors.Data {
+			if err := w.onStartPlugin(ctx, connector); err != nil {
+				return err
+			}
+		}
+
+		if !connectors.HasMore {
+			break
+		}
+
+		err = bunpaginate.UnmarshalCursor(connectors.Next, &query)
+		if err != nil {
+			return err
+		}
+	}
+
+	if shouldCreateDefaultWorker {
+		// If we have at least one connector, we need to create the default worker
+		// to handle the possible tasks that are not related to a specific connector.
+		// (ex: pools, bank accounts, uninstallation etc...)
+		if err := w.AddDefaultWorker(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connector) error {
+	// Even if the connector is scheduled for deletion, we still need to register
+	// the plugin to be able to handle the uninstallation.
+	// It will be unregistered when the uninstallation is done in the workflow
+	// after the deletion of the connector entry in the database.
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	err := w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
+	if err != nil {
+		w.logger.Errorf("failed to register plugin: %w", err)
+		// We don't want to crash the pod if the plugin registration fails,
+		// otherwise, the client will not be able to remove the failing
+		// connector from the database because of the crashes.
+		// We just log the error and continue.
+		return nil
+	}
+
+	if !connector.ScheduledForDeletion {
+		err = w.AddWorker(getConnectorTaskQueue(w.stack, connector.ID))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got insert notification for %q", connectorID.String())
+	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		return err
+	}
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	if err := w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config); err != nil {
+		return err
+	}
+
+	if err := w.AddWorker(getConnectorTaskQueue(w.stack, connector.ID)); err != nil {
+		return err
+	}
+
+	// If we have at least one connector, we need to create the default worker
+	// to handle the possible tasks that are not related to a specific connector.
+	// (ex: pools, bank accounts, uninstallation etc...)
+	if err := w.AddDefaultWorker(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got update notification for %q", connectorID.String())
+	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return w.onDeletePlugin(ctx, connectorID)
+		}
+		return err
+	}
+
+	// Only react to scheduled for deletion changes
+	if !connector.ScheduledForDeletion {
+		return nil
+	}
+
+	if err := w.RemoveWorker(connectorID.String()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
+	if err := w.plugins.UnregisterPlugin(connectorID); err != nil {
+		return err
+	}
+
+	if err := w.RemoveWorker(connectorID.String()); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Close is called when app is terminated
-func (w *Workers) Close() {
+func (w *WorkerPool) Close() {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
@@ -74,9 +216,13 @@ func (w *Workers) Close() {
 	}
 }
 
+func (w *WorkerPool) AddDefaultWorker() error {
+	return w.AddWorker(getDefaultTaskQueue(w.stack))
+}
+
 // Installing a new connector lauches a new worker
 // A default one is instantiated when the workers struct is created
-func (w *Workers) AddWorker(name string) error {
+func (w *WorkerPool) AddWorker(name string) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
@@ -119,7 +265,7 @@ func (w *Workers) AddWorker(name string) error {
 }
 
 // Uninstalling a connector stops the worker
-func (w *Workers) RemoveWorker(name string) error {
+func (w *WorkerPool) RemoveWorker(name string) error {
 	w.rwMutex.Lock()
 	defer w.rwMutex.Unlock()
 
