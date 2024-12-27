@@ -2,6 +2,7 @@ package activities
 
 import (
 	"errors"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
@@ -12,6 +13,7 @@ const (
 	ErrTypeStorage         = "STORAGE"
 	ErrTypeDefault         = "DEFAULT"
 	ErrTypeInvalidArgument = "INVALID_ARGUMENT"
+	ErrTypeRateLimited     = "RATE_LIMITED"
 	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
 
@@ -26,6 +28,11 @@ func temporalPluginError(err error) error {
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 
 	// Retry the following errors
+	case errors.Is(err, plugins.ErrUpstreamRatelimit):
+		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
+			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
+			NextRetryDelay: 3 * time.Second,
+		})
 	case errors.Is(err, plugins.ErrNotYetInstalled):
 		// We want to retry in case of not installed
 		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeDefault, err)
