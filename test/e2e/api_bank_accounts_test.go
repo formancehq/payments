@@ -178,7 +178,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			ver          int
 			createRes    struct{ Data v2.BankAccountResponse }
 			forwardReq   v2.BankAccountsForwardToConnectorRequest
-			connectorRes struct{ Data string }
+			connectorRes struct{ Data v2.ConnectorInstallResponse }
 			res          struct{ Data v2.BankAccountResponse }
 			e            chan *nats.Msg
 			err          error
@@ -202,11 +202,11 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok", func() {
-			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
+			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data.ConnectorID}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.RelatedAccounts).To(HaveLen(1))
-			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorRes.Data))
+			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorRes.Data.ConnectorID))
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount)))
 		})

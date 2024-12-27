@@ -104,7 +104,7 @@ var _ = Context("Payments API Payments", func() {
 
 	When("creating a new payment with v2", func() {
 		var (
-			connectorRes   struct{ Data string }
+			connectorRes   struct{ Data v2.ConnectorInstallResponse }
 			createResponse struct{ Data v2.PaymentResponse }
 			getResponse    struct{ Data v2.PaymentResponse }
 			e              chan *nats.Msg
@@ -127,10 +127,10 @@ var _ = Context("Payments API Payments", func() {
 		})
 
 		It("should be ok", func() {
-			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
+			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data.ConnectorID, createdAt)
 			createRequest := v2.CreatePaymentRequest{
 				Reference:            "ref",
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorRes.Data.ConnectorID,
 				CreatedAt:            createdAt,
 				Amount:               initialAmount,
 				Asset:                asset,

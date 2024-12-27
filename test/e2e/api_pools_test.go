@@ -119,7 +119,7 @@ var _ = Context("Payments API Pools", func() {
 
 	When("creating a new pool with v2", func() {
 		var (
-			connectorRes struct{ Data string }
+			connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorID  string
 			e            chan *nats.Msg
 			ver          int
@@ -131,7 +131,7 @@ var _ = Context("Payments API Pools", func() {
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
+			connectorID = connectorRes.Data.ConnectorID
 		})
 
 		It("should be ok when underlying accounts exist", func() {
@@ -268,7 +268,7 @@ var _ = Context("Payments API Pools", func() {
 
 	When("adding and removing accounts to a pool with v2", func() {
 		var (
-			connectorRes    struct{ Data string }
+			connectorRes    struct{ Data v2.ConnectorInstallResponse }
 			connectorID     string
 			accountIDs      []string
 			extraAccountIDs []string
@@ -285,7 +285,7 @@ var _ = Context("Payments API Pools", func() {
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
+			connectorID = connectorRes.Data.ConnectorID
 			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
