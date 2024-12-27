@@ -22,7 +22,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/invopop/jsonschema v0.12.0
-	github.com/jackc/pgx/v5 v5.7.1
+	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.38.0
