@@ -10,6 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
+	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/formancehq/payments/pkg/testserver"
@@ -38,9 +39,8 @@ var _ = Context("Payments API Connectors", func() {
 
 	When("installing a connector", func() {
 		var (
-			connectorRes struct{ Data string }
-			id           uuid.UUID
-			workflowID   string
+			id         uuid.UUID
+			workflowID string
 		)
 		JustBeforeEach(func() {
 			id = uuid.New()
@@ -48,6 +48,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v3", func() {
 			ver := 3
+			var connectorRes struct{ Data string }
 			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
@@ -71,12 +72,13 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v2", func() {
 			ver := 2
+			var connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			getRes := struct{ Data ConnectorConf }{}
-			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data, &getRes)
+			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(connectorConf))
 		})
@@ -84,8 +86,7 @@ var _ = Context("Payments API Connectors", func() {
 
 	When("uninstalling a connector", func() {
 		var (
-			connectorRes struct{ Data string }
-			id           uuid.UUID
+			id uuid.UUID
 		)
 		JustBeforeEach(func() {
 			id = uuid.New()
@@ -93,6 +94,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v3", func() {
 			ver := 3
+			var connectorRes struct{ Data string }
 			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
@@ -113,13 +115,14 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("should be ok with v2", func() {
 			ver := 2
+			var connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorConf := newConnectorConfigurationFn()(id)
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, nil)
+			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
 			Expect(err).To(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
+			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "uninstall")
 		})
 	})
 

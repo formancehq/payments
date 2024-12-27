@@ -65,7 +65,7 @@ var _ = Context("Payments API Accounts", func() {
 			func(ver int) {
 				e = Subscribe(GinkgoT(), app.GetValue())
 				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
 
 				createRequest.ConnectorID = connectorRes.Data
@@ -98,9 +98,8 @@ var _ = Context("Payments API Accounts", func() {
 				connectorConf := newConnectorConfigurationFn()(uuid.New())
 				_, err := GeneratePSPData(connectorConf.Directory)
 				Expect(err).To(BeNil())
-				ver = 3
 
-				err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
 				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 

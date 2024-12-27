@@ -12,6 +12,12 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+// NOTE: in order to maintain previous version compatibility, we need to keep the
+// same response structure as the previous version of the API
+type ConnectorInstallResponse struct {
+	ConnectorID string `json:"connectorID"`
+}
+
 func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_connectorsInstall")
@@ -41,6 +47,8 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Created(w, connectorID.String())
+		api.Created(w, ConnectorInstallResponse{
+			ConnectorID: connectorID.String(),
+		})
 	}
 }
