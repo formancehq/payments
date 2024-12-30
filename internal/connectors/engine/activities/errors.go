@@ -18,6 +18,14 @@ const (
 )
 
 func temporalPluginError(err error) error {
+	return temporalPluginErrorCheck(err, false)
+}
+
+func temporalPluginPollingError(err error) error {
+	return temporalPluginErrorCheck(err, true)
+}
+
+func temporalPluginErrorCheck(err error, isPolling bool) error {
 	switch {
 	// Do not retry the following errors
 	case errors.Is(err, plugins.ErrNotImplemented):
@@ -27,12 +35,20 @@ func temporalPluginError(err error) error {
 	case errors.Is(err, plugins.ErrCurrencyNotSupported):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 
-	// Retry the following errors
+	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
+		if isPolling {
+			// polled tasks are on a schedule so we don't want to retry them in case off rate-limiting
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, err)
+		}
+
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
+			// temporal already implements a backoff strategy, but let's add an extra delay before the next retry
 			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
-			NextRetryDelay: 3 * time.Second,
+			NextRetryDelay: 5 * time.Second,
 		})
+
+	// Retry the following errors
 	case errors.Is(err, plugins.ErrNotYetInstalled):
 		// We want to retry in case of not installed
 		return temporal.NewApplicationErrorWithCause(err.Error(), ErrTypeDefault, err)

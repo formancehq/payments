@@ -21,7 +21,7 @@ func (a Activities) PluginFetchNextBalances(ctx context.Context, request FetchNe
 
 	resp, err := plugin.FetchNextBalances(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, temporalPluginPollingError(err)
 	}
 	return &resp, nil
 }

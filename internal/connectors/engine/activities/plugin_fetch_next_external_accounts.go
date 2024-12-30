@@ -21,7 +21,7 @@ func (a Activities) PluginFetchNextExternalAccounts(ctx context.Context, request
 
 	resp, err := plugin.FetchNextExternalAccounts(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, temporalPluginPollingError(err)
 	}
 
 	return &resp, nil

@@ -21,7 +21,7 @@ func (a Activities) PluginFetchNextOthers(ctx context.Context, request FetchNext
 
 	resp, err := plugin.FetchNextOthers(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, temporalPluginPollingError(err)
 	}
 
 	return &resp, nil
