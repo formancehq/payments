@@ -41,6 +41,7 @@ type Storage interface {
 	ListenConnectorsChanges(ctx context.Context, handler HandlerConnectorsChanges) error
 	ConnectorsInstall(ctx context.Context, c models.Connector) error
 	ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error
+	ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error
 	ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error)
 	ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 	ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
@@ -9,7 +10,9 @@ import (
 	"github.com/formancehq/go-libs/v2/query"
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/gibson042/canonicaljson-go"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,6 +123,52 @@ func TestConnectorsUninstall(t *testing.T) {
 		}
 
 		require.NoError(t, store.ConnectorsUninstall(ctx, id))
+	})
+}
+
+func TestConnectorsConfigUpdate(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertConnector(t, ctx, store, defaultConnector2)
+
+	t.Run("same id upsert", func(t *testing.T) {
+		config := json.RawMessage(`{"val":"new"}`)
+		c := models.Connector{
+			ID:     defaultConnector.ID,
+			Config: config,
+		}
+
+		require.NoError(t, store.ConnectorsConfigUpdate(ctx, c))
+
+		connector, err := store.ConnectorsGet(ctx, c.ID)
+		require.NoError(t, err)
+		require.NotNil(t, connector)
+		assert.Equal(t, defaultConnector.Name, connector.Name)
+		assert.Equal(t, defaultConnector.CreatedAt, connector.CreatedAt)
+		assert.Equal(t, defaultConnector.Provider, connector.Provider)
+		assert.Equal(t, defaultConnector.ScheduledForDeletion, connector.ScheduledForDeletion)
+
+		expectedData, err := canonicaljson.Marshal(config)
+		require.NoError(t, err)
+		data, err := canonicaljson.Marshal(connector.Config)
+		require.NoError(t, err)
+		assert.Equal(t, string(expectedData), string(data))
+	})
+
+	t.Run("connector doesn't exist yet", func(t *testing.T) {
+		c := models.Connector{
+			ID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  "test",
+			},
+			Config: []byte(`{}`),
+		}
+
+		require.Error(t, store.ConnectorsConfigUpdate(ctx, c))
 	})
 }
 
