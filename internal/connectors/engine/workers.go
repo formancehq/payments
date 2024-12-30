@@ -181,15 +181,24 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	// Only react to scheduled for deletion changes
-	if !connector.ScheduledForDeletion {
+	if connector.ScheduledForDeletion {
+		if err := w.RemoveWorker(connectorID.String()); err != nil {
+			return err
+		}
+		// if we're deleting the plugin no other changes matter
 		return nil
 	}
 
-	if err := w.RemoveWorker(connectorID.String()); err != nil {
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
 		return err
 	}
 
+	err = w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config)
+	if err != nil {
+		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
+		return err
+	}
 	return nil
 }
 
