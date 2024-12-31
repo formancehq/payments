@@ -2,27 +2,24 @@ package client
 
 import (
 	"context"
-	"time"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/hmacvalidator"
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func (c *client) searchWebhook(ctx context.Context, connectorID string) error {
 	pageSize := 50
 	for page := 1; ; page++ {
-		start := time.Now()
 		webhooks, raw, err := c.client.Management().WebhooksCompanyLevelApi.ListAllWebhooks(
-			ctx,
+			metrics.OperationContext(ctx, "list_hooks"),
 			c.client.Management().WebhooksCompanyLevelApi.ListAllWebhooksInput(c.companyID).PageNumber(int32(page)).PageSize(int32(pageSize)),
 		)
-		c.recordMetrics(ctx, start, "list_hooks")
-		err = c.wrapSDKError(err, raw.StatusCode)
 		if err != nil {
-			return err
+			return c.wrapSDKError(err, raw.StatusCode)
 		}
 
 		if len(webhooks.Data) == 0 {
@@ -85,27 +82,21 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 		req.Password = pointer.For(c.webhookPassword)
 	}
 
-	start := time.Now()
 	webhook, raw, err := c.client.Management().WebhooksCompanyLevelApi.SetUpWebhook(
-		ctx,
+		metrics.OperationContext(ctx, "create_hook"),
 		c.client.Management().WebhooksCompanyLevelApi.SetUpWebhookInput(c.companyID).
 			CreateCompanyWebhookRequest(req),
 	)
-	c.recordMetrics(ctx, start, "create_hook")
-	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
-		return err
+		return c.wrapSDKError(err, raw.StatusCode)
 	}
 
-	start = time.Now()
 	hmac, raw, err := c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKey(
-		ctx,
+		metrics.OperationContext(ctx, "create_hook_hmac_key"),
 		c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKeyInput(c.companyID, *webhook.Id),
 	)
-	c.recordMetrics(ctx, start, "create_hook_hmac_key")
-	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
-		return err
+		return c.wrapSDKError(err, raw.StatusCode)
 	}
 
 	c.standardWebhook = &webhook
@@ -142,19 +133,15 @@ func (c *client) DeleteWebhook(ctx context.Context, connectorID string) error {
 		}
 	}
 
-	start := time.Now()
 	raw, err := c.client.Management().WebhooksCompanyLevelApi.RemoveWebhook(
-		ctx,
+		metrics.OperationContext(ctx, "delete_hook"),
 		c.client.Management().WebhooksCompanyLevelApi.RemoveWebhookInput(c.companyID, *c.standardWebhook.Id),
 	)
-	c.recordMetrics(ctx, start, "delete_hook")
-	err = c.wrapSDKError(err, raw.StatusCode)
 	if err != nil {
-		return err
+		return c.wrapSDKError(err, raw.StatusCode)
 	}
 
 	c.standardWebhook = nil
-
 	return nil
 }
 

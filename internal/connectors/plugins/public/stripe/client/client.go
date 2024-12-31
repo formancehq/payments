@@ -3,8 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -42,14 +40,7 @@ type client struct {
 
 func New(backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
-		opts := metrics.TransportOpts{
-			CommonMetricAttributesFn: CommonMetricsAttributes,
-		}
-
-		backends := stripe.NewBackends(&http.Client{
-			Timeout:   10 * time.Second,
-			Transport: metrics.NewTransport(opts),
-		})
+		backends := stripe.NewBackends(metrics.NewHTTPClient(CommonMetricsAttributes))
 		backend = backends.API
 	}
 
