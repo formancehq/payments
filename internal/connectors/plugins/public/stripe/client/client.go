@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
@@ -16,7 +17,6 @@ import (
 	"github.com/stripe/stripe-go/v79/transfer"
 	"github.com/stripe/stripe-go/v79/transferreversal"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -38,13 +38,19 @@ type client struct {
 	payoutClient             payout.Client
 	bankAccountClient        bankaccount.Client
 	balanceTransactionClient balancetransaction.Client
-
-	commonMetricAttributes []attribute.KeyValue
 }
 
 func New(backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
-		backend = stripe.GetBackend(stripe.APIBackend)
+		opts := metrics.TransportOpts{
+			CommonMetricAttributesFn: CommonMetricsAttributes,
+		}
+
+		backends := stripe.NewBackends(&http.Client{
+			Timeout:   10 * time.Second,
+			Transport: metrics.NewTransport(opts),
+		})
+		backend = backends.API
 	}
 
 	return &client{
@@ -54,20 +60,7 @@ func New(backend stripe.Backend, apiKey string) Client {
 		payoutClient:             payout.Client{B: backend, Key: apiKey},
 		bankAccountClient:        bankaccount.Client{B: backend, Key: apiKey},
 		balanceTransactionClient: balancetransaction.Client{B: backend, Key: apiKey},
-		commonMetricAttributes:   CommonMetricsAttributes(),
 	}
-}
-
-// recordMetrics is meant to be called in a defer
-func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
-	registry := metrics.GetMetricsRegistry()
-
-	attrs := c.commonMetricAttributes
-	attrs = append(attrs, attribute.String("operation", operation))
-	opts := metric.WithAttributes(attrs...)
-
-	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
-	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
 }
 
 func limit(wanted int64, have int) *int64 {

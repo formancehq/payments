@@ -3,16 +3,13 @@ package client
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) (*stripe.Balance, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_balances")
-
-	var filters stripe.Params
+	filters := stripe.Params{Context: metrics.OperationContext(ctx, "list_balances")}
 	if accountID != "" {
 		filters.StripeAccount = &accountID
 	}
