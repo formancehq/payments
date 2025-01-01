@@ -33,8 +33,8 @@ require (
 	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.10.0
 	github.com/stripe/stripe-go/v79 v79.12.0
-	github.com/uptrace/bun v1.2.6
-	github.com/uptrace/bun/dialect/pgdialect v1.2.6
+	github.com/uptrace/bun v1.2.7
+	github.com/uptrace/bun/dialect/pgdialect v1.2.7
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.58.0
 	go.opentelemetry.io/otel v1.33.0
