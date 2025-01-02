@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/payments/genericclient"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/internal/models"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -43,7 +44,7 @@ func New(connectorName string, apiKey, baseURL string) Client {
 	})
 
 	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = &http.Client{Timeout: 5 * time.Second, Transport: transport}
+	configuration.HTTPClient = &http.Client{Timeout: models.DefaultConnectorClientTimeout, Transport: transport}
 	configuration.Servers[0].URL = baseURL
 
 	genericClient := genericclient.NewAPIClient(configuration)
