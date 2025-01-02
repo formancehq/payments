@@ -126,7 +126,7 @@ func (w Workflow) resetConnector(
 		),
 		RunInstallConnector,
 		InstallConnector{
-			ConnectorID: resetConnector.ConnectorID,
+			ConnectorID: newConnector.ID,
 			Config:      config,
 		},
 	).Get(ctx, nil); err != nil {
