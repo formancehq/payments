@@ -89,6 +89,9 @@ func (w Workflow) resetConnector(
 		return nil, temporal.NewNonRetryableApplicationError("unmarshal config", "INVALID_CONFIG", err)
 	}
 
+	// We need to change the connector ID to a new one, otherwise, we will
+	// have some conflicts with temporal and previous workflows related to the
+	// previous connector ID.
 	newConnector := models.Connector{
 		ID: models.ConnectorID{
 			Reference: uuid.New(),
