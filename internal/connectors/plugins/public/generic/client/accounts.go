@@ -5,14 +5,12 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) ListAccounts(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Account, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_accounts")
-
 	req := c.apiClient.DefaultApi.
-		GetAccounts(ctx).
+		GetAccounts(metrics.OperationContext(ctx, "list_accounts")).
 		Page(page).
 		PageSize(pageSize)
 

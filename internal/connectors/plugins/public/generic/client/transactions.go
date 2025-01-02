@@ -5,13 +5,11 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_transactions")
-
-	req := c.apiClient.DefaultApi.GetTransactions(ctx).
+	req := c.apiClient.DefaultApi.GetTransactions(metrics.OperationContext(ctx, "list_transactions")).
 		Page(page).
 		PageSize(pageSize)
 

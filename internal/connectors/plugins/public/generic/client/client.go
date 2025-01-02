@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -33,40 +32,27 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 type client struct {
-	apiClient              *genericclient.APIClient
-	commonMetricAttributes []attribute.KeyValue
+	apiClient *genericclient.APIClient
 }
 
 func New(apiKey, baseURL string) Client {
-	httpClient := &http.Client{
+	transport := metrics.NewTransport(metrics.TransportOpts{
 		Transport: &apiTransport{
 			APIKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
-	}
+		CommonMetricAttributesFn: CommonMetricsAttributes,
+	})
 
 	configuration := genericclient.NewConfiguration()
-	configuration.HTTPClient = httpClient
+	configuration.HTTPClient = &http.Client{Timeout: 5 * time.Second, Transport: transport}
 	configuration.Servers[0].URL = baseURL
 
 	genericClient := genericclient.NewAPIClient(configuration)
 
 	return &client{
-		apiClient:              genericClient,
-		commonMetricAttributes: CommonMetricsAttributes(),
+		apiClient: genericClient,
 	}
-}
-
-// recordMetrics is meant to be called in a defer
-func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
-	registry := metrics.GetMetricsRegistry()
-
-	attrs := c.commonMetricAttributes
-	attrs = append(attrs, attribute.String("operation", operation))
-	opts := metric.WithAttributes(attrs...)
-
-	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
-	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
 }
 
 func CommonMetricsAttributes() []attribute.KeyValue {
