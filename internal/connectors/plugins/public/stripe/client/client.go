@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
 	"github.com/stripe/stripe-go/v79/balance"
@@ -14,7 +15,6 @@ import (
 	"github.com/stripe/stripe-go/v79/payout"
 	"github.com/stripe/stripe-go/v79/transfer"
 	"github.com/stripe/stripe-go/v79/transferreversal"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -38,9 +38,9 @@ type client struct {
 	balanceTransactionClient balancetransaction.Client
 }
 
-func New(backend stripe.Backend, apiKey string) Client {
+func New(name string, backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
-		backends := stripe.NewBackends(metrics.NewHTTPClient(CommonMetricsAttributes))
+		backends := stripe.NewBackends(metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout))
 		backend = backends.API
 	}
 
@@ -77,11 +77,4 @@ func wrapSDKErr(err error) error {
 
 	}
 	return err
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "stripe"),
-	}
-	return metricsAttributes
 }

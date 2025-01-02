@@ -21,11 +21,12 @@ type TransportOpts struct {
 }
 
 type Transport struct {
+	connectorName          string
 	parent                 http.RoundTripper
 	commonMetricAttributes []attribute.KeyValue
 }
 
-func NewTransport(opts TransportOpts) http.RoundTripper {
+func NewTransport(connectorName string, opts TransportOpts) http.RoundTripper {
 	if opts.Transport == nil {
 		opts.Transport = http.DefaultTransport
 	}
@@ -35,6 +36,7 @@ func NewTransport(opts TransportOpts) http.RoundTripper {
 	}
 
 	return &Transport{
+		connectorName:          connectorName,
 		parent:                 opts.Transport,
 		commonMetricAttributes: opts.CommonMetricAttributesFn(),
 	}
@@ -46,6 +48,7 @@ func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	registry := GetMetricsRegistry()
 
 	attrs := r.commonMetricAttributes
+	attrs = append(attrs, attribute.String("connector", r.connectorName))
 	attrs = append(attrs, attribute.String("endpoint", req.URL.Path))
 	if val := req.Context().Value(MetricOperationContextKey); val != nil {
 		if name, ok := val.(string); ok {

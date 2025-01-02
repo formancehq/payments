@@ -12,7 +12,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -37,12 +36,19 @@ type client struct {
 	hmacKey         string
 }
 
-func New(apiKey, username, password, companyID string, liveEndpointPrefix string) Client {
+func New(
+	provider string,
+	apiKey string,
+	username string,
+	password string,
+	companyID string,
+	liveEndpointPrefix string,
+) Client {
 	adyenConfig := &common.Config{
 		ApiKey:      apiKey,
 		Environment: common.TestEnv,
 		Debug:       true,
-		HTTPClient:  metrics.NewHTTPClient(CommonMetricsAttributes),
+		HTTPClient:  metrics.NewHTTPClient(provider, models.DefaultConnectorClientTimeout),
 	}
 
 	if liveEndpointPrefix != "" {
@@ -74,11 +80,4 @@ func (c *client) wrapSDKError(err error, statusCode int) error {
 		return fmt.Errorf("unexpected status code %d: %w", statusCode, err)
 	}
 	return err
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "adyen"),
-	}
-	return metricsAttributes
 }

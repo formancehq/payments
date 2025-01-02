@@ -10,8 +10,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const ProviderName = "bankingcircle"
+
 func init() {
-	registry.RegisterPlugin("bankingcircle", func(name string, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
 	}, capabilities)
 }
@@ -28,7 +30,7 @@ func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 		return nil, err
 	}
 
-	client, err := client.New(config.Username, config.Password, config.Endpoint, config.AuthorizationEndpoint, config.UserCertificate, config.UserCertificateKey)
+	client, err := client.New(ProviderName, config.Username, config.Password, config.Endpoint, config.AuthorizationEndpoint, config.UserCertificate, config.UserCertificateKey)
 	if err != nil {
 		return nil, err
 	}

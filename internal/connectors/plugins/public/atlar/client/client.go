@@ -20,7 +20,6 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -48,10 +47,10 @@ type client struct {
 	httpClient *http.Client
 }
 
-func New(baseURL *url.URL, accessKey, secret string) Client {
+func New(name string, baseURL *url.URL, accessKey, secret string) Client {
 	return &client{
 		client:     createAtlarClient(baseURL, accessKey, secret),
-		httpClient: metrics.NewHTTPClient(CommonMetricsAttributes),
+		httpClient: metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout),
 	}
 }
 
@@ -65,13 +64,6 @@ func createAtlarClient(baseURL *url.URL, accessKey, secret string) *atlar_client
 	transport.DefaultAuthentication = basicAuth
 	client := atlar_client.New(transport, strfmt.Default)
 	return client
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "generic"),
-	}
-	return metricsAttributes
 }
 
 // wrap a public error for cases that we don't want to retry

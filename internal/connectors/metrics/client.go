@@ -3,16 +3,15 @@ package metrics
 import (
 	"net/http"
 	"time"
-
-	"go.opentelemetry.io/otel/attribute"
 )
 
-func NewHTTPClient(commonAttributesFn func() []attribute.KeyValue) *http.Client {
-	opts := TransportOpts{
-		CommonMetricAttributesFn: commonAttributesFn,
-	}
+type ClientOptions struct {
+	Timeout time.Duration
+}
+
+func NewHTTPClient(connectorName string, timeout time.Duration) *http.Client {
 	return &http.Client{
-		Timeout:   10 * time.Second,
-		Transport: NewTransport(opts),
+		Timeout:   timeout,
+		Transport: NewTransport(connectorName, TransportOpts{}),
 	}
 }

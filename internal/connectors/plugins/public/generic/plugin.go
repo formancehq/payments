@@ -10,8 +10,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const ProviderName = "generic"
+
 func init() {
-	registry.RegisterPlugin("generic", func(name string, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
 	}, capabilities)
 }
@@ -28,7 +30,7 @@ func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 		return nil, err
 	}
 
-	client := client.New(config.APIKey, config.Endpoint)
+	client := client.New(ProviderName, config.APIKey, config.Endpoint)
 
 	return &Plugin{
 		name:   name,

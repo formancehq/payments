@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -16,6 +17,8 @@ import (
 // is only accepting request with "application/json" content type, and the lib
 // sets it as application/x-www-form-urlencoded, giving us a 415 error.
 type apiTransport struct {
+	connectorName string
+
 	clientID string
 	apiKey   string
 	endpoint string
@@ -68,7 +71,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 	}
 
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
+		Transport: metrics.NewTransport(t.connectorName, metrics.TransportOpts{}),
 	}
 	httpClient := httpwrapper.NewClient(config)
 

@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/genericclient"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/attribute"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -35,13 +34,12 @@ type client struct {
 	apiClient *genericclient.APIClient
 }
 
-func New(apiKey, baseURL string) Client {
-	transport := metrics.NewTransport(metrics.TransportOpts{
+func New(connectorName string, apiKey, baseURL string) Client {
+	transport := metrics.NewTransport(connectorName, metrics.TransportOpts{
 		Transport: &apiTransport{
 			APIKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
 		},
-		CommonMetricAttributesFn: CommonMetricsAttributes,
 	})
 
 	configuration := genericclient.NewConfiguration()
@@ -53,11 +51,4 @@ func New(apiKey, baseURL string) Client {
 	return &client{
 		apiClient: genericClient,
 	}
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "generic"),
-	}
-	return metricsAttributes
 }

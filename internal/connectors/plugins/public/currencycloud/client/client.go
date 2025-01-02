@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/sync/singleflight"
 )
@@ -52,7 +53,7 @@ func (c *client) buildEndpoint(path string, args ...interface{}) string {
 const DevAPIEndpoint = "https://devapi.currencycloud.com"
 
 // New creates a new client for the CurrencyCloud API.
-func New(loginID, apiKey, endpoint string) Client {
+func New(connectorName string, loginID, apiKey, endpoint string) Client {
 	if endpoint == "" {
 		endpoint = DevAPIEndpoint
 	}
@@ -62,13 +63,13 @@ func New(loginID, apiKey, endpoint string) Client {
 		loginID:  loginID,
 		apiKey:   apiKey,
 	}
+	baseTransport := &apiTransport{
+		c:          c,
+		underlying: otelhttp.NewTransport(http.DefaultTransport),
+	}
 
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("currencycloud"),
-		Transport: &apiTransport{
-			c:          c,
-			underlying: otelhttp.NewTransport(http.DefaultTransport),
-		},
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: baseTransport}),
 	}
 	c.httpClient = httpwrapper.NewClient(config)
 	return c
