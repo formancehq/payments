@@ -25,13 +25,10 @@ type client struct {
 
 func New(/* TODO: fill config parameters */) *client {
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("{{ .Connector }}"),
-		// TODO: you can use your own http transport for auth for example
-		//Transport: &apiTransport{
-		//	underlying: otelhttp.NewTransport(http.DefaultTransport),
-		//},
-		// TODO: you can also use your own http error checker to send the right
-		// error for your PSP
+		// TODO: you can set an underlying http transport in metrics.TransportOpts for authentication for example
+		Transport: metrics.NewTransport("{{ .Connector }}", metrics.TransportOpts{}),
+		// TODO: if the PSP requires special http status code handling, you can override the default handling by setting a
+		// custom HttpErrorCheckerFn like below
 		// HttpErrorCheckerFn: func(statusCode int) error {
 		// 	if statusCode == http.StatusNotFound {
 		// 		return nil
