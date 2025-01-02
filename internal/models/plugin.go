@@ -3,7 +3,10 @@ package models
 import (
 	"context"
 	"encoding/json"
+	"time"
 )
+
+const DefaultConnectorClientTimeout = 3 * time.Second
 
 type PluginConstructorFn func() Plugin
 

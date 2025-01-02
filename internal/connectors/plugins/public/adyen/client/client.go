@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/adyen"
 	"github.com/adyen/adyen-go-api-library/v7/src/common"
@@ -13,8 +12,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -28,8 +25,7 @@ type Client interface {
 }
 
 type client struct {
-	client                 *adyen.APIClient
-	commonMetricAttributes []attribute.KeyValue
+	client *adyen.APIClient
 
 	webhookUsername string
 	webhookPassword string
@@ -40,11 +36,19 @@ type client struct {
 	hmacKey         string
 }
 
-func New(apiKey, username, password, companyID string, liveEndpointPrefix string) Client {
+func New(
+	provider string,
+	apiKey string,
+	username string,
+	password string,
+	companyID string,
+	liveEndpointPrefix string,
+) Client {
 	adyenConfig := &common.Config{
 		ApiKey:      apiKey,
 		Environment: common.TestEnv,
 		Debug:       true,
+		HTTPClient:  metrics.NewHTTPClient(provider, models.DefaultConnectorClientTimeout),
 	}
 
 	if liveEndpointPrefix != "" {
@@ -56,11 +60,10 @@ func New(apiKey, username, password, companyID string, liveEndpointPrefix string
 	c := adyen.NewClient(adyenConfig)
 
 	return &client{
-		client:                 c,
-		commonMetricAttributes: CommonMetricsAttributes(),
-		webhookUsername:        username,
-		webhookPassword:        password,
-		companyID:              companyID,
+		client:          c,
+		webhookUsername: username,
+		webhookPassword: password,
+		companyID:       companyID,
 	}
 }
 
@@ -77,23 +80,4 @@ func (c *client) wrapSDKError(err error, statusCode int) error {
 		return fmt.Errorf("unexpected status code %d: %w", statusCode, err)
 	}
 	return err
-}
-
-// recordMetrics is meant to be called in a defer
-func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
-	registry := metrics.GetMetricsRegistry()
-
-	attrs := c.commonMetricAttributes
-	attrs = append(attrs, attribute.String("operation", operation))
-	opts := metric.WithAttributes(attrs...)
-
-	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
-	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "adyen"),
-	}
-	return metricsAttributes
 }

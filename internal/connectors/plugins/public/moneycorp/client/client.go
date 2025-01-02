@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -26,15 +27,15 @@ type client struct {
 	endpoint   string
 }
 
-func New(clientID, apiKey, endpoint string) *client {
+func New(connectorName, clientID, apiKey, endpoint string) *client {
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("moneycorp"),
-		Transport: &apiTransport{
-			clientID:   clientID,
-			apiKey:     apiKey,
-			endpoint:   endpoint,
-			underlying: otelhttp.NewTransport(http.DefaultTransport),
-		},
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: &apiTransport{
+			connectorName: connectorName,
+			clientID:      clientID,
+			apiKey:        apiKey,
+			endpoint:      endpoint,
+			underlying:    otelhttp.NewTransport(http.DefaultTransport),
+		}}),
 		HttpErrorCheckerFn: func(statusCode int) error {
 			if statusCode == http.StatusNotFound {
 				return nil

@@ -22,8 +22,8 @@ var (
 	ErrPluginNotFound = errors.New("plugin not found")
 )
 
-func RegisterPlugin(name string, createFunc PluginCreateFunction, capabilities []models.Capability) {
-	pluginsRegistry[name] = PluginInformation{
+func RegisterPlugin(provider string, createFunc PluginCreateFunction, capabilities []models.Capability) {
+	pluginsRegistry[provider] = PluginInformation{
 		capabilities: capabilities,
 		createFunc:   createFunc,
 	}

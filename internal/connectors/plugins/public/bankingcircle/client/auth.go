@@ -8,11 +8,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) login(ctx context.Context) error {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "authenticate")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
 		c.authorizationEndpoint+"/api/v1/authorizations/authorize", http.NoBody)

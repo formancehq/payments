@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type OwnerAddress struct {
@@ -33,7 +33,7 @@ type CreateIBANBankAccountRequest struct {
 }
 
 func (c *client) CreateIBANBankAccount(ctx context.Context, userID string, req *CreateIBANBankAccountRequest) (*BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_iban_bank_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_iban_bank_account")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts/iban", c.endpoint, c.clientID, userID)
 	return c.createBankAccount(ctx, endpoint, req)
@@ -49,7 +49,7 @@ type CreateUSBankAccountRequest struct {
 }
 
 func (c *client) CreateUSBankAccount(ctx context.Context, userID string, req *CreateUSBankAccountRequest) (*BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_us_bank_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_us_bank_account")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts/us", c.endpoint, c.clientID, userID)
 	return c.createBankAccount(ctx, endpoint, req)
@@ -66,7 +66,7 @@ type CreateCABankAccountRequest struct {
 }
 
 func (c *client) CreateCABankAccount(ctx context.Context, userID string, req *CreateCABankAccountRequest) (*BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_ca_bank_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_ca_bank_account")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts/ca", c.endpoint, c.clientID, userID)
 	return c.createBankAccount(ctx, endpoint, req)
@@ -81,7 +81,7 @@ type CreateGBBankAccountRequest struct {
 }
 
 func (c *client) CreateGBBankAccount(ctx context.Context, userID string, req *CreateGBBankAccountRequest) (*BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_gb_bank_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_gb_bank_account")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts/gb", c.endpoint, c.clientID, userID)
 	return c.createBankAccount(ctx, endpoint, req)
@@ -97,7 +97,7 @@ type CreateOtherBankAccountRequest struct {
 }
 
 func (c *client) CreateOtherBankAccount(ctx context.Context, userID string, req *CreateOtherBankAccountRequest) (*BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_other_bank_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_other_bank_account")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts/other", c.endpoint, c.clientID, userID)
 	return c.createBankAccount(ctx, endpoint, req)
@@ -130,7 +130,7 @@ type BankAccount struct {
 }
 
 func (c *client) GetBankAccounts(ctx context.Context, userID string, page, pageSize int) ([]BankAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_bank_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_bank_accounts")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/bankaccounts", c.endpoint, c.clientID, userID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

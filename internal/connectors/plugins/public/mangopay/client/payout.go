@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type PayoutRequest struct {
@@ -45,7 +45,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_payout")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payouts/bankwire", c.endpoint, c.clientID)
 
@@ -70,7 +70,7 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 }
 
 func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_payout")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payouts/%s", c.endpoint, c.clientID, payoutID)
 

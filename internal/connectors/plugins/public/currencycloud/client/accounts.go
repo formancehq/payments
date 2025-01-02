@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Account struct {
@@ -20,7 +20,7 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err
 	}
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		c.buildEndpoint("v2/accounts/find"), http.NoBody)

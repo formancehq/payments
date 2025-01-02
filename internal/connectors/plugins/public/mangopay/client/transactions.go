@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Payment struct {
@@ -31,7 +31,7 @@ type Payment struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, walletsID string, page, pageSize int, afterCreatedAt time.Time) ([]Payment, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/wallets/%s/transactions", c.endpoint, c.clientID, walletsID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

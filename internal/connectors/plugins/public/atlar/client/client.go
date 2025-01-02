@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -21,8 +20,6 @@ import (
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -46,17 +43,15 @@ type Client interface {
 }
 
 type client struct {
-	client                 *atlar_client.Rest
-	commonMetricAttributes []attribute.KeyValue
+	client     *atlar_client.Rest
+	httpClient *http.Client
 }
 
-func New(baseURL *url.URL, accessKey, secret string) Client {
-	c := &client{
-		client:                 createAtlarClient(baseURL, accessKey, secret),
-		commonMetricAttributes: CommonMetricsAttributes(),
+func New(name string, baseURL *url.URL, accessKey, secret string) Client {
+	return &client{
+		client:     createAtlarClient(baseURL, accessKey, secret),
+		httpClient: metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout),
 	}
-
-	return c
 }
 
 func createAtlarClient(baseURL *url.URL, accessKey, secret string) *atlar_client.Rest {
@@ -69,25 +64,6 @@ func createAtlarClient(baseURL *url.URL, accessKey, secret string) *atlar_client
 	transport.DefaultAuthentication = basicAuth
 	client := atlar_client.New(transport, strfmt.Default)
 	return client
-}
-
-// recordMetrics is meant to be called in a defer
-func (c *client) recordMetrics(ctx context.Context, start time.Time, operation string) {
-	registry := metrics.GetMetricsRegistry()
-
-	attrs := c.commonMetricAttributes
-	attrs = append(attrs, attribute.String("operation", operation))
-	opts := metric.WithAttributes(attrs...)
-
-	registry.ConnectorPSPCalls().Add(ctx, 1, opts)
-	registry.ConnectorPSPCallLatencies().Record(ctx, time.Since(start).Milliseconds(), opts)
-}
-
-func CommonMetricsAttributes() []attribute.KeyValue {
-	metricsAttributes := []attribute.KeyValue{
-		attribute.String("connector", "generic"),
-	}
-	return metricsAttributes
 }
 
 // wrap a public error for cases that we don't want to retry

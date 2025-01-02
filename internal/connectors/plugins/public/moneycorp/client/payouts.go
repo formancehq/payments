@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type payoutRequest struct {
@@ -61,7 +61,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_payout")
 
 	endpoint := fmt.Sprintf("%s/accounts/%s/payments", c.endpoint, pr.SourceAccountID)
 

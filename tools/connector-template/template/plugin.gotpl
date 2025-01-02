@@ -10,8 +10,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const ProviderName = "{{ .Connector }}"
+
 func init() {
-	registry.RegisterPlugin("{{ .Connector }}", func(name string, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(name string, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, rm)
 	}, capabilities)
 }

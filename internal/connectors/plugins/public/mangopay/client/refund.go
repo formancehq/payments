@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Refund struct {
@@ -30,7 +30,7 @@ type Refund struct {
 }
 
 func (c *client) GetRefund(ctx context.Context, refundID string) (*Refund, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_refund")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_refund")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/refunds/%s", c.endpoint, c.clientID, refundID)
 

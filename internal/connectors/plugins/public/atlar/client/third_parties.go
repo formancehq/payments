@@ -2,18 +2,16 @@ package client
 
 import (
 	"context"
-	"time"
 
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/get-momo/atlar-v1-go-client/client/third_parties"
 )
 
 func (c *client) GetV1BetaThirdPartiesID(ctx context.Context, id string) (*third_parties.GetV1betaThirdPartiesIDOK, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "get_third_party")
-
 	params := third_parties.GetV1betaThirdPartiesIDParams{
-		Context: ctx,
-		ID:      id,
+		Context:    metrics.OperationContext(ctx, "get_third_party"),
+		ID:         id,
+		HTTPClient: c.httpClient,
 	}
 
 	resp, err := c.client.ThirdParties.GetV1betaThirdPartiesID(&params)

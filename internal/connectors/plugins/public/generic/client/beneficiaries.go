@@ -5,14 +5,12 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_beneficiaries")
-
 	req := c.apiClient.DefaultApi.
-		GetBeneficiaries(ctx).
+		GetBeneficiaries(metrics.OperationContext(ctx, "list_beneficiaries")).
 		Page(page).
 		PageSize(pageSize)
 

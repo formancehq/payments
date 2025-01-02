@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
@@ -40,11 +41,11 @@ type client struct {
 	endpoint string
 }
 
-func New(clientID, apiKey, endpoint string) Client {
+func New(connectorName, clientID, apiKey, endpoint string) Client {
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("mangopay"),
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{}),
 		OAuthConfig: &clientcredentials.Config{
 			ClientID:     clientID,
 			ClientSecret: apiKey,

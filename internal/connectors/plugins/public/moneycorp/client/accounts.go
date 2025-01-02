@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type accountsResponse struct {
@@ -21,7 +21,7 @@ type Account struct {
 }
 
 func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	endpoint := fmt.Sprintf("%s/accounts", c.endpoint)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

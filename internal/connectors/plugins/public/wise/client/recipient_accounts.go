@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type RecipientAccountsResponse struct {
@@ -27,7 +27,7 @@ type RecipientAccount struct {
 }
 
 func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pageSize int, seekPositionForNext uint64) (*RecipientAccountsResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_recipient_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_recipient_accounts")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v2/accounts"), http.NoBody)
@@ -54,7 +54,7 @@ func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pag
 }
 
 func (c *client) GetRecipientAccount(ctx context.Context, accountID uint64) (*RecipientAccount, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_recipient_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_recipient_accounts")
 
 	c.mux.Lock()
 	defer c.mux.Unlock()

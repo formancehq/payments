@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Payout struct {
@@ -62,7 +62,7 @@ func (t *Payout) UnmarshalJSON(data []byte) error {
 }
 
 func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_payout")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers/"+payoutID), http.NoBody)
@@ -80,7 +80,7 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 }
 
 func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Payout, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_payout")
 
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"targetAccount":         targetAccount,

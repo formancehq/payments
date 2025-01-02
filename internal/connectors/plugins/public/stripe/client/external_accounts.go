@@ -2,8 +2,8 @@ package client
 
 import (
 	"context"
-	"time"
 
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -13,9 +13,6 @@ func (c *client) GetExternalAccounts(
 	timeline Timeline,
 	pageSize int64,
 ) (results []*stripe.BankAccount, _ Timeline, hasMore bool, err error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_bank_accounts")
-
 	results = make([]*stripe.BankAccount, 0, int(pageSize))
 
 	// return 0 results because this endpoint cannot be used for root account
@@ -26,6 +23,7 @@ func (c *client) GetExternalAccounts(
 	if !timeline.IsCaughtUp() {
 		var oldest interface{}
 		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
+			params.Context = metrics.OperationContext(ctx, "list_bank_accounts_scan")
 			itr := c.bankAccountClient.List(&stripe.BankAccountListParams{
 				Account:    &accountID,
 				ListParams: params,
@@ -45,6 +43,7 @@ func (c *client) GetExternalAccounts(
 	itr := c.bankAccountClient.List(&stripe.BankAccountListParams{
 		Account: &accountID,
 		ListParams: stripe.ListParams{
+			Context:      metrics.OperationContext(ctx, "list_bank_accounts"),
 			Limit:        &pageSize,
 			EndingBefore: &timeline.LatestID,
 		},

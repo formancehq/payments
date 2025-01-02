@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/google/uuid"
 )
 
@@ -16,7 +16,7 @@ type Quote struct {
 }
 
 func (c *client) CreateQuote(ctx context.Context, profileID, currency string, amount json.Number) (Quote, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_quote")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_quote")
 
 	var quote Quote
 

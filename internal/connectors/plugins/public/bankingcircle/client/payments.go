@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type DebtorInformation struct {
@@ -94,7 +94,7 @@ func (c *client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_payments")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_payments")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v1/payments/singles", http.NoBody)
 	if err != nil {
@@ -129,7 +129,7 @@ func (c *client) GetPayment(ctx context.Context, paymentID string) (*Payment, er
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payment")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_payment")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/payments/singles/%s", c.endpoint, paymentID), http.NoBody)
 	if err != nil {
@@ -153,7 +153,7 @@ func (c *client) GetPaymentStatus(ctx context.Context, paymentID string) (*Statu
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payment_status")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_payment_status")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/payments/singles/%s/status", c.endpoint, paymentID), http.NoBody)
 	if err != nil {

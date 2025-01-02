@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -16,7 +16,7 @@ type Contact struct {
 }
 
 func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_contacts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_contacts")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err

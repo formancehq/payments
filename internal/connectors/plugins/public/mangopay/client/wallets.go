@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Wallet struct {
@@ -24,7 +24,7 @@ type Wallet struct {
 }
 
 func (c *client) GetWallets(ctx context.Context, userID string, page, pageSize int) ([]Wallet, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_wallets")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_wallets")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/users/%s/wallets", c.endpoint, c.clientID, userID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
@@ -48,7 +48,7 @@ func (c *client) GetWallets(ctx context.Context, userID string, page, pageSize i
 }
 
 func (c *client) GetWallet(ctx context.Context, walletID string) (*Wallet, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_wallet")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_wallet")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/wallets/%s", c.endpoint, c.clientID, walletID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

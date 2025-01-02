@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	lru "github.com/hashicorp/golang-lru/v2"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -56,14 +57,13 @@ func (c *client) endpoint(path string) string {
 	return fmt.Sprintf("%s/%s", apiEndpoint, path)
 }
 
-func New(apiKey string) Client {
+func New(connectorName string, apiKey string) Client {
 	recipientsCache, _ := lru.New[uint64, *RecipientAccount](2048)
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("wise"),
-		Transport: &apiTransport{
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: &apiTransport{
 			APIKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
-		},
+		}}),
 	}
 
 	return &client{

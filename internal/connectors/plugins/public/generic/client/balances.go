@@ -2,16 +2,13 @@ package client
 
 import (
 	"context"
-	"time"
 
 	"github.com/formancehq/payments/genericclient"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "list_balances")
-
-	req := c.apiClient.DefaultApi.GetAccountBalances(ctx, accountID)
+	req := c.apiClient.DefaultApi.GetAccountBalances(metrics.OperationContext(ctx, "list_balances"), accountID)
 
 	balances, _, err := req.Execute()
 	if err != nil {

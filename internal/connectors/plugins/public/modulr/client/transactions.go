@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -26,7 +26,7 @@ type Transaction struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, fromTransactionDate time.Time) ([]Transaction, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("accounts/%s/transactions", accountID), http.NoBody)
 	if err != nil {

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Balance struct {
@@ -43,7 +43,7 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint+"/api/v1/accounts", http.NoBody)
 	if err != nil {
@@ -80,7 +80,7 @@ func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	if err := c.ensureAccessTokenIsValid(ctx); err != nil {
 		return nil, err
 	}
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_account")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fmt.Sprintf("%s/api/v1/accounts/%s", c.endpoint, accountID), http.NoBody)
 	if err != nil {

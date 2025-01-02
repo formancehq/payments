@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/modulr/client/hmac"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
@@ -57,7 +58,7 @@ func (m *client) buildEndpoint(path string, args ...interface{}) string {
 
 const SandboxAPIEndpoint = "https://api-sandbox.modulrfinance.com/api-sandbox-token"
 
-func New(apiKey, apiSecret, endpoint string) (Client, error) {
+func New(connectorName, apiKey, apiSecret, endpoint string) (Client, error) {
 	if endpoint == "" {
 		endpoint = SandboxAPIEndpoint
 	}
@@ -67,12 +68,11 @@ func New(apiKey, apiSecret, endpoint string) (Client, error) {
 		return nil, fmt.Errorf("failed to generate headers: %w", err)
 	}
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("modulr"),
-		Transport: &apiTransport{
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: &apiTransport{
 			headers:    headers,
 			apiKey:     apiKey,
 			underlying: otelhttp.NewTransport(http.DefaultTransport),
-		},
+		}}),
 	}
 
 	return &client{

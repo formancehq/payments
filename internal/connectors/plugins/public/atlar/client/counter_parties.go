@@ -3,30 +3,25 @@ package client
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )
 
 func (c *client) GetV1CounterpartiesID(ctx context.Context, counterPartyID string) (*counterparties.GetV1CounterpartiesIDOK, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "get_counterparty")
-
 	getCounterpartyParams := counterparties.GetV1CounterpartiesIDParams{
-		Context: ctx,
-		ID:      counterPartyID,
+		Context:    metrics.OperationContext(ctx, "get_counter_party"),
+		ID:         counterPartyID,
+		HTTPClient: c.httpClient,
 	}
 	counterpartyResponse, err := c.client.Counterparties.GetV1CounterpartiesID(&getCounterpartyParams)
 	return counterpartyResponse, wrapSDKErr(err)
 }
 
 func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
-	start := time.Now()
-	defer c.recordMetrics(ctx, start, "create_counter_party")
-
 	// TODO: make sure an account with that IBAN does not already exist (Atlar API v2 needed, v1 lacks the filters)
 	// alternatively we could query the local DB
 
@@ -60,8 +55,9 @@ func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccoun
 		},
 	}
 	postCounterpartiesParams := counterparties.PostV1CounterpartiesParams{
-		Context:      ctx,
+		Context:      metrics.OperationContext(ctx, "create_counter_party"),
 		Counterparty: &createCounterpartyRequest,
+		HTTPClient:   c.httpClient,
 	}
 	postCounterpartiesResponse, err := c.client.Counterparties.PostV1Counterparties(&postCounterpartiesParams)
 	if err != nil {

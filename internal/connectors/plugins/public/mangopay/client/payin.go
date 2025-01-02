@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type PayinResponse struct {
@@ -29,7 +29,7 @@ type PayinResponse struct {
 }
 
 func (c *client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_payin")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_payin")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/payins/%s", c.endpoint, c.clientID, payinID)
 

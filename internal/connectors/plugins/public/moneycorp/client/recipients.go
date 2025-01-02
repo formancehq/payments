@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type recipientsResponse struct {
@@ -25,7 +25,7 @@ type RecipientAttributes struct {
 }
 
 func (c *client) GetRecipients(ctx context.Context, accountID string, page int, pageSize int) ([]*Recipient, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_recipients")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_recipients")
 
 	endpoint := fmt.Sprintf("%s/accounts/%s/recipients", c.endpoint, accountID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

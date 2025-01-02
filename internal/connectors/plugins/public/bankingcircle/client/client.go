@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -35,6 +36,7 @@ type client struct {
 }
 
 func New(
+	connectorName string,
 	username, password,
 	endpoint, authorizationEndpoint,
 	uCertificate, uCertificateKey string,
@@ -50,8 +52,7 @@ func New(
 	}
 
 	config := &httpwrapper.Config{
-		CommonMetricsAttributes: httpwrapper.CommonMetricsAttributesFor("bankingcircle"),
-		Transport:               tr,
+		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{Transport: tr}),
 	}
 
 	c := &client{

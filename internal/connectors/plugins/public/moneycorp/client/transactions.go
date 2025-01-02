@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type transactionsResponse struct {
@@ -53,7 +53,7 @@ type TransactionAttributes struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, accountID string, page, pageSize int, lastCreatedAt time.Time) ([]*Transaction, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transactions")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	var body io.Reader
 	if !lastCreatedAt.IsZero() {
