@@ -12,7 +12,7 @@ import (
 type UninstallConnector struct {
 	ConnectorID       models.ConnectorID
 	DefaultWorkerName string
-	TaskID            models.TaskID
+	TaskID            *models.TaskID
 }
 
 func (w Workflow) runUninstallConnector(
@@ -21,21 +21,27 @@ func (w Workflow) runUninstallConnector(
 ) error {
 	err := w.uninstallConnector(ctx, uninstallConnector)
 	if err != nil {
-		if errUpdateTask := w.updateTasksError(
-			ctx,
-			uninstallConnector.TaskID,
-			&uninstallConnector.ConnectorID,
-			err,
-		); errUpdateTask != nil {
-			return errUpdateTask
+		if uninstallConnector.TaskID != nil {
+			if errUpdateTask := w.updateTasksError(
+				ctx,
+				*uninstallConnector.TaskID,
+				&uninstallConnector.ConnectorID,
+				err,
+			); errUpdateTask != nil {
+				return errUpdateTask
+			}
 		}
 
 		return err
 	}
 
+	if uninstallConnector.TaskID == nil {
+		return nil
+	}
+
 	return w.updateTaskSuccess(
 		ctx,
-		uninstallConnector.TaskID,
+		*uninstallConnector.TaskID,
 		&uninstallConnector.ConnectorID,
 		uninstallConnector.ConnectorID.String(),
 	)

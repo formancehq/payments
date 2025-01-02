@@ -252,11 +252,12 @@ func (mr *MockBackendMockRecorder) ConnectorsList(ctx, query any) *gomock.Call {
 }
 
 // ConnectorsReset mocks base method.
-func (m *MockBackend) ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) error {
+func (m *MockBackend) ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectorsReset", ctx, connectorID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // ConnectorsReset indicates an expected call of ConnectorsReset.

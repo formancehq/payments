@@ -81,6 +81,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runInstallConnector,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunResetConnector,
+			Func: w.runResetConnector,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunUninstallConnector,
 			Func: w.runUninstallConnector,
 		}).
