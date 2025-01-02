@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Balance struct {
@@ -20,7 +20,7 @@ type Balance struct {
 }
 
 func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Balance, int, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_balances")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_balances")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err

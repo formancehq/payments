@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Profile struct {
@@ -14,7 +14,7 @@ type Profile struct {
 }
 
 func (c *client) GetProfiles(ctx context.Context) ([]Profile, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_profiles")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_profiles")
 
 	var profiles []Profile
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.endpoint("v2/profiles"), http.NoBody)

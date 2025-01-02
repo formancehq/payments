@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type PayoutRequest struct {
@@ -54,7 +54,7 @@ type PayoutResponse struct {
 }
 
 func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutRequest) (*PayoutResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_payout")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_payout")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err

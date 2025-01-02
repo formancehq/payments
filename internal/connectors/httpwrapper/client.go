@@ -14,8 +14,6 @@ import (
 	"golang.org/x/oauth2"
 )
 
-const MetricOperationContextKey string = "_metric_operation_context_key"
-
 var (
 	ErrStatusCodeUnexpected  = errors.New("unexpected status code")
 	ErrStatusCodeClientError = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)

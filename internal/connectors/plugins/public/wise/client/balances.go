@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type BalanceAmount struct {
@@ -39,7 +39,7 @@ type Balance struct {
 }
 
 func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_balances")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_balances")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("v4/profiles/%d/balances?types=STANDARD", profileID)), http.NoBody)
@@ -57,7 +57,7 @@ func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 }
 
 func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uint64) (*Balance, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_balance")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_balance")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint(fmt.Sprintf("v4/profiles/%d/balances/%d", profileID, balanceID)), http.NoBody)

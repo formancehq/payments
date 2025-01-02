@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type PaymentAccount struct {
@@ -38,7 +38,7 @@ func (c *client) InitiateTransferOrPayouts(ctx context.Context, transferRequest 
 		return nil, err
 	}
 
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_transfers_payouts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_transfers_payouts")
 
 	body, err := json.Marshal(transferRequest)
 	if err != nil {

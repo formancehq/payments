@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Beneficiary struct {
@@ -19,7 +19,7 @@ type Beneficiary struct {
 }
 
 func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) ([]*Beneficiary, int, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_beneficiaries")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_beneficiaries")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, 0, err

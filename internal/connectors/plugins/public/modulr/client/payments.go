@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type PaymentType string
@@ -39,7 +39,7 @@ type Payment struct {
 }
 
 func (c *client) GetPayments(ctx context.Context, paymentType PaymentType, page, pageSize int, modifiedSince time.Time) ([]Payment, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_payments")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_payments")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("payments"), http.NoBody)
 	if err != nil {

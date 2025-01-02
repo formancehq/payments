@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Transfer struct {
@@ -62,7 +62,7 @@ func (t *Transfer) UnmarshalJSON(data []byte) error {
 }
 
 func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int, limit int) ([]Transfer, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_transfers")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transfers")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers"), http.NoBody)
@@ -156,7 +156,7 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 }
 
 func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_transfer")
 
 	req, err := http.NewRequestWithContext(ctx,
 		http.MethodGet, c.endpoint("v1/transfers/"+transferID), http.NoBody)
@@ -174,7 +174,7 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 }
 
 func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount uint64, transactionID string) (*Transfer, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
 	reqBody, err := json.Marshal(map[string]interface{}{
 		"targetAccount":         targetAccount,

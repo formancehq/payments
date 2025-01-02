@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Beneficiary struct {
@@ -17,7 +17,7 @@ type Beneficiary struct {
 }
 
 func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modifiedSince time.Time) ([]Beneficiary, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_beneficiaries")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_beneficiaries")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("beneficiaries"), http.NoBody)
 	if err != nil {

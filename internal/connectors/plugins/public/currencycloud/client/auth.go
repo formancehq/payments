@@ -7,11 +7,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 func (c *client) authenticate(ctx context.Context) error {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "authenticate")
 
 	form := make(url.Values)
 

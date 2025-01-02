@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type TransferRequest struct {
@@ -55,7 +55,7 @@ type TransferResponse struct {
 }
 
 func (c *client) InitiateTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
 	if err := c.ensureLogin(ctx); err != nil {
 		return nil, err

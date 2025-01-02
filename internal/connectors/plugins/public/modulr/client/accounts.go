@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 //nolint:tagliatelle // allow for clients
@@ -28,7 +28,7 @@ type Account struct {
 }
 
 func (c *client) GetAccounts(ctx context.Context, page, pageSize int, fromCreatedAt time.Time) ([]Account, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("accounts"), http.NoBody)
 	if err != nil {
@@ -55,7 +55,7 @@ func (c *client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 }
 
 func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_account")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_account")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("accounts/%s", accountID), http.NoBody)
 	if err != nil {

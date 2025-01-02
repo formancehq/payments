@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type EventType string
@@ -83,7 +83,7 @@ type Hook struct {
 }
 
 func (c *client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "list_hooks")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_hooks")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/hooks", c.endpoint, c.clientID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
@@ -111,7 +111,7 @@ type CreateHookRequest struct {
 }
 
 func (c *client) CreateHook(ctx context.Context, eventType EventType, URL string) error {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "create_hook")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_hook")
 
 	body, err := json.Marshal(&CreateHookRequest{
 		EventType: eventType,
@@ -142,7 +142,7 @@ type UpdateHookRequest struct {
 }
 
 func (c *client) UpdateHook(ctx context.Context, hookID string, URL string) error {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "update_hook")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "update_hook")
 
 	body, err := json.Marshal(&UpdateHookRequest{
 		URL:    URL,

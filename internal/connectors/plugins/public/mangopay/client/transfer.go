@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/errorsutils"
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Funds struct {
@@ -45,7 +45,7 @@ type TransferResponse struct {
 }
 
 func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *TransferRequest) (*TransferResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "initiate_transfer")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers", c.endpoint, c.clientID)
 
@@ -72,7 +72,7 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 }
 
 func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (TransferResponse, error) {
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "get_transfer")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_transfer")
 
 	endpoint := fmt.Sprintf("%s/v2.01/%s/transfers/%s", c.endpoint, c.clientID, transferID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)

@@ -83,7 +83,7 @@ func (t *apiTransport) login(ctx context.Context) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
-	ctx = context.WithValue(ctx, httpwrapper.MetricOperationContextKey, "authenticate")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "authenticate")
 
 	var res loginResponse
 	var errRes moneycorpErrors
