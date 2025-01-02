@@ -26,7 +26,7 @@ type Engine interface {
 	// Uninstall a connector with the given ID.
 	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	// Reset a connector with the given ID, by uninstalling and reinstalling it.
-	ResetConnector(ctx context.Context, connectorID models.ConnectorID) error
+	ResetConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 
 	// Create a Formance account, no call to the plugin, just a creation
 	// of an account in the database related to the provided connector id.
@@ -212,7 +212,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
 			DefaultWorkerName: getDefaultTaskQueue(e.stack),
-			TaskID:            task.ID,
+			TaskID:            &task.ID,
 		},
 	)
 	if err != nil {
@@ -229,60 +229,64 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	return task, nil
 }
 
-func (e *engine) ResetConnector(ctx context.Context, connectorID models.ConnectorID) error {
+func (e *engine) ResetConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.ResetConnector")
 	defer span.End()
 
-	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
-	if err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Detached the context to avoid being in a weird state if request is
-	// cancelled in the middle of the operation.
 	detachedCtx := context.WithoutCancel(ctx)
 	// Since we detached the context, we need to wait for the operation to finish
 	// even if the app is shutting down gracefully.
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	if _, err := e.UninstallConnector(detachedCtx, connectorID); err != nil {
-		otel.RecordError(span, err)
-		return err
+	now := time.Now()
+	id := fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String())
+	task := models.Task{
+		// Do not fill the connector ID as it will be deleted
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		Status:    models.TASK_STATUS_PROCESSING,
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
-	_, err = e.InstallConnector(detachedCtx, connectorID.Provider, connector.Config)
-	if err != nil {
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
 		otel.RecordError(span, err)
-		return err
+		return models.Task{}, err
 	}
 
-	run, err := e.temporalClient.ExecuteWorkflow(
+	_, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
-			ID:                    fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String()),
-			TaskQueue:             getConnectorTaskQueue(e.stack, connectorID),
-			WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+			ID:                                       id,
+			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
 				workflow.SearchAttributeStack: e.stack,
 			},
 		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			ConnectorReset: &connectorID,
+		workflow.RunResetConnector,
+		workflow.ResetConnector{
+			ConnectorID:       connectorID,
+			DefaultWorkerName: getDefaultTaskQueue(e.stack),
+			TaskID:            task.ID,
 		},
 	)
 	if err != nil {
+		task.Status = models.TASK_STATUS_FAILED
+		task.UpdatedAt = time.Now()
+		if err := e.storage.TasksUpsert(ctx, task); err != nil {
+			e.logger.Errorf("failed to update task status to failed: %v", err)
+		}
+
 		otel.RecordError(span, err)
-		return err
+		return models.Task{}, err
 	}
 
-	if err := run.Get(ctx, nil); err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-	return nil
+	return task, nil
 }
 
 func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
