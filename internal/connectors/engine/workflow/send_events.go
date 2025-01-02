@@ -102,7 +102,7 @@ func (w Workflow) runSendEvents(
 		err := sendEvent(
 			ctx,
 			fmt.Sprintf("%s-%s", sendEvents.ConnectorReset.String(), now.Format(time.RFC3339Nano)),
-			sendEvents.ConnectorReset,
+			nil,
 			func(ctx workflow.Context) error {
 				return activities.EventsSendConnectorReset(
 					infiniteRetryContext(ctx),
