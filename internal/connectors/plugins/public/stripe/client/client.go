@@ -71,10 +71,13 @@ func wrapSDKErr(err error) error {
 		return err
 	}
 
+	if stripeErr.Code == stripe.ErrorCodeRateLimit {
+		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeTooManyRequests, err)
+	}
+
 	switch stripeErr.Type {
 	case stripe.ErrorTypeInvalidRequest, stripe.ErrorTypeIdempotency:
 		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
-
 	}
 	return err
 }

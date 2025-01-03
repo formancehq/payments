@@ -24,6 +24,7 @@ import (
 type MockStorage struct {
 	ctrl     *gomock.Controller
 	recorder *MockStorageMockRecorder
+	isgomock struct{}
 }
 
 // MockStorageMockRecorder is the mock recorder for MockStorage.
@@ -300,6 +301,20 @@ func (m *MockStorage) ConnectorTasksTreeUpsert(ctx context.Context, connectorID 
 func (mr *MockStorageMockRecorder) ConnectorTasksTreeUpsert(ctx, connectorID, tasks any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorTasksTreeUpsert", reflect.TypeOf((*MockStorage)(nil).ConnectorTasksTreeUpsert), ctx, connectorID, tasks)
+}
+
+// ConnectorsConfigUpdate mocks base method.
+func (m *MockStorage) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ConnectorsConfigUpdate", ctx, c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ConnectorsConfigUpdate indicates an expected call of ConnectorsConfigUpdate.
+func (mr *MockStorageMockRecorder) ConnectorsConfigUpdate(ctx, c any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsConfigUpdate", reflect.TypeOf((*MockStorage)(nil).ConnectorsConfigUpdate), ctx, c)
 }
 
 // ConnectorsGet mocks base method.

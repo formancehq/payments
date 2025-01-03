@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type PluginCreateFunction func(string, json.RawMessage) (models.Plugin, error)
+type PluginCreateFunction func(string, logging.Logger, json.RawMessage) (models.Plugin, error)
 
 type PluginInformation struct {
 	capabilities []models.Capability
@@ -35,7 +35,7 @@ func GetPlugin(logger logging.Logger, provider string, connectorName string, raw
 		return nil, ErrPluginNotFound
 	}
 
-	p, err := info.createFunc(connectorName, rawConfig)
+	p, err := info.createFunc(connectorName, logger, rawConfig)
 	if err != nil {
 		return nil, translateError(err)
 	}

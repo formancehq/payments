@@ -78,6 +78,10 @@ func wrapSDKErr(err error) error {
 		return err
 	}
 
+	if atlarErr.Code == http.StatusTooManyRequests {
+		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeTooManyRequests)
+	}
+
 	if atlarErr.Code >= http.StatusBadRequest && atlarErr.Code < http.StatusInternalServerError {
 		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeClientError)
 	} else if atlarErr.Code >= http.StatusInternalServerError {

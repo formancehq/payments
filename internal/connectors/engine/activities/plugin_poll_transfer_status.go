@@ -15,12 +15,12 @@ type PollTransferStatusRequest struct {
 func (a Activities) PluginPollTransferStatus(ctx context.Context, request PollTransferStatusRequest) (*models.PollTransferStatusResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 
 	resp, err := plugin.PollTransferStatus(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 	return &resp, nil
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
 	"github.com/formancehq/payments/internal/models"
@@ -19,8 +20,9 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Adyen Plugin", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
+		plg    *Plugin
+		m      *client.MockClient
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -31,15 +33,15 @@ var _ = Describe("Adyen Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config - apiKey", func(ctx SpecContext) {
-			_, err := New("adyen", json.RawMessage(`{"companyID": "test"}`))
+			_, err := New("adyen", logger, json.RawMessage(`{"companyID": "test"}`))
 			Expect(err).To(MatchError("missing apiKey in config: invalid config"))
 		})
 		It("reports validation errors in the config - companyID", func(ctx SpecContext) {
-			_, err := New("adyen", json.RawMessage(`{"apiKey": "test"}`))
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey": "test"}`))
 			Expect(err).To(MatchError("missing companyID in config: invalid config"))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
-			_, err := New("adyen", json.RawMessage(`{"apiKey":"test", "companyID": "test"}`))
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test", "companyID": "test"}`))
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)

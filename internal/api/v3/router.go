@@ -88,13 +88,13 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 				r.Route("/{connectorID}", func(r chi.Router) {
 					r.Delete("/", connectorsUninstall(backend))
 					r.Get("/config", connectorsConfig(backend))
+					r.Patch("/config", connectorsConfigUpdate(backend))
 					r.Post("/reset", connectorsReset(backend))
 
 					r.Get("/schedules", schedulesList(backend))
 					r.Route("/schedules/{scheduleID}", func(r chi.Router) {
 						r.Get("/instances", workflowsInstancesList(backend))
 					})
-					// TODO(polo): add update config handler
 				})
 			})
 

@@ -8,18 +8,23 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 )
 
 var (
-	ErrStatusCodeUnexpected  = errors.New("unexpected status code")
-	ErrStatusCodeClientError = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
-	ErrStatusCodeServerError = fmt.Errorf("%w: http server error", ErrStatusCodeUnexpected)
+	ErrStatusCodeUnexpected      = errors.New("unexpected status code")
+	ErrStatusCodeClientError     = fmt.Errorf("%w: http client error", ErrStatusCodeUnexpected)
+	ErrStatusCodeServerError     = fmt.Errorf("%w: http server error", ErrStatusCodeUnexpected)
+	ErrStatusCodeTooManyRequests = fmt.Errorf("%w: http too many requests error", ErrStatusCodeUnexpected)
 
 	defaultHttpErrorCheckerFn = func(statusCode int) error {
+		if statusCode == http.StatusTooManyRequests {
+			return ErrStatusCodeTooManyRequests
+		}
+
 		if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
 			return ErrStatusCodeClientError
 		} else if statusCode >= http.StatusInternalServerError {
@@ -87,7 +92,7 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			hclog.Default().Error("failed to close response body", "error", err)
+			logging.FromContext(ctx).Errorf("failed to close response body: %w", err)
 		}
 	}()
 

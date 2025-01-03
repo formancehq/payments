@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -14,11 +15,12 @@ import (
 
 var _ = Describe("Stripe Plugin Payments", func() {
 	var (
-		plg *Plugin
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
+		plg    *Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		plg = &Plugin{logger: logger}
 	})
 
 	Context("fetch next Payments", func() {

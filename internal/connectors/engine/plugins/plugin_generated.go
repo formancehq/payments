@@ -21,6 +21,7 @@ import (
 type MockPlugins struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginsMockRecorder
+	isgomock struct{}
 }
 
 // MockPluginsMockRecorder is the mock recorder for MockPlugins.
@@ -55,21 +56,6 @@ func (mr *MockPluginsMockRecorder) Get(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockPlugins)(nil).Get), arg0)
 }
 
-// GetCapabilities mocks base method.
-func (m *MockPlugins) GetCapabilities(arg0 models.ConnectorID) ([]models.Capability, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCapabilities", arg0)
-	ret0, _ := ret[0].([]models.Capability)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetCapabilities indicates an expected call of GetCapabilities.
-func (mr *MockPluginsMockRecorder) GetCapabilities(arg0 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCapabilities", reflect.TypeOf((*MockPlugins)(nil).GetCapabilities), arg0)
-}
-
 // GetConfig mocks base method.
 func (m *MockPlugins) GetConfig(arg0 models.ConnectorID) (models.Config, error) {
 	m.ctrl.T.Helper()
@@ -86,17 +72,17 @@ func (mr *MockPluginsMockRecorder) GetConfig(arg0 any) *gomock.Call {
 }
 
 // RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(arg0 models.ConnectorID, arg1 string, arg2 models.Config, arg3 json.RawMessage) error {
+func (m *MockPlugins) RegisterPlugin(arg0 models.ConnectorID, arg1 string, arg2 models.Config, arg3 json.RawMessage, arg4 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3, arg4)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3 any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3, arg4 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3, arg4)
 }
 
 // UnregisterPlugin mocks base method.

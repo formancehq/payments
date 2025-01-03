@@ -20,6 +20,8 @@ func translateError(err error) error {
 		errors.Is(err, httpwrapper.ErrStatusCodeClientError),
 		errors.Is(err, models.ErrInvalidConfig):
 		return fmt.Errorf("%w: %w", err, plugins.ErrInvalidClientRequest)
+	case errors.Is(err, httpwrapper.ErrStatusCodeTooManyRequests):
+		return fmt.Errorf("%w: %w", err, plugins.ErrUpstreamRatelimit)
 	default:
 		return err
 	}

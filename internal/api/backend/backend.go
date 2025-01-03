@@ -33,6 +33,7 @@ type Backend interface {
 	// Connectors
 	ConnectorsConfigs() plugins.Configs
 	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
+	ConnectorsConfigUpdate(ctx context.Context, connector models.Connector) error
 	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)
 	ConnectorsInstall(ctx context.Context, provider string, config json.RawMessage) (models.ConnectorID, error)
 	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)

@@ -11,7 +11,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	"github.com/pkg/errors"
 	stripesdk "github.com/stripe/stripe-go/v79"
 )
@@ -82,7 +81,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripesdk.BalanceTransaction) (payment *models.PSPPayment, err error) {
 	if balanceTransaction.Source == nil {
-		hclog.Default().Info("skipping balance transaction with nil source element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
+		p.logger.WithFields(map[string]any{
+			"type": balanceTransaction.Type,
+			"id":   balanceTransaction.ID,
+		}).Info("skipping balance transaction with nil source element")
 		return nil, nil
 	}
 
@@ -95,7 +97,10 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 	switch balanceTransaction.Type {
 	case stripesdk.BalanceTransactionTypeCharge:
 		if balanceTransaction.Source.Charge == nil {
-			hclog.Default().Info("skipping balance transaction with nil charge element", "type", balanceTransaction.Type, "id", balanceTransaction.ID)
+			p.logger.WithFields(map[string]any{
+				"type": balanceTransaction.Type,
+				"id":   balanceTransaction.ID,
+			}).Info("skipping balance transaction with nil charge element")
 			return nil, nil
 		}
 		transactionCurrency := strings.ToUpper(string(balanceTransaction.Source.Charge.Currency))
@@ -480,7 +485,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 		}
 
 	default:
-		hclog.Default().Info("unsupported balance transaction type", "err", ErrUnsupportedTransactionType, "type", balanceTransaction.Type)
+		p.logger.WithField("type", balanceTransaction.Type).Errorf("unsupported balance transaction type: %w", ErrUnsupportedTransactionType)
 		return nil, nil
 	}
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/go-libs/v2/temporal"
@@ -25,6 +26,7 @@ func newWorker() *cobra.Command {
 	// their recommendation.
 	cmd.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
+	cmd.Flags().Duration(temporalRateLimitingRetryDelay, 5*time.Second, "Additional delay before a rate limited request is retried by Temporal workers")
 	return cmd
 }
 
@@ -54,6 +56,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
+	temporalRateLimitingRetryDelay, _ := cmd.Flags().GetDuration(temporalRateLimitingRetryDelay)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
@@ -61,6 +64,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			stack,
 			stackPublicURL,
 			temporalNamespace,
+			temporalRateLimitingRetryDelay,
 			temporalMaxConcurrentWorkflowTaskPollers,
 			service.IsDebug(cmd),
 		),

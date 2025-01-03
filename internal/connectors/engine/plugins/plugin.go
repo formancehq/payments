@@ -19,7 +19,7 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(models.ConnectorID, string, models.Config, json.RawMessage) error
+	RegisterPlugin(models.ConnectorID, string, models.Config, json.RawMessage, bool) error
 	UnregisterPlugin(models.ConnectorID) error
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -56,13 +56,14 @@ func (p *plugins) RegisterPlugin(
 	connectorName string,
 	config models.Config,
 	rawConfig json.RawMessage,
+	updateExisting bool,
 ) error {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
 	// Check if plugin is already installed
 	_, ok := p.plugins[connectorID.String()]
-	if ok {
+	if ok && !updateExisting {
 		return nil
 	}
 

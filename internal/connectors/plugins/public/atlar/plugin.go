@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/url"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/atlar/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -14,18 +15,19 @@ import (
 const ProviderName = "atlar"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, rm)
+	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, logger, rm)
 	}, capabilities)
 }
 
 type Plugin struct {
-	name string
+	name   string
+	logger logging.Logger
 
 	client client.Client
 }
 
-func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -38,6 +40,7 @@ func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 
 	return &Plugin{
 		name:   name,
+		logger: logger,
 		client: client.New(ProviderName, baseUrl, config.AccessKey, config.Secret),
 	}, nil
 }

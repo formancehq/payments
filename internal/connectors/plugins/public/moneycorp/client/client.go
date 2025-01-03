@@ -37,6 +37,10 @@ func New(connectorName, clientID, apiKey, endpoint string) *client {
 			underlying:    otelhttp.NewTransport(http.DefaultTransport),
 		}}),
 		HttpErrorCheckerFn: func(statusCode int) error {
+			if statusCode == http.StatusTooManyRequests {
+				return httpwrapper.ErrStatusCodeTooManyRequests
+			}
+
 			if statusCode == http.StatusNotFound {
 				return nil
 			} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {

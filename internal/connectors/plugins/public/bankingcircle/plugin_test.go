@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +18,8 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("BankingCircle Plugin", func() {
 	var (
-		plg *Plugin
+		plg    *Plugin
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -27,43 +29,43 @@ var _ = Describe("BankingCircle Plugin", func() {
 	Context("install", func() {
 		It("should report errors in config - username", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing username in config: invalid config"))
 		})
 
 		It("should report errors in config - password", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing password in config: invalid config"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
 		})
 
 		It("should report errors in config - authorization endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing authorization endpoint in config: invalid config"))
 		})
 
 		It("should report errors in config - certificate", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test", "authorizationEndpoint": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing user certificate in config: invalid config"))
 		})
 
 		It("should report errors in config - certificate key", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test", "authorizationEndpoint": "test", "userCertificate": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("missing user certificate key in config: invalid config"))
 		})
 
 		It("should report errors in config - invalid certificate", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test", "authorizationEndpoint": "test", "userCertificate": "test", "userCertificateKey": "test"}`)
-			_, err := New("bankingcircle", config)
+			_, err := New("bankingcircle", logger, config)
 			Expect(err).To(MatchError("failed to load user certificate: tls: failed to find any PEM data in certificate input: invalid config"))
 		})
 	})

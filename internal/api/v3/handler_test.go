@@ -27,7 +27,7 @@ func assertExpectedResponse(res *http.Response, expectedStatusCode int, expected
 
 	data, err := ioutil.ReadAll(res.Body)
 	Expect(err).To(BeNil())
-	Expect(data).To(ContainSubstring(expectedBodyString))
+	Expect(string(data)).To(ContainSubstring(expectedBodyString))
 }
 
 func prepareJSONRequest(method string, a any) *http.Request {

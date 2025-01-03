@@ -2,7 +2,9 @@ package activities_test
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
@@ -35,6 +37,8 @@ var _ = Describe("Plugin Poll Transfer Status", func() {
 		var (
 			plugin *models.MockPlugin
 			req    activities.PollTransferStatusRequest
+			logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
+			delay  = 50 * time.Millisecond
 		)
 
 		BeforeEach(func() {
@@ -42,7 +46,7 @@ var _ = Describe("Plugin Poll Transfer Status", func() {
 			p = plugins.NewMockPlugins(ctrl)
 			s = storage.NewMockStorage(ctrl)
 			plugin = models.NewMockPlugin(ctrl)
-			act = activities.New(nil, s, evts, p)
+			act = activities.New(logger, nil, s, evts, p, delay)
 			req = activities.PollTransferStatusRequest{
 				ConnectorID: models.ConnectorID{Provider: "some_provider"},
 				Req: models.PollTransferStatusRequest{

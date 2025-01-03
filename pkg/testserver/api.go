@@ -40,6 +40,14 @@ func ConnectorUninstall(ctx context.Context, srv *Server, ver int, id string, re
 	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, path), nil, res)
 }
 
+func ConnectorConfigUpdate(ctx context.Context, srv *Server, ver int, id string, reqBody any) error {
+	path := "connectors/" + id + "/config"
+	if ver == 2 {
+		return fmt.Errorf("connector update not supported by version %d", ver)
+	}
+	return srv.Client().Do(ctx, http.MethodPatch, pathPrefix(ver, path), reqBody, nil)
+}
+
 func ConnectorConfig(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	path := "connectors/" + id + "/config"
 	if ver == 2 {
