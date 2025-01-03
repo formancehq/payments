@@ -409,7 +409,8 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Reset a connector
+      summary: Reset a connector. Be aware that this will delete all data and
+        stop all existing tasks like payment initiations and bank account creations.
       operationId: v3ResetConnector
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
