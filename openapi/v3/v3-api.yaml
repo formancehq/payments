@@ -11,6 +11,7 @@ paths:
         - payments.v3
       summary: Show server information
       operationId: v3GetInfo
+      x-speakeasy-name-override: GetInfo
       responses:
         "200":
           description: OK
@@ -37,6 +38,7 @@ paths:
         Create a formance account object. This object will not be forwarded to
         the connector. It is only used for internal purposes.
       operationId: v3CreateAccount
+      x-speakeasy-name-override: CreateAccount
       requestBody:
         content:
           application/json:
@@ -63,6 +65,7 @@ paths:
         - payments.v3
       summary: List all accounts
       operationId: v3ListAccounts
+      x-speakeasy-name-override: ListAccounts
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -94,6 +97,7 @@ paths:
         - payments.v3
       summary: Get an account by ID
       operationId: v3GetAccount
+      x-speakeasy-name-override: GetAccount
       parameters:
         - $ref: '#/components/parameters/V3AccountID'
       responses:
@@ -119,6 +123,7 @@ paths:
         - payments.v3
       summary: Get account balances
       operationId: v3GetAccountBalances
+      x-speakeasy-name-override: GetAccountBalances
       parameters:
         - $ref: '#/components/parameters/V3AccountID'
         - $ref: '#/components/parameters/V3Asset'
@@ -152,6 +157,7 @@ paths:
         Create a formance bank account object. This object will not be forwarded
         to the connector until you called the forwardBankAccount method.
       operationId: v3CreateBankAccount
+      x-speakeasy-name-override: CreateBankAccount
       requestBody:
         content:
           application/json:
@@ -178,6 +184,7 @@ paths:
         - payments.v3
       summary: List all bank accounts
       operationId: v3ListBankAccounts
+      x-speakeasy-name-override: ListBankAccounts
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -209,6 +216,7 @@ paths:
         - payments.v3
       summary: Get a Bank Account by ID
       operationId: v3GetBankAccount
+      x-speakeasy-name-override: GetBankAccount
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       responses:
@@ -231,6 +239,7 @@ paths:
         - payments.v3
       summary: Update a bank account's metadata
       operationId: v3UpdateBankAccountMetadata
+      x-speakeasy-name-override: UpdateBankAccountMetadata
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       requestBody:
@@ -254,6 +263,7 @@ paths:
         - payments.v3
       summary: Forward a Bank Account to a PSP for creation
       operationId: v3ForwardBankAccount
+      x-speakeasy-name-override: ForwardBankAccount
       parameters:
         - $ref: '#/components/parameters/V3BankAccountID'
       requestBody:
@@ -282,6 +292,7 @@ paths:
         - payments.v3
       summary: List all connectors
       operationId: v3ListConnectors
+      x-speakeasy-name-override: ListConnectors
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -308,6 +319,7 @@ paths:
         - payments.v3
       summary: Install a connector
       operationId: v3InstallConnector
+      x-speakeasy-name-override: InstallConnector
       parameters:
         - $ref: '#/components/parameters/V3Connector'
       requestBody:
@@ -338,6 +350,7 @@ paths:
         - payments.v3
       summary: List all connector configurations
       operationId: v3ListConnectorConfigs
+      x-speakeasy-name-override: ListConnectorConfigs
       responses:
         "200":
           description: OK
@@ -361,6 +374,7 @@ paths:
         - payments.v3
       summary: Uninstall a connector
       operationId: v3UninstallConnector
+      x-speakeasy-name-override: UninstallConnector
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -386,6 +400,7 @@ paths:
         - payments.v3
       summary: Get a connector configuration by ID
       operationId: v3GetConnectorConfig
+      x-speakeasy-name-override: GetConnectorConfig
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -412,6 +427,7 @@ paths:
       summary: Reset a connector. Be aware that this will delete all data and
         stop all existing tasks like payment initiations and bank account creations.
       operationId: v3ResetConnector
+      x-speakeasy-name-override: ResetConnector
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
       responses:
@@ -437,6 +453,7 @@ paths:
         - payments.v3
       summary: List all connector schedules
       operationId: v3ListConnectorSchedules
+      x-speakeasy-name-override: ListConnectorSchedules
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -464,6 +481,7 @@ paths:
         - payments.v3
       summary: List all connector schedule instances
       operationId: v3ListConnectorScheduleInstances
+      x-speakeasy-name-override: ListConnectorScheduleInstances
       parameters:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3ScheduleID'
@@ -495,6 +513,7 @@ paths:
         Create a formance payment object. This object will not be forwarded to
         the connector. It is only used for internal purposes.
       operationId: v3CreatePayment
+      x-speakeasy-name-override: CreatePayment
       requestBody:
         content:
           application/json:
@@ -521,6 +540,7 @@ paths:
         - payments.v3
       summary: List all payments
       operationId: v3ListPayments
+      x-speakeasy-name-override: ListPayments
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -552,6 +572,7 @@ paths:
         - payments.v3
       summary: Get a payment by ID
       operationId: v3GetPayment
+      x-speakeasy-name-override: GetPayment
       parameters:
         - $ref: '#/components/parameters/V3PaymentID'
       responses:
@@ -577,6 +598,7 @@ paths:
         - payments.v3
       summary: Update a payment's metadata
       operationId: v3UpdatePaymentMetadata
+      x-speakeasy-name-override: UpdatePaymentMetadata
       parameters:
         - $ref: '#/components/parameters/V3PaymentID'
       requestBody:
@@ -604,6 +626,7 @@ paths:
         - payments.v3
       summary: Initiate a payment
       operationId: v3InitiatePayment
+      x-speakeasy-name-override: InitiatePayment
       parameters:
         - $ref: '#/components/parameters/V3NoValidation'
       requestBody:
@@ -632,6 +655,7 @@ paths:
         - payments.v3
       summary: List all payment initiations
       operationId: v3ListPaymentInitiations
+      x-speakeasy-name-override: ListPaymentInitiations
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -663,6 +687,7 @@ paths:
         - payments.v3
       summary: Delete a payment initiation by ID
       operationId: v3DeletePaymentInitiation
+      x-speakeasy-name-override: DeletePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -682,6 +707,7 @@ paths:
         - payments.v3
       summary: Get a payment initiation by ID
       operationId: v3GetPaymentInitiation
+      x-speakeasy-name-override: GetPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -707,6 +733,7 @@ paths:
         - payments.v3
       summary: Retry a payment initiation
       operationId: v3RetryPaymentInitiation
+      x-speakeasy-name-override: RetryPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -732,6 +759,7 @@ paths:
         - payments.v3
       summary: Approve a payment initiation
       operationId: v3ApprovePaymentInitiation
+      x-speakeasy-name-override: ApprovePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -757,6 +785,7 @@ paths:
         - payments.v3
       summary: Reject a payment initiation
       operationId: v3RejectPaymentInitiation
+      x-speakeasy-name-override: RejectPaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       responses:
@@ -778,6 +807,7 @@ paths:
         - payments.v3
       summary: Reverse a payment initiation
       operationId: v3ReversePaymentInitiation
+      x-speakeasy-name-override: ReversePaymentInitiation
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
       requestBody:
@@ -808,6 +838,7 @@ paths:
         - payments.v3
       summary: List all payment initiation adjustments
       operationId: v3ListPaymentInitiationAdjustments
+      x-speakeasy-name-override: ListPaymentInitiationAdjustments
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -835,6 +866,7 @@ paths:
         - payments.v3
       summary: List all payments related to a payment initiation
       operationId: v3ListPaymentInitiationRelatedPayments
+      x-speakeasy-name-override: ListPaymentInitiationRelatedPayments
       parameters:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
@@ -863,6 +895,7 @@ paths:
         - payments.v3
       summary: Create a formance pool object
       operationId: v3CreatePool
+      x-speakeasy-name-override: CreatePool
       requestBody:
         content:
           application/json:
@@ -889,6 +922,7 @@ paths:
         - payments.v3
       summary: List all pools
       operationId: v3ListPools
+      x-speakeasy-name-override: ListPools
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
@@ -920,6 +954,7 @@ paths:
         - payments.v3
       summary: Get a pool by ID
       operationId: v3GetPool
+      x-speakeasy-name-override: GetPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
       responses:
@@ -943,6 +978,7 @@ paths:
         - payments.v3
       summary: Delete a pool by ID
       operationId: v3DeletePool
+      x-speakeasy-name-override: DeletePool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
       responses:
@@ -964,6 +1000,7 @@ paths:
         - payments.v3
       summary: Get pool balances
       operationId: v3GetPoolBalances
+      x-speakeasy-name-override: GetPoolBalances
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3At'
@@ -990,6 +1027,7 @@ paths:
         - payments.v3
       summary: Add an account to a pool
       operationId: v3AddAccountToPool
+      x-speakeasy-name-override: AddAccountToPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3AccountID'
@@ -1010,6 +1048,7 @@ paths:
         - payments.v3
       summary: Remove an account from a pool
       operationId: v3RemoveAccountFromPool
+      x-speakeasy-name-override: RemoveAccountFromPool
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3AccountID'
@@ -1033,6 +1072,7 @@ paths:
         - payments.v3
       summary: Get a task and its result by ID
       operationId: v3GetTask
+      x-speakeasy-name-override: GetTask
       parameters:
         - $ref: '#/components/parameters/V3TaskID'
       responses:
