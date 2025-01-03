@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -14,13 +15,14 @@ import (
 const ProviderName = "adyen"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, rm)
+	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, logger, rm)
 	}, capabilities)
 }
 
 type Plugin struct {
-	name string
+	name   string
+	logger logging.Logger
 
 	client         client.Client
 	webhookConfigs map[string]webhookConfig
@@ -28,7 +30,7 @@ type Plugin struct {
 	connectorID string
 }
 
-func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -45,6 +47,7 @@ func New(name string, rawConfig json.RawMessage) (*Plugin, error) {
 
 	p := &Plugin{
 		name:   name,
+		logger: logger,
 		client: client,
 	}
 

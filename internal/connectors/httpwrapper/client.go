@@ -8,8 +8,8 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 )
@@ -92,7 +92,7 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	defer func() {
 		err = resp.Body.Close()
 		if err != nil {
-			hclog.Default().Error("failed to close response body", "error", err)
+			logging.FromContext(ctx).Errorf("failed to close response body: %w", err)
 		}
 	}()
 
