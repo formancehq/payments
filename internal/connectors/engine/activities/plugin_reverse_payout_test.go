@@ -2,7 +2,9 @@ package activities_test
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
@@ -33,13 +35,15 @@ var _ = Describe("Plugin Reverse Payout", func() {
 		var (
 			plugin *models.MockPlugin
 			req    activities.ReversePayoutRequest
+			logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
+			delay  = 50 * time.Millisecond
 		)
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			p = plugins.NewMockPlugins(ctrl)
 			s = storage.NewMockStorage(ctrl)
 			plugin = models.NewMockPlugin(ctrl)
-			act = activities.New(nil, s, evts, p)
+			act = activities.New(logger, nil, s, evts, p, delay)
 			req = activities.ReversePayoutRequest{
 				ConnectorID: models.ConnectorID{
 					Provider: "some_provider",
