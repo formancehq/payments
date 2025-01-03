@@ -16,12 +16,12 @@ type FetchNextBalancesRequest struct {
 func (a Activities) PluginFetchNextBalances(ctx context.Context, request FetchNextBalancesRequest) (*models.FetchNextBalancesResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, a.temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 
 	resp, err := plugin.FetchNextBalances(ctx, request.Req)
 	if err != nil {
-		return nil, a.temporalPluginPollingError(err)
+		return nil, a.temporalPluginPollingError(ctx, err)
 	}
 	return &resp, nil
 }

@@ -50,8 +50,14 @@ func NewModule(
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, plugins, stack, stackURL)
 		}),
-		fx.Provide(func(temporalClient client.Client, storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
-			return activities.New(temporalClient, storage, events, plugins, temporalRateLimitingRetryDelay)
+		fx.Provide(func(
+			logger logging.Logger,
+			temporalClient client.Client,
+			storage storage.Storage,
+			events *events.Events,
+			plugins plugins.Plugins,
+		) activities.Activities {
+			return activities.New(logger, temporalClient, storage, events, plugins, temporalRateLimitingRetryDelay)
 		}),
 		fx.Provide(
 			fx.Annotate(func(

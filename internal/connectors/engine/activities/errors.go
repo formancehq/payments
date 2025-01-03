@@ -1,10 +1,13 @@
 package activities
 
 import (
+	"context"
 	"errors"
+	"regexp"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
 )
 
@@ -16,15 +19,18 @@ const (
 	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
 
-func (a Activities) temporalPluginError(err error) error {
-	return a.temporalPluginErrorCheck(err, false)
+var scheduleSuffix = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`)
+
+func (a Activities) temporalPluginError(ctx context.Context, err error) error {
+	return a.temporalPluginErrorCheck(ctx, err, false)
 }
 
-func (a Activities) temporalPluginPollingError(err error) error {
-	return a.temporalPluginErrorCheck(err, true)
+func (a Activities) temporalPluginPollingError(ctx context.Context, err error) error {
+	return a.temporalPluginErrorCheck(ctx, err, true)
 }
 
-func (a Activities) temporalPluginErrorCheck(err error, isPolling bool) error {
+func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isPolling bool) error {
+
 	switch {
 	// Do not retry the following errors
 	case errors.Is(err, plugins.ErrNotImplemented):
@@ -36,9 +42,20 @@ func (a Activities) temporalPluginErrorCheck(err error, isPolling bool) error {
 
 	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
+		// many polled tasks are on a schedule so we can often skip retry in case of rate-limiting
 		if isPolling {
-			// polled tasks are on a schedule so we don't want to retry them in case off rate-limiting
-			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, err)
+			info := activity.GetInfo(ctx)
+
+			// if this polling activity was triggered by a schedule, the workflow ID will be suffixed with
+			// YYYY-MM-DDTHH:MM:SSZ
+			if scheduleSuffix.MatchString(info.WorkflowExecution.ID) {
+				a.logger.WithFields(map[string]any{
+					"workflow_type":  info.WorkflowType.Name,
+					"scheduled_time": info.ScheduledTime.String(),
+					"workflow_id":    info.WorkflowExecution.ID,
+				}).Debug("disabling retry for polled activity triggered by schedule due to rate-limit")
+				return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, err)
+			}
 		}
 
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
