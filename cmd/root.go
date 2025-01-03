@@ -20,6 +20,7 @@ const (
 	StackFlag                                    = "stack"
 	stackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
+	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
 )
 
 func NewRootCommand() *cobra.Command {

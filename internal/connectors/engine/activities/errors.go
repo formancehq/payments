@@ -2,7 +2,6 @@ package activities
 
 import (
 	"errors"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
@@ -17,15 +16,15 @@ const (
 	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
 
-func temporalPluginError(err error) error {
-	return temporalPluginErrorCheck(err, false)
+func (a Activities) temporalPluginError(err error) error {
+	return a.temporalPluginErrorCheck(err, false)
 }
 
-func temporalPluginPollingError(err error) error {
-	return temporalPluginErrorCheck(err, true)
+func (a Activities) temporalPluginPollingError(err error) error {
+	return a.temporalPluginErrorCheck(err, true)
 }
 
-func temporalPluginErrorCheck(err error, isPolling bool) error {
+func (a Activities) temporalPluginErrorCheck(err error, isPolling bool) error {
 	switch {
 	// Do not retry the following errors
 	case errors.Is(err, plugins.ErrNotImplemented):
@@ -45,7 +44,7 @@ func temporalPluginErrorCheck(err error, isPolling bool) error {
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
 			// temporal already implements a backoff strategy, but let's add an extra delay before the next retry
 			// https://docs.temporal.io/encyclopedia/retry-policies#per-error-next-retry-delay
-			NextRetryDelay: 5 * time.Second,
+			NextRetryDelay: a.rateLimitingRetryDelay,
 		})
 
 	// Retry the following errors

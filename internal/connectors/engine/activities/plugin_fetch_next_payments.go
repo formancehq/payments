@@ -16,12 +16,12 @@ type FetchNextPaymentsRequest struct {
 func (a Activities) PluginFetchNextPayments(ctx context.Context, request FetchNextPaymentsRequest) (*models.FetchNextPaymentsResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(err)
 	}
 
 	resp, err := plugin.FetchNextPayments(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginPollingError(err)
+		return nil, a.temporalPluginPollingError(err)
 	}
 
 	return &resp, nil

@@ -25,7 +25,7 @@ func (a Activities) PluginUninstallConnector(ctx context.Context, request Uninst
 
 	resp, err := plugin.Uninstall(ctx, models.UninstallRequest{})
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(err)
 	}
 
 	return &resp, nil

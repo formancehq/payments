@@ -15,12 +15,12 @@ type PollPayoutStatusRequest struct {
 func (a Activities) PluginPollPayoutStatus(ctx context.Context, request PollPayoutStatusRequest) (*models.PollPayoutStatusResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(err)
 	}
 
 	resp, err := plugin.PollPayoutStatus(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(err)
 	}
 	return &resp, nil
 }

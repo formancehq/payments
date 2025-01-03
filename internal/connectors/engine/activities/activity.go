@@ -2,6 +2,7 @@ package activities
 
 import (
 	"errors"
+	"time"
 
 	temporalworker "github.com/formancehq/go-libs/v2/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
@@ -16,6 +17,8 @@ type Activities struct {
 	storage        storage.Storage
 	events         *events.Events
 	temporalClient client.Client
+
+	rateLimitingRetryDelay time.Duration
 
 	plugins plugins.Plugins
 }
@@ -320,12 +323,19 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		})
 }
 
-func New(temporalClient client.Client, storage storage.Storage, events *events.Events, plugins plugins.Plugins) Activities {
+func New(
+	temporalClient client.Client,
+	storage storage.Storage,
+	events *events.Events,
+	plugins plugins.Plugins,
+	rateLimitingRetryDelay time.Duration,
+) Activities {
 	return Activities{
-		temporalClient: temporalClient,
-		storage:        storage,
-		plugins:        plugins,
-		events:         events,
+		temporalClient:         temporalClient,
+		storage:                storage,
+		plugins:                plugins,
+		events:                 events,
+		rateLimitingRetryDelay: rateLimitingRetryDelay,
 	}
 }
 
