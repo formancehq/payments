@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
@@ -34,6 +35,7 @@ var _ = Describe("Wise Plugin", func() {
 		block      *pem.Block
 		pemKey     *bytes.Buffer
 		privatekey *rsa.PrivateKey
+		logger     = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -72,12 +74,12 @@ var _ = Describe("Wise Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
-			_, err := New("wise", json.RawMessage(`{}`))
+			_, err := New("wise", logger, json.RawMessage(`{}`))
 			Expect(err).To(MatchError(ContainSubstring("config")))
 		})
 		It("rejects malformed pem keys", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey":"dummy","webhookPublicKey":"badKey"}`)
-			_, err := New("wise", config)
+			_, err := New("wise", logger, config)
 			Expect(err).To(MatchError(ContainSubstring("public key")))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
@@ -87,7 +89,7 @@ var _ = Describe("Wise Plugin", func() {
 			}
 			configJson, err := json.Marshal(config)
 			Expect(err).To(BeNil())
-			_, err = New("wise", configJson)
+			_, err = New("wise", logger, configJson)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(context.Background(), req)
@@ -111,7 +113,7 @@ var _ = Describe("Wise Plugin", func() {
 			}
 			configJson, err := json.Marshal(config)
 			Expect(err).To(BeNil())
-			plg, err = New("wise", configJson)
+			plg, err = New("wise", logger, configJson)
 			Expect(err).To(BeNil())
 
 			ctrl := gomock.NewController(GinkgoT())

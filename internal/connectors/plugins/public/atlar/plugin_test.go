@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +18,8 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Atlar Plugin", func() {
 	var (
-		plg *Plugin
+		plg    *Plugin
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -27,25 +29,25 @@ var _ = Describe("Atlar Plugin", func() {
 	Context("install", func() {
 		It("should report errors in config - baseURL", func(ctx SpecContext) {
 			config := json.RawMessage(`{"accessKey": "test", "secret": "test"}`)
-			_, err := New("atlar", config)
+			_, err := New("atlar", logger, config)
 			Expect(err).To(MatchError("missing baseURL in config: invalid config"))
 		})
 
 		It("should report errors in config - accessKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"baseURL": "test", "secret": "test"}`)
-			_, err := New("atlar", config)
+			_, err := New("atlar", logger, config)
 			Expect(err).To(MatchError("missing access key in config: invalid config"))
 		})
 
 		It("should report errors in config - secret", func(ctx SpecContext) {
 			config := json.RawMessage(`{"baseURL": "test", "accessKey": "test"}`)
-			_, err := New("atlar", config)
+			_, err := New("atlar", logger, config)
 			Expect(err).To(MatchError("missing secret in config: invalid config"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"baseURL": "http://localhost:8080/", "accessKey": "test", "secret": "test"}`)
-			_, err := New("atlar", config)
+			_, err := New("atlar", logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
