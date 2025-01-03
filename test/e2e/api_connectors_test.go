@@ -126,6 +126,48 @@ var _ = Context("Payments API Connectors", func() {
 		})
 	})
 
+	When("resetting a connector", func() {
+		var (
+			id uuid.UUID
+		)
+		JustBeforeEach(func() {
+			id = uuid.New()
+		})
+
+		It("should be ok with v3", func() {
+			ver := 3
+			var connectorRes struct{ Data string }
+			connectorConf := newConnectorConfigurationFn()(id)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+
+			resetRes := struct {
+				Data v3.ConnectorResetResponse `json:"data"`
+			}{}
+			err = ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data, &resetRes)
+			Expect(err).To(BeNil())
+			Expect(resetRes.Data).NotTo(BeNil())
+			taskID, err := models.TaskIDFromString(resetRes.Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring("reset"))
+			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			blockTillWorkflowComplete(ctx, connectorRes.Data, "reset")
+			Eventually(taskPoller(resetRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+		})
+
+		It("should be ok with v2", func() {
+			ver := 2
+			var connectorRes struct{ Data v2.ConnectorInstallResponse }
+			connectorConf := newConnectorConfigurationFn()(id)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+
+			err = ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
+			Expect(err).To(BeNil())
+			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "reset")
+		})
+	})
+
 	When("searching for schedules for a connector", func() {
 		var (
 			connectorRes  struct{ Data string }

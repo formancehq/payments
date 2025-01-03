@@ -23,6 +23,15 @@ func ConnectorInstall(ctx context.Context, srv *Server, ver int, reqBody any, re
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), reqBody, res)
 }
 
+func ConnectorReset(ctx context.Context, srv *Server, ver int, id string, res any) error {
+	path := "connectors/" + id
+	if ver == 2 {
+		path = "connectors/dummypay/" + id
+	}
+	path += "/reset"
+	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), nil, res)
+}
+
 func ConnectorUninstall(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	path := "connectors/" + id
 	if ver == 2 {
