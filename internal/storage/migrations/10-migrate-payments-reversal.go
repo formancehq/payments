@@ -11,6 +11,14 @@ import (
 	"github.com/uptrace/bun/schema"
 )
 
+type v2TransferReversalStatus int
+
+const (
+	TransferReversalStatusProcessing v2TransferReversalStatus = iota
+	TransferReversalStatusProcessed
+	TransferReversalStatusFailed
+)
+
 type v2TransferReversal struct {
 	bun.BaseModel `bun:"transfers.transfer_reversal"`
 
@@ -26,8 +34,8 @@ type v2TransferReversal struct {
 	Amount *big.Int `bun:"amount"`
 	Asset  string   `bun:"asset"`
 
-	Status models.PaymentInitiationReversalAdjustmentStatus `bun:"status"`
-	Error  string                                           `bun:"error"`
+	Status v2TransferReversalStatus `bun:"status"`
+	Error  string                   `bun:"error"`
 
 	Metadata map[string]string `bun:"metadata"`
 }
@@ -101,7 +109,7 @@ func MigrateTransferReversalsFromV2(ctx context.Context, db bun.IDB) error {
 		v3Reversals := make([]v3PaymentInitiationReversal, 0, len(cursor.Data))
 		v3ReversalAdjustments := make([]v3PaymentInitiationReversalAdjustment, 0)
 		for _, reversal := range cursor.Data {
-			reversal.Status++ // needed as we added the unknown status as 0 in v3
+			status := models.PaymentInitiationReversalAdjustmentStatus(int(reversal.Status) + 1) // needed as we added the unknown status as 0 in v3
 
 			v3Reversals = append(v3Reversals, v3PaymentInitiationReversal{
 				ID:                  reversal.ID,
@@ -118,26 +126,26 @@ func MigrateTransferReversalsFromV2(ctx context.Context, db bun.IDB) error {
 			v3ReversalAdjustments = append(v3ReversalAdjustments, v3PaymentInitiationReversalAdjustment{
 				ID: models.PaymentInitiationReversalAdjustmentID{
 					PaymentInitiationReversalID: reversal.ID,
-					CreatedAt:                   reversal.CreatedAt,
+					CreatedAt:                   reversal.CreatedAt.UTC(),
 					Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
 				},
 				PaymentInitiationReversalID: reversal.ID,
-				CreatedAt:                   reversal.CreatedAt,
+				CreatedAt:                   reversal.CreatedAt.UTC(),
 				Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
 				Metadata:                    reversal.Metadata,
 			})
 
-			if reversal.Status != models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING {
+			if status != models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING {
 				v3ReversalAdjustments = append(v3ReversalAdjustments, v3PaymentInitiationReversalAdjustment{
 					BaseModel: schema.BaseModel{},
 					ID: models.PaymentInitiationReversalAdjustmentID{
 						PaymentInitiationReversalID: reversal.ID,
-						CreatedAt:                   reversal.CreatedAt,
-						Status:                      reversal.Status,
+						CreatedAt:                   reversal.CreatedAt.UTC(),
+						Status:                      status,
 					},
 					PaymentInitiationReversalID: reversal.ID,
-					CreatedAt:                   reversal.CreatedAt,
-					Status:                      reversal.Status,
+					CreatedAt:                   reversal.CreatedAt.UTC(),
+					Status:                      status,
 					Error: func() *string {
 						if reversal.Error == "" {
 							return nil

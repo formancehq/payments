@@ -333,6 +333,18 @@ func TestBankAccountsList(t *testing.T) {
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertBankAccount(t, ctx, store, defaultBankAccount3)
 
+	t.Run("wrong query builder operator when listing by name", func(t *testing.T) {
+		q := NewListBankAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("name", "test1")),
+		)
+
+		cursor, err := store.BankAccountsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list bank accounts by name", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
 			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
@@ -429,6 +441,18 @@ func TestBankAccountsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 	})
 
+	t.Run("wrong query builder when listing by metadata", func(t *testing.T) {
+		q := NewListBankAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
+		)
+
+		cursor, err := store.BankAccountsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list bank accounts by metadata", func(t *testing.T) {
 		q := NewListBankAccountsQuery(
 			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
@@ -458,6 +482,18 @@ func TestBankAccountsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("unknown query builder key when listing bank accounts", func(t *testing.T) {
+		q := NewListBankAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "bar")),
+		)
+
+		cursor, err := store.BankAccountsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list bank accounts test cursor", func(t *testing.T) {

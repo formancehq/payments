@@ -137,6 +137,10 @@ func TestAccountsUpsert(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 
+	t.Run("upsert empty list", func(t *testing.T) {
+		require.NoError(t, store.AccountsUpsert(ctx, []models.Account{}))
+	})
+
 	t.Run("same id insert", func(t *testing.T) {
 		id := models.AccountID{
 			Reference:   "test1",
@@ -510,6 +514,30 @@ func TestAccountsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("wrong query builder operator with metadata", func(t *testing.T) {
+		q := NewListAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[foo]", "unknown")),
+		)
+
+		cursor, err := store.AccountsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
+	t.Run("query builder unknown key", func(t *testing.T) {
+		q := NewListAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "unknown")),
+		)
+
+		cursor, err := store.AccountsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list accounts test cursor", func(t *testing.T) {

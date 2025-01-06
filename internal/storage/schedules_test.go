@@ -176,6 +176,18 @@ func TestSchedulesList(t *testing.T) {
 	upsertSchedule(t, ctx, store, defaultSchedules[1])
 	upsertSchedule(t, ctx, store, defaultSchedules[2])
 
+	t.Run("wrong query builder operator when listing by operator id", func(t *testing.T) {
+		q := NewListSchedulesQuery(
+			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("connector_id", defaultConnector.ID)),
+		)
+
+		cursor, err := store.SchedulesList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list schedules by connector id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
 			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
@@ -209,6 +221,18 @@ func TestSchedulesList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListSchedulesQuery(
+			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "unknown")),
+		)
+
+		cursor, err := store.SchedulesList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list schedules test cursor", func(t *testing.T) {

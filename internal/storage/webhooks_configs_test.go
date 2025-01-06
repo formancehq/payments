@@ -95,6 +95,31 @@ func TestWebhooksConfigsGet(t *testing.T) {
 	})
 }
 
+func TestWebhooksConfigsGetFromConnectorID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertWebhookConfigs(t, ctx, store, defaultWebhooksConfigs)
+
+	t.Run("get webhooks configs from unknown connector id", func(t *testing.T) {
+		webhooksConfigs, err := store.WebhooksConfigsGetFromConnectorID(ctx, models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "unknown",
+		})
+		require.NoError(t, err)
+		require.Empty(t, webhooksConfigs)
+	})
+
+	t.Run("get webhooks configs from connector id", func(t *testing.T) {
+		webhooksConfigs, err := store.WebhooksConfigsGetFromConnectorID(ctx, defaultConnector.ID)
+		require.NoError(t, err)
+		require.ElementsMatch(t, defaultWebhooksConfigs, webhooksConfigs)
+	})
+}
+
 func TestWebhooksConfigsDeleteFromConnectorID(t *testing.T) {
 	t.Parallel()
 

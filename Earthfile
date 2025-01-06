@@ -77,9 +77,7 @@ tests:
 
     IF [ "$coverage" = "true" ]
         SET goFlags="$goFlags -covermode=atomic"
-        SET goFlags="$goFlags -coverpkg=github.com/formancehq/payments/internal/..."
-        SET goFlags="$goFlags,github.com/formancehq/payments/pkg/events/..."
-        SET goFlags="$goFlags,github.com/formancehq/payments/cmd/..."
+        SET goFlags="$goFlags -coverpkg=./..."
         SET goFlags="$goFlags -coverprofile coverage.txt"
     END
 

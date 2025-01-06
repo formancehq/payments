@@ -644,6 +644,18 @@ func TestPaymentsList(t *testing.T) {
 		},
 	}
 
+	t.Run("wrong query builder operator when listing with reference", func(t *testing.T) {
+		q := NewListPaymentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("reference", "test1")),
+		)
+
+		cursor, err := store.PaymentsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payments by reference", func(t *testing.T) {
 		q := NewListPaymentsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
@@ -917,6 +929,18 @@ func TestPaymentsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 	})
 
+	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
+		q := NewListPaymentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[key1]", "value1")),
+		)
+
+		cursor, err := store.PaymentsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payments by metadata", func(t *testing.T) {
 		q := NewListPaymentsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
@@ -955,6 +979,18 @@ func TestPaymentsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListPaymentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "unknown")),
+		)
+
+		cursor, err := store.PaymentsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list payments test cursor", func(t *testing.T) {
