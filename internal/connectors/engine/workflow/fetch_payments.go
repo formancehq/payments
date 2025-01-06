@@ -12,9 +12,10 @@ import (
 )
 
 type FetchNextPayments struct {
-	Config      models.Config      `json:"config"`
-	ConnectorID models.ConnectorID `json:"connectorID"`
-	FromPayload *FromPayload       `json:"fromPayload"`
+	Config       models.Config      `json:"config"`
+	ConnectorID  models.ConnectorID `json:"connectorID"`
+	FromPayload  *FromPayload       `json:"fromPayload"`
+	Periodically bool               `json:"periodically"`
 }
 
 func (w Workflow) runFetchNextPayments(
@@ -56,6 +57,7 @@ func (w Workflow) fetchNextPayments(
 			fetchNextPayments.FromPayload.GetPayload(),
 			state.State,
 			fetchNextPayments.Config.PageSize,
+			fetchNextPayments.Periodically,
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next payments")

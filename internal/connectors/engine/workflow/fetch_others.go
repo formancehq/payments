@@ -11,10 +11,11 @@ import (
 )
 
 type FetchNextOthers struct {
-	Config      models.Config      `json:"config"`
-	ConnectorID models.ConnectorID `json:"connectorID"`
-	Name        string             `json:"name"`
-	FromPayload *FromPayload       `json:"fromPayload"`
+	Config       models.Config      `json:"config"`
+	ConnectorID  models.ConnectorID `json:"connectorID"`
+	Name         string             `json:"name"`
+	FromPayload  *FromPayload       `json:"fromPayload"`
+	Periodically bool               `json:"periodically"`
 }
 
 func (w Workflow) runFetchNextOthers(
@@ -57,6 +58,7 @@ func (w Workflow) fetchNextOthers(
 			fetchNextOthers.FromPayload.GetPayload(),
 			state.State,
 			fetchNextOthers.Config.PageSize,
+			fetchNextOthers.Periodically,
 		)
 		if err != nil {
 			return errors.Wrap(err, "fetching next others")

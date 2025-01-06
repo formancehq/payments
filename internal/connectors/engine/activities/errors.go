@@ -25,11 +25,11 @@ func (a Activities) temporalPluginError(ctx context.Context, err error) error {
 	return a.temporalPluginErrorCheck(ctx, err, false)
 }
 
-func (a Activities) temporalPluginPollingError(ctx context.Context, err error) error {
-	return a.temporalPluginErrorCheck(ctx, err, true)
+func (a Activities) temporalPluginPollingError(ctx context.Context, err error, periodic bool) error {
+	return a.temporalPluginErrorCheck(ctx, err, periodic)
 }
 
-func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isPolling bool) error {
+func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isPeriodic bool) error {
 
 	switch {
 	// Do not retry the following errors
@@ -42,20 +42,15 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 
 	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
-		// many polled tasks are on a schedule so we can often skip retry in case of rate-limiting
-		if isPolling {
+		// periodic tasks will be repeated in the future anyway so we can skip retry in case of rate-limiting
+		if isPeriodic {
 			info := activity.GetInfo(ctx)
-
-			// if this polling activity was triggered by a schedule, the workflow ID will be suffixed with
-			// YYYY-MM-DDTHH:MM:SSZ
-			if scheduleSuffix.MatchString(info.WorkflowExecution.ID) {
-				a.logger.WithFields(map[string]any{
-					"workflow_type":  info.WorkflowType.Name,
-					"scheduled_time": info.ScheduledTime.String(),
-					"workflow_id":    info.WorkflowExecution.ID,
-				}).Debug("disabling retry for polled activity triggered by schedule due to rate-limit")
-				return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, err)
-			}
+			a.logger.WithFields(map[string]any{
+				"workflow_type":  info.WorkflowType.Name,
+				"scheduled_time": info.ScheduledTime.String(),
+				"workflow_id":    info.WorkflowExecution.ID,
+			}).Debug("disabling retry for polled activity triggered by schedule due to rate-limit")
+			return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeRateLimited, err)
 		}
 
 		return temporal.NewApplicationErrorWithOptions(err.Error(), ErrTypeRateLimited, temporal.ApplicationErrorOptions{
