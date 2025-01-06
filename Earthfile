@@ -67,11 +67,22 @@ tests:
     FROM +tidy
     COPY (+sources/*) /src
     WORKDIR /src
+
     ARG includeIntegrationTests="true"
+    ARG coverage=""
 
     ENV CGO_ENABLED=1 # required for -race
 
     LET goFlags="-race"
+
+    IF [ "$coverage" = "true" ]
+        SET goFlags="$goFlags -covermode=atomic"
+        SET goFlags="$goFlags -coverpkg=github.com/formancehq/payments/internal/..."
+        SET goFlags="$goFlags,github.com/formancehq/payments/pkg/events/..."
+        SET goFlags="$goFlags,github.com/formancehq/payments/cmd/..."
+        SET goFlags="$goFlags -coverprofile coverage.txt"
+    END
+
     IF [ "$includeIntegrationTests" = "true" ]
         COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
         COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
@@ -83,6 +94,10 @@ tests:
         WITH DOCKER --pull=postgres:15-alpine
             DO --pass-args +GO_TESTS
         END
+    END
+
+    IF [ "$coverage" = "true" ]
+        SAVE ARTIFACT coverage.txt AS LOCAL coverage.txt
     END
 
 deploy:
