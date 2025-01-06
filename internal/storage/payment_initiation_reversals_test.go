@@ -197,6 +197,18 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations())
 	upsertPaymentInitiationReversals(t, ctx, store, defaultPaymentInitiationReversals())
 
+	t.Run("wrong query builder when listing by reference", func(t *testing.T) {
+		q := NewListPaymentInitiationReversalsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("reference", "test1")),
+		)
+
+		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payment intitiations reversals by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
@@ -350,6 +362,18 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 	})
 
+	t.Run("wrong query builder when listing by metadata", func(t *testing.T) {
+		q := NewListPaymentInitiationReversalsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
+		)
+
+		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payment initiations reversals by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationReversalsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
@@ -388,6 +412,17 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListPaymentInitiationReversalsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+				WithQueryBuilder(query.Match("unknown", "bar")),
+		)
+
+		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list payment initiations reversals test cursor", func(t *testing.T) {

@@ -74,16 +74,16 @@ func MigratePaymentsAdjustmentsFromV2(ctx context.Context, db bun.IDB) error {
 		for _, adjustment := range cursor.Data {
 			events = append(events, v3eventSent{
 				ID: models.EventID{
-					EventIdempotencyKey: models.PaymentAdjustmentID{
+					EventIdempotencyKey: models.IdempotencyKey(models.PaymentAdjustmentID{
 						PaymentID: adjustment.PaymentID,
 						Reference: adjustment.Reference,
-						CreatedAt: adjustment.CreatedAt,
+						CreatedAt: adjustment.CreatedAt.UTC(),
 						Status:    adjustment.Status,
-					}.String(),
+					}),
 					ConnectorID: &adjustment.PaymentID.ConnectorID,
 				},
 				ConnectorID: &adjustment.PaymentID.ConnectorID,
-				SentAt:      adjustment.CreatedAt,
+				SentAt:      adjustment.CreatedAt.UTC(),
 			})
 		}
 
@@ -156,16 +156,16 @@ func MigratePaymentsFromV2(ctx context.Context, db bun.IDB) error {
 		for _, payment := range cursor.Data {
 			events = append(events, v3eventSent{
 				ID: models.EventID{
-					EventIdempotencyKey: models.PaymentAdjustmentID{
+					EventIdempotencyKey: models.IdempotencyKey(models.PaymentAdjustmentID{
 						PaymentID: payment.ID,
 						Reference: payment.Reference,
-						CreatedAt: payment.CreatedAt,
+						CreatedAt: payment.CreatedAt.UTC(),
 						Status:    payment.Status,
-					}.String(),
+					}),
 					ConnectorID: &payment.ConnectorID,
 				},
 				ConnectorID: &payment.ConnectorID,
-				SentAt:      payment.CreatedAt,
+				SentAt:      payment.CreatedAt.UTC(),
 			})
 		}
 

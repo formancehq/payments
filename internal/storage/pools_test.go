@@ -280,6 +280,18 @@ func TestPoolsList(t *testing.T) {
 	upsertPool(t, ctx, store, defaultPools()[1])
 	upsertPool(t, ctx, store, defaultPools()[2])
 
+	t.Run("wrong query builder operator when listing by name", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("name", "test1")),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list pools by name", func(t *testing.T) {
 		q := NewListPoolsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
@@ -309,6 +321,18 @@ func TestPoolsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "test1")),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list pools test cursor", func(t *testing.T) {

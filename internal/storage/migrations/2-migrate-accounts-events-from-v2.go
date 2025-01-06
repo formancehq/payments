@@ -58,11 +58,11 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 		for _, account := range cursor.Data {
 			events = append(events, v3eventSent{
 				ID: models.EventID{
-					EventIdempotencyKey: account.ID.String(),
+					EventIdempotencyKey: models.IdempotencyKey(account.ID),
 					ConnectorID:         &account.ID.ConnectorID,
 				},
 				ConnectorID: &account.ID.ConnectorID,
-				SentAt:      account.CreatedAt,
+				SentAt:      account.CreatedAt.UTC(),
 			})
 		}
 

@@ -193,6 +193,18 @@ func TestInstancesList(t *testing.T) {
 		upsertInstance(t, ctx, store, instance)
 	}
 
+	t.Run("wrong query builder operator when listing by schedule id", func(t *testing.T) {
+		q := NewListInstancesQuery(
+			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("schedule_id", defaultSchedules[0].ID)),
+		)
+
+		cursor, err := store.InstancesList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list instances by schedule_id", func(t *testing.T) {
 		q := NewListInstancesQuery(
 			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
@@ -259,6 +271,18 @@ func TestInstancesList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)
 		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListInstancesQuery(
+			bunpaginate.NewPaginatedQueryOptions(InstanceQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "unknown")),
+		)
+
+		cursor, err := store.InstancesList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list instances test cursor", func(t *testing.T) {

@@ -84,7 +84,7 @@ func MigrateConnectorsFromV2(ctx context.Context, db bun.IDB, encryptionKey stri
 			v3 := v3Connector{
 				ID:                   connector.ID,
 				Name:                 connector.Name,
-				CreatedAt:            connector.CreatedAt,
+				CreatedAt:            connector.CreatedAt.UTC(),
 				Provider:             connector.Provider,
 				ScheduledForDeletion: false,
 			}

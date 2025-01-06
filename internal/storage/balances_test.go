@@ -76,6 +76,64 @@ func TestBalancesUpsert(t *testing.T) {
 	upsertBalances(t, ctx, store, defaultBalances())
 	upsertBalances(t, ctx, store, defaultBalances2())
 
+	t.Run("upsert empty balances", func(t *testing.T) {
+		upsertBalances(t, ctx, store, []models.Balance{})
+	})
+
+	t.Run("upsert balances with unknown connector id", func(t *testing.T) {
+		b := models.Balance{
+			AccountID: models.AccountID{
+				Reference: "test",
+				ConnectorID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "unknown",
+				},
+			},
+			CreatedAt:     now.Add(-70 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-70 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		}
+
+		require.Error(t, store.BalancesUpsert(ctx, []models.Balance{b}))
+	})
+
+	t.Run("upsert balance in the past should not insert anything", func(t *testing.T) {
+		accounts := defaultAccounts()
+		b := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-70 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-70 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		}
+
+		upsertBalances(t, ctx, store, []models.Balance{b})
+
+		q := NewListBalancesQuery(
+			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+				AccountID: pointer.For(accounts[0].ID),
+				Asset:     "USD/2",
+			}).WithPageSize(15),
+		)
+
+		// We should have the same balances as before
+		expectedBalances := []models.Balance{
+			{
+				AccountID:     accounts[0].ID,
+				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
+				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
+				Asset:         "USD/2",
+				Balance:       big.NewInt(100),
+			},
+		}
+
+		balances, err := store.BalancesList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, balances.Data, 1)
+		require.Equal(t, expectedBalances, balances.Data)
+	})
+
 	t.Run("insert balances with same asset and same balance", func(t *testing.T) {
 		accounts := defaultAccounts()
 		b := models.Balance{
@@ -342,9 +400,7 @@ func TestBalancesList(t *testing.T) {
 
 	t.Run("list balances with from", func(t *testing.T) {
 		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				From: now.Add(-40 * time.Minute).UTC().Time,
-			}).WithPageSize(15),
+			bunpaginate.NewPaginatedQueryOptions(NewBalanceQuery().WithFrom(now.Add(-40 * time.Minute).UTC().Time)).WithPageSize(15),
 		)
 
 		accounts := defaultAccounts()
@@ -491,5 +547,83 @@ func TestBalancesList(t *testing.T) {
 		require.Empty(t, cursor.Previous)
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, expectedBalances1, cursor.Data)
+	})
+}
+
+func TestBalancesGetAt(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertBalances(t, ctx, store, defaultBalances())
+
+	t.Run("get balances at before first balance should return empty", func(t *testing.T) {
+		accounts := defaultAccounts()
+		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-61*time.Minute).UTC().Time)
+		require.NoError(t, err)
+		require.Nil(t, balances)
+	})
+
+	t.Run("get balances at after last balance updated at should return empty", func(t *testing.T) {
+		accounts := defaultAccounts()
+		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		require.NoError(t, err)
+		require.Nil(t, balances)
+	})
+
+	t.Run("get balances at", func(t *testing.T) {
+		accounts := defaultAccounts()
+		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-60*time.Minute).UTC().Time)
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 1)
+	})
+
+	t.Run("get balances after inserting a new balance", func(t *testing.T) {
+		accounts := defaultAccounts()
+		b := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		}
+
+		upsertBalances(t, ctx, store, []models.Balance{b})
+
+		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 1)
+	})
+
+	t.Run("get balances at after inserting two new balances with different asset", func(t *testing.T) {
+		accounts := defaultAccounts()
+
+		b := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(100),
+		}
+
+		b1 := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			Asset:         "EUR/2",
+			Balance:       big.NewInt(100),
+		}
+
+		upsertBalances(t, ctx, store, []models.Balance{b, b1})
+
+		balances, err := store.BalancesGetAt(ctx, accounts[0].ID, now.Add(-50*time.Minute).UTC().Time)
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 2)
 	})
 }

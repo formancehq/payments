@@ -288,6 +288,18 @@ func TestPaymentInitiationsList(t *testing.T) {
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations())
 
+	t.Run("wrong query builder operator when listing by reference", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("reference", "test1")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payment intitiations by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
@@ -510,6 +522,18 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 	})
 
+	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list payment initiations by metadata", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
@@ -548,6 +572,18 @@ func TestPaymentInitiationsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "test1")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list payment initiations test cursor", func(t *testing.T) {
@@ -979,6 +1015,70 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 0)
 		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("wrong query builder operator when listing by status", func(t *testing.T) {
+		q := NewListPaymentInitiationAdjustmentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED)),
+		)
+
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
+	t.Run("list payment initiation adjustments by status", func(t *testing.T) {
+		q := NewListPaymentInitiationAdjustmentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED)),
+		)
+
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiationAdjustments(t, defaultPaymentInitiationAdjustments()[1], cursor.Data[0])
+	})
+
+	t.Run("wrong query builder operator when listing by metadata", func(t *testing.T) {
+		q := NewListPaymentInitiationAdjustmentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Lt("metadata[foo]", "bar")),
+		)
+
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
+	t.Run("list payment initiation adjustments by metadata", func(t *testing.T) {
+		q := NewListPaymentInitiationAdjustmentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
+		)
+
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiationAdjustments(t, defaultPaymentInitiationAdjustments()[0], cursor.Data[0])
+	})
+
+	t.Run("unknown query builder key when listing", func(t *testing.T) {
+		q := NewListPaymentInitiationAdjustmentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationAdjustmentsQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("unknown", "test1")),
+		)
+
+		cursor, err := store.PaymentInitiationAdjustmentsList(ctx, defaultPaymentInitiationAdjustments()[0].ID.PaymentInitiationID, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
 	})
 
 	t.Run("list payment initiation adjustments by payment initiation", func(t *testing.T) {

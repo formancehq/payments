@@ -62,8 +62,8 @@ func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
 		for _, balance := range cursor.Data {
 			b := models.Balance{
 				AccountID:     balance.AccountID,
-				CreatedAt:     balance.CreatedAt,
-				LastUpdatedAt: balance.LastUpdatedAt,
+				CreatedAt:     balance.CreatedAt.UTC(),
+				LastUpdatedAt: balance.LastUpdatedAt.UTC(),
 				Asset:         balance.Asset,
 				Balance:       balance.Balance,
 			}
@@ -74,7 +74,7 @@ func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
 					ConnectorID:         &balance.AccountID.ConnectorID,
 				},
 				ConnectorID: &balance.AccountID.ConnectorID,
-				SentAt:      balance.LastUpdatedAt,
+				SentAt:      balance.LastUpdatedAt.UTC(),
 			})
 		}
 

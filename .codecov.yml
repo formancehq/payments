@@ -1,0 +1,7 @@
+ignore:
+  - "pkg/events"
+  - "test"
+  - "tools"
+  - "openapi"
+  - "local_env"
+  - "internal/storage/storage_generated.go"
