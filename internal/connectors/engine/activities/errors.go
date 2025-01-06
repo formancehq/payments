@@ -3,7 +3,6 @@ package activities
 import (
 	"context"
 	"errors"
-	"regexp"
 
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
@@ -18,8 +17,6 @@ const (
 	ErrTypeRateLimited     = "RATE_LIMITED"
 	ErrTypeUnimplemented   = "UNIMPLEMENTED"
 )
-
-var scheduleSuffix = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$`)
 
 func (a Activities) temporalPluginError(ctx context.Context, err error) error {
 	return a.temporalPluginErrorCheck(ctx, err, false)
