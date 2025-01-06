@@ -11,24 +11,25 @@ import (
 type FetchNextBalancesRequest struct {
 	ConnectorID models.ConnectorID
 	Req         models.FetchNextBalancesRequest
+	Periodic    bool
 }
 
 func (a Activities) PluginFetchNextBalances(ctx context.Context, request FetchNextBalancesRequest) (*models.FetchNextBalancesResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 
 	resp, err := plugin.FetchNextBalances(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginPollingError(ctx, err, request.Periodic)
 	}
 	return &resp, nil
 }
 
 var PluginFetchNextBalancesActivity = Activities{}.PluginFetchNextBalances
 
-func PluginFetchNextBalances(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int) (*models.FetchNextBalancesResponse, error) {
+func PluginFetchNextBalances(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int, periodic bool) (*models.FetchNextBalancesResponse, error) {
 	ret := models.FetchNextBalancesResponse{}
 	if err := executeActivity(ctx, PluginFetchNextBalancesActivity, &ret, FetchNextBalancesRequest{
 		ConnectorID: connectorID,
@@ -37,6 +38,7 @@ func PluginFetchNextBalances(ctx workflow.Context, connectorID models.ConnectorI
 			State:       state,
 			PageSize:    pageSize,
 		},
+		Periodic: periodic,
 	},
 	); err != nil {
 		return nil, err

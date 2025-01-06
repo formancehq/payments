@@ -84,6 +84,37 @@ var _ = Context("Payments API Connectors", func() {
 		})
 	})
 
+	When("updating a connector config", func() {
+		var (
+			id           uuid.UUID
+			ver          int
+			connectorRes struct{ Data string }
+			connectorID  string
+		)
+		JustBeforeEach(func() {
+			id = uuid.New()
+			ver = 3
+
+			connectorConf := newConnectorConfigurationFn()(id)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+			connectorID = connectorRes.Data
+			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
+		})
+
+		It("should be ok with v3", func() {
+			config := newConnectorConfigurationFn()(id)
+			config.PollingPeriod = "2m"
+			err := ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			Expect(err).To(BeNil())
+
+			getRes := struct{ Data ConnectorConf }{}
+			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
+			Expect(err).To(BeNil())
+			Expect(getRes.Data).To(Equal(config))
+		})
+	})
+
 	When("uninstalling a connector", func() {
 		var (
 			id uuid.UUID

@@ -25,9 +25,10 @@ func (w Workflow) run(
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
 			req := FetchNextAccounts{
-				Config:      config,
-				ConnectorID: connectorID,
-				FromPayload: fromPayload,
+				Config:       config,
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
 			}
 
 			nextWorkflow = RunFetchNextAccounts
@@ -36,9 +37,10 @@ func (w Workflow) run(
 
 		case models.TASK_FETCH_EXTERNAL_ACCOUNTS:
 			req := FetchNextExternalAccounts{
-				Config:      config,
-				ConnectorID: connectorID,
-				FromPayload: fromPayload,
+				Config:       config,
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
 			}
 
 			nextWorkflow = RunFetchNextExternalAccounts
@@ -47,10 +49,11 @@ func (w Workflow) run(
 
 		case models.TASK_FETCH_OTHERS:
 			req := FetchNextOthers{
-				Config:      config,
-				ConnectorID: connectorID,
-				Name:        task.Name,
-				FromPayload: fromPayload,
+				Config:       config,
+				ConnectorID:  connectorID,
+				Name:         task.Name,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
 			}
 
 			nextWorkflow = RunFetchNextOthers
@@ -59,9 +62,10 @@ func (w Workflow) run(
 
 		case models.TASK_FETCH_PAYMENTS:
 			req := FetchNextPayments{
-				Config:      config,
-				ConnectorID: connectorID,
-				FromPayload: fromPayload,
+				Config:       config,
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
 			}
 
 			nextWorkflow = RunFetchNextPayments
@@ -70,9 +74,10 @@ func (w Workflow) run(
 
 		case models.TASK_FETCH_BALANCES:
 			req := FetchNextBalances{
-				Config:      config,
-				ConnectorID: connectorID,
-				FromPayload: fromPayload,
+				Config:       config,
+				ConnectorID:  connectorID,
+				FromPayload:  fromPayload,
+				Periodically: task.Periodically,
 			}
 
 			nextWorkflow = RunFetchNextBalances

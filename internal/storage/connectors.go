@@ -125,6 +125,30 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 	return e("failed to commit transaction", tx.Commit())
 }
 
+func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return errors.Wrap(err, "cannot begin transaction")
+	}
+	defer tx.Rollback()
+
+	_, err = s.ConnectorsGet(ctx, c.ID)
+	if err != nil {
+		return e("connector not found", err)
+	}
+
+	_, err = tx.NewUpdate().
+		Model((*connector)(nil)).
+		Set("config = pgp_sym_encrypt(?::TEXT, ?, ?)", c.Config, s.configEncryptionKey, encryptionOptions).
+		Where("id = ?", c.ID).
+		Exec(ctx)
+	if err != nil {
+		return e("failed to encrypt config", err)
+	}
+
+	return e("failed to commit transaction", tx.Commit())
+}
+
 func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
 	_, err := s.db.NewUpdate().
 		Model((*connector)(nil)).

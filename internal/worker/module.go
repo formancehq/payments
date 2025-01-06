@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/formancehq/go-libs/v2/httpserver"
@@ -32,6 +33,7 @@ func NewModule(
 	stack string,
 	stackURL string,
 	temporalNamespace string,
+	temporalRateLimitingRetryDelay time.Duration,
 	temporalMaxConcurrentWorkflowTaskPollers int,
 	debug bool,
 ) fx.Option {
@@ -48,8 +50,14 @@ func NewModule(
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, plugins, stack, stackURL)
 		}),
-		fx.Provide(func(temporalClient client.Client, storage storage.Storage, events *events.Events, plugins plugins.Plugins) activities.Activities {
-			return activities.New(temporalClient, storage, events, plugins)
+		fx.Provide(func(
+			logger logging.Logger,
+			temporalClient client.Client,
+			storage storage.Storage,
+			events *events.Events,
+			plugins plugins.Plugins,
+		) activities.Activities {
+			return activities.New(logger, temporalClient, storage, events, plugins, temporalRateLimitingRetryDelay)
 		}),
 		fx.Provide(
 			fx.Annotate(func(

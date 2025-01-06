@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -17,7 +18,8 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("CurrencyCloud Plugin", func() {
 	var (
-		plg *Plugin
+		plg    *Plugin
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -27,25 +29,25 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 	Context("install", func() {
 		It("should report errors in config - loginID", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
-			_, err := New("currencycloud", config)
+			_, err := New("currencycloud", logger, config)
 			Expect(err).To(MatchError("missing clientID in config: invalid config"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"loginID": "test", "endpoint": "test"}`)
-			_, err := New("currencycloud", config)
+			_, err := New("currencycloud", logger, config)
 			Expect(err).To(MatchError("missing api key in config: invalid config"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"loginID": "test", "apiKey": "test"}`)
-			_, err := New("currencycloud", config)
+			_, err := New("currencycloud", logger, config)
 			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"loginID": "test", "apiKey": "test", "endpoint": "test"}`)
-			_, err := New("currencycloud", config)
+			_, err := New("currencycloud", logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)

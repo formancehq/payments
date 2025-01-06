@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/wise/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"
-	"github.com/hashicorp/go-hclog"
 )
 
 type paymentsState struct {
@@ -50,7 +50,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		payments, paymentIDs, err = fillPayments(pagedTransfers, payments, paymentIDs, oldState)
+		payments, paymentIDs, err = fillPayments(p.logger, pagedTransfers, payments, paymentIDs, oldState)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -90,6 +90,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 }
 
 func fillPayments(
+	logger logging.Logger,
 	pagedTransfers []client.Transfer,
 	payments []models.PSPPayment,
 	paymentIDs []uint64,
@@ -104,7 +105,7 @@ func fillPayments(
 		if err != nil {
 			if errors.Is(err, plugins.ErrCurrencyNotSupported) {
 				// Do not insert unknown currencies
-				hclog.Default().Info(fmt.Sprintf("skipping unsupported wise payment: %d", transfer.ID))
+				logger.WithField("transfer_id", transfer.ID).Info("skipping unsupported wise payment")
 				continue
 			}
 			return nil, nil, err

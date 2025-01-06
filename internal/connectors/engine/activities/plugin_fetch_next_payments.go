@@ -11,17 +11,18 @@ import (
 type FetchNextPaymentsRequest struct {
 	ConnectorID models.ConnectorID
 	Req         models.FetchNextPaymentsRequest
+	Periodic    bool
 }
 
 func (a Activities) PluginFetchNextPayments(ctx context.Context, request FetchNextPaymentsRequest) (*models.FetchNextPaymentsResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 
 	resp, err := plugin.FetchNextPayments(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginPollingError(ctx, err, request.Periodic)
 	}
 
 	return &resp, nil
@@ -29,7 +30,7 @@ func (a Activities) PluginFetchNextPayments(ctx context.Context, request FetchNe
 
 var PluginFetchNextPaymentsActivity = Activities{}.PluginFetchNextPayments
 
-func PluginFetchNextPayments(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int) (*models.FetchNextPaymentsResponse, error) {
+func PluginFetchNextPayments(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int, periodic bool) (*models.FetchNextPaymentsResponse, error) {
 	ret := models.FetchNextPaymentsResponse{}
 	if err := executeActivity(ctx, PluginFetchNextPaymentsActivity, &ret, FetchNextPaymentsRequest{
 		ConnectorID: connectorID,
@@ -38,6 +39,7 @@ func PluginFetchNextPayments(ctx workflow.Context, connectorID models.ConnectorI
 			State:       state,
 			PageSize:    pageSize,
 		},
+		Periodic: periodic,
 	}); err != nil {
 		return nil, err
 	}

@@ -11,17 +11,18 @@ import (
 type FetchNextExternalAccountsRequest struct {
 	ConnectorID models.ConnectorID
 	Req         models.FetchNextExternalAccountsRequest
+	Periodic    bool
 }
 
 func (a Activities) PluginFetchNextExternalAccounts(ctx context.Context, request FetchNextExternalAccountsRequest) (*models.FetchNextExternalAccountsResponse, error) {
 	plugin, err := a.plugins.Get(request.ConnectorID)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginError(ctx, err)
 	}
 
 	resp, err := plugin.FetchNextExternalAccounts(ctx, request.Req)
 	if err != nil {
-		return nil, temporalPluginError(err)
+		return nil, a.temporalPluginPollingError(ctx, err, request.Periodic)
 	}
 
 	return &resp, nil
@@ -29,7 +30,7 @@ func (a Activities) PluginFetchNextExternalAccounts(ctx context.Context, request
 
 var PluginFetchNextExternalAccountsActivity = Activities{}.PluginFetchNextExternalAccounts
 
-func PluginFetchNextExternalAccounts(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int) (*models.FetchNextExternalAccountsResponse, error) {
+func PluginFetchNextExternalAccounts(ctx workflow.Context, connectorID models.ConnectorID, fromPayload, state json.RawMessage, pageSize int, periodic bool) (*models.FetchNextExternalAccountsResponse, error) {
 	ret := models.FetchNextExternalAccountsResponse{}
 	if err := executeActivity(ctx, PluginFetchNextExternalAccountsActivity, &ret, FetchNextExternalAccountsRequest{
 		ConnectorID: connectorID,
@@ -38,6 +39,7 @@ func PluginFetchNextExternalAccounts(ctx workflow.Context, connectorID models.Co
 			State:       state,
 			PageSize:    pageSize,
 		},
+		Periodic: periodic,
 	}); err != nil {
 		return nil, err
 	}

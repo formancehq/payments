@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/moneycorp"
 	"github.com/formancehq/payments/internal/models"
@@ -21,6 +22,7 @@ var _ = Describe("Moneycorp *Plugin", func() {
 	var (
 		plg    *moneycorp.Plugin
 		config json.RawMessage
+		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
 
 	BeforeEach(func() {
@@ -31,11 +33,11 @@ var _ = Describe("Moneycorp *Plugin", func() {
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := moneycorp.New("moneycorp", config)
+			_, err := moneycorp.New("moneycorp", logger, config)
 			Expect(err).To(MatchError(ContainSubstring("config")))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
-			_, err := moneycorp.New("moneycorp", config)
+			_, err := moneycorp.New("moneycorp", logger, config)
 			Expect(err).To(BeNil())
 			res, err := plg.Install(context.Background(), models.InstallRequest{})
 			Expect(err).To(BeNil())

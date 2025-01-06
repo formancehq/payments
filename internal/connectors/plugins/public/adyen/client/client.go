@@ -70,6 +70,10 @@ func New(
 // wrap a public error for cases that we don't want to retry
 // so that activities can classify this error for temporal
 func (c *client) wrapSDKError(err error, statusCode int) error {
+	if statusCode == http.StatusTooManyRequests {
+		return fmt.Errorf("rate-limited by adyen %w: %w", httpwrapper.ErrStatusCodeTooManyRequests, err)
+	}
+
 	if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
 		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
 	}
