@@ -123,14 +123,15 @@ func MigrateTransferReversalsFromV2(ctx context.Context, db bun.IDB) error {
 				Metadata:            reversal.Metadata,
 			})
 
+			createdAt := reversal.CreatedAt.UTC()
 			v3ReversalAdjustments = append(v3ReversalAdjustments, v3PaymentInitiationReversalAdjustment{
 				ID: models.PaymentInitiationReversalAdjustmentID{
 					PaymentInitiationReversalID: reversal.ID,
-					CreatedAt:                   reversal.CreatedAt.UTC(),
+					CreatedAt:                   createdAt,
 					Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
 				},
 				PaymentInitiationReversalID: reversal.ID,
-				CreatedAt:                   reversal.CreatedAt.UTC(),
+				CreatedAt:                   createdAt,
 				Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING,
 				Metadata:                    reversal.Metadata,
 			})
@@ -140,11 +141,11 @@ func MigrateTransferReversalsFromV2(ctx context.Context, db bun.IDB) error {
 					BaseModel: schema.BaseModel{},
 					ID: models.PaymentInitiationReversalAdjustmentID{
 						PaymentInitiationReversalID: reversal.ID,
-						CreatedAt:                   reversal.CreatedAt.UTC(),
+						CreatedAt:                   createdAt,
 						Status:                      status,
 					},
 					PaymentInitiationReversalID: reversal.ID,
-					CreatedAt:                   reversal.CreatedAt.UTC(),
+					CreatedAt:                   createdAt,
 					Status:                      status,
 					Error: func() *string {
 						if reversal.Error == "" {
