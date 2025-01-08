@@ -44,13 +44,15 @@ func TestAccountsList(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.ListAccountsQuery{}
-		store.EXPECT().AccountsList(gomock.Any(), query).Return(nil, test.err)
-		_, err := s.AccountsList(context.Background(), query)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.ListAccountsQuery{}
+			store.EXPECT().AccountsList(gomock.Any(), query).Return(nil, test.err)
+			_, err := s.AccountsList(context.Background(), query)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

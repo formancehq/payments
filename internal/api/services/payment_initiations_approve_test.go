@@ -125,49 +125,51 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		var data []models.PaymentInitiationAdjustment
-		if test.adj != nil {
-			data = []models.PaymentInitiationAdjustment{*test.adj}
-		}
-		store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
-			&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
-				PageSize: 1,
-				HasMore:  false,
-				Data:     data,
-			}, test.adjListStorageErr,
-		)
+		t.Run(test.name, func(t *testing.T) {
+			var data []models.PaymentInitiationAdjustment
+			if test.adj != nil {
+				data = []models.PaymentInitiationAdjustment{*test.adj}
+			}
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
+				&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+					PageSize: 1,
+					HasMore:  false,
+					Data:     data,
+				}, test.adjListStorageErr,
+			)
 
-		if test.expectedAdjError == nil {
-			store.EXPECT().PaymentInitiationsGet(gomock.Any(), pid).Return(&test.pi, test.piGetStorageErr)
+			if test.expectedAdjError == nil {
+				store.EXPECT().PaymentInitiationsGet(gomock.Any(), pid).Return(&test.pi, test.piGetStorageErr)
 
-			if test.piGetStorageErr == nil {
-				switch test.pi.Type {
-				case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-					eng.EXPECT().CreateTransfer(gomock.Any(), pid, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
-				case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-					eng.EXPECT().CreatePayout(gomock.Any(), pid, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+				if test.piGetStorageErr == nil {
+					switch test.pi.Type {
+					case models.PAYMENT_INITIATION_TYPE_TRANSFER:
+						eng.EXPECT().CreateTransfer(gomock.Any(), pid, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
+					case models.PAYMENT_INITIATION_TYPE_PAYOUT:
+						eng.EXPECT().CreatePayout(gomock.Any(), pid, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+					}
 				}
 			}
-		}
 
-		_, err := s.PaymentInitiationsApprove(context.Background(), pid, false)
-		switch {
-		case test.expectedAdjError == nil && test.expectedPIError == nil && test.expectedEngineError == nil:
-			require.NoError(t, err)
-		case test.expectedAdjError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedAdjError)
-			} else {
-				require.Equal(t, test.expectedAdjError.Error(), err.Error())
+			_, err := s.PaymentInitiationsApprove(context.Background(), pid, false)
+			switch {
+			case test.expectedAdjError == nil && test.expectedPIError == nil && test.expectedEngineError == nil:
+				require.NoError(t, err)
+			case test.expectedAdjError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedAdjError)
+				} else {
+					require.Equal(t, test.expectedAdjError.Error(), err.Error())
+				}
+			case test.expectedPIError != nil:
+				require.Equal(t, test.expectedPIError.Error(), err.Error())
+			case test.expectedEngineError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedEngineError)
+				} else {
+					require.Equal(t, test.expectedEngineError, err)
+				}
 			}
-		case test.expectedPIError != nil:
-			require.Equal(t, test.expectedPIError.Error(), err.Error())
-		case test.expectedEngineError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedEngineError)
-			} else {
-				require.Equal(t, test.expectedEngineError, err)
-			}
-		}
+		})
 	}
 }

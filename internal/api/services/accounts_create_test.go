@@ -53,14 +53,16 @@ func TestAccountsCreate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().CreateFormanceAccount(gomock.Any(), gomock.Any()).Return(test.err)
-		err := s.AccountsCreate(context.Background(), models.Account{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().CreateFormanceAccount(gomock.Any(), gomock.Any()).Return(test.err)
+			err := s.AccountsCreate(context.Background(), models.Account{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

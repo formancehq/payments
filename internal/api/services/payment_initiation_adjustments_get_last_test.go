@@ -57,21 +57,23 @@ func TestPaymentInitiationAdjustmentsGetLast(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
-				WithPageSize(1),
-		)
-		store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
-			PageSize: 1,
-			HasMore:  false,
-			Data:     test.storageResponse,
-		}, test.err)
-		adj, err := s.PaymentInitiationAdjustmentsGetLast(context.Background(), pid)
-		if test.expectedError == nil {
-			require.NotNil(t, adj)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError.Error(), err.Error())
-		}
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.NewListPaymentInitiationAdjustmentsQuery(
+				bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+					WithPageSize(1),
+			)
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+				PageSize: 1,
+				HasMore:  false,
+				Data:     test.storageResponse,
+			}, test.err)
+			adj, err := s.PaymentInitiationAdjustmentsGetLast(context.Background(), pid)
+			if test.expectedError == nil {
+				require.NotNil(t, adj)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError.Error(), err.Error())
+			}
+		})
 	}
 }

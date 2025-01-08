@@ -86,32 +86,34 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PaymentInitiationsUpsert(gomock.Any(), test.pi, gomock.Any()).Return(test.piUpsertStorageErr)
-		if test.piUpsertStorageErr == nil && test.sendToPSP {
-			switch test.pi.Type {
-			case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-				eng.EXPECT().CreateTransfer(gomock.Any(), models.PaymentInitiationID{}, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
-			case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-				eng.EXPECT().CreatePayout(gomock.Any(), models.PaymentInitiationID{}, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PaymentInitiationsUpsert(gomock.Any(), test.pi, gomock.Any()).Return(test.piUpsertStorageErr)
+			if test.piUpsertStorageErr == nil && test.sendToPSP {
+				switch test.pi.Type {
+				case models.PAYMENT_INITIATION_TYPE_TRANSFER:
+					eng.EXPECT().CreateTransfer(gomock.Any(), models.PaymentInitiationID{}, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
+				case models.PAYMENT_INITIATION_TYPE_PAYOUT:
+					eng.EXPECT().CreatePayout(gomock.Any(), models.PaymentInitiationID{}, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+				}
 			}
-		}
 
-		_, err := s.PaymentInitiationsCreate(context.Background(), test.pi, test.sendToPSP, false)
-		switch {
-		case test.expectedPIError == nil && test.expectedEngineError == nil:
-			require.NoError(t, err)
-		case test.expectedPIError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedPIError)
-			} else {
-				require.Equal(t, test.expectedPIError.Error(), err.Error())
+			_, err := s.PaymentInitiationsCreate(context.Background(), test.pi, test.sendToPSP, false)
+			switch {
+			case test.expectedPIError == nil && test.expectedEngineError == nil:
+				require.NoError(t, err)
+			case test.expectedPIError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedPIError)
+				} else {
+					require.Equal(t, test.expectedPIError.Error(), err.Error())
+				}
+			case test.expectedEngineError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedEngineError)
+				} else {
+					require.Equal(t, test.expectedEngineError, err)
+				}
 			}
-		case test.expectedEngineError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedEngineError)
-			} else {
-				require.Equal(t, test.expectedEngineError, err)
-			}
-		}
+		})
 	}
 }

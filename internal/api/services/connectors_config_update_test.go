@@ -45,12 +45,14 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), models.Connector{}).Return(test.err)
-		err := s.ConnectorsConfigUpdate(context.Background(), models.Connector{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), models.Connector{}).Return(test.err)
+			err := s.ConnectorsConfigUpdate(context.Background(), models.Connector{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

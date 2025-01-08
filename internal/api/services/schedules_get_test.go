@@ -47,13 +47,15 @@ func TestSchedulesGet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().SchedulesGet(gomock.Any(), id, models.ConnectorID{}).Return(&models.Schedule{}, test.err)
-		payment, err := s.SchedulesGet(context.Background(), id, models.ConnectorID{})
-		if test.expectedError == nil {
-			require.NotNil(t, payment)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().SchedulesGet(gomock.Any(), id, models.ConnectorID{}).Return(&models.Schedule{}, test.err)
+			payment, err := s.SchedulesGet(context.Background(), id, models.ConnectorID{})
+			if test.expectedError == nil {
+				require.NotNil(t, payment)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

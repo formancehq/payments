@@ -48,13 +48,15 @@ func TestPoolsGet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{}, test.err)
-		payment, err := s.PoolsGet(context.Background(), id)
-		if test.expectedError == nil {
-			require.NotNil(t, payment)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{}, test.err)
+			payment, err := s.PoolsGet(context.Background(), id)
+			if test.expectedError == nil {
+				require.NotNil(t, payment)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

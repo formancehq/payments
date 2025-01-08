@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/payments/internal/api/backend"
@@ -42,7 +43,18 @@ var _ = Describe("API v2 Connectors List", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.Connector]{}, nil,
+				&bunpaginate.Cursor[models.Connector]{
+					Data: []models.Connector{
+						{
+							ID:                   models.ConnectorID{},
+							Name:                 "test",
+							CreatedAt:            time.Now().UTC(),
+							Provider:             "test",
+							ScheduledForDeletion: false,
+							Config:               []byte("{}"),
+						},
+					},
+				}, nil,
 			)
 			handlerFn(w, req)
 

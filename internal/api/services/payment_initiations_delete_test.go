@@ -85,38 +85,40 @@ func TestPaymentInitiationsDelete(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		var data []models.PaymentInitiationAdjustment
-		if test.adj != nil {
-			data = []models.PaymentInitiationAdjustment{*test.adj}
-		}
-		store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
-			&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
-				Data: data,
-			},
-			test.adjListStorageErr,
-		)
-
-		if test.expectedAdjError == nil {
-			store.EXPECT().PaymentInitiationsDelete(gomock.Any(), pid).Return(test.deleteStorageErr)
-		}
-
-		err := s.PaymentInitiationsDelete(context.Background(), pid)
-		if test.expectedAdjError == nil && test.expectedDeleteError == nil {
-			require.NoError(t, err)
-		}
-		if test.expectedAdjError != nil {
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedAdjError)
-			} else {
-				require.Equal(t, test.expectedAdjError.Error(), err.Error())
+		t.Run(test.name, func(t *testing.T) {
+			var data []models.PaymentInitiationAdjustment
+			if test.adj != nil {
+				data = []models.PaymentInitiationAdjustment{*test.adj}
 			}
-		}
-		if test.expectedDeleteError != nil {
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedDeleteError)
-			} else {
-				require.Equal(t, test.expectedDeleteError.Error(), err.Error())
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(
+				&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+					Data: data,
+				},
+				test.adjListStorageErr,
+			)
+
+			if test.expectedAdjError == nil {
+				store.EXPECT().PaymentInitiationsDelete(gomock.Any(), pid).Return(test.deleteStorageErr)
 			}
-		}
+
+			err := s.PaymentInitiationsDelete(context.Background(), pid)
+			if test.expectedAdjError == nil && test.expectedDeleteError == nil {
+				require.NoError(t, err)
+			}
+			if test.expectedAdjError != nil {
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedAdjError)
+				} else {
+					require.Equal(t, test.expectedAdjError.Error(), err.Error())
+				}
+			}
+			if test.expectedDeleteError != nil {
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedDeleteError)
+				} else {
+					require.Equal(t, test.expectedDeleteError.Error(), err.Error())
+				}
+			}
+		})
 	}
 }

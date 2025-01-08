@@ -53,14 +53,16 @@ func TestConnectorsInstall(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().InstallConnector(gomock.Any(), "test", gomock.Any()).Return(models.ConnectorID{}, test.err)
-		_, err := s.ConnectorsInstall(context.Background(), "test", []byte("{}"))
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().InstallConnector(gomock.Any(), "test", gomock.Any()).Return(models.ConnectorID{}, test.err)
+			_, err := s.ConnectorsInstall(context.Background(), "test", []byte("{}"))
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

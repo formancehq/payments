@@ -77,38 +77,40 @@ func TestPoolsBalancesAt(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{
-			ID:           id,
-			Name:         "test",
-			CreatedAt:    at,
-			PoolAccounts: poolsAccount,
-		}, test.poolsGetStorageErr)
-		if test.poolsGetStorageErr == nil {
-			store.EXPECT().BalancesGetAt(gomock.Any(), models.AccountID{}, at).Return(balancesResponse, test.accountsBalancesAtErr)
-		}
-
-		balances, err := s.PoolsBalancesAt(context.Background(), id, at)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-			require.NotNil(t, balances)
-			foundEUR := false
-			foundUSD := false
-			for _, balance := range balances {
-				switch balance.Asset {
-				case "EUR/2":
-					require.Equal(t, big.NewInt(400), balance.Amount)
-					foundEUR = true
-				case "USD/2":
-					require.Equal(t, big.NewInt(200), balance.Amount)
-					foundUSD = true
-				default:
-					require.Fail(t, "unexpected asset")
-				}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{
+				ID:           id,
+				Name:         "test",
+				CreatedAt:    at,
+				PoolAccounts: poolsAccount,
+			}, test.poolsGetStorageErr)
+			if test.poolsGetStorageErr == nil {
+				store.EXPECT().BalancesGetAt(gomock.Any(), models.AccountID{}, at).Return(balancesResponse, test.accountsBalancesAtErr)
 			}
-			require.True(t, foundEUR)
-			require.True(t, foundUSD)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+
+			balances, err := s.PoolsBalancesAt(context.Background(), id, at)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+				require.NotNil(t, balances)
+				foundEUR := false
+				foundUSD := false
+				for _, balance := range balances {
+					switch balance.Asset {
+					case "EUR/2":
+						require.Equal(t, big.NewInt(400), balance.Amount)
+						foundEUR = true
+					case "USD/2":
+						require.Equal(t, big.NewInt(200), balance.Amount)
+						foundUSD = true
+					default:
+						require.Fail(t, "unexpected asset")
+					}
+				}
+				require.True(t, foundEUR)
+				require.True(t, foundUSD)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

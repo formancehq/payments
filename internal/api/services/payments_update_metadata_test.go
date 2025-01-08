@@ -47,12 +47,14 @@ func TestPaymentsUpdateMetadata(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PaymentsUpdateMetadata(gomock.Any(), id, map[string]string{}).Return(test.err)
-		err := s.PaymentsUpdateMetadata(context.Background(), id, map[string]string{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PaymentsUpdateMetadata(gomock.Any(), id, map[string]string{}).Return(test.err)
+			err := s.PaymentsUpdateMetadata(context.Background(), id, map[string]string{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

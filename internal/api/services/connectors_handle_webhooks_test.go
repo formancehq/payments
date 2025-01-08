@@ -53,14 +53,16 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().HandleWebhook(gomock.Any(), "/any", models.Webhook{}).Return(test.err)
-		err := s.ConnectorsHandleWebhooks(context.Background(), "/any", models.Webhook{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().HandleWebhook(gomock.Any(), "/any", models.Webhook{}).Return(test.err)
+			err := s.ConnectorsHandleWebhooks(context.Background(), "/any", models.Webhook{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

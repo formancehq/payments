@@ -45,12 +45,14 @@ func TestBankAccountsCreate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().BankAccountsUpsert(gomock.Any(), models.BankAccount{}).Return(test.err)
-		err := s.BankAccountsCreate(context.Background(), models.BankAccount{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().BankAccountsUpsert(gomock.Any(), models.BankAccount{}).Return(test.err)
+			err := s.BankAccountsCreate(context.Background(), models.BankAccount{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }
