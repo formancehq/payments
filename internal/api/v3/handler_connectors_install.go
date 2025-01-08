@@ -10,14 +10,21 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
+var connectorConfigMaxBytes int64 = 500000
+
 func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_connectorsInstall")
 		defer span.End()
 
-		config, err := io.ReadAll(r.Body)
+		body := http.MaxBytesReader(w, r.Body, connectorConfigMaxBytes)
+		config, err := io.ReadAll(body)
 		if err != nil {
 			otel.RecordError(span, err)
+			if _, ok := err.(*http.MaxBytesError); ok {
+				api.WriteErrorResponse(w, http.StatusRequestEntityTooLarge, ErrMissingOrInvalidBody, err)
+				return
+			}
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}

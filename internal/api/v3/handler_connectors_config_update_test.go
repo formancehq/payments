@@ -62,6 +62,13 @@ var _ = Describe("API v3 Connector Config Update", func() {
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, "INVALID_ID")
 		})
 
+		It("should return a validation error when request body is too big", func(ctx SpecContext) {
+			data := oversizeRequestBody()
+			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "connectorID", connectorID.String(), &data))
+
+			assertExpectedResponse(w.Result(), http.StatusRequestEntityTooLarge, "MISSING_OR_INVALID_BODY")
+		})
+
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(
 				fmt.Errorf("connector update err"),

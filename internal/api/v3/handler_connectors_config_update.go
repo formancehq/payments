@@ -25,9 +25,14 @@ func connectorsConfigUpdate(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		rawConfig, err := io.ReadAll(r.Body)
+		body := http.MaxBytesReader(w, r.Body, connectorConfigMaxBytes)
+		rawConfig, err := io.ReadAll(body)
 		if err != nil {
 			otel.RecordError(span, err)
+			if _, ok := err.(*http.MaxBytesError); ok {
+				api.WriteErrorResponse(w, http.StatusRequestEntityTooLarge, ErrMissingOrInvalidBody, err)
+				return
+			}
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)
 			return
 		}
