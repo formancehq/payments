@@ -57,8 +57,9 @@ func shouldSkipStatus(status TransferInitiationStatus) (bool, models.PaymentInit
 		return false, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED
 	case TransferInitiationStatusReversed:
 		return false, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED
+	default:
+		return true, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
 	}
-	return true, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN
 }
 
 type v3PaymentInitiationAdjustment struct {
