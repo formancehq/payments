@@ -2,14 +2,15 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/formancehq/payments/internal/models"
 )
 
-func (s *Service) ConnectorsConfigUpdate(ctx context.Context, connector models.Connector) error {
-	err := s.storage.ConnectorsConfigUpdate(ctx, connector)
+func (s *Service) ConnectorsConfigUpdate(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error {
+	err := s.engine.UpdateConnector(ctx, connectorID, rawConfig)
 	if err != nil {
-		return newStorageError(err, "cannot update connector")
+		return handleEngineErrors(err)
 	}
 	return nil
 }

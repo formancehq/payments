@@ -27,6 +27,7 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
+	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -194,17 +195,17 @@ func (mr *MockBackendMockRecorder) ConnectorsConfig(ctx, connectorID any) *gomoc
 }
 
 // ConnectorsConfigUpdate mocks base method.
-func (m *MockBackend) ConnectorsConfigUpdate(ctx context.Context, connector models.Connector) error {
+func (m *MockBackend) ConnectorsConfigUpdate(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConnectorsConfigUpdate", ctx, connector)
+	ret := m.ctrl.Call(m, "ConnectorsConfigUpdate", ctx, connectorID, rawConfig)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ConnectorsConfigUpdate indicates an expected call of ConnectorsConfigUpdate.
-func (mr *MockBackendMockRecorder) ConnectorsConfigUpdate(ctx, connector any) *gomock.Call {
+func (mr *MockBackendMockRecorder) ConnectorsConfigUpdate(ctx, connectorID, rawConfig any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsConfigUpdate", reflect.TypeOf((*MockBackend)(nil).ConnectorsConfigUpdate), ctx, connector)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsConfigUpdate", reflect.TypeOf((*MockBackend)(nil).ConnectorsConfigUpdate), ctx, connectorID, rawConfig)
 }
 
 // ConnectorsConfigs mocks base method.

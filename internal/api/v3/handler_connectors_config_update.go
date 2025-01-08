@@ -1,7 +1,6 @@
 package v3
 
 import (
-	"encoding/json"
 	"io"
 	"net/http"
 
@@ -38,27 +37,7 @@ func connectorsConfigUpdate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		span.SetAttributes(attribute.String("config", string(rawConfig)))
-
-		config := models.DefaultConfig()
-		if err := json.Unmarshal(rawConfig, &config); err != nil {
-			otel.RecordError(span, err)
-			api.BadRequest(w, ErrMissingOrInvalidBody, err)
-			return
-		}
-
-		if err := config.Validate(); err != nil {
-			otel.RecordError(span, err)
-			api.BadRequest(w, ErrValidation, err)
-			return
-		}
-
-		connector := models.Connector{
-			ID:       connectorID,
-			Name:     config.Name,
-			Provider: connectorID.Provider,
-			Config:   rawConfig,
-		}
-		err = backend.ConnectorsConfigUpdate(ctx, connector)
+		err = backend.ConnectorsConfigUpdate(ctx, connectorID, rawConfig)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

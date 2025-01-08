@@ -125,6 +125,14 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(config))
 		})
+
+		It("should fail with a validation error when config invalid with v3", func() {
+			config := newConnectorConfigurationFn()(id)
+			config.Directory = ""
+			err := ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("400"))
+		})
 	})
 
 	When("uninstalling a connector", func() {

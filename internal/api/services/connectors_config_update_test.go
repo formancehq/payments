@@ -2,12 +2,14 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -21,6 +23,7 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 	eng := engine.NewMockEngine(ctrl)
 
 	s := New(store, eng)
+	genericErr := fmt.Errorf("error")
 
 	tests := []struct {
 		name          string
@@ -34,24 +37,26 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 		},
 		{
 			name:          "storage error not found",
-			err:           storage.ErrNotFound,
-			expectedError: newStorageError(storage.ErrNotFound, "cannot update connector"),
+			err:           engine.ErrNotFound,
+			expectedError: ErrNotFound,
 		},
 		{
 			name:          "other error",
-			err:           fmt.Errorf("error"),
-			expectedError: newStorageError(fmt.Errorf("error"), "cannot update connector"),
+			err:           genericErr,
+			expectedError: genericErr,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), models.Connector{}).Return(test.err)
-			err := s.ConnectorsConfigUpdate(context.Background(), models.Connector{})
+			config := json.RawMessage(`{}`)
+			connectorID := models.ConnectorID{}
+			eng.EXPECT().UpdateConnector(gomock.Any(), connectorID, config).Return(test.err)
+			err := s.ConnectorsConfigUpdate(context.Background(), connectorID, config)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else {
-				require.Equal(t, test.expectedError, err)
+				require.True(t, errors.Is(err, test.expectedError))
 			}
 		})
 	}

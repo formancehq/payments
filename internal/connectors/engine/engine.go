@@ -29,6 +29,8 @@ type Engine interface {
 	UninstallConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	// Reset a connector with the given ID, by uninstalling and reinstalling it.
 	ResetConnector(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
+	// Update a connector with the given configuration.
+	UpdateConnector(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error
 
 	// Create a Formance account, no call to the plugin, just a creation
 	// of an account in the database related to the provided connector id.
@@ -305,6 +307,45 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	}
 
 	return task, nil
+}
+
+func (e *engine) UpdateConnector(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.UpdateConnector")
+	defer span.End()
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(rawConfig, &config); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if err := config.Validate(); err != nil {
+		otel.RecordError(span, err)
+		return errors.Wrap(ErrValidation, err.Error())
+	}
+
+	connector := models.Connector{
+		ID:        connectorID,
+		Name:      config.Name,
+		CreatedAt: time.Now().UTC(),
+		Provider:  connectorID.Provider,
+		Config:    rawConfig,
+	}
+
+	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, true)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, models.ErrInvalidConfig) {
+			return errors.Wrap(ErrValidation, err.Error())
+		}
+		return err
+	}
+
+	if err := e.storage.ConnectorsConfigUpdate(ctx, connector); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+	return nil
 }
 
 func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
