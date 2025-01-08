@@ -9,7 +9,7 @@ import (
 func (s *Service) ConnectorsConfigUpdate(ctx context.Context, connector models.Connector) error {
 	err := s.storage.ConnectorsConfigUpdate(ctx, connector)
 	if err != nil {
-		return newStorageError(err, "update connector")
+		return newStorageError(err, "cannot update connector")
 	}
 	return nil
 }

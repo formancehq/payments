@@ -72,7 +72,7 @@ func transferInitiationsGet(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		relatedPayments, err := backend.PaymentInitiationRelatedPaymentListAll(ctx, id)
+		relatedPayments, err := backend.PaymentInitiationRelatedPaymentsListAll(ctx, id)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

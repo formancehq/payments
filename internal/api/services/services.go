@@ -7,8 +7,7 @@ import (
 
 type Service struct {
 	storage storage.Storage
-
-	engine engine.Engine
+	engine  engine.Engine
 }
 
 func New(storage storage.Storage, engine engine.Engine) *Service {

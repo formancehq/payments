@@ -12,13 +12,13 @@ import (
 func (s *Service) PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time.Time) ([]models.AggregatedBalance, error) {
 	pool, err := s.storage.PoolsGet(ctx, poolID)
 	if err != nil {
-		return nil, newStorageError(err, "getting pool")
+		return nil, newStorageError(err, "cannot get pool")
 	}
 	res := make(map[string]*big.Int)
 	for i := range pool.PoolAccounts {
 		balances, err := s.storage.BalancesGetAt(ctx, pool.PoolAccounts[i], at)
 		if err != nil {
-			return nil, newStorageError(err, "getting balances")
+			return nil, newStorageError(err, "cannot get balances")
 		}
 
 		for _, balance := range balances {

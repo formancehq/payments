@@ -47,9 +47,9 @@ func handleEngineErrors(err error) error {
 
 	switch {
 	case errors.Is(err, engine.ErrValidation):
-		return errors.Wrap(ErrValidation, err.Error())
+		return fmt.Errorf("%w: %w", err, ErrValidation)
 	case errors.Is(err, engine.ErrNotFound):
-		return errors.Wrap(ErrNotFound, err.Error())
+		return fmt.Errorf("%w: %w", err, ErrNotFound)
 	default:
 		return err
 	}
