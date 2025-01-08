@@ -48,13 +48,15 @@ func TestBankAccountsGet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().BankAccountsGet(gomock.Any(), id, true).Return(&models.BankAccount{}, test.err)
-		bankAccount, err := s.BankAccountsGet(context.Background(), id)
-		if test.expectedError == nil {
-			require.NotNil(t, bankAccount)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().BankAccountsGet(gomock.Any(), id, true).Return(&models.BankAccount{}, test.err)
+			bankAccount, err := s.BankAccountsGet(context.Background(), id)
+			if test.expectedError == nil {
+				require.NotNil(t, bankAccount)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

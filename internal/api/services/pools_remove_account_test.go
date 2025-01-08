@@ -56,14 +56,16 @@ func TestPoolsRemoveAccount(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().RemoveAccountFromPool(gomock.Any(), id, models.AccountID{}).Return(test.err)
-		err := s.PoolsRemoveAccount(context.Background(), id, models.AccountID{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().RemoveAccountFromPool(gomock.Any(), id, models.AccountID{}).Return(test.err)
+			err := s.PoolsRemoveAccount(context.Background(), id, models.AccountID{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

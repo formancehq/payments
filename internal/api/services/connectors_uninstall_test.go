@@ -65,17 +65,19 @@ func TestConnectorsUninstall(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().ConnectorsGet(gomock.Any(), models.ConnectorID{}).Return(&models.Connector{}, test.storageErr)
-		if test.storageErr == nil {
-			eng.EXPECT().UninstallConnector(gomock.Any(), models.ConnectorID{}).Return(models.Task{}, test.engineErr)
-		}
-		_, err := s.ConnectorsUninstall(context.Background(), models.ConnectorID{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), models.ConnectorID{}).Return(&models.Connector{}, test.storageErr)
+			if test.storageErr == nil {
+				eng.EXPECT().UninstallConnector(gomock.Any(), models.ConnectorID{}).Return(models.Task{}, test.engineErr)
+			}
+			_, err := s.ConnectorsUninstall(context.Background(), models.ConnectorID{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

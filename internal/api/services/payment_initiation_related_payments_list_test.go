@@ -48,14 +48,16 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.ListPaymentInitiationRelatedPaymentsQuery{}
-		store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(nil, test.err)
-		_, err := s.PaymentInitiationRelatedPaymentsList(context.Background(), pid, query)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.ListPaymentInitiationRelatedPaymentsQuery{}
+			store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(nil, test.err)
+			_, err := s.PaymentInitiationRelatedPaymentsList(context.Background(), pid, query)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }
 
@@ -94,21 +96,23 @@ func TestPaymentInitiationRelatedPaymentsListAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.NewListPaymentInitiationRelatedPaymentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
-				WithPageSize(50),
-		)
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.NewListPaymentInitiationRelatedPaymentsQuery(
+				bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
+					WithPageSize(50),
+			)
 
-		store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.Payment]{
-			PageSize: 1,
-			HasMore:  false,
-			Data:     []models.Payment{{}},
-		}, test.err)
-		_, err := s.PaymentInitiationRelatedPaymentsListAll(context.Background(), pid)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+			store.EXPECT().PaymentInitiationRelatedPaymentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.Payment]{
+				PageSize: 1,
+				HasMore:  false,
+				Data:     []models.Payment{{}},
+			}, test.err)
+			_, err := s.PaymentInitiationRelatedPaymentsListAll(context.Background(), pid)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

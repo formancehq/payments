@@ -45,13 +45,15 @@ func TestTasksGet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().TasksGet(gomock.Any(), models.TaskID{}).Return(&models.Task{}, test.err)
-		payment, err := s.TaskGet(context.Background(), models.TaskID{})
-		if test.expectedError == nil {
-			require.NotNil(t, payment)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().TasksGet(gomock.Any(), models.TaskID{}).Return(&models.Task{}, test.err)
+			payment, err := s.TaskGet(context.Background(), models.TaskID{})
+			if test.expectedError == nil {
+				require.NotNil(t, payment)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

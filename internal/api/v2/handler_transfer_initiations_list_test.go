@@ -2,10 +2,13 @@ package v2
 
 import (
 	"fmt"
+	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -42,8 +45,41 @@ var _ = Describe("API v2 PaymentInitiations List", func() {
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
 			m.EXPECT().PaymentInitiationsList(gomock.Any(), gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PaymentInitiation]{}, nil,
+				&bunpaginate.Cursor[models.PaymentInitiation]{
+					Data: []models.PaymentInitiation{
+						{
+							ID:                   models.PaymentInitiationID{},
+							ConnectorID:          models.ConnectorID{},
+							Reference:            "test",
+							CreatedAt:            time.Now().UTC(),
+							ScheduledAt:          time.Now().UTC(),
+							Description:          "test",
+							Type:                 models.PAYMENT_INITIATION_TYPE_PAYOUT,
+							SourceAccountID:      &models.AccountID{},
+							DestinationAccountID: &models.AccountID{},
+							Amount:               big.NewInt(100),
+							Asset:                "EUR/2",
+							Metadata: map[string]string{
+								"test": "test",
+							},
+						},
+					},
+				}, nil,
 			)
+
+			m.EXPECT().PaymentInitiationAdjustmentsGetLast(gomock.Any(), models.PaymentInitiationID{}).
+				Return(&models.PaymentInitiationAdjustment{
+					ID:        models.PaymentInitiationAdjustmentID{},
+					CreatedAt: time.Now().UTC(),
+					Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
+					Amount:    big.NewInt(100),
+					Asset:     pointer.For("EUR/2"),
+					Error:     nil,
+					Metadata: map[string]string{
+						"test": "test",
+					},
+				}, nil)
+
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusOK, "cursor")

@@ -47,13 +47,15 @@ func TestPaymentInitiationsGet(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PaymentInitiationsGet(gomock.Any(), id).Return(&models.PaymentInitiation{}, test.err)
-		pi, err := s.PaymentInitiationsGet(context.Background(), id)
-		if test.expectedError == nil {
-			require.NotNil(t, pi)
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PaymentInitiationsGet(gomock.Any(), id).Return(&models.PaymentInitiation{}, test.err)
+			pi, err := s.PaymentInitiationsGet(context.Background(), id)
+			if test.expectedError == nil {
+				require.NotNil(t, pi)
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

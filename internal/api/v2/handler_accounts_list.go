@@ -26,9 +26,7 @@ type accountResponse struct {
 	AccountName     string            `json:"accountName"`
 	Type            string            `json:"type"`
 	Metadata        map[string]string `json:"metadata"`
-	// TODO(polo): add pools
-	// Pools           []uuid.UUID       `json:"pools"`
-	Raw interface{} `json:"raw"`
+	Raw             interface{}       `json:"raw"`
 }
 
 func accountsList(backend backend.Backend) http.HandlerFunc {

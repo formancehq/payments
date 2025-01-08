@@ -53,14 +53,16 @@ func TestConnectorsReset(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().ResetConnector(gomock.Any(), models.ConnectorID{}).Return(models.Task{}, test.err)
-		_, err := s.ConnectorsReset(context.Background(), models.ConnectorID{})
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().ResetConnector(gomock.Any(), models.ConnectorID{}).Return(models.Task{}, test.err)
+			_, err := s.ConnectorsReset(context.Background(), models.ConnectorID{})
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

@@ -113,42 +113,44 @@ func TestPaymentInitiationsReversalCreate(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.EXPECT().PaymentInitiationsGet(gomock.Any(), pid).Return(&test.pi, test.piGetStorageErr)
-		if test.expectedPIError == nil {
-			store.EXPECT().PaymentInitiationReversalsUpsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(test.piUpsertStorageErr)
+		t.Run(test.name, func(t *testing.T) {
+			store.EXPECT().PaymentInitiationsGet(gomock.Any(), pid).Return(&test.pi, test.piGetStorageErr)
+			if test.expectedPIError == nil {
+				store.EXPECT().PaymentInitiationReversalsUpsert(gomock.Any(), gomock.Any(), gomock.Any()).Return(test.piUpsertStorageErr)
 
-			if test.expectedUpsertError == nil {
-				switch test.pi.Type {
-				case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-					eng.EXPECT().ReverseTransfer(gomock.Any(), gomock.Any(), false).Return(models.Task{}, test.engineErr)
-				case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-					eng.EXPECT().ReversePayout(gomock.Any(), gomock.Any(), false).Return(models.Task{}, test.engineErr)
+				if test.expectedUpsertError == nil {
+					switch test.pi.Type {
+					case models.PAYMENT_INITIATION_TYPE_TRANSFER:
+						eng.EXPECT().ReverseTransfer(gomock.Any(), gomock.Any(), false).Return(models.Task{}, test.engineErr)
+					case models.PAYMENT_INITIATION_TYPE_PAYOUT:
+						eng.EXPECT().ReversePayout(gomock.Any(), gomock.Any(), false).Return(models.Task{}, test.engineErr)
+					}
 				}
 			}
-		}
 
-		_, err := s.PaymentInitiationReversalsCreate(context.Background(), models.PaymentInitiationReversal{Asset: test.asset}, false)
-		switch {
-		case test.expectedPIError == nil && test.expectedUpsertError == nil && test.expectedEngineError == nil:
-			require.NoError(t, err)
-		case test.expectedUpsertError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedUpsertError)
-			} else {
-				require.Equal(t, test.expectedUpsertError.Error(), err.Error())
+			_, err := s.PaymentInitiationReversalsCreate(context.Background(), models.PaymentInitiationReversal{Asset: test.asset}, false)
+			switch {
+			case test.expectedPIError == nil && test.expectedUpsertError == nil && test.expectedEngineError == nil:
+				require.NoError(t, err)
+			case test.expectedUpsertError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedUpsertError)
+				} else {
+					require.Equal(t, test.expectedUpsertError.Error(), err.Error())
+				}
+			case test.expectedPIError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedPIError)
+				} else {
+					require.Equal(t, test.expectedPIError.Error(), err.Error())
+				}
+			case test.expectedEngineError != nil:
+				if test.typedError {
+					require.ErrorIs(t, err, test.expectedEngineError)
+				} else {
+					require.Equal(t, test.expectedEngineError, err)
+				}
 			}
-		case test.expectedPIError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedPIError)
-			} else {
-				require.Equal(t, test.expectedPIError.Error(), err.Error())
-			}
-		case test.expectedEngineError != nil:
-			if test.typedError {
-				require.ErrorIs(t, err, test.expectedEngineError)
-			} else {
-				require.Equal(t, test.expectedEngineError, err)
-			}
-		}
+		})
 	}
 }

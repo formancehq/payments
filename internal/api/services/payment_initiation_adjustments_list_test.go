@@ -48,14 +48,16 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.ListPaymentInitiationAdjustmentsQuery{}
-		store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(nil, test.err)
-		_, err := s.PaymentInitiationAdjustmentsList(context.Background(), pid, query)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.ListPaymentInitiationAdjustmentsQuery{}
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(nil, test.err)
+			_, err := s.PaymentInitiationAdjustmentsList(context.Background(), pid, query)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }
 
@@ -94,21 +96,23 @@ func TestPaymentInitiationAdjustmentsListAll(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.NewListPaymentInitiationAdjustmentsQuery(
-			bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
-				WithPageSize(50),
-		)
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.NewListPaymentInitiationAdjustmentsQuery(
+				bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).
+					WithPageSize(50),
+			)
 
-		store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
-			PageSize: 1,
-			HasMore:  false,
-			Data:     []models.PaymentInitiationAdjustment{{}},
-		}, test.err)
-		_, err := s.PaymentInitiationAdjustmentsListAll(context.Background(), pid)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+			store.EXPECT().PaymentInitiationAdjustmentsList(gomock.Any(), pid, query).Return(&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+				PageSize: 1,
+				HasMore:  false,
+				Data:     []models.PaymentInitiationAdjustment{{}},
+			}, test.err)
+			_, err := s.PaymentInitiationAdjustmentsListAll(context.Background(), pid)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

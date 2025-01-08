@@ -60,14 +60,16 @@ func TestBankAccountsForwardToConnector(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().ForwardBankAccount(gomock.Any(), test.bankAccountID, connectorID, false).Return(models.Task{}, test.err)
-		_, err := s.BankAccountsForwardToConnector(context.Background(), test.bankAccountID, connectorID, false)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().ForwardBankAccount(gomock.Any(), test.bankAccountID, connectorID, false).Return(models.Task{}, test.err)
+			_, err := s.BankAccountsForwardToConnector(context.Background(), test.bankAccountID, connectorID, false)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

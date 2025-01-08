@@ -44,13 +44,15 @@ func TestBalancesList(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		query := storage.ListBalancesQuery{}
-		store.EXPECT().BalancesList(gomock.Any(), query).Return(nil, test.err)
-		_, err := s.BalancesList(context.Background(), query)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			query := storage.ListBalancesQuery{}
+			store.EXPECT().BalancesList(gomock.Any(), query).Return(nil, test.err)
+			_, err := s.BalancesList(context.Background(), query)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }

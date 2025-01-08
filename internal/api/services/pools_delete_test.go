@@ -55,14 +55,16 @@ func TestPoolsDelete(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		eng.EXPECT().DeletePool(gomock.Any(), id).Return(test.err)
-		err := s.PoolsDelete(context.Background(), id)
-		if test.expectedError == nil {
-			require.NoError(t, err)
-		} else if test.typedError {
-			require.ErrorIs(t, err, test.expectedError)
-		} else {
-			require.Equal(t, test.expectedError, err)
-		}
+		t.Run(test.name, func(t *testing.T) {
+			eng.EXPECT().DeletePool(gomock.Any(), id).Return(test.err)
+			err := s.PoolsDelete(context.Background(), id)
+			if test.expectedError == nil {
+				require.NoError(t, err)
+			} else if test.typedError {
+				require.ErrorIs(t, err, test.expectedError)
+			} else {
+				require.Equal(t, test.expectedError, err)
+			}
+		})
 	}
 }
