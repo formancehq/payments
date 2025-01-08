@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/client"
 	"go.uber.org/fx"
@@ -11,12 +12,16 @@ import (
 
 func Module(stack string, debug bool) fx.Option {
 	ret := []fx.Option{
+		fx.Provide(func(logger logging.Logger) plugins.Plugins {
+			return plugins.New(plugins.CallerEngine, logger, debug)
+		}),
 		fx.Provide(func(
 			logger logging.Logger,
 			temporalClient client.Client,
 			storage storage.Storage,
+			plugins plugins.Plugins,
 		) Engine {
-			return New(logger, temporalClient, storage, stack)
+			return New(logger, temporalClient, storage, plugins, stack)
 		}),
 		fx.Invoke(func(lc fx.Lifecycle, engine Engine) {
 			lc.Append(fx.Hook{

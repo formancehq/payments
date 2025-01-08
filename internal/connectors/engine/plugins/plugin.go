@@ -12,9 +12,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// some methods may be disabled when called outside the worker
+	CallerWorker = "worker"
+	CallerEngine = "engine"
+)
+
 var (
-	ErrNotFound   = errors.New("plugin not found")
-	ErrValidation = errors.New("validation error")
+	ErrNotFound         = errors.New("plugin not found")
+	ErrValidation       = errors.New("validation error")
+	ErrInvalidOperation = errors.New("invalid operation")
 )
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
@@ -32,7 +39,8 @@ type plugins struct {
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
-	debug bool
+	caller string
+	debug  bool
 }
 
 type pluginInformation struct {
@@ -41,10 +49,12 @@ type pluginInformation struct {
 }
 
 func New(
+	caller string,
 	logger logging.Logger,
 	debug bool,
 ) *plugins {
 	return &plugins{
+		caller:  caller,
 		logger:  logger,
 		plugins: make(map[string]pluginInformation),
 		debug:   debug,
@@ -100,6 +110,10 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) error {
 }
 
 func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
+	if p.caller != CallerWorker {
+		return nil, ErrInvalidOperation
+	}
+
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
@@ -112,6 +126,10 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 }
 
 func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
+	if p.caller != CallerWorker {
+		return models.Config{}, ErrInvalidOperation
+	}
+
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 

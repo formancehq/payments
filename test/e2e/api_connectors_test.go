@@ -82,6 +82,18 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(connectorConf))
 		})
+
+		DescribeTable("should respond with a validation error when plugin-side config invalid",
+			func(ver int) {
+				connectorConf := newConnectorConfigurationFn()(id)
+				connectorConf.Directory = ""
+				err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("400"))
+			},
+			Entry("with v2", 2),
+			Entry("with v3", 3),
+		)
 	})
 
 	When("updating a connector config", func() {

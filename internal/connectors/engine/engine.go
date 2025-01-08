@@ -9,6 +9,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
@@ -73,6 +74,11 @@ type engine struct {
 	temporalClient client.Client
 	storage        storage.Storage
 
+	// plugins is only really present in engine to allow validation of plugin configs prior to insert into the DB
+	// other plugin-side work should be performed inside workers and not directly in the engine since we don't
+	// have a listener function that checks for plugin updates or installs
+	plugins plugins.Plugins
+
 	stack string
 
 	wg sync.WaitGroup
@@ -82,12 +88,14 @@ func New(
 	logger logging.Logger,
 	temporalClient client.Client,
 	storage storage.Storage,
+	plugins plugins.Plugins,
 	stack string,
 ) Engine {
 	return &engine{
 		logger:         logger,
 		temporalClient: temporalClient,
 		storage:        storage,
+		plugins:        plugins,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
 	}
@@ -117,6 +125,15 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		CreatedAt: time.Now().UTC(),
 		Provider:  provider,
 		Config:    rawConfig,
+	}
+
+	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, models.ErrInvalidConfig) {
+			return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
+		}
+		return models.ConnectorID{}, err
 	}
 
 	// Detached the context to avoid being in a weird state if request is
