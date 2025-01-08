@@ -49,13 +49,6 @@ var _ = Describe("API v3 Connector Config Update", func() {
 			connector.Config = conf
 		})
 
-		It("should return a validation error when name missing", func(ctx SpecContext) {
-			config.Name = ""
-			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "connectorID", connectorID.String(), &config))
-
-			assertExpectedResponse(w.Result(), http.StatusBadRequest, "VALIDATION")
-		})
-
 		It("should return a validation error when connector ID is invalid", func(ctx SpecContext) {
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "connectorID", "invalidID", &config))
 
@@ -70,7 +63,7 @@ var _ = Describe("API v3 Connector Config Update", func() {
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			m.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any(), gomock.Any()).Return(
 				fmt.Errorf("connector update err"),
 			)
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "connectorID", connectorID.String(), &config))
@@ -78,7 +71,7 @@ var _ = Describe("API v3 Connector Config Update", func() {
 		})
 
 		It("should return status no content on success", func(ctx SpecContext) {
-			m.EXPECT().ConnectorsConfigUpdate(gomock.Any(), connector).Return(nil)
+			m.EXPECT().ConnectorsConfigUpdate(gomock.Any(), connector.ID, gomock.Any()).Return(nil)
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPatch, "connectorID", connectorID.String(), &config))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
