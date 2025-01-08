@@ -57,7 +57,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				&models.PaymentInitiation{},
 				nil,
 			)
-			m.EXPECT().PaymentInitiationRelatedPaymentListAll(gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().PaymentInitiationRelatedPaymentsListAll(gomock.Any(), gomock.Any()).Return(
 				[]models.Payment{},
 				expectedErr,
 			)
@@ -71,7 +71,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				&models.PaymentInitiation{},
 				nil,
 			)
-			m.EXPECT().PaymentInitiationRelatedPaymentListAll(gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().PaymentInitiationRelatedPaymentsListAll(gomock.Any(), gomock.Any()).Return(
 				[]models.Payment{},
 				nil,
 			)
@@ -88,7 +88,7 @@ var _ = Describe("API v2 Transfer Initiation Get", func() {
 				&models.PaymentInitiation{},
 				nil,
 			)
-			m.EXPECT().PaymentInitiationRelatedPaymentListAll(gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().PaymentInitiationRelatedPaymentsListAll(gomock.Any(), gomock.Any()).Return(
 				[]models.Payment{},
 				nil,
 			)

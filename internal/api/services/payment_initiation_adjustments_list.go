@@ -10,7 +10,7 @@ import (
 
 func (s *Service) PaymentInitiationAdjustmentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationAdjustment], error) {
 	cursor, err := s.storage.PaymentInitiationAdjustmentsList(ctx, id, query)
-	return cursor, newStorageError(err, "failed to list payment initiation adjustments")
+	return cursor, newStorageError(err, "cannot list payment initiation adjustments")
 }
 
 func (s *Service) PaymentInitiationAdjustmentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.PaymentInitiationAdjustment, error) {
@@ -30,7 +30,7 @@ func (s *Service) PaymentInitiationAdjustmentsListAll(ctx context.Context, id mo
 
 		cursor, err := s.storage.PaymentInitiationAdjustmentsList(ctx, id, q)
 		if err != nil {
-			return nil, newStorageError(err, "cannot list payment initiation's adjustments")
+			return nil, newStorageError(err, "cannot list payment initiation adjustments")
 		}
 
 		adjustments = append(adjustments, cursor.Data...)

@@ -20,6 +20,7 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
+//go:generate mockgen -source engine.go -destination engine_generated.go -package engine . Engine
 type Engine interface {
 	// Install a connector with the given provider and configuration.
 	InstallConnector(ctx context.Context, provider string, rawConfig json.RawMessage) (models.ConnectorID, error)

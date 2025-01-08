@@ -10,7 +10,7 @@ import (
 func (s *Service) PaymentInitiationReversalsCreate(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error) {
 	pi, err := s.storage.PaymentInitiationsGet(ctx, reversal.PaymentInitiationID)
 	if err != nil {
-		return models.Task{}, newStorageError(err, "cannot create payment initiation reversal")
+		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
 	if pi.Asset != reversal.Asset {

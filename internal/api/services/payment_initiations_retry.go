@@ -18,16 +18,13 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 	}
 
 	if len(adjustments) == 0 {
-		return models.Task{}, errors.New("payment initiation's adjustments not found")
+		return models.Task{}, errors.New("payment initiation adjustments not found")
 	}
 
 	lastAdjustment := adjustments[0]
 
-	isReversed := false
 	switch lastAdjustment.Status {
 	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED:
-	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED:
-		isReversed = true
 	default:
 		return models.Task{}, fmt.Errorf("cannot retry an already processed payment initiation: %w", ErrValidation)
 	}
@@ -37,7 +34,7 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
-	attempts := getAttemps(adjustments, isReversed)
+	attempts := getAttemps(adjustments)
 
 	startDelay := 0 * time.Second
 	switch pi.Type {
@@ -58,12 +55,10 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 	return models.Task{}, nil
 }
 
-func getAttemps(adjustments []models.PaymentInitiationAdjustment, isReversed bool) int {
+func getAttemps(adjustments []models.PaymentInitiationAdjustment) int {
 	attempts := 0
 	for _, adjustment := range adjustments {
-		if isReversed && adjustment.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_FAILED {
-			attempts++
-		} else if !isReversed && adjustment.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED {
+		if adjustment.Status == models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED {
 			attempts++
 		}
 	}
@@ -88,7 +83,7 @@ func (s *Service) getAllPaymentInitiationAdjustments(ctx context.Context, id mod
 
 		cursor, err := s.storage.PaymentInitiationAdjustmentsList(ctx, id, q)
 		if err != nil {
-			return nil, newStorageError(err, "cannot list payment initiation's adjustments")
+			return nil, newStorageError(err, "cannot list payment initiation adjustments")
 		}
 
 		adjustments = append(adjustments, cursor.Data...)

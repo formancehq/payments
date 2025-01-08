@@ -10,10 +10,10 @@ import (
 
 func (s *Service) PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
 	cursor, err := s.storage.PaymentInitiationRelatedPaymentsList(ctx, id, query)
-	return cursor, newStorageError(err, "failed to list payment initiation related payments")
+	return cursor, newStorageError(err, "cannot list payment initiation related payments")
 }
 
-func (s *Service) PaymentInitiationRelatedPaymentListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error) {
+func (s *Service) PaymentInitiationRelatedPaymentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error) {
 	q := storage.NewListPaymentInitiationRelatedPaymentsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationRelatedPaymentsQuery{}).
 			WithPageSize(50),
@@ -30,7 +30,7 @@ func (s *Service) PaymentInitiationRelatedPaymentListAll(ctx context.Context, id
 
 		cursor, err := s.storage.PaymentInitiationRelatedPaymentsList(ctx, id, q)
 		if err != nil {
-			return nil, newStorageError(err, "cannot list payment initiation's adjustments")
+			return nil, newStorageError(err, "cannot list payment initiation related payments")
 		}
 
 		relatedPayment = append(relatedPayment, cursor.Data...)

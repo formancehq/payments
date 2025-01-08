@@ -21,11 +21,11 @@ func (s *Service) PaymentInitiationsReject(ctx context.Context, id models.Paymen
 		),
 	)
 	if err != nil {
-		return newStorageError(err, "cannot list payment initiation's adjustments")
+		return newStorageError(err, "cannot list payment initiation adjustments")
 	}
 
 	if len(cursor.Data) == 0 {
-		return errors.New("payment initiation's adjustments not found")
+		return errors.New("payment initiation adjustments not found")
 	}
 
 	lastAdjustment := cursor.Data[0]

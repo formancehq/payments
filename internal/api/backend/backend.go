@@ -64,7 +64,7 @@ type Backend interface {
 
 	// Payment Initiatiion Related Payments
 	PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
-	PaymentInitiationRelatedPaymentListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error)
+	PaymentInitiationRelatedPaymentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error)
 
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error

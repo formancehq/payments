@@ -10,5 +10,5 @@ import (
 
 func (s *Service) ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error) {
 	cursor, err := s.storage.ConnectorsList(ctx, query)
-	return cursor, newStorageError(err, "failed to list connectors")
+	return cursor, newStorageError(err, "cannot list connectors")
 }
