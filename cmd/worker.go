@@ -25,7 +25,7 @@ func newWorker() *cobra.Command {
 	// After meeting with the temporal team, we decided to set it to 20 as per
 	// their recommendation.
 	cmd.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 20, "Max concurrent workflow task pollers")
-	cmd.Flags().Int(temporalMaxConcurrentActivityTaskPollersFlag, 20, "Max concurrent activity task pollers")
+	cmd.Flags().Int(temporalMaxConcurrentActivityTaskPollersFlag, 4, "Max concurrent activity task pollers")
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	cmd.Flags().Duration(temporalRateLimitingRetryDelay, 5*time.Second, "Additional delay before a rate limited request is retried by Temporal workers")
 	return cmd
