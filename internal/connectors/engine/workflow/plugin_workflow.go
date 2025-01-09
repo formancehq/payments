@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -99,78 +100,121 @@ func (w Workflow) run(
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
 
+		connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
+		if err != nil {
+			return err
+		}
+
+		// avoid scheduling next workflow if connector has been flagged for deletion
+		if connector.ScheduledForDeletion {
+			return nil
+		}
+
+		// Schedule next workflow every polling duration
 		if task.Periodically {
-			// Schedule next workflow every polling duration
 			// TODO(polo): context
-			var scheduleID string
-			if fromPayload == nil {
-				scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connectorID.String(), capability.String())
-			} else {
-				scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connectorID.String(), capability.String(), fromPayload.ID)
-			}
-
-			err := activities.StorageSchedulesStore(
-				infiniteRetryContext(ctx),
-				models.Schedule{
-					ID:          scheduleID,
-					ConnectorID: connectorID,
-					CreatedAt:   workflow.Now(ctx).UTC(),
-				})
-			if err != nil {
-				return err
-			}
-
-			err = activities.TemporalScheduleCreate(
-				infiniteRetryContext(ctx),
-				activities.ScheduleCreateOptions{
-					ScheduleID: scheduleID,
-					Jitter:     config.PollingPeriod / 2,
-					Interval: client.ScheduleIntervalSpec{
-						Every: config.PollingPeriod,
-					},
-					Action: client.ScheduleWorkflowAction{
-						// Use the same ID as the schedule ID, so we can identify the workflows running.
-						// This is useful for debugging purposes.
-						ID:       scheduleID,
-						Workflow: nextWorkflow,
-						Args: []interface{}{
-							request,
-							task.NextTasks,
-						},
-						TaskQueue: w.getConnectorTaskQueue(connectorID),
-					},
-					Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
-					TriggerImmediately: true,
-					SearchAttributes: map[string]any{
-						SearchAttributeScheduleID: scheduleID,
-						SearchAttributeStack:      w.stack,
-					},
-				},
-			)
-			if err != nil {
-				return err
-			}
-
-		} else {
-			// Run next workflow immediately
-			if err := workflow.ExecuteChildWorkflow(
-				workflow.WithChildOptions(
-					ctx,
-					workflow.ChildWorkflowOptions{
-						TaskQueue:         w.getConnectorTaskQueue(connectorID),
-						ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-						SearchAttributes: map[string]interface{}{
-							SearchAttributeStack: w.stack,
-						},
-					},
-				),
+			err := w.scheduleNextWorkflow(
+				ctx,
+				connector,
+				capability,
+				task,
+				fromPayload,
 				nextWorkflow,
 				request,
-				task.NextTasks,
-			).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-				return errors.Wrap(err, "running next workflow")
+			)
+			if err != nil {
+				return fmt.Errorf("failed to schedule periodic task: %w", err)
 			}
+			return nil
 		}
+
+		// Run next workflow immediately
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			nextWorkflow,
+			request,
+			task.NextTasks,
+		).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+			return errors.Wrap(err, "running next workflow")
+		}
+	}
+	return nil
+}
+
+func (w Workflow) scheduleNextWorkflow(
+	ctx workflow.Context,
+	connector *models.Connector,
+	capability models.Capability,
+	task models.ConnectorTaskTree,
+	fromPayload *FromPayload,
+	nextWorkflow interface{},
+	request interface{},
+) error {
+	var (
+		config     models.Config
+		scheduleID string
+	)
+	if fromPayload == nil {
+		scheduleID = fmt.Sprintf("%s-%s-%s", w.stack, connector.ID.String(), capability.String())
+	} else {
+		scheduleID = fmt.Sprintf("%s-%s-%s-%s", w.stack, connector.ID.String(), capability.String(), fromPayload.ID)
+	}
+
+	// use most up-to-date configuration
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	connectorID := connector.ID
+	err := activities.StorageSchedulesStore(
+		infiniteRetryContext(ctx),
+		models.Schedule{
+			ID:          scheduleID,
+			ConnectorID: connectorID,
+			CreatedAt:   workflow.Now(ctx).UTC(),
+		})
+	if err != nil {
+		return err
+	}
+
+	err = activities.TemporalScheduleCreate(
+		infiniteRetryContext(ctx),
+		activities.ScheduleCreateOptions{
+			ScheduleID: scheduleID,
+			Jitter:     config.PollingPeriod / 2,
+			Interval: client.ScheduleIntervalSpec{
+				Every: config.PollingPeriod,
+			},
+			Action: client.ScheduleWorkflowAction{
+				// Use the same ID as the schedule ID, so we can identify the workflows running.
+				// This is useful for debugging purposes.
+				ID:       scheduleID,
+				Workflow: nextWorkflow,
+				Args: []interface{}{
+					request,
+					task.NextTasks,
+				},
+				TaskQueue: w.getDefaultTaskQueue(),
+			},
+			Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
+			TriggerImmediately: true,
+			SearchAttributes: map[string]any{
+				SearchAttributeScheduleID: scheduleID,
+				SearchAttributeStack:      w.stack,
+			},
+		},
+	)
+	if err != nil {
+		return err
 	}
 	return nil
 }

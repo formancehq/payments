@@ -142,7 +142,7 @@ func (w Workflow) createTransfer(
 								ScheduleID:          scheduleID,
 							},
 						},
-						TaskQueue: w.getConnectorTaskQueue(createTransfer.ConnectorID),
+						TaskQueue: w.getDefaultTaskQueue(),
 						TypedSearchAttributes: temporal.NewSearchAttributes(
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),

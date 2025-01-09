@@ -116,7 +116,7 @@ func (w Workflow) resetConnector(
 			ctx,
 			workflow.ChildWorkflowOptions{
 				WorkflowID:            fmt.Sprintf("install-%s-%s", w.stack, newConnector.ID.String()),
-				TaskQueue:             w.getConnectorTaskQueue(newConnector.ID),
+				TaskQueue:             w.getDefaultTaskQueue(),
 				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{

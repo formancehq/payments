@@ -140,7 +140,7 @@ func (w Workflow) createPayout(
 								ScheduleID:          scheduleID,
 							},
 						},
-						TaskQueue: w.getConnectorTaskQueue(createPayout.ConnectorID),
+						TaskQueue: w.getDefaultTaskQueue(),
 						TypedSearchAttributes: temporal.NewSearchAttributes(
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet(scheduleID),
 							temporal.NewSearchAttributeKeyKeyword(SearchAttributeStack).ValueSet(w.stack),

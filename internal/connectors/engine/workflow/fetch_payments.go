@@ -93,7 +93,7 @@ func (w Workflow) fetchNextPayments(
 					workflow.WithChildOptions(
 						ctx,
 						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getConnectorTaskQueue(fetchNextPayments.ConnectorID),
+							TaskQueue:         w.getDefaultTaskQueue(),
 							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 							SearchAttributes: map[string]interface{}{
 								SearchAttributeStack: w.stack,
@@ -118,7 +118,7 @@ func (w Workflow) fetchNextPayments(
 					workflow.WithChildOptions(
 						ctx,
 						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getConnectorTaskQueue(fetchNextPayments.ConnectorID),
+							TaskQueue:         w.getDefaultTaskQueue(),
 							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 							SearchAttributes: map[string]interface{}{
 								SearchAttributeStack: w.stack,
@@ -152,7 +152,7 @@ func (w Workflow) fetchNextPayments(
 					workflow.WithChildOptions(
 						ctx,
 						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getConnectorTaskQueue(fetchNextPayments.ConnectorID),
+							TaskQueue:         w.getDefaultTaskQueue(),
 							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 							SearchAttributes: map[string]interface{}{
 								SearchAttributeStack: w.stack,
