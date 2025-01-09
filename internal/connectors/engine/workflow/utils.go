@@ -30,7 +30,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				TaskQueue:         w.getConnectorTaskQueue(connectorID),
+				TaskQueue:         w.getDefaultTaskQueue(),
 				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 				SearchAttributes: map[string]interface{}{
 					SearchAttributeStack: w.stack,
@@ -150,6 +150,6 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 	}
 }
 
-func (w Workflow) getConnectorTaskQueue(connectorID models.ConnectorID) string {
-	return fmt.Sprintf("%s-%s", w.stack, connectorID.String())
+func (w Workflow) getDefaultTaskQueue() string {
+	return fmt.Sprintf("%s-default", w.stack)
 }

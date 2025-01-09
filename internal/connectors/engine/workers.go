@@ -133,7 +133,7 @@ func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connect
 	}
 
 	if !connector.ScheduledForDeletion {
-		err = w.AddWorker(getConnectorTaskQueue(w.stack, connector.ID))
+		err = w.AddWorker(getDefaultTaskQueue(w.stack))
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if err := w.AddWorker(getConnectorTaskQueue(w.stack, connector.ID)); err != nil {
+	if err := w.AddWorker(getDefaultTaskQueue(w.stack)); err != nil {
 		return err
 	}
 

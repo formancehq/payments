@@ -73,7 +73,7 @@ func (w Workflow) runHandleWebhooks(
 				ctx,
 				workflow.ChildWorkflowOptions{
 					WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s", w.stack, handleWebhooks.ConnectorID.String(), response.IdempotencyKey),
-					TaskQueue:             w.getConnectorTaskQueue(handleWebhooks.ConnectorID),
+					TaskQueue:             w.getDefaultTaskQueue(),
 					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 					SearchAttributes: map[string]interface{}{
@@ -180,7 +180,7 @@ func (w Workflow) runStoreWebhookTranslation(
 			workflow.WithChildOptions(
 				ctx,
 				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getConnectorTaskQueue(storeWebhookTranslation.ConnectorID),
+					TaskQueue:         w.getDefaultTaskQueue(),
 					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
 					SearchAttributes: map[string]interface{}{
 						SearchAttributeStack: w.stack,
