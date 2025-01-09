@@ -44,6 +44,13 @@ var _ = Describe("API v3 Connector Install", func() {
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
+		It("should return a validation error when request body is too big", func(ctx SpecContext) {
+			data := oversizeRequestBody()
+			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "connectorID", conn, &data))
+
+			assertExpectedResponse(w.Result(), http.StatusRequestEntityTooLarge, "MISSING_OR_INVALID_BODY")
+		})
+
 		It("should return status accepted on success", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsInstall(gomock.Any(), conn, config).Return(
 				models.ConnectorID{},

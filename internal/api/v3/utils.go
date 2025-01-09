@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 
@@ -10,6 +11,20 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
+
+type TestData struct {
+	Val string `json:"val"`
+}
+
+func oversizeRequestBody() []TestData {
+	var data []TestData
+	for i := 0; i < 1000000; i++ {
+		data = append(data, TestData{
+			Val: fmt.Sprintf("Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz %d", i),
+		})
+	}
+	return data
+}
 
 func getQueryBuilder(span trace.Span, r *http.Request) (query.Builder, error) {
 	data, err := io.ReadAll(r.Body)

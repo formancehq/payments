@@ -24,6 +24,7 @@ import (
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
+	isgomock struct{}
 }
 
 // MockEngineMockRecorder is the mock recorder for MockEngine.
@@ -285,4 +286,18 @@ func (m *MockEngine) UninstallConnector(ctx context.Context, connectorID models.
 func (mr *MockEngineMockRecorder) UninstallConnector(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UninstallConnector", reflect.TypeOf((*MockEngine)(nil).UninstallConnector), ctx, connectorID)
+}
+
+// UpdateConnector mocks base method.
+func (m *MockEngine) UpdateConnector(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateConnector", ctx, connectorID, rawConfig)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateConnector indicates an expected call of UpdateConnector.
+func (mr *MockEngineMockRecorder) UpdateConnector(ctx, connectorID, rawConfig any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnector", reflect.TypeOf((*MockEngine)(nil).UpdateConnector), ctx, connectorID, rawConfig)
 }
