@@ -2143,7 +2143,6 @@ components:
         - updatedAt
         - descriptor
         - status
-        - state
       properties:
         id:
           type: string
@@ -2157,11 +2156,20 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: '#/components/schemas/TaskStatus'
         state:
+          nullable: true
           type: object
         error:
           type: string
+    TaskStatus:
+      type: string
+      enum:
+        - PENDING
+        - ACTIVE
+        - STOPPED
+        - TERMINATED
+        - FAILED
     TaskStripe:
       allOf:
         - $ref: '#/components/schemas/TaskBase'
