@@ -2811,8 +2811,7 @@ components:
         - createdAt
         - updatedAt
         - descriptor
-        - status
-        - state
+        - status 
       properties:
         id:
           type: string
@@ -2829,6 +2828,7 @@ components:
           $ref: '#/components/schemas/PaymentStatus'
         state:
           type: object
+          nullable: true
         error:
           type: string
     TaskStripe:
@@ -3234,6 +3234,8 @@ components:
         - DISPUTE
         - DISPUTE_WON
         - DISPUTE_LOST
+        - TERMINATED
+        - ACTIVE
         - OTHER
     ServerInfo:
       type: object
