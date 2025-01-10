@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
@@ -91,7 +92,7 @@ func (p *Plugin) pollPayoutStatus(ctx context.Context, payoutID string) (models.
 
 	case "REJECTED", "FAILED", "RETURNED":
 		return models.PollPayoutStatusResponse{
-			Error: fmt.Errorf("payment failed: %s", status),
+			Error: pointer.For(fmt.Sprintf("payment failed: %s", status)),
 		}, nil
 
 	default:

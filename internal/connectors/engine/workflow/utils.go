@@ -15,7 +15,6 @@ func (w Workflow) storePIPaymentWithStatus(
 	payment models.Payment,
 	paymentInitiationID models.PaymentInitiationID,
 	status models.PaymentInitiationAdjustmentStatus,
-	connectorID models.ConnectorID,
 ) error {
 	// payment is available, storing it
 	err := activities.StoragePaymentsStore(
