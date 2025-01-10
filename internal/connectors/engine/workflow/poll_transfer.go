@@ -62,7 +62,6 @@ func (w Workflow) pollTransfer(
 		payment,
 		pollTransfer.PaymentInitiationID,
 		getPIStatusFromPayment(payment.Status),
-		pollTransfer.ConnectorID,
 	); err != nil {
 		return "", err
 	}

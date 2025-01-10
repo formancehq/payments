@@ -62,7 +62,6 @@ func (w Workflow) pollPayout(
 		payment,
 		pollPayout.PaymentInitiationID,
 		getPIStatusFromPayment(payment.Status),
-		pollPayout.ConnectorID,
 	); err != nil {
 		return "", err
 	}
