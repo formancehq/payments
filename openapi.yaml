@@ -2852,7 +2852,6 @@ components:
         - updatedAt
         - descriptor
         - status
-        - state
       properties:
         id:
           type: string
@@ -2868,6 +2867,7 @@ components:
         status:
           $ref: '#/components/schemas/TaskStatus'
         state:
+          nullable: true
           type: object
         error:
           type: string
