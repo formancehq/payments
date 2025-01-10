@@ -91,7 +91,6 @@ func (w Workflow) createTransfer(
 				payment,
 				createTransfer.PaymentInitiationID,
 				getPIStatusFromPayment(payment.Status),
-				createTransfer.ConnectorID,
 			); err != nil {
 				return err
 			}

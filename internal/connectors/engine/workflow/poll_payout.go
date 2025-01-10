@@ -1,6 +1,8 @@
 package workflow
 
 import (
+	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/workflow"
@@ -27,12 +29,17 @@ func (w Workflow) runPollPayout(
 			err,
 		)
 	}
-	return w.updateTaskSuccess(
-		ctx,
-		pollPayout.TaskID,
-		&pollPayout.ConnectorID,
-		paymentID,
-	)
+
+	if paymentID != "" {
+		return w.updateTaskSuccess(
+			ctx,
+			pollPayout.TaskID,
+			&pollPayout.ConnectorID,
+			paymentID,
+		)
+	}
+
+	return nil
 }
 
 func (w Workflow) pollPayout(
@@ -50,29 +57,49 @@ func (w Workflow) pollPayout(
 		return "", err
 	}
 
-	if pollPayoutStatusResponse.Payment == nil {
-		// payment not yet available, waiting for the next polling
+	paymentID := ""
+	var piErr error
+	switch {
+	case pollPayoutStatusResponse.Payment == nil && pollPayoutStatusResponse.Error == nil:
+		// payment not yet available and no error, waiting for the next polling
 		return "", nil
+
+	case pollPayoutStatusResponse.Payment != nil:
+		payment := models.FromPSPPaymentToPayment(*pollPayoutStatusResponse.Payment, pollPayout.ConnectorID)
+
+		if err := w.storePIPaymentWithStatus(
+			ctx,
+			payment,
+			pollPayout.PaymentInitiationID,
+			getPIStatusFromPayment(payment.Status),
+		); err != nil {
+			return "", err
+		}
+
+		paymentID = payment.ID.String()
+
+	case pollPayoutStatusResponse.Error != nil:
+		// Means that the payment initiation failed, and we need to register
+		// the error in the task as well as stopping the schedule polling.
+		piErr = fmt.Errorf("%s", *pollPayoutStatusResponse.Error)
 	}
 
-	payment := models.FromPSPPaymentToPayment(*pollPayoutStatusResponse.Payment, pollPayout.ConnectorID)
-
-	if err := w.storePIPaymentWithStatus(
-		ctx,
-		payment,
-		pollPayout.PaymentInitiationID,
-		getPIStatusFromPayment(payment.Status),
-		pollPayout.ConnectorID,
+	// everything is done, delete the related schedule
+	if err := activities.TemporalDeleteSchedule(
+		infiniteRetryContext(ctx),
+		pollPayout.ScheduleID,
 	); err != nil {
 		return "", err
 	}
 
-	// everything is done, delete the related schedule
-	if err := activities.TemporalDeleteSchedule(ctx, pollPayout.ScheduleID); err != nil {
+	if err := activities.StorageSchedulesDelete(
+		infiniteRetryContext(ctx),
+		pollPayout.ScheduleID,
+	); err != nil {
 		return "", err
 	}
 
-	return payment.ID.String(), activities.StorageSchedulesDelete(ctx, pollPayout.ScheduleID)
+	return paymentID, piErr
 }
 
 const RunPollPayout = "PollPayout"

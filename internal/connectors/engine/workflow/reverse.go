@@ -103,6 +103,7 @@ func (w Workflow) validatePaymentInitiationProcessed(
 		// Payment initiation has been processed
 		return nil
 	}
+
 	return temporal.NewNonRetryableApplicationError("no adjustments found", "PAYMENT_INITIATION_NOT_PROCESSED", ErrPaymentInitiationNotProcessed)
 }
 

@@ -98,7 +98,6 @@ func (w Workflow) reversePayout(
 			payment,
 			pi.ID,
 			getPIStatusFromPayment(payment.Status),
-			reversePayout.ConnectorID,
 		); err != nil {
 			return "", err
 		}
