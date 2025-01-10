@@ -11,14 +11,16 @@ import (
 )
 
 var (
-	temporalAddress   = flag.String("temporal_address", "staging.sihc8.tmprl.cloud:7233", "Temporal server address")
-	temporalNamespace = flag.String("namespace", "staging.sihc8", "Temporal namespace")
+	temporalAddress   = flag.String("temporal_address", "local-operator.sihc8.tmprl.cloud:7233", "Temporal server address")
+	temporalNamespace = flag.String("namespace", "local-operator.sihc8", "Temporal namespace")
 	temporalKey       = flag.String("key", "", "TLS key")
 	temporalCertStr   = flag.String("cert", "", "TLS cert")
 	temporalStack     = flag.String("stack", "", "Stack")
 )
 
 func main() {
+	flag.Parse()
+
 	ctx := context.Background()
 
 	var cert *tls.Certificate

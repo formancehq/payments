@@ -22,6 +22,8 @@ var (
 )
 
 func main() {
+	flag.Parse()
+
 	ctx := context.Background()
 
 	var cert *tls.Certificate
