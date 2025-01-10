@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	temporalAddress   = flag.String("temporal_address", "", "Temporal server address")
+	temporalAddress   = flag.String("temporal-address", "", "Temporal server address")
 	temporalNamespace = flag.String("namespace", "", "Temporal namespace")
 	temporalKey       = flag.String("key", "", "TLS key")
 	temporalCertStr   = flag.String("cert", "", "TLS cert")
