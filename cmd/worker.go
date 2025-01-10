@@ -60,8 +60,6 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	temporalRateLimitingRetryDelay, _ := cmd.Flags().GetDuration(temporalRateLimitingRetryDelay)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 	temporalMaxConcurrentActivityTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentActivityTaskPollersFlag)
-	fmt.Println("temporalMaxConcurrentWorkflowTaskPollers", temporalMaxConcurrentWorkflowTaskPollers)
-	fmt.Println("temporalMaxConcurrentActivityTaskPollers", temporalMaxConcurrentActivityTaskPollers)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
 		worker.NewModule(
