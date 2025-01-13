@@ -27,6 +27,7 @@ func (f *FromPayload) GetPayload() json.RawMessage {
 }
 
 type Workflow struct {
+	name              string
 	temporalNamespace string
 	temporalClient    client.Client
 
