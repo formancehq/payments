@@ -15,6 +15,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
@@ -132,7 +133,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false)
 	if err != nil {
 		otel.RecordError(span, err)
-		if errors.Is(err, models.ErrInvalidConfig) {
+		if _, ok := err.(validator.ValidationErrors); ok {
 			return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
 		}
 		return models.ConnectorID{}, err
@@ -335,7 +336,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, true)
 	if err != nil {
 		otel.RecordError(span, err)
-		if errors.Is(err, models.ErrInvalidConfig) {
+		if _, ok := err.(validator.ValidationErrors); ok {
 			return errors.Wrap(ErrValidation, err.Error())
 		}
 		return err

@@ -86,15 +86,18 @@ var _ = Context("Payments API Connectors", func() {
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
-			func(ver int) {
+			func(ver int, dirVal string, expectedErr string) {
 				connectorConf := newConnectorConfigurationFn()(id)
-				connectorConf.Directory = ""
+				connectorConf.Directory = dirVal
 				err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
+				Expect(err.Error()).To(ContainSubstring(expectedErr))
 			},
-			Entry("with v2", 2),
-			Entry("with v3", 3),
+			Entry("empty directory with v2", 2, "", "validation for 'Directory' failed on the 'required' tag"),
+			Entry("empty directory with v3", 3, "", "validation for 'Directory' failed on the 'required' tag"),
+			Entry("invalid directory with v2", 2, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
+			Entry("invalid directory with v3", 3, "^&()sodj", "validation for 'Directory' failed on the 'dirpath' tag"),
 		)
 	})
 
@@ -128,13 +131,18 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(getRes.Data).To(Equal(config))
 		})
 
-		It("should fail with a validation error when config invalid with v3", func() {
-			config := newConnectorConfigurationFn()(id)
-			config.Directory = ""
-			err := ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
-			Expect(err).NotTo(BeNil())
-			Expect(err.Error()).To(ContainSubstring("400"))
-		})
+		DescribeTable("should respond with a validation error when plugin-side config invalid",
+			func(ver int, dirValue string, expectedErr string) {
+				config := newConnectorConfigurationFn()(id)
+				config.Directory = dirValue
+				err := ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+				Expect(err).NotTo(BeNil())
+				Expect(err.Error()).To(ContainSubstring("400"))
+				Expect(err.Error()).To(ContainSubstring(expectedErr))
+			},
+			Entry("empty directory", 3, "", "validation for 'Directory' failed on the 'required' tag"),
+			Entry("invalid directory", 3, "$#2djskajdj", "validation for 'Directory' failed on the 'dirpath' tag"),
+		)
 	})
 
 	When("uninstalling a connector", func() {

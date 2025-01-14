@@ -1,7 +1,0 @@
-{
-    "directory": {
-        "dataType": "string",
-        "required": true,
-        "defaultValue": ""
-    }
-}
