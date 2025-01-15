@@ -21,6 +21,7 @@ type balancesResponse struct {
 	AccountID     string    `json:"accountId"`
 	CreatedAt     time.Time `json:"createdAt"`
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+	Currency      string    `json:"currency"`
 	Asset         string    `json:"asset"`
 	Balance       *big.Int  `json:"balance"`
 }
@@ -64,6 +65,7 @@ func accountsBalances(backend backend.Backend) http.HandlerFunc {
 			data[i] = &balancesResponse{
 				AccountID:     ret[i].AccountID.String(),
 				CreatedAt:     ret[i].CreatedAt,
+				Currency:      ret[i].Asset,
 				Asset:         ret[i].Asset,
 				Balance:       ret[i].Balance,
 				LastUpdatedAt: ret[i].LastUpdatedAt,
