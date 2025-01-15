@@ -90,7 +90,6 @@ func (w Workflow) createPayout(
 				payment,
 				createPayout.PaymentInitiationID,
 				getPIStatusFromPayment(payment.Status),
-				createPayout.ConnectorID,
 			); err != nil {
 				return err
 			}

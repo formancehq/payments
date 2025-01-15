@@ -235,7 +235,7 @@ var _ = Describe("Atlar Plugin Payouts Creation", func() {
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.PollPayoutStatusResponse{
 				Payment: nil,
-				Error:   errors.New("payment failed: REJECTED"),
+				Error:   pointer.For("payment failed: REJECTED"),
 			}))
 		})
 
