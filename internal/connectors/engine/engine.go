@@ -133,7 +133,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false)
 	if err != nil {
 		otel.RecordError(span, err)
-		if _, ok := err.(validator.ValidationErrors); ok {
+		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
 			return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
 		}
 		return models.ConnectorID{}, err
@@ -336,7 +336,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, true)
 	if err != nil {
 		otel.RecordError(span, err)
-		if _, ok := err.(validator.ValidationErrors); ok {
+		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
 			return errors.Wrap(ErrValidation, err.Error())
 		}
 		return err

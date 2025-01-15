@@ -30,19 +30,19 @@ var _ = Describe("Modulr Plugin", func() {
 		It("should report errors in config - apiSecret", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
 			_, err := New(ProviderName, logger, config)
-			Expect(err).To(MatchError("missing api secret in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("APISecret"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiSecret": "test", "endpoint": "test"}`)
 			_, err := New(ProviderName, logger, config)
-			Expect(err).To(MatchError("missing api key in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiSecret": "test", "apiKey": "test"}`)
 			_, err := New(ProviderName, logger, config)
-			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
