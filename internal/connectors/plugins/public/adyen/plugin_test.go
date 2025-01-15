@@ -33,15 +33,15 @@ var _ = Describe("Adyen Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config - apiKey", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"companyID": "test"}`))
-			Expect(err).To(MatchError("missing apiKey in config: invalid config"))
+			_, err := New("adyen", logger, json.RawMessage(`{"companyID":"test","webhookUsername":"user","webhookPassword":"testvalue","liveEndpointPrefix":"prefix"}`))
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 		It("reports validation errors in the config - companyID", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"apiKey": "test"}`))
-			Expect(err).To(MatchError("missing companyID in config: invalid config"))
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test","webhookUsername":"user","webhookPassword":"testvalue","liveEndpointPrefix":"prefix"}`))
+			Expect(err.Error()).To(ContainSubstring("CompanyID"))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test", "companyID": "test"}`))
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test","companyID": "test", "webhookUsername":"user","webhookPassword":"testvalue","liveEndpointPrefix":"prefix"}`))
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)

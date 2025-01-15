@@ -30,19 +30,19 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 		It("should report errors in config - loginID", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
 			_, err := New("currencycloud", logger, config)
-			Expect(err).To(MatchError("missing clientID in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("LoginID"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"loginID": "test", "endpoint": "test"}`)
 			_, err := New("currencycloud", logger, config)
-			Expect(err).To(MatchError("missing api key in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"loginID": "test", "apiKey": "test"}`)
 			_, err := New("currencycloud", logger, config)
-			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {

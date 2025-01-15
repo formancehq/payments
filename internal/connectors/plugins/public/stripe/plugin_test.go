@@ -30,7 +30,7 @@ var _ = Describe("Stripe Plugin", func() {
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
 			_, err := New("stripe", logger, config)
-			Expect(err).To(MatchError("missing api key in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
