@@ -30,19 +30,19 @@ var _ = Describe("Atlar Plugin", func() {
 		It("should report errors in config - baseURL", func(ctx SpecContext) {
 			config := json.RawMessage(`{"accessKey": "test", "secret": "test"}`)
 			_, err := New("atlar", logger, config)
-			Expect(err).To(MatchError("missing baseURL in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("BaseURL"))
 		})
 
 		It("should report errors in config - accessKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"baseURL": "test", "secret": "test"}`)
 			_, err := New("atlar", logger, config)
-			Expect(err).To(MatchError("missing access key in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("AccessKey"))
 		})
 
 		It("should report errors in config - secret", func(ctx SpecContext) {
 			config := json.RawMessage(`{"baseURL": "test", "accessKey": "test"}`)
 			_, err := New("atlar", logger, config)
-			Expect(err).To(MatchError("missing secret in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Secret"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {

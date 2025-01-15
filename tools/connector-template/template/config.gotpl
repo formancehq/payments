@@ -4,22 +4,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/formancehq/payments/internal/models"
 )
 
 type Config struct {
 	// TODO: fill Config struct
 	// This is the config a user will pass when installing this connector.
-	// You need to add all needed config useful for your connector, example:
-	// ClientID string `json:"clientID"`
-	// APIKey   string `json:"apiKey"`
-	// Endpoint string `json:"endpoint"`
-}
-
-func (c Config) validate() error {
-	// TODO: validate the Config struct
-
-	return nil
+	// Authentication criteria for connecting to your connector should be provided here. Example:
+	// ClientID string `json:"clientID" validate:"required"`
+	// APIKey   string `json:"apiKey" validate:"required"`
+	// Endpoint string `json:"endpoint" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
@@ -28,5 +23,6 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 		return Config{}, fmt.Errorf("%w: %w", err, models.ErrInvalidConfig)
 	}
 
-	return config, config.validate()
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	return config, validate.Struct(config)
 }

@@ -4,18 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/validator/v10"
 )
 
 type Config struct {
-	Directory string `json:"directory"`
-}
-
-func (c Config) validate() error {
-	if c.Directory == "" {
-		return fmt.Errorf("missing directory in config: %w", models.ErrInvalidConfig)
-	}
-	return nil
+	Directory string `json:"directory" validate:"required,dirpath"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
@@ -23,6 +16,6 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	if err := json.Unmarshal(payload, &config); err != nil {
 		return Config{}, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-
-	return config, config.validate()
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	return config, validate.Struct(config)
 }

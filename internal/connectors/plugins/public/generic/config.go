@@ -2,27 +2,15 @@ package generic
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
 
 type Config struct {
-	APIKey   string `json:"apiKey"`
-	Endpoint string `json:"endpoint"`
-}
-
-func (c Config) validate() error {
-	if c.APIKey == "" {
-		return fmt.Errorf("missing api key in config: %w", models.ErrInvalidConfig)
-	}
-
-	if c.Endpoint == "" {
-		return fmt.Errorf("missing endpoint in config: %w", models.ErrInvalidConfig)
-	}
-
-	return nil
+	APIKey   string `json:"apiKey" validate:"required"`
+	Endpoint string `json:"endpoint" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
@@ -30,6 +18,6 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 	if err := json.Unmarshal(payload, &config); err != nil {
 		return Config{}, errors.Wrap(models.ErrInvalidConfig, err.Error())
 	}
-
-	return config, config.validate()
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	return config, validate.Struct(config)
 }
