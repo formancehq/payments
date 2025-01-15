@@ -75,7 +75,7 @@ var _ = Describe("Wise Plugin", func() {
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			_, err := New("wise", logger, json.RawMessage(`{}`))
-			Expect(err).To(MatchError(ContainSubstring("config")))
+			Expect(err).To(MatchError(ContainSubstring("validation")))
 		})
 		It("rejects malformed pem keys", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey":"dummy","webhookPublicKey":"badKey"}`)
