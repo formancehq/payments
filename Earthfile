@@ -34,9 +34,7 @@ compile-configs:
     COPY (+sources/*) /src
     WORKDIR /src/internal/connectors/plugins/public
     FOR c IN $(ls -d */ | sed 's#/##')
-        RUN echo "{\"$c\":" >> raw_configs.json
-        RUN cat /src/internal/connectors/plugins/public/$c/config.json >> raw_configs.json
-        RUN echo "}" >> raw_configs.json
+        RUN jq -cn "{(\"$c\"): {}}" >> raw_configs.json
     END
     RUN jq --slurp 'add' raw_configs.json > configs.json
     SAVE ARTIFACT /src/internal/connectors/plugins/public/configs.json /configs.json
