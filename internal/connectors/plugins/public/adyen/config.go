@@ -10,10 +10,12 @@ import (
 
 type Config struct {
 	APIKey             string `json:"apiKey" validate:"required"`
-	WebhookUsername    string `json:"webhookUsername" validate:"required"`
-	WebhookPassword    string `json:"webhookPassword" validate:"required"`
 	CompanyID          string `json:"companyID" validate:"required"`
-	LiveEndpointPrefix string `json:"liveEndpointPrefix" validate:"required"`
+	LiveEndpointPrefix string `json:"liveEndpointPrefix" validate:"omitempty,alphanum"`
+
+	// https://datatracker.ietf.org/doc/html/rfc7617
+	WebhookUsername string `json:"webhookUsername" validate:"omitempty,excludes=:"`
+	WebhookPassword string `json:"webhookPassword" validate:""`
 }
 
 func unmarshalAndValidateConfig(payload []byte) (Config, error) {
