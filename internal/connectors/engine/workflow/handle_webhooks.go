@@ -42,7 +42,7 @@ func (w Workflow) runHandleWebhooks(
 	}
 
 	if config == nil {
-		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", err)
+		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", errors.New("webhook config not found"))
 	}
 
 	err = activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)

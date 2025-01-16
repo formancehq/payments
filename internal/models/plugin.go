@@ -175,7 +175,7 @@ type PollTransferStatusResponse struct {
 
 	// If not nil, it means that the transfer failed, the payment initiation
 	// will be marked as fail and the workflow will be terminated
-	Error error
+	Error *string
 }
 
 type CreatePayoutRequest struct {
@@ -208,7 +208,7 @@ type PollPayoutStatusResponse struct {
 	// If not, the payment is available and the workflow will be terminated
 	Payment *PSPPayment
 
-	// If not nil, it means that the transfer failed, the payment initiation
+	// If not nil, it means that the payout failed, the payment initiation
 	// will be marked as fail and the workflow will be terminated
-	Error error
+	Error *string
 }

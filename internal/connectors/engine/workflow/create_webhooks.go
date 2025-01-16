@@ -21,11 +21,7 @@ func (w Workflow) runCreateWebhooks(
 	createWebhooks CreateWebhooks,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
-	if err := w.createInstance(ctx, createWebhooks.ConnectorID); err != nil {
-		return errors.Wrap(err, "creating instance")
-	}
-	err := w.createWebhooks(ctx, createWebhooks, nextTasks)
-	return w.terminateInstance(ctx, createWebhooks.ConnectorID, err)
+	return w.createWebhooks(ctx, createWebhooks, nextTasks)
 }
 
 func (w Workflow) createWebhooks(

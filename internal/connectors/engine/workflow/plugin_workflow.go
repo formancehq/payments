@@ -125,6 +125,7 @@ func (w Workflow) run(
 			if err != nil {
 				return fmt.Errorf("failed to schedule periodic task: %w", err)
 			}
+
 			return nil
 		}
 
