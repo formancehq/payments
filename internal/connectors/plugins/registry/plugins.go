@@ -52,10 +52,18 @@ func setupConfig(provider string, conf any) Config {
 	val := reflect.ValueOf(conf)
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
+		if !field.IsExported() {
+			continue
+		}
+
 		validatorTag := field.Tag.Get("validate")
 
 		jsonTag := field.Tag.Get("json")
 		fieldName := strings.Split(jsonTag, ",")[0]
+
+		if fieldName == "" || fieldName == "-" {
+			continue
+		}
 
 		vt := field.Type
 		var dataType Type

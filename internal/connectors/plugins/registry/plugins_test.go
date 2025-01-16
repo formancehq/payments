@@ -18,6 +18,7 @@ func TestClient(t *testing.T) {
 }
 
 var _ = Describe("Register Plugin", func() {
+	type UnhandledType struct{}
 	type Config struct {
 		RequiredString   string        `json:"requiredString" validate:"required"`
 		OptionalString   string        `json:"optionalString" validate:""`
@@ -26,6 +27,9 @@ var _ = Describe("Register Plugin", func() {
 		RequiredDuration time.Duration `json:"requiredDuration" validate:"required"`
 		OptionalDuration time.Duration `json:"optionalDuration" validate:""`
 		WithJsonMetadata string        `json:"withJsonMetadata,omitempty" validate:""`
+
+		NilJsonTag      UnhandledType `json:"-"`
+		unexportedField UnhandledType //nolint:unused
 	}
 	var (
 		ctrl         *gomock.Controller
