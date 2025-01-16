@@ -1,14 +1,4 @@
-package plugins
-
-import (
-	_ "embed"
-	"encoding/json"
-	"errors"
-	"sync"
-)
-
-//go:embed configs.json
-var configsFile []byte
+package registry
 
 type Type string
 
@@ -45,35 +35,4 @@ var (
 			Required: true,
 		},
 	}
-
-	configs Configs
 )
-
-var once sync.Once
-
-func GetConfigs() Configs {
-	once.Do(func() {
-		if err := json.Unmarshal(configsFile, &configs); err != nil {
-			panic(err)
-		}
-
-		for key := range configs {
-			for paramName, param := range defaultParameters {
-				if _, ok := configs[key][paramName]; !ok {
-					configs[key][paramName] = param
-				}
-			}
-		}
-	})
-
-	return configs
-}
-
-func GetConfig(provider string) (Config, error) {
-	config, ok := configs[provider]
-	if !ok {
-		return nil, errors.New("config not found")
-	}
-
-	return config, nil
-}

@@ -3,6 +3,9 @@ package registry
 import (
 	"encoding/json"
 	"errors"
+	"log"
+	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -14,19 +17,50 @@ type PluginCreateFunction func(string, logging.Logger, json.RawMessage) (models.
 type PluginInformation struct {
 	capabilities []models.Capability
 	createFunc   PluginCreateFunction
+	config       Config
 }
 
 var (
 	pluginsRegistry map[string]PluginInformation = make(map[string]PluginInformation)
 
 	ErrPluginNotFound = errors.New("plugin not found")
+
+	checkRequired = regexp.MustCompile("required")
 )
 
-func RegisterPlugin(provider string, createFunc PluginCreateFunction, capabilities []models.Capability) {
+func RegisterPlugin(
+	provider string,
+	createFunc PluginCreateFunction,
+	capabilities []models.Capability,
+	conf any,
+) {
 	pluginsRegistry[provider] = PluginInformation{
 		capabilities: capabilities,
 		createFunc:   createFunc,
+		config:       setupConfig(provider, conf),
 	}
+}
+
+func setupConfig(provider string, conf any) Config {
+	config := make(Config)
+	for paramName, param := range defaultParameters {
+		if _, ok := config[paramName]; !ok {
+			config[paramName] = param
+		}
+	}
+
+	val := reflect.ValueOf(conf)
+	for i := 0; i < val.NumField(); i++ {
+		jsonTag := val.Type().Field(i).Tag.Get("json")
+		tag := val.Type().Field(i).Tag.Get("validate")
+		log.Printf("Field: %s, Tag: %s, JSON: %s\n", val.Type().Field(i).Name, tag, jsonTag)
+
+		config[jsonTag] = Parameter{
+			DataType: TypeString,
+			Required: checkRequired.MatchString(tag),
+		}
+	}
+	return config
 }
 
 func GetPlugin(logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
@@ -50,4 +84,20 @@ func GetCapabilities(provider string) ([]models.Capability, error) {
 	}
 
 	return info.capabilities, nil
+}
+
+func GetConfigs() Configs {
+	confs := make(Configs)
+	for key, info := range pluginsRegistry {
+		confs[key] = info.config
+	}
+	return confs
+}
+
+func GetConfig(provider string) (Config, error) {
+	info, ok := pluginsRegistry[strings.ToLower(provider)]
+	if !ok {
+		return nil, ErrPluginNotFound
+	}
+	return info.config, nil
 }

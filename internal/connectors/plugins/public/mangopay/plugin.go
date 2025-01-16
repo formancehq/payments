@@ -18,7 +18,7 @@ const ProviderName = "mangopay"
 func init() {
 	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities)
+	}, capabilities, Config{})
 }
 
 type Plugin struct {

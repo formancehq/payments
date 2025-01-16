@@ -5,7 +5,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
 )
@@ -29,7 +29,7 @@ var _ = Describe("API v2 Connectors Configs", func() {
 
 		It("should return data object", func(ctx SpecContext) {
 			req := httptest.NewRequest(http.MethodGet, "/", nil)
-			m.EXPECT().ConnectorsConfigs().Return(plugins.Configs{})
+			m.EXPECT().ConnectorsConfigs().Return(registry.Configs{})
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusOK, "data")

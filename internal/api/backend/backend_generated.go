@@ -16,7 +16,7 @@ import (
 	time "time"
 
 	bunpaginate "github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	plugins "github.com/formancehq/payments/internal/connectors/plugins"
+	registry "github.com/formancehq/payments/internal/connectors/plugins/registry"
 	models "github.com/formancehq/payments/internal/models"
 	storage "github.com/formancehq/payments/internal/storage"
 	uuid "github.com/google/uuid"
@@ -209,10 +209,10 @@ func (mr *MockBackendMockRecorder) ConnectorsConfigUpdate(ctx, connectorID, rawC
 }
 
 // ConnectorsConfigs mocks base method.
-func (m *MockBackend) ConnectorsConfigs() plugins.Configs {
+func (m *MockBackend) ConnectorsConfigs() registry.Configs {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ConnectorsConfigs")
-	ret0, _ := ret[0].(plugins.Configs)
+	ret0, _ := ret[0].(registry.Configs)
 	return ret0
 }
 
