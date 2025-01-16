@@ -48,6 +48,11 @@ func ConnectorConfigUpdate(ctx context.Context, srv *Server, ver int, id string,
 	return srv.Client().Do(ctx, http.MethodPatch, pathPrefix(ver, path), reqBody, nil)
 }
 
+func ConnectorConfigs(ctx context.Context, srv *Server, ver int, res any) error {
+	path := "connectors/configs"
+	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
+}
+
 func ConnectorConfig(ctx context.Context, srv *Server, ver int, id string, res any) error {
 	path := "connectors/" + id + "/config"
 	if ver == 2 {

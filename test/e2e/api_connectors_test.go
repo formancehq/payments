@@ -6,7 +6,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
@@ -270,6 +272,50 @@ var _ = Context("Payments API Connectors", func() {
 				Expect(schedule.ConnectorID.Provider).To(Equal("dummypay"))
 			}
 		})
+	})
+
+	When("fetching connector configurations", func() {
+		type connectorDef struct {
+			DataType     string `json:"dataType"`
+			Required     bool   `json:"required"`
+			DefaultValue string `json:"defaultValue"`
+		}
+		var res struct {
+			Data map[string]map[string]connectorDef
+		}
+
+		DescribeTable("should respond with detailed config json for each connector",
+			func(ver int) {
+				err := ConnectorConfigs(ctx, app.GetValue(), ver, &res)
+				Expect(err).To(BeNil())
+				Expect(len(res.Data)).To(BeNumerically(">", 1))
+				Expect(res.Data["dummypay"]).NotTo(BeNil())
+				Expect(res.Data["dummypay"]["pageSize"]).NotTo(BeNil())
+				Expect(res.Data["dummypay"]["pageSize"].DataType).To(Equal("unsigned integer"))
+				Expect(res.Data["dummypay"]["pageSize"].Required).To(Equal(false))
+				Expect(res.Data["dummypay"]["pageSize"].DefaultValue).NotTo(Equal(""))
+				pageSize, err := strconv.Atoi(res.Data["dummypay"]["pageSize"].DefaultValue)
+				Expect(err).To(BeNil())
+				Expect(pageSize).To(BeNumerically(">", 0))
+				Expect(res.Data["dummypay"]["pollingPeriod"]).NotTo(BeNil())
+				Expect(res.Data["dummypay"]["pollingPeriod"].DataType).To(Equal("duration ns"))
+				Expect(res.Data["dummypay"]["pollingPeriod"].Required).To(Equal(false))
+				Expect(res.Data["dummypay"]["pollingPeriod"].DefaultValue).NotTo(Equal(""))
+				pollingPeriod, err := time.ParseDuration(res.Data["dummypay"]["pollingPeriod"].DefaultValue)
+				Expect(err).To(BeNil())
+				Expect(pollingPeriod).To(BeNumerically(">", 0))
+				Expect(res.Data["dummypay"]["name"]).NotTo(BeNil())
+				Expect(res.Data["dummypay"]["name"].DataType).To(Equal("string"))
+				Expect(res.Data["dummypay"]["name"].Required).To(Equal(true))
+				Expect(res.Data["dummypay"]["name"].DefaultValue).To(Equal(""))
+				Expect(res.Data["dummypay"]["directory"]).NotTo(BeNil())
+				Expect(res.Data["dummypay"]["directory"].DataType).To(Equal("string"))
+				Expect(res.Data["dummypay"]["directory"].Required).To(Equal(true))
+				Expect(res.Data["dummypay"]["directory"].DefaultValue).To(Equal(""))
+			},
+			Entry("with v2", 2),
+			Entry("with v3", 3),
+		)
 	})
 })
 
