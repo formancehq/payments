@@ -3,11 +3,11 @@ package registry
 type Type string
 
 const (
-	TypeLongString              Type = "long string"
-	TypeString                  Type = "string"
-	TypeDurationNs              Type = "duration ns"
-	TypeDurationUnsignedInteger Type = "unsigned integer"
-	TypeBoolean                 Type = "boolean"
+	TypeLongString      Type = "long string"
+	TypeString          Type = "string"
+	TypeDurationNs      Type = "duration ns"
+	TypeUnsignedInteger Type = "unsigned integer"
+	TypeBoolean         Type = "boolean"
 )
 
 type Configs map[string]Config
@@ -21,17 +21,17 @@ type Parameter struct {
 var (
 	defaultParameters = map[string]Parameter{
 		"pollingPeriod": {
-			DataType:     "duration ns",
+			DataType:     TypeDurationNs,
 			Required:     false,
 			DefaultValue: "2m",
 		},
 		"pageSize": {
-			DataType:     "unsigned integer",
+			DataType:     TypeUnsignedInteger,
 			Required:     false,
 			DefaultValue: "100",
 		},
 		"name": {
-			DataType: "string",
+			DataType: TypeString,
 			Required: true,
 		},
 	}

@@ -51,13 +51,32 @@ func setupConfig(provider string, conf any) Config {
 
 	val := reflect.ValueOf(conf)
 	for i := 0; i < val.NumField(); i++ {
-		jsonTag := val.Type().Field(i).Tag.Get("json")
-		tag := val.Type().Field(i).Tag.Get("validate")
-		log.Printf("Field: %s, Tag: %s, JSON: %s\n", val.Type().Field(i).Name, tag, jsonTag)
+		field := val.Type().Field(i)
+		validatorTag := field.Tag.Get("validate")
 
-		config[jsonTag] = Parameter{
-			DataType: TypeString,
-			Required: checkRequired.MatchString(tag),
+		jsonTag := field.Tag.Get("json")
+		fieldName := strings.Split(jsonTag, ",")[0]
+
+		vt := field.Type
+		var dataType Type
+		switch vt.Kind() {
+		case reflect.String:
+			dataType = TypeString
+		case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+			dataType = TypeUnsignedInteger
+		case reflect.Int64:
+			if field.Type.Name() == "Duration" {
+				dataType = TypeDurationNs
+				break
+			}
+			fallthrough
+		default:
+			log.Panicf("unhandled type for field %q: %q", val.Type().Field(i).Name, field.Type.Name())
+		}
+
+		config[fieldName] = Parameter{
+			DataType: dataType,
+			Required: checkRequired.MatchString(validatorTag),
 		}
 	}
 	return config
