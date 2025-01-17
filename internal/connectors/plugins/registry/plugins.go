@@ -50,6 +50,12 @@ func setupConfig(provider string, conf any) Config {
 	}
 
 	val := reflect.ValueOf(conf)
+	if val.Kind() == reflect.Invalid {
+		log.Panicf("RegisterPlugin config cannot be nil")
+	}
+	if val.Kind() != reflect.Struct {
+		log.Panicf("RegisterPlugin config must be a struct, got %v", val.Kind())
+	}
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Type().Field(i)
 		if !field.IsExported() {
