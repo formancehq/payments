@@ -30,37 +30,37 @@ var _ = Describe("BankingCircle Plugin", func() {
 		It("should report errors in config - username", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing username in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Username"))
 		})
 
 		It("should report errors in config - password", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test"}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing password in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Password"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test"}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should report errors in config - authorization endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test"}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing authorization endpoint in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("AuthorizationEndpoint"))
 		})
 
 		It("should report errors in config - certificate", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test", "authorizationEndpoint": "test"}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing user certificate in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("UserCertificate"))
 		})
 
 		It("should report errors in config - certificate key", func(ctx SpecContext) {
 			config := json.RawMessage(`{"username": "test", "password": "test", "endpoint": "test", "authorizationEndpoint": "test", "userCertificate": "test"}`)
 			_, err := New("bankingcircle", logger, config)
-			Expect(err).To(MatchError("missing user certificate key in config: invalid config"))
+			Expect(err.Error()).To(ContainSubstring("UserCertificateKey"))
 		})
 
 		It("should report errors in config - invalid certificate", func(ctx SpecContext) {

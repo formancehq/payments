@@ -19,7 +19,6 @@ sources:
 compile-plugins:
     FROM core+builder-image
     COPY (+sources/*) /src
-    COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
     WORKDIR /src/internal/connectors/plugins/public
     RUN printf "package public\n\n" > list.go
     RUN printf "import (\n" >> list.go
@@ -29,23 +28,9 @@ compile-plugins:
     RUN printf ")\n" >> list.go
     SAVE ARTIFACT /src/internal/connectors/plugins/public/list.go /list.go
 
-compile-configs:
-    FROM core+builder-image
-    COPY (+sources/*) /src
-    WORKDIR /src/internal/connectors/plugins/public
-    FOR c IN $(ls -d */ | sed 's#/##')
-        RUN echo "{\"$c\":" >> raw_configs.json
-        RUN cat /src/internal/connectors/plugins/public/$c/config.json >> raw_configs.json
-        RUN echo "}" >> raw_configs.json
-    END
-    RUN jq --slurp 'add' raw_configs.json > configs.json
-    SAVE ARTIFACT /src/internal/connectors/plugins/public/configs.json /configs.json
-
-
 compile:
     FROM core+builder-image
     COPY (+sources/*) /src
-    COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
     COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
     WORKDIR /src
     ARG VERSION=latest
@@ -82,7 +67,6 @@ tests:
     END
 
     IF [ "$includeIntegrationTests" = "true" ]
-        COPY (+compile-configs/configs.json) /src/internal/connectors/plugins/configs.json
         COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
         SET goFlags="$goFlags -tags it"
         WITH DOCKER --load=postgres:15-alpine=+postgres
@@ -117,13 +101,11 @@ lint:
     WORKDIR /src
     DO --pass-args core+GO_LINT
     COPY (+compile-plugins/list.go) .
-    COPY (+compile-configs/configs.json) .
     SAVE ARTIFACT cmd AS LOCAL cmd
     SAVE ARTIFACT internal AS LOCAL internal
     SAVE ARTIFACT pkg AS LOCAL pkg
     SAVE ARTIFACT main.go AS LOCAL main.go
     SAVE ARTIFACT list.go AS LOCAL internal/connectors/plugins/public/list.go
-    SAVE ARTIFACT configs.json AS LOCAL internal/connectors/plugins/configs.json
 
 pre-commit:
     WAIT

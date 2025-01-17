@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
@@ -31,7 +31,7 @@ type Backend interface {
 	BankAccountsForwardToConnector(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 
 	// Connectors
-	ConnectorsConfigs() plugins.Configs
+	ConnectorsConfigs() registry.Configs
 	ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error)
 	ConnectorsConfigUpdate(ctx context.Context, connectorID models.ConnectorID, rawConfig json.RawMessage) error
 	ConnectorsList(ctx context.Context, query storage.ListConnectorsQuery) (*bunpaginate.Cursor[models.Connector], error)

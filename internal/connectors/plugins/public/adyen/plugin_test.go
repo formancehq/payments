@@ -33,15 +33,28 @@ var _ = Describe("Adyen Plugin", func() {
 
 	Context("install", func() {
 		It("reports validation errors in the config - apiKey", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"companyID": "test"}`))
-			Expect(err).To(MatchError("missing apiKey in config: invalid config"))
+			_, err := New("adyen", logger, json.RawMessage(`{"companyID":"test"}`))
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 		It("reports validation errors in the config - companyID", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"apiKey": "test"}`))
-			Expect(err).To(MatchError("missing companyID in config: invalid config"))
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test"}`))
+			Expect(err.Error()).To(ContainSubstring("CompanyID"))
 		})
-		It("returns valid install response", func(ctx SpecContext) {
-			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test", "companyID": "test"}`))
+		It("returns validation errors when username contains forbidden characters", func(ctx SpecContext) {
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test","companyID": "test","webhookUsername":"some:val"}`))
+			Expect(err.Error()).To(ContainSubstring("WebhookUsername"))
+		})
+		It("returns valid install response without optional parameters", func(ctx SpecContext) {
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test","companyID": "test"}`))
+			Expect(err).To(BeNil())
+			req := models.InstallRequest{}
+			res, err := plg.Install(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(len(res.Workflow) > 0).To(BeTrue())
+			Expect(res.Workflow).To(Equal(workflow()))
+		})
+		It("returns valid install response with all parameters", func(ctx SpecContext) {
+			_, err := New("adyen", logger, json.RawMessage(`{"apiKey":"test","companyID": "test", "webhookUsername":"user","webhookPassword":"testvalue","liveEndpointPrefix":"1797a841fbb37ca7"}`))
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)

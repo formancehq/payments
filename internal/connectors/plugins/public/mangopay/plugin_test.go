@@ -30,19 +30,22 @@ var _ = Describe("Mangopay Plugin", func() {
 		It("should report errors in config - clientID", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
 			_, err := New("mangopay", logger, config)
-			Expect(err).To(MatchError("missing clientID in config: invalid config"))
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("ClientID"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(`{"clientID": "test", "endpoint": "test"}`)
 			_, err := New("mangopay", logger, config)
-			Expect(err).To(MatchError("missing api key in config: invalid config"))
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"clientID": "test", "apiKey": "test"}`)
 			_, err := New("mangopay", logger, config)
-			Expect(err).To(MatchError("missing endpoint in config: invalid config"))
+			Expect(err).NotTo(BeNil())
+			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {

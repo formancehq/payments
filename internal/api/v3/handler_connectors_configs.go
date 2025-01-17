@@ -6,7 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/otel"
 )
 
@@ -15,10 +15,10 @@ func connectorsConfigs(backend backend.Backend) http.HandlerFunc {
 		_, span := otel.Tracer().Start(r.Context(), "v3_connectorsConfigs")
 		defer span.End()
 
-		configs := backend.ConnectorsConfigs()
+		confs := backend.ConnectorsConfigs()
 
-		err := json.NewEncoder(w).Encode(api.BaseResponse[plugins.Configs]{
-			Data: &configs,
+		err := json.NewEncoder(w).Encode(api.BaseResponse[registry.Configs]{
+			Data: &confs,
 		})
 		if err != nil {
 			otel.RecordError(span, err)

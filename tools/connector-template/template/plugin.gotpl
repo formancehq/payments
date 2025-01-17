@@ -1,7 +1,7 @@
 package {{ .Connector }}
 
 import (
-    "context"
+	"context"
 	"encoding/json"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -16,11 +16,11 @@ const ProviderName = "{{ .Connector }}"
 func init() {
 	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
-	}, capabilities)
+	}, capabilities, Config{})
 }
 
 type Plugin struct {
-	name string
+	name   string
 	logger logging.Logger
 
 	client client.Client

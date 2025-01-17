@@ -34,7 +34,7 @@ var _ = Describe("Moneycorp *Plugin", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
 			_, err := moneycorp.New("moneycorp", logger, config)
-			Expect(err).To(MatchError(ContainSubstring("config")))
+			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 		It("returns valid install response", func(ctx SpecContext) {
 			_, err := moneycorp.New("moneycorp", logger, config)
