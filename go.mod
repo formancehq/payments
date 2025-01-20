@@ -7,7 +7,7 @@ toolchain go1.23.4
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
-	github.com/ThreeDotsLabs/watermill v1.4.3
+	github.com/ThreeDotsLabs/watermill v1.4.4
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/formancehq/go-libs/v2 v2.0.1-0.20241128191336-ae97d7d27bf4
