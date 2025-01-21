@@ -22,6 +22,17 @@ func (w Workflow) run(
 	var nextWorkflow interface{}
 	var request interface{}
 	var capability models.Capability
+
+	connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
+	if err != nil {
+		return err
+	}
+
+	// avoid scheduling next workflow if connector has been flagged for deletion
+	if connector.ScheduledForDeletion {
+		return nil
+	}
+
 	for _, task := range taskTree {
 		switch task.TaskType {
 		case models.TASK_FETCH_ACCOUNTS:
@@ -100,16 +111,6 @@ func (w Workflow) run(
 			return fmt.Errorf("unknown task type: %v", task.TaskType)
 		}
 
-		connector, err := activities.StorageConnectorsGet(infiniteRetryContext(ctx), connectorID)
-		if err != nil {
-			return err
-		}
-
-		// avoid scheduling next workflow if connector has been flagged for deletion
-		if connector.ScheduledForDeletion {
-			return nil
-		}
-
 		// Schedule next workflow every polling duration
 		if task.Periodically {
 			// TODO(polo): context
@@ -126,7 +127,7 @@ func (w Workflow) run(
 				return fmt.Errorf("failed to schedule periodic task: %w", err)
 			}
 
-			return nil
+			continue
 		}
 
 		// Run next workflow immediately

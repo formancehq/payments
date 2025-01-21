@@ -197,6 +197,7 @@ func TestSchedulesList(t *testing.T) {
 
 		cursor, err := store.SchedulesList(ctx, q)
 		require.NoError(t, err)
+		require.Equal(t, 15, cursor.PageSize)
 		require.Equal(t, 3, len(cursor.Data))
 		require.False(t, cursor.HasMore)
 		require.Empty(t, cursor.Previous)

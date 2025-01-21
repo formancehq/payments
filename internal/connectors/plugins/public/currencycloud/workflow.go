@@ -23,7 +23,6 @@ func workflow() models.ConnectorTasksTree {
 			NextTasks:    []models.ConnectorTaskTree{},
 		},
 		{
-
 			TaskType:     models.TASK_FETCH_BALANCES,
 			Name:         "fetch_balances",
 			Periodically: true,
