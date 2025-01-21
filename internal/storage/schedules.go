@@ -126,6 +126,7 @@ func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpa
 	}
 
 	return &bunpaginate.Cursor[models.Schedule]{
+		PageSize: cursor.PageSize,
 		Data:     schedules,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
