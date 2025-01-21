@@ -24,6 +24,14 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 		s.Equal(RunFetchNextAccounts, req.Action.Workflow)
 		return nil
 	})
+	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, schedule models.Schedule) error {
+		s.Equal(fmt.Sprintf("test-%s-FETCH_PAYMENTS-1", s.connectorID.String()), schedule.ID)
+		return nil
+	})
+	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.ScheduleCreateOptions) error {
+		s.Equal(RunFetchNextPayments, req.Action.Workflow)
+		return nil
+	})
 
 	s.env.ExecuteWorkflow(
 		Run,
@@ -37,6 +45,12 @@ func (s *UnitTestSuite) Test_Run_Periodically_FetchAccounts_Success() {
 			{
 				TaskType:     models.TASK_FETCH_ACCOUNTS,
 				Name:         "test",
+				Periodically: true,
+				NextTasks:    []models.ConnectorTaskTree{},
+			},
+			{
+				TaskType:     models.TASK_FETCH_PAYMENTS,
+				Name:         "test2",
 				Periodically: true,
 				NextTasks:    []models.ConnectorTaskTree{},
 			},
@@ -300,6 +314,11 @@ func (s *UnitTestSuite) Test_Run_ConnectorScheduledForDeletion_Success() {
 }
 
 func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		&s.connector,
+		nil,
+	)
+
 	s.env.ExecuteWorkflow(
 		Run,
 		models.DefaultConfig(),
