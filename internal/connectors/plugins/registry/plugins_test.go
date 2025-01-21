@@ -48,10 +48,15 @@ var _ = Describe("Register Plugin", func() {
 
 	Context("population of plugin configuration", func() {
 		RegisterPlugin(name, fn, capabilities, conf)
+		It("return an error if the config is not found", func(ctx SpecContext) {
+			c, err := GetConfig("test")
+			Expect(err).ToNot(BeNil())
+			Expect(c).To(BeNil())
+		})
+
 		It("can parse a required string", func(ctx SpecContext) {
-			configs := GetConfigs()
-			c, ok := configs[name]
-			Expect(ok).To(BeTrue())
+			c, err := GetConfig(name)
+			Expect(err).To(BeNil())
 			Expect(c["requiredString"]).NotTo(BeNil())
 			Expect(c["requiredString"].DataType).To(Equal(TypeString))
 			Expect(c["requiredString"].Required).To(BeTrue())
