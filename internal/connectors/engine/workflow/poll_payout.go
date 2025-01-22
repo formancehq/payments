@@ -85,7 +85,7 @@ func (w Workflow) pollPayout(
 	}
 
 	// everything is done, delete the related schedule
-	if err := activities.TemporalDeleteSchedule(
+	if err := activities.TemporalScheduleDelete(
 		infiniteRetryContext(ctx),
 		pollPayout.ScheduleID,
 	); err != nil {
