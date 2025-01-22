@@ -168,4 +168,5 @@ release:
     FROM core+builder-image
     ARG mode=local
     COPY --dir . /src
+    COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
     DO core+GORELEASER --mode=$mode
