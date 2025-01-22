@@ -88,6 +88,16 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeClientError))
 			Expect(res.Code).To(Equal("err123"))
 		})
+		It("unmarshals error responses when http client error seen too many requests", func(ctx SpecContext) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"?code=429", http.NoBody)
+			Expect(err).To(BeNil())
+
+			res := &errorRes{}
+			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
+			Expect(code).To(Equal(http.StatusTooManyRequests))
+			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeTooManyRequests))
+			Expect(res.Code).To(Equal("err123"))
+		})
 		It("responds with error when HTTP request fails", func(ctx SpecContext) {
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "notaurl", http.NoBody)
 			Expect(err).To(BeNil())
