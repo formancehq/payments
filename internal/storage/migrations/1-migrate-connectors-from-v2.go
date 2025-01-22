@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -39,7 +40,7 @@ type v3Connector struct {
 
 type ConnectorQuery struct{}
 
-func MigrateConnectorsFromV2(ctx context.Context, db bun.IDB, encryptionKey string) error {
+func MigrateConnectorsFromV2(ctx context.Context, logger logging.Logger, db bun.IDB, encryptionKey string) error {
 	exist, err := isTableExisting(ctx, db, "connectors", "connector")
 	if err != nil {
 		return err
@@ -81,6 +82,7 @@ func MigrateConnectorsFromV2(ctx context.Context, db bun.IDB, encryptionKey stri
 		}
 
 		for _, connector := range cursor.Data {
+			logger.WithField("connector_id", connector.ID.String()).Info("migrating connector from v2...")
 			v3 := v3Connector{
 				ID:                   connector.ID,
 				Name:                 connector.Name,
@@ -114,6 +116,8 @@ func MigrateConnectorsFromV2(ctx context.Context, db bun.IDB, encryptionKey stri
 			if err != nil {
 				return err
 			}
+
+			logger.WithField("connector_id", connector.ID.String()).Info("finished migrating connector from v2")
 		}
 
 		if !cursor.HasMore {
