@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -23,7 +24,7 @@ type client struct {
 	// You may need fields here for authentication purpose
 }
 
-func New(/* TODO: fill config parameters */) *client {
+func New( /* TODO: fill config parameters */ ) *client {
 	config := &httpwrapper.Config{
 		// TODO: you can set an underlying http transport in metrics.TransportOpts for authentication for example
 		Transport: metrics.NewTransport("{{ .Connector }}", metrics.TransportOpts{}),
