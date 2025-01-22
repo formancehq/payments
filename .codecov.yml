@@ -6,5 +6,7 @@ ignore:
   - "local_env"
   - "internal/storage/storage_generated.go"
   - "internal/connectors/engine/engine_generated.go"
+  - "internal/connectors/engine/activities/client_generated.go"
+  - "internal/connectors/engine/activities/schedule_client_generated.go"
   - "internal/connectors/engine/plugins/plugin_generated.go"
   - "internal/api/backend/backend_generated.go"
