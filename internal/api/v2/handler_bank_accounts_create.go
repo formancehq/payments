@@ -41,11 +41,11 @@ type BankAccountResponse struct {
 type BankAccountsCreateRequest struct {
 	Name string `json:"name"`
 
-	AccountNumber *string `json:"accountNumber"`
-	IBAN          *string `json:"iban"`
-	SwiftBicCode  *string `json:"swiftBicCode"`
-	Country       *string `json:"country"`
-	ConnectorID   *string `json:"connectorID"`
+	AccountNumber *string `json:"accountNumber,omitempty"`
+	IBAN          *string `json:"iban,omitempty"`
+	SwiftBicCode  *string `json:"swiftBicCode,omitempty"`
+	Country       *string `json:"country,omitempty"`
+	ConnectorID   *string `json:"connectorID,omitempty"`
 
 	Metadata map[string]string `json:"metadata"`
 }
