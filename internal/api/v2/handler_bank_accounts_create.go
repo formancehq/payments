@@ -35,7 +35,7 @@ type BankAccountResponse struct {
 	AccountNumber   string                                `json:"accountNumber,omitempty"`
 	SwiftBicCode    string                                `json:"swiftBicCode,omitempty"`
 	Metadata        map[string]string                     `json:"metadata,omitempty"`
-	RelatedAccounts []*bankAccountRelatedAccountsResponse `json:"relatedAccounts,omitempty"`
+	RelatedAccounts []*bankAccountRelatedAccountsResponse `json:"relatedAccounts"`
 }
 
 type BankAccountsCreateRequest struct {
