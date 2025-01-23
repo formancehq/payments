@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"regexp"
@@ -97,9 +98,10 @@ func setupConfig(provider string, conf any) Config {
 }
 
 func GetPlugin(logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
-	info, ok := pluginsRegistry[strings.ToLower(provider)]
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
 	if !ok {
-		return nil, ErrPluginNotFound
+		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
 	p, err := info.createFunc(connectorName, logger, rawConfig)
@@ -111,9 +113,10 @@ func GetPlugin(logger logging.Logger, provider string, connectorName string, raw
 }
 
 func GetCapabilities(provider string) ([]models.Capability, error) {
-	info, ok := pluginsRegistry[strings.ToLower(provider)]
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
 	if !ok {
-		return nil, ErrPluginNotFound
+		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
 	return info.capabilities, nil
@@ -128,9 +131,10 @@ func GetConfigs() Configs {
 }
 
 func GetConfig(provider string) (Config, error) {
-	info, ok := pluginsRegistry[strings.ToLower(provider)]
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
 	if !ok {
-		return nil, ErrPluginNotFound
+		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 	return info.config, nil
 }

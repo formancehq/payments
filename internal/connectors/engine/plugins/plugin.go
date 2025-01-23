@@ -119,7 +119,7 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 
 	pluginInfo, ok := p.plugins[connectorID.String()]
 	if !ok {
-		return nil, ErrNotFound
+		return nil, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}
 
 	return pluginInfo.client, nil
@@ -135,7 +135,7 @@ func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, erro
 
 	pluginInfo, ok := p.plugins[connectorID.String()]
 	if !ok {
-		return models.Config{}, ErrNotFound
+		return models.Config{}, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}
 
 	return pluginInfo.config, nil
