@@ -1,13 +1,16 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+	"unicode"
 
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -87,32 +90,26 @@ func main() {
 }
 
 func readConfig(name string) (V3Config, error) {
-	f, err := os.Open(filepath.Join(*path, name, "config.json"))
-	if err != nil {
-		return V3Config{}, err
-	}
-
 	// Verify the opened file is within the intended directory
 	absPath, err := filepath.Abs(*path)
 	if err != nil {
 		return V3Config{}, err
 	}
-	absFile, err := filepath.Abs(filepath.Join(*path, name, "config.json"))
+	absFile, err := filepath.Abs(filepath.Join(*path, name, "config.go"))
 	if err != nil {
 		return V3Config{}, err
 	}
 	if !strings.HasPrefix(absFile, absPath) {
 		return V3Config{}, fmt.Errorf("invalid path: %s", name)
 	}
-	defer f.Close()
 
-	var configJson ConfigJson
-	if err := json.NewDecoder(f).Decode(&configJson); err != nil {
+	fset := token.NewFileSet()
+	f, err := parser.ParseFile(fset, filepath.Join(*path, name, "config.go"), nil, 0)
+	if err != nil {
 		return V3Config{}, err
 	}
 
 	required := []string{"name"}
-	// Add default configs
 	var properties = map[string]Property{
 		"name": {
 			Type: "string",
@@ -126,14 +123,64 @@ func readConfig(name string) (V3Config, error) {
 			Default: "25",
 		},
 	}
-	for k, v := range configJson {
-		if v.Required {
-			required = append(required, k)
+	for _, decl := range f.Decls {
+		gen, ok := decl.(*ast.GenDecl)
+		if !ok || gen.Tok != token.TYPE {
+			continue
 		}
 
-		properties[k] = Property{
-			Type:    v.DataType,
-			Default: v.DefaultValue,
+		for _, spec := range gen.Specs {
+			ts, ok := spec.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+
+			st, ok := ts.Type.(*ast.StructType)
+			if !ok {
+				continue
+			}
+
+			for _, field := range st.Fields.List {
+				if len(field.Names) == 0 ||
+					len(field.Names[0].Name) == 0 ||
+					unicode.IsLower(rune(field.Names[0].Name[0])) {
+					continue
+				}
+
+				name := ""
+				tagValue := strings.Trim(field.Tag.Value, "`")
+				arr := strings.Split(tagValue, " ")
+				for _, tag := range arr {
+					fields := strings.Split(tag, ":")
+					if len(fields) < 2 {
+						return V3Config{}, fmt.Errorf("invalid tag: %s", tag)
+					}
+
+					switch fields[0] {
+					case "json":
+						name = strings.Trim(fields[1], "\"")
+						typ := field.Type.(*ast.Ident).Name
+						fieldType := ""
+						switch typ {
+						case "string":
+							fieldType = "string"
+						case "int", "int32", "int64":
+							fieldType = "integer"
+						case "uint32", "uint64":
+							fieldType = "unsigned integer"
+						default:
+							return V3Config{}, fmt.Errorf("invalid type: %s", typ)
+						}
+						properties[name] = Property{
+							Type: fieldType,
+						}
+					case "validate":
+						if strings.Contains(fields[1], "required") {
+							required = append(required, name)
+						}
+					}
+				}
+			}
 		}
 	}
 

@@ -32,6 +32,8 @@ compile:
     FROM core+builder-image
     COPY (+sources/*) /src
     COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
+    # We want this target to compile before merging anything
+    COPY (+compile-openapi-configs/v3-connectors-config.yaml) ./openapi/v3/v3-connectors-config.yaml
     WORKDIR /src
     ARG VERSION=latest
     DO --pass-args core+GO_COMPILE --VERSION=$VERSION

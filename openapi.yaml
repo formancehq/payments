@@ -4513,10 +4513,7 @@ components:
       required:
         - name
         - apiKey
-        - webhookUsername
-        - webhookPassword
         - companyID
-        - liveEndpointPrefix
       properties:
         apiKey:
           type: string
@@ -4562,12 +4559,12 @@ components:
       type: object
       required:
         - name
-        - authorizationEndpoint
-        - userCertificate
-        - userCertificateKey
         - username
         - password
         - endpoint
+        - authorizationEndpoint
+        - userCertificate
+        - userCertificateKey
       properties:
         authorizationEndpoint:
           type: string
@@ -4732,8 +4729,8 @@ components:
       type: object
       required:
         - name
-        - webhookPublicKey
         - apiKey
+        - webhookPublicKey
       properties:
         apiKey:
           type: string
