@@ -84,7 +84,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 		}
 
 		var connectorID *models.ConnectorID
-		if req.ConnectorID != nil {
+		if req.ConnectorID != nil && *req.ConnectorID != "" {
 			c, err := models.ConnectorIDFromString(*req.ConnectorID)
 			if err != nil {
 				otel.RecordError(span, err)
