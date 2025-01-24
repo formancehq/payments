@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	enginePlugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/activity"
@@ -35,6 +36,8 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 	case errors.Is(err, plugins.ErrInvalidClientRequest):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 	case errors.Is(err, plugins.ErrCurrencyNotSupported):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
+	case errors.Is(err, enginePlugins.ErrNotFound):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 
 	// Potentially retry
