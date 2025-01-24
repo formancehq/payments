@@ -301,10 +301,13 @@ components:
           type: string
         accountNumber:
           type: string
+          nullable: true
         iban:
           type: string
+          nullable: true
         swiftBicCode:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
