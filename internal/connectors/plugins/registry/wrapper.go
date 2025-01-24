@@ -33,7 +33,7 @@ func (i *impl) Install(ctx context.Context, req models.InstallRequest) (models.I
 
 	resp, err := i.plugin.Install(ctx, req)
 	if err != nil {
-		i.logger.WithField("name", i.plugin.Name()).Error("install failed: %v", err)
+		i.logger.WithField("name", i.plugin.Name()).Errorf("install failed: %w", err)
 		otel.RecordError(span, err)
 		return models.InstallResponse{}, translateError(err)
 	}
