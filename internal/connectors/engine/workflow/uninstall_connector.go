@@ -199,9 +199,7 @@ func (w Workflow) uninstallConnector(
 		return err
 	}
 
-	if err := w.plugins.UnregisterPlugin(uninstallConnector.ConnectorID); err != nil {
-		return err
-	}
+	w.plugins.UnregisterPlugin(uninstallConnector.ConnectorID)
 
 	return nil
 }

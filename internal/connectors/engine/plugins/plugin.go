@@ -27,7 +27,7 @@ var (
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
 	RegisterPlugin(models.ConnectorID, string, models.Config, json.RawMessage, bool) error
-	UnregisterPlugin(models.ConnectorID) error
+	UnregisterPlugin(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
 }
@@ -94,19 +94,17 @@ func (p *plugins) RegisterPlugin(
 	return nil
 }
 
-func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) error {
+func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
 	_, ok := p.plugins[connectorID.String()]
 	if !ok {
 		// Nothing to do``
-		return nil
+		return
 	}
 
 	delete(p.plugins, connectorID.String())
-
-	return nil
 }
 
 func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {

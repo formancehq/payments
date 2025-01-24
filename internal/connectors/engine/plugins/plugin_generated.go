@@ -21,7 +21,6 @@ import (
 type MockPlugins struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginsMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginsMockRecorder is the mock recorder for MockPlugins.
@@ -86,11 +85,9 @@ func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3, arg4 a
 }
 
 // UnregisterPlugin mocks base method.
-func (m *MockPlugins) UnregisterPlugin(arg0 models.ConnectorID) error {
+func (m *MockPlugins) UnregisterPlugin(arg0 models.ConnectorID) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "UnregisterPlugin", arg0)
-	ret0, _ := ret[0].(error)
-	return ret0
+	m.ctrl.Call(m, "UnregisterPlugin", arg0)
 }
 
 // UnregisterPlugin indicates an expected call of UnregisterPlugin.
