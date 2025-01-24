@@ -98,11 +98,8 @@ func (w Workflow) installConnector(
 		nil,
 		[]models.ConnectorTaskTree(installResponse.Workflow),
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		applicationError := &temporal.ApplicationError{}
-		if errors.As(err, &applicationError) {
-			if applicationError.Type() != "ChildWorkflowExecutionAlreadyStartedError" {
-				return err
-			}
+		if temporal.IsWorkflowExecutionAlreadyStartedError(err) {
+			return nil
 		} else {
 			return errors.Wrap(err, "running next workflow")
 		}
