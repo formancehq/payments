@@ -41,6 +41,108 @@ var (
 	}
 )
 
+func defaultPaymentsRefunded() []models.Payment {
+	defaultAccounts := defaultAccounts()
+	return []models.Payment{
+		{
+			ID:                   pID1,
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "test1",
+			CreatedAt:            now.Add(-60 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_TRANSFER,
+			InitialAmount:        big.NewInt(100),
+			Amount:               big.NewInt(100),
+			Asset:                "USD/2",
+			Scheme:               models.PAYMENT_SCHEME_OTHER,
+			SourceAccountID:      &defaultAccounts[0].ID,
+			DestinationAccountID: &defaultAccounts[1].ID,
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					},
+					Reference: "test1",
+					CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+					Amount:    big.NewInt(100),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		},
+		{
+			ID:                   pID1,
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "test1",
+			CreatedAt:            now.Add(-59 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_TRANSFER,
+			InitialAmount:        big.NewInt(100),
+			Amount:               big.NewInt(100),
+			Asset:                "USD/2",
+			Scheme:               models.PAYMENT_SCHEME_OTHER,
+			SourceAccountID:      &defaultAccounts[0].ID,
+			DestinationAccountID: &defaultAccounts[1].ID,
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-59 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUNDED,
+					},
+					Reference: "test1",
+					CreatedAt: now.Add(-59 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+					Amount:    big.NewInt(10),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		},
+		{
+			ID:                   pID1,
+			ConnectorID:          defaultConnector.ID,
+			Reference:            "test1",
+			CreatedAt:            now.Add(-58 * time.Minute).UTC().Time,
+			Type:                 models.PAYMENT_TYPE_TRANSFER,
+			InitialAmount:        big.NewInt(100),
+			Amount:               big.NewInt(100),
+			Asset:                "USD/2",
+			Scheme:               models.PAYMENT_SCHEME_OTHER,
+			SourceAccountID:      &defaultAccounts[0].ID,
+			DestinationAccountID: &defaultAccounts[1].ID,
+			Metadata: map[string]string{
+				"key1": "value1",
+			},
+			Adjustments: []models.PaymentAdjustment{
+				{
+					ID: models.PaymentAdjustmentID{
+						PaymentID: pID1,
+						Reference: "test1",
+						CreatedAt: now.Add(-58 * time.Minute).UTC().Time,
+						Status:    models.PAYMENT_STATUS_REFUNDED,
+					},
+					Reference: "test1",
+					CreatedAt: now.Add(-58 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_REFUNDED,
+					Amount:    big.NewInt(10),
+					Asset:     pointer.For("USD/2"),
+					Raw:       []byte(`{}`),
+				},
+			},
+		},
+	}
+}
+
 func defaultPayments() []models.Payment {
 	defaultAccounts := defaultAccounts()
 	return []models.Payment{
@@ -470,6 +572,22 @@ func TestPaymentsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, big.NewInt(150), actual.Amount)
 	})
+}
+
+func TestPaymentsUpsertRefunded(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPaymentsRefunded())
+
+	actual, err := store.PaymentsGet(ctx, pID1)
+	require.NoError(t, err)
+	// two refunds in the same batch, should be 100 - 10 - 10 = 80
+	require.Equal(t, big.NewInt(80), actual.Amount)
 }
 
 func TestPaymentsUpdateMetadata(t *testing.T) {
