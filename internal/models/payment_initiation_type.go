@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 type PaymentInitiationType int
@@ -37,7 +38,11 @@ func PaymentInitiationTypeFromString(value string) (PaymentInitiationType, error
 	case "UNKNOWN":
 		return PAYMENT_INITIATION_TYPE_UNKNOWN, nil
 	default:
-		return PAYMENT_INITIATION_TYPE_UNKNOWN, errors.New("invalid payment initiation type value")
+		intType, err := strconv.Atoi(value)
+		if err != nil || intType < 0 || intType > 2 {
+			return PAYMENT_INITIATION_TYPE_UNKNOWN, errors.New("invalid payment initiation type value")
+		}
+		return PaymentInitiationType(intType), nil
 	}
 }
 
