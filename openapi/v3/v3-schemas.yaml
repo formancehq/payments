@@ -119,6 +119,7 @@ components:
           type: string
         defaultAsset:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         raw:
