@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/gomega"
 	enums "go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
+	"go.temporal.io/sdk/temporal"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -84,6 +85,19 @@ var _ = Describe("Temporal Schedule Creation", func() {
 		sc.EXPECT().Create(ctx, gomock.Any()).Return(nil, expectedErr)
 		err := act.TemporalScheduleCreate(ctx, createOpts)
 		Expect(err).NotTo(BeNil())
+	})
+
+	It("returns no error when schedule is already running", func(ctx SpecContext) {
+		t.EXPECT().ScheduleClient().Return(sc)
+
+		createOpts := activities.ScheduleCreateOptions{
+			ScheduleID: scheduleID,
+		}
+
+		expectedErr := fmt.Errorf("%w, some error", temporal.ErrScheduleAlreadyRunning)
+		sc.EXPECT().Create(ctx, gomock.Any()).Return(nil, expectedErr)
+		err := act.TemporalScheduleCreate(ctx, createOpts)
+		Expect(err).To(BeNil())
 	})
 
 	It("forwards expected create options to temporal", func(ctx SpecContext) {
