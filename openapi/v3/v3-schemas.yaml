@@ -723,12 +723,15 @@ components:
           $ref: "#/components/schemas/V3PaymentStatusEnum"
         sourceAccountID:
           type: string
+          nullable: true
         destinationAccountID:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
           type: array
+          nullable: true
           items:
             $ref: "#/components/schemas/V3PaymentAdjustment"
 
