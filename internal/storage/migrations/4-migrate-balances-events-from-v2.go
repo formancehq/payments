@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -20,7 +21,7 @@ type v2Balance struct {
 	LastUpdatedAt time.Time        `bun:"last_updated_at"`
 }
 
-func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
+func MigrateBalancesFromV2(ctx context.Context, logger logging.Logger, db bun.IDB) error {
 	exist, err := isTableExisting(ctx, db, "accounts", "balances")
 	if err != nil {
 		return err
@@ -40,9 +41,9 @@ func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
 
 	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]]{
 		Order:    bunpaginate.OrderAsc,
-		PageSize: 100,
+		PageSize: 1000,
 		Options: bunpaginate.PaginatedQueryOptions[any]{
-			PageSize: 100,
+			PageSize: 1000,
 		},
 	}
 	for {
@@ -57,6 +58,8 @@ func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
 		if err != nil {
 			return err
 		}
+
+		logger.WithField("balances", len(cursor.Data)).Info("migrating balances batch...")
 
 		events := make([]v3eventSent, 0, len(cursor.Data))
 		for _, balance := range cursor.Data {
@@ -87,6 +90,8 @@ func MigrateBalancesFromV2(ctx context.Context, db bun.IDB) error {
 				return err
 			}
 		}
+
+		logger.WithField("balances", len(cursor.Data)).Info("finished migrating balances batch")
 
 		if !cursor.HasMore {
 			break

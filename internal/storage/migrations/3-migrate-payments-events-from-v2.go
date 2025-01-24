@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
@@ -32,7 +33,7 @@ type v2PaymentAdjustments struct {
 	Status    models.PaymentStatus `bun:"status"`
 }
 
-func MigratePaymentsAdjustmentsFromV2(ctx context.Context, db bun.IDB) error {
+func MigratePaymentsAdjustmentsFromV2(ctx context.Context, logger logging.Logger, db bun.IDB) error {
 	exist, err := isTableExisting(ctx, db, "payments", "adjustment")
 	if err != nil {
 		return err
@@ -52,9 +53,9 @@ func MigratePaymentsAdjustmentsFromV2(ctx context.Context, db bun.IDB) error {
 
 	q := bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[any]]{
 		Order:    bunpaginate.OrderAsc,
-		PageSize: 100,
+		PageSize: 300,
 		Options: bunpaginate.PaginatedQueryOptions[any]{
-			PageSize: 100,
+			PageSize: 300,
 		},
 	}
 	for {
@@ -69,6 +70,8 @@ func MigratePaymentsAdjustmentsFromV2(ctx context.Context, db bun.IDB) error {
 		if err != nil {
 			return err
 		}
+
+		logger.WithField("adjustments", len(cursor.Data)).Info("migrating adjustments batch...")
 
 		events := make([]v3eventSent, 0, len(cursor.Data))
 		for _, adjustment := range cursor.Data {
@@ -96,6 +99,8 @@ func MigratePaymentsAdjustmentsFromV2(ctx context.Context, db bun.IDB) error {
 				return err
 			}
 		}
+
+		logger.WithField("adjustments", len(cursor.Data)).Info("finished migrating adjustments batch")
 
 		if !cursor.HasMore {
 			break

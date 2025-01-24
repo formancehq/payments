@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/formancehq/go-libs/v2/bun/bunmigrate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"
@@ -32,5 +33,7 @@ func Migrate(cmd *cobra.Command, args []string, db *bun.DB) error {
 		storage.EncryptionKey = cfgEncryptionKey
 	}
 
-	return storage.Migrate(cmd.Context(), db, cfgEncryptionKey)
+	logger := logging.NewDefaultLogger(cmd.OutOrStdout(), true, true, false)
+
+	return storage.Migrate(cmd.Context(), logger, db, cfgEncryptionKey)
 }

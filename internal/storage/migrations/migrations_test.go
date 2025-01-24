@@ -41,7 +41,7 @@ func TestMigrationsWithoutV2(t *testing.T) {
 		db.AddQueryHook(bundebug.NewQueryHook())
 	}
 
-	migrator := GetMigrator(db, "default-encryption-key", []migrations.Option{
+	migrator := GetMigrator(logging.Testing(), db, "default-encryption-key", []migrations.Option{
 		migrations.WithTableName("goose_db_version_v3"),
 	}...)
 	test := testmigrations.NewMigrationTest(t, migrator, db)
@@ -63,7 +63,7 @@ func TestMigrationsWithV2(t *testing.T) {
 	// Add v2 schema and data
 	fillDBTestMigrations(t, db)
 
-	migrator := GetMigrator(db, "default-encryption-key", []migrations.Option{
+	migrator := GetMigrator(logging.Testing(), db, "default-encryption-key", []migrations.Option{
 		migrations.WithTableName("goose_db_version_v3"),
 	}...)
 	test := testmigrations.NewMigrationTest(t, migrator, db)

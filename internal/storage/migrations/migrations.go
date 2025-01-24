@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	_ "embed"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/migrations"
 	"github.com/uptrace/bun"
 )
@@ -21,13 +22,15 @@ var migrateTransferInitiationsFromV2 string
 //go:embed 9-migrate-pools-from-v2.sql
 var migratePoolsFromV2 string
 
-func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
+func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
 			Name: "init schema",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running init schema migration...")
 					_, err := tx.ExecContext(ctx, initSchema)
+					logger.WithField("error", err).Info("finished running init schema migration")
 					return err
 				})
 			},
@@ -36,7 +39,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate connectors from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigrateConnectorsFromV2(ctx, db, encryptionKey)
+					logger.Info("running migrate connectors from v2 migration...")
+					err := MigrateConnectorsFromV2(ctx, logger, db, encryptionKey)
+					logger.WithField("error", err).Info("finished running migrate connectors from v2 migration")
+					return err
 				})
 			},
 		},
@@ -44,7 +50,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate accounts events from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigrateAccountEventsFromV2(ctx, db)
+					logger.Info("running migrate accounts events from v2 migration...")
+					err := MigrateAccountEventsFromV2(ctx, logger, db)
+					logger.WithField("error", err).Info("finished running migrate accounts events from v2 migration")
+					return err
 				})
 			},
 		},
@@ -52,7 +61,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate payments adjustments events from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigratePaymentsAdjustmentsFromV2(ctx, db)
+					logger.Info("running migrate payments adjustments events from v2 migration...")
+					err := MigratePaymentsAdjustmentsFromV2(ctx, logger, db)
+					logger.WithField("error", err).Info("finished running migrate payments adjustments events from v2 migration")
+					return err
 				})
 			},
 		},
@@ -60,7 +72,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate payments events from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigratePaymentsFromV2(ctx, db)
+					logger.Info("running migrate payments events from v2 migration...")
+					err := MigratePaymentsFromV2(ctx, db)
+					logger.WithField("error", err).Info("finished running migrate payments events from v2 migration")
+					return err
 				})
 			},
 		},
@@ -68,7 +83,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate balances events from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigrateBalancesFromV2(ctx, db)
+					logger.Info("running migrate balances events from v2 migration...")
+					err := MigrateBalancesFromV2(ctx, logger, db)
+					logger.WithField("error", err).Info("finished running migrate balances events from v2 migration")
+					return err
 				})
 			},
 		},
@@ -76,7 +94,9 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate bank accounts from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running migrate bank accounts from v2 migration...")
 					_, err := tx.ExecContext(ctx, migrateBankAccountsFromV2)
+					logger.WithField("error", err).Info("finished running migrate bank accounts from v2 migration")
 					return err
 				})
 			},
@@ -85,7 +105,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "fix missing reference for v2 transfer initiations",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return FixMissingReferenceTransferInitiation(ctx, db)
+					logger.Info("running fix missing reference for v2 transfer initiations migration...")
+					err := FixMissingReferenceTransferInitiation(ctx, db)
+					logger.WithField("error", err).Info("finished running fix missing reference for v2 transfer initiations migration")
+					return err
 				})
 			},
 		},
@@ -93,7 +116,9 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate transfer initiations from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running migrate transfer initiations from v2 migration...")
 					_, err := tx.ExecContext(ctx, migrateTransferInitiationsFromV2)
+					logger.WithField("error", err).Info("finished running migrate transfer initiations from v2 migration")
 					return err
 				})
 			},
@@ -102,7 +127,10 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate payment initiation adjustments from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigrateTransferInitiationAdjustmentsFromV2(ctx, db)
+					logger.Info("running migrate payment initiation adjustments from v2 migration...")
+					err := MigrateTransferInitiationAdjustmentsFromV2(ctx, db)
+					logger.WithField("error", err).Info("finished running migrate payment initiation adjustments from v2 migration")
+					return err
 				})
 			},
 		},
@@ -110,7 +138,9 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate pools from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running migrate pools from v2 migration...")
 					_, err := tx.ExecContext(ctx, migratePoolsFromV2)
+					logger.WithField("error", err).Info("finished running migrate pools from v2 migration")
 					return err
 				})
 			},
@@ -119,15 +149,18 @@ func registerMigrations(migrator *migrations.Migrator, encryptionKey string) {
 			Name: "migrate payment initiation reversals from v2",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					return MigrateTransferReversalsFromV2(ctx, db)
+					logger.Info("running migrate payment initiation reversals from v2 migration...")
+					err := MigrateTransferReversalsFromV2(ctx, db)
+					logger.WithField("error", err).Info("finished running migrate payment initiation reversals from v2 migration")
+					return err
 				})
 			},
 		},
 	)
 }
 
-func GetMigrator(db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
+func GetMigrator(logger logging.Logger, db *bun.DB, encryptionKey string, opts ...migrations.Option) *migrations.Migrator {
 	migrator := migrations.NewMigrator(db, opts...)
-	registerMigrations(migrator, encryptionKey)
+	registerMigrations(logger, migrator, encryptionKey)
 	return migrator
 }

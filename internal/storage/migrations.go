@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/migrations"
 	paymentsMigration "github.com/formancehq/payments/internal/storage/migrations"
 	"github.com/uptrace/bun"
@@ -15,7 +16,7 @@ import (
 //nolint:gochecknoglobals // This is a global variable by design.
 var EncryptionKey string
 
-func Migrate(ctx context.Context, db bun.IDB, encryptionKey string) error {
+func Migrate(ctx context.Context, logger logging.Logger, db bun.IDB, encryptionKey string) error {
 	d, ok := db.(*bun.DB)
 	if !ok {
 		return fmt.Errorf("db of type %T was not of expected *bun.DB type", db)
@@ -25,5 +26,5 @@ func Migrate(ctx context.Context, db bun.IDB, encryptionKey string) error {
 		migrations.WithTableName("goose_db_version_v3"),
 	}
 
-	return paymentsMigration.GetMigrator(d, encryptionKey, options...).Up(ctx)
+	return paymentsMigration.GetMigrator(logger, d, encryptionKey, options...).Up(ctx)
 }

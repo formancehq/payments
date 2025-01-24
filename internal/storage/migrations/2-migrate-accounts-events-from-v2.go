@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
 )
@@ -16,7 +17,7 @@ type v2Accounts struct {
 	CreatedAt time.Time        `bun:"created_at,type:timestamp with time zone,notnull"`
 }
 
-func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
+func MigrateAccountEventsFromV2(ctx context.Context, logger logging.Logger, db bun.IDB) error {
 	exist, err := isTableExisting(ctx, db, "accounts", "account")
 	if err != nil {
 		return err
@@ -54,6 +55,8 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 			return err
 		}
 
+		logger.WithField("accounts", len(cursor.Data)).Info("migrating accounts batch...")
+
 		events := make([]v3eventSent, 0, len(cursor.Data))
 		for _, account := range cursor.Data {
 			events = append(events, v3eventSent{
@@ -75,6 +78,8 @@ func MigrateAccountEventsFromV2(ctx context.Context, db bun.IDB) error {
 				return err
 			}
 		}
+
+		logger.WithField("accounts", len(cursor.Data)).Info("finished migrating accounts batch")
 
 		if !cursor.HasMore {
 			break
