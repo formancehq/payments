@@ -20,6 +20,28 @@ func (w Workflow) runInstallConnector(
 	ctx workflow.Context,
 	installConnector InstallConnector,
 ) error {
+	if errInstall := w.installConnector(ctx, installConnector); errInstall != nil {
+		// In that case we don't want the connector to still be present in the
+		// database, so we remove it
+		if err := activities.StorageConnectorsDelete(
+			infiniteRetryContext(ctx),
+			installConnector.ConnectorID,
+		); err != nil {
+			return fmt.Errorf("failed to delete connector: %w", err)
+		}
+
+		w.plugins.UnregisterPlugin(installConnector.ConnectorID)
+
+		return errInstall
+	}
+
+	return nil
+}
+
+func (w Workflow) installConnector(
+	ctx workflow.Context,
+	installConnector InstallConnector,
+) error {
 	// Second step: install the connector via the plugin and get the list of
 	// capabilities and the workflow of polling data
 	installResponse, err := activities.PluginInstallConnector(

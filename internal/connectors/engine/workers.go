@@ -204,9 +204,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
 	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
-	if err := w.plugins.UnregisterPlugin(connectorID); err != nil {
-		return err
-	}
+	w.plugins.UnregisterPlugin(connectorID)
 
 	if err := w.RemoveWorker(connectorID.String()); err != nil {
 		return err
