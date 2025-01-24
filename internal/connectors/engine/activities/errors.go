@@ -28,7 +28,6 @@ func (a Activities) temporalPluginPollingError(ctx context.Context, err error, p
 }
 
 func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isPeriodic bool) error {
-
 	switch {
 	// Do not retry the following errors
 	case errors.Is(err, plugins.ErrNotImplemented):

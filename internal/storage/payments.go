@@ -66,8 +66,11 @@ type paymentAdjustment struct {
 func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) error {
 	paymentsToInsert := make([]payment, 0, len(payments))
 	adjustmentsToInsert := make([]paymentAdjustment, 0)
+	paymentsRefundedSeen := make(map[models.PaymentID]int)
 	paymentsRefunded := make([]payment, 0)
+	paymentsInitialAmountToAdjustSeen := make(map[models.PaymentID]int)
 	paymentsInitialAmountToAdjust := make([]payment, 0)
+	paymentsCapturedSeen := make(map[models.PaymentID]int)
 	paymentsCaptured := make([]payment, 0)
 	for _, p := range payments {
 		paymentsToInsert = append(paymentsToInsert, fromPaymentModels(p))
@@ -76,17 +79,32 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			adjustmentsToInsert = append(adjustmentsToInsert, fromPaymentAdjustmentModels(a))
 			switch a.Status {
 			case models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT:
-				res := fromPaymentModels(p)
-				res.InitialAmount = a.Amount
-				paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
+				if i, ok := paymentsInitialAmountToAdjustSeen[p.ID]; ok {
+					paymentsInitialAmountToAdjust[i].InitialAmount = a.Amount
+				} else {
+					res := fromPaymentModels(p)
+					res.InitialAmount = a.Amount
+					paymentsInitialAmountToAdjust = append(paymentsInitialAmountToAdjust, res)
+					paymentsInitialAmountToAdjustSeen[p.ID] = len(paymentsInitialAmountToAdjust) - 1
+				}
 			case models.PAYMENT_STATUS_REFUNDED:
-				res := fromPaymentModels(p)
-				res.Amount = a.Amount
-				paymentsRefunded = append(paymentsRefunded, res)
+				if i, ok := paymentsRefundedSeen[p.ID]; ok {
+					paymentsRefunded[i].Amount.Add(paymentsRefunded[i].Amount, a.Amount)
+				} else {
+					res := fromPaymentModels(p)
+					res.Amount = a.Amount
+					paymentsRefunded = append(paymentsRefunded, res)
+					paymentsRefundedSeen[p.ID] = len(paymentsRefunded) - 1
+				}
 			case models.PAYMENT_STATUS_CAPTURE, models.PAYMENT_STATUS_REFUND_REVERSED:
-				res := fromPaymentModels(p)
-				res.Amount = a.Amount
-				paymentsCaptured = append(paymentsCaptured, res)
+				if i, ok := paymentsCapturedSeen[p.ID]; ok {
+					paymentsCaptured[i].Amount.Add(paymentsCaptured[i].Amount, a.Amount)
+				} else {
+					res := fromPaymentModels(p)
+					res.Amount = a.Amount
+					paymentsCaptured = append(paymentsCaptured, res)
+					paymentsCapturedSeen[p.ID] = len(paymentsCaptured) - 1
+				}
 			}
 		}
 	}
