@@ -395,7 +395,12 @@ components:
                       type: boolean
 
     V3GetConnectorConfigResponse:
-      $ref: "#/components/schemas/V3ConnectorConfig"
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3ConnectorConfig"
 
     V3ConnectorsCursorResponse:
       type: object
