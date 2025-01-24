@@ -100,6 +100,7 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                   string              `json:"id"`
 		ConnectorID          string              `json:"connectorID"`
+		Provider             string              `json:"provider"`
 		Reference            string              `json:"reference"`
 		CreatedAt            time.Time           `json:"createdAt"`
 		Type                 PaymentType         `json:"type"`
@@ -115,6 +116,7 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 	}{
 		ID:            p.ID.String(),
 		ConnectorID:   p.ConnectorID.String(),
+		Provider:      p.ConnectorID.Provider,
 		Reference:     p.Reference,
 		CreatedAt:     p.CreatedAt,
 		Type:          p.Type,
@@ -144,6 +146,7 @@ func (c *Payment) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                   string              `json:"id"`
 		ConnectorID          string              `json:"connectorID"`
+		Provider             string              `json:"provider"`
 		Reference            string              `json:"reference"`
 		CreatedAt            time.Time           `json:"createdAt"`
 		Type                 PaymentType         `json:"type"`

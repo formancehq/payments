@@ -2586,7 +2586,6 @@ components:
         - name
         - createdAt
         - country
-        - connectorID
       properties:
         id:
           type: string
@@ -3662,7 +3661,12 @@ components:
                     required:
                       type: boolean
     V3GetConnectorConfigResponse:
-      $ref: '#/components/schemas/V3ConnectorConfig'
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3ConnectorConfig'
     V3ConnectorsCursorResponse:
       type: object
       required:

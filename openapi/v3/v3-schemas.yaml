@@ -119,6 +119,7 @@ components:
           type: string
         defaultAsset:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         raw:
@@ -301,10 +302,13 @@ components:
           type: string
         accountNumber:
           type: string
+          nullable: true
         iban:
           type: string
+          nullable: true
         swiftBicCode:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
@@ -395,7 +399,12 @@ components:
                       type: boolean
 
     V3GetConnectorConfigResponse:
-      $ref: "#/components/schemas/V3ConnectorConfig"
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: "#/components/schemas/V3ConnectorConfig"
 
     V3ConnectorsCursorResponse:
       type: object
@@ -684,6 +693,7 @@ components:
       required:
         - id
         - connectorID
+        - provider
         - reference
         - createdAt
         - type
@@ -696,6 +706,8 @@ components:
         id:
           type: string
         connectorID:
+          type: string
+        provider:
           type: string
         reference:
           type: string
@@ -718,12 +730,15 @@ components:
           $ref: "#/components/schemas/V3PaymentStatusEnum"
         sourceAccountID:
           type: string
+          nullable: true
         destinationAccountID:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
           type: array
+          nullable: true
           items:
             $ref: "#/components/schemas/V3PaymentAdjustment"
 
