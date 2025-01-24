@@ -241,6 +241,7 @@ func testTransferInitiationsMigrations() testmigrations.Hook {
 
 			exists, err := db.NewSelect().TableExpr("payment_initiations").
 				Where("id = ?", "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vbmV5Y29ycCIsIlJlZmVyZW5jZSI6IjdkNGU1MjM3LTNjMDktNDUwZS04ODY5LTI2YzA2MGFmMjM3NyJ9LCJSZWZlcmVuY2UiOiJ0ZXN0In0").
+				Where("type = ?", models.PAYMENT_INITIATION_TYPE_PAYOUT).
 				Exists(ctx)
 			require.NoError(t, err)
 			require.True(t, exists)
