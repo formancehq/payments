@@ -1877,7 +1877,6 @@ components:
         - name
         - createdAt
         - country
-        - connectorID
       properties:
         id:
           type: string
