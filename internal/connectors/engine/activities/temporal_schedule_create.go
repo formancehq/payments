@@ -2,6 +2,7 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
@@ -46,6 +47,10 @@ func (a Activities) TemporalScheduleCreate(ctx context.Context, options Schedule
 		SearchAttributes:   options.SearchAttributes,
 	})
 	if err != nil {
+		if errors.Is(err, temporal.ErrScheduleAlreadyRunning) {
+			// No need to do anything if schedule is already running
+			return nil
+		}
 		return err
 	}
 
