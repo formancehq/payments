@@ -298,7 +298,7 @@ func fromBalanceModels(from models.Balance) balance {
 }
 
 func toBalancesModels(from []balance) []models.Balance {
-	var to []models.Balance
+	to := make([]models.Balance, 0, len(from))
 	for _, b := range from {
 		to = append(to, toBalanceModels(b))
 	}
