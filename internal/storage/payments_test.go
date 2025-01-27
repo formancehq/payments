@@ -672,6 +672,70 @@ func TestPaymentsGet(t *testing.T) {
 	})
 }
 
+func TestPaymentsGetMultipleAdjustmentsLastStatus(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	p := models.Payment{
+		ID:                   pID1,
+		ConnectorID:          defaultConnector.ID,
+		Reference:            "test1",
+		CreatedAt:            now.Add(-60 * time.Minute).UTC().Time,
+		Type:                 models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount:        big.NewInt(100),
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Scheme:               models.PAYMENT_SCHEME_OTHER,
+		SourceAccountID:      &defaultAccounts()[0].ID,
+		DestinationAccountID: &defaultAccounts()[1].ID,
+		Metadata: map[string]string{
+			"key1": "value1",
+		},
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_CAPTURE,
+				},
+				Reference: "test1",
+				CreatedAt: now.Add(-55 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_CAPTURE,
+				Amount:    big.NewInt(100),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_AUTHORISATION,
+				},
+				Reference: "test1",
+				CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_AUTHORISATION,
+				Amount:    big.NewInt(100),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+		},
+	}
+
+	upsertPayments(t, ctx, store, []models.Payment{p})
+
+	actual, err := store.PaymentsGet(ctx, p.ID)
+	require.NoError(t, err)
+	require.Len(t, actual.Adjustments, 2)
+	require.Equal(t, models.PAYMENT_STATUS_CAPTURE, actual.Status)
+}
+
 func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 	t.Parallel()
 

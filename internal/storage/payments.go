@@ -236,7 +236,9 @@ func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.P
 
 	status := models.PAYMENT_STATUS_PENDING
 	if len(adjustments) > 0 {
-		status = adjustments[len(adjustments)-1].Status
+		// This list is ordered by created_at DESC, so the first element is the
+		// last adjustment, and we want the last status.
+		status = adjustments[0].Status
 	}
 	res := toPaymentModels(payment, status)
 	res.Adjustments = adjustments
