@@ -58,6 +58,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID           string            `json:"id"`
 		ConnectorID  string            `json:"connectorID"`
+		Provider     string            `json:"provider"`
 		Reference    string            `json:"reference"`
 		CreatedAt    time.Time         `json:"createdAt"`
 		Type         AccountType       `json:"type"`
@@ -68,6 +69,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	}{
 		ID:           a.ID.String(),
 		ConnectorID:  a.ConnectorID.String(),
+		Provider:     a.ConnectorID.Provider,
 		Reference:    a.Reference,
 		CreatedAt:    a.CreatedAt,
 		Type:         a.Type,
