@@ -260,6 +260,25 @@ func TestBalancesUpsert(t *testing.T) {
 		require.Len(t, cursor.Data, 3)
 		require.Equal(t, expectedBalances, cursor.Data)
 	})
+
+	t.Run("no balances available", func(t *testing.T) {
+		accountID := models.AccountID{
+			Reference:   "12324343abc",
+			ConnectorID: defaultConnector.ID,
+		}
+
+		q := NewListBalancesQuery(
+			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
+				AccountID: pointer.For(accountID),
+			}).WithPageSize(15),
+		)
+
+		expectedBalances := []models.Balance{}
+		cursor, err := store.BalancesList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.Equal(t, expectedBalances, cursor.Data)
+	})
 }
 
 func TestBalancesDeleteFromConnectorID(t *testing.T) {
