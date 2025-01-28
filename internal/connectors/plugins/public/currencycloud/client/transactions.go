@@ -12,14 +12,16 @@ import (
 
 //nolint:tagliatelle // allow different styled tags in client
 type Transaction struct {
-	ID        string    `json:"id"`
-	AccountID string    `json:"account_id"`
-	Currency  string    `json:"currency"`
-	Type      string    `json:"type"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Action    string    `json:"action"`
+	ID                string    `json:"id"`
+	AccountID         string    `json:"account_id"`
+	Currency          string    `json:"currency"`
+	Type              string    `json:"type"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
+	Action            string    `json:"action"`
+	RelatedEntityType string    `json:"related_entity_type"`
+	RelatedEntityID   string    `json:"related_entity_id"`
 
 	Amount json.Number `json:"amount"`
 }
