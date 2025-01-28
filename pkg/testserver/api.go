@@ -69,6 +69,14 @@ func ConnectorSchedules(ctx context.Context, srv *Server, ver int, id string, re
 	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
 }
 
+func GetConnectorSchedule(ctx context.Context, srv *Server, ver int, connID string, id string, res any) error {
+	path := "connectors/" + connID + "/schedules/" + id
+	if ver == 2 {
+		path = "connectors/dummypay/" + connID + "/schedules/" + id
+	}
+	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
+}
+
 func CreateAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "accounts"), reqBody, res)
 }
