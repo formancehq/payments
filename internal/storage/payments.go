@@ -329,7 +329,7 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 				select status
 				from payment_adjustments apd
 				where payment_id = payment.id
-				order by created_at desc
+				order by created_at desc, sort_id desc
 				limit 1
 			) apd on true`)
 
