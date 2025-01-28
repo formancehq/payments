@@ -93,6 +93,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 					r.Get("/schedules", schedulesList(backend))
 					r.Route("/schedules/{scheduleID}", func(r chi.Router) {
+						r.Get("/", schedulesGet(backend))
 						r.Get("/instances", workflowsInstancesList(backend))
 					})
 				})
