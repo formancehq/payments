@@ -229,6 +229,49 @@ var _ = Context("Payments API Connectors", func() {
 		})
 	})
 
+	When("fetching a single schedule for a connector", func() {
+		var (
+			connectorRes struct{ Data string }
+			id           uuid.UUID
+			ver          int
+
+			expectedSchedule models.Schedule
+		)
+		JustBeforeEach(func() {
+			ver = 3
+			id = uuid.New()
+
+			connectorConf := newConnectorConfigurationFn()(id)
+			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			Expect(err).To(BeNil())
+
+			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
+
+			listRes := struct {
+				Cursor bunpaginate.Cursor[models.Schedule]
+			}{}
+			err = ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &listRes)
+			Expect(err).To(BeNil())
+			Expect(len(listRes.Cursor.Data) > 0).To(BeTrue())
+			expectedSchedule = listRes.Cursor.Data[0]
+		})
+
+		It("should be ok with v3", func(ctx SpecContext) {
+			res := struct {
+				Data models.Schedule
+			}{}
+			err := GetConnectorSchedule(ctx, app.GetValue(), ver, connectorRes.Data, expectedSchedule.ID, &res)
+			Expect(err).To(BeNil())
+			schedule := res.Data
+			Expect(schedule).NotTo(BeNil())
+			Expect(schedule.ConnectorID.String()).To(Equal(connectorRes.Data))
+			Expect(schedule.ConnectorID.Provider).To(Equal("dummypay"))
+			Expect(schedule.ID).To(Equal(expectedSchedule.ID))
+			Expect(schedule.CreatedAt).To(Equal(expectedSchedule.CreatedAt))
+		})
+	})
+
 	When("searching for schedules for a connector", func() {
 		var (
 			connectorRes  struct{ Data string }
