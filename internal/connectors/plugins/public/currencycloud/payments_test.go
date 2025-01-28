@@ -385,3 +385,56 @@ func comparePSPPayments(t *testing.T, a, b models.PSPPayment) {
 		require.Equal(t, v, b.Metadata[k])
 	}
 }
+
+func TestMatchTransactionType(t *testing.T) {
+	tests := []struct {
+		entityType          string
+		transactionType     string
+		expectedPaymentType models.PaymentType
+	}{
+		{
+			entityType:          "inbound_funds",
+			transactionType:     "credit",
+			expectedPaymentType: models.PAYMENT_TYPE_PAYIN,
+		},
+		{
+			entityType:          "payment",
+			transactionType:     "debit",
+			expectedPaymentType: models.PAYMENT_TYPE_PAYOUT,
+		},
+		{
+			entityType:          "transfer",
+			transactionType:     "debit",
+			expectedPaymentType: models.PAYMENT_TYPE_TRANSFER,
+		},
+		{
+			entityType:          "balance_transfer",
+			transactionType:     "debit",
+			expectedPaymentType: models.PAYMENT_TYPE_TRANSFER,
+		},
+		{
+			entityType:          "unknown",
+			transactionType:     "unknown",
+			expectedPaymentType: models.PAYMENT_TYPE_OTHER,
+		},
+		{
+			entityType:          "unknown",
+			transactionType:     "credit",
+			expectedPaymentType: models.PAYMENT_TYPE_PAYIN,
+		},
+		{
+			entityType:          "unknown",
+			transactionType:     "debit",
+			expectedPaymentType: models.PAYMENT_TYPE_PAYOUT,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.entityType+"-"+test.transactionType, func(t *testing.T) {
+			t.Parallel()
+
+			paymentType := matchTransactionType(test.entityType, test.transactionType)
+			require.Equal(t, test.expectedPaymentType, paymentType)
+		})
+	}
+}
