@@ -99,34 +99,17 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
-		It("should return an error - get contactID error", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(nil, errors.New("test error"))
-
-			resp, err := plg.CreatePayout(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
-		})
-
 		It("should return an error - initiate payout error", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Contact{ID: "1"}, nil)
-
 			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
-				OnBehalfOf:      "1",
 				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:        "EUR",
 				Amount:          "1.00",
 				Reference:       samplePSPPaymentInitiation.Description,
+				Reason:          samplePSPPaymentInitiation.Description,
 				UniqueRequestID: samplePSPPaymentInitiation.Reference,
 			}).Return(nil, errors.New("test error"))
 
@@ -141,9 +124,6 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().GetContactID(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Contact{ID: "1"}, nil)
-
 			trResponse := client.PayoutResponse{
 				ID:            "test1",
 				Amount:        "1.00",
@@ -154,11 +134,11 @@ var _ = Describe("CurrencyCloud Plugin Payouts Creation", func() {
 				CreatedAt:     now,
 			}
 			m.EXPECT().InitiatePayout(gomock.Any(), &client.PayoutRequest{
-				OnBehalfOf:      "1",
 				BeneficiaryID:   samplePSPPaymentInitiation.DestinationAccount.Reference,
 				Currency:        "EUR",
 				Amount:          "1.00",
 				Reference:       samplePSPPaymentInitiation.Description,
+				Reason:          samplePSPPaymentInitiation.Description,
 				UniqueRequestID: samplePSPPaymentInitiation.Reference,
 			}).Return(&trResponse, nil)
 
