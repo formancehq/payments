@@ -37,17 +37,12 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.PSPPayment{}, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
 	}
 
-	contact, err := p.client.GetContactID(ctx, pi.SourceAccount.Reference)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-
 	resp, err := p.client.InitiatePayout(ctx, &client.PayoutRequest{
-		OnBehalfOf:      contact.ID,
 		BeneficiaryID:   pi.DestinationAccount.Reference,
 		Currency:        curr,
 		Amount:          json.Number(amount),
 		Reference:       pi.Description,
+		Reason:          pi.Description,
 		UniqueRequestID: pi.Reference,
 	})
 	if err != nil {

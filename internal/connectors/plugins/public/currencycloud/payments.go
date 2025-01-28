@@ -118,10 +118,14 @@ func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, e
 		return nil, err
 	}
 
-	paymentType := matchTransactionType(transaction.Type)
+	paymentType := matchTransactionType(transaction.RelatedEntityType, transaction.Type)
 
+	reference := transaction.RelatedEntityID
+	if reference == "" {
+		reference = transaction.ID
+	}
 	payment := &models.PSPPayment{
-		Reference: transaction.ID,
+		Reference: reference,
 		CreatedAt: transaction.CreatedAt,
 		Type:      paymentType,
 		Amount:    amount,
@@ -141,13 +145,23 @@ func transactionToPayment(transaction client.Transaction) (*models.PSPPayment, e
 	return payment, nil
 }
 
-func matchTransactionType(transactionType string) models.PaymentType {
-	switch transactionType {
-	case "credit":
+func matchTransactionType(entityType string, transactionType string) models.PaymentType {
+	switch entityType {
+	case "inbound_funds":
 		return models.PAYMENT_TYPE_PAYIN
-	case "debit":
+	case "payment":
 		return models.PAYMENT_TYPE_PAYOUT
+	case "transfer", "balance_transfer":
+		return models.PAYMENT_TYPE_TRANSFER
+	default:
+		switch transactionType {
+		case "credit":
+			return models.PAYMENT_TYPE_PAYIN
+		case "debit":
+			return models.PAYMENT_TYPE_PAYOUT
+		}
 	}
+
 	return models.PAYMENT_TYPE_OTHER
 }
 
