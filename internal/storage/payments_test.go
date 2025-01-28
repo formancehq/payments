@@ -770,6 +770,79 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 	})
 }
 
+func TestPaymentsListSorting(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+
+	p := models.Payment{
+		ID:                   pID1,
+		ConnectorID:          defaultConnector.ID,
+		Reference:            "test1",
+		CreatedAt:            now.Add(-60 * time.Minute).UTC().Time,
+		Type:                 models.PAYMENT_TYPE_TRANSFER,
+		InitialAmount:        big.NewInt(100),
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Scheme:               models.PAYMENT_SCHEME_OTHER,
+		SourceAccountID:      &defaultAccounts()[0].ID,
+		DestinationAccountID: &defaultAccounts()[1].ID,
+		Metadata: map[string]string{
+			"key1": "value1",
+		},
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_PENDING,
+				},
+				Reference: "test1",
+				CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_PENDING,
+				Amount:    big.NewInt(100),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: pID1,
+					Reference: "test1",
+					CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				},
+				Reference: "test1",
+				CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
+				Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				Amount:    big.NewInt(100),
+				Asset:     pointer.For("USD/2"),
+				Raw:       []byte(`{}`),
+			},
+		},
+	}
+
+	upsertPayments(t, ctx, store, []models.Payment{p})
+
+	q := NewListPaymentsQuery(
+		bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+			WithPageSize(1),
+	)
+
+	cursor, err := store.PaymentsList(ctx, q)
+	require.NoError(t, err)
+	require.Len(t, cursor.Data, 1)
+	require.False(t, cursor.HasMore)
+	require.Empty(t, cursor.Previous)
+	require.Empty(t, cursor.Next)
+
+	require.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, cursor.Data[0].Status)
+}
+
 func TestPaymentsList(t *testing.T) {
 	t.Parallel()
 
