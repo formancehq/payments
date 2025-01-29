@@ -13,8 +13,8 @@ import (
 
 type PaymentAccount struct {
 	Account              string `json:"account"`
-	FinancialInstitution string `json:"financialInstitution"`
-	Country              string `json:"country"`
+	FinancialInstitution string `json:"financialInstitution,omitempty"`
+	Country              string `json:"country,omitempty"`
 }
 
 type PaymentRequest struct {
@@ -26,6 +26,7 @@ type PaymentRequest struct {
 	Amount                 Amount          `json:"amount"`
 	ChargeBearer           string          `json:"chargeBearer"`
 	CreditorAccount        *PaymentAccount `json:"creditorAccount"`
+	CreditorName           string          `json:"creditorName"`
 }
 
 type PaymentResponse struct {

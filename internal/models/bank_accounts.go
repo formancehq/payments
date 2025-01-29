@@ -16,6 +16,11 @@ const (
 	BankAccountOwnerCityMetadataKey         = bankAccountOwnerNamespace + "city"
 	BankAccountOwnerRegionMetadataKey       = bankAccountOwnerNamespace + "region"
 	BankAccountOwnerPostalCodeMetadataKey   = bankAccountOwnerNamespace + "postalCode"
+	BankAccountAccountNumberMetadataKey     = bankAccountOwnerNamespace + "accountNumber"
+	BankAccountIBANMetadataKey              = bankAccountOwnerNamespace + "iban"
+	BankAccountSwiftBicCodeMetadataKey      = bankAccountOwnerNamespace + "swiftBicCode"
+	BankAccountCountryMetadataKey           = bankAccountOwnerNamespace + "country"
+	BankAccountNameMetadataKey              = bankAccountOwnerNamespace + "name"
 )
 
 type BankAccount struct {
@@ -57,4 +62,34 @@ func (a *BankAccount) Obfuscate() error {
 	}
 
 	return nil
+}
+
+func FillBankAccountDetailsToAccountMetadata(account *Account, bankAccount *BankAccount) {
+	if account.Metadata == nil {
+		account.Metadata = make(map[string]string)
+	}
+
+	account.Metadata[BankAccountOwnerAddressLine1MetadataKey] = bankAccount.Metadata[BankAccountOwnerAddressLine1MetadataKey]
+	account.Metadata[BankAccountOwnerAddressLine2MetadataKey] = bankAccount.Metadata[BankAccountOwnerAddressLine2MetadataKey]
+	account.Metadata[BankAccountOwnerCityMetadataKey] = bankAccount.Metadata[BankAccountOwnerCityMetadataKey]
+	account.Metadata[BankAccountOwnerRegionMetadataKey] = bankAccount.Metadata[BankAccountOwnerRegionMetadataKey]
+	account.Metadata[BankAccountOwnerPostalCodeMetadataKey] = bankAccount.Metadata[BankAccountOwnerPostalCodeMetadataKey]
+
+	if bankAccount.AccountNumber != nil {
+		account.Metadata[BankAccountAccountNumberMetadataKey] = *bankAccount.AccountNumber
+	}
+
+	if bankAccount.IBAN != nil {
+		account.Metadata[BankAccountIBANMetadataKey] = *bankAccount.IBAN
+	}
+
+	if bankAccount.SwiftBicCode != nil {
+		account.Metadata[BankAccountSwiftBicCodeMetadataKey] = *bankAccount.SwiftBicCode
+	}
+
+	if bankAccount.Country != nil {
+		account.Metadata[BankAccountCountryMetadataKey] = *bankAccount.Country
+	}
+
+	account.Metadata[BankAccountNameMetadataKey] = bankAccount.Name
 }

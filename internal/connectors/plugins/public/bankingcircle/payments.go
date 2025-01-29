@@ -103,22 +103,41 @@ func translatePayment(from client.Payment) (*models.PSPPayment, error) {
 
 	paymentType := matchPaymentType(from.Classification)
 
-	precision, ok := supportedCurrenciesWithDecimal[from.Transfer.Amount.Currency]
+	pCurrency := from.Transfer.Amount.Currency
+	if pCurrency == "" {
+		// If payment is pending, then we need to use the debtor information
+		// to get currency and amount.
+		pCurrency = from.DebtorInformation.DebitAmount.Currency
+	}
+
+	pAmount := from.Transfer.Amount.Amount.String()
+	if pAmount == "" {
+		// If payment is pending, then we need to use the debtor information
+		// to get currency and amount.
+		pAmount = from.DebtorInformation.DebitAmount.Amount.String()
+	}
+
+	precision, ok := supportedCurrenciesWithDecimal[pCurrency]
 	if !ok {
 		return nil, nil
 	}
 
-	amount, err := currency.GetAmountWithPrecisionFromString(from.Transfer.Amount.Amount.String(), precision)
+	amount, err := currency.GetAmountWithPrecisionFromString(pAmount, precision)
 	if err != nil {
 		return nil, err
 	}
 
+	createdAt := from.ProcessedTimestamp
+	if createdAt.IsZero() {
+		createdAt = from.LastChangedTimestamp
+	}
+
 	payment := models.PSPPayment{
 		Reference: from.PaymentID,
-		CreatedAt: from.ProcessedTimestamp,
+		CreatedAt: createdAt,
 		Type:      paymentType,
 		Amount:    amount,
-		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, from.Transfer.Amount.Currency),
+		Asset:     currency.FormatAsset(supportedCurrenciesWithDecimal, pCurrency),
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
 		Status:    matchPaymentStatus(from.Status),
 		Raw:       raw,

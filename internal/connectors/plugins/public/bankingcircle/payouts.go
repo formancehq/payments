@@ -19,6 +19,15 @@ func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
 	}
 
+	if pi.DestinationAccount.Name == nil {
+		return fmt.Errorf("destination account name is required: %w", models.ErrInvalidRequest)
+	}
+
+	if pi.DestinationAccount.Metadata[models.BankAccountAccountNumberMetadataKey] == "" &&
+		pi.DestinationAccount.Metadata[models.BankAccountIBANMetadataKey] == "" {
+		return fmt.Errorf("destination account number or IBAN is required: %w", models.ErrInvalidRequest)
+	}
+
 	return nil
 }
 
@@ -46,13 +55,9 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return nil, fmt.Errorf("no account identifiers provided for source account: %w", models.ErrInvalidRequest)
 	}
 
-	var destinationAccount *client.Account
-	destinationAccount, err = p.client.GetAccount(ctx, pi.DestinationAccount.Reference)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get destination account: %v: %w", err, models.ErrInvalidRequest)
-	}
-	if len(destinationAccount.AccountIdentifiers) == 0 {
-		return nil, fmt.Errorf("no account identifiers provided for destination account: %w", models.ErrInvalidRequest)
+	account := pi.DestinationAccount.Metadata[models.BankAccountAccountNumberMetadataKey]
+	if account == "" {
+		account = pi.DestinationAccount.Metadata[models.BankAccountIBANMetadataKey]
 	}
 
 	resp, err := p.client.InitiateTransferOrPayouts(ctx, &client.PaymentRequest{
@@ -71,10 +76,11 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		},
 		ChargeBearer: "SHA",
 		CreditorAccount: &client.PaymentAccount{
-			Account:              destinationAccount.AccountIdentifiers[0].Account,
-			FinancialInstitution: destinationAccount.AccountIdentifiers[0].FinancialInstitution,
-			Country:              destinationAccount.AccountIdentifiers[0].Country,
+			Account:              account,
+			FinancialInstitution: pi.DestinationAccount.Metadata[models.BankAccountSwiftBicCodeMetadataKey],
+			Country:              pi.DestinationAccount.Metadata[models.BankAccountCountryMetadataKey],
 		},
+		CreditorName: *pi.DestinationAccount.Name,
 	})
 	if err != nil {
 		return nil, err
