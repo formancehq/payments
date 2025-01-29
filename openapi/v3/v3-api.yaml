@@ -17,13 +17,13 @@ paths:
           description: OK
           content:
             application/json:
-              schema: 
+              schema:
                 $ref: '#/components/schemas/V3ConfigInfoResponse'
         default:
           description: Error
           content:
             application/json:
-              schema: 
+              schema:
                 $ref: '#/components/schemas/V3ErrorResponse'
       security:
         - Authorization:
@@ -393,7 +393,7 @@ paths:
       security:
         - Authorization:
             - payments:write
-  
+
   /v3/connectors/{connectorID}/config:
     get:
       tags:
@@ -471,6 +471,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/connectors/{connectorID}/schedules/{scheduleID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a connector schedule by ID
+      operationId: v3GetConnectorSchedule
+      x-speakeasy-name-override: GetConnectorSchedule
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3ScheduleID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ConnectorScheduleResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
       security:
         - Authorization:
             - payments:read
@@ -726,7 +753,7 @@ paths:
       security:
         - Authorization:
             - payments:read
-  
+
   /v3/payment-initiations/{paymentInitiationID}/retry:
     post:
       tags:
@@ -1091,4 +1118,4 @@ paths:
       security:
         - Authorization:
             - payments:read
-  
+

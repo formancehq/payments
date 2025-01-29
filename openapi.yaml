@@ -3419,6 +3419,7 @@ components:
       required:
         - id
         - connectorID
+        - provider
         - reference
         - createdAt
         - type
@@ -3427,6 +3428,8 @@ components:
         id:
           type: string
         connectorID:
+          type: string
+        provider:
           type: string
         reference:
           type: string
