@@ -170,9 +170,13 @@ func (pi *PaymentInitiation) UnmarshalJSON(data []byte) error {
 }
 
 func FromPaymentInitiationToPSPPaymentInitiation(from *PaymentInitiation, sourceAccount, destinationAccount *PSPAccount) PSPPaymentInitiation {
+	createdAt := from.CreatedAt
+	if !from.ScheduledAt.IsZero() {
+		createdAt = from.ScheduledAt // Scheduled at should be the creation time of the payment on the PSP
+	}
 	return PSPPaymentInitiation{
 		Reference:          from.Reference,
-		CreatedAt:          from.ScheduledAt, // Scheduled at should be the creation time of the payment on the PSP
+		CreatedAt:          createdAt,
 		Description:        from.Description,
 		SourceAccount:      sourceAccount,
 		DestinationAccount: destinationAccount,
