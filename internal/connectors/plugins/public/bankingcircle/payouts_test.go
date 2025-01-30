@@ -25,9 +25,10 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 	Context("create payout", func() {
 		var (
-			m                          *client.MockClient
-			samplePSPPaymentInitiation models.PSPPaymentInitiation
-			now                        time.Time
+			m                                         *client.MockClient
+			samplePSPPaymentInitiation                models.PSPPaymentInitiation
+			samplePSPPaymentInitiationMissingMetadata models.PSPPaymentInitiation
+			now                                       time.Time
 		)
 
 		BeforeEach(func() {
@@ -37,6 +38,35 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 			now = time.Now().UTC()
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{
+				Reference:   "test1",
+				CreatedAt:   now.UTC(),
+				Description: "test1",
+				SourceAccount: &models.PSPAccount{
+					Reference:    "acc1",
+					CreatedAt:    now.Add(-time.Duration(50) * time.Minute).UTC(),
+					Name:         pointer.For("acc1"),
+					DefaultAsset: pointer.For("EUR/2"),
+				},
+				DestinationAccount: &models.PSPAccount{
+					Reference:    "acc2",
+					CreatedAt:    now.Add(-time.Duration(49) * time.Minute).UTC(),
+					Name:         pointer.For("acc2"),
+					DefaultAsset: pointer.For("EUR/2"),
+					Metadata: map[string]string{
+						models.BankAccountIBANMetadataKey:          "iban",
+						models.BankAccountAccountNumberMetadataKey: "acc",
+						models.BankAccountSwiftBicCodeMetadataKey:  "bic",
+						models.BankAccountCountryMetadataKey:       "US",
+					},
+				},
+				Amount: big.NewInt(100),
+				Asset:  "EUR/2",
+				Metadata: map[string]string{
+					"foo": "bar",
+				},
+			}
+
+			samplePSPPaymentInitiationMissingMetadata = models.PSPPaymentInitiation{
 				Reference:   "test1",
 				CreatedAt:   now.UTC(),
 				Description: "test1",
@@ -99,6 +129,29 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
+		It("should return an error - validation error - missing metadata", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiationMissingMetadata,
+			}
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("destination account number or IBAN is required: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - validation error - missing name", func(ctx SpecContext) {
+			samplePSPPaymentInitiationMissingMetadata.DestinationAccount.Name = nil
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiationMissingMetadata,
+			}
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("destination account name is required: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
 		It("should return an error - get account error", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
@@ -129,46 +182,6 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
-		It("should return an error - get account 2 error", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Account{
-					AccountIdentifiers: []client.AccountIdentifier{{}},
-				}, nil)
-
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
-				Return(nil, errors.New("test error"))
-
-			resp, err := plg.CreatePayout(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get destination account: test error: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
-		})
-
-		It("should return an error - missing destination account identifiers error", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.SourceAccount.Reference).
-				Return(&client.Account{
-					AccountIdentifiers: []client.AccountIdentifier{{}},
-				}, nil)
-
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
-				Return(&client.Account{
-					AccountIdentifiers: []client.AccountIdentifier{},
-				}, nil)
-
-			resp, err := plg.CreatePayout(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("no account identifiers provided for destination account: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
-		})
-
 		It("should return an error - initiate payout error", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
@@ -179,15 +192,6 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 					AccountIdentifiers: []client.AccountIdentifier{{
 						Account:              "123456789",
 						FinancialInstitution: "test",
-						Country:              "US",
-					}},
-				}, nil)
-
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
-				Return(&client.Account{
-					AccountIdentifiers: []client.AccountIdentifier{{
-						Account:              "987654321",
-						FinancialInstitution: "test 2",
 						Country:              "US",
 					}},
 				}, nil)
@@ -208,10 +212,11 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 				},
 				ChargeBearer: "SHA",
 				CreditorAccount: &client.PaymentAccount{
-					Account:              "987654321",
-					FinancialInstitution: "test 2",
+					Account:              "acc",
+					FinancialInstitution: "bic",
 					Country:              "US",
 				},
+				CreditorName: "acc2",
 			}).Return(nil, errors.New("test error"))
 
 			resp, err := plg.CreatePayout(ctx, req)
@@ -237,15 +242,6 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 					}},
 				}, nil)
 
-			m.EXPECT().GetAccount(gomock.Any(), samplePSPPaymentInitiation.DestinationAccount.Reference).
-				Return(&client.Account{
-					AccountIdentifiers: []client.AccountIdentifier{{
-						Account:              "987654321",
-						FinancialInstitution: "test 2",
-						Country:              "US",
-					}},
-				}, nil)
-
 			m.EXPECT().InitiateTransferOrPayouts(gomock.Any(), &client.PaymentRequest{
 				IdempotencyKey:         samplePSPPaymentInitiation.Reference,
 				RequestedExecutionDate: samplePSPPaymentInitiation.CreatedAt,
@@ -262,10 +258,11 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 				},
 				ChargeBearer: "SHA",
 				CreditorAccount: &client.PaymentAccount{
-					Account:              "987654321",
-					FinancialInstitution: "test 2",
+					Account:              "acc",
+					FinancialInstitution: "bic",
 					Country:              "US",
 				},
+				CreditorName: "acc2",
 			}).Return(&pr, nil)
 
 			paymentResponse := client.Payment{

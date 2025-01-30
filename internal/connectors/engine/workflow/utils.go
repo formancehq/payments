@@ -1,11 +1,14 @@
 package workflow
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
+	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -111,6 +114,7 @@ func (w Workflow) getPSPPI(
 			return models.PSPPaymentInitiation{}, err
 		}
 	}
+
 	var destinationAccount *models.Account
 	if pi.DestinationAccountID != nil {
 		var err error
@@ -121,9 +125,42 @@ func (w Workflow) getPSPPI(
 		if err != nil {
 			return models.PSPPaymentInitiation{}, err
 		}
+
+		if destinationAccount.Type == models.ACCOUNT_TYPE_EXTERNAL {
+			if err := fillFormanceBankAccount(ctx, destinationAccount); err != nil {
+				return models.PSPPaymentInitiation{}, err
+			}
+		}
 	}
 	pspPI := models.FromPaymentInitiationToPSPPaymentInitiation(pi, models.ToPSPAccount(sourceAccount), models.ToPSPAccount(destinationAccount))
 	return pspPI, nil
+}
+
+func fillFormanceBankAccount(
+	ctx workflow.Context,
+	account *models.Account,
+) error {
+	bankAccountUUID, err := uuid.Parse(account.ID.Reference)
+	if err != nil {
+		// Not an uuid, so cannot be a formance bank account
+		return nil
+	}
+
+	bankAccount, err := activities.StorageBankAccountsGet(
+		infiniteRetryContext(ctx),
+		bankAccountUUID,
+		true,
+	)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
+
+	return nil
 }
 
 func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiationAdjustmentStatus {
