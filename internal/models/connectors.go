@@ -28,6 +28,7 @@ func (c *Connector) IdempotencyKey() string {
 func (c Connector) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                   string          `json:"id"`
+		Reference            string          `json:"reference"`
 		Name                 string          `json:"name"`
 		CreatedAt            time.Time       `json:"createdAt"`
 		Provider             string          `json:"provider"`
@@ -35,6 +36,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 		ScheduledForDeletion bool            `json:"scheduledForDeletion"`
 	}{
 		ID:                   c.ID.String(),
+		Reference:            c.ID.Reference.String(),
 		Name:                 c.Name,
 		CreatedAt:            c.CreatedAt,
 		Provider:             c.Provider,
@@ -46,6 +48,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 func (c *Connector) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                   string          `json:"id"`
+		Reference            string          `json:"reference"`
 		Name                 string          `json:"name"`
 		CreatedAt            time.Time       `json:"createdAt"`
 		Provider             string          `json:"provider"`

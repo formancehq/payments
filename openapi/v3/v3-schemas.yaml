@@ -514,6 +514,7 @@ components:
       type: object
       required:
         - id
+        - reference
         - name
         - createdAt
         - provider
@@ -521,6 +522,8 @@ components:
         - config
       properties:
         id:
+          type: string
+        reference:
           type: string
         name:
           type: string

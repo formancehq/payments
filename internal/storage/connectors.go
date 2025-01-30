@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v2/query"
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/stdlib"
@@ -34,6 +35,7 @@ type connector struct {
 
 	// Mandatory fields
 	ID                   models.ConnectorID `bun:"id,pk,type:character varying,notnull"`
+	Reference            uuid.UUID          `bun:"reference,type:uuid,notnull"`
 	Name                 string             `bun:"name,type:text,notnull"`
 	CreatedAt            time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 	Provider             string             `bun:"provider,type:text,notnull"`
@@ -99,6 +101,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 
 	toInsert := connector{
 		ID:                   c.ID,
+		Reference:            c.ID.Reference,
 		Name:                 c.Name,
 		CreatedAt:            time.New(c.CreatedAt),
 		Provider:             c.Provider,
