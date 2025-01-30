@@ -1086,6 +1086,11 @@ paths:
       parameters:
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -1241,6 +1246,11 @@ paths:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -1638,6 +1648,11 @@ paths:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -1665,6 +1680,11 @@ paths:
         - $ref: '#/components/parameters/V3PaymentInitiationID'
         - $ref: '#/components/parameters/V3PageSize'
         - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
