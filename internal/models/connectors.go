@@ -48,6 +48,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 func (c *Connector) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                   string          `json:"id"`
+		Reference            string          `json:"reference"`
 		Name                 string          `json:"name"`
 		CreatedAt            time.Time       `json:"createdAt"`
 		Provider             string          `json:"provider"`
