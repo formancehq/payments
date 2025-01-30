@@ -106,7 +106,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPollingPayment_Success() {
 	})
 	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, options activities.ScheduleCreateOptions) error {
 		s.Contains(options.ScheduleID, "polling-payout")
-		s.Equal(RunPollTransfer, options.Action.Workflow)
+		s.Equal(RunPollPayout, options.Action.Workflow)
 		return nil
 	})
 

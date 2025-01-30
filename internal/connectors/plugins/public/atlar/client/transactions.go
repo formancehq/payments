@@ -16,7 +16,7 @@ func (c *client) GetV1Transactions(ctx context.Context, token string, pageSize i
 	}
 
 	resp, err := c.client.Transactions.GetV1Transactions(&params)
-	return resp, wrapSDKErr(err)
+	return resp, wrapSDKErr(err, nil)
 }
 
 func (c *client) GetV1TransactionsID(ctx context.Context, id string) (*transactions.GetV1TransactionsIDOK, error) {
@@ -27,5 +27,5 @@ func (c *client) GetV1TransactionsID(ctx context.Context, id string) (*transacti
 	}
 
 	resp, err := c.client.Transactions.GetV1TransactionsID(&params)
-	return resp, wrapSDKErr(err)
+	return resp, wrapSDKErr(err, &transactions.GetV1TransactionsIDNotFound{})
 }
