@@ -156,6 +156,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "add connector reference",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add connector reference migration...")
+					err := AddReferenceForConnector(ctx, db)
+					logger.WithField("error", err).Info("finished add connector reference migration")
+					return err
+				})
+			},
+		},
 	)
 }
 

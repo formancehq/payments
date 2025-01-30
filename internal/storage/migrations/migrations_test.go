@@ -77,6 +77,7 @@ func TestMigrationsWithV2(t *testing.T) {
 	test.Append(9, testTransferInitiationsMigrations())
 	test.Append(10, testPoolsMigrations())
 	test.Append(11, testPaymentReversalsMigrations())
+	test.Append(12, testReferenceConnectorMigrations())
 	test.Run()
 }
 
@@ -347,6 +348,34 @@ func testPaymentReversalsMigrations() testmigrations.Hook {
 				Exists(ctx)
 			require.NoError(t, err)
 			require.True(t, exists)
+		},
+	}
+}
+
+func testReferenceConnectorMigrations() testmigrations.Hook {
+	return testmigrations.Hook{
+		After: func(ctx context.Context, t *testing.T, db bun.IDB) {
+			for _, connectorID := range []string{
+				"eyJQcm92aWRlciI6Im1vbmV5Y29ycCIsIlJlZmVyZW5jZSI6IjdkNGU1MjM3LTNjMDktNDUwZS04ODY5LTI2YzA2MGFmMjM3NyJ9",
+				"eyJQcm92aWRlciI6ImFkeWVuIiwiUmVmZXJlbmNlIjoiNGEwNzUyYWUtYWIxYS00NWI4LTgyNzItMjI2ODA3OTE2NTQ0In0",
+				"eyJQcm92aWRlciI6ImF0bGFyIiwiUmVmZXJlbmNlIjoiN2JkZTk4NGUtYzY1OC00MzNiLWE1OGEtZTUxMGMwMTYwMDYwIn0",
+				"eyJQcm92aWRlciI6ImJhbmtpbmdjaXJjbGUiLCJSZWZlcmVuY2UiOiIwODQ4OWFlNC0zOGUxLTQwMTEtYjViMS1mZjkxMTliYWEzNDkifQ",
+				"eyJQcm92aWRlciI6ImN1cnJlbmN5Y2xvdWQiLCJSZWZlcmVuY2UiOiJlNmI4OGFlZS05OTI0LTQ4ZmYtYTZkMS1mYmIwZjJjMjRkYWYifQ",
+				"eyJQcm92aWRlciI6ImdlbmVyaWMiLCJSZWZlcmVuY2UiOiIwYmE0MDNiYi0zYzlmLTQ2OTUtYmQxZC0yYmQ5ZDdiMjgwOTQifQ",
+				"eyJQcm92aWRlciI6Im1hbmdvcGF5IiwiUmVmZXJlbmNlIjoiZTQ0MGIyMzgtM2RkNi00YzhlLTk5MDktZTJjOTgzODA2MTgyIn0",
+				"eyJQcm92aWRlciI6Im1vZHVsciIsIlJlZmVyZW5jZSI6IjYzZTZlNDIyLWQ5MWMtNDQ3YS1hODU0LTE5ODJkYTU1YzljYyJ9",
+				"eyJQcm92aWRlciI6InN0cmlwZSIsIlJlZmVyZW5jZSI6ImIwYzZjNTdhLTM3MDYtNDRmMi1iMDdmLTE3YjNiYTdhZDhkYyJ9",
+				"eyJQcm92aWRlciI6Indpc2UiLCJSZWZlcmVuY2UiOiI4OWJlZDg1MS1kMjIyLTQ2NzItYjEwYy00ZDczZWE2ZGY0NGEifQ",
+			} {
+				id := models.MustConnectorIDFromString(connectorID)
+
+				exists, err := db.NewSelect().TableExpr("connectors").
+					Where("id = ?", connectorID).
+					Where("reference = ?", id.Reference).
+					Exists(ctx)
+				require.NoError(t, err)
+				require.True(t, exists)
+			}
 		},
 	}
 }
