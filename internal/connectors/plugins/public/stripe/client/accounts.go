@@ -40,6 +40,10 @@ func (c *client) GetAccounts(
 
 	itr := c.accountClient.List(&stripe.AccountListParams{ListParams: filters})
 	results = append(results, itr.AccountList().Data...)
+	if len(results) == 0 {
+		return results, timeline, itr.AccountList().ListMeta.HasMore, wrapSDKErr(itr.Err())
+	}
+
 	timeline.LatestID = results[len(results)-1].ID
 	return results, timeline, itr.AccountList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 }

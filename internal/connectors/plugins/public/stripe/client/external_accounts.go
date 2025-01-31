@@ -52,6 +52,9 @@ func (c *client) GetExternalAccounts(
 		return nil, timeline, false, wrapSDKErr(err)
 	}
 	results = append(results, itr.BankAccountList().Data...)
+	if len(results) == 0 {
+		return results, timeline, itr.BankAccountList().ListMeta.HasMore, nil
+	}
 	timeline.LatestID = results[len(results)-1].ID
 	return results, timeline, itr.BankAccountList().ListMeta.HasMore, nil
 }

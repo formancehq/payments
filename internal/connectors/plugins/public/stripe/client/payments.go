@@ -66,6 +66,10 @@ func (c *client) GetPayments(
 
 	itr := c.balanceTransactionClient.List(params)
 	results = append(results, itr.BalanceTransactionList().Data...)
+	if len(results) == 0 {
+		return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, wrapSDKErr(itr.Err())
+	}
+
 	timeline.LatestID = results[len(results)-1].ID
 	return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 }
