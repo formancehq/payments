@@ -18,7 +18,7 @@ func (c *client) GetV1CounterpartiesID(ctx context.Context, counterPartyID strin
 		HTTPClient: c.httpClient,
 	}
 	counterpartyResponse, err := c.client.Counterparties.GetV1CounterpartiesID(&getCounterpartyParams)
-	return counterpartyResponse, wrapSDKErr(err)
+	return counterpartyResponse, wrapSDKErr(err, &counterparties.GetV1CounterpartiesIDNotFound{})
 }
 
 func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
@@ -61,7 +61,7 @@ func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccoun
 	}
 	postCounterpartiesResponse, err := c.client.Counterparties.PostV1Counterparties(&postCounterpartiesParams)
 	if err != nil {
-		return nil, wrapSDKErr(err)
+		return nil, wrapSDKErr(err, &counterparties.PostV1CounterpartiesBadRequest{})
 	}
 
 	if len(postCounterpartiesResponse.Payload.ExternalAccounts) != 1 {

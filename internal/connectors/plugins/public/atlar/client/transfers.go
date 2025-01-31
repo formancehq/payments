@@ -16,7 +16,7 @@ func (c *client) PostV1CreditTransfers(ctx context.Context, req *atlar_models.Cr
 	}
 
 	resp, err := c.client.CreditTransfers.PostV1CreditTransfers(&postCreditTransfersParams)
-	return resp, wrapSDKErr(err)
+	return resp, wrapSDKErr(err, &credit_transfers.PostV1CreditTransfersBadRequest{})
 }
 
 func (c *client) GetV1CreditTransfersGetByExternalIDExternalID(ctx context.Context, externalID string) (*credit_transfers.GetV1CreditTransfersGetByExternalIDExternalIDOK, error) {
@@ -27,5 +27,5 @@ func (c *client) GetV1CreditTransfersGetByExternalIDExternalID(ctx context.Conte
 	}
 
 	resp, err := c.client.CreditTransfers.GetV1CreditTransfersGetByExternalIDExternalID(&getCreditTransferParams)
-	return resp, wrapSDKErr(err)
+	return resp, wrapSDKErr(err, &credit_transfers.GetV1CreditTransfersGetByExternalIDExternalIDNotFound{})
 }

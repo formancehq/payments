@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -66,25 +67,46 @@ func createAtlarClient(baseURL *url.URL, accessKey, secret string) *atlar_client
 	return client
 }
 
+type ErrorCodeReader interface {
+	Code() int
+}
+
 // wrap a public error for cases that we don't want to retry
 // so that activities can classify this error for temporal
-func wrapSDKErr(err error) error {
+func wrapSDKErr(err error, atlarErr any) error {
 	if err == nil {
 		return nil
 	}
 
-	atlarErr, ok := err.(*runtime.APIError)
-	if !ok {
-		return err
+	var code int
+	switch {
+	case atlarErr == nil:
+		var atlarError *runtime.APIError
+		if !errors.As(err, &atlarError) {
+			return err
+		}
+		code = atlarError.Code
+
+	default:
+		if !errors.As(err, &atlarErr) {
+			return err
+		}
+
+		reader, ok := atlarErr.(ErrorCodeReader)
+		if !ok {
+			return err
+		}
+
+		code = reader.Code()
 	}
 
-	if atlarErr.Code == http.StatusTooManyRequests {
+	if code == http.StatusTooManyRequests {
 		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeTooManyRequests)
 	}
 
-	if atlarErr.Code >= http.StatusBadRequest && atlarErr.Code < http.StatusInternalServerError {
+	if code >= http.StatusBadRequest && code < http.StatusInternalServerError {
 		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeClientError)
-	} else if atlarErr.Code >= http.StatusInternalServerError {
+	} else if code >= http.StatusInternalServerError {
 		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeServerError)
 	}
 

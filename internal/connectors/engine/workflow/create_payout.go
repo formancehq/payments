@@ -129,13 +129,13 @@ func (w Workflow) createPayout(
 						Every: config.PollingPeriod,
 					},
 					Action: client.ScheduleWorkflowAction{
-						Workflow: RunPollTransfer,
+						Workflow: RunPollPayout,
 						Args: []interface{}{
-							PollTransfer{
+							PollPayout{
 								TaskID:              createPayout.TaskID,
 								ConnectorID:         createPayout.ConnectorID,
 								PaymentInitiationID: createPayout.PaymentInitiationID,
-								TransferID:          *createPayoutResponse.PollingPayoutID,
+								PayoutID:            *createPayoutResponse.PollingPayoutID,
 								ScheduleID:          scheduleID,
 							},
 						},

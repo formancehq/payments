@@ -15,5 +15,5 @@ func (c *client) GetV1BetaThirdPartiesID(ctx context.Context, id string) (*third
 	}
 
 	resp, err := c.client.ThirdParties.GetV1betaThirdPartiesID(&params)
-	return resp, wrapSDKErr(err)
+	return resp, wrapSDKErr(err, &third_parties.GetV1betaThirdPartiesIDNotFound{})
 }
