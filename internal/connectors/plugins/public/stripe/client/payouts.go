@@ -5,7 +5,6 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/stripe/stripe-go/v79"
-	"github.com/stripe/stripe-go/v79/payout"
 )
 
 type CreatePayoutRequest struct {
@@ -41,7 +40,7 @@ func (c *client) CreatePayout(ctx context.Context, createPayoutRequest *CreatePa
 		params.Description = stripe.String(createPayoutRequest.Description)
 	}
 
-	payoutResponse, err := payout.New(params)
+	payoutResponse, err := c.payoutClient.New(params)
 	if err != nil {
 		return nil, wrapSDKErr(err)
 	}
