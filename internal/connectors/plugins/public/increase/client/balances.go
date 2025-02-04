@@ -2,10 +2,9 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
+	"github.com/increase/increase-go"
 )
 
 type Balance struct {
@@ -13,25 +12,20 @@ type Balance struct {
 	Currency  string `json:"currency"`
 }
 
+func mapBalance(b *increase.Balance) *Balance {
+	return &Balance{
+		Available: b.Available.MinorUnits,
+		Currency:  string(b.Currency),
+	}
+}
+
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "get_account_balance")
 
-	endpoint := fmt.Sprintf("/accounts/%s/balance", accountID)
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	balance, err := c.sdk.Balances.Get(ctx, accountID)
 	if err != nil {
 		return nil, err
 	}
 
-	var response struct {
-		Available int64  `json:"available"`
-		Currency  string `json:"currency"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, err
-	}
-
-	return []*Balance{{
-		Available: response.Available,
-		Currency:  response.Currency,
-	}}, nil
+	return []*Balance{mapBalance(balance)}, nil
 }

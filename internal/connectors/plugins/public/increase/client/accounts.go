@@ -2,11 +2,10 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
+	"github.com/increase/increase-go"
 )
 
 type Account struct {
@@ -18,26 +17,36 @@ type Account struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+func mapAccount(a *increase.Account) *Account {
+	return &Account{
+		ID:        a.ID,
+		Name:      a.Name,
+		Status:    string(a.Status),
+		Type:      string(a.Type),
+		Currency:  string(a.Currency),
+		CreatedAt: a.CreatedAt,
+	}
+}
+
 func (c *client) GetAccounts(ctx context.Context, lastID string, pageSize int64) ([]*Account, string, bool, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_accounts")
 
-	endpoint := fmt.Sprintf("/accounts?limit=%d", pageSize)
+	params := &increase.AccountListParams{
+		Limit: increase.F(int32(pageSize)),
+	}
 	if lastID != "" {
-		endpoint += "&cursor=" + lastID
+		params.Cursor = increase.F(lastID)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	resp, err := c.sdk.Accounts.List(ctx, params)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	var response struct {
-		Data     []*Account `json:"data"`
-		NextPage string     `json:"next_page"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, "", false, err
+	accounts := make([]*Account, len(resp.Data))
+	for i, a := range resp.Data {
+		accounts[i] = mapAccount(a)
 	}
 
-	return response.Data, response.NextPage, response.NextPage != "", nil
+	return accounts, resp.NextCursor, resp.HasMore, nil
 }

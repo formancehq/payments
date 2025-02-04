@@ -1,17 +1,11 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"net/url"
-	"path"
 
 	"github.com/formancehq/go-libs/v2/api"
-	"github.com/formancehq/go-libs/v2/logging"
+	increase "github.com/increase/increase-go"
 )
 
 type Client interface {
@@ -27,59 +21,27 @@ type Client interface {
 	CreateWireTransfer(ctx context.Context, req *CreateWireTransferRequest) (*Transfer, error)
 	CreateCheckTransfer(ctx context.Context, req *CreateCheckTransferRequest) (*Transfer, error)
 	CreateRTPTransfer(ctx context.Context, req *CreateRTPTransferRequest) (*Transfer, error)
+	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest) (*EventSubscription, error)
+	VerifyWebhookSignature(payload []byte, signature string) error
 }
 
 type client struct {
 	httpClient *http.Client
-	baseURL    string
-	apiKey     string
+	sdk        *increase.Client
 }
 
 func NewClient(apiKey string) Client {
+	httpClient := &http.Client{
+		Transport: api.NewTransport("increase", api.TransportOpts{}),
+	}
+
+	sdk := increase.NewClient(
+		apiKey,
+		increase.WithHTTPClient(httpClient),
+	)
+
 	return &client{
-		httpClient: &http.Client{
-			Transport: api.NewTransport("increase", api.TransportOpts{}),
-		},
-		baseURL: "https://api.increase.com",
-		apiKey:  apiKey,
+		httpClient: httpClient,
+		sdk:        sdk,
 	}
-}
-
-func (c *client) newRequest(ctx context.Context, method, endpoint string, body io.Reader) (*http.Request, error) {
-	u, err := url.Parse(c.baseURL)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse base URL: %w", err)
-	}
-	u.Path = path.Join(u.Path, endpoint)
-
-	req, err := http.NewRequestWithContext(ctx, method, u.String(), body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.Header.Set("Authorization", "Bearer "+c.apiKey)
-	req.Header.Set("Content-Type", "application/json")
-
-	return req, nil
-}
-
-func (c *client) do(req *http.Request, v interface{}) error {
-	resp, err := c.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 400 {
-		body, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	if v != nil {
-		if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
-			return fmt.Errorf("failed to decode response: %w", err)
-		}
-	}
-
-	return nil
 }
