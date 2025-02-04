@@ -2,15 +2,12 @@
 
 This connector integrates the Increase payment service provider with the Formance Payments service.
 
-## Installation
+## Configuration
 
-1. Configure the connector with your Increase API key and desired polling period:
-```json
-{
-    "apiKey": "your_api_key",
-    "pollingPeriod": "30s"
-}
-```
+Required configuration parameters:
+- `api_key`: Your Increase API key (required)
+- `webhook_secret`: Secret for verifying webhook signatures (required)
+- `polling_period`: Minimum interval between polling operations (default: 30s)
 
 Note: The minimum polling period is 30 seconds to respect API rate limits.
 
@@ -32,32 +29,52 @@ Note: The minimum polling period is 30 seconds to respect API rate limits.
 - Create and manage external bank accounts
 - Monitor external account status changes
 
-## Webhook Configuration
+## Webhook Integration
 
-Webhooks must be configured in the Increase dashboard. The connector supports the following webhook events:
+Webhooks are automatically configured during connector installation. The connector supports:
 - `account.created`: Account creation and updates
 - `transaction.created`: Payment status updates
 - `transfer.created`: Transfer status updates
 
+### Security
+- All webhooks are verified using HMAC signatures
+- Invalid signatures are rejected
+- Supports Increase's webhook replay protection
+
 ## Error Handling
 
 ### Rate Limits
-- Increase enforces rate limits on API requests
-- The connector implements a minimum 30-second polling interval
+- Maximum 100 requests per minute
+- Minimum 30-second polling interval enforced
 - Webhook processing is not rate-limited
+- Implements exponential backoff for retries
 
 ### Common Errors
-- Invalid API key: Check your configuration
-- Missing payout type: Ensure the `payout_type` metadata key is set
-- Invalid account status: Verify account is active
-- Insufficient funds: Check account balance
+- `InvalidAPIKey`: Check your API key configuration
+- `InvalidWebhookSignature`: Verify webhook secret configuration
+- `AccountNotFound`: Ensure account exists and is accessible
+- `InsufficientFunds`: Verify account balance before transfer
+- `InvalidRoutingNumber`: Check bank account details
+- `TransferLimitExceeded`: Review transfer amount and limits
+- `MissingPayoutType`: Ensure the `payout_type` metadata key is set
 
 ## Known Limitations
 
-1. Reverse transfers and payouts are not supported
-2. Webhook configuration must be done manually in the Increase dashboard
-3. Some operations may require additional account verification with Increase
-4. API rate limits may affect real-time payment processing
+1. API Rate Limits
+   - Maximum 100 requests per minute
+   - Webhook delivery may be delayed during high load
+   - Polling operations respect minimum interval
+
+2. Transfer Limits
+   - ACH: Subject to daily/monthly limits
+   - Wire: Subject to bank-specific limits
+   - RTP: Maximum $100,000 per transfer
+   - Reverse transfers not supported
+
+3. Account Operations
+   - Some operations require additional account verification
+   - International accounts may have additional requirements
+   - Real-time payment processing affected by rate limits
 
 ## API Documentation
 
