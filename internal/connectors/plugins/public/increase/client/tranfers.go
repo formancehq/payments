@@ -7,6 +7,39 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
+type TransferRequest struct {
+	SourceAccountID      string
+	DestinationAccountID string
+	Amount              int64
+	Currency            string
+	Description         string
+}
+
+type TransferResponse struct {
+	ID            string
+	Status        string
+	Amount        int64
+	Currency      string
+	Description   string
+	CreatedAt     string
+}
+
+type PayoutRequest struct {
+	AccountID    string
+	Amount       int64
+	Currency     string
+	Description  string
+}
+
+type PayoutResponse struct {
+	ID           string
+	Status       string
+	Amount       int64
+	Currency     string
+	Description  string
+	CreatedAt    string
+}
+
 func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
