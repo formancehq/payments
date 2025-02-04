@@ -12,23 +12,13 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return nil, err
 	}
 
-	// TODO: Since we are in minor units currency in the PSPPaymentInitiation
-	// object, we sometimes need to put back the amount in float for
-	// the PSP. You can use the next methods to do that.
-	// curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
-	//}
-
-	// amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
-	// if err != nil {
-	//	 return nil, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
-	// }
-
 	resp, err := p.client.InitiatePayout(
 		ctx,
 		&client.PayoutRequest{
-			// TODO: fill payout request
+			AccountID:    pi.SourceAccount.ID,
+			Amount:      pi.Amount.Int64(),
+			Currency:    pi.Asset,
+			Description: pi.Description,
 		},
 	)
 	if err != nil {
@@ -39,6 +29,15 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 }
 
 func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
-	// TODO: translate payout to formance payment object
-	return nil, nil
+	return &models.PSPPayment{
+		ID:             from.ID,
+		CreatedAt:      from.CreatedAt,
+		Reference:      from.ID,
+		Amount:         from.Amount,
+		Type:          models.PaymentTypePayout,
+		Status:        models.PaymentStatusSucceeded,
+		Scheme:        models.PaymentSchemeACH,
+		Asset:         from.Currency,
+		RawData:       from,
+	}, nil
 }
