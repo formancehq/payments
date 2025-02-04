@@ -9,12 +9,8 @@ import (
 )
 
 type Config struct {
-	// TODO: fill Config struct
-	// This is the config a user will pass when installing this connector.
-	// Authentication criteria for connecting to your connector should be provided here. Example:
-	// ClientID string `json:"clientID" validate:"required"`
-	// APIKey   string `json:"apiKey" validate:"required"`
-	// Endpoint string `json:"endpoint" validate:"required"`
+	APIKey      string `json:"apiKey" validate:"required"`
+	Environment string `json:"environment" validate:"required,oneof=sandbox production"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

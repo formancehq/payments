@@ -3,8 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/httpwrapper"
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	"github.com/Increase/increase-go"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -18,31 +17,15 @@ type Client interface {
 }
 
 type client struct {
-	httpClient httpwrapper.Client
-
-	// TODO: fill config parameters
-	// You may need fields here for authentication purpose
+	increaseClient *increase.Client
 }
 
-func New( /* TODO: fill config parameters */ ) *client {
-	config := &httpwrapper.Config{
-		// TODO: you can set an underlying http transport in metrics.TransportOpts for authentication for example
-		Transport: metrics.NewTransport("increase", metrics.TransportOpts{}),
-		// TODO: if the PSP requires special http status code handling, you can override the default handling by setting a
-		// custom HttpErrorCheckerFn like below
-		// HttpErrorCheckerFn: func(statusCode int) error {
-		// 	if statusCode == http.StatusNotFound {
-		// 		return nil
-		// 	} else if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
-		// 		return httpwrapper.ErrStatusCodeClientError
-		// 	} else if statusCode >= http.StatusInternalServerError {
-		// 		return httpwrapper.ErrStatusCodeServerError
-		// 	}
-		// 	return nil
-		// },
+func New(apiKey string, environment string) *client {
+	opts := []increase.Option{increase.WithAPIKey(apiKey)}
+	if environment == "sandbox" {
+		opts = append(opts, increase.WithBaseURL("https://sandbox.increase.com"))
 	}
-
 	return &client{
-		httpClient: httpwrapper.NewClient(config),
+		increaseClient: increase.NewClient(opts...),
 	}
 }

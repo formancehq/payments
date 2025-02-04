@@ -32,8 +32,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	_ = config // TODO: use config to create client and remove this line
-	client := client.New()
+	client := client.New(config.APIKey, config.Environment)
 
 	return &Plugin{
 		name:   name,
