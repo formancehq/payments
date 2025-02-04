@@ -150,6 +150,9 @@ func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID Con
 }
 
 func ToPSPAccount(from *Account) *PSPAccount {
+	if from == nil {
+		return nil
+	}
 	return &PSPAccount{
 		Reference:    from.Reference,
 		CreatedAt:    from.CreatedAt,
