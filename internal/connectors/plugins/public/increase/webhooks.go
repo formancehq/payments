@@ -25,16 +25,13 @@ type webhookTranslateRequest struct {
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	// Support both manual (dashboard) and API-based webhook configuration
 	subscription, err := p.client.CreateEventSubscription(ctx, &client.CreateEventSubscriptionRequest{
 		URL: req.Endpoint,
 	})
 	if err != nil {
-		// If API creation fails, webhooks can still be configured manually in the dashboard
-		return models.CreateWebhooksResponse{}, nil
+		return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
 	}
 
-	// Store subscription ID in plugin state for future reference
 	p.subscriptionID = subscription.ID
 	return models.CreateWebhooksResponse{}, nil
 }
