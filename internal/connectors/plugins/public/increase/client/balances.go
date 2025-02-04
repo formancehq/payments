@@ -3,7 +3,6 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v2/api"
 	"github.com/Increase/increase-go"
 )
 
@@ -20,7 +19,7 @@ func mapBalance(b *increase.Balance) *Balance {
 }
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
-	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "get_account_balance")
+	ctx = context.WithValue(ctx, "metric_operation", "get_account_balance")
 
 	balance, err := c.sdk.Balances.Get(ctx, accountID)
 	if err != nil {

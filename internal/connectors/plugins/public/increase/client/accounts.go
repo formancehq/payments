@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/api"
 	"github.com/Increase/increase-go"
 )
 
@@ -31,7 +30,7 @@ func mapAccount(a *increase.Account) *Account {
 }
 
 func (c *client) GetAccounts(ctx context.Context, lastID string, pageSize int64) ([]*Account, string, bool, error) {
-	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, "metric_operation", "list_accounts")
 
 	params := &increase.AccountListParams{
 		Limit: increase.F(int32(pageSize)),

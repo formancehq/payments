@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/api"
 	"github.com/Increase/increase-go"
 )
 
