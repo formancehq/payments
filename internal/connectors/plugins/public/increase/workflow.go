@@ -104,5 +104,17 @@ func workflow() models.ConnectorTasksTree {
                 },
             },
         },
+        {
+            TaskType:     models.TASK_TRANSFER,
+            Name:         "transfer",
+            Periodically: false,
+            NextTasks:    []models.ConnectorTaskTree{},
+        },
+        {
+            TaskType:     models.TASK_PAYOUT,
+            Name:         "payout",
+            Periodically: false,
+            NextTasks:    []models.ConnectorTaskTree{},
+        },
     }
 }
