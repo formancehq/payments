@@ -9,70 +9,77 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/Increase/increase-go"
 )
 
-type mockClient struct {
+type mockIncrease struct {
 	mock.Mock
 }
 
-func (m *mockClient) GetAccounts(ctx context.Context, lastID string, pageSize int64) ([]*client.Account, string, bool, error) {
-	args := m.Called(ctx, lastID, pageSize)
-	return args.Get(0).([]*client.Account), args.String(1), args.Bool(2), args.Error(3)
+func (m *mockIncrease) Accounts() *increase.AccountService {
+	return &increase.AccountService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) GetAccountBalances(ctx context.Context, accountID string) ([]*client.Balance, error) {
-	args := m.Called(ctx, accountID)
-	return args.Get(0).([]*client.Balance), args.Error(1)
+func (m *mockIncrease) Balances() *increase.BalanceService {
+	return &increase.BalanceService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) GetTransactions(ctx context.Context, lastID string, pageSize int64) ([]*client.Transaction, string, bool, error) {
-	args := m.Called(ctx, lastID, pageSize)
-	return args.Get(0).([]*client.Transaction), args.String(1), args.Bool(2), args.Error(3)
+func (m *mockIncrease) Transactions() *increase.TransactionService {
+	return &increase.TransactionService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) GetPendingTransactions(ctx context.Context, lastID string, pageSize int64) ([]*client.Transaction, string, bool, error) {
-	args := m.Called(ctx, lastID, pageSize)
-	return args.Get(0).([]*client.Transaction), args.String(1), args.Bool(2), args.Error(3)
+func (m *mockIncrease) ExternalAccounts() *increase.ExternalAccountService {
+	return &increase.ExternalAccountService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) GetDeclinedTransactions(ctx context.Context, lastID string, pageSize int64) ([]*client.Transaction, string, bool, error) {
-	args := m.Called(ctx, lastID, pageSize)
-	return args.Get(0).([]*client.Transaction), args.String(1), args.Bool(2), args.Error(3)
+func (m *mockIncrease) AccountTransfers() *increase.AccountTransferService {
+	return &increase.AccountTransferService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) GetExternalAccounts(ctx context.Context, lastID string, pageSize int64) ([]*client.ExternalAccount, string, bool, error) {
-	args := m.Called(ctx, lastID, pageSize)
-	return args.Get(0).([]*client.ExternalAccount), args.String(1), args.Bool(2), args.Error(3)
+func (m *mockIncrease) ACHTransfers() *increase.ACHTransferService {
+	return &increase.ACHTransferService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) CreateExternalAccount(ctx context.Context, req *client.CreateExternalAccountRequest) (*client.ExternalAccount, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.ExternalAccount), args.Error(1)
+func (m *mockIncrease) WireTransfers() *increase.WireTransferService {
+	return &increase.WireTransferService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) CreateTransfer(ctx context.Context, req *client.CreateTransferRequest) (*client.Transfer, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.Transfer), args.Error(1)
+func (m *mockIncrease) CheckTransfers() *increase.CheckTransferService {
+	return &increase.CheckTransferService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) CreateACHTransfer(ctx context.Context, req *client.CreateACHTransferRequest) (*client.Transfer, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.Transfer), args.Error(1)
+func (m *mockIncrease) RealTimePaymentsTransfers() *increase.RealTimePaymentsTransferService {
+	return &increase.RealTimePaymentsTransferService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) CreateWireTransfer(ctx context.Context, req *client.CreateWireTransferRequest) (*client.Transfer, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.Transfer), args.Error(1)
+func (m *mockIncrease) EventSubscriptions() *increase.EventSubscriptionService {
+	return &increase.EventSubscriptionService{
+		Client: &increase.Client{},
+	}
 }
 
-func (m *mockClient) CreateCheckTransfer(ctx context.Context, req *client.CreateCheckTransferRequest) (*client.Transfer, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.Transfer), args.Error(1)
-}
-
-func (m *mockClient) CreateRTPTransfer(ctx context.Context, req *client.CreateRTPTransferRequest) (*client.Transfer, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*client.Transfer), args.Error(1)
+func (m *mockIncrease) Webhooks() *increase.WebhookService {
+	return &increase.WebhookService{
+		Client: &increase.Client{},
+	}
 }
 
 func TestPlugin_Install(t *testing.T) {
@@ -109,11 +116,78 @@ func TestPlugin_Install_InvalidConfig(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestPlugin_DeterminePayoutType(t *testing.T) {
+	tests := []struct {
+		name     string
+		metadata map[string]string
+		want     string
+		wantErr  bool
+	}{
+		{
+			name: "valid ach payout type",
+			metadata: map[string]string{
+				PayoutTypeMetadataKey: PayoutTypeACH,
+			},
+			want:    PayoutTypeACH,
+			wantErr: false,
+		},
+		{
+			name: "valid wire payout type",
+			metadata: map[string]string{
+				PayoutTypeMetadataKey: PayoutTypeWire,
+			},
+			want:    PayoutTypeWire,
+			wantErr: false,
+		},
+		{
+			name: "valid check payout type",
+			metadata: map[string]string{
+				PayoutTypeMetadataKey: PayoutTypeCheck,
+			},
+			want:    PayoutTypeCheck,
+			wantErr: false,
+		},
+		{
+			name: "valid rtp payout type",
+			metadata: map[string]string{
+				PayoutTypeMetadataKey: PayoutTypeRTP,
+			},
+			want:    PayoutTypeRTP,
+			wantErr: false,
+		},
+		{
+			name:     "missing payout type",
+			metadata: map[string]string{},
+			wantErr:  true,
+		},
+		{
+			name: "invalid payout type",
+			metadata: map[string]string{
+				PayoutTypeMetadataKey: "invalid",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			p := NewPlugin()
+			got, err := p.determinePayoutType(tt.metadata)
+			if tt.wantErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func TestPlugin_CreatePayout(t *testing.T) {
 	tests := []struct {
 		name     string
 		metadata map[string]string
-		mockSetup func(*mockClient)
+		mockSetup func(*mockIncrease)
 		wantErr  bool
 	}{
 		{
@@ -122,21 +196,23 @@ func TestPlugin_CreatePayout(t *testing.T) {
 				PayoutTypeMetadataKey: PayoutTypeACH,
 				"business_type":       "business",
 			},
-			mockSetup: func(m *mockClient) {
-				m.On("CreateACHTransfer", mock.Anything, &client.CreateACHTransferRequest{
-					CreateTransferRequest: client.CreateTransferRequest{
-						AccountID:   "acc_123",
-						Amount:      100,
-						Description: "test payout",
-					},
-					StandardEntryClassCode: SECCodeCCD,
-				}).Return(&client.Transfer{
+			mockSetup: func(m *mockIncrease) {
+				m.On("ACHTransfers").Return(&increase.ACHTransferService{
+					Client: &increase.Client{},
+				})
+				m.On("New", mock.Anything, &increase.ACHTransferCreateParams{
+					AccountID:              "acc_123",
+					Amount:                100,
+					Description:           increase.F("test payout"),
+					RequireApproval:       increase.F(false),
+					StandardEntryClassCode: increase.F(string(increase.ACHTransferStandardEntryClassCodeCCD)),
+				}).Return(&increase.ACHTransfer{
 					ID:        "transfer_123",
 					CreatedAt: time.Now(),
-					Status:    "pending",
-					Type:      "ach",
+					Status:    increase.ACHTransferStatusPending,
+					Type:      increase.ACHTransferTypeCreditCCD,
 					Amount:    100,
-					Currency:  "USD",
+					Currency:  increase.CurrencyUSD,
 				}, nil)
 			},
 			wantErr: false,
@@ -146,21 +222,23 @@ func TestPlugin_CreatePayout(t *testing.T) {
 			metadata: map[string]string{
 				PayoutTypeMetadataKey: PayoutTypeWire,
 			},
-			mockSetup: func(m *mockClient) {
-				m.On("CreateWireTransfer", mock.Anything, &client.CreateWireTransferRequest{
-					CreateTransferRequest: client.CreateTransferRequest{
-						AccountID:   "acc_123",
-						Amount:      100,
-						Description: "test payout",
-					},
-					MessageToRecipient: "test payout",
-				}).Return(&client.Transfer{
+			mockSetup: func(m *mockIncrease) {
+				m.On("WireTransfers").Return(&increase.WireTransferService{
+					Client: &increase.Client{},
+				})
+				m.On("New", mock.Anything, &increase.WireTransferCreateParams{
+					AccountID:          "acc_123",
+					Amount:            100,
+					Description:       increase.F("test payout"),
+					RequireApproval:   increase.F(false),
+					MessageToRecipient: increase.F("test payout"),
+				}).Return(&increase.WireTransfer{
 					ID:        "transfer_123",
 					CreatedAt: time.Now(),
-					Status:    "pending",
-					Type:      "wire",
+					Status:    increase.WireTransferStatusPending,
+					Type:      increase.WireTransferTypeWire,
 					Amount:    100,
-					Currency:  "USD",
+					Currency:  increase.CurrencyUSD,
 				}, nil)
 			},
 			wantErr: false,
@@ -171,23 +249,25 @@ func TestPlugin_CreatePayout(t *testing.T) {
 				PayoutTypeMetadataKey: PayoutTypeCheck,
 				"check_memo":          "test memo",
 			},
-			mockSetup: func(m *mockClient) {
-				m.On("CreateCheckTransfer", mock.Anything, &client.CreateCheckTransferRequest{
-					CreateTransferRequest: client.CreateTransferRequest{
-						AccountID:   "acc_123",
-						Amount:      100,
-						Description: "test payout",
+			mockSetup: func(m *mockIncrease) {
+				m.On("CheckTransfers").Return(&increase.CheckTransferService{
+					Client: &increase.Client{},
+				})
+				m.On("New", mock.Anything, &increase.CheckTransferCreateParams{
+					AccountID:          "acc_123",
+					Amount:            100,
+					Description:       increase.F("test payout"),
+					RequireApproval:   increase.F(false),
+					PhysicalCheck: &increase.CheckTransferCreateParamsPhysicalCheck{
+						Memo: increase.F("test memo"),
 					},
-					PhysicalCheck: client.PhysicalCheck{
-						Memo: "test memo",
-					},
-				}).Return(&client.Transfer{
+				}).Return(&increase.CheckTransfer{
 					ID:        "transfer_123",
 					CreatedAt: time.Now(),
-					Status:    "pending",
-					Type:      "check",
+					Status:    increase.CheckTransferStatusPending,
+					Type:      increase.CheckTransferTypeCheck,
 					Amount:    100,
-					Currency:  "USD",
+					Currency:  increase.CurrencyUSD,
 				}, nil)
 			},
 			wantErr: false,
@@ -197,20 +277,22 @@ func TestPlugin_CreatePayout(t *testing.T) {
 			metadata: map[string]string{
 				PayoutTypeMetadataKey: PayoutTypeRTP,
 			},
-			mockSetup: func(m *mockClient) {
-				m.On("CreateRTPTransfer", mock.Anything, &client.CreateRTPTransferRequest{
-					CreateTransferRequest: client.CreateTransferRequest{
-						AccountID:   "acc_123",
-						Amount:      100,
-						Description: "test payout",
-					},
-				}).Return(&client.Transfer{
+			mockSetup: func(m *mockIncrease) {
+				m.On("RealTimePaymentsTransfers").Return(&increase.RealTimePaymentsTransferService{
+					Client: &increase.Client{},
+				})
+				m.On("New", mock.Anything, &increase.RealTimePaymentsTransferCreateParams{
+					AccountID:          "acc_123",
+					Amount:            100,
+					Description:       increase.F("test payout"),
+					RequireApproval:   increase.F(false),
+				}).Return(&increase.RealTimePaymentsTransfer{
 					ID:        "transfer_123",
 					CreatedAt: time.Now(),
-					Status:    "pending",
-					Type:      "rtp",
+					Status:    increase.RealTimePaymentsTransferStatusPending,
+					Type:      increase.RealTimePaymentsTransferTypeRealTimePayments,
 					Amount:    100,
-					Currency:  "USD",
+					Currency:  increase.CurrencyUSD,
 				}, nil)
 			},
 			wantErr: false,
@@ -220,7 +302,7 @@ func TestPlugin_CreatePayout(t *testing.T) {
 			metadata: map[string]string{
 				"foo": "bar",
 			},
-			mockSetup: func(m *mockClient) {},
+			mockSetup: func(m *mockIncrease) {},
 			wantErr:   true,
 		},
 		{
@@ -228,18 +310,18 @@ func TestPlugin_CreatePayout(t *testing.T) {
 			metadata: map[string]string{
 				PayoutTypeMetadataKey: "invalid",
 			},
-			mockSetup: func(m *mockClient) {},
+			mockSetup: func(m *mockIncrease) {},
 			wantErr:   true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := &mockClient{}
+			mockSDK := &mockIncrease{}
 			p := NewPlugin()
-			p.client = mockClient
+			p.client = mockSDK
 
-			tt.mockSetup(mockClient)
+			tt.mockSetup(mockSDK)
 
 			_, err := p.CreatePayout(context.Background(), models.CreatePayoutRequest{
 				PaymentInitiation: models.PSPPaymentInitiation{
@@ -254,53 +336,69 @@ func TestPlugin_CreatePayout(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				assert.NoError(t, err)
-				mockClient.AssertExpectations(t)
+				mockSDK.AssertExpectations(t)
 			}
 		})
 	}
 }
 
 func TestPlugin_FetchNextAccounts(t *testing.T) {
-	mockClient := &mockClient{}
+	mockSDK := &mockIncrease{}
 	p := NewPlugin()
-	p.client = mockClient
+	p.client = mockSDK
 
-	accounts := []*client.Account{
-		{
-			ID:        "acc_123",
-			Name:      "Test Account",
-			Status:    "active",
-			Type:      "checking",
-			Currency:  "USD",
-			CreatedAt: time.Now(),
+	createdAt := time.Now()
+	mockSDK.On("Accounts").Return(&increase.AccountService{
+		Client: &increase.Client{},
+	})
+	mockSDK.On("List", mock.Anything, &increase.AccountListParams{
+		Limit: increase.F(int32(10)),
+	}).Return(&increase.AccountList{
+		Data: []*increase.Account{
+			{
+				ID:        "acc_123",
+				Name:      "Test Account",
+				Status:    increase.AccountStatusActive,
+				Type:      increase.AccountTypeChecking,
+				Currency:  increase.CurrencyUSD,
+				Bank:      increase.AccountBankIncrease,
+				CreatedAt: createdAt,
+			},
 		},
-	}
-
-	mockClient.On("GetAccounts", mock.Anything, "", int64(10)).Return(accounts, "next_cursor", true, nil)
+		NextCursor: "next_cursor",
+		HasMore:    true,
+	}, nil)
 
 	resp, err := p.FetchNextAccounts(context.Background(), models.FetchNextAccountsRequest{
 		PageSize: 10,
 	})
 	assert.NoError(t, err)
 	assert.Len(t, resp.Accounts, 1)
-	assert.Equal(t, accounts[0].ID, resp.Accounts[0].ID)
+	assert.Equal(t, "acc_123", resp.Accounts[0].Reference)
+	assert.Equal(t, "USD", *resp.Accounts[0].DefaultAsset)
+	assert.Equal(t, "Test Account", *resp.Accounts[0].Name)
+	assert.Equal(t, string(increase.AccountStatusActive), resp.Accounts[0].Metadata["status"])
+	assert.Equal(t, string(increase.AccountTypeChecking), resp.Accounts[0].Metadata["type"])
+	assert.Equal(t, string(increase.AccountBankIncrease), resp.Accounts[0].Metadata["bank"])
+	assert.Equal(t, string(increase.CurrencyUSD), resp.Accounts[0].Metadata["currency"])
 	assert.True(t, resp.HasMore)
-	mockClient.AssertExpectations(t)
+	mockSDK.AssertExpectations(t)
 }
 
 func TestPlugin_FetchNextBalances(t *testing.T) {
-	mockClient := &mockClient{}
+	mockSDK := &mockIncrease{}
 	p := NewPlugin()
-	p.client = mockClient
+	p.client = mockSDK
 
-	balances := []*client.Balance{
-		{
-			Available: 1000,
-			Currency:  "USD",
+	mockSDK.On("Balances").Return(&increase.BalanceService{
+		Client: &increase.Client{},
+	})
+	mockSDK.On("Get", mock.Anything, "acc_123").Return(&increase.Balance{
+		Available: increase.Amount{
+			MinorUnits: 1000,
 		},
-	}
-
-	mockClient.On("GetAccountBalances", mock.Anything, "acc_123").Return(balances, nil)
+		Currency: increase.CurrencyUSD,
+	}, nil)
 
 	fromPayload := json.RawMessage(`{"accountID": "acc_123"}`)
 	resp, err := p.FetchNextBalances(context.Background(), models.FetchNextBalancesRequest{
@@ -308,58 +406,66 @@ func TestPlugin_FetchNextBalances(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Len(t, resp.Balances, 1)
-	assert.Equal(t, balances[0].Available, resp.Balances[0].Amount)
-	assert.Equal(t, balances[0].Currency, resp.Balances[0].Currency)
-	mockClient.AssertExpectations(t)
+	assert.Equal(t, int64(1000), resp.Balances[0].Amount)
+	assert.Equal(t, string(increase.CurrencyUSD), resp.Balances[0].Currency)
+	mockSDK.AssertExpectations(t)
 }
 
 func TestPlugin_FetchNextExternalAccounts(t *testing.T) {
-	mockClient := &mockClient{}
+	mockSDK := &mockIncrease{}
 	p := NewPlugin()
-	p.client = mockClient
+	p.client = mockSDK
 
-	externalAccounts := []*client.ExternalAccount{
-		{
-			ID:            "ext_123",
-			Name:          "Test External Account",
-			AccountNumber: "123456789",
-			RoutingNumber: "987654321",
-			Status:        "active",
-			Type:          "checking",
+	mockSDK.On("ExternalAccounts").Return(&increase.ExternalAccountService{
+		Client: &increase.Client{},
+	})
+	mockSDK.On("List", mock.Anything, &increase.ExternalAccountListParams{
+		Limit: increase.F(int32(10)),
+	}).Return(&increase.ExternalAccountList{
+		Data: []*increase.ExternalAccount{
+			{
+				ID:            "ext_123",
+				Name:          "Test External Account",
+				AccountNumber: "123456789",
+				RoutingNumber: "987654321",
+				Status:        increase.ExternalAccountStatusActive,
+				Type:          increase.ExternalAccountTypeChecking,
+			},
 		},
-	}
-
-	mockClient.On("GetExternalAccounts", mock.Anything, "", int64(10)).Return(externalAccounts, "next_cursor", true, nil)
+		NextCursor: "next_cursor",
+		HasMore:    true,
+	}, nil)
 
 	resp, err := p.FetchNextExternalAccounts(context.Background(), models.FetchNextExternalAccountsRequest{
 		PageSize: 10,
 	})
 	assert.NoError(t, err)
 	assert.Len(t, resp.ExternalAccounts, 1)
-	assert.Equal(t, externalAccounts[0].ID, resp.ExternalAccounts[0].ID)
+	assert.Equal(t, "ext_123", resp.ExternalAccounts[0].ID)
 	assert.True(t, resp.HasMore)
-	mockClient.AssertExpectations(t)
+	mockSDK.AssertExpectations(t)
 }
 
 func TestPlugin_CreateBankAccount(t *testing.T) {
-	mockClient := &mockClient{}
+	mockSDK := &mockIncrease{}
 	p := NewPlugin()
-	p.client = mockClient
+	p.client = mockSDK
 
-	bankAccount := &client.ExternalAccount{
+	mockSDK.On("ExternalAccounts").Return(&increase.ExternalAccountService{
+		Client: &increase.Client{},
+	})
+	mockSDK.On("New", mock.Anything, &increase.ExternalAccountCreateParams{
+		Name:          "Test Account",
+		AccountNumber: "123456789",
+		RoutingNumber: "987654321",
+	}).Return(&increase.ExternalAccount{
 		ID:            "ext_123",
 		Name:          "Test Account",
 		AccountNumber: "123456789",
 		RoutingNumber: "987654321",
-		Status:        "active",
-		Type:          "checking",
-	}
-
-	mockClient.On("CreateExternalAccount", mock.Anything, &client.CreateExternalAccountRequest{
-		Name:          "Test Account",
-		AccountNumber: "123456789",
-		RoutingNumber: "987654321",
-	}).Return(bankAccount, nil)
+		Status:        increase.ExternalAccountStatusActive,
+		Type:          increase.ExternalAccountTypeChecking,
+	}, nil)
 
 	resp, err := p.CreateBankAccount(context.Background(), models.CreateBankAccountRequest{
 		BankAccount: models.PSPBankAccount{
@@ -370,46 +476,55 @@ func TestPlugin_CreateBankAccount(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, resp.RelatedAccount)
-	assert.Equal(t, bankAccount.ID, resp.RelatedAccount.ID)
-	mockClient.AssertExpectations(t)
+	assert.Equal(t, "ext_123", resp.RelatedAccount.ID)
+	mockSDK.AssertExpectations(t)
 }
 
 func TestPlugin_TranslateWebhook(t *testing.T) {
+	mockSDK := &mockIncrease{}
+
 	tests := []struct {
 		name      string
 		eventType string
 		data      interface{}
+		signature string
 		validate  func(*testing.T, models.WebhookResponse)
 		wantErr   bool
 	}{
 		{
 			name:      "account created",
 			eventType: webhookTypeAccountCreated,
-			data: &client.Account{
+			data: &increase.Account{
 				ID:        "acc_123",
 				Name:      "Test Account",
-				Status:    "active",
-				Type:      "checking",
-				Currency:  "USD",
+				Status:    increase.AccountStatusActive,
+				Type:      increase.AccountTypeChecking,
+				Currency:  increase.CurrencyUSD,
+				Bank:      increase.AccountBankIncrease,
 				CreatedAt: time.Now(),
 			},
+			signature: "whsig_test_123",
 			validate: func(t *testing.T, resp models.WebhookResponse) {
 				assert.NotNil(t, resp.Account)
-				assert.Equal(t, "acc_123", resp.Account.ID)
-				assert.Equal(t, models.AccountTypeChecking, resp.Account.Type)
-				assert.Equal(t, models.AccountStatusActive, resp.Account.Status)
+				assert.Equal(t, "acc_123", resp.Account.Reference)
+				assert.Equal(t, string(increase.CurrencyUSD), *resp.Account.DefaultAsset)
+				assert.Equal(t, "Test Account", *resp.Account.Name)
+				assert.Equal(t, string(increase.AccountStatusActive), resp.Account.Metadata["status"])
+				assert.Equal(t, string(increase.AccountTypeChecking), resp.Account.Metadata["type"])
+				assert.Equal(t, string(increase.AccountBankIncrease), resp.Account.Metadata["bank"])
+				assert.Equal(t, string(increase.CurrencyUSD), resp.Account.Metadata["currency"])
 			},
 			wantErr: false,
 		},
 		{
 			name:      "transaction created",
 			eventType: webhookTypeTransactionCreated,
-			data: &client.Transaction{
+			data: &increase.Transaction{
 				ID:        "txn_123",
-				Status:    "pending",
-				Type:      "ach",
-				Amount:    100,
-				Currency:  "USD",
+				Status:    increase.TransactionStatusPending,
+				Type:      increase.TransactionTypeACHTransfer,
+				Amount:    increase.Amount{MinorUnits: 100},
+				Currency:  increase.CurrencyUSD,
 				CreatedAt: time.Now(),
 			},
 			validate: func(t *testing.T, resp models.WebhookResponse) {
@@ -418,19 +533,19 @@ func TestPlugin_TranslateWebhook(t *testing.T) {
 				assert.Equal(t, models.PaymentStatusPending, resp.Payment.Status)
 				assert.Equal(t, models.PaymentTypeACH, resp.Payment.Type)
 				assert.Equal(t, int64(100), resp.Payment.Amount)
-				assert.Equal(t, "USD", resp.Payment.Currency)
+				assert.Equal(t, string(increase.CurrencyUSD), resp.Payment.Currency)
 			},
 			wantErr: false,
 		},
 		{
 			name:      "transfer created",
 			eventType: webhookTypeTransferCreated,
-			data: &client.Transfer{
+			data: &increase.WireTransfer{
 				ID:        "transfer_123",
-				Status:    "pending",
-				Type:      "wire",
+				Status:    increase.WireTransferStatusPending,
+				Type:      increase.WireTransferTypeWire,
 				Amount:    200,
-				Currency:  "USD",
+				Currency:  increase.CurrencyUSD,
 				CreatedAt: time.Now(),
 			},
 			validate: func(t *testing.T, resp models.WebhookResponse) {
@@ -439,7 +554,7 @@ func TestPlugin_TranslateWebhook(t *testing.T) {
 				assert.Equal(t, models.PaymentStatusPending, resp.Payment.Status)
 				assert.Equal(t, models.PaymentTypeWire, resp.Payment.Type)
 				assert.Equal(t, int64(200), resp.Payment.Amount)
-				assert.Equal(t, "USD", resp.Payment.Currency)
+				assert.Equal(t, string(increase.CurrencyUSD), resp.Payment.Currency)
 			},
 			wantErr: false,
 		},
@@ -453,33 +568,63 @@ func TestPlugin_TranslateWebhook(t *testing.T) {
 			name:      "unknown event type",
 			eventType: "unknown",
 			data:      struct{}{},
+			signature: "whsig_test_123",
 			validate: func(t *testing.T, resp models.WebhookResponse) {
 				assert.Nil(t, resp.Account)
 				assert.Nil(t, resp.Payment)
 			},
 			wantErr: false,
 		},
+		{
+			name:      "invalid signature",
+			eventType: webhookTypeAccountCreated,
+			data: &increase.Account{
+				ID:        "acc_123",
+				Name:      "Test Account",
+				Status:    increase.AccountStatusActive,
+				Type:      increase.AccountTypeChecking,
+				Currency:  increase.CurrencyUSD,
+				Bank:      increase.AccountBankIncrease,
+				CreatedAt: time.Now(),
+			},
+			signature: "whsig_invalid",
+			validate: func(t *testing.T, resp models.WebhookResponse) {
+				assert.Nil(t, resp.Account)
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			p := NewPlugin()
+			p.client = mockSDK
 
 			data, err := json.Marshal(tt.data)
 			assert.NoError(t, err)
 
-			webhookEvent := client.WebhookEvent{
-				ID:        "evt_123",
-				Type:      tt.eventType,
-				CreatedAt: time.Now(),
-				Data:      data,
+			webhookEvent := increase.WebhookEvent{
+				ID:                  "evt_123",
+				Type:               tt.eventType,
+				CreatedAt:          time.Now(),
+				AssociatedObjectID: "obj_123",
+				Category:           "account.created",
+				Data:              data,
 			}
 			webhookEventBytes, err := json.Marshal(webhookEvent)
 			assert.NoError(t, err)
 
+			mockSDK.On("Webhooks").Return(&increase.WebhookService{
+				Client: &increase.Client{},
+			})
+			if tt.signature != "" {
+			mockSDK.On("ValidateWebhookSignature", webhookEventBytes, tt.signature, mock.Anything).Return(nil)
+			}
+
 			resp, err := p.TranslateWebhook(context.Background(), models.TranslateWebhookRequest{
 				Webhook: models.PSPWebhook{
-					Raw: webhookEventBytes,
+					Raw:     webhookEventBytes,
+					Headers: map[string]string{"Increase-Webhook-Signature": tt.signature},
 				},
 			})
 

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
-	"github.com/increase/increase-go"
+	"github.com/Increase/increase-go"
 )
 
 type Transfer struct {

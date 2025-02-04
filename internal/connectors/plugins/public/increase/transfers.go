@@ -51,10 +51,30 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	}, nil
 }
 
-func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	payoutType, ok := req.PaymentInitiation.Metadata[PayoutTypeMetadataKey]
+func (p *Plugin) determinePayoutType(metadata map[string]string) (string, error) {
+	payoutType, ok := metadata[PayoutTypeMetadataKey]
 	if !ok {
-		return models.CreatePayoutResponse{}, fmt.Errorf("missing payout type in metadata")
+		return "", fmt.Errorf("missing payout type in metadata")
+	}
+
+	switch payoutType {
+	case PayoutTypeACH:
+		return PayoutTypeACH, nil
+	case PayoutTypeWire:
+		return PayoutTypeWire, nil
+	case PayoutTypeCheck:
+		return PayoutTypeCheck, nil
+	case PayoutTypeRTP:
+		return PayoutTypeRTP, nil
+	default:
+		return "", fmt.Errorf("unsupported payout type: %s", payoutType)
+	}
+}
+
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	payoutType, err := p.determinePayoutType(req.PaymentInitiation.Metadata)
+	if err != nil {
+		return models.CreatePayoutResponse{}, fmt.Errorf("failed to determine payout type: %w", err)
 	}
 
 	var (

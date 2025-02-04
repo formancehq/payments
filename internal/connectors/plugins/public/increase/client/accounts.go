@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
-	"github.com/increase/increase-go"
+	"github.com/Increase/increase-go"
 )
 
 type Account struct {
@@ -14,6 +14,7 @@ type Account struct {
 	Status    string    `json:"status"`
 	Type      string    `json:"type"`
 	Currency  string    `json:"currency"`
+	Bank      string    `json:"bank"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
@@ -24,6 +25,7 @@ func mapAccount(a *increase.Account) *Account {
 		Status:    string(a.Status),
 		Type:      string(a.Type),
 		Currency:  string(a.Currency),
+		Bank:      string(a.Bank),
 		CreatedAt: a.CreatedAt,
 	}
 }

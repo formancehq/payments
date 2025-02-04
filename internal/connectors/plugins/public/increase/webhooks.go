@@ -40,6 +40,10 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	if err := p.client.VerifyWebhookSignature(req.Webhook.Raw, req.Webhook.Headers["Increase-Webhook-Signature"]); err != nil {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("invalid webhook signature: %w", err)
+	}
+
 	var webhook client.WebhookEvent
 	if err := json.Unmarshal(req.Webhook.Raw, &webhook); err != nil {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("failed to unmarshal webhook: %w", err)
@@ -60,14 +64,11 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 			return models.TranslateWebhookResponse{}, fmt.Errorf("failed to marshal account: %w", err)
 		}
 
-		response.Account = &models.PSPAccount{
-			ID:        account.ID,
-			CreatedAt: account.CreatedAt,
-			Reference: account.ID,
-			Type:      models.AccountType(account.Type),
-			Status:    models.AccountStatus(account.Status),
-			Raw:       raw,
+		pspAccount, err := p.mapAccount(&account)
+		if err != nil {
+			return models.TranslateWebhookResponse{}, fmt.Errorf("failed to map account: %w", err)
 		}
+		response.Account = pspAccount
 
 	case webhookTypeTransactionCreated:
 		var transaction client.Transaction

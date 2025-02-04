@@ -3,21 +3,61 @@ package increase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/Increase/increase-go"
 )
 
-type accountsState struct {
-	LastID   string          `json:"last_id"`
-	Timeline json.RawMessage `json:"timeline"`
+type pollingState struct {
+	LastID    string    `json:"last_id"`
+	LastFetch time.Time `json:"last_fetch"`
+}
+
+func (p *Plugin) getPollingState(state json.RawMessage) (*pollingState, error) {
+	if len(state) == 0 {
+		return &pollingState{
+			LastFetch: time.Now().UTC(),
+		}, nil
+	}
+
+	var s pollingState
+	if err := json.Unmarshal(state, &s); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal state: %w", err)
+	}
+	return &s, nil
+}
+
+func (p *Plugin) mapAccount(a *increase.Account) (*models.PSPAccount, error) {
+	raw, err := json.Marshal(a)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal account: %w", err)
+	}
+
+	return &models.PSPAccount{
+		Reference:    a.ID,
+		CreatedAt:    a.CreatedAt,
+		Name:         &a.Name,
+		DefaultAsset: pointer.String("USD"),
+		Metadata: map[string]string{
+			"status":   string(a.Status),
+			"type":     string(a.Type),
+			"bank":     string(a.Bank),
+			"currency": string(a.Currency),
+		},
+		Raw: raw,
+	}, nil
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var state accountsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &state); err != nil {
-			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
-		}
+	state, err := p.getPollingState(req.State)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to get polling state: %w", err)
+	}
+
+	if state.LastFetch.Add(p.config.PollingPeriod).After(time.Now().UTC()) {
+		return models.FetchNextAccountsResponse{}, nil
 	}
 
 	accounts, nextCursor, hasMore, err := p.client.GetAccounts(ctx, state.LastID, int64(req.PageSize))
@@ -27,23 +67,16 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	pspAccounts := make([]models.PSPAccount, len(accounts))
 	for i, account := range accounts {
-		raw, err := json.Marshal(account)
+		pspAccount, err := p.mapAccount(account)
 		if err != nil {
-			return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to marshal account: %w", err)
+			return models.FetchNextAccountsResponse{}, err
 		}
-
-		pspAccounts[i] = models.PSPAccount{
-			ID:        account.ID,
-			CreatedAt: account.CreatedAt,
-			Reference: account.ID,
-			Type:      models.AccountType(account.Type),
-			Status:    models.AccountStatus(account.Status),
-			Raw:       raw,
-		}
+		pspAccounts[i] = *pspAccount
 	}
 
-	newState := accountsState{
-		LastID: nextCursor,
+	newState := pollingState{
+		LastID:    nextCursor,
+		LastFetch: time.Now().UTC(),
 	}
 	newStateBytes, err := json.Marshal(newState)
 	if err != nil {

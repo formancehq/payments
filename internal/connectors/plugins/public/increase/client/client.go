@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
-	increase "github.com/increase/increase-go"
+	increase "github.com/Increase/increase-go"
 )
 
 type Client interface {
@@ -32,7 +32,13 @@ type client struct {
 
 func NewClient(apiKey string) Client {
 	httpClient := &http.Client{
-		Transport: api.NewTransport("increase", api.TransportOpts{}),
+		Transport: api.NewTransport("increase", api.TransportOpts{
+			Metrics: true,
+			Tags: map[string]string{
+				"connector": "increase",
+				"version":   "v1",
+			},
+		}),
 	}
 
 	sdk := increase.NewClient(

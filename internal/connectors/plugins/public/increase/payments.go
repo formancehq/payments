@@ -3,21 +3,22 @@ package increase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 )
 
-type paymentsState struct {
-	LastID   string          `json:"last_id"`
-	Timeline json.RawMessage `json:"timeline"`
-}
+// Using pollingState from accounts.go
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	var state paymentsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &state); err != nil {
-			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to unmarshal state: %w", err)
-		}
+	state, err := p.getPollingState(req.State)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to get polling state: %w", err)
+	}
+
+	if state.LastFetch.Add(p.config.PollingPeriod).After(time.Now().UTC()) {
+		return models.FetchNextPaymentsResponse{}, nil
 	}
 
 	// Get succeeded transactions
@@ -67,8 +68,9 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	newState := paymentsState{
-		LastID: nextCursor,
+	newState := pollingState{
+		LastID:    nextCursor,
+		LastFetch: time.Now().UTC(),
 	}
 	newStateBytes, err := json.Marshal(newState)
 	if err != nil {
