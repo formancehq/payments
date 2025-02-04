@@ -14,7 +14,7 @@ require (
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
-	github.com/go-chi/chi/v5 v5.2.0
+	github.com/go-chi/chi/v5 v5.2.1
 	github.com/go-openapi/runtime v0.28.0
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-playground/validator/v10 v10.24.0
