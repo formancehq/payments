@@ -11,8 +11,8 @@ import (
 )
 
 type pollingState struct {
-	LastID    string    `json:"last_id"`
-	LastFetch time.Time `json:"last_fetch"`
+	NextCursor string    `json:"next_cursor"`
+	LastFetch  time.Time `json:"last_fetch"`
 }
 
 func (p *Plugin) getPollingState(state json.RawMessage) (*pollingState, error) {
@@ -60,7 +60,7 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, nil
 	}
 
-	accounts, nextCursor, hasMore, err := p.client.GetAccounts(ctx, state.LastID, int64(req.PageSize))
+	accounts, nextCursor, hasMore, err := p.client.GetAccounts(ctx, state.NextCursor, int64(req.PageSize))
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to get accounts: %w", err)
 	}
@@ -75,8 +75,8 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	newState := pollingState{
-		LastID:    nextCursor,
-		LastFetch: time.Now().UTC(),
+		NextCursor: nextCursor,
+		LastFetch:  time.Now().UTC(),
 	}
 	newStateBytes, err := json.Marshal(newState)
 	if err != nil {
