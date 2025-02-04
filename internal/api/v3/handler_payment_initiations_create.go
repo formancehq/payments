@@ -2,7 +2,6 @@ package v3
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -13,58 +12,24 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
+	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
 
 type PaymentInitiationsCreateRequest struct {
-	Reference   string    `json:"reference"`
-	ScheduledAt time.Time `json:"scheduledAt"`
-	ConnectorID string    `json:"connectorID"`
-	Description string    `json:"description"`
-	Type        string    `json:"type"`
-	Amount      *big.Int  `json:"amount"`
-	Asset       string    `json:"asset"`
+	Reference   string    `json:"reference" validate:"required"`
+	ScheduledAt time.Time `json:"scheduledAt" validate:""`
+	ConnectorID string    `json:"connectorID" validate:"required,connectorID"`
+	Description string    `json:"description" validate:""`
+	Type        string    `json:"type" validate:"required,paymentInitiationType"`
+	Amount      *big.Int  `json:"amount" validate:"required"`
+	Asset       string    `json:"asset" validate:"required"`
 
-	SourceAccountID      *string `json:"sourceAccountID"`
-	DestinationAccountID *string `json:"destinationAccountID"`
+	SourceAccountID      *string `json:"sourceAccountID" validate:"required,accountID"`
+	DestinationAccountID *string `json:"destinationAccountID" validate:"omitempty,accountID"`
 
-	Metadata map[string]string `json:"metadata"`
-}
-
-func (r *PaymentInitiationsCreateRequest) Validate() error {
-	if r.Reference == "" {
-		return errors.New("reference is required")
-	}
-
-	if r.SourceAccountID != nil {
-		_, err := models.AccountIDFromString(*r.SourceAccountID)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.DestinationAccountID != nil {
-		_, err := models.AccountIDFromString(*r.DestinationAccountID)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err := models.PaymentInitiationTypeFromString(r.Type)
-	if err != nil {
-		return err
-	}
-
-	if r.Amount == nil {
-		return errors.New("amount is required")
-	}
-
-	if r.Asset == "" {
-		return errors.New("asset is required")
-	}
-
-	return nil
+	Metadata map[string]string `json:"metadata" validate:""`
 }
 
 type PaymentInitiationsCreateResponse struct {
@@ -72,7 +37,7 @@ type PaymentInitiationsCreateResponse struct {
 	TaskID              string `json:"taskID"`
 }
 
-func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
+func paymentInitiationsCreate(backend backend.Backend, validate *validator.Validate) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsCreate")
 		defer span.End()
@@ -86,7 +51,7 @@ func paymentInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 
 		populateSpanFromPaymentInitiationCreateRequest(span, payload)
 
-		if err := payload.Validate(); err != nil {
+		if err := validate.Struct(payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return

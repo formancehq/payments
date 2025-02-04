@@ -7,7 +7,9 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
@@ -16,6 +18,7 @@ import (
 var _ = Describe("API v3 Payment Initiation Creation", func() {
 	var (
 		handlerFn http.HandlerFunc
+		validate  *validator.Validate
 		connID    models.ConnectorID
 		source    models.AccountID
 		dest      models.AccountID
@@ -23,6 +26,8 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 		destID    string
 	)
 	BeforeEach(func() {
+		validate = validation.NewValidator()
+
 		connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
 		source = models.AccountID{Reference: uuid.New().String(), ConnectorID: connID}
 		dest = models.AccountID{Reference: uuid.New().String(), ConnectorID: connID}
@@ -40,7 +45,7 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = paymentInitiationsCreate(m)
+			handlerFn = paymentInitiationsCreate(m, validate)
 		})
 
 		It("should return a bad request error when body is missing", func(ctx SpecContext) {
