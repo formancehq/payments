@@ -1,8 +1,6 @@
 module github.com/formancehq/payments
 
-go 1.23.2
-
-toolchain go1.23.5
+go 1.21
 
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
