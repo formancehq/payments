@@ -1,10 +1,13 @@
 module github.com/formancehq/payments
 
-go 1.21
+go 1.23
+
+toolchain go1.23.5
 
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
+	github.com/Increase/increase-go v0.180.0
 	github.com/ThreeDotsLabs/watermill v1.4.4
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
@@ -56,7 +59,6 @@ require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/IBM/sarama v1.43.3 // indirect
-	github.com/Increase/increase-go v0.180.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/ThreeDotsLabs/watermill-http/v2 v2.3.1 // indirect
