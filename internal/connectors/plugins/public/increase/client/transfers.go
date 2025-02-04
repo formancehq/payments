@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
 )
 
 type Transfer struct {
@@ -55,7 +55,7 @@ type PhysicalCheck struct {
 }
 
 func (c *client) CreateTransfer(ctx context.Context, req *CreateTransferRequest) (*Transfer, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_transfer")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "create_transfer")
 
 	body := new(bytes.Buffer)
 	if err := json.NewEncoder(body).Encode(req); err != nil {

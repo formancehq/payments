@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
 )
 
 type Account struct {
@@ -19,7 +19,7 @@ type Account struct {
 }
 
 func (c *client) GetAccounts(ctx context.Context, lastID string, pageSize int64) ([]*Account, string, bool, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_accounts")
 
 	endpoint := fmt.Sprintf("/accounts?limit=%d", pageSize)
 	if lastID != "" {

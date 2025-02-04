@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
 )
 
 type Balance struct {
@@ -14,7 +14,7 @@ type Balance struct {
 }
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*Balance, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_account_balance")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "get_account_balance")
 
 	endpoint := fmt.Sprintf("/accounts/%s/balance", accountID)
 	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)

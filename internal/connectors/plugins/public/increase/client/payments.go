@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
 )
 
 type Transaction struct {
@@ -23,7 +23,7 @@ type Transaction struct {
 }
 
 func (c *client) GetTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_transactions")
 
 	endpoint := fmt.Sprintf("/transactions?limit=%d&status=succeeded", pageSize)
 	if lastID != "" {
@@ -47,7 +47,7 @@ func (c *client) GetTransactions(ctx context.Context, lastID string, pageSize in
 }
 
 func (c *client) GetPendingTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_pending_transactions")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_pending_transactions")
 
 	endpoint := fmt.Sprintf("/transactions?limit=%d&status=pending", pageSize)
 	if lastID != "" {
@@ -71,7 +71,7 @@ func (c *client) GetPendingTransactions(ctx context.Context, lastID string, page
 }
 
 func (c *client) GetDeclinedTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_declined_transactions")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_declined_transactions")
 
 	endpoint := fmt.Sprintf("/transactions?limit=%d&status=declined", pageSize)
 	if lastID != "" {

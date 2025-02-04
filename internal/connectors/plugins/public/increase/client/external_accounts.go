@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
 )
 
 type ExternalAccount struct {
@@ -26,7 +26,7 @@ type CreateExternalAccountRequest struct {
 }
 
 func (c *client) GetExternalAccounts(ctx context.Context, lastID string, pageSize int64) ([]*ExternalAccount, string, bool, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_external_accounts")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_external_accounts")
 
 	endpoint := fmt.Sprintf("/external_accounts?limit=%d", pageSize)
 	if lastID != "" {
@@ -50,7 +50,7 @@ func (c *client) GetExternalAccounts(ctx context.Context, lastID string, pageSiz
 }
 
 func (c *client) CreateExternalAccount(ctx context.Context, req *CreateExternalAccountRequest) (*ExternalAccount, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_external_account")
+	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "create_external_account")
 
 	body := new(bytes.Buffer)
 	if err := json.NewEncoder(body).Encode(req); err != nil {

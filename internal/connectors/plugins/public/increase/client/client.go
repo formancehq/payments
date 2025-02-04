@@ -10,9 +10,8 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/pkg/httpwrapper"
-	"github.com/formancehq/payments/pkg/metrics"
+	"github.com/formancehq/go-libs/v2/api"
+	"github.com/formancehq/go-libs/v2/logging"
 )
 
 type Client interface {
@@ -39,7 +38,7 @@ type client struct {
 func NewClient(apiKey string) Client {
 	return &client{
 		httpClient: &http.Client{
-			Transport: metrics.NewTransport("increase", metrics.TransportOpts{}),
+			Transport: api.NewTransport("increase", api.TransportOpts{}),
 		},
 		baseURL: "https://api.increase.com",
 		apiKey:  apiKey,
