@@ -2,7 +2,11 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 	"time"
+
+	"github.com/formancehq/payments/pkg/metrics"
 )
 
 type Transaction struct {

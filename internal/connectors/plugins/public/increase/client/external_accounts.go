@@ -3,8 +3,11 @@ package client
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/pkg/metrics"
 )
 
 type ExternalAccount struct {

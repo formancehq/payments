@@ -2,6 +2,10 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+
+	"github.com/formancehq/payments/pkg/metrics"
 )
 
 type Balance struct {
