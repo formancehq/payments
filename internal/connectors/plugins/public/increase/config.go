@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/validator/v10"
 )
 
 type Config struct {

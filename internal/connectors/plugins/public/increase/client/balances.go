@@ -10,18 +10,22 @@ import (
 func (c *client) GetAccountBalances(ctx context.Context) ([]*Balance, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_account_balances")
 
-	resp, err := c.increaseClient.Accounts.List(ctx, &increase.AccountListParams{})
+	resp, err := c.increaseClient.Accounts.List(ctx, increase.AccountListParams{})
 	if err != nil {
 		return nil, err
 	}
 
 	balances := make([]*Balance, len(resp.Data))
 	for i, acc := range resp.Data {
+		bal, err := c.increaseClient.Accounts.Balance(ctx, string(acc.ID), increase.AccountBalanceParams{})
+		if err != nil {
+			return nil, err
+		}
 		balances[i] = &Balance{
 			AccountID:     string(acc.ID),
 			Currency:      string(acc.Currency),
-			Amount:       acc.Balance,
-			LastUpdatedAt: acc.UpdatedAt.String(),
+			Amount:        bal.AvailableBalance,
+			LastUpdatedAt: acc.CreatedAt.String(),
 		}
 	}
 

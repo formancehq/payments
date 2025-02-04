@@ -7,14 +7,14 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
-func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_payout")
+func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
 	params := increase.ACHTransferNewParams{
-		AccountID:           increase.F(pr.AccountID),
-		Amount:              increase.F(pr.Amount),
-		StatementDescriptor: increase.F(pr.Description),
-		RequireApproval:     increase.F(true),
+		AccountID:           increase.F(tr.SourceAccountID),
+		Amount:              increase.F(tr.Amount),
+		StatementDescriptor: increase.F(tr.Description),
+		AccountNumber:       increase.F(tr.DestinationAccountID),
 	}
 
 	resp, err := c.increaseClient.ACHTransfers.New(ctx, params)
@@ -22,7 +22,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 		return nil, err
 	}
 
-	return &PayoutResponse{
+	return &TransferResponse{
 		ID:          string(resp.ID),
 		Status:      string(resp.Status),
 		Amount:      resp.Amount,

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Increase/increase-go"
+	"github.com/Increase/increase-go/option"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -21,9 +22,11 @@ type client struct {
 }
 
 func New(apiKey string, environment string) *client {
-	opts := []increase.Option{increase.WithAPIKey(apiKey)}
+	opts := []option.RequestOption{
+		option.WithAPIKey(apiKey),
+	}
 	if environment == "sandbox" {
-		opts = append(opts, increase.WithBaseURL("https://sandbox.increase.com"))
+		opts = append(opts, option.WithBaseURL("https://sandbox.increase.com"))
 	}
 	return &client{
 		increaseClient: increase.NewClient(opts...),

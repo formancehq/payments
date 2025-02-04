@@ -15,5 +15,9 @@ func (p *Plugin) validateTransferPayoutRequests(pi models.PSPPaymentInitiation) 
 		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
 	}
 
+	if _, ok := supportedCurrenciesWithDecimal[pi.Asset]; !ok {
+		return fmt.Errorf("currency %s is not supported: %w", pi.Asset, models.ErrInvalidRequest)
+	}
+
 	return nil
 }

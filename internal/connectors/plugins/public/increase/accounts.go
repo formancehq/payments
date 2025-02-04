@@ -39,8 +39,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-        // TODO: transfer PSP object into formance object
-        accounts = append(accounts, models.PSPAccount{})
+		// TODO: transfer PSP object into formance object
+		accounts = append(accounts, models.PSPAccount{})
 
 		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
 		if !needMore || !hasMore {

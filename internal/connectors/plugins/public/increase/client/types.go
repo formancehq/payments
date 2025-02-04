@@ -1,17 +1,13 @@
 package client
 
-import (
-	"github.com/Increase/increase-go"
-)
-
 type Account struct {
-	ID            string
-	Name          string
-	Type          string
-	Status        string
-	Currency      string
-	Balance       int64
-	CreatedAt     string
+	ID        string
+	Name      string
+	Type      string
+	Status    string
+	Currency  string
+	Balance   int64
+	CreatedAt string
 }
 
 type Balance struct {
@@ -32,44 +28,44 @@ type ExternalAccount struct {
 }
 
 type Transaction struct {
-	ID            string
-	Type          string
-	Status        string
-	Amount        int64
-	Currency      string
-	Description   string
-	CreatedAt     string
+	ID          string
+	Type        string
+	Status      string
+	Amount      int64
+	Currency    string
+	Description string
+	CreatedAt   string
 }
 
 type TransferRequest struct {
 	SourceAccountID      string
 	DestinationAccountID string
-	Amount              int64
-	Currency            string
-	Description         string
+	Amount               int64
+	Currency             string
+	Description          string
 }
 
 type TransferResponse struct {
-	ID            string
-	Status        string
-	Amount        int64
-	Currency      string
-	Description   string
-	CreatedAt     string
+	ID          string
+	Status      string
+	Amount      int64
+	Currency    string
+	Description string
+	CreatedAt   string
 }
 
 type PayoutRequest struct {
-	AccountID    string
-	Amount       int64
-	Currency     string
-	Description  string
+	AccountID   string
+	Amount      int64
+	Currency    string
+	Description string
 }
 
 type PayoutResponse struct {
-	ID           string
-	Status       string
-	Amount       int64
-	Currency     string
-	Description  string
-	CreatedAt    string
+	ID          string
+	Status      string
+	Amount      int64
+	Currency    string
+	Description string
+	CreatedAt   string
 }
