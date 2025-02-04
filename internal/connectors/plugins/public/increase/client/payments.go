@@ -2,11 +2,10 @@ package client
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
+	"github.com/increase/increase-go"
 )
 
 type Transaction struct {
@@ -22,74 +21,89 @@ type Transaction struct {
 	Description   string    `json:"description"`
 }
 
+func mapTransaction(t *increase.Transaction) *Transaction {
+	return &Transaction{
+		ID:          t.ID,
+		Amount:      t.Amount,
+		Currency:    string(t.Currency),
+		Type:        string(t.Type),
+		Status:      string(t.Status),
+		CreatedAt:   t.CreatedAt,
+		AccountID:   t.AccountID,
+		RouteID:     t.RouteID,
+		RouteType:   string(t.RouteType),
+		Description: t.Description,
+	}
+}
+
 func (c *client) GetTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_transactions")
 
-	endpoint := fmt.Sprintf("/transactions?limit=%d&status=succeeded", pageSize)
+	params := &increase.TransactionListParams{
+		Limit:  increase.F(int32(pageSize)),
+		Status: increase.F(increase.TransactionListParamsStatusSucceeded),
+	}
 	if lastID != "" {
-		endpoint += "&cursor=" + lastID
+		params.Cursor = increase.F(lastID)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	resp, err := c.sdk.Transactions.List(ctx, params)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	var response struct {
-		Data     []*Transaction `json:"data"`
-		NextPage string         `json:"next_page"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, "", false, err
+	transactions := make([]*Transaction, len(resp.Data))
+	for i, t := range resp.Data {
+		transactions[i] = mapTransaction(t)
 	}
 
-	return response.Data, response.NextPage, response.NextPage != "", nil
+	return transactions, resp.NextCursor, resp.HasMore, nil
 }
 
 func (c *client) GetPendingTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_pending_transactions")
 
-	endpoint := fmt.Sprintf("/transactions?limit=%d&status=pending", pageSize)
+	params := &increase.TransactionListParams{
+		Limit:  increase.F(int32(pageSize)),
+		Status: increase.F(increase.TransactionListParamsStatusPending),
+	}
 	if lastID != "" {
-		endpoint += "&cursor=" + lastID
+		params.Cursor = increase.F(lastID)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	resp, err := c.sdk.Transactions.List(ctx, params)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	var response struct {
-		Data     []*Transaction `json:"data"`
-		NextPage string         `json:"next_page"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, "", false, err
+	transactions := make([]*Transaction, len(resp.Data))
+	for i, t := range resp.Data {
+		transactions[i] = mapTransaction(t)
 	}
 
-	return response.Data, response.NextPage, response.NextPage != "", nil
+	return transactions, resp.NextCursor, resp.HasMore, nil
 }
 
 func (c *client) GetDeclinedTransactions(ctx context.Context, lastID string, pageSize int64) ([]*Transaction, string, bool, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_declined_transactions")
 
-	endpoint := fmt.Sprintf("/transactions?limit=%d&status=declined", pageSize)
+	params := &increase.TransactionListParams{
+		Limit:  increase.F(int32(pageSize)),
+		Status: increase.F(increase.TransactionListParamsStatusDeclined),
+	}
 	if lastID != "" {
-		endpoint += "&cursor=" + lastID
+		params.Cursor = increase.F(lastID)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	resp, err := c.sdk.Transactions.List(ctx, params)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	var response struct {
-		Data     []*Transaction `json:"data"`
-		NextPage string         `json:"next_page"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, "", false, err
+	transactions := make([]*Transaction, len(resp.Data))
+	for i, t := range resp.Data {
+		transactions[i] = mapTransaction(t)
 	}
 
-	return response.Data, response.NextPage, response.NextPage != "", nil
+	return transactions, resp.NextCursor, resp.HasMore, nil
 }

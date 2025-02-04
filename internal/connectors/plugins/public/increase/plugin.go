@@ -10,8 +10,9 @@ import (
 )
 
 type Plugin struct {
-	client client.Client
-	config *Config
+	client         client.Client
+	config         *Config
+	subscriptionID string
 }
 
 func NewPlugin() *Plugin {

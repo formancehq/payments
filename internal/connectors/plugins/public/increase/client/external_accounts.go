@@ -1,13 +1,10 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
+	"github.com/increase/increase-go"
 )
 
 type ExternalAccount struct {
@@ -25,47 +22,53 @@ type CreateExternalAccountRequest struct {
 	RoutingNumber string `json:"routing_number"`
 }
 
+func mapExternalAccount(a *increase.ExternalAccount) *ExternalAccount {
+	return &ExternalAccount{
+		ID:            a.ID,
+		Name:          a.Name,
+		AccountNumber: a.AccountNumber,
+		RoutingNumber: a.RoutingNumber,
+		Status:        string(a.Status),
+		Type:          string(a.Type),
+	}
+}
+
 func (c *client) GetExternalAccounts(ctx context.Context, lastID string, pageSize int64) ([]*ExternalAccount, string, bool, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "list_external_accounts")
 
-	endpoint := fmt.Sprintf("/external_accounts?limit=%d", pageSize)
+	params := &increase.ExternalAccountListParams{
+		Limit: increase.F(int32(pageSize)),
+	}
 	if lastID != "" {
-		endpoint += "&cursor=" + lastID
+		params.Cursor = increase.F(lastID)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodGet, endpoint, nil)
+	resp, err := c.sdk.ExternalAccounts.List(ctx, params)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	var response struct {
-		Data     []*ExternalAccount `json:"data"`
-		NextPage string             `json:"next_page"`
-	}
-	if err := c.do(req, &response); err != nil {
-		return nil, "", false, err
+	accounts := make([]*ExternalAccount, len(resp.Data))
+	for i, a := range resp.Data {
+		accounts[i] = mapExternalAccount(a)
 	}
 
-	return response.Data, response.NextPage, response.NextPage != "", nil
+	return accounts, resp.NextCursor, resp.HasMore, nil
 }
 
 func (c *client) CreateExternalAccount(ctx context.Context, req *CreateExternalAccountRequest) (*ExternalAccount, error) {
 	ctx = context.WithValue(ctx, api.MetricOperationContextKey, "create_external_account")
 
-	body := new(bytes.Buffer)
-	if err := json.NewEncoder(body).Encode(req); err != nil {
-		return nil, fmt.Errorf("failed to encode request: %w", err)
+	params := &increase.ExternalAccountCreateParams{
+		Name:          req.Name,
+		AccountNumber: req.AccountNumber,
+		RoutingNumber: req.RoutingNumber,
 	}
 
-	httpReq, err := c.newRequest(ctx, http.MethodPost, "/external_accounts", body)
+	account, err := c.sdk.ExternalAccounts.New(ctx, params)
 	if err != nil {
 		return nil, err
 	}
 
-	var account ExternalAccount
-	if err := c.do(httpReq, &account); err != nil {
-		return nil, err
-	}
-
-	return &account, nil
+	return mapExternalAccount(account), nil
 }
