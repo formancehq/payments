@@ -3416,6 +3416,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         createdAt:
           type: string
           format: date-time
@@ -3425,6 +3426,8 @@ components:
           $ref: '#/components/schemas/V3AccountTypeEnum'
         defaultAsset:
           type: string
+          pattern: ^[a-zA-Z]{3}\/[0-9]$
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3CreateAccountResponse:
@@ -3449,6 +3452,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         provider:
           type: string
         reference:
@@ -3564,6 +3568,7 @@ components:
       properties:
         connectorID:
           type: string
+          format: byte
     V3ForwardBankAccountResponse:
       type: object
       required:
@@ -3854,6 +3859,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         createdAt:
           type: string
           format: date-time
@@ -3871,6 +3877,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         scheduleID:
           type: string
         createdAt:
@@ -3902,6 +3909,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         createdAt:
           type: string
           format: date-time
@@ -3915,12 +3923,15 @@ components:
           format: bigint
         asset:
           type: string
+          pattern: ^[a-zA-Z]{3}\/[0-9]$
         scheme:
           type: string
         sourceAccountID:
           type: string
+          format: byte
         destinationAccountID:
           type: string
+          format: byte
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         adjustments:
@@ -3946,6 +3957,7 @@ components:
           format: bigint
         asset:
           type: string
+          pattern: ^[a-zA-Z]{3}\/[0-9]$
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3CreatePaymentResponse:
@@ -4018,6 +4030,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         provider:
           type: string
         reference:
@@ -4041,9 +4054,11 @@ components:
           $ref: '#/components/schemas/V3PaymentStatusEnum'
         sourceAccountID:
           type: string
+          format: byte
           nullable: true
         destinationAccountID:
           type: string
+          format: byte
           nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
@@ -4120,13 +4135,17 @@ components:
       properties:
         reference:
           type: string
+          minLength: 3
+          maxLength: 1000
         scheduledAt:
           type: string
           format: date-time
         connectorID:
           type: string
+          format: byte
         description:
           type: string
+          maxLength: 10000
         type:
           $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
         amount:
@@ -4134,10 +4153,14 @@ components:
           format: bigint
         asset:
           type: string
+          pattern: ^[a-zA-Z]{3}\/[0-9]$
         sourceAccountID:
           type: string
+          format: byte
+          nullable: true
         destinationAccountID:
           type: string
+          format: byte
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3InitiatePaymentResponse:
@@ -4194,13 +4217,17 @@ components:
       properties:
         reference:
           type: string
+          minLength: 3
+          maxLength: 1000
         description:
           type: string
+          maxLength: 10000
         amount:
           type: integer
           format: bigint
         asset:
           type: string
+          pattern: ^[a-zA-Z]{3}\/[0-9]$
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3ReversePaymentInitiationResponse:
@@ -4327,6 +4354,7 @@ components:
           type: string
         connectorID:
           type: string
+          format: byte
         reference:
           type: string
         createdAt:
@@ -4348,8 +4376,10 @@ components:
           $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
         sourceAccountID:
           type: string
+          format: byte
         destinationAccountID:
           type: string
+          format: byte
         error:
           type: string
         metadata:
@@ -4527,6 +4557,7 @@ components:
           format: date-time
         connectorID:
           type: string
+          format: byte
         createdObjectID:
           type: string
         error:

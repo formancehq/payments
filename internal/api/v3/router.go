@@ -7,11 +7,13 @@ import (
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/go-chi/chi/v5"
 )
 
 func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticator, debug bool) *chi.Mux {
 	r := chi.NewRouter()
+	validator := validation.NewValidator()
 
 	r.Get("/_info", api.InfoHandler(info))
 
@@ -108,7 +110,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 			// Payment Initiations
 			r.Route("/payment-initiations", func(r chi.Router) {
-				r.Post("/", paymentInitiationsCreate(backend))
+				r.Post("/", paymentInitiationsCreate(backend, validator))
 				r.Get("/", paymentInitiationsList(backend))
 
 				r.Route("/{paymentInitiationID}", func(r chi.Router) {
@@ -117,7 +119,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 					r.Post("/retry", paymentInitiationsRetry(backend))
 					r.Post("/approve", paymentInitiationsApprove(backend))
 					r.Post("/reject", paymentInitiationsReject(backend))
-					r.Post("/reverse", paymentInitiationsReverse(backend))
+					r.Post("/reverse", paymentInitiationsReverse(backend, validator))
 
 					r.Get("/adjustments", paymentInitiationAdjustmentsList(backend))
 					r.Get("/payments", paymentInitiationPaymentsList(backend))

@@ -2,7 +2,6 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
 	"math/big"
 	"net/http"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -17,56 +17,21 @@ import (
 )
 
 type CreateTransferInitiationRequest struct {
-	Reference            string            `json:"reference"`
-	ScheduledAt          time.Time         `json:"scheduledAt"`
-	Description          string            `json:"description"`
-	SourceAccountID      string            `json:"sourceAccountID"`
-	DestinationAccountID string            `json:"destinationAccountID"`
-	ConnectorID          string            `json:"connectorID"`
-	Provider             string            `json:"provider"`
-	Type                 string            `json:"type"`
-	Amount               *big.Int          `json:"amount"`
-	Asset                string            `json:"asset"`
-	Validated            bool              `json:"validated"`
-	Metadata             map[string]string `json:"metadata"`
+	Reference            string            `json:"reference" validate:"required"`
+	ScheduledAt          time.Time         `json:"scheduledAt" validate:""`
+	Description          string            `json:"description" validate:""`
+	SourceAccountID      string            `json:"sourceAccountID" validate:"omitempty,accountID"`
+	DestinationAccountID string            `json:"destinationAccountID" validate:"required,accountID"`
+	ConnectorID          string            `json:"connectorID" validate:"required,connectorID"`
+	Provider             string            `json:"provider" validate:""`
+	Type                 string            `json:"type" validate:"required,paymentInitiationType"`
+	Amount               *big.Int          `json:"amount" validate:"required"`
+	Asset                string            `json:"asset" validate:"required,asset"`
+	Validated            bool              `json:"validated" validate:""`
+	Metadata             map[string]string `json:"metadata" validate:""`
 }
 
-func (r *CreateTransferInitiationRequest) Validate() error {
-	if r.Reference == "" {
-		return errors.New("reference is required")
-	}
-
-	if r.SourceAccountID != "" {
-		_, err := models.AccountIDFromString(r.SourceAccountID)
-		if err != nil {
-			return err
-		}
-	}
-
-	if r.DestinationAccountID != "" {
-		_, err := models.AccountIDFromString(r.DestinationAccountID)
-		if err != nil {
-			return err
-		}
-	}
-
-	_, err := models.PaymentInitiationTypeFromString(r.Type)
-	if err != nil {
-		return err
-	}
-
-	if r.Amount == nil {
-		return errors.New("amount is required")
-	}
-
-	if r.Asset == "" {
-		return errors.New("asset is required")
-	}
-
-	return nil
-}
-
-func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
+func transferInitiationsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_transferInitiationsCreate")
 		defer span.End()
@@ -80,7 +45,7 @@ func transferInitiationsCreate(backend backend.Backend) http.HandlerFunc {
 
 		setSpanAttributesFromRequest(span, payload)
 
-		if err := payload.Validate(); err != nil {
+		if _, err := validator.Validate(payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return

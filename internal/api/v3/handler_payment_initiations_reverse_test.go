@@ -7,13 +7,14 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
 )
 
-var _ = Describe("API v2 Payment Initiation Reverse", func() {
+var _ = Describe("API v3 Payment Initiation Reversal", func() {
 	var (
 		handlerFn http.HandlerFunc
 		paymentID models.PaymentInitiationID
@@ -23,7 +24,7 @@ var _ = Describe("API v2 Payment Initiation Reverse", func() {
 		paymentID = models.PaymentInitiationID{Reference: "ref", ConnectorID: connID}
 	})
 
-	Context("retry payment initiation", func() {
+	Context("reverse payment initiation", func() {
 		var (
 			w *httptest.ResponseRecorder
 			m *backend.MockBackend
@@ -32,7 +33,7 @@ var _ = Describe("API v2 Payment Initiation Reverse", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = paymentInitiationsReverse(m)
+			handlerFn = paymentInitiationsReverse(m, validation.NewValidator())
 
 			_ = paymentID
 		})
@@ -67,9 +68,9 @@ var _ = Describe("API v2 Payment Initiation Reverse", func() {
 				expectedErr,
 			)
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "paymentInitiationID", paymentID.String(), &PaymentInitiationsReverseRequest{
-				Reference: "ref",
+				Reference: "ref1",
 				Amount:    big.NewInt(1313),
-				Asset:     "USD",
+				Asset:     "USD/2",
 			}))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
@@ -80,9 +81,9 @@ var _ = Describe("API v2 Payment Initiation Reverse", func() {
 				nil,
 			)
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "paymentInitiationID", paymentID.String(), &PaymentInitiationsReverseRequest{
-				Reference: "ref",
+				Reference: "ref3",
 				Amount:    big.NewInt(1313),
-				Asset:     "USD",
+				Asset:     "eur/2",
 			}))
 			assertExpectedResponse(w.Result(), http.StatusAccepted, "")
 		})
