@@ -67,12 +67,11 @@ var _ = Context("Payments API Payment Initiation", func() {
 			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
-				ScheduledAt:          time.Now(),
 				ConnectorID:          connectorRes.Data,
 				Description:          "some description",
 				Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER.String(),
 				Amount:               big.NewInt(3200),
-				Asset:                "EUR",
+				Asset:                "EUR/2",
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
 				Metadata:             map[string]string{"key": "val"},
@@ -226,12 +225,11 @@ var _ = Context("Payments API Payment Initiation", func() {
 			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
-				ScheduledAt:          time.Now(),
 				ConnectorID:          connectorRes.Data,
 				Description:          "payout description",
 				Type:                 models.PAYMENT_INITIATION_TYPE_PAYOUT.String(),
 				Amount:               big.NewInt(2233),
-				Asset:                "EUR",
+				Asset:                "EUR/2",
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
 				Metadata:             map[string]string{"pay": "out"},
