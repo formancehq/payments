@@ -5,11 +5,39 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/go-playground/locales"
+	"github.com/go-playground/locales/en"
 	"github.com/go-playground/validator/v10"
+
+	ut "github.com/go-playground/universal-translator"
+	en_translations "github.com/go-playground/validator/v10/translations/en"
 )
 
+var (
+	defaultLocaleStr = "en"
+	defaultLocale    = en.New()
+	supportedLocales []locales.Translator
+
+	translator ut.Translator
+)
+
+func init() {
+	supportedLocales = []locales.Translator{defaultLocale}
+}
+
+// Translator returns the locale for this deployment
+// currently only one locale is expected
+func Translator() ut.Translator {
+	return translator
+}
+
 func NewValidator() *validator.Validate {
+	uni := ut.New(defaultLocale, supportedLocales...)
+	// TODO: non-default locale could be configured for a stack if we have non-english clients who need it
+	translator, _ = uni.GetTranslator(defaultLocaleStr)
+
 	validate := validator.New(validator.WithRequiredStructEnabled())
+	en_translations.RegisterDefaultTranslations(validate, translator)
 
 	validate.RegisterValidation("accountID", IsAccountID, false)
 	validate.RegisterValidation("connectorID", IsConnectorID, false)

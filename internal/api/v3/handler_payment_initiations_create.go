@@ -53,7 +53,7 @@ func paymentInitiationsCreate(backend backend.Backend, validate *validator.Valid
 
 		if err := validate.Struct(payload); err != nil {
 			otel.RecordError(span, err)
-			api.BadRequest(w, ErrValidation, err)
+			WrapValidationError(w, ErrValidation, err)
 			return
 		}
 
