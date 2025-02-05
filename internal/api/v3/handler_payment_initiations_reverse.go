@@ -17,8 +17,8 @@ import (
 )
 
 type PaymentInitiationsReverseRequest struct {
-	Reference   string            `json:"reference" validate:"required,gt=3,lt=1000"`
-	Description string            `json:"description" validate:"omitempty,lt=10000"`
+	Reference   string            `json:"reference" validate:"required,gte=3,lte=1000"`
+	Description string            `json:"description" validate:"omitempty,lte=10000"`
 	Amount      *big.Int          `json:"amount" validate:"required"`
 	Asset       string            `json:"asset" validate:"required,asset"`
 	Metadata    map[string]string `json:"metadata" validate:""`

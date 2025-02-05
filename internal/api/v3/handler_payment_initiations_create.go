@@ -18,10 +18,10 @@ import (
 )
 
 type PaymentInitiationsCreateRequest struct {
-	Reference   string    `json:"reference" validate:"required,gt=3,lt=1000"`
+	Reference   string    `json:"reference" validate:"required,gte=3,lte=1000"`
 	ScheduledAt time.Time `json:"scheduledAt" validate:"omitempty,gt=now"`
 	ConnectorID string    `json:"connectorID" validate:"required,connectorID"`
-	Description string    `json:"description" validate:"omitempty,lt=10000"`
+	Description string    `json:"description" validate:"omitempty,lte=10000"`
 	Type        string    `json:"type" validate:"required,paymentInitiationType"`
 	Amount      *big.Int  `json:"amount" validate:"required"`
 	Asset       string    `json:"asset" validate:"required,asset"`
