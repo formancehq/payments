@@ -18,16 +18,16 @@ import (
 )
 
 type PaymentInitiationsCreateRequest struct {
-	Reference   string    `json:"reference" validate:"required"`
-	ScheduledAt time.Time `json:"scheduledAt" validate:""`
+	Reference   string    `json:"reference" validate:"required,gt=3,lt=1000"`
+	ScheduledAt time.Time `json:"scheduledAt" validate:"omitempty,gt=now"`
 	ConnectorID string    `json:"connectorID" validate:"required,connectorID"`
-	Description string    `json:"description" validate:""`
+	Description string    `json:"description" validate:"omitempty,lt=10000"`
 	Type        string    `json:"type" validate:"required,paymentInitiationType"`
 	Amount      *big.Int  `json:"amount" validate:"required"`
-	Asset       string    `json:"asset" validate:"required"`
+	Asset       string    `json:"asset" validate:"required,asset"`
 
-	SourceAccountID      *string `json:"sourceAccountID" validate:"required,accountID"`
-	DestinationAccountID *string `json:"destinationAccountID" validate:"omitempty,accountID"`
+	SourceAccountID      *string `json:"sourceAccountID" validate:"omitempty,accountID"`
+	DestinationAccountID *string `json:"destinationAccountID" validate:"required,accountID"`
 
 	Metadata map[string]string `json:"metadata" validate:""`
 }

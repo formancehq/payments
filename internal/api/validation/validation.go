@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/go-playground/validator/v10"
 )
@@ -13,6 +14,7 @@ func NewValidator() *validator.Validate {
 	validate.RegisterValidation("accountID", IsAccountID, false)
 	validate.RegisterValidation("connectorID", IsConnectorID, false)
 	validate.RegisterValidation("paymentInitiationType", IsPaymentInitiationType, false)
+	validate.RegisterValidation("asset", IsAsset, false)
 	return validate
 }
 
@@ -61,6 +63,19 @@ func IsPaymentInitiationType(fl validator.FieldLevel) bool {
 		return false
 	}
 	if _, err := models.PaymentInitiationTypeFromString(str); err != nil {
+		return false
+	}
+	return true
+}
+
+func IsAsset(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+
+	_, _, err = currency.GetCurrencyAndPrecisionFromAsset(currency.ISO4217Currencies, str)
+	if err != nil {
 		return false
 	}
 	return true

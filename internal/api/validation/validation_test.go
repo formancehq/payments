@@ -33,6 +33,8 @@ var _ = Describe("Validator custom type checks", func() {
 			AccountIDNullable        *string                      `validate:"omitempty,accountID"`
 			PaymentInitiationType    models.PaymentInitiationType `validate:"omitempty,paymentInitiationType"`
 			PaymentInitiationTypeStr string                       `validate:"omitempty,paymentInitiationType"`
+			Asset                    string                       `validate:"omitempty,asset"`
+			AssetNullable            *string                      `validate:"omitempty,asset"`
 		}
 
 		DescribeTable("non conforming values",
@@ -97,6 +99,23 @@ var _ = Describe("Validator custom type checks", func() {
 			Entry("paymentInitiationType: unsupported type for this matcher", "paymentInitiationType", "FieldName", struct {
 				FieldName int `validate:"paymentInitiationType"`
 			}{FieldName: 34}),
+
+			// asset
+			Entry("asset: invalid value of string on required field", "asset", "StringFieldName", struct {
+				StringFieldName string `validate:"required,asset"`
+			}{StringFieldName: "invalid"}),
+			Entry("asset: invalid value of string", "asset", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,asset"`
+			}{StringFieldName: "invalid"}),
+			Entry("asset: invalid value on string pointer on required field", "asset", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"required,asset"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("asset: invalid value on string pointer", "asset", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"omitempty,asset"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("asset: unsupported type for this matcher", "asset", "FieldName", struct {
+				FieldName int `validate:"asset"`
+			}{FieldName: 34}),
 		)
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
@@ -119,6 +138,13 @@ var _ = Describe("Validator custom type checks", func() {
 			err := validate.Struct(CustomStruct{
 				PaymentInitiationType:    models.PAYMENT_INITIATION_TYPE_PAYOUT,
 				PaymentInitiationTypeStr: models.PAYMENT_INITIATION_TYPE_TRANSFER.String(),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("asset supports expected values", func(ctx SpecContext) {
+			err := validate.Struct(CustomStruct{
+				Asset:         "JPY/0",
+				AssetNullable: pointer.For("cad/2"),
 			})
 			Expect(err).To(BeNil())
 		})
