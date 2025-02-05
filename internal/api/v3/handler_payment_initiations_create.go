@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/go-playground/validator/v10"
@@ -53,7 +54,7 @@ func paymentInitiationsCreate(backend backend.Backend, validate *validator.Valid
 
 		if err := validate.Struct(payload); err != nil {
 			otel.RecordError(span, err)
-			WrapValidationError(w, ErrValidation, err)
+			validation.WrapError(w, ErrValidation, err)
 			return
 		}
 

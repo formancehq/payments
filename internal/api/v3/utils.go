@@ -5,12 +5,9 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/go-libs/v2/query"
-	"github.com/formancehq/payments/internal/api/validation"
-	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -43,16 +40,6 @@ func getQueryBuilder(span trace.Span, r *http.Request) (query.Builder, error) {
 		span.SetAttributes(attribute.String("query", r.URL.Query().Get("query")))
 		return query.ParseJSON(r.URL.Query().Get("query"))
 	}
-}
-
-func WrapValidationError(w http.ResponseWriter, code string, rawErr error) {
-	if errs, ok := rawErr.(validator.ValidationErrors); ok && len(errs) > 0 {
-		err := fmt.Errorf("%s", errs[0].Translate(validation.Translator()))
-		api.BadRequest(w, code, err)
-		return
-	}
-	// fallback
-	api.BadRequest(w, code, rawErr)
 }
 
 func getPagination[T any](span trace.Span, r *http.Request, options T) (*bunpaginate.PaginatedQueryOptions[T], error) {

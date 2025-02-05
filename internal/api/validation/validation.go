@@ -2,7 +2,9 @@ package validation
 
 import (
 	"fmt"
+	"net/http"
 
+	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/go-playground/locales"
@@ -29,6 +31,17 @@ func init() {
 // currently only one locale is expected
 func Translator() ut.Translator {
 	return translator
+}
+
+// TODO: could be added to go-libs later on so we don't have to think about it
+func WrapError(w http.ResponseWriter, code string, rawErr error) {
+	if errs, ok := rawErr.(validator.ValidationErrors); ok && len(errs) > 0 {
+		err := fmt.Errorf("%s", errs[0].Translate(Translator()))
+		api.BadRequest(w, code, err)
+		return
+	}
+	// fallback
+	api.BadRequest(w, code, rawErr)
 }
 
 func NewValidator() *validator.Validate {

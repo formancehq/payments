@@ -7,11 +7,13 @@ import (
 	"github.com/formancehq/go-libs/v2/auth"
 	"github.com/formancehq/go-libs/v2/service"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/go-chi/chi/v5"
 )
 
 func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticator, debug bool) *chi.Mux {
 	r := chi.NewRouter()
+	validator := validation.NewValidator()
 
 	r.Get("/_info", api.InfoHandler(info))
 
@@ -91,7 +93,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 			// Transfer Initiations
 			r.Route("/transfer-initiations", func(r chi.Router) {
-				r.Post("/", transferInitiationsCreate(backend))
+				r.Post("/", transferInitiationsCreate(backend, validator))
 				r.Get("/", transferInitiationsList(backend))
 
 				r.Route("/{transferInitiationID}", func(r chi.Router) {
