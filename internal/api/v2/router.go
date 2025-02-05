@@ -102,7 +102,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 					r.Post("/status", transferInitiationsUpdateStatus(backend))
 					r.Post("/retry", transferInitiationsRetry(backend))
-					r.Post("/reverse", transferInitiationsReverse(backend))
+					r.Post("/reverse", transferInitiationsReverse(backend, validator))
 				})
 			})
 		})

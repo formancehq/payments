@@ -2,7 +2,6 @@ package v3
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -17,27 +17,11 @@ import (
 )
 
 type PaymentInitiationsReverseRequest struct {
-	Reference   string            `json:"reference"`
-	Description string            `json:"description"`
-	Amount      *big.Int          `json:"amount"`
-	Asset       string            `json:"asset"`
-	Metadata    map[string]string `json:"metadata"`
-}
-
-func (r *PaymentInitiationsReverseRequest) Validate() error {
-	if r.Reference == "" {
-		return errors.New("reference is required")
-	}
-
-	if r.Amount == nil {
-		return errors.New("amount is required")
-	}
-
-	if r.Asset == "" {
-		return errors.New("asset is required")
-	}
-
-	return nil
+	Reference   string            `json:"reference" validate:"required,gt=3,lt=1000"`
+	Description string            `json:"description" validate:"omitempty,lt=10000"`
+	Amount      *big.Int          `json:"amount" validate:"required"`
+	Asset       string            `json:"asset" validate:"required,asset"`
+	Metadata    map[string]string `json:"metadata" validate:""`
 }
 
 type PaymentInitiationsReverseResponse struct {
@@ -45,7 +29,7 @@ type PaymentInitiationsReverseResponse struct {
 	TaskID                      string `json:"taskID"`
 }
 
-func paymentInitiationsReverse(backend backend.Backend) http.HandlerFunc {
+func paymentInitiationsReverse(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentInitiationsReverse")
 		defer span.End()
@@ -67,7 +51,7 @@ func paymentInitiationsReverse(backend backend.Backend) http.HandlerFunc {
 
 		populateSpanFromPaymentInitiationsReverseRequest(span, payload)
 
-		if err := payload.Validate(); err != nil {
+		if _, err := validator.Validate(payload); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return

@@ -119,7 +119,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 					r.Post("/retry", paymentInitiationsRetry(backend))
 					r.Post("/approve", paymentInitiationsApprove(backend))
 					r.Post("/reject", paymentInitiationsReject(backend))
-					r.Post("/reverse", paymentInitiationsReverse(backend))
+					r.Post("/reverse", paymentInitiationsReverse(backend, validator))
 
 					r.Get("/adjustments", paymentInitiationAdjustmentsList(backend))
 					r.Get("/payments", paymentInitiationPaymentsList(backend))
