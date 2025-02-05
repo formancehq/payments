@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
@@ -18,7 +17,7 @@ import (
 var _ = Describe("API v2 Payment Initiation Creation", func() {
 	var (
 		handlerFn http.HandlerFunc
-		validate  *validator.Validate
+		validate  *validation.Validator
 		connID    models.ConnectorID
 		source    models.AccountID
 		dest      models.AccountID

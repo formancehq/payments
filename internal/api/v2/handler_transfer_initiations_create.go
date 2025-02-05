@@ -12,7 +12,6 @@ import (
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
-	"github.com/go-playground/validator/v10"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -32,7 +31,7 @@ type CreateTransferInitiationRequest struct {
 	Metadata             map[string]string `json:"metadata" validate:""`
 }
 
-func transferInitiationsCreate(backend backend.Backend, validate *validator.Validate) http.HandlerFunc {
+func transferInitiationsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_transferInitiationsCreate")
 		defer span.End()
@@ -46,9 +45,9 @@ func transferInitiationsCreate(backend backend.Backend, validate *validator.Vali
 
 		setSpanAttributesFromRequest(span, payload)
 
-		if err := validate.Struct(payload); err != nil {
+		if _, err := validator.Validate(payload); err != nil {
 			otel.RecordError(span, err)
-			validation.WrapError(w, ErrValidation, err)
+			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 

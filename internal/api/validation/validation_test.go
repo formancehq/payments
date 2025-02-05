@@ -6,7 +6,6 @@ import (
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,7 +18,7 @@ func TestV3Handlers(t *testing.T) {
 
 var _ = Describe("Validator custom type checks", func() {
 	var (
-		validate *validator.Validate
+		validate *validation.Validator
 	)
 	BeforeEach(func() {
 		validate = validation.NewValidator()
@@ -39,10 +38,8 @@ var _ = Describe("Validator custom type checks", func() {
 
 		DescribeTable("non conforming values",
 			func(tag, fieldName string, val any) {
-				err := validate.Struct(val)
+				vErrs, err := validate.Validate(val)
 				Expect(err).ToNot(BeNil())
-				vErrs, ok := err.(validator.ValidationErrors)
-				Expect(ok).To(BeTrue())
 				Expect(vErrs).To(HaveLen(1))
 
 				fieldErr := vErrs[0]
@@ -120,7 +117,7 @@ var _ = Describe("Validator custom type checks", func() {
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
 			connID := models.ConnectorID{Reference: uuid.New()}
-			err := validate.Struct(CustomStruct{
+			_, err := validate.Validate(CustomStruct{
 				ConnectorID:         connID.String(),
 				ConnectorIDNullable: pointer.For(connID.String()),
 			})
@@ -128,21 +125,21 @@ var _ = Describe("Validator custom type checks", func() {
 		})
 		It("accountID supports expected values", func(ctx SpecContext) {
 			accID := models.AccountID{Reference: "ref"}
-			err := validate.Struct(CustomStruct{
+			_, err := validate.Validate(CustomStruct{
 				AccountID:         accID.String(),
 				AccountIDNullable: pointer.For(accID.String()),
 			})
 			Expect(err).To(BeNil())
 		})
 		It("paymentInitiationType supports expected values", func(ctx SpecContext) {
-			err := validate.Struct(CustomStruct{
+			_, err := validate.Validate(CustomStruct{
 				PaymentInitiationType:    models.PAYMENT_INITIATION_TYPE_PAYOUT,
 				PaymentInitiationTypeStr: models.PAYMENT_INITIATION_TYPE_TRANSFER.String(),
 			})
 			Expect(err).To(BeNil())
 		})
 		It("asset supports expected values", func(ctx SpecContext) {
-			err := validate.Struct(CustomStruct{
+			_, err := validate.Validate(CustomStruct{
 				Asset:         "JPY/0",
 				AssetNullable: pointer.For("cad/2"),
 			})
