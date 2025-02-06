@@ -48,8 +48,9 @@ var _ = Describe("Register Plugin", func() {
 
 	Context("population of plugin configuration", func() {
 		RegisterPlugin(name, fn, capabilities, conf)
+		RegisterPlugin(DummyPSPName, fn, capabilities, conf)
 		It("can parse a required string", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["requiredString"]).NotTo(BeNil())
@@ -59,7 +60,7 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can parse an optional string", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["optionalString"]).NotTo(BeNil())
@@ -69,7 +70,7 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can parse a required unsigned integer", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["requiredUint"]).NotTo(BeNil())
@@ -79,7 +80,7 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can parse an optional unsigned integer", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["optionalUint"]).NotTo(BeNil())
@@ -89,7 +90,7 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can parse a required duration", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["requiredDuration"]).NotTo(BeNil())
@@ -99,7 +100,7 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can parse an optional duration", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["optionalDuration"]).NotTo(BeNil())
@@ -109,13 +110,25 @@ var _ = Describe("Register Plugin", func() {
 		})
 
 		It("can extract json field name when extra metadata present", func(ctx SpecContext) {
-			configs := GetConfigs()
+			configs := GetConfigs(false)
 			c, ok := configs[name]
 			Expect(ok).To(BeTrue())
 			Expect(c["withJsonMetadata"]).NotTo(BeNil())
 			Expect(c["withJsonMetadata"].DataType).To(Equal(TypeString))
 			Expect(c["withJsonMetadata"].Required).To(BeFalse())
 			Expect(c["withJsonMetadata"].DefaultValue).To(Equal(""))
+		})
+
+		It("hides dummypay when not in debug mode", func(ctx SpecContext) {
+			configs := GetConfigs(false)
+			_, ok := configs[DummyPSPName]
+			Expect(ok).To(BeFalse())
+		})
+
+		It("shows dummypay when in debug mode", func(ctx SpecContext) {
+			configs := GetConfigs(true)
+			_, ok := configs[DummyPSPName]
+			Expect(ok).To(BeTrue())
 		})
 	})
 })

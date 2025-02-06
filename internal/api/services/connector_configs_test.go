@@ -17,7 +17,7 @@ func TestConnectorConfigs(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	require.NotNil(t, s.ConnectorsConfigs())
 }

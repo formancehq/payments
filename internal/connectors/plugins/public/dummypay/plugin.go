@@ -13,7 +13,7 @@ import (
 )
 
 func init() {
-	registry.RegisterPlugin("dummypay", func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(registry.DummyPSPName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }

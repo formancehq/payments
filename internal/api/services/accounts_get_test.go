@@ -21,7 +21,7 @@ func TestAccountsGet(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	id := models.AccountID{
 		Reference: "test",
