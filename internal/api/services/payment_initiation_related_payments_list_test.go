@@ -21,7 +21,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	pid := models.PaymentInitiationID{}
 
@@ -69,7 +69,7 @@ func TestPaymentInitiationRelatedPaymentsListAll(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	pid := models.PaymentInitiationID{}
 

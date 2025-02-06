@@ -23,7 +23,7 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	query := storage.NewListPaymentInitiationAdjustmentsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.PaymentInitiationAdjustmentsQuery{}).

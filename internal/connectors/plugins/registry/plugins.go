@@ -13,6 +13,8 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const DummyPSPName = "dummypay"
+
 type PluginCreateFunction func(string, logging.Logger, json.RawMessage) (models.Plugin, error)
 
 type PluginInformation struct {
@@ -122,9 +124,13 @@ func GetCapabilities(provider string) ([]models.Capability, error) {
 	return info.capabilities, nil
 }
 
-func GetConfigs() Configs {
+func GetConfigs(debug bool) Configs {
 	confs := make(Configs)
 	for key, info := range pluginsRegistry {
+		// hide dummy PSP outside of debug mode
+		if !debug && key == DummyPSPName {
+			continue
+		}
 		confs[key] = info.config
 	}
 	return confs

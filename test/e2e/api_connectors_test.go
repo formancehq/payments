@@ -36,6 +36,7 @@ var _ = Context("Payments API Connectors", func() {
 			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
+			Debug:                 true,
 		}
 	})
 

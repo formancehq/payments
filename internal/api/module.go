@@ -32,7 +32,7 @@ func NewModule(bind string, debug bool) fx.Option {
 			return NewRouter(backend, info, healthController, a, debug, versions...)
 		}, fx.ParamTags(``, ``, ``, ``, `group:"apiVersions"`))),
 		fx.Provide(func(storage storage.Storage, engine engine.Engine) backend.Backend {
-			return services.New(storage, engine)
+			return services.New(storage, engine, debug)
 		}),
 	)
 }

@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) ConnectorsConfigs() registry.Configs {
-	return registry.GetConfigs()
+	return registry.GetConfigs(s.debug)
 }
 
 func (s *Service) ConnectorsConfig(ctx context.Context, connectorID models.ConnectorID) (json.RawMessage, error) {

@@ -20,7 +20,7 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	tests := []struct {
 		name          string

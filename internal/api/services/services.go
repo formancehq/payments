@@ -8,11 +8,13 @@ import (
 type Service struct {
 	storage storage.Storage
 	engine  engine.Engine
+	debug   bool
 }
 
-func New(storage storage.Storage, engine engine.Engine) *Service {
+func New(storage storage.Storage, engine engine.Engine, debug bool) *Service {
 	return &Service{
 		storage: storage,
 		engine:  engine,
+		debug:   debug,
 	}
 }

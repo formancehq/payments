@@ -21,7 +21,7 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 	store := storage.NewMockStorage(ctrl)
 	eng := engine.NewMockEngine(ctrl)
 
-	s := New(store, eng)
+	s := New(store, eng, false)
 
 	piWithoutScheduledAt := models.PaymentInitiation{
 		Type: models.PAYMENT_INITIATION_TYPE_TRANSFER,
