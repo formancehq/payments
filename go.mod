@@ -28,7 +28,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
 	github.com/lib/pq v1.10.9
-	github.com/nats-io/nats.go v1.38.0
+	github.com/nats-io/nats.go v1.39.0
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
