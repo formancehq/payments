@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -16,11 +17,8 @@ import (
 var _ = Describe("API v3 Accounts Create", func() {
 	var (
 		handlerFn http.HandlerFunc
-		connID    models.ConnectorID
+		connID    = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
 	)
-	BeforeEach(func() {
-		connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
-	})
 
 	Context("create accounts", func() {
 		var (
@@ -32,7 +30,7 @@ var _ = Describe("API v3 Accounts Create", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = accountsCreate(m)
+			handlerFn = accountsCreate(m, validation.NewValidator())
 		})
 
 		It("should return a bad request error when body is missing", func(ctx SpecContext) {
@@ -59,6 +57,9 @@ var _ = Describe("API v3 Accounts Create", func() {
 			}),
 			Entry("type invalid", CreateAccountRequest{
 				Reference: "reference", ConnectorID: connID.String(), CreatedAt: time.Now(), Name: "accountName", Type: "type",
+			}),
+			Entry("created at is in the future", CreateAccountRequest{
+				Reference: "reference", ConnectorID: connID.String(), CreatedAt: time.Now().Add(time.Minute), Name: "accountName", Type: "INTERNAL",
 			}),
 		)
 

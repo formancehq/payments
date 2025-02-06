@@ -32,7 +32,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 			// Accounts
 			r.Route("/accounts", func(r chi.Router) {
 				r.Get("/", accountsList(backend))
-				r.Post("/", accountsCreate(backend))
+				r.Post("/", accountsCreate(backend, validator))
 
 				r.Route("/{accountID}", func(r chi.Router) {
 					r.Get("/", accountsGet(backend))

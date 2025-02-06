@@ -49,6 +49,18 @@ func IsAccountID(fl validator.FieldLevel) bool {
 	return true
 }
 
+func IsAccountType(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+
+	if models.AccountTypeFromString(str) == models.ACCOUNT_TYPE_UNKNOWN {
+		return false
+	}
+	return true
+}
+
 func IsPaymentInitiationType(fl validator.FieldLevel) bool {
 	_, ok := fl.Field().Interface().(models.PaymentInitiationType)
 	if ok {
