@@ -1,4 +1,4 @@
-package models
+package models_test
 
 import (
 	"math/big"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -14,7 +15,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now().UTC()
-	connectorID := ConnectorID{
+	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
@@ -22,15 +23,15 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 	t.Run("parent reference is empty", func(t *testing.T) {
 		t.Parallel()
 
-		pspPayment := PSPPayment{
+		pspPayment := models.PSPPayment{
 			ParentReference:        "",
 			Reference:              "test1",
 			CreatedAt:              now.UTC(),
-			Type:                   PAYMENT_TYPE_PAYOUT,
+			Type:                   models.PAYMENT_TYPE_PAYOUT,
 			Amount:                 big.NewInt(100),
 			Asset:                  "USD/2",
-			Scheme:                 PAYMENT_SCHEME_OTHER,
-			Status:                 PAYMENT_STATUS_CANCELLED,
+			Scheme:                 models.PAYMENT_SCHEME_OTHER,
+			Status:                 models.PAYMENT_STATUS_CANCELLED,
 			SourceAccountReference: pointer.For("acc"),
 			Metadata: map[string]string{
 				"foo": "bar",
@@ -38,44 +39,44 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 			Raw: []byte(`{}`),
 		}
 
-		actual := FromPSPPaymentToPayment(pspPayment, connectorID)
+		actual := models.FromPSPPaymentToPayment(pspPayment, connectorID)
 
-		pid := PaymentID{
-			PaymentReference: PaymentReference{
+		pid := models.PaymentID{
+			PaymentReference: models.PaymentReference{
 				Reference: "test1",
-				Type:      PAYMENT_TYPE_PAYOUT,
+				Type:      models.PAYMENT_TYPE_PAYOUT,
 			},
 			ConnectorID: connectorID,
 		}
-		expected := Payment{
+		expected := models.Payment{
 			ID:            pid,
 			ConnectorID:   connectorID,
 			Reference:     "test1",
 			CreatedAt:     now.UTC(),
-			Type:          PAYMENT_TYPE_PAYOUT,
+			Type:          models.PAYMENT_TYPE_PAYOUT,
 			InitialAmount: big.NewInt(100),
 			Amount:        big.NewInt(100),
 			Asset:         "USD/2",
-			Scheme:        PAYMENT_SCHEME_OTHER,
-			Status:        PAYMENT_STATUS_CANCELLED,
-			SourceAccountID: &AccountID{
+			Scheme:        models.PAYMENT_SCHEME_OTHER,
+			Status:        models.PAYMENT_STATUS_CANCELLED,
+			SourceAccountID: &models.AccountID{
 				Reference:   "acc",
 				ConnectorID: connectorID,
 			},
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
-			Adjustments: []PaymentAdjustment{
+			Adjustments: []models.PaymentAdjustment{
 				{
-					ID: PaymentAdjustmentID{
+					ID: models.PaymentAdjustmentID{
 						PaymentID: pid,
 						Reference: "test1",
 						CreatedAt: now.UTC(),
-						Status:    PAYMENT_STATUS_CANCELLED,
+						Status:    models.PAYMENT_STATUS_CANCELLED,
 					},
 					Reference: "test1",
 					CreatedAt: now.UTC(),
-					Status:    PAYMENT_STATUS_CANCELLED,
+					Status:    models.PAYMENT_STATUS_CANCELLED,
 					Amount:    big.NewInt(100),
 					Asset:     pointer.For("USD/2"),
 					Metadata: map[string]string{
@@ -92,15 +93,15 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 	t.Run("parent reference is not empty", func(t *testing.T) {
 		t.Parallel()
 
-		pspPayment := PSPPayment{
+		pspPayment := models.PSPPayment{
 			ParentReference:             "parent_reference",
 			Reference:                   "test1",
 			CreatedAt:                   now.UTC(),
-			Type:                        PAYMENT_TYPE_TRANSFER,
+			Type:                        models.PAYMENT_TYPE_TRANSFER,
 			Amount:                      big.NewInt(150),
 			Asset:                       "EUR/2",
-			Scheme:                      PAYMENT_SCHEME_OTHER,
-			Status:                      PAYMENT_STATUS_SUCCEEDED,
+			Scheme:                      models.PAYMENT_SCHEME_OTHER,
+			Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 			DestinationAccountReference: pointer.For("acc"),
 			Metadata: map[string]string{
 				"foo": "bar",
@@ -108,44 +109,44 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 			Raw: []byte(`{}`),
 		}
 
-		actual := FromPSPPaymentToPayment(pspPayment, connectorID)
+		actual := models.FromPSPPaymentToPayment(pspPayment, connectorID)
 
-		pid := PaymentID{
-			PaymentReference: PaymentReference{
+		pid := models.PaymentID{
+			PaymentReference: models.PaymentReference{
 				Reference: "parent_reference",
-				Type:      PAYMENT_TYPE_TRANSFER,
+				Type:      models.PAYMENT_TYPE_TRANSFER,
 			},
 			ConnectorID: connectorID,
 		}
-		expected := Payment{
+		expected := models.Payment{
 			ID:            pid,
 			ConnectorID:   connectorID,
 			Reference:     "parent_reference",
 			CreatedAt:     now.UTC(),
-			Type:          PAYMENT_TYPE_TRANSFER,
+			Type:          models.PAYMENT_TYPE_TRANSFER,
 			InitialAmount: big.NewInt(150),
 			Amount:        big.NewInt(150),
 			Asset:         "EUR/2",
-			Scheme:        PAYMENT_SCHEME_OTHER,
-			Status:        PAYMENT_STATUS_SUCCEEDED,
-			DestinationAccountID: &AccountID{
+			Scheme:        models.PAYMENT_SCHEME_OTHER,
+			Status:        models.PAYMENT_STATUS_SUCCEEDED,
+			DestinationAccountID: &models.AccountID{
 				Reference:   "acc",
 				ConnectorID: connectorID,
 			},
 			Metadata: map[string]string{
 				"foo": "bar",
 			},
-			Adjustments: []PaymentAdjustment{
+			Adjustments: []models.PaymentAdjustment{
 				{
-					ID: PaymentAdjustmentID{
+					ID: models.PaymentAdjustmentID{
 						PaymentID: pid,
 						Reference: "test1",
 						CreatedAt: now.UTC(),
-						Status:    PAYMENT_STATUS_SUCCEEDED,
+						Status:    models.PAYMENT_STATUS_SUCCEEDED,
 					},
 					Reference: "test1",
 					CreatedAt: now.UTC(),
-					Status:    PAYMENT_STATUS_SUCCEEDED,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
 					Amount:    big.NewInt(150),
 					Asset:     pointer.For("EUR/2"),
 					Metadata: map[string]string{
@@ -160,7 +161,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 	})
 }
 
-func comparePayment(t *testing.T, expected, actual Payment) {
+func comparePayment(t *testing.T, expected, actual models.Payment) {
 	require.Equal(t, expected.ID, actual.ID)
 	require.Equal(t, expected.ConnectorID, actual.ConnectorID)
 	require.Equal(t, expected.Reference, actual.Reference)
@@ -198,7 +199,7 @@ func comparePayment(t *testing.T, expected, actual Payment) {
 	compareAdjustments(t, expected.Adjustments, actual.Adjustments)
 }
 
-func compareAdjustments(t *testing.T, expected, actual []PaymentAdjustment) {
+func compareAdjustments(t *testing.T, expected, actual []models.PaymentAdjustment) {
 	require.Equal(t, len(expected), len(actual))
 	for i := range expected {
 		require.Equal(t, expected[i].ID, actual[i].ID)
