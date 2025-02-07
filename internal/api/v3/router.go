@@ -42,7 +42,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 			// Bank Accounts
 			r.Route("/bank-accounts", func(r chi.Router) {
-				r.Post("/", bankAccountsCreate(backend))
+				r.Post("/", bankAccountsCreate(backend, validator))
 				r.Get("/", bankAccountsList(backend))
 
 				r.Route("/{bankAccountID}", func(r chi.Router) {

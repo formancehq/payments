@@ -2,13 +2,13 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
@@ -39,30 +39,18 @@ type BankAccountResponse struct {
 }
 
 type BankAccountsCreateRequest struct {
-	Name string `json:"name"`
+	Name string `json:"name" validate:"required,lte=1000"`
 
-	AccountNumber *string `json:"accountNumber,omitempty"`
-	IBAN          *string `json:"iban,omitempty"`
-	SwiftBicCode  *string `json:"swiftBicCode,omitempty"`
-	Country       *string `json:"country,omitempty"`
-	ConnectorID   *string `json:"connectorID,omitempty"`
+	AccountNumber *string `json:"accountNumber" validate:"required_if=IBAN nil"`
+	IBAN          *string `json:"iban" validate:"required_if=AccountNumber nil"`
+	SwiftBicCode  *string `json:"swiftBicCode" validate:""`
+	Country       *string `json:"country" validate:"omitempty,country_code"`
+	ConnectorID   *string `json:"connectorID,omitempty" validate:"omitempty,connectorID"`
 
-	Metadata map[string]string `json:"metadata"`
+	Metadata map[string]string `json:"metadata" validate:""`
 }
 
-func (r *BankAccountsCreateRequest) Validate() error {
-	if r.AccountNumber == nil && r.IBAN == nil {
-		return errors.New("either accountNumber or iban must be provided")
-	}
-
-	if r.Name == "" {
-		return errors.New("name must be provided")
-	}
-
-	return nil
-}
-
-func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
+func bankAccountsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_bankAccountsCreate")
 		defer span.End()
@@ -77,7 +65,7 @@ func bankAccountsCreate(backend backend.Backend) http.HandlerFunc {
 
 		populateSpanFromBankAccountCreateRequest(span, req)
 
-		if err := req.Validate(); err != nil {
+		if _, err := validator.Validate(req); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
