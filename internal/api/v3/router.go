@@ -54,7 +54,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 			// Payments
 			r.Route("/payments", func(r chi.Router) {
-				r.Post("/", paymentsCreate(backend))
+				r.Post("/", paymentsCreate(backend, validator))
 				r.Get("/", paymentsList(backend))
 
 				r.Route("/{paymentID}", func(r chi.Router) {

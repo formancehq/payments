@@ -2,7 +2,6 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,82 +18,20 @@ import (
 )
 
 type CreatePaymentRequest struct {
-	Reference            string            `json:"reference"`
-	ConnectorID          string            `json:"connectorID"`
-	CreatedAt            time.Time         `json:"createdAt"`
-	Type                 string            `json:"type"`
-	Amount               *big.Int          `json:"amount"`
-	Asset                string            `json:"asset"`
-	Scheme               string            `json:"scheme"`
-	Status               string            `json:"status"`
-	SourceAccountID      *string           `json:"sourceAccountID"`
-	DestinationAccountID *string           `json:"destinationAccountID"`
-	Metadata             map[string]string `json:"metadata"`
+	Reference            string            `json:"reference" validate:"required,gte=3,lte=1000"`
+	ConnectorID          string            `json:"connectorID" validate:"required,connectorID"`
+	CreatedAt            time.Time         `json:"createdAt" validate:"required,lte=now"`
+	Type                 string            `json:"type" validate:"required,paymentType"`
+	Amount               *big.Int          `json:"amount" validate:"required"`
+	Asset                string            `json:"asset" validate:"required,asset"`
+	Scheme               string            `json:"scheme" validate:"required,paymentScheme"`
+	Status               string            `json:"status" validate:"required,paymentStatus"`
+	SourceAccountID      *string           `json:"sourceAccountID" validate:"omitempty,accountID"`
+	DestinationAccountID *string           `json:"destinationAccountID" validate:"omitempty,accountID"`
+	Metadata             map[string]string `json:"metadata" validate:""`
 }
 
-func (r *CreatePaymentRequest) validate() error {
-	if r.Reference == "" {
-		return errors.New("reference is required")
-	}
-
-	if r.ConnectorID == "" {
-		return errors.New("connectorID is required")
-	}
-
-	if r.CreatedAt.IsZero() || r.CreatedAt.After(time.Now()) {
-		return errors.New("createdAt is empty or in the future")
-	}
-
-	if r.Amount == nil {
-		return errors.New("amount is required")
-	}
-
-	if r.Type == "" {
-		return errors.New("type is required")
-	}
-
-	if _, err := models.PaymentTypeFromString(r.Type); err != nil {
-		return fmt.Errorf("invalid type: %w", err)
-	}
-
-	if r.Scheme == "" {
-		return errors.New("scheme is required")
-	}
-
-	if _, err := models.PaymentSchemeFromString(r.Scheme); err != nil {
-		return fmt.Errorf("invalid scheme: %w", err)
-	}
-
-	if r.Asset == "" {
-		return errors.New("asset is required")
-	}
-
-	if r.Status == "" {
-		return errors.New("status is required")
-	}
-
-	if _, err := models.PaymentStatusFromString(r.Status); err != nil {
-		return fmt.Errorf("invalid status: %w", err)
-	}
-
-	if r.SourceAccountID != nil {
-		_, err := models.AccountIDFromString(*r.SourceAccountID)
-		if err != nil {
-			return fmt.Errorf("invalid sourceAccountID: %w", err)
-		}
-	}
-
-	if r.DestinationAccountID != nil {
-		_, err := models.AccountIDFromString(*r.DestinationAccountID)
-		if err != nil {
-			return fmt.Errorf("invalid destinationAccountID: %w", err)
-		}
-	}
-
-	return nil
-}
-
-func paymentsCreate(backend backend.Backend) http.HandlerFunc {
+func paymentsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_paymentsCreate")
 		defer span.End()
@@ -108,7 +46,7 @@ func paymentsCreate(backend backend.Backend) http.HandlerFunc {
 
 		populateSpanFromPaymentCreateRequest(span, req)
 
-		if err := req.validate(); err != nil {
+		if _, err := validator.Validate(req); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return

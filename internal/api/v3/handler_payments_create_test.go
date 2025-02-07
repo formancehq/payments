@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -34,9 +35,9 @@ var _ = Describe("API v3 Payments Create", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = paymentsCreate(m)
+			handlerFn = paymentsCreate(m, validation.NewValidator())
 
-			asset := "JPY"
+			asset := "JPY/0"
 			adj = []CreatePaymentsAdjustmentsRequest{
 				{
 					Reference: "ref_adjustment",
@@ -62,14 +63,30 @@ var _ = Describe("API v3 Payments Create", func() {
 			},
 			Entry("reference missing", CreatePaymentRequest{}),
 			Entry("connectorID missing", CreatePaymentRequest{Reference: "ref"}),
-			Entry("createdAt missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id"}),
-			Entry("amount missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now()}),
-			Entry("payment type missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467)}),
-			Entry("payment type invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "invalid"}),
-			Entry("scheme missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT"}),
-			Entry("scheme invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "invalid"}),
-			Entry("asset missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
-			Entry("adjustments missing", CreatePaymentRequest{Reference: "ref", ConnectorID: "id", CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD"}),
+			Entry("createdAt missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String()}),
+			Entry("payment type missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "CLP/2", Amount: big.NewInt(4467)}),
+			Entry("payment type invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "BHD/3", Amount: big.NewInt(4467), Type: "invalid"}),
+			Entry("amount missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), Type: "TRANSFER", Asset: "DFJ/0", CreatedAt: time.Now()}),
+			Entry("scheme missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "DKK/2", Amount: big.NewInt(4467), Type: "PAYOUT"}),
+			Entry("scheme invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "EUR/2", Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "invalid"}),
+			Entry("asset missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
+			Entry("asset invalid", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Asset: "wut", Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA"}),
+			Entry("adjustments missing", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2"}),
+			Entry("adjustments missing reference", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
+				{},
+			}}),
+			Entry("adjustments missing created at", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
+				{Reference: "adj1"},
+			}}),
+			Entry("adjustments missing status", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
+				{Reference: "adj1", CreatedAt: time.Now()},
+			}}),
+			Entry("adjustments missing amount", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
+				{Reference: "adj1", CreatedAt: time.Now(), Status: "REFUNDED"},
+			}}),
+			Entry("adjustments missing asset", CreatePaymentRequest{Reference: "ref", ConnectorID: testConnectorID().String(), CreatedAt: time.Now(), Amount: big.NewInt(4467), Type: "PAYOUT", Scheme: "CARD_VISA", Asset: "CAD/2", Adjustments: []CreatePaymentsAdjustmentsRequest{
+				{Reference: "adj1", CreatedAt: time.Now(), Status: "REFUNDED", Amount: big.NewInt(3)},
+			}}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
@@ -80,7 +97,7 @@ var _ = Describe("API v3 Payments Create", func() {
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
-				Asset:       "JPY",
+				Asset:       "JPY/0",
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
 				Adjustments: adj,
@@ -96,7 +113,7 @@ var _ = Describe("API v3 Payments Create", func() {
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
-				Asset:       "JPY",
+				Asset:       "JPY/0",
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
 				Adjustments: adj,
