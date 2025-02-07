@@ -54,7 +54,7 @@ var _ = Context("Payments API Payments", func() {
 			ver = 3
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
-			asset = "USD"
+			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
@@ -118,7 +118,7 @@ var _ = Context("Payments API Payments", func() {
 			ver = 2
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
-			asset = "USD"
+			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
