@@ -19,9 +19,9 @@ import (
 type BankAccountsCreateRequest struct {
 	Name string `json:"name" validate:"required,lte=1000"`
 
-	AccountNumber *string `json:"accountNumber" validate:"required_if=IBAN nil"`
-	IBAN          *string `json:"iban" validate:"required_if=AccountNumber nil"`
-	SwiftBicCode  *string `json:"swiftBicCode" validate:""`
+	AccountNumber *string `json:"accountNumber" validate:"required_if=IBAN nil,omitempty,alphanum"`
+	IBAN          *string `json:"iban" validate:"required_if=AccountNumber nil,omitempty,alphanum,gte=15,lte=31"`
+	SwiftBicCode  *string `json:"swiftBicCode" validate:"omitempty,alphanum,gte=8,lte=11"`
 	Country       *string `json:"country" validate:"omitempty,country_code"`
 
 	Metadata map[string]string `json:"metadata" validate:""`
