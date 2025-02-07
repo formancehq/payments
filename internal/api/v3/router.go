@@ -48,7 +48,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 				r.Route("/{bankAccountID}", func(r chi.Router) {
 					r.Get("/", bankAccountsGet(backend))
 					r.Patch("/metadata", bankAccountsUpdateMetadata(backend))
-					r.Post("/forward", bankAccountsForwardToConnector(backend))
+					r.Post("/forward", bankAccountsForwardToConnector(backend, validator))
 				})
 			})
 
