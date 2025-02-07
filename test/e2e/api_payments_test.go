@@ -174,7 +174,7 @@ func setupDebtorAndCreditorAccounts(
 		Name:         "creditor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt.Add(-time.Hour),
-		DefaultAsset: "USD",
+		DefaultAsset: "USD/2",
 		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
 		Metadata:     map[string]string{"key": "val"},
 	}
@@ -187,7 +187,7 @@ func setupDebtorAndCreditorAccounts(
 		Name:         "debtor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt,
-		DefaultAsset: "USD",
+		DefaultAsset: "USD/2",
 		Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
 		Metadata:     map[string]string{"ping": "pong"},
 	}
