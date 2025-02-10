@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +34,7 @@ var _ = Describe("API v2 Bank Accounts ForwardToConnector", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = bankAccountsForwardToConnector(m)
+			handlerFn = bankAccountsForwardToConnector(m, validation.NewValidator())
 		})
 
 		DescribeTable("validation errors",

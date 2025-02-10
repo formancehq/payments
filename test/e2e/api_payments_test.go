@@ -54,7 +54,7 @@ var _ = Context("Payments API Payments", func() {
 			ver = 3
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
-			asset = "USD"
+			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
@@ -118,7 +118,7 @@ var _ = Context("Payments API Payments", func() {
 			ver = 2
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
-			asset = "USD"
+			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			connectorConf := newConnectorConfigurationFn()(uuid.New())
@@ -174,7 +174,7 @@ func setupDebtorAndCreditorAccounts(
 		Name:         "creditor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt.Add(-time.Hour),
-		DefaultAsset: "USD",
+		DefaultAsset: "USD/2",
 		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
 		Metadata:     map[string]string{"key": "val"},
 	}
@@ -187,7 +187,7 @@ func setupDebtorAndCreditorAccounts(
 		Name:         "debtor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt,
-		DefaultAsset: "USD",
+		DefaultAsset: "USD/2",
 		Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
 		Metadata:     map[string]string{"ping": "pong"},
 	}

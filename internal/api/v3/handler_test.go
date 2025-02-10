@@ -11,7 +11,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/formancehq/payments/internal/models"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -19,6 +21,18 @@ import (
 func TestV3Handlers(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "API v3 Suite")
+}
+
+func generateTextString(l int) string {
+	var buf bytes.Buffer
+	for i := 0; i < l; i++ {
+		buf.WriteString("a")
+	}
+	return buf.String()
+}
+
+func testConnectorID() *models.ConnectorID {
+	return &models.ConnectorID{Reference: uuid.New(), Provider: "dummypay"}
 }
 
 func assertExpectedResponse(res *http.Response, expectedStatusCode int, expectedBodyString string) {

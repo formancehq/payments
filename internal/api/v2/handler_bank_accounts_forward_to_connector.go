@@ -2,11 +2,11 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
@@ -14,18 +14,10 @@ import (
 )
 
 type BankAccountsForwardToConnectorRequest struct {
-	ConnectorID string `json:"connectorID"`
+	ConnectorID string `json:"connectorID" validate:"required"`
 }
 
-func (f *BankAccountsForwardToConnectorRequest) Validate() error {
-	if f.ConnectorID == "" {
-		return errors.New("connectorID must be provided")
-	}
-
-	return nil
-}
-
-func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
+func bankAccountsForwardToConnector(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_bankAccountsForwardToConnector")
 		defer span.End()
@@ -48,7 +40,7 @@ func bankAccountsForwardToConnector(backend backend.Backend) http.HandlerFunc {
 
 		span.SetAttributes(attribute.String("connectorID", req.ConnectorID))
 
-		err = req.Validate()
+		_, err = validator.Validate(req)
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrMissingOrInvalidBody, err)

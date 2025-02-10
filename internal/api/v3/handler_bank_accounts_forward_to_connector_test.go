@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +34,7 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = bankAccountsForwardToConnector(m)
+			handlerFn = bankAccountsForwardToConnector(m, validation.NewValidator())
 		})
 
 		DescribeTable("validation errors",
@@ -41,7 +42,7 @@ var _ = Describe("API v3 Bank Accounts ForwardToConnector", func() {
 				handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "bankAccountID", bankAccountID.String(), &freq))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, expected)
 			},
-			Entry("connector ID missing", ErrMissingOrInvalidBody, BankAccountsForwardToConnectorRequest{}),
+			Entry("connector ID missing", ErrValidation, BankAccountsForwardToConnectorRequest{}),
 			Entry("connector ID invalid", ErrValidation, BankAccountsForwardToConnectorRequest{ConnectorID: "blah"}),
 		)
 

@@ -1,5 +1,6 @@
 ignore:
   - "pkg/events"
+  - "pkg/testserver"
   - "test"
   - "tools"
   - "openapi"

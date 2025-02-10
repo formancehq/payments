@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +34,7 @@ var _ = Describe("API v2 Payments Create", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = paymentsCreate(m)
+			handlerFn = paymentsCreate(m, validation.NewValidator())
 		})
 
 		It("should return a bad request error when body is missing", func(ctx SpecContext) {
@@ -67,7 +68,7 @@ var _ = Describe("API v2 Payments Create", func() {
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
-				Asset:       "JPY",
+				Asset:       "JPY/0",
 				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
@@ -83,7 +84,7 @@ var _ = Describe("API v2 Payments Create", func() {
 				ConnectorID: connID.String(),
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
-				Asset:       "JPY",
+				Asset:       "JPY/0",
 				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),

@@ -35,7 +35,11 @@ func NewValidator() *Validator {
 	en_translations.RegisterDefaultTranslations(validate, translator)
 
 	registerCustomChecker("accountID", IsAccountID, "", validate, translator)
+	registerCustomChecker("accountType", IsAccountType, "", validate, translator)
 	registerCustomChecker("connectorID", IsConnectorID, "", validate, translator)
+	registerCustomChecker("paymentType", IsPaymentType, "", validate, translator)
+	registerCustomChecker("paymentScheme", IsPaymentScheme, "", validate, translator)
+	registerCustomChecker("paymentStatus", IsPaymentStatus, "", validate, translator)
 	registerCustomChecker("paymentInitiationType", IsPaymentInitiationType, "", validate, translator)
 	registerCustomChecker("asset", IsAsset, "", validate, translator)
 	return &Validator{

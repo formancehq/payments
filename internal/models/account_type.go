@@ -10,3 +10,13 @@ const (
 	// External accounts represents actual bank accounts of the user.
 	ACCOUNT_TYPE_EXTERNAL AccountType = "EXTERNAL"
 )
+
+func AccountTypeFromString(value string) AccountType {
+	switch value {
+	case string(ACCOUNT_TYPE_INTERNAL):
+		return ACCOUNT_TYPE_INTERNAL
+	case string(ACCOUNT_TYPE_EXTERNAL):
+		return ACCOUNT_TYPE_EXTERNAL
+	}
+	return ACCOUNT_TYPE_UNKNOWN
+}

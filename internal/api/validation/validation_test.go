@@ -30,6 +30,12 @@ var _ = Describe("Validator custom type checks", func() {
 			ConnectorIDNullable      *string                      `validate:"omitempty,connectorID"`
 			AccountID                string                       `validate:"omitempty,accountID"`
 			AccountIDNullable        *string                      `validate:"omitempty,accountID"`
+			AccountType              string                       `validate:"omitempty,accountType"`
+			AccountTypeNullable      *string                      `validate:"omitempty,accountType"`
+			PaymentType              models.PaymentType           `validate:"omitempty,paymentType"`
+			PaymentTypeStr           string                       `validate:"omitempty,paymentType"`
+			PaymentScheme            models.PaymentScheme         `validate:"omitempty,paymentScheme"`
+			PaymentSchemeStr         string                       `validate:"omitempty,paymentScheme"`
 			PaymentInitiationType    models.PaymentInitiationType `validate:"omitempty,paymentInitiationType"`
 			PaymentInitiationTypeStr string                       `validate:"omitempty,paymentInitiationType"`
 			Asset                    string                       `validate:"omitempty,asset"`
@@ -80,6 +86,57 @@ var _ = Describe("Validator custom type checks", func() {
 				FieldName int `validate:"accountID"`
 			}{FieldName: 34}),
 
+			// accountType
+			Entry("accountType: invalid value of string on required field", "accountType", "StringFieldName", struct {
+				StringFieldName string `validate:"required,accountType"`
+			}{StringFieldName: "invalid"}),
+			Entry("accountType: invalid value of string", "accountType", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,accountType"`
+			}{StringFieldName: "invalid"}),
+			Entry("accountType: invalid value on string pointer on required field", "accountType", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"required,accountType"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("accountType: invalid value on string pointer", "accountType", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"omitempty,accountType"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("accountType: unsupported type for this matcher", "accountType", "FieldName", struct {
+				FieldName int `validate:"accountType"`
+			}{FieldName: 0}),
+
+			// paymentType
+			Entry("paymentType: invalid value of string on required field", "paymentType", "StringFieldName", struct {
+				StringFieldName string `validate:"required,paymentType"`
+			}{StringFieldName: "invalid"}),
+			Entry("paymentType: invalid value of string", "paymentType", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,paymentType"`
+			}{StringFieldName: "invalid"}),
+			Entry("paymentType: invalid value on string pointer on required field", "paymentType", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"required,paymentType"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("paymentType: invalid value on string pointer", "paymentType", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"omitempty,paymentType"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("paymentType: unsupported type for this matcher", "paymentType", "FieldName", struct {
+				FieldName int `validate:"paymentType"`
+			}{FieldName: 34}),
+
+			// paymentScheme
+			Entry("paymentScheme: invalid value of string on required field", "paymentScheme", "StringFieldName", struct {
+				StringFieldName string `validate:"required,paymentScheme"`
+			}{StringFieldName: "invalid"}),
+			Entry("paymentScheme: invalid value of string", "paymentScheme", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,paymentScheme"`
+			}{StringFieldName: "invalid"}),
+			Entry("paymentScheme: invalid value on string pointer on required field", "paymentScheme", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"required,paymentScheme"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("paymentScheme: invalid value on string pointer", "paymentScheme", "PointerFieldName", struct {
+				PointerFieldName *string `validate:"omitempty,paymentScheme"`
+			}{PointerFieldName: pointer.For("invalid")}),
+			Entry("paymentScheme: unsupported type for this matcher", "paymentScheme", "FieldName", struct {
+				FieldName int `validate:"paymentScheme"`
+			}{FieldName: 34}),
+
 			// paymentInitiationType
 			Entry("paymentInitiationType: invalid value of string on required field", "paymentInitiationType", "StringFieldName", struct {
 				StringFieldName string `validate:"required,paymentInitiationType"`
@@ -128,6 +185,27 @@ var _ = Describe("Validator custom type checks", func() {
 			_, err := validate.Validate(CustomStruct{
 				AccountID:         accID.String(),
 				AccountIDNullable: pointer.For(accID.String()),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("accountType supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				AccountType:         string(models.ACCOUNT_TYPE_EXTERNAL),
+				AccountTypeNullable: pointer.For(string(models.ACCOUNT_TYPE_INTERNAL)),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("paymentType supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				PaymentType:    models.PAYMENT_TYPE_PAYOUT,
+				PaymentTypeStr: models.PAYMENT_TYPE_TRANSFER.String(),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("paymentScheme supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				PaymentScheme:    models.PAYMENT_SCHEME_CARD_ALIPAY,
+				PaymentSchemeStr: models.PAYMENT_SCHEME_CARD_AMEX.String(),
 			})
 			Expect(err).To(BeNil())
 		})

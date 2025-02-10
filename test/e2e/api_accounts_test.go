@@ -47,7 +47,7 @@ var _ = Context("Payments API Accounts", func() {
 		Reference:    "ref",
 		Name:         "foo",
 		CreatedAt:    createdAt,
-		DefaultAsset: "USD",
+		DefaultAsset: "USD/2",
 		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
 		Metadata:     map[string]string{"key": "val"},
 	}
