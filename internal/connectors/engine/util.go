@@ -4,6 +4,6 @@ import (
 	"fmt"
 )
 
-func getDefaultTaskQueue(stack string) string {
+func GetDefaultTaskQueue(stack string) string {
 	return fmt.Sprintf("%s-default", stack)
 }
