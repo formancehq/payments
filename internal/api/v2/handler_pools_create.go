@@ -2,13 +2,13 @@ package v2
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/google/uuid"
@@ -17,15 +17,8 @@ import (
 )
 
 type CreatePoolRequest struct {
-	Name       string   `json:"name"`
-	AccountIDs []string `json:"accountIDs"`
-}
-
-func (r *CreatePoolRequest) Validate() error {
-	if len(r.AccountIDs) == 0 {
-		return errors.New("one or more account id required")
-	}
-	return nil
+	Name       string   `json:"name" validate:""`
+	AccountIDs []string `json:"accountIDs" validate:"min=1,dive,accountID"`
 }
 
 type PoolResponse struct {
@@ -34,7 +27,7 @@ type PoolResponse struct {
 	Accounts []string `json:"accounts"`
 }
 
-func poolsCreate(backend backend.Backend) http.HandlerFunc {
+func poolsCreate(backend backend.Backend, validator *validation.Validator) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v2_poolsBalancesAt")
 		defer span.End()
@@ -49,7 +42,7 @@ func poolsCreate(backend backend.Backend) http.HandlerFunc {
 
 		populateSpanFromCreatePoolRequest(span, CreatePoolRequest)
 
-		if err := CreatePoolRequest.Validate(); err != nil {
+		if _, err := validator.Validate(CreatePoolRequest); err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, err)
 			return
