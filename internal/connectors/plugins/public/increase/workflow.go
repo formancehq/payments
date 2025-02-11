@@ -16,12 +16,12 @@ func workflow() models.ConnectorTasksTree {
 					Periodically: true,
 					NextTasks:    []models.ConnectorTaskTree{},
 				},
-				{
-					TaskType:  models.TASK_FETCH_PAYMENTS,
-					Name:      "fetch_payments",
-					NextTasks: []models.ConnectorTaskTree{},
-				},
 			},
+		},
+		{
+			TaskType:  models.TASK_FETCH_PAYMENTS,
+			Name:      "fetch_payments",
+			NextTasks: []models.ConnectorTaskTree{},
 		},
 		{
 			TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,

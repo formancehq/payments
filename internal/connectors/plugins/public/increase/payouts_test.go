@@ -249,7 +249,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = "wire"
-		
+
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
@@ -259,18 +259,18 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				Currency:          "USD",
 				Amount:            "1.00",
 			}
-		
+
 			m.EXPECT().InitiateWireTransferPayout(gomock.Any(), &client.WireTransferPayoutRequest{
 				AccountID:          samplePSPPaymentInitiation.SourceAccount.Reference,
 				ExternalAccountID:  samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Amount:            "1.00",
-				BeneficiaryName:   *samplePSPPaymentInitiation.DestinationAccount.Name,
+				Amount:             "1.00",
+				BeneficiaryName:    *samplePSPPaymentInitiation.DestinationAccount.Name,
 				MessageToRecipient: samplePSPPaymentInitiation.Description,
 			}).Return(&trResponse, nil)
-		
+
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
-		
+
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
@@ -295,7 +295,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = "check"
-		
+
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
@@ -305,7 +305,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				Currency:          "USD",
 				Amount:            "1.00",
 			}
-		
+
 			m.EXPECT().InitiateCheckTransferPayout(gomock.Any(), &client.CheckPayoutRequest{
 				AccountID:             samplePSPPaymentInitiation.SourceAccount.Reference,
 				SourceAccountNumberID: samplePSPPaymentInitiation.SourceAccount.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey],
@@ -317,10 +317,10 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					CheckNumber: samplePSPPaymentInitiation.Metadata[client.IncreaseCheckNumberMetadataKey],
 				},
 			}).Return(&trResponse, nil)
-		
+
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
-		
+
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
@@ -345,7 +345,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = "rtp"
-		
+
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
@@ -355,7 +355,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				Currency:          "USD",
 				Amount:            "1.00",
 			}
-		
+
 			m.EXPECT().InitiateRTPTransferPayout(gomock.Any(), &client.RTPPayoutRequest{
 				SourceAccountNumberID: samplePSPPaymentInitiation.SourceAccount.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey],
 				ExternalAccountID:     samplePSPPaymentInitiation.DestinationAccount.Reference,
@@ -363,10 +363,10 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				CreditorName:          *samplePSPPaymentInitiation.DestinationAccount.Name,
 				RemittanceInformation: samplePSPPaymentInitiation.Description,
 			}).Return(&trResponse, nil)
-		
+
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
-		
+
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
@@ -384,6 +384,6 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					Metadata:                    map[string]string{"routingNumber": "", "accountNumber": "", "recipientName": "", "checkNumber": ""},
 				},
 			}))
-		})		
+		})
 	})
 })
