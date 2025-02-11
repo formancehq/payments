@@ -90,10 +90,19 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(engine.ErrNotFound))
 		})
 
-		It("should return storage error when task cannot be upserted", func(ctx SpecContext) {
-			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
-				&models.Connector{ID: connID}, nil,
+		It("should return not found error when storage doesn't find bank account", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
+			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(
+				nil, fmt.Errorf("some not found err: %w", storage.ErrNotFound),
 			)
+			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should return storage error when task cannot be upserted", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
+			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			expectedErr := fmt.Errorf("fffff")
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(
 				expectedErr,
@@ -107,6 +116,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
 				&models.Connector{ID: connID}, nil,
 			)
+			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			expectedErr := fmt.Errorf("workflow failed")
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
@@ -123,6 +133,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
 				&models.Connector{ID: connID}, nil,
 			)
+			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
 				workflow.RunCreateBankAccount,

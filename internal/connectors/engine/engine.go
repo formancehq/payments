@@ -466,6 +466,11 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		return models.Task{}, fmt.Errorf("connector %w", ErrNotFound)
 	}
 
+	if _, err := e.storage.BankAccountsGet(ctx, bankAccountID, false); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, fmt.Errorf("bank account %w", ErrNotFound)
+	}
+
 	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, bankAccountID.String())
 	now := time.Now().UTC()
 	task := models.Task{
