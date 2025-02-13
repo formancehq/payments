@@ -156,7 +156,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	run, err := e.temporalClient.ExecuteWorkflow(
 		detachedCtx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
+			ID:                                       e.taskIDReferenceFor(IDPrefixConnectorInstall, connector.ID, ""),
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,

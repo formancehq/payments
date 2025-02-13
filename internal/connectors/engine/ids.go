@@ -8,6 +8,7 @@ import (
 
 const (
 	IDPrefixBankAccountCreate = "create-bank-account"
+	IDPrefixConnectorInstall  = "install"
 )
 
 func (e *engine) taskIDReferenceFor(prefix string, connectorID models.ConnectorID, objectID string) string {

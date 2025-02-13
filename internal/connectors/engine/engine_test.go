@@ -1,6 +1,7 @@
 package engine_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -58,7 +59,9 @@ var _ = Describe("Engine Tests", func() {
 		defaultTaskQueue string
 		eng              engine.Engine
 		store            *storage.MockStorage
+		plgs             *plugins.MockPlugins
 		cl               *activities.MockClient
+		wr               *activities.MockWorkflowRun
 	)
 	BeforeEach(func() {
 		stackName = "STACKNAME"
@@ -66,9 +69,78 @@ var _ = Describe("Engine Tests", func() {
 		ctrl := gomock.NewController(GinkgoT())
 		logger := logging.NewDefaultLogger(GinkgoWriter, false, false, false)
 		cl = activities.NewMockClient(ctrl)
+		wr = activities.NewMockWorkflowRun(ctrl)
 		store = storage.NewMockStorage(ctrl)
-		plgs := plugins.NewMockPlugins(ctrl)
+		plgs = plugins.NewMockPlugins(ctrl)
 		eng = engine.New(logger, cl, store, plgs, stackName)
+	})
+
+	Context("installing a connector", func() {
+		var (
+			config json.RawMessage
+		)
+		BeforeEach(func() {
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+		})
+
+		It("should return error when config has validation issues", func(ctx SpecContext) {
+			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{}`))
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("hi")
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+				expectedErr,
+			)
+			_, err := eng.InstallConnector(ctx, "psp", config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return validation error when plugin registry fails with validation issues", func(ctx SpecContext) {
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+				models.ErrInvalidConfig,
+			)
+			_, err := eng.InstallConnector(ctx, "psp", config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should fail when storage error happens", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage err")
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
+			_, err := eng.InstallConnector(ctx, "psp", config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should fail when workflow start fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow err")
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
+				workflow.RunInstallConnector,
+				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
+			).Return(nil, expectedErr)
+			_, err := eng.InstallConnector(ctx, "psp", config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
+				workflow.RunInstallConnector,
+				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
+			).Return(wr, nil)
+			wr.EXPECT().Get(gomock.Any(), nil).Return(nil)
+			_, err := eng.InstallConnector(ctx, "psp", config)
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Context("forwarding a bank account to a connector", func() {
