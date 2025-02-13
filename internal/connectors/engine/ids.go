@@ -10,6 +10,7 @@ const (
 	IDPrefixBankAccountCreate  = "create-bank-account"
 	IDPrefixConnectorInstall   = "install"
 	IDPrefixConnectorUninstall = "uninstall"
+	IDPrefixConnectorReset     = "reset"
 )
 
 func (e *engine) taskIDReferenceFor(prefix string, connectorID models.ConnectorID, objectID string) string {

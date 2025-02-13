@@ -261,7 +261,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	defer e.wg.Done()
 
 	now := time.Now()
-	id := fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String())
+	id := e.taskIDReferenceFor(IDPrefixConnectorReset, connectorID, "")
 	task := models.Task{
 		// Do not fill the connector ID as it will be deleted
 		ID: models.TaskID{
