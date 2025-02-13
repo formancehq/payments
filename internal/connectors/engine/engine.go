@@ -200,7 +200,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	}
 
 	now := time.Now()
-	id := fmt.Sprintf("uninstall-%s-%s", e.stack, connectorID.String())
+	id := e.taskIDReferenceFor(IDPrefixConnectorUninstall, connectorID, "")
 	task := models.Task{
 		// Do not fill the connector ID as it will be deleted
 		ID: models.TaskID{

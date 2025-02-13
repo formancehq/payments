@@ -143,6 +143,63 @@ var _ = Describe("Engine Tests", func() {
 		})
 	})
 
+	Context("uninstalling a connector", func() {
+		var (
+			connID models.ConnectorID
+		)
+		BeforeEach(func() {
+			connID = models.ConnectorID{Reference: uuid.New(), Provider: "dummypay"}
+		})
+
+		It("should return storage error when deletion flag cannot be set", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage err")
+			store.EXPECT().ConnectorsScheduleForDeletion(gomock.Any(), connID).Return(expectedErr)
+			_, err := eng.UninstallConnector(ctx, connID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return storage error when task cannot be inserted", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("task storage err")
+			store.EXPECT().ConnectorsScheduleForDeletion(gomock.Any(), connID).Return(nil)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(expectedErr)
+			_, err := eng.UninstallConnector(ctx, connID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("calls task upsert twice on workflow failure", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow storage err")
+			store.EXPECT().ConnectorsScheduleForDeletion(gomock.Any(), connID).Return(nil)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil).MinTimes(2)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorUninstall, defaultTaskQueue),
+				workflow.RunUninstallConnector,
+				gomock.AssignableToTypeOf(workflow.UninstallConnector{}),
+			).Return(nil, expectedErr)
+
+			_, err := eng.UninstallConnector(ctx, connID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("returns a task without waiting for workflow run", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsScheduleForDeletion(gomock.Any(), connID).Return(nil)
+			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorUninstall, defaultTaskQueue),
+				workflow.RunUninstallConnector,
+				gomock.AssignableToTypeOf(workflow.UninstallConnector{}),
+			).Return(nil, nil)
+
+			task, err := eng.UninstallConnector(ctx, connID)
+			Expect(err).To(BeNil())
+			Expect(task.ID.Reference).To(ContainSubstring(engine.IDPrefixConnectorUninstall))
+			Expect(task.ID.Reference).To(ContainSubstring(stackName))
+			Expect(task.ID.ConnectorID).To(Equal(connID))
+			Expect(task.ConnectorID.String()).To(Equal("")) // connID must be nil for uninstall tasks
+			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+	})
+
 	Context("forwarding a bank account to a connector", func() {
 		var (
 			bankID uuid.UUID
