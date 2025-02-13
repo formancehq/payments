@@ -153,23 +153,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	}
 
 	// Launch the workflow
-	run, err := e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       e.taskIDReferenceFor(IDPrefixConnectorInstall, connector.ID, ""),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunInstallConnector,
-		workflow.InstallConnector{
-			ConnectorID: connector.ID,
-			Config:      config,
-		},
-	)
+	run, err := e.launchInstallWorkflow(detachedCtx, connector, config)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
@@ -1009,29 +993,31 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 
 	if !connector.ScheduledForDeletion {
 		// Launch the workflow
-		_, err := e.temporalClient.ExecuteWorkflow(
-			ctx,
-			client.StartWorkflowOptions{
-				ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
-				TaskQueue:                                GetDefaultTaskQueue(e.stack),
-				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-				WorkflowExecutionErrorWhenAlreadyStarted: false,
-				SearchAttributes: map[string]interface{}{
-					workflow.SearchAttributeStack: e.stack,
-				},
-			},
-			workflow.RunInstallConnector,
-			workflow.InstallConnector{
-				ConnectorID: connector.ID,
-				Config:      config,
-			},
-		)
-		if err != nil {
+		if _, err := e.launchInstallWorkflow(ctx, connector, config); err != nil {
 			return err
 		}
 	}
-
 	return nil
+}
+
+func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config) (client.WorkflowRun, error) {
+	return e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       e.taskIDReferenceFor(IDPrefixConnectorInstall, connector.ID, ""),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunInstallConnector,
+		workflow.InstallConnector{
+			ConnectorID: connector.ID,
+			Config:      config,
+		},
+	)
 }
 
 var _ Engine = &engine{}

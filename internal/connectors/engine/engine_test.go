@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -73,6 +74,56 @@ var _ = Describe("Engine Tests", func() {
 		store = storage.NewMockStorage(ctrl)
 		plgs = plugins.NewMockPlugins(ctrl)
 		eng = engine.New(logger, cl, store, plgs, stackName)
+	})
+
+	Context("on start", func() {
+		var (
+		//			config json.RawMessage
+		)
+		BeforeEach(func() {
+			//			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+		})
+
+		It("should fail when unable to fetch connectors from storage", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage err")
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(nil, expectedErr)
+			err := eng.OnStart(ctx)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should do nothing if no connectors are present", func(ctx SpecContext) {
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{}, nil)
+			err := eng.OnStart(ctx)
+			Expect(err).To(BeNil())
+		})
+
+		It("should fail when workflow cannot be launched", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("workflow error")
+			connector := models.Connector{Config: json.RawMessage(`{}`)}
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
+				workflow.RunInstallConnector,
+				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
+			).Return(nil, expectedErr)
+			err := eng.OnStart(ctx)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should launch a workflow for each connector", func(ctx SpecContext) {
+			connectors := []models.Connector{
+				{Config: json.RawMessage(`{}`)},
+				{Config: json.RawMessage(`{}`)},
+			}
+			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
+				workflow.RunInstallConnector,
+				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
+			).Return(wr, nil).MinTimes(len(connectors))
+			err := eng.OnStart(ctx)
+			Expect(err).To(BeNil())
+		})
 	})
 
 	Context("installing a connector", func() {
