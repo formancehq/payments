@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -14,26 +15,40 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
-	GetAccounts(ctx context.Context, pageSize int, cursor string) ([]*Account, string, error)
+	GetAccounts(ctx context.Context, pageSize int, cursor string, createdAtAfter time.Time) ([]*Account, string, error)
 	GetAccount(ctx context.Context, accountID string) (*Account, error)
-	GetAccountBalance(ctx context.Context, accountID string) (*Balance, error)
+	GetAccountBalance(ctx context.Context, accountID string) (*Balance, time.Time, error)
 	GetExternalAccounts(ctx context.Context, pageSize int, cursor string) ([]*ExternalAccount, string, error)
-	GetTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error)
-	GetPendingTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error)
-	GetDeclinedTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error)
+	GetExternalAccount(ctx context.Context, accountID string) (*ExternalAccount, error)
+	GetTransactions(ctx context.Context, pageSize int, createdAtAfter time.Time) ([]*Transaction, string, error)
+	GetTransaction(ctx context.Context, transactionID string) (*Transaction, error)
+	GetPendingTransactions(ctx context.Context, pageSize int, createdAtAfter time.Time) ([]*Transaction, string, error)
+	GetPendingTransaction(ctx context.Context, transactionID string) (*Transaction, error)
+	GetDeclinedTransactions(ctx context.Context, pageSize int, createdAtAfter time.Time) ([]*Transaction, string, error)
+	GetDeclinedTransaction(ctx context.Context, transactionID string) (*Transaction, error)
+	GetTransfer(ctx context.Context, transferID string) (*TransferResponse, error)
 	InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error)
+	GetACHTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
+	GetRTPTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
+	GetWireTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
+	GetCheckTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
 	InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest) (*PayoutResponse, error)
 	InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest) (*PayoutResponse, error)
 	InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest) (*PayoutResponse, error)
 	InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest) (*PayoutResponse, error)
 	CreateBankAccount(ctx context.Context, pr *BankAccountRequest) (*BankAccountResponse, error)
+	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest) (*EventSubscription, error)
+	ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error)
+	UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error)
+	VerifyWebhookSignature(payload []byte, signature string) error
 }
 
 type client struct {
 	httpClient httpwrapper.Client
 
-	apiKey   string
-	endpoint string
+	apiKey              string
+	endpoint            string
+	webhookSharedSecret string
 }
 
 type apiTransport struct {
@@ -42,7 +57,7 @@ type apiTransport struct {
 }
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Add("Authorization", t.client.apiKey)
+	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.client.apiKey))
 	return t.underlying.RoundTrip(req)
 }
 
@@ -54,16 +69,11 @@ type responseWrapper[t any] struct {
 	} `json:"response_metadata"`
 }
 
-const SandboxAPIEndpoint = "https://sandbox.increase.com"
-
-func New(connectorName, apiKey, endpoint string) *client {
-	if endpoint == "" {
-		endpoint = SandboxAPIEndpoint
-	}
-
+func New(connectorName, apiKey, endpoint, webhookSharedSecret string) *client {
 	client := &client{
-		apiKey:   apiKey,
-		endpoint: endpoint,
+		apiKey:              apiKey,
+		endpoint:            endpoint,
+		webhookSharedSecret: webhookSharedSecret,
 	}
 
 	apiTransport := &apiTransport{

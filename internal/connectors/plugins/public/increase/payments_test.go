@@ -45,17 +45,8 @@ var _ = Describe("Increase Plugin Payments", func() {
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
 					Amount:    "100.01",
-					Source: struct {
-						DestinationAccountID string "json:\"destination_account_id\""
-						SourceAccountID      string "json:\"source_account_id\""
-						TransactionID        string "json:\"transaction_id\""
-					}{
-						DestinationAccountID: "2345432",
-						SourceAccountID:      "09876543",
-						TransactionID:        "123467898",
-					},
-					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
-					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
+					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
 				})
 			}
@@ -64,17 +55,8 @@ var _ = Describe("Increase Plugin Payments", func() {
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
 					Amount:    "100.01",
-					Source: struct {
-						DestinationAccountID string "json:\"destination_account_id\""
-						SourceAccountID      string "json:\"source_account_id\""
-						TransactionID        string "json:\"transaction_id\""
-					}{
-						DestinationAccountID: "2345432",
-						SourceAccountID:      "09876543",
-						TransactionID:        "123467898",
-					},
-					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
-					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
+					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
 				})
 			}
@@ -83,17 +65,8 @@ var _ = Describe("Increase Plugin Payments", func() {
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
 					Amount:    "100.01",
-					Source: struct {
-						DestinationAccountID string "json:\"destination_account_id\""
-						SourceAccountID      string "json:\"source_account_id\""
-						TransactionID        string "json:\"transaction_id\""
-					}{
-						DestinationAccountID: "2345432",
-						SourceAccountID:      "09876543",
-						TransactionID:        "123467898",
-					},
-					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
-					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
+					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
 				})
 			}
@@ -105,7 +78,61 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
+				[]*client.Transaction{},
+				"",
+				nil,
+			)
+
+			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
+				[]*client.Transaction{},
+				"",
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+		})
+
+		It("should return an error - get pending transactions error", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
+				[]*client.Transaction{},
+				"",
+				errors.New("test error"),
+			)
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
+		})
+
+		It("should return an error - get declined transactions error", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+
+			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
+				[]*client.Transaction{},
+				"",
+				nil,
+			)
+
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
+				[]*client.Transaction{},
+				"",
+				nil,
+			)
+
+			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
 				[]*client.Transaction{},
 				"",
 				errors.New("test error"),
@@ -123,19 +150,19 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
 				[]*client.Transaction{},
 				"",
 				nil,
 			)
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
 				[]*client.Transaction{},
 				"",
 				nil,
 			)
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
 				[]*client.Transaction{},
 				"",
 				nil,
@@ -150,9 +177,9 @@ var _ = Describe("Increase Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.NextSucceededCursor).To(BeEmpty())
-			Expect(state.NextPendingCursor).To(BeEmpty())
-			Expect(state.NextDeclinedCursor).To(BeEmpty())
+			Expect(state.LastSucceededCreatedAt.IsZero()).To(BeTrue())
+			Expect(state.LastPendingCreatedAt.IsZero()).To(BeTrue())
+			Expect(state.LastDeclinedCreatedAt.IsZero()).To(BeTrue())
 		})
 
 		It("should fetch next payments - no state pageSize > total payments", func(ctx SpecContext) {
@@ -161,34 +188,39 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 60, "").Return(
-				sampleSucceededTransactions,
+			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
+				sampleSucceededTransactions[:20],
 				"",
 				nil,
 			)
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 60, "").Return(
-				samplePendingTransactions[:1],
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
+				samplePendingTransactions[:20],
 				"",
 				nil,
 			)
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 60, "").Return(
-				sampleDeclinedTransactions[:1],
+			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
+				sampleDeclinedTransactions[:20],
 				"",
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(52))
+			Expect(resp.Payments).To(HaveLen(60))
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).ToNot(BeNil())
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.NextSucceededCursor).To(BeEmpty())
+			succeededCreatedTime, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[19].CreatedAt)
+			pendingCreatedTime, _ := time.Parse(time.RFC3339, samplePendingTransactions[19].CreatedAt)
+			declinedCreatedTime, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[19].CreatedAt)
+			Expect(state.LastSucceededCreatedAt.UTC()).To(Equal(succeededCreatedTime.UTC()))
+			Expect(state.LastPendingCreatedAt.UTC()).To(Equal(pendingCreatedTime.UTC()))
+			Expect(state.LastDeclinedCreatedAt.UTC()).To(Equal(declinedCreatedTime.UTC()))
 		})
 
 		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {
@@ -197,63 +229,71 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 40, "").Return(
-				sampleSucceededTransactions[:40],
+			m.EXPECT().GetTransactions(gomock.Any(), 13, time.Time{}).Return(
+				sampleSucceededTransactions[:13],
 				"qwerty",
 				nil,
 			)
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 40, "").Return(
-				samplePendingTransactions[:40],
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 13, time.Time{}).Return(
+				samplePendingTransactions[:13],
 				"uiop",
 				nil,
 			)
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 40, "").Return(
-				sampleDeclinedTransactions[:40],
+			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 13, time.Time{}).Return(
+				sampleDeclinedTransactions[:13],
 				"asdfg",
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(40))
+			Expect(resp.Payments).To(HaveLen(39))
 			Expect(resp.HasMore).To(BeTrue())
 			Expect(resp.NewState).ToNot(BeNil())
 
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.NextSucceededCursor).To(Equal("qwerty"))
-			Expect(state.NextPendingCursor).To(Equal("uiop"))
-			Expect(state.NextDeclinedCursor).To(Equal("asdfg"))
+			succeededCreatedTime, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[12].CreatedAt)
+			pendingCreatedTime, _ := time.Parse(time.RFC3339, samplePendingTransactions[12].CreatedAt)
+			declinedCreatedTime, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[12].CreatedAt)
+			Expect(state.LastSucceededCreatedAt.UTC()).To(Equal(succeededCreatedTime.UTC()))
+			Expect(state.LastPendingCreatedAt.UTC()).To(Equal(pendingCreatedTime.UTC()))
+			Expect(state.LastDeclinedCreatedAt.UTC()).To(Equal(declinedCreatedTime.UTC()))
 		})
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
+			lastSucceededCreatedAt, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[38].CreatedAt)
+			lastPendingCreatedAt, _ := time.Parse(time.RFC3339, samplePendingTransactions[38].CreatedAt)
+			lastDeclinedCreatedAt, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[38].CreatedAt)
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(`{"next_succeeded_cursor": "qwerty", "next_pending_cursor": "uiop", "next_declined_cursor": "asdfg"}`),
+				State:    []byte(fmt.Sprintf(`{"last_succeeded_created_at": "%s", "last_pending_created_at": "%s", "last_declined_created_at": "%s"}`, lastSucceededCreatedAt.Format(time.RFC3339Nano), lastPendingCreatedAt.Format(time.RFC3339Nano), lastDeclinedCreatedAt.Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 40, "qwerty").Return(
-				sampleSucceededTransactions[:40],
-				"mnbvc",
-				nil,
-			)
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 40, "uiop").Return(
-				samplePendingTransactions[:40],
+			m.EXPECT().GetPendingTransactions(gomock.Any(), 13, lastPendingCreatedAt).Return(
+				samplePendingTransactions[:13],
 				"lkjh",
 				nil,
 			)
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 40, "asdfg").Return(
-				sampleDeclinedTransactions[:40],
+
+			m.EXPECT().GetTransactions(gomock.Any(), 13, lastSucceededCreatedAt).Return(
+				sampleSucceededTransactions[:13],
+				"mnbvc",
+				nil,
+			)
+
+			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 13, lastDeclinedCreatedAt).Return(
+				sampleDeclinedTransactions[:13],
 				"uytr",
 				nil,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Payments).To(HaveLen(40))
+			Expect(resp.Payments).To(HaveLen(39))
 			Expect(resp.HasMore).To(BeTrue())
 			Expect(resp.NewState).ToNot(BeNil())
 
@@ -261,9 +301,12 @@ var _ = Describe("Increase Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
-			Expect(state.NextSucceededCursor).To(Equal("mnbvc"))
-			Expect(state.NextPendingCursor).To(Equal("lkjh"))
-			Expect(state.NextDeclinedCursor).To(Equal("uytr"))
+			succeededCreatedTime, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[12].CreatedAt)
+			pendingCreatedTime, _ := time.Parse(time.RFC3339, samplePendingTransactions[12].CreatedAt)
+			declinedCreatedTime, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[12].CreatedAt)
+			Expect(state.LastSucceededCreatedAt.UTC()).To(Equal(succeededCreatedTime.UTC()))
+			Expect(state.LastPendingCreatedAt.UTC()).To(Equal(pendingCreatedTime.UTC()))
+			Expect(state.LastDeclinedCreatedAt.UTC()).To(Equal(declinedCreatedTime.UTC()))
 		})
 	})
 })

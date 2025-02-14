@@ -4,7 +4,9 @@ const (
 	increaseMetadataSpecNamespace = "com.increase.spec/"
 
 	IncreaseAccountHolderMetadataKey         = increaseMetadataSpecNamespace + "accountHolder"
+	IncreaseAccountNumberMetadataKey         = increaseMetadataSpecNamespace + "accountNumber"
 	IncreaseRoutingNumberMetadataKey         = increaseMetadataSpecNamespace + "routingNumber"
+	IncreaseRecipientNameMetadataKey         = increaseMetadataSpecNamespace + "recipientName"
 	IncreaseDescriptionMetadataKey           = increaseMetadataSpecNamespace + "description"
 	IncreaseSourceAccountNumberIdMetadataKey = increaseMetadataSpecNamespace + "sourceAccountNumberID"
 	IncreaseFufillmentMethodMetadataKey      = increaseMetadataSpecNamespace + "fufillmentMethod"
@@ -15,4 +17,7 @@ const (
 	IncreaseCityMetadataKey                  = increaseMetadataSpecNamespace + "city"
 	IncreaseStateMetadataKey                 = increaseMetadataSpecNamespace + "state"
 	IncreasePayoutMethodMetadataKey          = increaseMetadataSpecNamespace + "payoutMethod"
+	IncreaseTypeMetadataKey                  = increaseMetadataSpecNamespace + "type"
+	IncreaseBankMetadataKey                  = increaseMetadataSpecNamespace + "bank"
+	IncreaseStatusMetadataKey                = increaseMetadataSpecNamespace + "status"
 )

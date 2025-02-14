@@ -41,7 +41,7 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 					ID:            fmt.Sprintf("%d", i),
 					Description:   fmt.Sprintf("Account %d", i),
 					AccountNumber: fmt.Sprintf("123454%d", i),
-					CreatedAt:     now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					CreatedAt:     now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 				})
 			}
 		})

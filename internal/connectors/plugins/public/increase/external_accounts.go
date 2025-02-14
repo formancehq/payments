@@ -61,7 +61,7 @@ func fillExternalAccounts(
 			break
 		}
 
-		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", account.CreatedAt)
+		createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -87,4 +87,34 @@ func fillExternalAccounts(
 	}
 
 	return accounts, nil
+}
+
+func (p *Plugin) mapExternalAccount(
+	account *client.ExternalAccount,
+) (*models.PSPAccount, error) {
+	createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	raw, err := json.Marshal(account)
+	if err != nil {
+		return nil, err
+	}
+
+	pspAccount := models.PSPAccount{
+		Reference: account.ID,
+		CreatedAt: createdTime,
+		Raw:       raw,
+		Metadata: map[string]string{
+			"type":          account.Type,
+			"accountHolder": account.AccountHolder,
+			"accountNumber": account.AccountNumber,
+			"status":        account.Status,
+			"description":   account.Description,
+			"routingNumber": account.RoutingNumber,
+		},
+	}
+
+	return &pspAccount, nil
 }

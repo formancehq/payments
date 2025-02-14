@@ -2,31 +2,29 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type Transaction struct {
-	ID          string `json:"id"`
-	AccountID   string `json:"account_id"`
-	Amount      string `json:"amount"`
-	Currency    string `json:"currency"`
-	CreatedAt   string `json:"created_at"`
-	Date        string `json:"date"`
-	Description string `json:"description"`
-	RouteID     string `json:"route_id"`
-	RouteType   string `json:"route_type"`
-	Source      struct {
-		DestinationAccountID string `json:"destination_account_id"`
-		SourceAccountID      string `json:"source_account_id"`
-		TransactionID        string `json:"transaction_id"`
-	} `json:"source"`
+	ID          string      `json:"id"`
+	AccountID   string      `json:"account_id"`
+	Amount      json.Number `json:"amount"`
+	Currency    string      `json:"currency"`
+	CreatedAt   string      `json:"created_at"`
+	Date        string      `json:"date"`
+	Description string      `json:"description"`
+	RouteID     string      `json:"route_id"`
+	RouteType   string      `json:"route_type"`
+	Type        string      `json:"type"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error) {
+func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "transactions", http.NoBody)
@@ -36,8 +34,8 @@ func (c *client) GetTransactions(ctx context.Context, pageSize int, cursor strin
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if cursor != "" {
-		q.Add("cursor", cursor)
+	if !lastCreatedAtAfter.IsZero() {
+		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -51,7 +49,25 @@ func (c *client) GetTransactions(ctx context.Context, pageSize int, cursor strin
 	return res.Data, res.NextCursor, nil
 }
 
-func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error) {
+func (c *client) GetTransaction(ctx context.Context, transactionID string) (*Transaction, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_transaction")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("transactions/%s", transactionID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transactions request: %w", err)
+	}
+
+	var res Transaction
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transaction: %w %w", err, errRes.Error())
+	}
+
+	return &res, nil
+}
+
+func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_pending_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "pending_transactions", http.NoBody)
@@ -61,8 +77,8 @@ func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, curso
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if cursor != "" {
-		q.Add("cursor", cursor)
+	if !lastCreatedAtAfter.IsZero() {
+		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -76,7 +92,25 @@ func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, curso
 	return res.Data, res.NextCursor, nil
 }
 
-func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, cursor string) ([]*Transaction, string, error) {
+func (c *client) GetPendingTransaction(ctx context.Context, transactionID string) (*Transaction, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_pending_transaction")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("pending_transactions/%s", transactionID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create pending transactions request: %w", err)
+	}
+
+	var res Transaction
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pending transaction: %w %w", err, errRes.Error())
+	}
+
+	return &res, nil
+}
+
+func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_declined_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "declined_transactions", http.NoBody)
@@ -86,8 +120,8 @@ func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, curs
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if cursor != "" {
-		q.Add("cursor", cursor)
+	if !lastCreatedAtAfter.IsZero() {
+		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -99,4 +133,22 @@ func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, curs
 	}
 
 	return res.Data, res.NextCursor, nil
+}
+
+func (c *client) GetDeclinedTransaction(ctx context.Context, transactionID string) (*Transaction, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_declined_transaction")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("declined_transactions/%s", transactionID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create declined transaction request: %w", err)
+	}
+
+	var res Transaction
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get declined transaction: %w %w", err, errRes.Error())
+	}
+
+	return &res, nil
 }

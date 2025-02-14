@@ -23,9 +23,9 @@ type ExternalAccount struct {
 func (c *client) GetExternalAccounts(ctx context.Context, pageSize int, cursor string) ([]*ExternalAccount, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_external_accounts")
 
-	req, err := c.newRequest(ctx, http.MethodGet, "accounts", http.NoBody)
+	req, err := c.newRequest(ctx, http.MethodGet, "external_accounts", http.NoBody)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to create account request: %w", err)
+		return nil, "", fmt.Errorf("failed to create external account request: %w", err)
 	}
 
 	q := req.URL.Query()
@@ -39,7 +39,24 @@ func (c *client) GetExternalAccounts(ctx context.Context, pageSize int, cursor s
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed to get accounts: %w %w", err, errRes.Error())
+		return nil, "", fmt.Errorf("failed to get external accounts: %w %w", err, errRes.Error())
 	}
 	return res.Data, res.NextCursor, nil
+}
+
+func (c *client) GetExternalAccount(ctx context.Context, accountID string) (*ExternalAccount, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_external_account")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("external_accounts/%s", accountID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create external account request: %w", err)
+	}
+
+	var res ExternalAccount
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get external account: %w %w", err, errRes.Error())
+	}
+	return &res, nil
 }

@@ -34,7 +34,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.client = m
-			now, _ = time.Parse("2006-01-02T15:04:05.999-0700", time.Now().UTC().Format("2006-01-02T15:04:05.999-0700"))
+			now, _ = time.Parse(time.RFC3339, time.Now().UTC().Format(time.RFC3339))
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{
 				Reference:   "test1",
@@ -58,6 +58,32 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 					"foo": "bar",
 				},
 			}
+		})
+
+		It("should return an error - validation error - amount", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+
+			req.PaymentInitiation.Amount = nil
+
+			resp, err := plg.CreateTransfer(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("amount is required: invalid request"))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
+		})
+
+		It("should return an error - validation error - description", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+
+			req.PaymentInitiation.Description = ""
+
+			resp, err := plg.CreateTransfer(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("description is required: invalid request"))
+			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
 		It("should return an error - validation error - source account", func(ctx SpecContext) {
@@ -125,7 +151,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 			trResponse := client.TransferResponse{
 				ID:                   "1",
 				Status:               "complete",
-				CreatedAt:            now.Format("2006-01-02T15:04:05.999-0700"),
+				CreatedAt:            now.Format(time.RFC3339),
 				Description:          samplePSPPaymentInitiation.Description,
 				Currency:             "USD",
 				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,

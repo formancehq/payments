@@ -40,7 +40,7 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 
 	req, err := c.newRequest(ctx, http.MethodPost, "account_transfers", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create account balance request: %w", err)
+		return nil, fmt.Errorf("failed to create transfer request: %w", err)
 	}
 
 	var res TransferResponse
@@ -48,6 +48,23 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
+	}
+	return &res, nil
+}
+
+func (c *client) GetTransfer(ctx context.Context, transferID string) (*TransferResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_transfer")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("account_transfers/%s", transferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create transfer request: %w", err)
+	}
+
+	var res TransferResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
 	}
 	return &res, nil
 }

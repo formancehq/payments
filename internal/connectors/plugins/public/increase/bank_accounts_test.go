@@ -2,6 +2,7 @@ package increase
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/pointer"
@@ -48,6 +49,27 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 			}
 		})
 
+		It("should return an error - create bank account error", func(ctx SpecContext) {
+			req := models.CreateBankAccountRequest{
+				BankAccount: sampleBankAccount,
+			}
+
+			m.EXPECT().CreateBankAccount(gomock.Any(), &client.BankAccountRequest{
+				AccountHolder: sampleBankAccount.Metadata[client.IncreaseAccountHolderMetadataKey],
+				Description:   sampleBankAccount.Metadata[client.IncreaseDescriptionMetadataKey],
+				RoutingNumber: sampleBankAccount.Metadata[client.IncreaseRoutingNumberMetadataKey],
+				AccountNumber: *sampleBankAccount.AccountNumber,
+			}).Return(
+				nil,
+				errors.New("test error"),
+			)
+
+			resp, err := plg.CreateBankAccount(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("test error"))
+			Expect(resp).To(Equal(models.CreateBankAccountResponse{}))
+		})
+
 		It("should return an error - missing routingNumber in bank account metadata", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{}
@@ -58,6 +80,32 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("missing routingNumber in bank account metadata: invalid request"))
+			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
+		})
+
+		It("should return an error - missing accountHolder in bank account metadata", func(ctx SpecContext) {
+			ba := sampleBankAccount
+			ba.Metadata[client.IncreaseAccountHolderMetadataKey] = ""
+			req := models.CreateBankAccountRequest{
+				BankAccount: ba,
+			}
+
+			res, err := plg.CreateBankAccount(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("missing accountHolder in bank account metadata: invalid request"))
+			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
+		})
+
+		It("should return an error - missing accountHolder in bank account metadata", func(ctx SpecContext) {
+			ba := sampleBankAccount
+			ba.Metadata[client.IncreaseAccountHolderMetadataKey] = ""
+			req := models.CreateBankAccountRequest{
+				BankAccount: ba,
+			}
+
+			res, err := plg.CreateBankAccount(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("missing accountHolder in bank account metadata: invalid request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -87,7 +135,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			raw, _ := json.Marshal(expectedBA)
 
-			createdAt, _ := time.Parse("2006-01-02T15:04:05.999-0700", expectedBA.CreatedAt)
+			createdAt, _ := time.Parse(time.RFC3339, expectedBA.CreatedAt)
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res).To(Equal(models.CreateBankAccountResponse{
@@ -95,12 +143,12 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 					Reference: "id",
 					CreatedAt: createdAt,
 					Metadata: map[string]string{
-						"accountHolder": "business",
-						"accountNumber": "12345678",
-						"description":   "description",
-						"routingNumber": "23567655",
-						"type":          "",
-						"status":        "active",
+						client.IncreaseAccountHolderMetadataKey: "business",
+						client.IncreaseAccountNumberMetadataKey: "12345678",
+						client.IncreaseDescriptionMetadataKey:   "description",
+						client.IncreaseRoutingNumberMetadataKey: "23567655",
+						client.IncreaseTypeMetadataKey:          "",
+						client.IncreaseStatusMetadataKey:        "active",
 					},
 					Raw: raw,
 				},

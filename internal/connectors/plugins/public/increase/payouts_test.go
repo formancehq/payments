@@ -35,7 +35,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.client = m
-			now, _ = time.Parse("2006-01-02T15:04:05.999-0700", time.Now().UTC().Format("2006-01-02T15:04:05.999-0700"))
+			now, _ = time.Parse(time.RFC3339, time.Now().UTC().Format(time.RFC3339))
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{
 				Reference:   "test1",
@@ -92,6 +92,19 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
+		It("should return an error - validation error - asset not supported", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+
+			req.PaymentInitiation.Asset = "HUF/2"
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
 		It("should return an error - validation error - payment method is required", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
@@ -101,6 +114,56 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("payoutMethod is a required metadata: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - validation error - description is required", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Description = ""
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("description is required: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - validation error - amount is required", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Amount = nil
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("amount is required: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - validation error - fulfillmentMethod is required", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseCheckPaymentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseFufillmentMethodMetadataKey] = ""
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("fulfillmentMethod is a required metadata: invalid request"))
+			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
+		})
+
+		It("should return an error - validation error - sourceAccountNumberID is required", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.SourceAccount.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey] = ""
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseRTPPaymentMethod
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("sourceAccountNumberID is a required source account metadata: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -204,11 +267,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = "ach"
 
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
-				CreatedAt:         now.Format("2006-01-02T15:04:05.999-0700"),
+				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
@@ -239,7 +303,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					SourceAccountReference:      pointer.For("234R5432"),
 					DestinationAccountReference: pointer.For("acc2"),
 					Raw:                         raw,
-					Metadata:                    map[string]string{"routingNumber": "", "accountNumber": "", "recipientName": "", "checkNumber": ""},
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
 				},
 			}))
 		})
@@ -253,7 +322,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
-				CreatedAt:         now.Format("2006-01-02T15:04:05.999-0700"),
+				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
@@ -285,12 +354,17 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					SourceAccountReference:      pointer.For("234R5432"),
 					DestinationAccountReference: pointer.For("acc2"),
 					Raw:                         raw,
-					Metadata:                    map[string]string{"routingNumber": "", "accountNumber": "", "recipientName": "", "checkNumber": ""},
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
 				},
 			}))
 		})
 
-		It("should be ok - check", func(ctx SpecContext) {
+		It("should be ok - check with thirdparty fufillment", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
@@ -299,7 +373,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
-				CreatedAt:         now.Format("2006-01-02T15:04:05.999-0700"),
+				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
@@ -335,7 +409,73 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					SourceAccountReference:      pointer.For("234R5432"),
 					DestinationAccountReference: pointer.For("acc2"),
 					Raw:                         raw,
-					Metadata:                    map[string]string{"routingNumber": "", "accountNumber": "", "recipientName": "", "checkNumber": ""},
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
+				},
+			}))
+		})
+
+		It("should be ok - check with physical fufillment", func(ctx SpecContext) {
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseCheckPaymentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseFufillmentMethodMetadataKey] = physicalCheckFufillmentMethod
+
+			trResponse := client.PayoutResponse{
+				ID:                "1",
+				Status:            "complete",
+				CreatedAt:         now.Format(time.RFC3339),
+				AccountID:         "234R5432",
+				ExternalAccountId: "acc2",
+				Currency:          "USD",
+				Amount:            "1.00",
+			}
+
+			m.EXPECT().InitiateCheckTransferPayout(gomock.Any(), &client.CheckPayoutRequest{
+				AccountID:             samplePSPPaymentInitiation.SourceAccount.Reference,
+				SourceAccountNumberID: samplePSPPaymentInitiation.SourceAccount.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey],
+				FulfillmentMethod:     physicalCheckFufillmentMethod,
+				Amount:                "1.00",
+				PhysicalCheck: client.PhysicalCheck{
+					MailingAddress: client.MailingAddress{
+						Line1:      req.PaymentInitiation.Metadata[client.IncreaseLine1MetadataKey],
+						City:       req.PaymentInitiation.Metadata[client.IncreaseCityMetadataKey],
+						State:      req.PaymentInitiation.Metadata[client.IncreaseStateMetadataKey],
+						PostalCode: req.PaymentInitiation.Metadata[client.IncreasePostalCodeMetadataKey],
+					},
+					Memo:          "test1",
+					RecipientName: "acc2",
+				},
+			}).Return(&trResponse, nil)
+
+			raw, err := json.Marshal(&trResponse)
+			Expect(err).To(BeNil())
+
+			resp, err := plg.CreatePayout(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.CreatePayoutResponse{
+				Payment: &models.PSPPayment{
+					Reference:                   "1",
+					CreatedAt:                   now,
+					Type:                        models.PAYMENT_TYPE_PAYOUT,
+					Amount:                      big.NewInt(100),
+					Asset:                       "USD/2",
+					Scheme:                      models.PAYMENT_SCHEME_OTHER,
+					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
+					SourceAccountReference:      pointer.For("234R5432"),
+					DestinationAccountReference: pointer.For("acc2"),
+					Raw:                         raw,
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
 				},
 			}))
 		})
@@ -349,7 +489,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			trResponse := client.PayoutResponse{
 				ID:                "1",
 				Status:            "complete",
-				CreatedAt:         now.Format("2006-01-02T15:04:05.999-0700"),
+				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
@@ -381,7 +521,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					SourceAccountReference:      pointer.For("234R5432"),
 					DestinationAccountReference: pointer.For("acc2"),
 					Raw:                         raw,
-					Metadata:                    map[string]string{"routingNumber": "", "accountNumber": "", "recipientName": "", "checkNumber": ""},
+					Metadata: map[string]string{
+						client.IncreaseRoutingNumberMetadataKey: "",
+						client.IncreaseAccountNumberMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseCheckNumberMetadataKey:   "",
+					},
 				},
 			}))
 		})

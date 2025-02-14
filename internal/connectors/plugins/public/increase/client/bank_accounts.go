@@ -38,14 +38,14 @@ func (c *client) CreateBankAccount(ctx context.Context, pr *BankAccountRequest) 
 
 	req, err := c.newRequest(ctx, http.MethodPost, "external_accounts", bytes.NewBuffer(body))
 	if err != nil {
-		return nil, fmt.Errorf("failed to create external account request: %w", err)
+		return nil, fmt.Errorf("failed to create bank account request: %w", err)
 	}
 
 	var res BankAccountResponse
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create external account: %w %w", err, errRes.Error())
+		return nil, fmt.Errorf("failed to create bank account: %w %w", err, errRes.Error())
 	}
 
 	return &res, nil

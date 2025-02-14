@@ -46,7 +46,7 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 
 	sourceAccountNumberID := models.ExtractNamespacedMetadata(pi.SourceAccount.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
 	if sourceAccountNumberID == "" && (payoutMethod == increaseCheckPaymentMethod || payoutMethod == increaseRTPPaymentMethod) {
-		return fmt.Errorf("asset is required: %w", models.ErrInvalidRequest)
+		return fmt.Errorf("sourceAccountNumberID is a required source account metadata: %w", models.ErrInvalidRequest)
 	}
 
 	return nil

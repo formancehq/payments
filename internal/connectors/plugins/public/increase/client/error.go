@@ -1,6 +1,15 @@
 package client
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
+
+var (
+	ErrWebhookUrlMissing              = errors.New("Webhook url is not set")
+	ErrWebhookSharedSecretMissing     = errors.New("Webhook shared secret is not set")
+	ErrWebhookHeaderXSignatureMissing = errors.New("missing X-Signature-Sha256 header")
+)
 
 type increaseError struct {
 	Status int    `json:"status"`

@@ -3,6 +3,7 @@ package increase
 import (
 	"errors"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/models"
@@ -23,7 +24,6 @@ var _ = Describe("Increase Plugin Balances", func() {
 	Context("fetching next balances", func() {
 		var (
 			m             *client.MockClient
-			sampleAccount *client.Account
 			sampleBalance *client.Balance
 		)
 
@@ -36,11 +36,6 @@ var _ = Describe("Increase Plugin Balances", func() {
 				AccountID:        "test_id",
 				CurrentBalance:   "1000",
 				AvailableBalance: "1000",
-			}
-
-			sampleAccount = &client.Account{
-				Name:     "Test",
-				Currency: "USD",
 			}
 		})
 
@@ -58,11 +53,12 @@ var _ = Describe("Increase Plugin Balances", func() {
 		It("should return an error - get balances error", func(ctx SpecContext) {
 			req := models.FetchNextBalancesRequest{
 				PageSize:    60,
-				FromPayload: []byte(`{"account_id": "test"}`),
+				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
 			m.EXPECT().GetAccountBalance(gomock.Any(), "test").Return(
 				sampleBalance,
+				time.Now().UTC(),
 				errors.New("test error"),
 			)
 
@@ -75,16 +71,12 @@ var _ = Describe("Increase Plugin Balances", func() {
 		It("should fetch all balances", func(ctx SpecContext) {
 			req := models.FetchNextBalancesRequest{
 				PageSize:    60,
-				FromPayload: []byte(`{"account_id": "test"}`),
+				FromPayload: []byte(`{"reference": "test", "defaultAsset": "USD"}`),
 			}
 
 			m.EXPECT().GetAccountBalance(gomock.Any(), "test").Return(
 				sampleBalance,
-				nil,
-			)
-
-			m.EXPECT().GetAccount(gomock.Any(), "test").Return(
-				sampleAccount,
+				time.Now().UTC(),
 				nil,
 			)
 

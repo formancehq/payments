@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
@@ -20,7 +21,7 @@ type Account struct {
 	CreatedAt string `json:"created_at"`
 }
 
-func (c *client) GetAccounts(ctx context.Context, pageSize int, cursor string) ([]*Account, string, error) {
+func (c *client) GetAccounts(ctx context.Context, pageSize int, cursor string, createdAtAfter time.Time) ([]*Account, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "accounts", http.NoBody)
@@ -32,6 +33,9 @@ func (c *client) GetAccounts(ctx context.Context, pageSize int, cursor string) (
 	q.Add("limit", strconv.Itoa(pageSize))
 	if cursor != "" {
 		q.Add("cursor", cursor)
+	}
+	if !createdAtAfter.IsZero() && cursor == "" {
+		q.Add("created_at.after", createdAtAfter.Format("2006-01-02T15:04:05-0700"))
 	}
 	req.URL.RawQuery = q.Encode()
 

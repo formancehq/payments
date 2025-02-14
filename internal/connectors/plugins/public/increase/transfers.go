@@ -50,7 +50,7 @@ func transferToPayment(transfer *client.TransferResponse) (*models.PSPPayment, e
 
 	status := matchPaymentStatus(transfer.Status)
 
-	createdAt, err := time.Parse("2006-01-02T15:04:05.999-0700", transfer.CreatedAt)
+	createdAt, err := time.Parse(time.RFC3339, transfer.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse posted date %s: %w", transfer.CreatedAt, err)
 	}
@@ -90,4 +90,41 @@ func matchPaymentStatus(status string) models.PaymentStatus {
 	default:
 		return models.PAYMENT_STATUS_UNKNOWN
 	}
+}
+
+func (p *Plugin) mapTransfer(transfer *client.TransferResponse) (*models.PSPPayment, error) {
+	raw, err := json.Marshal(transfer)
+	if err != nil {
+		return nil, err
+	}
+
+	status := matchPaymentStatus(transfer.Status)
+
+	createdAt, err := time.Parse(time.RFC3339, transfer.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse posted date %s: %w", transfer.CreatedAt, err)
+	}
+
+	precision, ok := supportedCurrenciesWithDecimal[transfer.Currency]
+	if !ok {
+		return nil, nil
+	}
+
+	amount, err := currency.GetAmountWithPrecisionFromString(transfer.Amount.String(), precision)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse amount %s: %w", transfer.Amount, err)
+	}
+
+	return &models.PSPPayment{
+		Reference:                   transfer.ID,
+		CreatedAt:                   createdAt,
+		Type:                        models.PAYMENT_TYPE_TRANSFER,
+		Amount:                      amount,
+		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transfer.Currency),
+		Scheme:                      models.PAYMENT_SCHEME_OTHER,
+		Status:                      status,
+		SourceAccountReference:      &transfer.AccountID,
+		DestinationAccountReference: &transfer.DestinationAccountID,
+		Raw:                         raw,
+	}, nil
 }

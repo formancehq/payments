@@ -41,7 +41,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 					ID:        fmt.Sprintf("%d", i),
 					Name:      fmt.Sprintf("Account %d", i),
 					Currency:  "USD",
-					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format("2006-01-02T15:04:05.999-0700"),
+					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 				})
 			}
 		})
@@ -52,7 +52,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
 				[]*client.Account{},
 				"",
 				errors.New("test error"),
@@ -70,7 +70,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
 				[]*client.Account{},
 				"",
 				nil,
@@ -95,7 +95,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "").Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
 				sampleAccounts,
 				"",
 				nil,
@@ -120,7 +120,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 40, "").Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 40, "", time.Time{}).Return(
 				sampleAccounts[:40],
 				"wrY4nKh",
 				nil,
@@ -139,12 +139,13 @@ var _ = Describe("Increase Plugin Accounts", func() {
 		})
 
 		It("should fetch next accounts - with state pageSize < total accounts", func(ctx SpecContext) {
+			createdAtAfter, _ := time.Parse(time.RFC3339, sampleAccounts[38].CreatedAt)
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"next_cursor": "%s"}`, "wrY4nKh")),
+				State:    []byte(fmt.Sprintf(`{"next_cursor": "wrY4nKh", "created_at_after": "%s"}`, createdAtAfter.UTC().Format(time.RFC3339Nano))),
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 40, "wrY4nKh").Return(
+			m.EXPECT().GetAccounts(gomock.Any(), 40, "wrY4nKh", createdAtAfter.UTC()).Return(
 				sampleAccounts[:40],
 				"qsdf",
 				nil,

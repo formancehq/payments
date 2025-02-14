@@ -9,28 +9,21 @@ import (
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var fromPayload struct {
-		AccountID string `json:"account_id"`
-	}
+	var from models.PSPAccount
 	if req.FromPayload == nil {
 		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
-	if err := json.Unmarshal(req.FromPayload, &fromPayload); err != nil {
+	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	balance, err := p.client.GetAccountBalance(ctx, fromPayload.AccountID)
-	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
-	account, err := p.client.GetAccount(ctx, fromPayload.AccountID)
+	balance, atTime, err := p.client.GetAccountBalance(ctx, from.Reference)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
 	var accountBalances []models.PSPBalance
-	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, account.Currency)
+	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, *from.DefaultAsset)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
@@ -40,12 +33,13 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)
+	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, *from.DefaultAsset)
 
 	accountBalances = append(accountBalances, models.PSPBalance{
 		AccountReference: balance.AccountID,
 		Amount:           amount,
 		Asset:            asset,
+		CreatedAt:        atTime,
 	})
 
 	return models.FetchNextBalancesResponse{

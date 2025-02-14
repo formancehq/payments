@@ -33,17 +33,17 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		if err != nil {
 			return models.CreateBankAccountResponse{}, err
 		}
-		createdTime, _ := time.Parse("2006-01-02T15:04:05.999-0700", resp.CreatedAt)
+		createdTime, _ := time.Parse(time.RFC3339, resp.CreatedAt)
 		account = models.PSPAccount{
 			Reference: resp.ID,
 			CreatedAt: createdTime,
 			Metadata: map[string]string{
-				"accountHolder": resp.AccountHolder,
-				"accountNumber": resp.AccountNumber,
-				"description":   resp.Description,
-				"routingNumber": resp.RoutingNumber,
-				"type":          resp.Type,
-				"status":        resp.Status,
+				client.IncreaseAccountHolderMetadataKey: resp.AccountHolder,
+				client.IncreaseAccountNumberMetadataKey: resp.AccountNumber,
+				client.IncreaseDescriptionMetadataKey:   resp.Description,
+				client.IncreaseRoutingNumberMetadataKey: resp.RoutingNumber,
+				client.IncreaseTypeMetadataKey:          resp.Type,
+				client.IncreaseStatusMetadataKey:        resp.Status,
 			},
 			Raw: raw,
 		}

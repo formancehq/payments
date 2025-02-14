@@ -32,7 +32,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	client := client.New(ProviderName, config.APIKey, config.Endpoint)
+	client := client.New(ProviderName, config.APIKey, config.Endpoint, config.WebhookSharedSecret)
 
 	return &Plugin{
 		name:   name,
@@ -52,7 +52,10 @@ func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.I
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
-	return models.UninstallResponse{}, nil
+	if p.client == nil {
+		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.uninstall(ctx, req)
 }
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -145,13 +148,19 @@ func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStat
 // Note: if the connector has webhooks, use this method to create the related
 // webhooks on the PSP.
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
+	if p.client == nil {
+		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.createWebhooks(ctx, req)
 }
 
 // Note: if the connector has webhooks, use this method to translate incoming
 // webhooks to a formance object.
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
+	if p.client == nil {
+		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.translateWebhook(ctx, req)
 }
 
 var _ models.Plugin = &Plugin{}

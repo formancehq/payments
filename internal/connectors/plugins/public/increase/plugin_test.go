@@ -40,7 +40,7 @@ var _ = Describe("Increase Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhook_shared_secret": "secret"}`)
 			_, err := New(ProviderName, logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
@@ -54,9 +54,8 @@ var _ = Describe("Increase Plugin", func() {
 	Context("uninstall", func() {
 		It("should return valid uninstall response", func(ctx SpecContext) {
 			req := models.UninstallRequest{ConnectorID: "test"}
-			resp, err := plg.Uninstall(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(models.UninstallResponse{}))
+			_, err := plg.Uninstall(ctx, req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
@@ -172,7 +171,7 @@ var _ = Describe("Increase Plugin", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.CreateWebhooksRequest{}
 			_, err := plg.CreateWebhooks(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
@@ -180,7 +179,7 @@ var _ = Describe("Increase Plugin", func() {
 		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{}
 			_, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 })

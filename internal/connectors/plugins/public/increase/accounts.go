@@ -12,7 +12,8 @@ import (
 )
 
 type accountsState struct {
-	NextCursor string `json:"next_cursor"`
+	NextCursor     string    `json:"next_cursor"`
+	CreatedAtAfter time.Time `json:"created_at_after"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -25,12 +26,12 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	hasMore := false
-	pagedAccounts, nextCursor, err := p.client.GetAccounts(ctx, req.PageSize, oldState.NextCursor)
+	pagedAccounts, nextCursor, err := p.client.GetAccounts(ctx, req.PageSize, oldState.NextCursor, oldState.CreatedAtAfter)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	accounts, err = fillAccounts(pagedAccounts, accounts, req.PageSize)
+	accounts, err = p.fillAccounts(pagedAccounts, accounts, req.PageSize)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -39,6 +40,10 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	newState := accountsState{
 		NextCursor: nextCursor,
+	}
+
+	if len(accounts) > 0 {
+		newState.CreatedAtAfter = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -53,7 +58,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}, nil
 }
 
-func fillAccounts(
+func (p *Plugin) fillAccounts(
 	pagedAccounts []*client.Account,
 	accounts []models.PSPAccount,
 	pageSize int,
@@ -63,7 +68,7 @@ func fillAccounts(
 			break
 		}
 
-		createdTime, err := time.Parse("2006-01-02T15:04:05.999-0700", account.CreatedAt)
+		createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -80,13 +85,39 @@ func fillAccounts(
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
 			Raw:          raw,
 			Metadata: map[string]string{
-				"type":     account.Type,
-				"bank":     account.Bank,
-				"currency": account.Currency,
-				"status":   account.Status,
+				client.IncreaseTypeMetadataKey:   account.Type,
+				client.IncreaseBankMetadataKey:   account.Bank,
+				client.IncreaseStatusMetadataKey: account.Status,
 			},
 		})
 	}
 
 	return accounts, nil
+}
+
+func (p *Plugin) mapAccount(account *client.Account) (models.PSPAccount, error) {
+	createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
+	if err != nil {
+		return models.PSPAccount{}, err
+	}
+
+	raw, err := json.Marshal(account)
+	if err != nil {
+		return models.PSPAccount{}, err
+	}
+
+	pspAccount := models.PSPAccount{
+		Reference:    account.ID,
+		CreatedAt:    createdTime,
+		Name:         &account.Name,
+		DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
+		Raw:          raw,
+		Metadata: map[string]string{
+			client.IncreaseTypeMetadataKey:   account.Type,
+			client.IncreaseBankMetadataKey:   account.Bank,
+			client.IncreaseStatusMetadataKey: account.Status,
+		},
+	}
+
+	return pspAccount, nil
 }

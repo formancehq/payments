@@ -50,7 +50,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		if err != nil {
 			return nil, err
 		}
-		return payoutToPayment(resp)
+		return p.payoutToPayment(resp)
 	case increaseCheckPaymentMethod:
 		check := &client.CheckPayoutRequest{
 			AccountID:             pi.SourceAccount.Reference,
@@ -82,7 +82,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		if err != nil {
 			return nil, err
 		}
-		return payoutToPayment(resp)
+		return p.payoutToPayment(resp)
 	case increaseRTPPaymentMethod:
 		resp, err := p.client.InitiateRTPTransferPayout(
 			ctx,
@@ -97,7 +97,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		if err != nil {
 			return nil, err
 		}
-		return payoutToPayment(resp)
+		return p.payoutToPayment(resp)
 	default:
 		resp, err := p.client.InitiateACHTransferPayout(
 			ctx,
@@ -112,11 +112,11 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		if err != nil {
 			return nil, err
 		}
-		return payoutToPayment(resp)
+		return p.payoutToPayment(resp)
 	}
 }
 
-func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
+func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(from)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
 
 	status := matchPaymentStatus(from.Status)
 
-	createdAt, err := time.Parse("2006-01-02T15:04:05.999-0700", from.CreatedAt)
+	createdAt, err := time.Parse(time.RFC3339, from.CreatedAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse posted date %s: %w", from.CreatedAt, err)
 	}
@@ -150,10 +150,10 @@ func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
 		SourceAccountReference:      &from.AccountID,
 		DestinationAccountReference: &from.ExternalAccountId,
 		Metadata: map[string]string{
-			"checkNumber":   from.CheckNumber,
-			"routingNumber": from.RoutingNumber,
-			"accountNumber": from.AccountNumber,
-			"recipientName": from.RecipientName,
+			client.IncreaseCheckNumberMetadataKey:   from.CheckNumber,
+			client.IncreaseRoutingNumberMetadataKey: from.RoutingNumber,
+			client.IncreaseAccountNumberMetadataKey: from.AccountNumber,
+			client.IncreaseRecipientNameMetadataKey: from.RecipientName,
 		},
 		Raw: raw,
 	}, nil

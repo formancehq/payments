@@ -153,6 +153,33 @@ func (c *client) InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutReq
 	}, nil
 }
 
+func (c *client) GetACHTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_ach_payout")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("ach_transfers/%s", transferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ach payout request: %w", err)
+	}
+
+	var res ACHPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ach payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:                res.ID,
+		AccountID:         res.AccountID,
+		Amount:            res.Amount,
+		Currency:          res.Currency,
+		CreatedAt:         res.CreatedAt,
+		Status:            res.Status,
+		ExternalAccountId: res.ExternalAccountID,
+		AccountNumber:     res.AccountNumber,
+	}, nil
+}
+
 func (c *client) InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_wire_transfer_payout")
 
@@ -171,6 +198,35 @@ func (c *client) InitiateWireTransferPayout(ctx context.Context, pr *WireTransfe
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wire transfer payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:                res.ID,
+		AccountID:         res.AccountID,
+		Amount:            res.Amount,
+		Currency:          res.Currency,
+		CreatedAt:         res.CreatedAt,
+		Status:            res.Status,
+		ExternalAccountId: res.ExternalAccountID,
+		AccountNumber:     res.AccountNumber,
+		RecipientName:     res.BeneficiaryName,
+		RoutingNumber:     res.RoutingNumber,
+	}, nil
+}
+
+func (c *client) GetWireTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_wire_transfer_payout")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("wire_transfers/%s", transferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create wire transfer payout request: %w", err)
+	}
+
+	var res WireTransferPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get wire transfer payout: %w %w", err, errRes.Error())
 	}
 
 	return &PayoutResponse{
@@ -220,6 +276,34 @@ func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayou
 	}, nil
 }
 
+func (c *client) GetCheckTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_check_payout")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("check_transfers/%s", transferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create check transfer payout request: %w", err)
+	}
+
+	var res CheckPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get check transfer payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:            res.ID,
+		AccountID:     res.AccountID,
+		Amount:        res.Amount,
+		Currency:      res.Currency,
+		CreatedAt:     res.CreatedAt,
+		Status:        res.Status,
+		AccountNumber: res.AccountNumber,
+		RoutingNumber: res.RoutingNumber,
+		CheckNumber:   res.CheckNumber,
+	}, nil
+}
+
 func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_rtp_payout")
 
@@ -238,6 +322,35 @@ func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutReq
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create real time payments transfer payout: %w %w", err, errRes.Error())
+	}
+
+	return &PayoutResponse{
+		ID:                res.ID,
+		AccountID:         res.AccountID,
+		Amount:            res.Amount,
+		Currency:          res.Currency,
+		CreatedAt:         res.CreatedAt,
+		Status:            res.Status,
+		ExternalAccountId: res.ExternalAccountID,
+		AccountNumber:     res.DestinationAccountNumber,
+		RoutingNumber:     res.DestinationRoutingNumber,
+		RecipientName:     res.CreditorName,
+	}, nil
+}
+
+func (c *client) GetRTPTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_rtp_payout")
+
+	req, err := c.newRequest(ctx, http.MethodGet, fmt.Sprintf("real_time_payments_transfers/%s", transferID), http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create real time payments transfer payout request: %w", err)
+	}
+
+	var res RTPPayoutResponse
+	var errRes increaseError
+	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get real time payments transfer payout: %w %w", err, errRes.Error())
 	}
 
 	return &PayoutResponse{
