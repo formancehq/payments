@@ -46,6 +46,36 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			}
 		})
 
+		It("should return an error - invalid state", func(ctx SpecContext) {
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{invalid json`),
+				PageSize: 10,
+			}
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid character 'i' looking for beginning of object key string"))
+			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+		})
+
+		It("should return an error - invalid created_at time", func(ctx SpecContext) {
+			accounts := []*client.Account{{
+				ID:        "acc_123",
+				Name:      "Test Account",
+				Currency:  "USD",
+				CreatedAt: "invalid-timestamp",
+				Type:      "CHECKING",
+				Bank:      "test_bank",
+				Status:    "ACTIVE",
+			}}
+		
+			resp, err := plg.fillAccounts(accounts, make([]models.PSPAccount, 0), 10)
+		
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(`parsing time "invalid-timestamp" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid-timestamp" as "2006"`))
+			Expect(resp).To(BeNil())
+		})		
+
 		It("should return an error - get accounts error", func(ctx SpecContext) {
 			req := models.FetchNextAccountsRequest{
 				State:    []byte(`{}`),
