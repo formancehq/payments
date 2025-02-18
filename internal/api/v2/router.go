@@ -65,7 +65,7 @@ func newRouter(backend backend.Backend, info api.ServiceInfo, a auth.Authenticat
 
 			// Pools
 			r.Route("/pools", func(r chi.Router) {
-				r.Post("/", poolsCreate(backend))
+				r.Post("/", poolsCreate(backend, validator))
 				r.Get("/", poolsList(backend))
 
 				r.Route("/{poolID}", func(r chi.Router) {

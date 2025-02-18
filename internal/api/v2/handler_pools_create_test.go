@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -34,7 +35,7 @@ var _ = Describe("API v2 Pools Create", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = poolsCreate(m)
+			handlerFn = poolsCreate(m, validation.NewValidator())
 		})
 
 		It("should return a bad request error when body is missing", func(ctx SpecContext) {
@@ -49,8 +50,9 @@ var _ = Describe("API v2 Pools Create", func() {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("accountIDs missing", CreatePoolRequest{}),
-			Entry("accountIDs invalid", CreatePoolRequest{AccountIDs: []string{"invalid"}}),
+			Entry("accountIDs missing", CreatePoolRequest{Name: "test"}),
+			Entry("accountIDs invalid", CreatePoolRequest{Name: "test", AccountIDs: []string{"invalid"}}),
+			Entry("name missing", CreatePoolRequest{AccountIDs: []string{accID.String()}}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {

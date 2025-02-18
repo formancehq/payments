@@ -371,17 +371,21 @@ var _ = Context("Payments API Connectors", func() {
 	})
 })
 
-func blockTillWorkflowComplete(ctx context.Context, connectorID string, searchKeyword string) string {
+func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searchKeyword string) string {
 	var (
 		workflowID string
 		runID      string
 	)
 
+	connectorID := models.MustConnectorIDFromString(connectorIDStr)
+
 	cl := temporalServer.GetValue().DefaultClient()
 	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
 	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
 	for _, info := range workflowRes.Executions {
-		if strings.Contains(info.Execution.WorkflowId, connectorID) && strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
+		if (strings.Contains(info.Execution.WorkflowId, connectorID.Reference.String()) ||
+			strings.Contains(info.Execution.WorkflowId, connectorID.String())) &&
+			strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
 			workflowID = info.Execution.WorkflowId
 			runID = info.Execution.RunId
 			break

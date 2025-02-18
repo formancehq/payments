@@ -153,23 +153,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	}
 
 	// Launch the workflow
-	run, err := e.temporalClient.ExecuteWorkflow(
-		detachedCtx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunInstallConnector,
-		workflow.InstallConnector{
-			ConnectorID: connector.ID,
-			Config:      config,
-		},
-	)
+	run, err := e.launchInstallWorkflow(detachedCtx, connector, config)
 	if err != nil {
 		otel.RecordError(span, err)
 		return models.ConnectorID{}, err
@@ -200,7 +184,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 	}
 
 	now := time.Now()
-	id := fmt.Sprintf("uninstall-%s-%s", e.stack, connectorID.String())
+	id := e.taskIDReferenceFor(IDPrefixConnectorUninstall, connectorID, "")
 	task := models.Task{
 		// Do not fill the connector ID as it will be deleted
 		ID: models.TaskID{
@@ -222,7 +206,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -232,7 +216,7 @@ func (e *engine) UninstallConnector(ctx context.Context, connectorID models.Conn
 		workflow.RunUninstallConnector,
 		workflow.UninstallConnector{
 			ConnectorID:       connectorID,
-			DefaultWorkerName: getDefaultTaskQueue(e.stack),
+			DefaultWorkerName: GetDefaultTaskQueue(e.stack),
 			TaskID:            &task.ID,
 		},
 	)
@@ -261,7 +245,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 	defer e.wg.Done()
 
 	now := time.Now()
-	id := fmt.Sprintf("reset-%s-%s", e.stack, connectorID.String())
+	id := e.taskIDReferenceFor(IDPrefixConnectorReset, connectorID, "")
 	task := models.Task{
 		// Do not fill the connector ID as it will be deleted
 		ID: models.TaskID{
@@ -282,7 +266,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -292,7 +276,7 @@ func (e *engine) ResetConnector(ctx context.Context, connectorID models.Connecto
 		workflow.RunResetConnector,
 		workflow.ResetConnector{
 			ConnectorID:       connectorID,
-			DefaultWorkerName: getDefaultTaskQueue(e.stack),
+			DefaultWorkerName: GetDefaultTaskQueue(e.stack),
 			TaskID:            task.ID,
 		},
 	)
@@ -383,7 +367,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s-%s", e.stack, account.ConnectorID.String(), account.Reference),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -437,7 +421,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s-%s", e.stack, payment.ConnectorID.String(), payment.Reference),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -461,8 +445,23 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardBankAccount")
 	defer span.End()
 
-	id := models.TaskIDReference(fmt.Sprintf("create-bank-account-%s", e.stack), connectorID, bankAccountID.String())
+	if _, err := e.storage.ConnectorsGet(ctx, connectorID); err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return models.Task{}, err
+	}
 
+	if _, err := e.storage.BankAccountsGet(ctx, bankAccountID, false); err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("bank account %w", ErrNotFound)
+		}
+		return models.Task{}, err
+	}
+
+	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, bankAccountID.String())
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
@@ -484,7 +483,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -542,7 +541,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			StartDelay:                               startDelay,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -601,7 +600,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -661,7 +660,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			StartDelay:                               startDelay,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -721,7 +720,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -761,7 +760,7 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, webhook.ConnectorID.String(), webhook.ID),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -796,7 +795,7 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-creation-%s-%s", e.stack, pool.ID.String()),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -842,7 +841,7 @@ func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID m
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-add-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -888,7 +887,7 @@ func (e *engine) RemoveAccountFromPool(ctx context.Context, id uuid.UUID, accoun
 		detachedCtx,
 		client.StartWorkflowOptions{
 			ID:                                       fmt.Sprintf("pools-remove-account-%s-%s-%s", e.stack, pool.ID.String(), accountID.String()),
-			TaskQueue:                                getDefaultTaskQueue(e.stack),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
@@ -924,7 +923,7 @@ func (e *engine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 			ctx,
 			client.StartWorkflowOptions{
 				ID:                                       fmt.Sprintf("pools-deletion-%s-%s", e.stack, poolID.String()),
-				TaskQueue:                                getDefaultTaskQueue(e.stack),
+				TaskQueue:                                GetDefaultTaskQueue(e.stack),
 				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
 				WorkflowExecutionErrorWhenAlreadyStarted: false,
 				SearchAttributes: map[string]interface{}{
@@ -1000,29 +999,31 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 
 	if !connector.ScheduledForDeletion {
 		// Launch the workflow
-		_, err := e.temporalClient.ExecuteWorkflow(
-			ctx,
-			client.StartWorkflowOptions{
-				ID:                                       fmt.Sprintf("install-%s-%s", e.stack, connector.ID.String()),
-				TaskQueue:                                getDefaultTaskQueue(e.stack),
-				WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-				WorkflowExecutionErrorWhenAlreadyStarted: false,
-				SearchAttributes: map[string]interface{}{
-					workflow.SearchAttributeStack: e.stack,
-				},
-			},
-			workflow.RunInstallConnector,
-			workflow.InstallConnector{
-				ConnectorID: connector.ID,
-				Config:      config,
-			},
-		)
-		if err != nil {
+		if _, err := e.launchInstallWorkflow(ctx, connector, config); err != nil {
 			return err
 		}
 	}
-
 	return nil
+}
+
+func (e *engine) launchInstallWorkflow(ctx context.Context, connector models.Connector, config models.Config) (client.WorkflowRun, error) {
+	return e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       e.taskIDReferenceFor(IDPrefixConnectorInstall, connector.ID, ""),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunInstallConnector,
+		workflow.InstallConnector{
+			ConnectorID: connector.ID,
+			Config:      config,
+		},
+	)
 }
 
 var _ Engine = &engine{}
