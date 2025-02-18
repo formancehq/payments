@@ -316,6 +316,14 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(engine.ErrNotFound))
 		})
 
+		It("should return original error when storage returns misc error from connector fetch", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("original")
+			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, expectedErr)
+			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
 		It("should return not found error when storage doesn't find bank account", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
 			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(
@@ -324,6 +332,17 @@ var _ = Describe("Engine Tests", func() {
 			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(engine.ErrNotFound))
+		})
+
+		It("should return original error when storage returns misc error from bank account fetch", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("original")
+			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
+			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(
+				nil, fmt.Errorf("some not found err: %w", expectedErr),
+			)
+			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
 		})
 
 		It("should return storage error when task cannot be upserted", func(ctx SpecContext) {

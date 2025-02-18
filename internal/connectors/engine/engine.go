@@ -447,12 +447,18 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 
 	if _, err := e.storage.ConnectorsGet(ctx, connectorID); err != nil {
 		otel.RecordError(span, err)
-		return models.Task{}, fmt.Errorf("connector %w", ErrNotFound)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return models.Task{}, err
 	}
 
 	if _, err := e.storage.BankAccountsGet(ctx, bankAccountID, false); err != nil {
 		otel.RecordError(span, err)
-		return models.Task{}, fmt.Errorf("bank account %w", ErrNotFound)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("bank account %w", ErrNotFound)
+		}
+		return models.Task{}, err
 	}
 
 	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, bankAccountID.String())
