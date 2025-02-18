@@ -17,7 +17,7 @@ import (
 )
 
 type CreatePoolRequest struct {
-	Name       string   `json:"name" validate:""`
+	Name       string   `json:"name" validate:"required"`
 	AccountIDs []string `json:"accountIDs" validate:"min=1,dive,accountID"`
 }
 

@@ -50,8 +50,9 @@ var _ = Describe("API v3 Pools Create", func() {
 				handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("accountIDs missing", CreatePoolRequest{}),
-			Entry("accountIDs invalid", CreatePoolRequest{AccountIDs: []string{"invalid"}}),
+			Entry("accountIDs missing", CreatePoolRequest{Name: "test"}),
+			Entry("accountIDs invalid", CreatePoolRequest{Name: "test", AccountIDs: []string{"invalid"}}),
+			Entry("name missing", CreatePoolRequest{AccountIDs: []string{accID.String()}}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
