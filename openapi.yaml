@@ -808,29 +808,6 @@ paths:
       security:
         - Authorization:
             - payments:write
-  /v3/_info:
-    get:
-      tags:
-        - payments.v3
-      summary: Show server information
-      operationId: v3GetInfo
-      x-speakeasy-name-override: GetInfo
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V3ConfigInfoResponse'
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
-      security:
-        - Authorization:
-            - payments:read
   /v3/accounts:
     post:
       tags:
@@ -1899,6 +1876,135 @@ paths:
         - Authorization:
             - payments:read
 components:
+  responses:
+    ServerInfo:
+      description: Server information
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServerInfo'
+    NoContent:
+      description: No content
+    PaymentsErrorResponse:
+      description: Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentsErrorResponse'
+    Payments:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentsCursor'
+    Payment:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PaymentResponse'
+    Pools:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolsCursor'
+    Pool:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolResponse'
+    PoolBalances:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolBalancesResponse'
+    TransferInitiations:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferInitiationsCursor'
+    TransferInitiation:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferInitiationResponse'
+    Accounts:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountsCursor'
+    Account:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AccountResponse'
+    AccountBalances:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BalancesCursor'
+    ConnectorInstalled:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorResponse'
+    Connectors:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorsResponse'
+    BankAccounts:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BankAccountsCursor'
+    BankAccount:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BankAccountResponse'
+    ConnectorsConfigs:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorsConfigsResponse'
+    ConnectorConfig:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ConnectorConfigResponse'
+    Tasks:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TasksCursor'
+    Task:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TaskResponse'
+    Transfer:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/TransferResponse'
   schemas:
     CursorBase:
       type: object
@@ -3328,13 +3434,6 @@ components:
         - DISPUTE_WON
         - DISPUTE_LOST
         - OTHER
-    ServerInfo:
-      type: object
-      required:
-        - version
-      properties:
-        version:
-          type: string
     PaymentsErrorResponse:
       type: object
       required:
@@ -3353,17 +3452,6 @@ components:
         - VALIDATION
         - NOT_FOUND
       example: VALIDATION
-    V3ConfigInfoResponse:
-      $ref: '#/components/schemas/V3ConfigInfo'
-    V3ConfigInfo:
-      type: object
-      properties:
-        debug:
-          type: boolean
-        version:
-          type: string
-      required:
-        - version
     V3AccountID:
       type: string
     V3AccountsCursorResponse:
@@ -4848,135 +4936,6 @@ components:
           default: 2m
         webhookPublicKey:
           type: string
-  responses:
-    NoContent:
-      description: No content
-    PaymentsErrorResponse:
-      description: Error
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentsErrorResponse'
-    ServerInfo:
-      description: Server information
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ServerInfo'
-    Payments:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentsCursor'
-    Payment:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PaymentResponse'
-    Pools:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolsCursor'
-    Pool:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolResponse'
-    PoolBalances:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/PoolBalancesResponse'
-    TransferInitiations:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferInitiationsCursor'
-    TransferInitiation:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferInitiationResponse'
-    Accounts:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AccountsCursor'
-    Account:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/AccountResponse'
-    AccountBalances:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BalancesCursor'
-    ConnectorInstalled:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorResponse'
-    Connectors:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorsResponse'
-    BankAccounts:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccountsCursor'
-    BankAccount:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/BankAccountResponse'
-    ConnectorsConfigs:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorsConfigsResponse'
-    ConnectorConfig:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ConnectorConfigResponse'
-    Tasks:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TasksCursor'
-    Task:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TaskResponse'
-    Transfer:
-      description: OK
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/TransferResponse'
   parameters:
     Query:
       name: query

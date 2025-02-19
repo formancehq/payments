@@ -26,6 +26,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var defaultHttpClientTimeout = 3 * time.Second
+
 type T interface {
 	require.TestingT
 	Cleanup(func())
@@ -45,6 +47,7 @@ type Configuration struct {
 	TemporalAddress       string
 	NatsURL               string
 	ConfigEncryptionKey   string
+	HttpClientTimeout     time.Duration
 	Output                io.Writer
 	Debug                 bool
 	OTLPConfig            *OTLPConfig
@@ -112,7 +115,7 @@ func (s *Server) Start() error {
 		transport = httpclient.NewDebugHTTPTransport(transport)
 	}
 
-	httpClient, err := NewClient(httpserver.URL(s.ctx), transport)
+	httpClient, err := NewClient(httpserver.URL(s.ctx), s.configuration.HttpClientTimeout, transport)
 	if err != nil {
 		return err
 	}
@@ -194,6 +197,10 @@ func (s *Server) URL() string {
 
 func New(t T, configuration Configuration) *Server {
 	t.Helper()
+
+	if configuration.HttpClientTimeout == 0 {
+		configuration.HttpClientTimeout = defaultHttpClientTimeout
+	}
 
 	serverID := uuid.NewString()[:8]
 	worker := NewWorker(t, configuration, serverID)

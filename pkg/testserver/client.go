@@ -20,8 +20,8 @@ type Client struct {
 	transport      http.RoundTripper
 }
 
-func NewClient(urlStr string, transport http.RoundTripper) (*Client, error) {
-	config := &httpwrapper.Config{Timeout: 2 * time.Second}
+func NewClient(urlStr string, clientTimeout time.Duration, transport http.RoundTripper) (*Client, error) {
+	config := &httpwrapper.Config{Timeout: clientTimeout}
 	internalClient := httpwrapper.NewClient(config)
 	return &Client{
 		baseUrl:        urlStr,
@@ -72,7 +72,7 @@ func (c *Client) PollTask(ctx context.Context, t T) func(id string) func() model
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseUrl+path, nil)
 			require.NoError(t, err)
 
-			httpClient := &http.Client{Timeout: 2 * time.Second}
+			httpClient := &http.Client{Timeout: defaultHttpClientTimeout}
 			res, err := httpClient.Do(req)
 			require.NoError(t, err)
 			defer res.Body.Close()

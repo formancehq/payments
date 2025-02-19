@@ -3,20 +3,6 @@ info:
   title: Payments API
   version: v1
 paths:
-  /_info:
-    get:
-      summary: Get server info
-      operationId: getServerInfo
-      tags:
-        - payments.v1
-      responses:
-        '200':
-          $ref: '#/components/responses/ServerInfo'
-        default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
-      security:
-        - Authorization:
-            - payments:read
   /payments:
     post:
       summary: Create a payment
@@ -924,12 +910,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PaymentsErrorResponse'
-    ServerInfo:
-      description: Server information
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ServerInfo'
     Payments:
       description: OK
       content:
@@ -2573,13 +2553,6 @@ components:
         - DISPUTE_WON
         - DISPUTE_LOST
         - OTHER
-    ServerInfo:
-      type: object
-      required:
-        - version
-      properties:
-        version:
-          type: string
     PaymentsErrorResponse:
       type: object
       required:
