@@ -1,0 +1,28 @@
+openapi: 3.0.3
+info:
+  title: Payments API
+  version: v1
+paths:
+  /_info:
+    get:
+      summary: Get server info
+      operationId: getServerInfo
+      tags:
+        - payments.v1
+      responses:
+        '200':
+          $ref: '#/components/responses/ServerInfo'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+
+components:
+  responses:
+    ServerInfo:
+      description: Server information
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ServerInfo'

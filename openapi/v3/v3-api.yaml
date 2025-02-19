@@ -3,32 +3,6 @@ info:
   title: Payments API
   version: v3
 paths:
-
-  # INFO
-  /v3/_info:
-    get:
-      tags:
-        - payments.v3
-      summary: Show server information
-      operationId: v3GetInfo
-      x-speakeasy-name-override: GetInfo
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V3ConfigInfoResponse'
-        default:
-          description: Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
-      security:
-        - Authorization:
-          - payments:read
-
   # ACCOUNTS
   /v3/accounts:
     post:
