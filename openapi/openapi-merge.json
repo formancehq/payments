@@ -1,6 +1,9 @@
 {
     "inputs": [
       {
+        "inputFile": "./common/common.yaml"
+      },
+      {
         "inputFile": "./v1-2/v1-2.yaml"
       },
       {
