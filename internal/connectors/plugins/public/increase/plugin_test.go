@@ -40,7 +40,7 @@ var _ = Describe("Increase Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhook_shared_secret": "secret"}`)
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhookSharedSecret": "secret"}`)
 			_, err := New(ProviderName, logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
@@ -181,5 +181,27 @@ var _ = Describe("Increase Plugin", func() {
 			_, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+	})
+
+	It("should have the correct capabilities", func() {
+		expectedCapabilities := []models.Capability{
+			models.CAPABILITY_FETCH_ACCOUNTS,
+			models.CAPABILITY_FETCH_BALANCES,
+			models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS,
+			models.CAPABILITY_FETCH_PAYMENTS,
+			models.CAPABILITY_CREATE_TRANSFER,
+			models.CAPABILITY_CREATE_PAYOUT,
+			models.CAPABILITY_CREATE_BANK_ACCOUNT,
+			models.CAPABILITY_TRANSLATE_WEBHOOKS,
+			models.CAPABILITY_CREATE_WEBHOOKS,
+		}
+
+		Expect(capabilities).To(HaveLen(len(expectedCapabilities)))
+		Expect(capabilities).To(Equal(expectedCapabilities))
+
+		// Verify each capability is present
+		for _, expectedCap := range expectedCapabilities {
+			Expect(capabilities).To(ContainElement(expectedCap))
+		}
 	})
 })

@@ -16,20 +16,36 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
+type EventCategory string
+
+const (
+	EventCategoryAccountCreated             EventCategory = "account.created"
+	EventCategoryDeclinedTransactionCreated EventCategory = "declined_transaction.created"
+	EventCategoryPendingTransactionCreated  EventCategory = "pending_transaction.created"
+	EventCategoryTransactionCreated         EventCategory = "transaction.created"
+	EventCategoryExternalAccountCreated     EventCategory = "external_account.created"
+	EventCategoryAccountTransferCreated     EventCategory = "account_transfer.created"
+	EventCategoryCheckTransferCreated       EventCategory = "check_transfer.created"
+	EventCategoryWireTransferCreated        EventCategory = "wire_transfer.created"
+	EventCategoryRTPTransferCreated         EventCategory = "real_time_payments_transfer.created"
+	EventCategoryACHTransferCreated         EventCategory = "ach_transfer.created"
+)
+
 type WebhookEvent struct {
-	ID                   string    `json:"id"`
-	Type                 string    `json:"type"`
-	CreatedAt            time.Time `json:"created_at"`
-	Category             string    `json:"category"`
-	AssociatedObjectID   string    `json:"associated_object_id"`
-	AssociatedObjectType string    `json:"associated_object_type"`
+	ID                   string `json:"id"`
+	Type                 string `json:"type"`
+	CreatedAt            string `json:"created_at"`
+	Category             string `json:"category"`
+	AssociatedObjectID   string `json:"associated_object_id"`
+	AssociatedObjectType string `json:"associated_object_type"`
 }
 
 type EventSubscription struct {
-	ID        string    `json:"id"`
-	URL       string    `json:"url"`
-	CreatedAt time.Time `json:"created_at"`
-	Status    string    `json:"status"`
+	ID                    string `json:"id"`
+	URL                   string `json:"url"`
+	CreatedAt             string `json:"created_at"`
+	Status                string `json:"status"`
+	SelectedEventCategory string `json:"selected_event_category"`
 }
 
 type UpdateEventSubscriptionRequest struct {

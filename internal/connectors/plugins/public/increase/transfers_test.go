@@ -27,6 +27,8 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 		var (
 			m                          *client.MockClient
 			samplePSPPaymentInitiation models.PSPPaymentInitiation
+			trResponse                 client.TransferResponse
+			payment                    *models.PSPPayment
 			now                        time.Time
 		)
 
@@ -57,6 +59,29 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				Metadata: map[string]string{
 					"foo": "bar",
 				},
+			}
+
+			trResponse = client.TransferResponse{
+				ID:                   "1",
+				Status:               "complete",
+				CreatedAt:            now.Format(time.RFC3339),
+				Description:          samplePSPPaymentInitiation.Description,
+				Currency:             "USD",
+				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
+				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
+				Amount:               "1.00",
+			}
+
+			payment = &models.PSPPayment{
+				Reference:                   "1",
+				CreatedAt:                   now,
+				Type:                        models.PAYMENT_TYPE_TRANSFER,
+				Amount:                      big.NewInt(100),
+				Asset:                       "USD/2",
+				Scheme:                      models.PAYMENT_SCHEME_OTHER,
+				Status:                      models.PAYMENT_STATUS_SUCCEEDED,
+				SourceAccountReference:      pointer.For("acc1"),
+				DestinationAccountReference: pointer.For("acc2"),
 			}
 		})
 
@@ -148,16 +173,6 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			trResponse := client.TransferResponse{
-				ID:                   "1",
-				Status:               "complete",
-				CreatedAt:            now.Format(time.RFC3339),
-				Description:          samplePSPPaymentInitiation.Description,
-				Currency:             "USD",
-				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
-				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				Amount:               "1.00",
-			}
 			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
 				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
 				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
@@ -168,23 +183,63 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
 
+			payment.Raw = raw
+			payment.Status = models.PAYMENT_STATUS_SUCCEEDED
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{
-				Payment: &models.PSPPayment{
-					Reference:                   "1",
-					CreatedAt:                   now,
-					Type:                        models.PAYMENT_TYPE_TRANSFER,
-					Amount:                      big.NewInt(100),
-					Asset:                       "USD/2",
-					Scheme:                      models.PAYMENT_SCHEME_OTHER,
-					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
-					SourceAccountReference:      pointer.For("acc1"),
-					DestinationAccountReference: pointer.For("acc2"),
-					Raw:                         raw,
-				},
+				Payment: payment,
 			}))
 		})
 
+		It("should be ok - submitted status", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
+				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
+				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
+				Amount:               "1.00",
+				Description:          samplePSPPaymentInitiation.Description,
+			}).Return(&trResponse, nil)
+
+			trResponse.Status = "submitted"
+			raw, err := json.Marshal(&trResponse)
+			Expect(err).To(BeNil())
+
+			payment.Raw = raw
+			payment.Status = models.PAYMENT_STATUS_PENDING
+			resp, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.CreateTransferResponse{
+				Payment: payment,
+			}))
+		})
+
+		It("should be ok - canceled status", func(ctx SpecContext) {
+			req := models.CreateTransferRequest{
+				PaymentInitiation: samplePSPPaymentInitiation,
+			}
+
+			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
+				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
+				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
+				Amount:               "1.00",
+				Description:          samplePSPPaymentInitiation.Description,
+			}).Return(&trResponse, nil)
+
+			trResponse.Status = "canceled"
+			raw, err := json.Marshal(&trResponse)
+			Expect(err).To(BeNil())
+
+			payment.Raw = raw
+			payment.Status = models.PAYMENT_STATUS_CANCELLED
+			resp, err := plg.CreateTransfer(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.CreateTransferResponse{
+				Payment: payment,
+			}))
+		})
 	})
 })

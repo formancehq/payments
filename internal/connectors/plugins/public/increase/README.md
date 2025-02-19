@@ -2,13 +2,6 @@
 
 This connector enables synchronization of accounts, balances, payments, external accounts, and fund transfers via Increase's APIs. It basically integrates the Increase payment service provider with the Formance Payments service.
 
-## Configuration
-
-Required configuration parameters:
-- `api_key`: Your Increase API key (required)
-- `endpoint`: Your Increase endpoint (required)
-- `webhook_shared_secret`: Your Increase webhook secret (required)
-
 ## Capabilities
 
 ### Account Operations
@@ -30,9 +23,22 @@ Required configuration parameters:
 ### Webhooks Operations
 - Account created webhooks
 - External account created webhooks
-- Payment created webhooks
-- Transfer created webhooks
-- Payout created webhooks
+- Payment created webhooks for different transaction types:
+  - Succeeded transactions
+  - Declined transactions
+  - Pending transactions
+- Account transfer created webhooks
+- Payout created webhooks using various methods:
+  - ACH transfer
+  - Wire transfer
+  - Check transfer
+
+## Configuration
+
+Required configuration parameters:
+- `apiKey`: Your Increase API key (required)
+- `endpoint`: Your Increase endpoint (required)
+- `webhookSharedSecret`: Your Increase webhook secret (required)
 
 ## API Documentation
 

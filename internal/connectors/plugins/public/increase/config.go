@@ -11,7 +11,7 @@ import (
 type Config struct {
 	APIKey              string `json:"apiKey" validate:"required"`
 	Endpoint            string `json:"endpoint" validate:"required"`
-	WebhookSharedSecret string `json:"webhook_shared_secret" validate:"required"`
+	WebhookSharedSecret string `json:"webhookSharedSecret" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

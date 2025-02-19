@@ -23,7 +23,8 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	client client.Client
+	client         client.Client
+	webhookConfigs map[client.EventCategory]webhookConfig
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -33,12 +34,15 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}
 
 	client := client.New(ProviderName, config.APIKey, config.Endpoint, config.WebhookSharedSecret)
-
-	return &Plugin{
+	p := &Plugin{
 		name:   name,
 		logger: logger,
 		client: client,
-	}, nil
+	}
+
+	p.initWebhookConfig()
+
+	return p, nil
 }
 
 func (p *Plugin) Name() string {

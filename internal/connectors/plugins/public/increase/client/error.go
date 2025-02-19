@@ -6,9 +6,11 @@ import (
 )
 
 var (
-	ErrWebhookUrlMissing              = errors.New("Webhook url is not set")
-	ErrWebhookSharedSecretMissing     = errors.New("Webhook shared secret is not set")
+	ErrWebhookUrlMissing              = errors.New("webhook url is not set")
+	ErrMissingSelectedEventCategory   = errors.New("selected_event_category is not set in fromPayload")
+	ErrWebhookSharedSecretMissing     = errors.New("webhook shared secret is not set")
 	ErrWebhookHeaderXSignatureMissing = errors.New("missing X-Signature-Sha256 header")
+	ErrWebhookNameUnknown             = errors.New("unknown webhook name")
 )
 
 type increaseError struct {

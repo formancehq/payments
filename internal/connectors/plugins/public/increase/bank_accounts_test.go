@@ -72,7 +72,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 		It("should return an error - missing routingNumber in bank account metadata", func(ctx SpecContext) {
 			ba := sampleBankAccount
-			ba.Metadata = map[string]string{}
+			ba.Metadata[client.IncreaseRoutingNumberMetadataKey] = ""
 			req := models.CreateBankAccountRequest{
 				BankAccount: ba,
 			}
@@ -96,16 +96,16 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
-		It("should return an error - missing accountHolder in bank account metadata", func(ctx SpecContext) {
+		It("should return an error - missing description in bank account metadata", func(ctx SpecContext) {
 			ba := sampleBankAccount
-			ba.Metadata[client.IncreaseAccountHolderMetadataKey] = ""
+			ba.Metadata[client.IncreaseDescriptionMetadataKey] = ""
 			req := models.CreateBankAccountRequest{
 				BankAccount: ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing accountHolder in bank account metadata: invalid request"))
+			Expect(err).To(MatchError("missing description in bank account metadata: invalid request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
