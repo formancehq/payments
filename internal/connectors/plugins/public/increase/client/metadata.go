@@ -9,7 +9,7 @@ const (
 	IncreaseRecipientNameMetadataKey         = increaseMetadataSpecNamespace + "recipientName"
 	IncreaseDescriptionMetadataKey           = increaseMetadataSpecNamespace + "description"
 	IncreaseSourceAccountNumberIdMetadataKey = increaseMetadataSpecNamespace + "sourceAccountNumberID"
-	IncreaseFufillmentMethodMetadataKey      = increaseMetadataSpecNamespace + "fufillmentMethod"
+	IncreaseFulfillmentMethodMetadataKey     = increaseMetadataSpecNamespace + "fufillmentMethod"
 	IncreaseCheckNumberMetadataKey           = increaseMetadataSpecNamespace + "checkNumber"
 	IncreaseMailingAddressMetadataKey        = increaseMetadataSpecNamespace + "mailingAddress"
 	IncreasePostalCodeMetadataKey            = increaseMetadataSpecNamespace + "postalCode"

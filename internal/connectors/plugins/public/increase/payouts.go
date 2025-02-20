@@ -56,9 +56,9 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			AccountID:             pi.SourceAccount.Reference,
 			Amount:                json.Number(amount),
 			SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.SourceAccount.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
-			FulfillmentMethod:     models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFufillmentMethodMetadataKey),
+			FulfillmentMethod:     models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey),
 		}
-		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFufillmentMethodMetadataKey)
+		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey)
 		if fulfillmentMethod == thirdPartyFufillmentMethod {
 			check.ThirdParty = struct {
 				CheckNumber string "json:\"check_number\""
@@ -131,7 +131,7 @@ func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPaymen
 
 	precision, ok := supportedCurrenciesWithDecimal[from.Currency]
 	if !ok {
-		return nil, nil
+		return nil, fmt.Errorf("unsupported currency: %s", from.Currency)
 	}
 
 	amount, err := currency.GetAmountWithPrecisionFromString(from.Amount.String(), precision)

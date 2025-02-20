@@ -171,7 +171,7 @@ func (p *Plugin) translateAccountTransfer(ctx context.Context, webhook client.We
 		return models.WebhookResponse{}, err
 	}
 
-	pspPayment, err := p.mapTransfer(transfer)
+	pspPayment, err := p.transferToPayment(transfer)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map account transfer: %w", err)
 	}

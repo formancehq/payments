@@ -3,6 +3,7 @@ package increase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
@@ -28,7 +29,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
-	accounts, err = fillExternalAccounts(pagedRecipients, accounts, req.PageSize)
+	accounts, err = p.fillExternalAccounts(pagedRecipients, accounts, req.PageSize)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
@@ -51,7 +52,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}, nil
 }
 
-func fillExternalAccounts(
+func (p *Plugin) fillExternalAccounts(
 	pagedAccounts []*client.ExternalAccount,
 	accounts []models.PSPAccount,
 	pageSize int,
@@ -61,29 +62,11 @@ func fillExternalAccounts(
 			break
 		}
 
-		createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
+		mappedAccounts, err := p.mapExternalAccount(account)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to map external account: %w", err)
 		}
-
-		raw, err := json.Marshal(account)
-		if err != nil {
-			return nil, err
-		}
-
-		accounts = append(accounts, models.PSPAccount{
-			Reference: account.ID,
-			CreatedAt: createdTime,
-			Raw:       raw,
-			Metadata: map[string]string{
-				"type":          account.Type,
-				"accountHolder": account.AccountHolder,
-				"accountNumber": account.AccountNumber,
-				"status":        account.Status,
-				"description":   account.Description,
-				"routingNumber": account.RoutingNumber,
-			},
-		})
+		accounts = append(accounts, *mappedAccounts)
 	}
 
 	return accounts, nil

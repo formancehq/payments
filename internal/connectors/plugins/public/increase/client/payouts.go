@@ -114,7 +114,7 @@ type PayoutResponse struct {
 	Currency          string      `json:"currency"`
 	CreatedAt         string      `json:"created_at"`
 	Status            string      `json:"status"`
-	RecipientName     string      `json:"reciepient_name"`
+	RecipientName     string      `json:"recipient_name"`
 	ExternalAccountId string      `json:"external_account_id"`
 	AccountNumber     string      `json:"account_number"`
 	RoutingNumber     string      `json:"routing_number"`

@@ -3,6 +3,7 @@ package increase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
@@ -33,7 +34,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		if err != nil {
 			return models.CreateBankAccountResponse{}, err
 		}
-		createdTime, _ := time.Parse(time.RFC3339, resp.CreatedAt)
+		createdTime, err := time.Parse(time.RFC3339, resp.CreatedAt)
+		if err != nil {
+			return models.CreateBankAccountResponse{}, fmt.Errorf("failed to parse creation time: %w", err)
+		}
 		account = models.PSPAccount{
 			Reference: resp.ID,
 			CreatedAt: createdTime,

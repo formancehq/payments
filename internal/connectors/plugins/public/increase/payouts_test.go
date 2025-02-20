@@ -59,9 +59,9 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				Amount: big.NewInt(100),
 				Asset:  "USD/2",
 				Metadata: map[string]string{
-					client.IncreaseFufillmentMethodMetadataKey: "third_party",
-					client.IncreaseCheckNumberMetadataKey:      "123456789",
-					client.IncreasePayoutMethodMetadataKey:     "ach",
+					client.IncreaseFulfillmentMethodMetadataKey: "third_party",
+					client.IncreaseCheckNumberMetadataKey:       "123456789",
+					client.IncreasePayoutMethodMetadataKey:      "ach",
 				},
 			}
 		})
@@ -146,7 +146,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseCheckPaymentMethod
-			req.PaymentInitiation.Metadata[client.IncreaseFufillmentMethodMetadataKey] = ""
+			req.PaymentInitiation.Metadata[client.IncreaseFulfillmentMethodMetadataKey] = ""
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
@@ -459,7 +459,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseCheckPaymentMethod
-			req.PaymentInitiation.Metadata[client.IncreaseFufillmentMethodMetadataKey] = physicalCheckFufillmentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseFulfillmentMethodMetadataKey] = physicalCheckFufillmentMethod
 
 			trResponse := client.PayoutResponse{
 				ID:        "1",

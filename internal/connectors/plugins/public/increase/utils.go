@@ -40,7 +40,7 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
 	}
 
-	if payoutMethod == increaseCheckPaymentMethod && models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFufillmentMethodMetadataKey) == "" {
+	if payoutMethod == increaseCheckPaymentMethod && models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey) == "" {
 		return fmt.Errorf("fulfillmentMethod is a required metadata: %w", models.ErrInvalidRequest)
 	}
 

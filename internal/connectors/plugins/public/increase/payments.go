@@ -80,7 +80,7 @@ func (p *Plugin) fillPayments(
 
 		precision, ok := supportedCurrenciesWithDecimal[transaction.Currency]
 		if !ok {
-			return nil, nil
+			return nil, fmt.Errorf("unsupported currency: %s", transaction.Currency)
 		}
 
 		amount, err := currency.GetAmountWithPrecisionFromString(transaction.Amount.String(), precision)
