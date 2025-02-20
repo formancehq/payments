@@ -34,11 +34,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Account"
+                $ref: '#/components/schemas/V3Account'
 
     V3GetAccountResponse:
       type: object
@@ -46,7 +46,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Account"
+          $ref: '#/components/schemas/V3Account'
 
     V3CreateAccountRequest:
       type: object
@@ -68,7 +68,7 @@ components:
         accountName:
           type: string
         type:
-          $ref: "#/components/schemas/V3AccountTypeEnum"
+          $ref: '#/components/schemas/V3AccountTypeEnum'
         defaultAsset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
@@ -82,7 +82,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Account"
+          $ref: '#/components/schemas/V3Account'
 
     V3Account:
       type: object
@@ -108,7 +108,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: "#/components/schemas/V3AccountTypeEnum"
+          $ref: '#/components/schemas/V3AccountTypeEnum'
         name:
           type: string
         defaultAsset:
@@ -151,11 +151,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Balance"
+                $ref: '#/components/schemas/V3Balance'
     V3Balance:
       type: object
       required:
@@ -236,10 +236,8 @@ components:
           properties:
             taskID:
               description: >
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to forward the bank account to the PSP.
-                You can use the task API to check the status of the task and get
-                the resulting bank account ID.
+                Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of
+                the task and get the resulting bank account ID.
               type: string
 
     V3BankAccountsCursorResponse:
@@ -267,11 +265,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3BankAccount"
+                $ref: '#/components/schemas/V3BankAccount'
 
     V3GetBankAccountResponse:
       type: object
@@ -279,7 +277,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3BankAccount"
+          $ref: '#/components/schemas/V3BankAccount'
 
     V3BankAccount:
       type: object
@@ -304,12 +302,15 @@ components:
         swiftBicCode:
           type: string
           nullable: true
+        country:
+          type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
           type: array
           items:
-            $ref: "#/components/schemas/V3BankAccountRelatedAccount"
+            $ref: '#/components/schemas/V3BankAccountRelatedAccount'
 
     V3BankAccountRelatedAccount:
       type: object
@@ -325,7 +326,7 @@ components:
 
     # CONNECTORS
     V3InstallConnectorRequest:
-      $ref: "#/components/schemas/V3ConnectorConfig"
+      $ref: '#/components/schemas/V3ConnectorConfig'
 
     V3InstallConnectorResponse:
       type: object
@@ -348,10 +349,8 @@ components:
           properties:
             taskID:
               description: >
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to uninstall the connector.
-                You can use the task API to check the status of the task and get
-                the results.
+                Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and
+                get the results.
               type: string
 
     V3ResetConnectorResponse:
@@ -361,10 +360,8 @@ components:
       properties:
         data:
           description: >
-            Since this call is asynchronous, the response will contain the ID of
-            the task that was created to reset the connector.
-            You can use the task API to check the status of the task and get
-            the results.
+            Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the
+            results.
           type: string
 
     V3ConnectorConfigsResponse:
@@ -399,7 +396,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3ConnectorConfig"
+          $ref: '#/components/schemas/V3ConnectorConfig'
 
     V3ConnectorsCursorResponse:
       type: object
@@ -426,11 +423,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Connector"
+                $ref: '#/components/schemas/V3Connector'
 
     V3ConnectorSchedulesCursorResponse:
       type: object
@@ -457,11 +454,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Schedule"
+                $ref: '#/components/schemas/V3Schedule'
 
     V3ConnectorScheduleResponse:
       type: object
@@ -496,11 +493,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Instance"
+                $ref: '#/components/schemas/V3Instance'
 
     V3Connector:
       type: object
@@ -598,7 +595,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: "#/components/schemas/V3PaymentTypeEnum"
+          $ref: '#/components/schemas/V3PaymentTypeEnum'
         initialAmount:
           type: integer
           format: bigint
@@ -621,7 +618,7 @@ components:
         adjustments:
           type: array
           items:
-            $ref: "#/components/schemas/V3CreatePaymentAdjustmentRequest"
+            $ref: '#/components/schemas/V3CreatePaymentAdjustmentRequest'
 
     V3CreatePaymentAdjustmentRequest:
       type: object
@@ -636,7 +633,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: "#/components/schemas/V3PaymentStatusEnum"
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
         amount:
           type: integer
           format: bigint
@@ -652,7 +649,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Payment"
+          $ref: '#/components/schemas/V3Payment'
 
     V3UpdatePaymentMetadataRequest:
       type: object
@@ -687,11 +684,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Payment"
+                $ref: '#/components/schemas/V3Payment'
 
     V3GetPaymentResponse:
       type: object
@@ -699,7 +696,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Payment"
+          $ref: '#/components/schemas/V3Payment'
 
     V3Payment:
       type: object
@@ -729,7 +726,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: "#/components/schemas/V3PaymentTypeEnum"
+          $ref: '#/components/schemas/V3PaymentTypeEnum'
         initialAmount:
           type: integer
           format: bigint
@@ -741,7 +738,7 @@ components:
         scheme:
           type: string
         status:
-          $ref: "#/components/schemas/V3PaymentStatusEnum"
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
         sourceAccountID:
           type: string
           format: byte
@@ -756,7 +753,7 @@ components:
           type: array
           nullable: true
           items:
-            $ref: "#/components/schemas/V3PaymentAdjustment"
+            $ref: '#/components/schemas/V3PaymentAdjustment'
 
     V3PaymentAdjustment:
       type: object
@@ -775,7 +772,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: "#/components/schemas/V3PaymentStatusEnum"
+          $ref: '#/components/schemas/V3PaymentStatusEnum'
         amount:
           type: integer
           format: bigint
@@ -842,7 +839,7 @@ components:
           type: string
           maxLength: 10000
         type:
-          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
+          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
         amount:
           type: integer
           format: bigint
@@ -873,11 +870,8 @@ components:
               type: string
             taskID:
               description: >
-                Will be filled if the noValidation query parameter is set to true.
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to create the payment on the PSP.
-                You can use the task API to check the status of the task and get
-                the resulting payment ID
+                Will be filled if the noValidation query parameter is set to true. Since this call is asynchronous, the response will contain the ID of the task that was created to create the payment
+                on the PSP. You can use the task API to check the status of the task and get the resulting payment ID
               type: string
 
     V3RetryPaymentInitiationResponse:
@@ -892,10 +886,8 @@ components:
           properties:
             taskID:
               description: >
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to retry the payment initiation to the PSP.
-                You can use the task API to check the status of the task and get
-                the resulting payment ID.
+                Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status
+                of the task and get the resulting payment ID.
               type: string
 
     V3ApprovePaymentInitiationResponse:
@@ -910,10 +902,8 @@ components:
           properties:
             taskID:
               description: >
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to approve the payment initiation.
-                You can use the task API to check the status of the task and get
-                the resulting payment ID.
+                Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the
+                task and get the resulting payment ID.
               type: string
 
     V3ReversePaymentInitiationRequest:
@@ -950,10 +940,8 @@ components:
           properties:
             taskID:
               description: >
-                Since this call is asynchronous, the response will contain the ID of
-                the task that was created to reverse the payment initiation.
-                You can use the task API to check the status of the task and get
-                the resulting payment ID.
+                Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the
+                task and get the resulting payment ID.
               type: string
             paymentInitiationReversalID:
               description: >
@@ -985,11 +973,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3PaymentInitiation"
+                $ref: '#/components/schemas/V3PaymentInitiation'
 
     V3PaymentInitiationAdjustmentsCursorResponse:
       type: object
@@ -1016,11 +1004,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3PaymentInitiationAdjustment"
+                $ref: '#/components/schemas/V3PaymentInitiationAdjustment'
 
     V3PaymentInitiationRelatedPaymentsCursorResponse:
       type: object
@@ -1047,11 +1035,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Payment"
+                $ref: '#/components/schemas/V3Payment'
 
     V3PaymentInitiation:
       type: object
@@ -1083,14 +1071,14 @@ components:
         description:
           type: string
         type:
-          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
+          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
         amount:
           type: integer
           format: bigint
         asset:
           type: string
         status:
-          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
+          $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
         sourceAccountID:
           type: string
           format: byte
@@ -1115,7 +1103,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
+          $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
         amount:
           type: integer
           format: bigint
@@ -1132,7 +1120,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3PaymentInitiation"
+          $ref: '#/components/schemas/V3PaymentInitiation'
 
     V3PaymentInitiationStatusEnum:
       type: string
@@ -1202,11 +1190,11 @@ components:
               example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
             next:
               type: string
-              example: ""
+              example: ''
             data:
               type: array
               items:
-                $ref: "#/components/schemas/V3Pool"
+                $ref: '#/components/schemas/V3Pool'
 
     V3GetPoolResponse:
       type: object
@@ -1214,7 +1202,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Pool"
+          $ref: '#/components/schemas/V3Pool'
 
     V3PoolBalancesResponse:
       type: object
@@ -1222,7 +1210,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3PoolBalances"
+          $ref: '#/components/schemas/V3PoolBalances'
 
     V3Pool:
       type: object
@@ -1242,12 +1230,12 @@ components:
         poolAccounts:
           type: array
           items:
-            $ref: "#/components/schemas/V3AccountID"
+            $ref: '#/components/schemas/V3AccountID'
 
     V3PoolBalances:
       type: array
       items:
-        $ref: "#/components/schemas/V3PoolBalance"
+        $ref: '#/components/schemas/V3PoolBalance'
 
     V3PoolBalance:
       type: object
@@ -1268,7 +1256,7 @@ components:
         - data
       properties:
         data:
-          $ref: "#/components/schemas/V3Task"
+          $ref: '#/components/schemas/V3Task'
 
     V3Task:
       type: object
@@ -1281,7 +1269,7 @@ components:
         id:
           type: string
         status:
-          $ref: "#/components/schemas/V3TaskStatusEnum"
+          $ref: '#/components/schemas/V3TaskStatusEnum'
         createdAt:
           type: string
           format: date-time

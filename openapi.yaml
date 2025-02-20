@@ -3731,6 +3731,9 @@ components:
         swiftBicCode:
           type: string
           nullable: true
+        country:
+          type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
         relatedAccounts:
