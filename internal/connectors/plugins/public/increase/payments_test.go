@@ -22,9 +22,9 @@ var _ = Describe("Increase Plugin Payments", func() {
 		plg = &Plugin{}
 	})
 
-	Context("fetching next accounts", func() {
+	Context("fetching next payments", func() {
 		var (
-			m                           *client.MockClient
+			mockHTTPClient              *client.MockHTTPClient
 			sampleSucceededTransactions []*client.Transaction
 			samplePendingTransactions   []*client.Transaction
 			sampleDeclinedTransactions  []*client.Transaction
@@ -33,9 +33,11 @@ var _ = Describe("Increase Plugin Payments", func() {
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			mockHTTPClient = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(mockHTTPClient) // Inject the mock HTTP client
 			now = time.Now().UTC()
+
 			sampleSucceededTransactions = make([]*client.Transaction, 0)
 			samplePendingTransactions = make([]*client.Transaction, 0)
 			sampleDeclinedTransactions = make([]*client.Transaction, 0)
@@ -78,21 +80,19 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
-				nil,
-			)
-
-			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get pending transactions: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
@@ -102,15 +102,19 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get pending transactions: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
@@ -120,27 +124,19 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
-				nil,
-			)
-
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
-				nil,
-			)
-
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get pending transactions: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
@@ -150,33 +146,28 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
-
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
-				nil,
-			)
-
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
-				[]*client.Transaction{},
-				"",
-				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: []*client.Transaction{},
+			}).Times(3)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(0))
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).ToNot(BeNil())
+
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.LastSucceededCreatedAt.IsZero()).To(BeTrue())
 			Expect(state.LastPendingCreatedAt.IsZero()).To(BeTrue())
 			Expect(state.LastDeclinedCreatedAt.IsZero()).To(BeTrue())
@@ -188,33 +179,52 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 20, time.Time{}).Return(
-				sampleSucceededTransactions[:20],
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: sampleSucceededTransactions[:20],
+			})
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 20, time.Time{}).Return(
-				samplePendingTransactions[:20],
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: samplePendingTransactions[:20],
+			})
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 20, time.Time{}).Return(
-				sampleDeclinedTransactions[:20],
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: sampleDeclinedTransactions[:20],
+			})
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(60))
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).ToNot(BeNil())
+
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			succeededCreatedTime, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[19].CreatedAt)
 			pendingCreatedTime, _ := time.Parse(time.RFC3339, samplePendingTransactions[19].CreatedAt)
 			declinedCreatedTime, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[19].CreatedAt)
@@ -229,23 +239,43 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetTransactions(gomock.Any(), 13, time.Time{}).Return(
-				sampleSucceededTransactions[:13],
-				"qwerty",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       sampleSucceededTransactions[:13],
+				NextCursor: "qwerty",
+			})
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 13, time.Time{}).Return(
-				samplePendingTransactions[:13],
-				"uiop",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: samplePendingTransactions[:13],
+			})
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 13, time.Time{}).Return(
-				sampleDeclinedTransactions[:13],
-				"asdfg",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       sampleDeclinedTransactions[:13],
+				NextCursor: "asdfg",
+			})
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
@@ -273,23 +303,43 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetPendingTransactions(gomock.Any(), 13, lastPendingCreatedAt).Return(
-				samplePendingTransactions[:13],
-				"lkjh",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       sampleSucceededTransactions[:13],
+				NextCursor: "mnbvc",
+			})
 
-			m.EXPECT().GetTransactions(gomock.Any(), 13, lastSucceededCreatedAt).Return(
-				sampleSucceededTransactions[:13],
-				"mnbvc",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: samplePendingTransactions[:13],
+			})
 
-			m.EXPECT().GetDeclinedTransactions(gomock.Any(), 13, lastDeclinedCreatedAt).Return(
-				sampleDeclinedTransactions[:13],
-				"uytr",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       sampleDeclinedTransactions[:13],
+				NextCursor: "uytr",
+			})
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
@@ -300,7 +350,7 @@ var _ = Describe("Increase Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			succeededCreatedTime, _ := time.Parse(time.RFC3339, sampleSucceededTransactions[12].CreatedAt)
 			pendingCreatedTime, _ := time.Parse(time.RFC3339, samplePendingTransactions[12].CreatedAt)
 			declinedCreatedTime, _ := time.Parse(time.RFC3339, sampleDeclinedTransactions[12].CreatedAt)

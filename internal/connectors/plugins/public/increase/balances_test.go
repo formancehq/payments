@@ -3,7 +3,6 @@ package increase
 import (
 	"errors"
 	"math/big"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/models"
@@ -23,14 +22,15 @@ var _ = Describe("Increase Plugin Balances", func() {
 
 	Context("fetching next balances", func() {
 		var (
-			m             *client.MockClient
+			m             *client.MockHTTPClient
 			sampleBalance *client.Balance
 		)
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			m = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(m)
 
 			sampleBalance = &client.Balance{
 				AccountID:        "test_id",
@@ -56,15 +56,19 @@ var _ = Describe("Increase Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test"}`),
 			}
 
-			m.EXPECT().GetAccountBalance(gomock.Any(), "test").Return(
-				sampleBalance,
-				time.Now().UTC(),
+			m.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get account balance: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
@@ -74,11 +78,15 @@ var _ = Describe("Increase Plugin Balances", func() {
 				FromPayload: []byte(`{"reference": "test", "defaultAsset": "USD"}`),
 			}
 
-			m.EXPECT().GetAccountBalance(gomock.Any(), "test").Return(
-				sampleBalance,
-				time.Now().UTC(),
+			m.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, sampleBalance)
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).To(BeNil())

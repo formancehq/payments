@@ -39,7 +39,7 @@ func (c *client) GetAccounts(ctx context.Context, pageSize int, cursor string, c
 	}
 	req.URL.RawQuery = q.Encode()
 
-	var res responseWrapper[[]*Account]
+	var res ResponseWrapper[[]*Account]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {

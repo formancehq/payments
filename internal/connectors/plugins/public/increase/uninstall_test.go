@@ -12,23 +12,35 @@ import (
 
 var _ = Describe("Increase Plugin Uninstall", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
+		plg            *Plugin
+		mockHTTPClient *client.MockHTTPClient
 	)
 
 	BeforeEach(func() {
 		ctrl := gomock.NewController(GinkgoT())
-		m = client.NewMockClient(ctrl)
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		plg = &Plugin{
-			client: m,
+			client: client.New("test", "aseplye", "https://test.com", "we5432345"),
 		}
+		plg.client.SetHttpClient(mockHTTPClient)
 	})
 
 	Context("uninstalling connector", func() {
 		It("should handle empty webhooks list", func(ctx SpecContext) {
-			m.EXPECT().ListEventSubscriptions(gomock.Any()).Return(
-				[]*client.EventSubscription{},
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
+			).SetArg(
+				2,
+				client.ResponseWrapper[[]*client.EventSubscription]{
+					Data:       []*client.EventSubscription{},
+					NextCursor: "qwerty",
+				},
 			)
 
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
@@ -39,45 +51,72 @@ var _ = Describe("Increase Plugin Uninstall", func() {
 		})
 
 		It("should handle webhook list event error", func(ctx SpecContext) {
-			m.EXPECT().ListEventSubscriptions(gomock.Any()).Return(
-				nil,
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("list failed"),
 			)
 
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
-			Expect(err).To(MatchError("list failed"))
+			Expect(err).To(MatchError("failed to list web hooks: list failed unexpected status code: 0"))
 			Expect(resp).To(Equal(models.UninstallResponse{}))
 		})
 
 		It("should handle webhook deletion error", func(ctx SpecContext) {
-			m.EXPECT().ListEventSubscriptions(gomock.Any()).Return(
-				[]*client.EventSubscription{
-					{
-						ID:  "webhook-1",
-						URL: "https://example.com/test-connector/webhook",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(
+				2,
+				client.ResponseWrapper[[]*client.EventSubscription]{
+					Data: []*client.EventSubscription{
+						{
+							ID:  "webhook-1",
+							URL: "https://example.com/test-connector/webhook",
+						},
 					},
 				},
-				nil,
 			)
 
-			m.EXPECT().UpdateEventSubscription(
+			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				&client.UpdateEventSubscriptionRequest{Status: eventSubscriptionStatusDeleted},
-				"webhook-1",
-			).Return(nil, errors.New("deletion failed"))
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				errors.New("deletion failed"),
+			)
 
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
-			Expect(err).To(MatchError("deletion failed"))
+			Expect(err).To(MatchError("failed to update web hooks: deletion failed unexpected status code: 0"))
 			Expect(resp).To(Equal(models.UninstallResponse{}))
 		})
 
 		It("should successfully uninstall and delete webhooks", func(ctx SpecContext) {
-			m.EXPECT().ListEventSubscriptions(gomock.Any()).Return(
-				[]*client.EventSubscription{
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.EventSubscription]{
+				Data: []*client.EventSubscription{
 					{
 						ID:  "webhook-1",
 						URL: "https://example.com/test-connector/webhook",
@@ -87,14 +126,17 @@ var _ = Describe("Increase Plugin Uninstall", func() {
 						URL: "https://example.com/other-connector/webhook",
 					},
 				},
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
 			)
-
-			m.EXPECT().UpdateEventSubscription(
-				gomock.Any(),
-				&client.UpdateEventSubscriptionRequest{Status: eventSubscriptionStatusDeleted},
-				"webhook-1",
-			).Return(&client.EventSubscription{}, nil)
 
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",

@@ -39,7 +39,7 @@ func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedA
 	}
 	req.URL.RawQuery = q.Encode()
 
-	var res responseWrapper[[]*Transaction]
+	var res ResponseWrapper[[]*Transaction]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
@@ -82,7 +82,7 @@ func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastC
 	}
 	req.URL.RawQuery = q.Encode()
 
-	var res responseWrapper[[]*Transaction]
+	var res ResponseWrapper[[]*Transaction]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
@@ -125,7 +125,7 @@ func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, last
 	}
 	req.URL.RawQuery = q.Encode()
 
-	var res responseWrapper[[]*Transaction]
+	var res ResponseWrapper[[]*Transaction]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {

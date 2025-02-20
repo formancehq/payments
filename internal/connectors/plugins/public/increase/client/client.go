@@ -41,6 +41,11 @@ type Client interface {
 	ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error)
 	UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error)
 	VerifyWebhookSignature(payload []byte, signature string) error
+	SetHttpClient(httpClient HTTPClient)
+}
+
+type HTTPClient interface {
+	Do(context.Context, *http.Request, any, any) (int, error)
 }
 
 type client struct {
@@ -61,7 +66,7 @@ func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlying.RoundTrip(req)
 }
 
-type responseWrapper[t any] struct {
+type ResponseWrapper[t any] struct {
 	Data             t      `json:"data"`
 	NextCursor       string `json:"next_cursor"`
 	ResponseMetadata struct {
@@ -90,6 +95,10 @@ func New(connectorName, apiKey, endpoint, webhookSharedSecret string) *client {
 	client.httpClient = httpwrapper.NewClient(config)
 
 	return client
+}
+
+func (c *client) SetHttpClient(httpClient HTTPClient) {
+	c.httpClient = httpClient
 }
 
 func (c *client) newRequest(ctx context.Context, method, path string, body io.Reader) (*http.Request, error) {

@@ -24,15 +24,16 @@ var _ = Describe("Increase Plugin Accounts", func() {
 
 	Context("fetching next accounts", func() {
 		var (
-			m              *client.MockClient
+			mockHTTPClient *client.MockHTTPClient
 			sampleAccounts []*client.Account
 			now            time.Time
 		)
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			mockHTTPClient = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 
 			sampleAccounts = make([]*client.Account, 0)
@@ -82,15 +83,19 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
-				[]*client.Account{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get accounts: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
@@ -100,11 +105,17 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
-				[]*client.Account{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Account]{
+				Data: []*client.Account{},
+			})
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -115,7 +126,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(BeEmpty())
 		})
 
@@ -125,11 +136,17 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 60, "", time.Time{}).Return(
-				sampleAccounts,
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Account]{
+				Data: sampleAccounts,
+			})
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -140,7 +157,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(BeEmpty())
 		})
 
@@ -150,11 +167,18 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 40, "", time.Time{}).Return(
-				sampleAccounts[:40],
-				"wrY4nKh",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Account]{
+				Data:       sampleAccounts[:40],
+				NextCursor: "wrY4nKh",
+			})
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -175,11 +199,18 @@ var _ = Describe("Increase Plugin Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetAccounts(gomock.Any(), 40, "wrY4nKh", createdAtAfter.UTC()).Return(
-				sampleAccounts[:40],
-				"qsdf",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.Account]{
+				Data:       sampleAccounts[:40],
+				NextCursor: "qsdf",
+			})
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -190,7 +221,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(Equal("qsdf"))
 		})
 	})

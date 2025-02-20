@@ -98,7 +98,7 @@ func (c *client) ListEventSubscriptions(ctx context.Context) ([]*EventSubscripti
 		return nil, fmt.Errorf("failed to create webhooks request: %w", err)
 	}
 
-	var res responseWrapper[[]*EventSubscription]
+	var res ResponseWrapper[[]*EventSubscription]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {

@@ -35,7 +35,7 @@ func (c *client) GetExternalAccounts(ctx context.Context, pageSize int, cursor s
 	}
 	req.URL.RawQuery = q.Encode()
 
-	var res responseWrapper[[]*ExternalAccount]
+	var res ResponseWrapper[[]*ExternalAccount]
 	var errRes increaseError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {

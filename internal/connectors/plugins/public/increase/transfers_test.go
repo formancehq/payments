@@ -25,7 +25,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 	Context("create transfer", func() {
 		var (
-			m                          *client.MockClient
+			mockHTTPClient             *client.MockHTTPClient
 			samplePSPPaymentInitiation models.PSPPaymentInitiation
 			trResponse                 client.TransferResponse
 			payment                    *models.PSPPayment
@@ -34,8 +34,9 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			mockHTTPClient = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(mockHTTPClient)
 			now, _ = time.Parse(time.RFC3339, time.Now().UTC().Format(time.RFC3339))
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{
@@ -155,16 +156,19 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
-				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Amount:               "1.00",
-				Description:          samplePSPPaymentInitiation.Description,
-			}).Return(nil, errors.New("test error"))
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
+				errors.New("test error"),
+			)
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to initiate transfer: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -173,12 +177,15 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
-				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Amount:               "1.00",
-				Description:          samplePSPPaymentInitiation.Description,
-			}).Return(&trResponse, nil)
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, trResponse)
 
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
@@ -197,14 +204,17 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
-				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Amount:               "1.00",
-				Description:          samplePSPPaymentInitiation.Description,
-			}).Return(&trResponse, nil)
-
 			trResponse.Status = "submitted"
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, trResponse)
+
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
 
@@ -222,14 +232,17 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 
-			m.EXPECT().InitiateTransfer(gomock.Any(), &client.TransferRequest{
-				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
-				Amount:               "1.00",
-				Description:          samplePSPPaymentInitiation.Description,
-			}).Return(&trResponse, nil)
-
 			trResponse.Status = "canceled"
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, trResponse)
+
 			raw, err := json.Marshal(&trResponse)
 			Expect(err).To(BeNil())
 

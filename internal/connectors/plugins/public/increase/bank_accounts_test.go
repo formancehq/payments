@@ -25,15 +25,16 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 	Context("create bank account", func() {
 		var (
-			m                 *client.MockClient
+			mockHTTPClient    *client.MockHTTPClient
 			sampleBankAccount models.BankAccount
 			now               time.Time
 		)
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			mockHTTPClient = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 
 			sampleBankAccount = models.BankAccount{
@@ -54,19 +55,19 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 				BankAccount: sampleBankAccount,
 			}
 
-			m.EXPECT().CreateBankAccount(gomock.Any(), &client.BankAccountRequest{
-				AccountHolder: sampleBankAccount.Metadata[client.IncreaseAccountHolderMetadataKey],
-				Description:   sampleBankAccount.Metadata[client.IncreaseDescriptionMetadataKey],
-				RoutingNumber: sampleBankAccount.Metadata[client.IncreaseRoutingNumberMetadataKey],
-				AccountNumber: *sampleBankAccount.AccountNumber,
-			}).Return(
-				nil,
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to create bank account: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -122,16 +123,18 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 				RoutingNumber: ba.Metadata[client.IncreaseRoutingNumberMetadataKey],
 				AccountHolder: ba.Metadata[client.IncreaseAccountHolderMetadataKey],
 				Status:        "active",
+				CreatedAt:     now.Format(time.RFC3339),
 			}
-			m.EXPECT().CreateBankAccount(gomock.Any(), &client.BankAccountRequest{
-				AccountNumber: *ba.AccountNumber,
-				AccountHolder: ba.Metadata[client.IncreaseAccountHolderMetadataKey],
-				RoutingNumber: ba.Metadata[client.IncreaseRoutingNumberMetadataKey],
-				Description:   ba.Metadata[client.IncreaseDescriptionMetadataKey],
-			}).Return(
-				expectedBA,
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, *expectedBA)
 
 			raw, _ := json.Marshal(expectedBA)
 

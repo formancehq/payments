@@ -24,15 +24,16 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 
 	Context("fetching next external accounts", func() {
 		var (
-			m                      *client.MockClient
+			mockHTTPClient         *client.MockHTTPClient
 			sampleExternalAccounts []*client.ExternalAccount
 			now                    time.Time
 		)
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			mockHTTPClient = client.NewMockHTTPClient(ctrl)
+			plg.client = client.New("test", "aseplye", "https://test.com", "we5432345")
+			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 
 			sampleExternalAccounts = make([]*client.ExternalAccount, 0)
@@ -52,15 +53,19 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetExternalAccounts(gomock.Any(), 60, "").Return(
-				[]*client.ExternalAccount{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get external accounts: test error unexpected status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
 		})
 
@@ -70,11 +75,17 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetExternalAccounts(gomock.Any(), 60, "").Return(
-				[]*client.ExternalAccount{},
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.ExternalAccount]{
+				Data: []*client.ExternalAccount{},
+			})
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -85,7 +96,7 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(BeEmpty())
 		})
 
@@ -95,11 +106,17 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 				PageSize: 60,
 			}
 
-			m.EXPECT().GetExternalAccounts(gomock.Any(), 60, "").Return(
-				sampleExternalAccounts,
-				"",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.ExternalAccount]{
+				Data: sampleExternalAccounts,
+			})
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -110,7 +127,7 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(BeEmpty())
 		})
 
@@ -120,11 +137,18 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetExternalAccounts(gomock.Any(), 40, "").Return(
-				sampleExternalAccounts[:40],
-				"qwerty",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.ExternalAccount]{
+				Data:       sampleExternalAccounts[:40],
+				NextCursor: "qwerty",
+			})
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -144,11 +168,18 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 				PageSize: 40,
 			}
 
-			m.EXPECT().GetExternalAccounts(gomock.Any(), 40, "qwerty").Return(
-				sampleExternalAccounts[:40],
-				"asdfg",
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
 				nil,
-			)
+			).SetArg(2, client.ResponseWrapper[[]*client.ExternalAccount]{
+				Data:       sampleExternalAccounts[:40],
+				NextCursor: "asdfg",
+			})
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).To(BeNil())
@@ -159,7 +190,7 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
+			// We fetched everything, state should be reset
 			Expect(state.NextCursor).To(Equal("asdfg"))
 		})
 	})

@@ -11,6 +11,7 @@ package client
 
 import (
 	context "context"
+	http "net/http"
 	reflect "reflect"
 	time "time"
 
@@ -407,6 +408,18 @@ func (mr *MockClientMockRecorder) ListEventSubscriptions(ctx any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListEventSubscriptions", reflect.TypeOf((*MockClient)(nil).ListEventSubscriptions), ctx)
 }
 
+// SetHttpClient mocks base method.
+func (m *MockClient) SetHttpClient(httpClient HTTPClient) {
+	m.ctrl.T.Helper()
+	m.ctrl.Call(m, "SetHttpClient", httpClient)
+}
+
+// SetHttpClient indicates an expected call of SetHttpClient.
+func (mr *MockClientMockRecorder) SetHttpClient(httpClient any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetHttpClient", reflect.TypeOf((*MockClient)(nil).SetHttpClient), httpClient)
+}
+
 // UpdateEventSubscription mocks base method.
 func (m *MockClient) UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error) {
 	m.ctrl.T.Helper()
@@ -434,4 +447,43 @@ func (m *MockClient) VerifyWebhookSignature(payload []byte, signature string) er
 func (mr *MockClientMockRecorder) VerifyWebhookSignature(payload, signature any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhookSignature", reflect.TypeOf((*MockClient)(nil).VerifyWebhookSignature), payload, signature)
+}
+
+// MockHTTPClient is a mock of HTTPClient interface.
+type MockHTTPClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockHTTPClientMockRecorder
+	isgomock struct{}
+}
+
+// MockHTTPClientMockRecorder is the mock recorder for MockHTTPClient.
+type MockHTTPClientMockRecorder struct {
+	mock *MockHTTPClient
+}
+
+// NewMockHTTPClient creates a new mock instance.
+func NewMockHTTPClient(ctrl *gomock.Controller) *MockHTTPClient {
+	mock := &MockHTTPClient{ctrl: ctrl}
+	mock.recorder = &MockHTTPClientMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockHTTPClient) EXPECT() *MockHTTPClientMockRecorder {
+	return m.recorder
+}
+
+// Do mocks base method.
+func (m *MockHTTPClient) Do(arg0 context.Context, arg1 *http.Request, arg2, arg3 any) (int, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Do", arg0, arg1, arg2, arg3)
+	ret0, _ := ret[0].(int)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Do indicates an expected call of Do.
+func (mr *MockHTTPClientMockRecorder) Do(arg0, arg1, arg2, arg3 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Do", reflect.TypeOf((*MockHTTPClient)(nil).Do), arg0, arg1, arg2, arg3)
 }
