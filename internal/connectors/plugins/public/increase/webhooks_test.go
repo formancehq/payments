@@ -17,8 +17,9 @@ import (
 
 var _ = Describe("Increase Plugin Webhooks", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
+		plg      *Plugin
+		httpMock *client.MockHTTPClient
+		ctrl     *gomock.Controller
 	)
 
 	BeforeEach(func() {
@@ -31,6 +32,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			expectedWebhookResponseID    string
 			webhookBaseURL               string
 			err                          error
+			verifierMock                 *MockWebhookVerifier
 			sampleAccountCreated         *client.Account
 			samplePaymentCreated         *client.Transaction
 			sampleTransferCreated        *client.TransferResponse
@@ -40,9 +42,15 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
+			ctrl = gomock.NewController(GinkgoT())
+			httpMock = client.NewMockHTTPClient(ctrl)
+			verifierMock = NewMockWebhookVerifier(ctrl)
+			plg = &Plugin{
+				client:   client.New("test", "aseplye", "https://test.com", "we5432345"),
+				verifier: verifierMock,
+			}
+			plg.client.SetHttpClient(httpMock)
+
 			expectedObjectedID = "44"
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseURL = "http://example.com"
@@ -123,22 +131,21 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			}
 
 			url, _ := url.JoinPath(req.WebhookBaseUrl, "account/created")
-			esReq := &client.CreateEventSubscriptionRequest{
-				URL:                   url,
-				SelectedEventCategory: "account.created",
-			}
-			m.EXPECT().CreateEventSubscription(
+
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				esReq,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				&client.EventSubscription{
-					ID:                    expectedWebhookResponseID,
-					URL:                   url,
-					Status:                "active",
-					SelectedEventCategory: "account.created",
-				},
+				200,
 				nil,
-			)
+			).SetArg(2, client.EventSubscription{
+				ID:                    expectedWebhookResponseID,
+				URL:                   url,
+				Status:                "active",
+				SelectedEventCategory: "account.created",
+			})
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
@@ -152,22 +159,19 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				WebhookBaseUrl: webhookBaseURL,
 			}
 
-			url, _ := url.JoinPath(req.WebhookBaseUrl, "account/created")
-			esReq := &client.CreateEventSubscriptionRequest{
-				URL:                   url,
-				SelectedEventCategory: "account.created",
-			}
-			m.EXPECT().CreateEventSubscription(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				esReq,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				nil,
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create webhook subscription: test error"))
+			Expect(err).To(MatchError("failed to create webhook subscription: failed to create web hooks: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.CreateWebhooksResponse{}))
 		})
 
@@ -203,7 +207,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "account.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -215,9 +219,9 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(errors.New("test error"))
 
 			res, err := plg.TranslateWebhook(ctx, req)
@@ -231,7 +235,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "ac.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -243,9 +247,9 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
@@ -259,7 +263,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "account.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -271,22 +275,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetAccount(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				nil,
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get account: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -295,7 +301,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "account_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -307,15 +313,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetTransfer(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get transfer: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -324,7 +339,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "ach_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -336,15 +351,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetACHTransferPayout(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get ach payout: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -353,7 +377,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "check_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -365,15 +389,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetCheckTransferPayout(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get check transfer payout: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -382,7 +415,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "declined_transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -394,15 +427,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetDeclinedTransaction(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get declined transaction: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -411,7 +453,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "external_account.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -423,15 +465,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetExternalAccount(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get external account: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -440,7 +491,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "pending_transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -452,15 +503,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetPendingTransaction(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get pending transaction: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -469,7 +529,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "real_time_payments_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -481,15 +541,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetRTPTransferPayout(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get real time payments transfer payout: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -498,7 +567,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -510,15 +579,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetTransaction(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get transaction: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -527,7 +605,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "wire_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -539,15 +617,24 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetWireTransferPayout(gomock.Any(), expectedObjectedID).Return(
-				nil,
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				500,
 				errors.New("test error"),
 			)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("failed to get wire transfer payout: test error unexpected status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -556,7 +643,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "account.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -568,18 +655,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetAccount(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				sampleAccountCreated,
+				200,
 				nil,
-			)
+			).SetArg(2, *sampleAccountCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -592,7 +681,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "declined_transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -604,18 +693,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetDeclinedTransaction(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				samplePaymentCreated,
+				200,
 				nil,
-			)
+			).SetArg(2, *samplePaymentCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -628,7 +719,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "pending_transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -640,18 +731,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetPendingTransaction(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				samplePaymentCreated,
+				200,
 				nil,
-			)
+			).SetArg(2, *samplePaymentCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -664,7 +757,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "transaction.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -676,18 +769,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetTransaction(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				samplePaymentCreated,
+				200,
 				nil,
-			)
+			).SetArg(2, *samplePaymentCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -700,7 +795,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "external_account.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -712,18 +807,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(
-				gomock.Any(),
-				gomock.Any(),
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
 			).Return(nil)
 
-			m.EXPECT().GetExternalAccount(
+			httpMock.EXPECT().Do(
 				gomock.Any(),
-				expectedObjectedID,
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
 			).Return(
-				sampleExternalAccountCreated,
+				200,
 				nil,
-			)
+			).SetArg(2, *sampleExternalAccountCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -736,7 +833,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "account_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -748,8 +845,20 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetTransfer(gomock.Any(), expectedObjectedID).Return(sampleTransferCreated, nil)
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, *sampleTransferCreated)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -762,7 +871,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "check_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -774,8 +883,25 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetCheckTransferPayout(gomock.Any(), expectedObjectedID).Return(samplePayoutCreated, nil)
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.CheckPayoutResponse{
+				ID:        "4",
+				AccountID: "123454",
+				Currency:  "USD",
+				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
+			})
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -788,7 +914,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "wire_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -800,8 +926,25 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetWireTransferPayout(gomock.Any(), expectedObjectedID).Return(samplePayoutCreated, nil)
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.WireTransferPayoutResponse{
+				ID:        "4",
+				AccountID: "123454",
+				Currency:  "USD",
+				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
+			})
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -814,7 +957,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "real_time_payments_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -826,8 +969,25 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetRTPTransferPayout(gomock.Any(), expectedObjectedID).Return(samplePayoutCreated, nil)
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.RTPPayoutResponse{
+				ID:        "4",
+				AccountID: "123454",
+				Currency:  "USD",
+				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
+			})
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -840,7 +1000,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				Name: "ach_transfer.created",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
-						"Increase-Webhook-Signature": {"Increase-Webhook-Signature: t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+						"Increase-Webhook-Signature": {"t=2022-01-31T23:59:59Z,v1=7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "associated_object_id": "%s"}`, expectedObjectedID)),
 				},
@@ -852,8 +1012,25 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				},
 			}
 
-			m.EXPECT().VerifyWebhookSignature(gomock.Any(), gomock.Any()).Return(nil)
-			m.EXPECT().GetACHTransferPayout(gomock.Any(), expectedObjectedID).Return(samplePayoutCreated, nil)
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Increase-Webhook-Signature"][0],
+			).Return(nil)
+
+			httpMock.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ACHPayoutResponse{
+				ID:        "4",
+				AccountID: "123454",
+				Currency:  "USD",
+				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
+			})
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())

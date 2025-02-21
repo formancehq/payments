@@ -52,13 +52,13 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		}
 		return p.payoutToPayment(resp)
 	case increaseCheckPaymentMethod:
+		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey)
 		check := &client.CheckPayoutRequest{
 			AccountID:             pi.SourceAccount.Reference,
 			Amount:                json.Number(amount),
 			SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.SourceAccount.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
-			FulfillmentMethod:     models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey),
+			FulfillmentMethod:     fulfillmentMethod,
 		}
-		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey)
 		if fulfillmentMethod == thirdPartyFufillmentMethod {
 			check.ThirdParty = struct {
 				CheckNumber string "json:\"check_number\""

@@ -13,7 +13,6 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-//go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetAccounts(ctx context.Context, pageSize int, cursor string, createdAtAfter time.Time) ([]*Account, string, error)
 	GetAccount(ctx context.Context, accountID string) (*Account, error)
@@ -40,10 +39,10 @@ type Client interface {
 	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest) (*EventSubscription, error)
 	ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error)
 	UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error)
-	VerifyWebhookSignature(payload []byte, signature string) error
 	SetHttpClient(httpClient HTTPClient)
 }
 
+//go:generate mockgen -destination=http_generated.go -package=client . HTTPClient
 type HTTPClient interface {
 	Do(context.Context, *http.Request, any, any) (int, error)
 }

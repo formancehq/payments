@@ -25,6 +25,7 @@ type Plugin struct {
 
 	client         client.Client
 	webhookConfigs map[client.EventCategory]webhookConfig
+	verifier       WebhookVerifier
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -38,6 +39,9 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		name:   name,
 		logger: logger,
 		client: client,
+		verifier: &defaultVerifier{
+			webhookSharedSecret: config.WebhookSharedSecret,
+		},
 	}
 
 	p.initWebhookConfig()

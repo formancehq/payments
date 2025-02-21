@@ -11,6 +11,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
+const (
+	createdAtAfterQueryParam = "created_at.after"
+)
+
 type Transaction struct {
 	ID          string      `json:"id"`
 	AccountID   string      `json:"account_id"`
@@ -35,7 +39,7 @@ func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedA
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
 	if !lastCreatedAtAfter.IsZero() {
-		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
+		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format(time.RFC3339))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -78,7 +82,7 @@ func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastC
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
 	if !lastCreatedAtAfter.IsZero() {
-		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
+		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format("time.RFC3339"))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -121,7 +125,7 @@ func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, last
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
 	if !lastCreatedAtAfter.IsZero() {
-		q.Add("created_at.after", lastCreatedAtAfter.Format("2006-01-02T15:04:05-0700"))
+		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format("time.RFC3339"))
 	}
 	req.URL.RawQuery = q.Encode()
 

@@ -35,7 +35,7 @@ func (c *client) GetAccounts(ctx context.Context, pageSize int, cursor string, c
 		q.Add("cursor", cursor)
 	}
 	if !createdAtAfter.IsZero() && cursor == "" {
-		q.Add("created_at.after", createdAtAfter.Format("2006-01-02T15:04:05-0700"))
+		q.Add("created_at.after", createdAtAfter.Format(time.RFC3339))
 	}
 	req.URL.RawQuery = q.Encode()
 

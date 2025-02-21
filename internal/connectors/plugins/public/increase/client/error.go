@@ -11,6 +11,7 @@ var (
 	ErrWebhookSharedSecretMissing     = errors.New("webhook shared secret is not set")
 	ErrWebhookHeaderXSignatureMissing = errors.New("missing X-Signature-Sha256 header")
 	ErrWebhookNameUnknown             = errors.New("unknown webhook name")
+	ErrWebhookRequestFailed           = errors.New("failed to create webhooks request")
 )
 
 type increaseError struct {

@@ -12,8 +12,8 @@ import (
 )
 
 type accountsState struct {
-	NextCursor     string    `json:"next_cursor"`
-	CreatedAtAfter time.Time `json:"created_at_after"`
+	NextCursor    string    `json:"next_cursor"`
+	LastCreatedAt time.Time `json:"last_created_at"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -26,7 +26,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 	hasMore := false
-	pagedAccounts, nextCursor, err := p.client.GetAccounts(ctx, req.PageSize, oldState.NextCursor, oldState.CreatedAtAfter)
+	pagedAccounts, nextCursor, err := p.client.GetAccounts(ctx, req.PageSize, oldState.NextCursor, oldState.LastCreatedAt)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -43,7 +43,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	if len(accounts) > 0 {
-		newState.CreatedAtAfter = accounts[len(accounts)-1].CreatedAt
+		newState.LastCreatedAt = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)

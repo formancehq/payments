@@ -2,9 +2,15 @@ package increase
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/models"
@@ -14,11 +20,21 @@ const (
 	// HeadersSignature is Increase webhook signature
 	HeadersSignature               = "Increase-Webhook-Signature"
 	eventSubscriptionStatusDeleted = "deleted"
+	signatureScheme                = "v1"
+	toleranceDuration              = 5 * time.Minute // 5-minute tolerance for timestamp validation
 )
 
 type webhookConfig struct {
 	urlPath string
 	fn      func(context.Context, client.WebhookEvent) (models.WebhookResponse, error)
+}
+
+type defaultVerifier struct {
+	webhookSharedSecret string
+}
+
+type WebhookVerifier interface {
+	verifyWebhookSignature(payload []byte, header string) error
 }
 
 func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
@@ -122,7 +138,7 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 	if !ok || len(signatures) == 0 {
 		return models.TranslateWebhookResponse{}, client.ErrWebhookHeaderXSignatureMissing
 	}
-	if err := p.client.VerifyWebhookSignature(req.Webhook.Body, signatures[0]); err != nil {
+	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0]); err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
 
@@ -306,4 +322,79 @@ func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.Webho
 	response.Payment = pspPayment
 
 	return response, nil
+}
+
+func (v *defaultVerifier) verifyWebhookSignature(payload []byte, header string) error {
+	timestamp, signatures, err := extractSignatureData(header)
+	if err != nil {
+		return err
+	}
+
+	signedPayload := fmt.Sprintf("%s.%s", timestamp, payload)
+	expectedSignature, err := computeHMACSHA256(signedPayload, v.webhookSharedSecret)
+	if err != nil {
+		return err
+	}
+
+	if !compareSignatures(expectedSignature, signatures) {
+		return fmt.Errorf("invalid webhook signature: %w", err)
+	}
+
+	if !validateTimestamp(timestamp) {
+		return errors.New("timestamp outside tolerance window")
+	}
+
+	return nil
+}
+
+func extractSignatureData(header string) (string, []string, error) {
+	parts := strings.Split(header, ",")
+	var timestamp string
+	var signatures []string
+
+	for _, part := range parts {
+		pair := strings.SplitN(part, "=", 2)
+		if len(pair) != 2 {
+			continue
+		}
+		key, value := pair[0], pair[1]
+		switch key {
+		case "t":
+			timestamp = value
+		case "v1":
+			signatures = append(signatures, value)
+		}
+	}
+
+	if timestamp == "" || len(signatures) == 0 {
+		return "", nil, fmt.Errorf("invalid signature header")
+	}
+	return timestamp, signatures, nil
+}
+
+func computeHMACSHA256(message, secret string) (string, error) {
+	mac := hmac.New(sha256.New, []byte(secret))
+	_, err := mac.Write([]byte(message))
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(mac.Sum(nil)), nil
+}
+
+func compareSignatures(expectedSignature string, signatures []string) bool {
+	for _, sig := range signatures {
+		if hmac.Equal([]byte(expectedSignature), []byte(sig)) {
+			return true
+		}
+	}
+	return false
+}
+
+func validateTimestamp(timestamp string) bool {
+	t, err := time.Parse(time.RFC3339, timestamp)
+	if err != nil {
+		return false
+	}
+	diff := time.Since(t)
+	return diff <= toleranceDuration && diff >= -toleranceDuration
 }
