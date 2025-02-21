@@ -111,6 +111,7 @@ components:
           $ref: '#/components/schemas/V3AccountTypeEnum'
         name:
           type: string
+          nullable: true
         defaultAsset:
           type: string
           nullable: true
