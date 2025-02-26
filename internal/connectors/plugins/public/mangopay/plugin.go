@@ -3,6 +3,7 @@ package mangopay
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -14,6 +15,8 @@ import (
 )
 
 const ProviderName = "mangopay"
+
+var ErrMissingMetadataUserID = errors.New("missing userID in bank account metadata")
 
 func init() {
 	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
