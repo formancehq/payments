@@ -268,6 +268,25 @@ var _ = Describe("Gocardless *Plugin", func() {
 
 	})
 
+	Context("currencies", func() {
+		It("should have the supported currencies", func() {
+			expectedCurrencies := map[string]int{
+				"AUD": currency.ISO4217Currencies["AUD"],
+				"CAD": currency.ISO4217Currencies["CAD"],
+				"DKK": currency.ISO4217Currencies["DKK"],
+				"EUR": currency.ISO4217Currencies["EUR"],
+				"GBP": currency.ISO4217Currencies["GBP"],
+				"NZD": currency.ISO4217Currencies["NZD"],
+				"SEK": currency.ISO4217Currencies["SEK"],
+				"USD": currency.ISO4217Currencies["USD"],
+			}
+
+			Expect(gocardless.SupportedCurrenciesWithDecimal).To(Equal(expectedCurrencies))
+			Expect(gocardless.SupportedCurrenciesWithDecimal).To(HaveLen(len(expectedCurrencies)))
+
+		})
+	})
+
 	Context("capabilities", func() {
 		It("should have the correct capabilities", func() {
 			expectedCapabilities := []models.Capability{
@@ -288,22 +307,4 @@ var _ = Describe("Gocardless *Plugin", func() {
 		})
 	})
 
-	Context("currencies", func() {
-		It("should have the supported currencies", func() {
-			expectedCurrencies := map[string]int{
-				"AUD": currency.ISO4217Currencies["AUD"],
-				"CAD": currency.ISO4217Currencies["CAD"],
-				"DKK": currency.ISO4217Currencies["DKK"],
-				"EUR": currency.ISO4217Currencies["EUR"],
-				"GBP": currency.ISO4217Currencies["GBP"],
-				"NZD": currency.ISO4217Currencies["NZD"],
-				"SEK": currency.ISO4217Currencies["SEK"],
-				"USD": currency.ISO4217Currencies["USD"],
-			}
-
-			Expect(gocardless.SupportedCurrenciesWithDecimal).To(Equal(expectedCurrencies))
-			Expect(gocardless.SupportedCurrenciesWithDecimal).To(HaveLen(len(expectedCurrencies)))
-
-		})
-	})
 })
