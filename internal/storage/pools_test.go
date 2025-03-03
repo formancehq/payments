@@ -323,6 +323,84 @@ func TestPoolsList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 	})
 
+	t.Run("list pools by id", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", poolID1.String())),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+		require.Equal(t, []models.Pool{defaultPools()[0]}, cursor.Data)
+	})
+
+	t.Run("list pools by unknown id", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", uuid.New().String())),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.NoError(t, err)
+		require.Empty(t, cursor.Data)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("list pools by account id 1", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("account_id", defaultAccounts()[0].ID.String())),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+		require.Equal(t, []models.Pool{defaultPools()[0]}, cursor.Data)
+	})
+
+	t.Run("list pools by account id 2", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("account_id", defaultAccounts()[2].ID.String())),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 2)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+		require.Equal(t, []models.Pool{defaultPools()[1], defaultPools()[2]}, cursor.Data)
+	})
+
+	t.Run("list pools by unknown account id", func(t *testing.T) {
+		q := NewListPoolsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("account_id", uuid.New().String())),
+		)
+
+		cursor, err := store.PoolsList(ctx, q)
+		require.NoError(t, err)
+		require.Empty(t, cursor.Data)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+	})
+
 	t.Run("unknown query builder key when listing", func(t *testing.T) {
 		q := NewListPoolsQuery(
 			bunpaginate.NewPaginatedQueryOptions(PoolQuery{}).
