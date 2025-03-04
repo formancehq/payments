@@ -144,7 +144,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 			Expect(res).To(Equal(models.CreateBankAccountResponse{
 				RelatedAccount: models.PSPAccount{
 					Reference: "id",
-					Name: pointer.For("description"),
+					Name:      pointer.For("description"),
 					CreatedAt: createdAt,
 					Metadata: map[string]string{
 						client.IncreaseAccountHolderMetadataKey: "business",
