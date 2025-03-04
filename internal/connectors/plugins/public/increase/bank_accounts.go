@@ -42,7 +42,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		account = models.PSPAccount{
 			Reference: resp.ID,
 			CreatedAt: createdTime,
-			Name: &resp.Description,
+			Name:      &resp.Description,
 			Metadata: map[string]string{
 				client.IncreaseAccountHolderMetadataKey: resp.AccountHolder,
 				client.IncreaseAccountNumberMetadataKey: resp.AccountNumber,

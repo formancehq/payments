@@ -64,10 +64,10 @@ type PhysicalCheck struct {
 }
 
 type CheckPayoutRequest struct {
-	AccountID             string        `json:"account_id"`
-	Amount                json.Number   `json:"amount"`
-	SourceAccountNumberID string        `json:"source_account_number_id"`
-	FulfillmentMethod     string        `json:"fulfillment_method"`
+	AccountID             string         `json:"account_id"`
+	Amount                json.Number    `json:"amount"`
+	SourceAccountNumberID string         `json:"source_account_number_id"`
+	FulfillmentMethod     string         `json:"fulfillment_method"`
 	PhysicalCheck         *PhysicalCheck `json:"physical_check,omitempty"`
 	ThirdParty            *struct {
 		CheckNumber string `json:"check_number"`

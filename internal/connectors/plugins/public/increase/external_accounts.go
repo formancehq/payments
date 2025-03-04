@@ -88,7 +88,7 @@ func (p *Plugin) mapExternalAccount(
 	pspAccount := models.PSPAccount{
 		Reference: account.ID,
 		CreatedAt: createdTime,
-		Name: &account.Description,
+		Name:      &account.Description,
 		Raw:       raw,
 		Metadata: map[string]string{
 			client.IncreaseTypeMetadataKey:          account.Type,
