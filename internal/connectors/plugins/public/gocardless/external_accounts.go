@@ -73,6 +73,10 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	hasMore = nextCursor.After != ""
 
+	if !hasMore && len(externalBankAccounts) > 0 {
+		newState.After = externalBankAccounts[len(externalBankAccounts)-1].Reference
+	}
+
 	if len(externalBankAccounts) > req.PageSize {
 		externalBankAccounts = externalBankAccounts[:req.PageSize]
 	}

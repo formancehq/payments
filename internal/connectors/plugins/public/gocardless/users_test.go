@@ -146,9 +146,6 @@ var _ = Describe("Gocardless Plugin fetch next users", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 
-			Expect(state.CreditorsAfter).To(Equal(""))
-			Expect(state.CustomersAfter).To(Equal(""))
-
 		})
 
 		It("should fetch users - pageSize < total users", func(ctx SpecContext) {
@@ -219,8 +216,6 @@ var _ = Describe("Gocardless Plugin fetch next users", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 
-			Expect(state.CreditorsAfter).To(Equal(""))
-			Expect(state.CustomersAfter).To(Equal(""))
 		})
 	})
 

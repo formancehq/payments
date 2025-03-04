@@ -97,6 +97,10 @@ func (p *Plugin) getCreditorsUsers(
 
 	hasMore = nextCursor.After != ""
 
+	if !hasMore && len(users) > 0 {
+		newState.CreditorsAfter = users[len(users)-1].ID
+	}
+
 	if len(users) > pageSize {
 		users = users[:pageSize]
 	}
@@ -128,6 +132,10 @@ func (p *Plugin) getCustomersUsers(
 	}
 
 	hasMore = nextCursor.After != ""
+
+	if !hasMore && len(users) > 0 {
+		newState.CustomersAfter = users[len(users)-1].ID
+	}
 
 	if len(users) > pageSize {
 		users = users[:pageSize]

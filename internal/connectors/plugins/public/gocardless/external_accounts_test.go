@@ -151,7 +151,7 @@ var _ = Describe("Gocardless Plugin fetch next external accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.After).To(Equal(""))
+			Expect(state.After).To(Equal(sampleBankAccounts[len(sampleBankAccounts)-1].ID))
 
 		})
 
@@ -231,7 +231,7 @@ var _ = Describe("Gocardless Plugin fetch next external accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.After).To(Equal(""))
+			Expect(state.After).To(Equal(sampleBankAccounts[len(sampleBankAccounts)-1].ID))
 
 		})
 
@@ -281,7 +281,7 @@ var _ = Describe("Gocardless Plugin fetch next external accounts", func() {
 			var state externalAccountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.After).To(Equal(""))
+			Expect(state.After).To(Equal(sampleBankAccounts[41:][len(sampleBankAccounts[41:])-1].ID))
 
 		})
 

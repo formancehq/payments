@@ -114,7 +114,7 @@ var _ = Describe("Gocardless Plugin fetch next payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.After).To(Equal(""))
+			Expect(state.After).To(Equal(samplePayments[len(samplePayments)-1].ID))
 
 		})
 		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {

@@ -48,6 +48,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	hasMore = nextCursor.After != ""
 
+	if !hasMore && len(payments) > 0 {
+		newState.After = payments[len(payments)-1].Reference
+	}
+
 	if len(payments) > req.PageSize {
 		payments = payments[:req.PageSize]
 	}
