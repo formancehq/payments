@@ -28,7 +28,7 @@ type BankAccountResponse struct {
 	AccountHolder string `json:"account_holder"`
 }
 
-func (c *client) CreateBankAccount(ctx context.Context, pr *BankAccountRequest) (*BankAccountResponse, error) {
+func (c *client) CreateBankAccount(ctx context.Context, pr *BankAccountRequest, idempotencyKey string) (*BankAccountResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_external_account")
 
 	body, err := json.Marshal(pr)
@@ -40,6 +40,7 @@ func (c *client) CreateBankAccount(ctx context.Context, pr *BankAccountRequest) 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create bank account request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res BankAccountResponse
 	var errRes increaseError

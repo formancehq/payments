@@ -39,44 +39,28 @@ type WebhookVerifier interface {
 
 func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
 	p.webhookConfigs = map[client.EventCategory]webhookConfig{
-		client.EventCategoryAccountCreated: {
-			urlPath: "/accounts/created",
-			fn:      p.translateAccount,
-		},
-		client.EventCategoryACHTransferCreated: {
-			urlPath: "/ach_transfers/created",
+		client.EventCategoryACHTransferUpdated: {
+			urlPath: "/ach_transfers/updated",
 			fn:      p.translateAchTransfer,
 		},
-		client.EventCategoryAccountTransferCreated: {
-			urlPath: "/account_transfers/created",
+		client.EventCategoryAccountTransferUpdated: {
+			urlPath: "/account_transfers/updated",
 			fn:      p.translateAccountTransfer,
 		},
-		client.EventCategoryCheckTransferCreated: {
-			urlPath: "/check_transfers/created",
+		client.EventCategoryCheckTransferUpdated: {
+			urlPath: "/check_transfers/updated",
 			fn:      p.translateCheckTransfer,
 		},
-		client.EventCategoryDeclinedTransactionCreated: {
-			urlPath: "/declined_transactions/created",
-			fn:      p.translateDeclinedTransaction,
-		},
-		client.EventCategoryExternalAccountCreated: {
-			urlPath: "/external_accounts/created",
-			fn:      p.translateExternalAccount,
-		},
-		client.EventCategoryPendingTransactionCreated: {
-			urlPath: "/pending_transactions/created",
+		client.EventCategoryPendingTransactionUpdated: {
+			urlPath: "/pending_transactions/updated",
 			fn:      p.translatePendingTransaction,
 		},
-		client.EventCategoryRTPTransferCreated: {
-			urlPath: "/real_time_payments_transfers/created",
+		client.EventCategoryRTPTransferUpdated: {
+			urlPath: "/real_time_payments_transfers/updated",
 			fn:      p.translateRTPTransfer,
 		},
-		client.EventCategoryTransactionCreated: {
-			urlPath: "/transactions/created",
-			fn:      p.translateTransaction,
-		},
-		client.EventCategoryWireTransferCreated: {
-			urlPath: "/wire_transfers/created",
+		client.EventCategoryWireTransferUpdated: {
+			urlPath: "/wire_transfers/updated",
 			fn:      p.translateWireTransfer,
 		},
 	}
@@ -98,10 +82,6 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.CreateWebhooksResponse{}, err
-	}
-
-	if from.SelectedEventCategory == "" {
-		return models.CreateWebhooksResponse{}, client.ErrMissingSelectedEventCategory
 	}
 
 	for eventType, config := range p.webhookConfigs {
@@ -164,22 +144,6 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 	}, nil
 }
 
-func (p *Plugin) translateAccount(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
-	var response models.WebhookResponse
-	account, err := p.client.GetAccount(ctx, webhook.AssociatedObjectID)
-	if err != nil {
-		return models.WebhookResponse{}, err
-	}
-
-	pspAccount, err := p.mapAccount(account)
-	if err != nil {
-		return models.WebhookResponse{}, fmt.Errorf("failed to map account: %w", err)
-	}
-	response.Account = &pspAccount
-
-	return response, nil
-}
-
 func (p *Plugin) translateAccountTransfer(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
 	var response models.WebhookResponse
 	transfer, err := p.client.GetTransfer(ctx, webhook.AssociatedObjectID)
@@ -228,38 +192,6 @@ func (p *Plugin) translateCheckTransfer(ctx context.Context, webhook client.Webh
 	return response, nil
 }
 
-func (p *Plugin) translateDeclinedTransaction(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
-	var response models.WebhookResponse
-	transaction, err := p.client.GetDeclinedTransaction(ctx, webhook.AssociatedObjectID)
-	if err != nil {
-		return models.WebhookResponse{}, err
-	}
-
-	pspPayment, err := p.mapPayment(transaction, models.PAYMENT_STATUS_FAILED)
-	if err != nil {
-		return models.WebhookResponse{}, fmt.Errorf("failed to map declined transaction payment: %w", err)
-	}
-	response.Payment = &pspPayment
-
-	return response, nil
-}
-
-func (p *Plugin) translateExternalAccount(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
-	var response models.WebhookResponse
-	account, err := p.client.GetExternalAccount(ctx, webhook.AssociatedObjectID)
-	if err != nil {
-		return models.WebhookResponse{}, err
-	}
-
-	pspAccount, err := p.mapExternalAccount(account)
-	if err != nil {
-		return models.WebhookResponse{}, fmt.Errorf("failed to map external account: %w", err)
-	}
-	response.Account = pspAccount
-
-	return response, nil
-}
-
 func (p *Plugin) translatePendingTransaction(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
 	var response models.WebhookResponse
 	transaction, err := p.client.GetPendingTransaction(ctx, webhook.AssociatedObjectID)
@@ -292,22 +224,6 @@ func (p *Plugin) translateRTPTransfer(ctx context.Context, webhook client.Webhoo
 	return response, nil
 }
 
-func (p *Plugin) translateTransaction(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
-	var response models.WebhookResponse
-	transaction, err := p.client.GetTransaction(ctx, webhook.AssociatedObjectID)
-	if err != nil {
-		return models.WebhookResponse{}, err
-	}
-
-	pspPayment, err := p.mapPayment(transaction, models.PAYMENT_STATUS_SUCCEEDED)
-	if err != nil {
-		return models.WebhookResponse{}, fmt.Errorf("failed to map succeeded transaction payment: %w", err)
-	}
-	response.Payment = &pspPayment
-
-	return response, nil
-}
-
 func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.WebhookEvent) (models.WebhookResponse, error) {
 	var response models.WebhookResponse
 	transfer, err := p.client.GetWireTransferPayout(ctx, webhook.AssociatedObjectID)
@@ -330,18 +246,18 @@ func (v *defaultVerifier) verifyWebhookSignature(payload []byte, header string) 
 		return err
 	}
 
-	signedPayload := fmt.Sprintf("%s.%s", timestamp, payload)
+	signedPayload := fmt.Sprintf("%s.%s", timestamp, string(payload))
 	expectedSignature, err := computeHMACSHA256(signedPayload, v.webhookSharedSecret)
 	if err != nil {
 		return err
 	}
 
-	if !compareSignatures(expectedSignature, signatures) {
-		return fmt.Errorf("invalid webhook signature: %w", err)
-	}
-
 	if !validateTimestamp(timestamp) {
 		return errors.New("timestamp outside tolerance window")
+	}
+
+	if !compareSignatures(expectedSignature, signatures) {
+		return errors.New("invalid webhook signature")
 	}
 
 	return nil
@@ -353,7 +269,7 @@ func extractSignatureData(header string) (string, []string, error) {
 	var signatures []string
 
 	for _, part := range parts {
-		pair := strings.SplitN(part, "=", 2)
+		pair := strings.SplitN(strings.TrimSpace(part), "=", 2)
 		if len(pair) != 2 {
 			continue
 		}
@@ -382,8 +298,19 @@ func computeHMACSHA256(message, secret string) (string, error) {
 }
 
 func compareSignatures(expectedSignature string, signatures []string) bool {
+	expectedSigBytes, err := hex.DecodeString(expectedSignature)
+	if err != nil {
+		fmt.Printf("Error decoding expected signature: %v\n", err)
+		return false
+	}
+
 	for _, sig := range signatures {
-		if hmac.Equal([]byte(expectedSignature), []byte(sig)) {
+		sigBytes, err := hex.DecodeString(sig)
+		if err != nil {
+			fmt.Printf("Error decoding received signature: %v\n", err)
+			continue
+		}
+		if hmac.Equal(expectedSigBytes, sigBytes) {
 			return true
 		}
 	}

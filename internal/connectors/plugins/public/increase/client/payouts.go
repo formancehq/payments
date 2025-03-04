@@ -68,10 +68,10 @@ type CheckPayoutRequest struct {
 	Amount                json.Number   `json:"amount"`
 	SourceAccountNumberID string        `json:"source_account_number_id"`
 	FulfillmentMethod     string        `json:"fulfillment_method"`
-	PhysicalCheck         PhysicalCheck `json:"physical_check"`
-	ThirdParty            struct {
+	PhysicalCheck         *PhysicalCheck `json:"physical_check,omitempty"`
+	ThirdParty            *struct {
 		CheckNumber string `json:"check_number"`
-	} `json:"third_party"`
+	} `json:"third_party,omitempty"`
 }
 
 type CheckPayoutResponse struct {
@@ -121,7 +121,7 @@ type PayoutResponse struct {
 	CheckNumber       string      `json:"check_number"`
 }
 
-func (c *client) InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_ach_payout")
 
 	body, err := json.Marshal(pr)
@@ -133,6 +133,7 @@ func (c *client) InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutReq
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ach payout request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res ACHPayoutResponse
 	var errRes increaseError
@@ -180,7 +181,7 @@ func (c *client) GetACHTransferPayout(ctx context.Context, transferID string) (*
 	}, nil
 }
 
-func (c *client) InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_wire_transfer_payout")
 
 	body, err := json.Marshal(pr)
@@ -192,6 +193,7 @@ func (c *client) InitiateWireTransferPayout(ctx context.Context, pr *WireTransfe
 	if err != nil {
 		return nil, fmt.Errorf("failed to create wire transfer payout request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res WireTransferPayoutResponse
 	var errRes increaseError
@@ -243,7 +245,7 @@ func (c *client) GetWireTransferPayout(ctx context.Context, transferID string) (
 	}, nil
 }
 
-func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_check_payout")
 
 	body, err := json.Marshal(pr)
@@ -255,6 +257,7 @@ func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayou
 	if err != nil {
 		return nil, fmt.Errorf("failed to create check transfer payout request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res CheckPayoutResponse
 	var errRes increaseError
@@ -304,7 +307,7 @@ func (c *client) GetCheckTransferPayout(ctx context.Context, transferID string) 
 	}, nil
 }
 
-func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest) (*PayoutResponse, error) {
+func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_rtp_payout")
 
 	body, err := json.Marshal(pr)
@@ -316,6 +319,7 @@ func (c *client) InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutReq
 	if err != nil {
 		return nil, fmt.Errorf("failed to create real time payments transfer payout request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res RTPPayoutResponse
 	var errRes increaseError

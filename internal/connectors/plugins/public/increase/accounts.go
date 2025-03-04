@@ -94,30 +94,3 @@ func (p *Plugin) fillAccounts(
 
 	return accounts, nil
 }
-
-func (p *Plugin) mapAccount(account *client.Account) (models.PSPAccount, error) {
-	createdTime, err := time.Parse(time.RFC3339, account.CreatedAt)
-	if err != nil {
-		return models.PSPAccount{}, err
-	}
-
-	raw, err := json.Marshal(account)
-	if err != nil {
-		return models.PSPAccount{}, err
-	}
-
-	pspAccount := models.PSPAccount{
-		Reference:    account.ID,
-		CreatedAt:    createdTime,
-		Name:         &account.Name,
-		DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Currency)),
-		Raw:          raw,
-		Metadata: map[string]string{
-			client.IncreaseTypeMetadataKey:   account.Type,
-			client.IncreaseBankMetadataKey:   account.Bank,
-			client.IncreaseStatusMetadataKey: account.Status,
-		},
-	}
-
-	return pspAccount, nil
-}

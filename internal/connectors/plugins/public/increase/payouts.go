@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
@@ -25,94 +26,110 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return nil, err
 	}
 
-	_, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
-	}
+	amount := pi.Amount.String() // increase uses minor units
+	payoutMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey)
 
-	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
-	}
-
-	switch models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey) {
+	switch strings.ToLower(payoutMethod) {
 	case increaseWirePaymentMethod:
+		wrp := &client.WireTransferPayoutRequest{
+			AccountID:          pi.SourceAccount.Reference,
+			Amount:             json.Number(amount),
+			ExternalAccountID:  pi.DestinationAccount.Reference,
+			MessageToRecipient: pi.Description,
+		}
+		if pi.DestinationAccount.Name != nil {
+			wrp.BeneficiaryName = *pi.DestinationAccount.Name
+		}
 		resp, err := p.client.InitiateWireTransferPayout(
 			ctx,
-			&client.WireTransferPayoutRequest{
-				AccountID:          pi.SourceAccount.Reference,
-				Amount:             json.Number(amount),
-				ExternalAccountID:  pi.DestinationAccount.Reference,
-				BeneficiaryName:    *pi.DestinationAccount.Name,
-				MessageToRecipient: pi.Description,
-			},
+			wrp,
+			fmt.Sprintf("wire%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
 		)
 		if err != nil {
 			return nil, err
 		}
 		return p.payoutToPayment(resp)
 	case increaseCheckPaymentMethod:
+		sourceAccountNumberID := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
 		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey)
 		check := &client.CheckPayoutRequest{
 			AccountID:             pi.SourceAccount.Reference,
 			Amount:                json.Number(amount),
-			SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.SourceAccount.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
+			SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
 			FulfillmentMethod:     fulfillmentMethod,
 		}
 		if fulfillmentMethod == thirdPartyFufillmentMethod {
-			check.ThirdParty = struct {
-				CheckNumber string "json:\"check_number\""
+			check.ThirdParty = &struct {
+				CheckNumber string `json:"check_number"`
 			}{
 				CheckNumber: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCheckNumberMetadataKey),
 			}
-		} else {
-			check.PhysicalCheck.MailingAddress = client.MailingAddress{
-				City:       models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCityMetadataKey),
-				State:      models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseStateMetadataKey),
-				PostalCode: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePostalCodeMetadataKey),
-				Line1:      models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseLine1MetadataKey),
+		} else if fulfillmentMethod == physicalCheckFufillmentMethod {
+			check.PhysicalCheck = &client.PhysicalCheck{
+				MailingAddress: client.MailingAddress{
+					City:       models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCityMetadataKey),
+					State:      models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseStateMetadataKey),
+					PostalCode: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePostalCodeMetadataKey),
+					Line1:      models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseLine1MetadataKey),
+				},
+				Memo: pi.Description,
 			}
-			check.PhysicalCheck.Memo = pi.Description
-			check.PhysicalCheck.RecipientName = *pi.DestinationAccount.Name
+			if pi.DestinationAccount.Name != nil {
+				check.PhysicalCheck.RecipientName = *pi.DestinationAccount.Name
+			}
+		} else {
+			return nil, fmt.Errorf("invalid fufillmentMethod %s", fulfillmentMethod)
 		}
 		resp, err := p.client.InitiateCheckTransferPayout(
 			ctx,
 			check,
+			fmt.Sprintf("check%s%s", sourceAccountNumberID, pi.DestinationAccount.Reference),
 		)
 		if err != nil {
 			return nil, err
 		}
 		return p.payoutToPayment(resp)
 	case increaseRTPPaymentMethod:
+		sourceAccountNumberID := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
+		rtp := &client.RTPPayoutRequest{
+			Amount:                json.Number(amount),
+			ExternalAccountID:     pi.DestinationAccount.Reference,
+			RemittanceInformation: pi.Description,
+			SourceAccountNumberID: sourceAccountNumberID,
+		}
+		if pi.DestinationAccount.Name != nil {
+			rtp.CreditorName = *pi.DestinationAccount.Name
+		}
 		resp, err := p.client.InitiateRTPTransferPayout(
 			ctx,
-			&client.RTPPayoutRequest{
-				Amount:                json.Number(amount),
-				ExternalAccountID:     pi.DestinationAccount.Reference,
-				RemittanceInformation: pi.Description,
-				CreditorName:          *pi.DestinationAccount.Name,
-				SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.SourceAccount.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
-			},
+			rtp,
+			fmt.Sprintf("rtp%s%s", sourceAccountNumberID, pi.DestinationAccount.Reference),
+		)
+		if err != nil {
+			return nil, err
+		}
+		return p.payoutToPayment(resp)
+	case increaseACHPayoutMethod:
+		apr := &client.ACHPayoutRequest{
+			AccountID:           pi.SourceAccount.Reference,
+			Amount:              json.Number(amount),
+			ExternalAccountID:   pi.DestinationAccount.Reference,
+			StatementDescriptor: pi.Description,
+		}
+		if pi.DestinationAccount.Name != nil {
+			apr.IndividualName = *pi.DestinationAccount.Name
+		}
+		resp, err := p.client.InitiateACHTransferPayout(
+			ctx,
+			apr,
+			fmt.Sprintf("ach%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
 		)
 		if err != nil {
 			return nil, err
 		}
 		return p.payoutToPayment(resp)
 	default:
-		resp, err := p.client.InitiateACHTransferPayout(
-			ctx,
-			&client.ACHPayoutRequest{
-				AccountID:           pi.SourceAccount.Reference,
-				Amount:              json.Number(amount),
-				ExternalAccountID:   pi.DestinationAccount.Reference,
-				StatementDescriptor: pi.Description,
-				IndividualName:      *pi.DestinationAccount.Name,
-			},
-		)
-		if err != nil {
-			return nil, err
-		}
-		return p.payoutToPayment(resp)
+		return nil, fmt.Errorf("invalid payout method: %s", models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey))
 	}
 }
 

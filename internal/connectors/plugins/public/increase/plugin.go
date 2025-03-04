@@ -124,7 +124,6 @@ func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransfer
 	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: Fill only if we cannot have the related payment in the CreateTransfer method
 func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
 	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
 }
@@ -148,13 +147,10 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: Fill only if we cannot have the related payment in the CreatePayout method
 func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
 	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
-// Note: if the connector has webhooks, use this method to create the related
-// webhooks on the PSP.
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
@@ -162,8 +158,6 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return p.createWebhooks(ctx, req)
 }
 
-// Note: if the connector has webhooks, use this method to translate incoming
-// webhooks to a formance object.
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled

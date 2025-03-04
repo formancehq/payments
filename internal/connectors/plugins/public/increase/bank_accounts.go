@@ -23,6 +23,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			AccountHolder: models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseAccountHolderMetadataKey),
 			Description:   models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseDescriptionMetadataKey),
 		},
+		fmt.Sprintf("ba%s%s", ba.ID.String(), *ba.AccountNumber),
 	)
 	if err != nil {
 		return models.CreateBankAccountResponse{}, err
@@ -41,6 +42,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		account = models.PSPAccount{
 			Reference: resp.ID,
 			CreatedAt: createdTime,
+			Name: &resp.Description,
 			Metadata: map[string]string{
 				client.IncreaseAccountHolderMetadataKey: resp.AccountHolder,
 				client.IncreaseAccountNumberMetadataKey: resp.AccountNumber,

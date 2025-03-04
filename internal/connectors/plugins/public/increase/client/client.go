@@ -26,16 +26,16 @@ type Client interface {
 	GetDeclinedTransactions(ctx context.Context, pageSize int, createdAtAfter time.Time) ([]*Transaction, string, error)
 	GetDeclinedTransaction(ctx context.Context, transactionID string) (*Transaction, error)
 	GetTransfer(ctx context.Context, transferID string) (*TransferResponse, error)
-	InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error)
+	InitiateTransfer(ctx context.Context, tr *TransferRequest, idempotencyKey string) (*TransferResponse, error)
 	GetACHTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
 	GetRTPTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
 	GetWireTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
 	GetCheckTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error)
-	InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest) (*PayoutResponse, error)
-	InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest) (*PayoutResponse, error)
-	InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest) (*PayoutResponse, error)
-	InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest) (*PayoutResponse, error)
-	CreateBankAccount(ctx context.Context, pr *BankAccountRequest) (*BankAccountResponse, error)
+	InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
+	InitiateRTPTransferPayout(ctx context.Context, pr *RTPPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
+	InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
+	InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
+	CreateBankAccount(ctx context.Context, pr *BankAccountRequest, idempotencyKey string) (*BankAccountResponse, error)
 	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest) (*EventSubscription, error)
 	ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error)
 	UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error)
@@ -62,6 +62,7 @@ type apiTransport struct {
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", t.client.apiKey))
+	req.Header.Add("Content-Type", "application/json")
 	return t.underlying.RoundTrip(req)
 }
 

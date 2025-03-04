@@ -50,28 +50,6 @@ var _ = Describe("Increase Plugin Balances", func() {
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
-		It("should return an error - asset not supported", func(ctx SpecContext) {
-			req := models.FetchNextBalancesRequest{
-				PageSize:    60,
-				FromPayload: []byte(`{"reference": "test", "defaultAsset": "HUF"}`),
-			}
-
-			m.EXPECT().Do(
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).Return(
-				200,
-				nil,
-			).SetArg(2, sampleBalance)
-
-			resp, err := plg.FetchNextBalances(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing currencies"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
 		It("should return an error - get balances error", func(ctx SpecContext) {
 			req := models.FetchNextBalancesRequest{
 				PageSize:    60,
@@ -116,7 +94,7 @@ var _ = Describe("Increase Plugin Balances", func() {
 			Expect(resp.HasMore).To(BeFalse())
 			Expect(resp.NewState).To(BeNil())
 
-			Expect(resp.Balances[0].Amount).To(Equal(big.NewInt(100000)))
+			Expect(resp.Balances[0].Amount).To(Equal(big.NewInt(1000)))
 		})
 	})
 })

@@ -30,7 +30,7 @@ type TransferResponse struct {
 	CreatedAt                string      `json:"created_at"`
 }
 
-func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
+func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest, idempotencyKey string) (*TransferResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
 	body, err := json.Marshal(tr)
@@ -42,6 +42,7 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 	if err != nil {
 		return nil, fmt.Errorf("failed to create transfer request: %w", err)
 	}
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res TransferResponse
 	var errRes increaseError

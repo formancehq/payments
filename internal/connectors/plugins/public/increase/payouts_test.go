@@ -46,9 +46,6 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					CreatedAt:    now.Add(-time.Duration(50) * time.Minute).UTC(),
 					Name:         pointer.For("acc1"),
 					DefaultAsset: pointer.For("USD/2"),
-					Metadata: map[string]string{
-						client.IncreaseSourceAccountNumberIdMetadataKey: "123456789",
-					},
 				},
 				DestinationAccount: &models.PSPAccount{
 					Reference:    "acc2",
@@ -59,9 +56,10 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				Amount: big.NewInt(100),
 				Asset:  "USD/2",
 				Metadata: map[string]string{
-					client.IncreaseFulfillmentMethodMetadataKey: "third_party",
-					client.IncreaseCheckNumberMetadataKey:       "123456789",
-					client.IncreasePayoutMethodMetadataKey:      "ach",
+					client.IncreaseFulfillmentMethodMetadataKey:     "third_party",
+					client.IncreaseCheckNumberMetadataKey:           "123456789",
+					client.IncreasePayoutMethodMetadataKey:          "ach",
+					client.IncreaseSourceAccountNumberIdMetadataKey: "123456789",
 				},
 			}
 		})
@@ -89,19 +87,6 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("destination account is required: invalid request"))
-			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
-		})
-
-		It("should return an error - validation error - asset not supported", func(ctx SpecContext) {
-			req := models.CreatePayoutRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			req.PaymentInitiation.Asset = "HUF/2"
-
-			resp, err := plg.CreatePayout(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -158,7 +143,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			req := models.CreatePayoutRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
-			req.PaymentInitiation.SourceAccount.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey] = ""
+			req.PaymentInitiation.Metadata[client.IncreaseSourceAccountNumberIdMetadataKey] = ""
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseRTPPaymentMethod
 
 			resp, err := plg.CreatePayout(ctx, req)

@@ -16,24 +16,15 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return nil, err
 	}
 
-	_, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
-	}
-
-	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
-	}
-
 	resp, err := p.client.InitiateTransfer(
 		ctx,
 		&client.TransferRequest{
 			AccountID:            pi.SourceAccount.Reference,
 			DestinationAccountID: pi.DestinationAccount.Reference,
-			Amount:               json.Number(amount),
+			Amount:               json.Number(pi.Amount.String()),
 			Description:          pi.Description,
 		},
+		fmt.Sprintf("transfer%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
 	)
 	if err != nil {
 		return nil, err

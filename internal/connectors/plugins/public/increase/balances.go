@@ -3,8 +3,9 @@ package increase
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/big"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 )
 
@@ -22,28 +23,23 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	var accountBalances []models.PSPBalance
-	precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, *from.DefaultAsset)
-	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
+	var amount big.Int
+	_, ok := amount.SetString(balance.AvailableBalance.String(), 10)
+	if !ok {
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse amount: %s", balance.AvailableBalance.String())
 	}
 
-	amount, err := currency.GetAmountWithPrecisionFromString(balance.AvailableBalance.String(), precision)
-	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
-	asset := currency.FormatAsset(supportedCurrenciesWithDecimal, *from.DefaultAsset)
-
-	accountBalances = append(accountBalances, models.PSPBalance{
+	accountBalances := models.PSPBalance{
 		AccountReference: balance.AccountID,
-		Amount:           amount,
-		Asset:            asset,
+		Amount:           &amount,
 		CreatedAt:        atTime,
-	})
+	}
+	if from.DefaultAsset != nil {
+		accountBalances.Asset = *from.DefaultAsset
+	}
 
 	return models.FetchNextBalancesResponse{
-		Balances: accountBalances,
+		Balances: []models.PSPBalance{accountBalances},
 		HasMore:  false,
 	}, nil
 }

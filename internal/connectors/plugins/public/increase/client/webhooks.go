@@ -13,16 +13,12 @@ import (
 type EventCategory string
 
 const (
-	EventCategoryAccountCreated             EventCategory = "account.created"
-	EventCategoryDeclinedTransactionCreated EventCategory = "declined_transaction.created"
-	EventCategoryPendingTransactionCreated  EventCategory = "pending_transaction.created"
-	EventCategoryTransactionCreated         EventCategory = "transaction.created"
-	EventCategoryExternalAccountCreated     EventCategory = "external_account.created"
-	EventCategoryAccountTransferCreated     EventCategory = "account_transfer.created"
-	EventCategoryCheckTransferCreated       EventCategory = "check_transfer.created"
-	EventCategoryWireTransferCreated        EventCategory = "wire_transfer.created"
-	EventCategoryRTPTransferCreated         EventCategory = "real_time_payments_transfer.created"
-	EventCategoryACHTransferCreated         EventCategory = "ach_transfer.created"
+	EventCategoryPendingTransactionUpdated EventCategory = "pending_transaction.updated"
+	EventCategoryAccountTransferUpdated    EventCategory = "account_transfer.updated"
+	EventCategoryCheckTransferUpdated      EventCategory = "check_transfer.updated"
+	EventCategoryWireTransferUpdated       EventCategory = "wire_transfer.updated"
+	EventCategoryRTPTransferUpdated        EventCategory = "real_time_payments_transfer.updated"
+	EventCategoryACHTransferUpdated        EventCategory = "ach_transfer.updated"
 )
 
 type WebhookEvent struct {
@@ -47,7 +43,6 @@ type UpdateEventSubscriptionRequest struct {
 }
 
 type CreateEventSubscriptionRequest struct {
-	OauthConnectionID     string `json:"oauth_connection_id"`
 	SelectedEventCategory string `json:"selected_event_category"`
 	SharedSecret          string `json:"shared_secret"`
 	URL                   string `json:"url"`
@@ -69,6 +64,7 @@ func (c *client) CreateEventSubscription(ctx context.Context, es *CreateEventSub
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrWebhookRequestFailed, err)
 	}
+	req.Header.Add("Idempotency-Key", es.SelectedEventCategory)
 
 	var res EventSubscription
 	var errRes increaseError

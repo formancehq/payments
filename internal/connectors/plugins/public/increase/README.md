@@ -36,7 +36,7 @@ This connector enables synchronization of accounts, balances, payments, external
 ## Installation
 
 ```
-curl -D - --data '{"name":"increase","directory":"./internal/connectors/plugins/public/increase", "endpoint":"https://sandbox.increase.com", "apiKey":"WoXgj4lOxuMI9YwR4cxHjkxcqdIdeW60", webhookSharedSecret: "hgfcxcv"}' -X POST http://localhost:8080/v3/connectors/install/increase
+curl -D - --data '{"name":"increase", "endpoint":"https://sandbox.increase.com", "apiKey":"", webhookSharedSecret: ""}' -X POST http://localhost:8080/v3/connectors/install/increase
 ```
 
 ### Configuration
@@ -56,6 +56,8 @@ The connector supports the following currencies:
   - JPY
   - USD
 
+NOTE: Amounts are often represented in the smallest unit of the currency (e.g., cents for USD)
+
 ## Usage
 
 ### Creating Bank Accounts
@@ -65,32 +67,41 @@ Bank accounts requests are determined by some metadata in the request:
 {
   "accountNumber": "09878762343",
   "metadata": {
-    "description": "some description",
-    "routingNumber": "2354321234",
-    "accountHolder": "John Doe",
+    "com.increase.spec/description": "some description",
+    "com.increase.spec/routingNumber": "2354321234",
+    "com.increase.spec/accountHolder": "John Doe",
   }
 }
 ```
 
 ### Creating Payouts
 
-Payout requests are determined by some metadata in the request:
+Payout requests are determined by some metadata in the request. Metadata is only available for check and rtp payout methods
+
+#### Check
+
 ```json
 {
-  "soureAccount": {
-    "metadata": {
-      "sourceAccountNumberID": "sdfdsd"
-    }
-  },
   "metadata": {
-    "payoutMethod": "check",
-    "sourceAccountNumberID": "2354321234",
-    "fufillmentMethod": "third_party", // for check payout
-    "checkNumber": "789", //for third_party fufillmentMethod
-    "city": "some city", // for physical_check fufillmentMethod
-    "state": "some state", // for physical_check fufillmentMethod
-    "postalCode": "some postal code", // for physical_check fufillmentMethod
-    "line1": "some line", // for physical_check fufillmentMethod
+    "com.increase.spec/payoutMethod": "check",
+    "com.increase.spec/sourceAccountNumberID": "2354321234", // for check and rtp payout
+    "com.increase.spec/fufillmentMethod": "method", // third_party or physical_check
+    "com.increase.spec/checkNumber": "789", //for third_party fufillmentMethod
+    "com.increase.spec/city": "some city", // for physical_check fufillmentMethod
+    "com.increase.spec/state": "some state", // for physical_check fufillmentMethod
+    "com.increase.spec/postalCode": "some postal code", // for physical_check fufillmentMethod
+    "com.increase.spec/line1": "some line", // for physical_check fufillmentMethod
+  }
+}
+```
+
+#### RTP
+
+```json
+{
+  "metadata": {
+    "com.increase.spec/payoutMethod": "rtp",
+    "com.increase.spec/sourceAccountNumberID": "2354321234",
   }
 }
 ```

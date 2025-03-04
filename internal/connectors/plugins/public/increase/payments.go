@@ -30,7 +30,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
-	payments, hasMore, err := p.processPaymentTypes(ctx, oldState, payments, req.PageSize/3, &newState)
+	payments, hasMore, err := p.processPaymentTypes(ctx, oldState, payments, req.PageSize, &newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -64,6 +64,7 @@ func (p *Plugin) processPaymentTypes(ctx context.Context, oldState paymentsState
 	}
 
 	hasMore := pendingCursor != "" || succeededCursor != "" || declinedCursor != ""
+
 	return payments, hasMore, nil
 }
 
@@ -74,7 +75,7 @@ func (p *Plugin) fillPayments(
 	status models.PaymentStatus,
 ) ([]models.PSPPayment, error) {
 	for i, transaction := range pagedTransactions {
-		if i >= pageSize {
+		if i > pageSize*3 {
 			break
 		}
 

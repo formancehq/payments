@@ -138,19 +138,6 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
-		It("should return an error - validation error - asset not supported", func(ctx SpecContext) {
-			req := models.CreateTransferRequest{
-				PaymentInitiation: samplePSPPaymentInitiation,
-			}
-
-			req.PaymentInitiation.Asset = "HUF/2"
-
-			resp, err := plg.CreateTransfer(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
-			Expect(resp).To(Equal(models.CreateTransferResponse{}))
-		})
-
 		It("should return an error - initiate transfer error", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{
 				PaymentInitiation: samplePSPPaymentInitiation,
