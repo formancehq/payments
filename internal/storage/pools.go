@@ -190,30 +190,41 @@ func NewListPoolsQuery(opts bunpaginate.PaginatedQueryOptions[PoolQuery]) ListPo
 	}
 }
 
-func (s *store) poolsQueryContext(qb query.Builder) (string, []any, error) {
-	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
+func (s *store) poolsQueryContext(qb query.Builder) (string, string, []any, error) {
+	join := ""
+	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "name":
+		case key == "name", key == "id":
 			if operator != "$match" {
 				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
 			}
 
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-			// TODO(polo): add filters for accounts ID
+		case key == "account_id":
+			if operator != "$match" {
+				return "", nil, errors.Wrap(ErrValidation, "'account_id' column can only be used with $match")
+			}
+
+			join = "JOIN pool_accounts AS pool_accounts ON pool_accounts.pool_id = pool.id"
+
+			return fmt.Sprintf("pool_accounts.%s = ?", key), []any{value}, nil
 		default:
 			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
 		}
 	}))
+
+	return join, where, args, err
 }
 
 func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error) {
 	var (
+		join  string
 		where string
 		args  []any
 		err   error
 	)
 	if q.Options.QueryBuilder != nil {
-		where, args, err = s.poolsQueryContext(q.Options.QueryBuilder)
+		join, where, args, err = s.poolsQueryContext(q.Options.QueryBuilder)
 		if err != nil {
 			return nil, err
 		}
@@ -225,11 +236,15 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 			query = query.
 				Relation("PoolAccounts")
 
+			if join != "" {
+				query = query.Join(join)
+			}
+
 			if where != "" {
 				query = query.Where(where, args...)
 			}
 
-			query = query.Order("created_at DESC", "sort_id DESC")
+			query = query.Order("pool.created_at DESC", "pool.sort_id DESC")
 
 			return query
 		},
