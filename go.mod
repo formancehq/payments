@@ -41,9 +41,9 @@ require (
 	github.com/uptrace/bun/extra/bundebug v1.2.10
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0
-	go.opentelemetry.io/otel v1.34.0
-	go.opentelemetry.io/otel/metric v1.34.0
-	go.opentelemetry.io/otel/trace v1.34.0
+	go.opentelemetry.io/otel v1.35.0
+	go.opentelemetry.io/otel/metric v1.35.0
+	go.opentelemetry.io/otel/trace v1.35.0
 	go.temporal.io/api v1.45.0
 	go.temporal.io/sdk v1.32.1
 	go.uber.org/fx v1.23.0
