@@ -24,7 +24,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 			Amount:               json.Number(pi.Amount.String()),
 			Description:          pi.Description,
 		},
-		fmt.Sprintf("transfer%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
+		fmt.Sprintf("transfer%s", pi.Reference),
 	)
 	if err != nil {
 		return nil, err

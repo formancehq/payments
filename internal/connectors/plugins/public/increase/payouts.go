@@ -43,7 +43,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateWireTransferPayout(
 			ctx,
 			wrp,
-			fmt.Sprintf("wire%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
+			fmt.Sprintf("wire%s", pi.Reference),
 		)
 		if err != nil {
 			return nil, err
@@ -55,7 +55,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		check := &client.CheckPayoutRequest{
 			AccountID:             pi.SourceAccount.Reference,
 			Amount:                json.Number(amount),
-			SourceAccountNumberID: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey),
+			SourceAccountNumberID: sourceAccountNumberID,
 			FulfillmentMethod:     fulfillmentMethod,
 		}
 		if fulfillmentMethod == thirdPartyFufillmentMethod {
@@ -83,7 +83,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateCheckTransferPayout(
 			ctx,
 			check,
-			fmt.Sprintf("check%s%s", sourceAccountNumberID, pi.DestinationAccount.Reference),
+			fmt.Sprintf("check%s", pi.Reference),
 		)
 		if err != nil {
 			return nil, err
@@ -103,7 +103,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateRTPTransferPayout(
 			ctx,
 			rtp,
-			fmt.Sprintf("rtp%s%s", sourceAccountNumberID, pi.DestinationAccount.Reference),
+			fmt.Sprintf("rtp%s", pi.Reference),
 		)
 		if err != nil {
 			return nil, err
@@ -122,7 +122,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateACHTransferPayout(
 			ctx,
 			apr,
-			fmt.Sprintf("ach%s%s", pi.SourceAccount.Reference, pi.DestinationAccount.Reference),
+			fmt.Sprintf("ach%s", pi.Reference),
 		)
 		if err != nil {
 			return nil, err

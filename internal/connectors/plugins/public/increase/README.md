@@ -76,7 +76,8 @@ Bank accounts requests are determined by some metadata in the request:
 
 ### Creating Payouts
 
-Payout requests are determined by some metadata in the request. Metadata is only available for check and rtp payout methods
+Payout requests are determined by some metadata in the request. Metadata is only available for check and rtp payout methods.
+Note: Payout destination id must be an account with name.
 
 #### Check
 
@@ -105,6 +106,20 @@ Payout requests are determined by some metadata in the request. Metadata is only
   }
 }
 ```
+
+### Webhooks
+
+Webhook is supported for check, ach, wire, rtp, and account transfers
+| Event name                            | Event URL Path                                          |
+| ------------------------------------- | -------------------------------------------------- |
+| ach_transfer.updated                  | /ach_transfers/updated
+| account_transfer.updated              | /account_transfers/updated
+| check_transfer.updated                | /check_transfers/updated
+| pending_transaction.updated           | /pending_transactions/updated
+| real_time_payments_transfer.updated   | /real_time_payments_transfers/updated
+| wire_transfer.updated                 | /wire_transfers/updated
+
+Note: To test the webhooks, you'd need to provide ```STACK_PUBLIC_URL``` to the payment worker env in docker file. You'd also need to add event name and url to the ```webhook_config``` table.
 
 ### Fetching Payments
 
@@ -183,11 +198,6 @@ This state management system ensures:
 Common error scenarios:
 1. Configuration Errors:
   - Missing required fields
-2. Common errors when fetching users:
-  - Invalid reference format (must start with "CR" or "CU")
-  - Missing reference
-  - API rate limits
-  - Invalid pagination cursors
 3. Payout Creation:
   - Missing required metadata
   - Invalid currency
