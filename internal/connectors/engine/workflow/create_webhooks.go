@@ -29,7 +29,7 @@ func (w Workflow) createWebhooks(
 	createWebhooks CreateWebhooks,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
-	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "v3/connectors/webhooks", createWebhooks.ConnectorID.String())
+	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/webhooks", createWebhooks.ConnectorID.String())
 	if err != nil {
 		return errors.Wrap(err, "joining webhook base URL")
 	}
