@@ -27,13 +27,14 @@ The connector requires the following configuration:
 }
 ```
 
-| Field         | Required | Description                                     |
-| ------------- | -------- | ----------------------------------------------- |
-| name          | Yes      | Name of the connector                           |
-| pageSize      | Yes      | How many items to fetch per polling             |
-| pollingPeriod | Yes      | Interval at which polling happens               |
-| accessToken   | Yes      | GoCardless API access token                     |
-| endpoint      | Yes      | GoCardless API endpoint (sandbox or production) |
+| Field              | Required | Description                                         |
+| ------------------ | -------- | --------------------------------------------------- |
+| name               | Yes      | Name of the connector                               |
+| pageSize           | Yes      | How many items to fetch per polling                 |
+| shouldFetchMandate | Yes      | If mandate should be fetched when fetching payments |
+| pollingPeriod      | Yes      | Interval at which polling happens                   |
+| accessToken        | Yes      | GoCardless API access token                         |
+| endpoint           | Yes      | GoCardless API endpoint (sandbox or production)     |
 
 ### Supported Currencies
 
