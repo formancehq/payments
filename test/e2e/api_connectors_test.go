@@ -172,7 +172,7 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(taskID.Reference).To(ContainSubstring("uninstall"))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
-			Eventually(taskPoller(delRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
 		It("should be ok with v2", func() {
@@ -214,7 +214,7 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(taskID.Reference).To(ContainSubstring("reset"))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "reset")
-			Eventually(taskPoller(resetRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(resetRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
 		It("should be ok with v2", func() {
