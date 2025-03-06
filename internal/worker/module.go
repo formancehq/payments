@@ -36,12 +36,15 @@ func NewModule(
 	temporalRateLimitingRetryDelay time.Duration,
 	temporalMaxConcurrentWorkflowTaskPollers int,
 	temporalMaxConcurrentActivityTaskPollers int,
+	temporalMaxSlotsPerPoller int,
 	debug bool,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
-			MaxConcurrentWorkflowTaskPollers: temporalMaxConcurrentWorkflowTaskPollers,
-			MaxConcurrentActivityTaskPollers: temporalMaxConcurrentActivityTaskPollers,
+			MaxConcurrentWorkflowTaskPollers:       temporalMaxConcurrentWorkflowTaskPollers,
+			MaxConcurrentWorkflowTaskExecutionSize: temporalMaxConcurrentWorkflowTaskPollers * temporalMaxSlotsPerPoller,
+			MaxConcurrentActivityTaskPollers:       temporalMaxConcurrentActivityTaskPollers,
+			MaxConcurrentActivityExecutionSize:     temporalMaxConcurrentActivityTaskPollers * temporalMaxSlotsPerPoller,
 		}),
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)

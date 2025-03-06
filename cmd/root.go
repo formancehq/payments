@@ -21,6 +21,7 @@ const (
 	stackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
+	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"
 	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
 )
 
