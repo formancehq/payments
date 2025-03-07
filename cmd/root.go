@@ -22,6 +22,7 @@ const (
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
 	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"
+	temporalMaxLocalActivitySlotsFlag            = "temporal-max-local-activity-slots"
 	temporalRateLimitingRetryDelay               = "temporal-rate-limiting-retry-delay"
 )
 

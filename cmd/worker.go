@@ -27,6 +27,7 @@ func newWorker() *cobra.Command {
 	cmd.Flags().Int(temporalMaxConcurrentWorkflowTaskPollersFlag, 4, "Max concurrent workflow task pollers")
 	cmd.Flags().Int(temporalMaxConcurrentActivityTaskPollersFlag, 4, "Max concurrent activity task pollers")
 	cmd.Flags().Int(temporalMaxSlotsPerPollerFlag, 10, "Max slot count per poller")
+	cmd.Flags().Int(temporalMaxLocalActivitySlotsFlag, 50, "Max local activity slots")
 	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
 	cmd.Flags().Duration(temporalRateLimitingRetryDelay, 5*time.Second, "Additional delay before a rate limited request is retried by Temporal workers")
 	return cmd
@@ -62,6 +63,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)
 	temporalMaxConcurrentActivityTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentActivityTaskPollersFlag)
 	temporalMaxSlotsPerPoller, _ := cmd.Flags().GetInt(temporalMaxSlotsPerPollerFlag)
+	temporalMaxLocalActivitySlots, _ := cmd.Flags().GetInt(temporalMaxLocalActivitySlotsFlag)
 	return fx.Options(
 		worker.NewHealthCheckModule(listen, service.IsDebug(cmd)),
 		worker.NewModule(
@@ -72,6 +74,7 @@ func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 			temporalMaxConcurrentWorkflowTaskPollers,
 			temporalMaxConcurrentActivityTaskPollers,
 			temporalMaxSlotsPerPoller,
+			temporalMaxLocalActivitySlots,
 			service.IsDebug(cmd),
 		),
 	), nil

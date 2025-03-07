@@ -37,14 +37,16 @@ func NewModule(
 	temporalMaxConcurrentWorkflowTaskPollers int,
 	temporalMaxConcurrentActivityTaskPollers int,
 	temporalMaxSlotsPerPoller int,
+	temporalMaxLocalActivitySlots int,
 	debug bool,
 ) fx.Option {
 	ret := []fx.Option{
 		fx.Supply(worker.Options{
-			MaxConcurrentWorkflowTaskPollers:       temporalMaxConcurrentWorkflowTaskPollers,
-			MaxConcurrentWorkflowTaskExecutionSize: temporalMaxConcurrentWorkflowTaskPollers * temporalMaxSlotsPerPoller,
-			MaxConcurrentActivityTaskPollers:       temporalMaxConcurrentActivityTaskPollers,
-			MaxConcurrentActivityExecutionSize:     temporalMaxConcurrentActivityTaskPollers * temporalMaxSlotsPerPoller,
+			MaxConcurrentWorkflowTaskPollers:        temporalMaxConcurrentWorkflowTaskPollers,
+			MaxConcurrentWorkflowTaskExecutionSize:  temporalMaxConcurrentWorkflowTaskPollers * temporalMaxSlotsPerPoller,
+			MaxConcurrentActivityTaskPollers:        temporalMaxConcurrentActivityTaskPollers,
+			MaxConcurrentActivityExecutionSize:      temporalMaxConcurrentActivityTaskPollers * temporalMaxSlotsPerPoller,
+			MaxConcurrentLocalActivityExecutionSize: temporalMaxLocalActivitySlots,
 		}),
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)
