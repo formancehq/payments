@@ -199,50 +199,6 @@ var _ = Describe("Column Plugin Payments", func() {
 				Expect(err).To(MatchError("required destinationAccount field reference is missing"))
 			})
 
-			It("should return error when receiver_account_number_id is missing", func(ctx SpecContext) {
-				pi := models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
-					Asset:  "USD",
-					Metadata: map[string]string{
-						client.ColumnSenderAccountNumberIdMetadataKey: "src_acc_num",
-					},
-					SourceAccount: &models.PSPAccount{
-						Name:      pointer.For("Test Source"),
-						Reference: "src_ref",
-					},
-					DestinationAccount: &models.PSPAccount{
-						Reference: "dst_ref",
-					},
-				}
-
-				_, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{
-					PaymentInitiation: pi,
-				})
-				Expect(err).To(MatchError(fmt.Sprintf("required field metadata field %s must be provided", client.ColumnReceiverAccountNumberIdMetadataKey)))
-			})
-
-			It("should return error when destination account receiver_account_number_id is missing", func(ctx SpecContext) {
-				pi := models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
-					Asset:  "USD",
-					Metadata: map[string]string{
-						client.ColumnSenderAccountNumberIdMetadataKey: "src_acc_num",
-					},
-					SourceAccount: &models.PSPAccount{
-						Name:      pointer.For("Test Source"),
-						Reference: "src_ref",
-					},
-					DestinationAccount: &models.PSPAccount{
-						Reference: "dst_ref",
-					},
-				}
-
-				_, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{
-					PaymentInitiation: pi,
-				})
-				Expect(err).To(MatchError(fmt.Sprintf("required field metadata field %s must be provided", client.ColumnReceiverAccountNumberIdMetadataKey)))
-			})
-
 			It("should return error when allow overdraft is invalid", func(ctx SpecContext) {
 				pi := models.PSPPaymentInitiation{
 					Amount: big.NewInt(100),
@@ -411,7 +367,6 @@ var _ = Describe("Column Plugin Payments", func() {
 				})
 				Expect(err).To(MatchError(fmt.Sprintf("metadata field %s is not required when addressLine1 is not provided", client.ColumnCountryCodeMetadataKey)))
 			})
-
 
 		})
 

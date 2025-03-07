@@ -47,7 +47,7 @@ var _ = Describe("Column Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhookSharedSecret": "secret"}`)
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
 			_, err := New(ProviderName, logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
@@ -190,7 +190,7 @@ var _ = Describe("Column Plugin", func() {
 		var plg *Plugin
 
 		BeforeEach(func() {
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhookSharedSecret": "secret"}`)
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
 			var err error
 			plg, err = New(ProviderName, logger, config)
 			Expect(err).To(BeNil())

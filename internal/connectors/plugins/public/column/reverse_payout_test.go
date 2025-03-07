@@ -37,8 +37,10 @@ var _ = Describe("Column Plugin Payments", func() {
 			It("should validate a valid reverse payout request", func() {
 				pr := models.PSPPaymentInitiationReversal{
 					Metadata: map[string]string{
-						client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-						client.ColumnReasonMetadataKey:        "incorrect_amount",
+						client.ColumnReasonMetadataKey: "incorrect_amount",
+					},
+					RelatedPaymentInitiation: models.PSPPaymentInitiation{
+						Reference: "test-reference",
 					},
 				}
 
@@ -55,21 +57,23 @@ var _ = Describe("Column Plugin Payments", func() {
 				Expect(err).To(MatchError("required field metadata must be provided"))
 			})
 
-			It("should return error when ach transfer id is missing", func() {
+			It("should return error when relatedPaymentInitiation.reference is missing", func() {
 				pr := models.PSPPaymentInitiationReversal{
 					Metadata: map[string]string{
-						client.ColumnReasonMetadataKey: "duplicate",
+						client.ColumnReasonMetadataKey: "incorrect_amount",
 					},
+					RelatedPaymentInitiation: models.PSPPaymentInitiation{},
 				}
 
 				err := plg.validateReversePayout(pr)
-				Expect(err).To(MatchError(fmt.Sprintf("required field metadata field %s must be provided", client.ColumnAchTransferIDMetadataKey)))
+				Expect(err).To(MatchError("required field relatedPaymentInitiation.reference must be provided"))
 			})
 
 			It("should return error when reason is missing", func() {
 				pr := models.PSPPaymentInitiationReversal{
-					Metadata: map[string]string{
-						client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
+					Metadata: map[string]string{},
+					RelatedPaymentInitiation: models.PSPPaymentInitiation{
+						Reference: "test-reference",
 					},
 				}
 
@@ -80,8 +84,7 @@ var _ = Describe("Column Plugin Payments", func() {
 			It("should return error when reason is invalid", func() {
 				pr := models.PSPPaymentInitiationReversal{
 					Metadata: map[string]string{
-						client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-						client.ColumnReasonMetadataKey:        "invalid-reason",
+						client.ColumnReasonMetadataKey: "invalid-reason",
 					},
 				}
 
@@ -95,8 +98,10 @@ var _ = Describe("Column Plugin Payments", func() {
 				req := models.ReversePayoutRequest{
 					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
 						Metadata: map[string]string{
-							client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-							client.ColumnReasonMetadataKey:        "incorrect_amount",
+							client.ColumnReasonMetadataKey: "incorrect_amount",
+						},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{
+							Reference: "test-reference",
 						},
 					},
 				}
@@ -130,8 +135,10 @@ var _ = Describe("Column Plugin Payments", func() {
 				req := models.ReversePayoutRequest{
 					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
 						Metadata: map[string]string{
-							client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-							client.ColumnReasonMetadataKey:        "incorrect_amount",
+							client.ColumnReasonMetadataKey: "incorrect_amount",
+						},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{
+							Reference: "test-reference",
 						},
 					},
 				}
@@ -155,8 +162,10 @@ var _ = Describe("Column Plugin Payments", func() {
 				req := models.ReversePayoutRequest{
 					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
 						Metadata: map[string]string{
-							client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-							client.ColumnReasonMetadataKey:        "incorrect_amount",
+							client.ColumnReasonMetadataKey: "incorrect_amount",
+						},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{
+							Reference: "test-reference",
 						},
 					},
 				}
@@ -191,8 +200,10 @@ var _ = Describe("Column Plugin Payments", func() {
 				req := models.ReversePayoutRequest{
 					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
 						Metadata: map[string]string{
-							client.ColumnAchTransferIDMetadataKey: "test-transfer-id",
-							client.ColumnReasonMetadataKey:        "incorrect_amount",
+							client.ColumnReasonMetadataKey: "incorrect_amount",
+						},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{
+							Reference: "test-reference",
 						},
 					},
 				}

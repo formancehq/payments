@@ -132,48 +132,6 @@ var _ = Describe("Column Plugin Payouts", func() {
 			Expect(err.Error()).To(ContainSubstring("must be one of: ach, wire, realtime, international-wire"))
 		})
 
-		Context("ACH Payout Validation", func() {
-
-			It("should return an error when amount condition is missing", func(ctx SpecContext) {
-				req := models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
-					SourceAccount: &models.PSPAccount{
-						Reference: "test-ref",
-					},
-					DestinationAccount: &models.PSPAccount{
-						Reference: "test-ref",
-					},
-					Metadata: map[string]string{
-						client.ColumnPayoutTypeMetadataKey: "ach",
-					},
-				}
-
-				err := plg.validatePayoutRequests(req)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring(fmt.Sprintf("required field metadata field %s must be provided", client.ColumnAmountConditionMetadataKey)))
-			})
-
-			It("should return an error when description is missing", func(ctx SpecContext) {
-
-				req := models.PSPPaymentInitiation{
-					Amount: big.NewInt(100),
-					SourceAccount: &models.PSPAccount{
-						Reference: "test-ref",
-					},
-					DestinationAccount: &models.PSPAccount{
-						Reference: "test-ref",
-					},
-					Metadata: map[string]string{
-						client.ColumnPayoutTypeMetadataKey:      "ach",
-						client.ColumnAmountConditionMetadataKey: "test-condition",
-					},
-				}
-				err := plg.validatePayoutRequests(req)
-				Expect(err).ToNot(BeNil())
-				Expect(err.Error()).To(ContainSubstring("required field description must be provided"))
-			})
-		})
-
 		Context("Wire/Realtime/International-Wire Payout Validation", func() {
 
 			It("should return an error when asset is missing", func(ctx SpecContext) {
@@ -251,6 +209,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
 						Amount: big.NewInt(100),
+						Asset:  "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -391,6 +350,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 					req := models.CreatePayoutRequest{
 						PaymentInitiation: models.PSPPaymentInitiation{
 							Amount: big.NewInt(100),
+							Asset:  "USD/2",
 							SourceAccount: &models.PSPAccount{
 								Reference: "test-ref",
 							},
@@ -555,6 +515,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 				req := models.CreatePayoutRequest{
 					PaymentInitiation: models.PSPPaymentInitiation{
 						Amount: big.NewInt(100),
+						Asset:  "USD/2",
 						SourceAccount: &models.PSPAccount{
 							Reference: "test-ref",
 						},
@@ -578,12 +539,14 @@ var _ = Describe("Column Plugin Payouts", func() {
 					200,
 					nil,
 				).SetArg(2, client.ACHPayoutResponse{
-					ACHCompanyID:         "test-company",
-					ACHPositivePayRuleID: "test-id",
-					Amount:               100,
-					AmountCondition:      "test-condition",
-					BankAccountID:        "test-bank",
-					Description:          "test description",
+					ID:            "test-id",
+					CreatedAt:     "2021-01-01T00:00:00Z",
+					UpdatedAt:     "2021-01-01T00:00:00Z",
+					Status:        "completed",
+					Amount:        100,
+					CurrencyCode:  "USD",
+					BankAccountID: "test-bank",
+					Description:   "test description",
 				})
 
 				resp, err := plg.CreatePayout(ctx, req)

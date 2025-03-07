@@ -27,14 +27,12 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 	resp, err := p.client.InitiateTransfer(
 		ctx,
 		&client.TransferRequest{
-			Amount:                  pi.Amount.Int64(),
-			CurrencyCode:            curr,
-			SenderBankAccountId:     pi.SourceAccount.Reference,
-			SenderAccountNumberId:   pi.Metadata[client.ColumnSenderAccountNumberIdMetadataKey],
-			ReceiverBankAccountId:   pi.DestinationAccount.Reference,
-			ReceiverAccountNumberId: pi.Metadata[client.ColumnReceiverAccountNumberIdMetadataKey],
-			AllowOverdraft:          allowOverdraft == "true",
-			Hold:                    hold == "true",
+			Amount:                pi.Amount.Int64(),
+			CurrencyCode:          curr,
+			SenderBankAccountId:   pi.SourceAccount.Reference,
+			ReceiverBankAccountId: pi.DestinationAccount.Reference,
+			AllowOverdraft:        allowOverdraft == "true",
+			Hold:                  hold == "true",
 			Details: client.TransferRequestDetails{
 				SenderName:           *pi.SourceAccount.Name,
 				MerchantName:         pi.Metadata[client.ColumnMerchantNameMetadataKey],

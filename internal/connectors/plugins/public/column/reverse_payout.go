@@ -16,7 +16,7 @@ func (p *Plugin) createReversePayout(ctx context.Context, pr models.PSPPaymentIn
 	}
 
 	resp, err := p.client.ReversePayout(ctx, &client.ReversePayoutRequest{
-		ACHTransferID: pr.Metadata[client.ColumnAchTransferIDMetadataKey],
+		ACHTransferID: pr.RelatedPaymentInitiation.Reference,
 		Reason:        client.ReversePayoutReason(pr.Metadata[client.ColumnReasonMetadataKey]),
 		Description:   pr.Description,
 	})

@@ -77,8 +77,7 @@ func (c *client) CreateCounterPartyBankAccount(ctx context.Context, data Counter
 	if err != nil {
 		return CounterPartyBankAccountResponse{}, fmt.Errorf("failed to marshal bank account request: %w", err)
 	}
-
-	req, err := c.newRequest(ctx, http.MethodPost, "counterparties", bytes.NewReader(body))
+	req, err := c.newRequest(ctx, http.MethodPost, "counterparties", bytes.NewBuffer(body))
 	if err != nil {
 		return CounterPartyBankAccountResponse{}, fmt.Errorf("failed to create counter party bank account: %w", err)
 	}

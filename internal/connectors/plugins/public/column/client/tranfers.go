@@ -11,25 +11,23 @@ import (
 )
 
 type TransferRequest struct {
-	Amount                  int64  `json:"amount"`
-	CurrencyCode            string `json:"currency_code"`
-	SenderBankAccountId     string `json:"sender_bank_account_id,omitempty"`
-	SenderAccountNumberId   string `json:"sender_account_number_id,omitempty"`
-	ReceiverBankAccountId   string `json:"receiver_bank_account_id,omitempty"`
-	ReceiverAccountNumberId string `json:"receiver_account_number_id,omitempty"`
-	AllowOverdraft          bool   `json:"allow_overdraft,omitempty"`
-	Hold                    bool   `json:"hold,omitempty"`
-	Details                 TransferRequestDetails
+	Amount                int64                  `json:"amount"`
+	CurrencyCode          string                 `json:"currency_code"`
+	SenderBankAccountId   string                 `json:"sender_bank_account_id,omitempty"`
+	ReceiverBankAccountId string                 `json:"receiver_bank_account_id,omitempty"`
+	AllowOverdraft        bool                   `json:"allow_overdraft,omitempty"`
+	Hold                  bool                   `json:"hold,omitempty"`
+	Details               TransferRequestDetails `json:"details,omitempty"`
 }
 
 type TransferRequestDetails struct {
-	SenderName           string `json:"sender_name"`
-	MerchantName         string `json:"merchant_name,omitempty"`
-	MerchantCategoryCode string `json:"merchant_category_code,omitempty"`
-	AuthorizationMethod  string `json:"authorization_method,omitempty"`
-	InternalTransferType string `json:"internal_transfer_type,omitempty"`
-	Website              string `json:"website,omitempty"`
-	Address              ColumnAddress
+	SenderName           string        `json:"sender_name"`
+	MerchantName         string        `json:"merchant_name,omitempty"`
+	MerchantCategoryCode string        `json:"merchant_category_code,omitempty"`
+	AuthorizationMethod  string        `json:"authorization_method,omitempty"`
+	InternalTransferType string        `json:"internal_transfer_type,omitempty"`
+	Website              string        `json:"website,omitempty"`
+	Address              ColumnAddress `json:"address,omitempty"`
 }
 
 type TransferResponse struct {
@@ -58,7 +56,7 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 		return &TransferResponse{}, fmt.Errorf("failed to marshal transfer request: %w", err)
 	}
 
-	req, err := c.newRequest(ctx, http.MethodPost, "/transfers/book", bytes.NewBuffer(body))
+	req, err := c.newRequest(ctx, http.MethodPost, "transfers/book", bytes.NewBuffer(body))
 	if err != nil {
 		return &TransferResponse{}, fmt.Errorf("failed to create payments request: %w", err)
 	}

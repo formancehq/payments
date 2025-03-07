@@ -39,7 +39,6 @@ const (
 
 	ColumnPayoutTypeMetadataKey = columnMetadataSpecNamespace + "payout_type"
 
-	ColumnAchTransferIDMetadataKey                     = columnMetadataSpecNamespace + "ach_transfer_id"
 	ColumnReasonMetadataKey                            = columnMetadataSpecNamespace + "reason"
 	ColumnBicMetadataKey                               = columnMetadataSpecNamespace + "bic"
 	ColumnDefaultAccountNumberMetadataKey              = columnMetadataSpecNamespace + "default_account_number"
@@ -84,5 +83,19 @@ const (
 	ColumnReceiverInternalAccountNumberIDMetadataKey   = columnMetadataSpecNamespace + "receiver_internal_account_number_id"
 	ColumnExternalDestinationCounterpartyIDMetadataKey = columnMetadataSpecNamespace + "external_destination_counterparty_id"
 
-	ColumnSenderTypeMetadataKey = columnMetadataSpecNamespace + "sender_type" // can only be "account_number_id" or "bank_account_id"
+	ColumnEffectiveDateMetadataKey                     = columnMetadataSpecNamespace + "effective_date"
+	ColumnSameDayMetadataKey                           = columnMetadataSpecNamespace + "same_day"
+	ColumnCompanyDiscretionaryDataMetadataKey          = columnMetadataSpecNamespace + "company_discretionary_data"
+	ColumnCompanyEntryDescriptionMetadataKey           = columnMetadataSpecNamespace + "company_entry_description"
+	ColumnCompanyNameMetadataKey                       = columnMetadataSpecNamespace + "company_name"
+	ColumnPaymentRelatedInfoMetadataKey                = columnMetadataSpecNamespace + "payment_related_info"
+	ColumnReceiverNameMetadataKey                      = columnMetadataSpecNamespace + "receiver_name"
+	ColumnReceiverIDMetadataKey                        = columnMetadataSpecNamespace + "receiver_id"
+	ColumnEntryClassCodeMetadataKey                    = columnMetadataSpecNamespace + "entry_class_code"
+	ColumnUltimateOriginatorCounterpartyMetadataKey    = columnMetadataSpecNamespace + "ultimate_originator_counterparty"
+	ColumnUltimateOriginatorCounterpartyIDMetadataKey  = columnMetadataSpecNamespace + "ultimate_originator_counterparty_id"
+	ColumnUltimateBeneficiaryCounterpartyMetadataKey   = columnMetadataSpecNamespace + "ultimate_beneficiary_counterparty"
+	ColumnUltimateBeneficiaryCounterpartyIDMetadataKey = columnMetadataSpecNamespace + "ultimate_beneficiary_counterparty_id"
+	ColumnDetailsMetadataKey                           = columnMetadataSpecNamespace + "details"
+	ColumnSenderTypeMetadataKey                        = columnMetadataSpecNamespace + "sender_type" // can only be "account_number_id" or "bank_account_id"
 )

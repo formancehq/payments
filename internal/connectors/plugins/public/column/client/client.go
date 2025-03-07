@@ -45,9 +45,8 @@ type HTTPClient interface {
 type client struct {
 	httpClient httpwrapper.Client
 
-	apiKey              string
-	endpoint            string
-	webhookSharedSecret string
+	apiKey   string
+	endpoint string
 }
 
 type apiTransport struct {
@@ -58,7 +57,10 @@ type apiTransport struct {
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	auth := fmt.Sprintf(":%s", t.client.apiKey)
 	basicAuth := "Basic " + base64.StdEncoding.EncodeToString([]byte(auth))
+
 	req.Header.Set("Authorization", basicAuth)
+	req.Header.Set("Content-Type", "application/json")
+
 	return t.underlying.RoundTrip(req)
 }
 

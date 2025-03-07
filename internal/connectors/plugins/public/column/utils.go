@@ -33,20 +33,12 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 		return fmt.Errorf("required sourceAccount field reference is missing")
 	}
 
-	if models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnSenderAccountNumberIdMetadataKey) == "" {
-		return fmt.Errorf("required field metadata field %s must be provided", client.ColumnSenderAccountNumberIdMetadataKey)
-	}
-
 	if pi.DestinationAccount == nil {
 		return fmt.Errorf("required field destinationAccount must be provided")
 	}
 
 	if pi.DestinationAccount.Reference == "" {
 		return fmt.Errorf("required destinationAccount field reference is missing")
-	}
-
-	if models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnReceiverAccountNumberIdMetadataKey) == "" {
-		return fmt.Errorf("required field metadata field %s must be provided", client.ColumnReceiverAccountNumberIdMetadataKey)
 	}
 
 	allowOverdraft := models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnAllowOverdraftMetadataKey)
@@ -153,25 +145,8 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 		return fmt.Errorf("required field metadata field %s must be one of: ach, wire, realtime, international-wire", client.ColumnPayoutTypeMetadataKey)
 	}
 
-	if payoutType == "ach" {
-
-		amountCondition := models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnAmountConditionMetadataKey)
-		if amountCondition == "" {
-			return fmt.Errorf("required field metadata field %s must be provided", client.ColumnAmountConditionMetadataKey)
-		}
-
-		if pi.Description == "" {
-			return fmt.Errorf("required field description must be provided")
-		}
-
-	}
-
-	if payoutType == "realtime" || payoutType == "wire" || payoutType == "international-wire" {
-
-		if pi.Asset == "" {
-			return fmt.Errorf("required field asset must be provided")
-		}
-
+	if pi.Asset == "" {
+		return fmt.Errorf("required field asset must be provided")
 	}
 
 	return nil
@@ -182,11 +157,6 @@ func (p *Plugin) validateReversePayout(pr models.PSPPaymentInitiationReversal) e
 		return fmt.Errorf("required field metadata must be provided")
 	}
 
-	achTransferID := models.ExtractNamespacedMetadata(pr.Metadata, client.ColumnAchTransferIDMetadataKey)
-	if achTransferID == "" {
-		return fmt.Errorf("required field metadata field %s must be provided", client.ColumnAchTransferIDMetadataKey)
-	}
-
 	reason := models.ExtractNamespacedMetadata(pr.Metadata, client.ColumnReasonMetadataKey)
 	if reason == "" {
 		return fmt.Errorf("required field metadata field %s must be provided", client.ColumnReasonMetadataKey)
@@ -194,6 +164,10 @@ func (p *Plugin) validateReversePayout(pr models.PSPPaymentInitiationReversal) e
 
 	if !IsValidReversePayoutReason(reason) {
 		return fmt.Errorf("required field metadata field %s must be a valid reason", client.ColumnReasonMetadataKey)
+	}
+
+	if pr.RelatedPaymentInitiation.Reference == "" {
+		return fmt.Errorf("required field relatedPaymentInitiation.reference must be provided")
 	}
 
 	return nil

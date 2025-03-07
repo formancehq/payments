@@ -359,13 +359,13 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 					Body: json.RawMessage(`{
 						"id":"1", 
 						"data": {
-							"type":"ach.outgoing_transfer.settled",
-							"ach_company_id": "company123",
-							"ach_positive_pay_rule_id": "rule456",
+							"id": "rule456",
+							"type":"CREDIT",
 							"amount": 1000,
-							"amount_condition": "greater_than",
 							"bank_account_id": "account789",
-							"description": "Test description"
+							"counterparty_id": "counterparty123",
+							"description": "Test description",
+							"currency_code": "USD"
 						}
 					}`),
 				},
