@@ -10,7 +10,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.4.4
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
-	github.com/formancehq/go-libs/v2 v2.2.0
+	github.com/formancehq/go-libs/v2 v2.2.1
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
@@ -29,18 +29,18 @@ require (
 	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.39.1
-	github.com/onsi/ginkgo/v2 v2.22.2
+	github.com/onsi/ginkgo/v2 v2.23.0
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/stripe/stripe-go/v79 v79.12.0
-	github.com/uptrace/bun v1.2.10
-	github.com/uptrace/bun/dialect/pgdialect v1.2.10
-	github.com/uptrace/bun/extra/bundebug v1.2.10
+	github.com/uptrace/bun v1.2.11
+	github.com/uptrace/bun/dialect/pgdialect v1.2.11
+	github.com/uptrace/bun/extra/bundebug v1.2.11
 	github.com/xeipuuv/gojsonschema v1.2.0
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.60.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/metric v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
