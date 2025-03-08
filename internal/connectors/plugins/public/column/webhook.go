@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
@@ -79,6 +78,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 			return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
 		}
 		config.secret = resp.Secret
+		p.webhookConfigs[eventType] = config
 
 		raw, err := json.Marshal(resp)
 		if err != nil {
@@ -127,10 +127,7 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 }
 
 func (p *Plugin) translateBookTransfer(ctx context.Context, webhook client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error) {
-	var (
-		transfer client.TransferResponse
-		response models.WebhookResponse
-	)
+	var transfer client.TransferResponse
 	dataBytes, err := json.Marshal(webhook.Data)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to marshal webhook data: %w", err)
@@ -143,15 +140,14 @@ func (p *Plugin) translateBookTransfer(ctx context.Context, webhook client.Webho
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map webhook book transfer payment: %w", err)
 	}
-	response.Payment = pspPayment
-	return response, nil
+
+	return models.WebhookResponse{
+		Payment: pspPayment,
+	}, nil
 }
 
 func (p *Plugin) translateAchTransfer(ctx context.Context, webhook client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error) {
-	var (
-		transfer client.ACHPayoutResponse
-		response models.WebhookResponse
-	)
+	var transfer client.ACHPayoutResponse
 	dataBytes, err := json.Marshal(webhook.Data)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to marshal webhook data: %w", err)
@@ -170,15 +166,13 @@ func (p *Plugin) translateAchTransfer(ctx context.Context, webhook client.Webhoo
 		return models.WebhookResponse{}, fmt.Errorf("failed to map ach payout to payment: %w", err)
 	}
 
-	response.Payment = pspPayment
-	return response, nil
+	return models.WebhookResponse{
+		Payment: pspPayment,
+	}, nil
 }
 
 func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error) {
-	var (
-		transfer client.WirePayoutResponse
-		response models.WebhookResponse
-	)
+	var transfer client.WirePayoutResponse
 	dataBytes, err := json.Marshal(webhook.Data)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to marshal webhook data: %w", err)
@@ -197,15 +191,13 @@ func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.Webho
 		return models.WebhookResponse{}, fmt.Errorf("failed to map wire payout to payment: %w", err)
 	}
 
-	response.Payment = pspPayment
-	return response, nil
+	return models.WebhookResponse{
+		Payment: pspPayment,
+	}, nil
 }
 
 func (p *Plugin) translateInternationalWireTransfer(ctx context.Context, webhook client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error) {
-	var (
-		transfer client.InternationalWirePayoutResponse
-		response models.WebhookResponse
-	)
+	var transfer client.InternationalWirePayoutResponse
 	dataBytes, err := json.Marshal(webhook.Data)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to marshal webhook data: %w", err)
@@ -224,8 +216,9 @@ func (p *Plugin) translateInternationalWireTransfer(ctx context.Context, webhook
 		return models.WebhookResponse{}, fmt.Errorf("failed to map international wire payout to payment: %w", err)
 	}
 
-	response.Payment = pspPayment
-	return response, nil
+	return models.WebhookResponse{
+		Payment: pspPayment,
+	}, nil
 }
 
 func (v *defaultVerifier) verifyWebhookSignature(payload []byte, header string, webhookSecret string) error {
@@ -233,13 +226,7 @@ func (v *defaultVerifier) verifyWebhookSignature(payload []byte, header string, 
 	h.Write(payload)
 	computedSignature := hex.EncodeToString(h.Sum(nil))
 
-	signatureParts := strings.Split(header, "=")
-	if len(signatureParts) != 2 {
-		return errors.New("invalid signature format in header")
-	}
-	providedSignature := signatureParts[1]
-
-	if !hmac.Equal([]byte(computedSignature), []byte(providedSignature)) {
+	if !hmac.Equal([]byte(computedSignature), []byte(header)) {
 		return errors.New("signature verification failed")
 	}
 
