@@ -13,7 +13,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var _ = Describe("Increase Plugin Webhooks", func() {
+var _ = Describe("Column Plugin Webhooks", func() {
 	var (
 		plg      *Plugin
 		httpMock *client.MockHTTPClient

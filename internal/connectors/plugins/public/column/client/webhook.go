@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type EventCategory string
