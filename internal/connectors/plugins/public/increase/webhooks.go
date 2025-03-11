@@ -80,6 +80,10 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, client.ErrWebhookUrlMissing
 	}
 
+	if !strings.HasPrefix(req.WebhookBaseUrl, "https://") {
+		return models.CreateWebhooksResponse{}, fmt.Errorf("webhook URL must use HTTPS protocol")
+	}
+
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.CreateWebhooksResponse{}, err
 	}

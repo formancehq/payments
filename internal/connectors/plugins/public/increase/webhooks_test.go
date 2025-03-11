@@ -51,7 +51,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			expectedObjectedID = "44"
 			expectedWebhookResponseID = "sampleResID"
-			webhookBaseURL = "http://example.com"
+			webhookBaseURL = "https://example.com"
 			now = time.Now().UTC()
 
 			samplePaymentCreated = &client.Transaction{
@@ -148,6 +148,18 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to create web hooks: test error : : status code: 0"))
+			Expect(res).To(Equal(models.CreateWebhooksResponse{}))
+		})
+
+		It("should return an error - non-https webhook url", func(ctx SpecContext) {
+			req := models.CreateWebhooksRequest{
+				FromPayload:    json.RawMessage(`{"id":"1", "selected_event_category":"account.created"}`),
+				WebhookBaseUrl: "http://example.com",
+			}
+
+			res, err := plg.CreateWebhooks(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("webhook URL must use HTTPS protocol"))
 			Expect(res).To(Equal(models.CreateWebhooksResponse{}))
 		})
 
