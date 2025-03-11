@@ -92,9 +92,10 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 
 		from.URL = url
 		from.SelectedEventCategory = string(eventType)
-		resp, err := p.client.CreateEventSubscription(ctx, &from)
+		idempotencyKey := p.generateIdempotencyKey(from.SelectedEventCategory, req.ConnectorID)
+		resp, err := p.client.CreateEventSubscription(ctx, &from, idempotencyKey)
 		if err != nil {
-			return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
+			return models.CreateWebhooksResponse{}, err
 		}
 
 		raw, err := json.Marshal(resp)

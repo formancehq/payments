@@ -2,6 +2,7 @@ package increase
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/models"
@@ -93,4 +94,8 @@ func (p *Plugin) validateBankAccountRequests(ba models.BankAccount) error {
 	}
 
 	return nil
+}
+
+func (p *Plugin) generateIdempotencyKey(values ...string) string {
+	return strings.Join(values, "-")
 }

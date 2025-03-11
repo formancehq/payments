@@ -147,7 +147,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create webhook subscription: failed to create web hooks: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create web hooks: test error : : status code: 0"))
 			Expect(res).To(Equal(models.CreateWebhooksResponse{}))
 		})
 
@@ -268,7 +268,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get transfer: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get transfer: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -306,7 +306,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get ach payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get ach payout: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -344,7 +344,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get check transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get check transfer payout: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -382,7 +382,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get pending transaction: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get pending transaction: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -420,7 +420,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get real time payments transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get real time payments transfer payout: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -458,7 +458,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get wire transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get wire transfer payout: test error : : status code: 0"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 

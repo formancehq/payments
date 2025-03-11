@@ -69,7 +69,7 @@ Bank accounts requests are determined by some metadata in the request:
   "metadata": {
     "com.increase.spec/description": "some description",
     "com.increase.spec/routingNumber": "2354321234",
-    "com.increase.spec/accountHolder": "John Doe",
+    "com.increase.spec/accountHolder": "business",
   }
 }
 ```

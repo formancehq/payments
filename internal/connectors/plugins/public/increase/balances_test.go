@@ -68,7 +68,7 @@ var _ = Describe("Increase Plugin Balances", func() {
 
 			resp, err := plg.FetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get account balance: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get account balance: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 

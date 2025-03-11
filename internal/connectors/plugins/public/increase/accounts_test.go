@@ -95,7 +95,7 @@ var _ = Describe("Increase Plugin Accounts", func() {
 
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get accounts: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get accounts: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 

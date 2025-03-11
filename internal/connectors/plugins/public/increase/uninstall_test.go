@@ -64,7 +64,7 @@ var _ = Describe("Increase Plugin Uninstall", func() {
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
-			Expect(err).To(MatchError("failed to list web hooks: list failed unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to list web hooks: list failed : : status code: 0"))
 			Expect(resp).To(Equal(models.UninstallResponse{}))
 		})
 
@@ -102,7 +102,7 @@ var _ = Describe("Increase Plugin Uninstall", func() {
 			resp, err := plg.uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
-			Expect(err).To(MatchError("failed to update web hooks: deletion failed unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to update web hooks: deletion failed : : status code: 0"))
 			Expect(resp).To(Equal(models.UninstallResponse{}))
 		})
 

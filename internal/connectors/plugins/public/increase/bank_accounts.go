@@ -15,6 +15,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		return models.CreateBankAccountResponse{}, err
 	}
 
+	idempotencyKey := p.generateIdempotencyKey(ba.ID.String())
 	resp, err := p.client.CreateBankAccount(
 		ctx,
 		&client.BankAccountRequest{
@@ -23,7 +24,7 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			AccountHolder: models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseAccountHolderMetadataKey),
 			Description:   models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseDescriptionMetadataKey),
 		},
-		fmt.Sprintf("ba%s%s", ba.ID.String(), *ba.AccountNumber),
+		idempotencyKey,
 	)
 	if err != nil {
 		return models.CreateBankAccountResponse{}, err

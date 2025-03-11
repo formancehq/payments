@@ -67,7 +67,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			resp, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create bank account: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create bank account: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreateBankAccountResponse{}))
 		})
 

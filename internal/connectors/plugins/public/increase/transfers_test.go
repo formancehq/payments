@@ -83,6 +83,11 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 				SourceAccountReference:      pointer.For("acc1"),
 				DestinationAccountReference: pointer.For("acc2"),
+				Metadata: map[string]string{
+					client.IncreaseDescriptionMetadataKey:              "test1",
+					client.IncreaseTransactionIDMetadataKey:            "",
+					client.IncreaseDestinationTransactionIDMetadataKey: "",
+				},
 			}
 		})
 
@@ -155,7 +160,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to initiate transfer: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to initiate transfer: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 

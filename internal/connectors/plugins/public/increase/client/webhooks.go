@@ -48,7 +48,7 @@ type CreateEventSubscriptionRequest struct {
 	URL                   string `json:"url"`
 }
 
-func (c *client) CreateEventSubscription(ctx context.Context, es *CreateEventSubscriptionRequest) (*EventSubscription, error) {
+func (c *client) CreateEventSubscription(ctx context.Context, es *CreateEventSubscriptionRequest, idempotencyKey string) (*EventSubscription, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_event_subscription")
 
 	if es.SharedSecret == "" {
@@ -64,7 +64,7 @@ func (c *client) CreateEventSubscription(ctx context.Context, es *CreateEventSub
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrWebhookRequestFailed, err)
 	}
-	req.Header.Add("Idempotency-Key", es.SelectedEventCategory)
+	req.Header.Add("Idempotency-Key", idempotencyKey)
 
 	var res EventSubscription
 	var errRes increaseError

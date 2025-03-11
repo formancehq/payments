@@ -65,7 +65,7 @@ var _ = Describe("Increase Plugin External Accounts", func() {
 
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get external accounts: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to get external accounts: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
 		})
 

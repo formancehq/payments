@@ -36,7 +36,7 @@ type Client interface {
 	InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
 	InitiateWireTransferPayout(ctx context.Context, pr *WireTransferPayoutRequest, idempotencyKey string) (*PayoutResponse, error)
 	CreateBankAccount(ctx context.Context, pr *BankAccountRequest, idempotencyKey string) (*BankAccountResponse, error)
-	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest) (*EventSubscription, error)
+	CreateEventSubscription(ctx context.Context, req *CreateEventSubscriptionRequest, idempotencyKey string) (*EventSubscription, error)
 	ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error)
 	UpdateEventSubscription(ctx context.Context, req *UpdateEventSubscriptionRequest, webhookID string) (*EventSubscription, error)
 	SetHttpClient(httpClient HTTPClient)

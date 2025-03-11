@@ -28,6 +28,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 
 	amount := pi.Amount.String() // increase uses minor units
 	payoutMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey)
+	idempotencyKey := p.generateIdempotencyKey(pi.Reference)
 
 	switch strings.ToLower(payoutMethod) {
 	case increaseWirePaymentMethod:
@@ -43,7 +44,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateWireTransferPayout(
 			ctx,
 			wrp,
-			fmt.Sprintf("wire%s", pi.Reference),
+			idempotencyKey,
 		)
 		if err != nil {
 			return nil, err
@@ -83,7 +84,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateCheckTransferPayout(
 			ctx,
 			check,
-			fmt.Sprintf("check%s", pi.Reference),
+			idempotencyKey,
 		)
 		if err != nil {
 			return nil, err
@@ -103,7 +104,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateRTPTransferPayout(
 			ctx,
 			rtp,
-			fmt.Sprintf("rtp%s", pi.Reference),
+			idempotencyKey,
 		)
 		if err != nil {
 			return nil, err
@@ -122,7 +123,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		resp, err := p.client.InitiateACHTransferPayout(
 			ctx,
 			apr,
-			fmt.Sprintf("ach%s", pi.Reference),
+			idempotencyKey,
 		)
 		if err != nil {
 			return nil, err

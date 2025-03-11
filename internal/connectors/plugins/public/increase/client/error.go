@@ -19,19 +19,14 @@ type increaseError struct {
 	Type   string `json:"type"`
 	Title  string `json:"title"`
 	Detail string `json:"detail"`
-	Errors []struct {
-		Field   string `json:"field"`
-		Message string `json:"message"`
-	} `json:"errors"`
 }
 
 func (ie *increaseError) Error() error {
 	var err error
 	if ie.Detail == "" {
-		err = fmt.Errorf("unexpected status code: %d", ie.Status)
+		err = fmt.Errorf("%s: %s: status code: %d", ie.Type, ie.Title, ie.Status)
 	} else {
-		err = fmt.Errorf("%d: %s", ie.Status, ie.Detail)
+		err = fmt.Errorf("%s: %s: status code: %d", ie.Type, ie.Detail, ie.Status)
 	}
-
 	return err
 }

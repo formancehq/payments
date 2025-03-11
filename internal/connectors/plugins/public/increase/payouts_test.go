@@ -182,7 +182,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create ach payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create ach payout: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -204,7 +204,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create wire transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create wire transfer payout: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -226,7 +226,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create check transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create check transfer payout: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -248,7 +248,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create real time payments transfer payout: test error unexpected status code: 0"))
+			Expect(err).To(MatchError("failed to create real time payments transfer payout: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 

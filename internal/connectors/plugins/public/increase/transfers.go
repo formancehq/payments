@@ -16,6 +16,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return nil, err
 	}
 
+	idempotencyKey := p.generateIdempotencyKey(pi.Reference)
 	resp, err := p.client.InitiateTransfer(
 		ctx,
 		&client.TransferRequest{
@@ -24,7 +25,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 			Amount:               json.Number(pi.Amount.String()),
 			Description:          pi.Description,
 		},
-		fmt.Sprintf("transfer%s", pi.Reference),
+		idempotencyKey,
 	)
 	if err != nil {
 		return nil, err
@@ -67,6 +68,11 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 		SourceAccountReference:      &transfer.AccountID,
 		DestinationAccountReference: &transfer.DestinationAccountID,
 		Raw:                         raw,
+		Metadata: map[string]string{
+			client.IncreaseDescriptionMetadataKey:              transfer.Description,
+			client.IncreaseTransactionIDMetadataKey:            transfer.TransactionID,
+			client.IncreaseDestinationTransactionIDMetadataKey: transfer.DestinationTransactionID,
+		},
 	}, nil
 }
 
