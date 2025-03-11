@@ -10,7 +10,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.4.5
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
-	github.com/formancehq/go-libs/v2 v2.2.1
+	github.com/formancehq/go-libs/v2 v2.2.2
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
