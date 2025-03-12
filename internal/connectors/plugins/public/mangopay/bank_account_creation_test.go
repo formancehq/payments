@@ -81,7 +81,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing userID in bank account metadata"))
+			Expect(err).To(MatchError(models.ErrMissingConnectorMetadata))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
