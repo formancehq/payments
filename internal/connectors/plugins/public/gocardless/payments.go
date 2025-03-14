@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"math/big"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/gocardless/client"
@@ -75,7 +74,6 @@ func fillPayments(
 
 	for _, payment := range pagedPayments {
 
-		createdAt := time.Unix(payment.CreatedAt, 0)
 		raw, err := json.Marshal(payment)
 
 		if err != nil {
@@ -85,10 +83,10 @@ func fillPayments(
 		payments = append(payments, models.PSPPayment{
 			Reference:                   payment.ID,
 			Amount:                      big.NewInt(int64(payment.Amount)),
-			CreatedAt:                   createdAt,
+			CreatedAt:                   payment.CreatedAt,
 			Status:                      mapPaymentStatus(payment.Status),
 			Asset:                       currency.FormatAsset(SupportedCurrenciesWithDecimal, payment.Asset),
-			Metadata:                    payment.Metadata,
+			Metadata:                    extractExternalAccountMetadata(payment.Metadata),
 			SourceAccountReference:      &payment.SourceAccountReference,
 			DestinationAccountReference: &payment.DestinationAccountReference,
 			Raw:                         raw,

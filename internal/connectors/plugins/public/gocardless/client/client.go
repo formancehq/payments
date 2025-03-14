@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 	gocardless "github.com/gocardless/gocardless-pro-go/v4"
@@ -14,8 +15,8 @@ type Client interface {
 	GetExternalAccounts(ctx context.Context, ownerID string, pageSize int, after string) ([]GocardlessGenericAccount, Cursor, error)
 	GetPayments(ctx context.Context, pageSize int, after string) ([]GocardlessPayment, Cursor, error)
 	GetMandate(ctx context.Context, mandateId string) (*gocardless.Mandate, error)
-	CreateCreditorBankAccount(ctx context.Context, creditor string, ba models.BankAccount) (*gocardless.CreditorBankAccount, error)
-	CreateCustomerBankAccount(ctx context.Context, customer string, ba models.BankAccount) (*gocardless.CustomerBankAccount, error)
+	CreateCreditorBankAccount(ctx context.Context, creditor string, ba models.BankAccount) (GocardlessGenericAccount, error)
+	CreateCustomerBankAccount(ctx context.Context, customer string, ba models.BankAccount) (GocardlessGenericAccount, error)
 	NewWithService(service GoCardlessService)
 }
 
@@ -44,7 +45,7 @@ type Cursor struct {
 
 type GocardlessGenericAccount struct {
 	ID                string                 `json:"id,omitempty"`
-	CreatedAt         int64                  `json:"created_at,omitempty"`
+	CreatedAt         time.Time              `json:"created_at,omitempty"`
 	AccountHolderName string                 `json:"account_holder_name,omitempty"`
 	Currency          string                 `json:"currency,omitempty"`
 	Metadata          map[string]interface{} `json:"metadata,omitempty"`
@@ -57,7 +58,7 @@ type GocardlessUser struct {
 	AddressLine3                        string                    `json:"address_line3,omitempty"`
 	City                                string                    `json:"city,omitempty"`
 	CountryCode                         string                    `json:"country_code,omitempty"`
-	CreatedAt                           int64                     `json:"created_at,omitempty"`
+	CreatedAt                           time.Time                 `json:"created_at,omitempty"`
 	Id                                  string                    `json:"id,omitempty"`
 	Name                                string                    `json:"name,omitempty"`
 	PostalCode                          string                    `json:"postal_code,omitempty"`

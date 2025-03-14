@@ -30,7 +30,7 @@ func (c *client) GetCreditors(ctx context.Context, pageSize int, after string) (
 		}
 		creditors = append(creditors, GocardlessUser{
 			Id:                 creditor.Id,
-			CreatedAt:          parsedTime.Unix(),
+			CreatedAt:          parsedTime,
 			Name:               creditor.Name,
 			CountryCode:        creditor.CountryCode,
 			PostalCode:         creditor.PostalCode,

@@ -30,7 +30,7 @@ var _ = Describe("Gocardless Plugin fetch next users", func() {
 				Id:          fmt.Sprintf("%d", i),
 				Name:        fmt.Sprintf("Creditor %d", i),
 				CountryCode: "US",
-				CreatedAt:   now.Add(-time.Duration(50-i) * time.Minute).Unix(),
+				CreatedAt:   now,
 			})
 		}
 	})

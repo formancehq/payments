@@ -44,18 +44,16 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 				CreatedAt:     now.UTC(),
 				Name:          "test",
 				AccountNumber: pointer.For("20548790"),
-				IBAN:          pointer.For("FR7630006000011234567890189"),
 				SwiftBicCode:  pointer.For("BNPAFRPP"),
 				Country:       pointer.For("US"),
 				Metadata: map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessAccountTypeMetadataKey: "savings",
 				},
 			}
 		}))
 
-		It("should return an error - required metadata field branch_code is missing", func(ctx SpecContext) {
+		It("should return an error - required metadata field currency is missing", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{}
 			req := models.CreateBankAccountRequest{
@@ -64,22 +62,7 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("required metadata field com.gocardless.spec/branch_code is missing"))
-			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
-		})
-
-		It("should return an error - required metadata field currency is missing", func(ctx SpecContext) {
-			ba := sampleBankAccount
-			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey: "12345",
-			}
-			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
-			}
-
-			res, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("required metadata field com.gocardless.spec/currency is missing"))
+			Expect(err).To(MatchError(ErrMissingCurrency))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -87,7 +70,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "XYZ",
 				client.GocardlessAccountTypeMetadataKey: "savings",
 			}
@@ -98,14 +80,13 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			res, err := plg.CreateBankAccount(ctx, req)
 
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("com.gocardless.spec/currency XYZ not supported"))
+			Expect(err).To(MatchError(ErrNotSupportedCurrency))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
 		It("should return an error - com.gocardless.spec/customer ID format invalid", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCustomerMetadataKey:    "INVALID123",
 				client.GocardlessAccountTypeMetadataKey: "savings",
@@ -116,14 +97,13 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("com.gocardless.spec/customer ID must start with 'CU'"))
+			Expect(err).To(MatchError(ErrInvalidCustomerID))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
 		It("should return an error - com.gocardless.spec/creditor ID format invalid", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCreditorMetadataKey:    "INVALID123",
 				client.GocardlessAccountTypeMetadataKey: "savings",
@@ -134,14 +114,13 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("com.gocardless.spec/creditor ID must start with 'CR'"))
+			Expect(err).To(MatchError(ErrInvalidCreditorID))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
 		It("should return an error - missing both com.gocardless.spec/customer and com.gocardless.spec/creditor", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessAccountTypeMetadataKey: "savings",
 			}
@@ -151,14 +130,13 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("you must provide com.gocardless.spec/customer or com.gocardless.spec/creditor metadata field"))
+			Expect(err).To(MatchError(ErrCreditorAndCustomerIDProvided))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
 		It("should return an error - you must provide either com.gocardless.spec/customer or com.gocardless.spec/creditor metadata field but not both", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCustomerMetadataKey:    "CU987654321",
 				client.GocardlessCreditorMetadataKey:    "CR123456789",
@@ -171,16 +149,15 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
-			Expect(err).To(MatchError("you must provide either com.gocardless.spec/customer or com.gocardless.spec/creditor metadata field but not both"))
+			Expect(err).To(MatchError(ErrCreditorAndCustomerIDProvided))
 		})
 
 		It("should return an error - required metadata field com.gocardless.spec/account_type is missing for US accounts", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			ba.Country = pointer.For("US")
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey: "12345",
-				client.GocardlessCurrencyMetadataKey:   "USD",
-				client.GocardlessCustomerMetadataKey:   "CU123456789",
+				client.GocardlessCurrencyMetadataKey: "USD",
+				client.GocardlessCustomerMetadataKey: "CU123456789",
 			}
 			req := models.CreateBankAccountRequest{
 				BankAccount: ba,
@@ -188,7 +165,7 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("required metadata field com.gocardless.spec/account_type is missing"))
+			Expect(err).To(MatchError(ErrMissingAccountType))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -196,7 +173,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.Country = pointer.For("US")
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCustomerMetadataKey:    "CU123456789",
 				client.GocardlessAccountTypeMetadataKey: "invalid",
@@ -207,7 +183,25 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("metadata field com.gocardless.spec/account_type must be checking or savings"))
+			Expect(err).To(MatchError(ErrInvalidAccountType))
+			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
+		})
+
+		It("should return an error - when account_type is provided for non USD account", func(ctx SpecContext) {
+			ba := sampleBankAccount
+			ba.Country = pointer.For("US")
+			ba.Metadata = map[string]string{
+				client.GocardlessCurrencyMetadataKey:    "GBP",
+				client.GocardlessCustomerMetadataKey:    "CU123456789",
+				client.GocardlessAccountTypeMetadataKey: "savings",
+			}
+			req := models.CreateBankAccountRequest{
+				BankAccount: ba,
+			}
+
+			res, err := plg.CreateBankAccount(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(ErrAccountTypeProvided))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -215,7 +209,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.AccountNumber = nil
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCreditorMetadataKey:    "CR123",
 				client.GocardlessAccountTypeMetadataKey: "savings",
@@ -226,7 +219,7 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("account number is required"))
+			Expect(err).To(MatchError(ErrMissingAccountNumber))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -234,7 +227,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.SwiftBicCode = nil
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCreditorMetadataKey:    "CR123",
 				client.GocardlessAccountTypeMetadataKey: "savings",
@@ -245,7 +237,7 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("swift bic code is required"))
+			Expect(err).To(MatchError(ErrMissingSwiftCode))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -253,7 +245,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.Country = nil
 			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
 				client.GocardlessCurrencyMetadataKey:    "USD",
 				client.GocardlessCreditorMetadataKey:    "CR123",
 				client.GocardlessAccountTypeMetadataKey: "savings",
@@ -264,26 +255,7 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("country is required"))
-			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
-		})
-
-		It("should return an error - IBAN is required", func(ctx SpecContext) {
-			ba := sampleBankAccount
-			ba.IBAN = nil
-			ba.Metadata = map[string]string{
-				client.GocardlessBranchCodeMetadataKey:  "12345",
-				client.GocardlessCurrencyMetadataKey:    "USD",
-				client.GocardlessCreditorMetadataKey:    "CR123",
-				client.GocardlessAccountTypeMetadataKey: "savings",
-			}
-			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
-			}
-
-			res, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("IBAN is required"))
+			Expect(err).To(MatchError(ErrorMissingCountry))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -309,10 +281,8 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 						AccountNumber:     *ba.AccountNumber,
 						AccountType:       ba.Metadata[client.GocardlessAccountTypeMetadataKey],
 						BankCode:          *ba.SwiftBicCode,
-						BranchCode:        ba.Metadata[client.GocardlessBranchCodeMetadataKey],
 						CountryCode:       *ba.Country,
 						Currency:          ba.Metadata[client.GocardlessCurrencyMetadataKey],
-						Iban:              *ba.IBAN,
 						Links:             gocardless.CreditorBankAccountCreateParamsLinks{Creditor: ba.Metadata[client.GocardlessCreditorMetadataKey]},
 					}).Return(expectedAccount, nil)
 				} else {
@@ -331,10 +301,8 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 						AccountNumber:     *ba.AccountNumber,
 						AccountType:       ba.Metadata[client.GocardlessAccountTypeMetadataKey],
 						BankCode:          *ba.SwiftBicCode,
-						BranchCode:        ba.Metadata[client.GocardlessBranchCodeMetadataKey],
 						CountryCode:       *ba.Country,
 						Currency:          ba.Metadata[client.GocardlessCurrencyMetadataKey],
-						Iban:              *ba.IBAN,
 						Links:             gocardless.CustomerBankAccountCreateParamsLinks{Customer: ba.Metadata[client.GocardlessCustomerMetadataKey]},
 					}).Return(expectedAccount, nil)
 				}
@@ -351,7 +319,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("creditor bank account",
 				"creditor",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCreditorMetadataKey:    "CR123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -363,7 +330,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("customer bank account",
 				"customer",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCustomerMetadataKey:    "CU123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -397,7 +363,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("creditor bank account",
 				"creditor",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCreditorMetadataKey:    "CR123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -407,7 +372,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("customer bank account",
 				"customer",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCustomerMetadataKey:    "CU123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -439,7 +403,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("creditor bank account",
 				"creditor",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCreditorMetadataKey:    "CR123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -449,7 +412,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("customer bank account",
 				"customer",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCustomerMetadataKey:    "CU123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -486,7 +448,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("creditor bank account",
 				"creditor",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCreditorMetadataKey:    "CR123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -498,7 +459,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("customer bank account",
 				"customer",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCustomerMetadataKey:    "CU123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -527,11 +487,9 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 				CreatedAt:     now.UTC(),
 				Name:          "test",
 				AccountNumber: pointer.For("20548790"),
-				IBAN:          pointer.For("FR7630006000011234567890189"),
 				SwiftBicCode:  pointer.For("BNPAFRPP"),
 				Country:       pointer.For("US"),
 				Metadata: map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessAccountTypeMetadataKey: "savings",
 				},
@@ -547,11 +505,11 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 				if accountType == "creditor" {
 					m.EXPECT().CreateCreditorBankAccount(gomock.Any(), gomock.Any(),
 						gomock.Any(),
-					).Return(nil, expectedError)
+					).Return(client.GocardlessGenericAccount{}, expectedError)
 				} else {
 					m.EXPECT().CreateCustomerBankAccount(gomock.Any(), gomock.Any(),
 						gomock.Any(),
-					).Return(nil, expectedError)
+					).Return(client.GocardlessGenericAccount{}, expectedError)
 				}
 
 				resp, err := plg.createBankAccount(ctx, ba)
@@ -562,7 +520,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("creditor bank account",
 				"creditor",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCreditorMetadataKey:    "CR123",
 					client.GocardlessAccountTypeMetadataKey: "savings",
@@ -572,7 +529,6 @@ var _ = Describe("Gocardless Plugin Bank Account Creation", func() {
 			Entry("customer bank account",
 				"customer",
 				map[string]string{
-					client.GocardlessBranchCodeMetadataKey:  "12345",
 					client.GocardlessCurrencyMetadataKey:    "USD",
 					client.GocardlessCustomerMetadataKey:    "CU123",
 					client.GocardlessAccountTypeMetadataKey: "savings",

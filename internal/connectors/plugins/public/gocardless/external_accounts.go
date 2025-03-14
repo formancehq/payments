@@ -17,8 +17,6 @@ type OwnerType struct {
 	ID string `json:"id"`
 }
 
-var jsonMarshal = json.Marshal
-
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (
 	models.FetchNextExternalAccountsResponse, error,
 ) {
@@ -81,7 +79,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		externalBankAccounts = externalBankAccounts[:req.PageSize]
 	}
 
-	payload, err := jsonMarshal(newState)
+	payload, err := json.Marshal(newState)
 
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err

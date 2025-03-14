@@ -56,19 +56,27 @@ The connector supports the following currencies:
 Bank accounts can be created for both creditors and customers. The type is determined by metadata in the request:
 
 ```json
-{
-  "name": "John Doe",
-  "accountNumber": "09878762343",
-  "iban": "2354321234",
-  "swiftBicCode": "34XZZT34",
+ { "name": "Gitstart Union Bank",
+  "accountNumber": "21616901",
+  "swiftBicCode": "021000021",
   "country": "US", // Country code in ISO 3166-1 alpha-2 code.
   "metadata": {
-    "branch_code": "required_branch_code",
-    "currency": "USD",
-    "creditor": "CR123", // For creditor bank account
+    "com.gocardless.spec/currency": "USD",
+    "com.gocardless.spec/customer": "CU001DRQMY17P6",
+    "com.gocardless.spec/account_type": "savings"
+  }
+}
+{
+  "name": "Gitstart Union Bank",
+  "accountNumber": "21616901",
+  "swiftBicCode": "021000021",
+  "country": "US", // Country code in ISO 3166-1 alpha-2 code.
+  "metadata": {
+    "com.gocardless.spec/currency": "USD",
+    "com.gocardless.spec/creditor": "CR123", // For creditor bank account
     // OR
-    "customer": "CU123", // For customer bank account
-    "account_type": "savings" // Required for US accounts
+    "com.gocardless.spec/customer": "CU123", // For customer bank account
+    "com.gocardless.spec/account_type": "savings" // Required for US accounts
   }
 }
 ```

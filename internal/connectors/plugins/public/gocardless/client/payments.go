@@ -10,14 +10,14 @@ import (
 )
 
 type GocardlessPayment struct {
-	ID                          string            `json:"id,omitempty"`
-	CreatedAt                   int64             `json:"created_at,omitempty"`
-	Amount                      int               `json:"amount,omitempty"`
-	Status                      string            `json:"status,omitempty"`
-	Asset                       string            `json:"asset,omitempty"`
-	Metadata                    map[string]string `json:"metadata,omitempty"`
-	SourceAccountReference      string            `json:"sourceAccountReference,omitempty"`
-	DestinationAccountReference string            `json:"destinationAccountReference,omitempty"`
+	ID                          string                 `json:"id,omitempty"`
+	CreatedAt                   time.Time              `json:"created_at,omitempty"`
+	Amount                      int                    `json:"amount,omitempty"`
+	Status                      string                 `json:"status,omitempty"`
+	Asset                       string                 `json:"asset,omitempty"`
+	Metadata                    map[string]interface{} `json:"metadata,omitempty"`
+	SourceAccountReference      string                 `json:"sourceAccountReference,omitempty"`
+	DestinationAccountReference string                 `json:"destinationAccountReference,omitempty"`
 }
 
 func (c *client) GetPayments(ctx context.Context, pageSize int, after string) (
@@ -58,13 +58,22 @@ func (c *client) GetPayments(ctx context.Context, pageSize int, after string) (
 
 		}
 
+		payment.Metadata[GocardlessFxMetadataKey] = payment.Fx
+		payment.Metadata[GocardlessAmountRefundedMetadataKey] = payment.AmountRefunded
+		payment.Metadata[GocardlessLinksMetadataKey] = payment.Links
+		payment.Metadata[GocardlessChargeDateMetadataKey] = payment.ChargeDate
+		payment.Metadata[GocardlessDescriptionMetadataKey] = payment.Description
+		payment.Metadata[GocardlessFasterAchMetadataKey] = payment.FasterAch
+		payment.Metadata[GocardlessRetryIfPossibleMetadataKey] = payment.RetryIfPossible
+		payment.Metadata[GocardlessReferenceMetadataKey] = payment.Reference
+
 		payments = append(payments, GocardlessPayment{
 			ID:                          payment.Id,
-			CreatedAt:                   parsedTime.Unix(),
+			CreatedAt:                   parsedTime,
 			Amount:                      payment.Amount,
 			Status:                      payment.Status,
 			Asset:                       payment.Currency,
-			Metadata:                    convertGocardlessMetadata(payment.Metadata),
+			Metadata:                    payment.Metadata,
 			SourceAccountReference:      sourceAccountReference,
 			DestinationAccountReference: destinationAccountReference,
 		})
@@ -73,12 +82,4 @@ func (c *client) GetPayments(ctx context.Context, pageSize int, after string) (
 		After: paymentsResponse.Meta.Cursors.After,
 	}
 	return payments, nextCursor, nil
-}
-
-func convertGocardlessMetadata(in map[string]interface{}) map[string]string {
-	out := make(map[string]string)
-	for k, v := range in {
-		out[k] = fmt.Sprint(v)
-	}
-	return out
 }

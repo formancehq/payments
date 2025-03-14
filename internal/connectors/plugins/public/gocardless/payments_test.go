@@ -42,11 +42,11 @@ var _ = Describe("Gocardless Plugin fetch next payments", func() {
 			for i := 0; i < 50; i++ {
 				samplePayments = append(samplePayments, client.GocardlessPayment{
 					ID:                          fmt.Sprintf("PM%d", 1+i),
-					CreatedAt:                   now.Add(-time.Duration(50-i) * time.Minute).Unix(),
+					CreatedAt:                   now,
 					Amount:                      int(10000 + i*100),
 					Status:                      "pending",
 					Asset:                       "EUR",
-					Metadata:                    map[string]string{},
+					Metadata:                    map[string]interface{}{},
 					SourceAccountReference:      fmt.Sprintf("CR%d", i),
 					DestinationAccountReference: fmt.Sprintf("CU%d", i),
 				})
@@ -187,11 +187,11 @@ var _ = Describe("Gocardless Plugin fetch next payments", func() {
 			for i := 0; i < 50; i++ {
 				samplePayments = append(samplePayments, client.GocardlessPayment{
 					ID:                          fmt.Sprintf("PM%d", i),
-					CreatedAt:                   now.Add(-time.Duration(50-i) * time.Minute).Unix(),
+					CreatedAt:                   now,
 					Amount:                      int(10000 + i*100),
 					Status:                      "pending",
 					Asset:                       "EUR",
-					Metadata:                    map[string]string{},
+					Metadata:                    map[string]interface{}{},
 					SourceAccountReference:      fmt.Sprintf("CR%d", i),
 					DestinationAccountReference: fmt.Sprintf("CU%d", i),
 				})

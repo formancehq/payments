@@ -43,7 +43,7 @@ var _ = Describe("Gocardless Plugin fetch next external accounts", func() {
 				sampleBankAccounts = append(sampleBankAccounts, client.GocardlessGenericAccount{
 					ID:                fmt.Sprintf("BA%d", i),
 					AccountHolderName: name,
-					CreatedAt:         now.Add(-time.Duration(50-i) * time.Minute).Unix(),
+					CreatedAt:         now,
 					Metadata:          map[string]interface{}{"type": "external_account"},
 					Currency:          "USD",
 					AccountType:       "savings",
@@ -179,35 +179,6 @@ var _ = Describe("Gocardless Plugin fetch next external accounts", func() {
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be resetted
 			Expect(state.After).To(Equal(""))
-		})
-
-		It("should fetch next external creditors accounts - no state no results", func(ctx SpecContext) {
-			req := models.FetchNextExternalAccountsRequest{
-				FromPayload: json.RawMessage(`{"id": "CR123"}`),
-				PageSize:    60,
-			}
-
-			m.EXPECT().GetExternalAccounts(gomock.Any(), "CR123", req.PageSize, "").
-				Return(
-					sampleBankAccounts,
-					client.Cursor{},
-					nil,
-				)
-
-			originalMarshal := jsonMarshal
-			defer func() {
-				jsonMarshal = originalMarshal
-			}()
-
-			// Mock the marshal function
-			jsonMarshal = func(v interface{}) ([]byte, error) {
-
-				return nil, fmt.Errorf("mock marshal error")
-			}
-
-			_, err := plg.FetchNextExternalAccounts(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("mock marshal error"))
 		})
 
 		It("should fetch next external creditors accounts - no state pageSize > total accounts", func(ctx SpecContext) {

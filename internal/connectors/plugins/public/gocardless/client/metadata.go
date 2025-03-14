@@ -1,11 +1,19 @@
 package client
 
 const (
-	gocardlessMetadataSpecNamespace = "com.gocardless.spec/"
+	GocardlessMetadataSpecNamespace = "com.gocardless.spec/"
 
-	GocardlessBranchCodeMetadataKey  = gocardlessMetadataSpecNamespace + "branch_code"
-	GocardlessCurrencyMetadataKey    = gocardlessMetadataSpecNamespace + "currency"
-	GocardlessCreditorMetadataKey    = gocardlessMetadataSpecNamespace + "creditor"
-	GocardlessCustomerMetadataKey    = gocardlessMetadataSpecNamespace + "customer"
-	GocardlessAccountTypeMetadataKey = gocardlessMetadataSpecNamespace + "account_type"
+	GocardlessCurrencyMetadataKey    = GocardlessMetadataSpecNamespace + "currency"
+	GocardlessCreditorMetadataKey    = GocardlessMetadataSpecNamespace + "creditor"
+	GocardlessCustomerMetadataKey    = GocardlessMetadataSpecNamespace + "customer"
+	GocardlessAccountTypeMetadataKey = GocardlessMetadataSpecNamespace + "account_type"
+
+	GocardlessFxMetadataKey              = GocardlessMetadataSpecNamespace + "fx"
+	GocardlessAmountRefundedMetadataKey  = GocardlessMetadataSpecNamespace + "amount_refunded"
+	GocardlessLinksMetadataKey           = GocardlessMetadataSpecNamespace + "links"
+	GocardlessChargeDateMetadataKey      = GocardlessMetadataSpecNamespace + "charge_date"
+	GocardlessDescriptionMetadataKey     = GocardlessMetadataSpecNamespace + "description"
+	GocardlessFasterAchMetadataKey       = GocardlessMetadataSpecNamespace + "faster_ach"
+	GocardlessRetryIfPossibleMetadataKey = GocardlessMetadataSpecNamespace + "retry_if_possible"
+	GocardlessReferenceMetadataKey       = GocardlessMetadataSpecNamespace + "reference"
 )

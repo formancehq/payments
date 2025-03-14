@@ -2,71 +2,102 @@ package client
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	gocardless "github.com/gocardless/gocardless-pro-go/v4"
 )
 
-func (c *client) CreateCreditorBankAccount(ctx context.Context, creditor string, ba models.BankAccount) (
-	*gocardless.CreditorBankAccount, error,
-) {
+func (c *client) CreateCreditorBankAccount(ctx context.Context, creditor string, ba models.BankAccount) (GocardlessGenericAccount, error) {
 
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_creditor_bank_account")
 
 	setAsDefaultPayoutAccount := false
 
-	currency := ba.Metadata[GocardlessCurrencyMetadataKey]
-	branchCode := ba.Metadata[GocardlessBranchCodeMetadataKey]
-	accountType := ba.Metadata[GocardlessAccountTypeMetadataKey]
+	currency := models.ExtractNamespacedMetadata(ba.Metadata, GocardlessCurrencyMetadataKey)
+	accountType := models.ExtractNamespacedMetadata(ba.Metadata, GocardlessAccountTypeMetadataKey)
 
-	bankAccount, err := c.service.CreateGocardlessCreditorBankAccount(ctx, gocardless.CreditorBankAccountCreateParams{
+	payload := gocardless.CreditorBankAccountCreateParams{
 		AccountHolderName:         ba.Name,
 		AccountNumber:             *ba.AccountNumber,
 		AccountType:               accountType,
-		BankCode:                  *ba.SwiftBicCode,
-		BranchCode:                branchCode,
 		CountryCode:               *ba.Country,
 		Currency:                  currency,
-		Iban:                      *ba.IBAN,
 		Links:                     gocardless.CreditorBankAccountCreateParamsLinks{Creditor: creditor},
 		SetAsDefaultPayoutAccount: setAsDefaultPayoutAccount,
-	})
-
-	if err != nil {
-		return nil, err
 	}
 
-	return bankAccount, nil
+	if *ba.Country == "US" {
+		payload.BankCode = *ba.SwiftBicCode
+	} else {
+		payload.BranchCode = *ba.SwiftBicCode
+	}
+
+	bankAccount, err := c.service.CreateGocardlessCreditorBankAccount(ctx, payload)
+
+	if err != nil {
+		return GocardlessGenericAccount{}, err
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339Nano, bankAccount.CreatedAt)
+
+	if err != nil {
+		return GocardlessGenericAccount{}, fmt.Errorf("failed to parse creation time: %w", err)
+	}
+
+	return GocardlessGenericAccount{
+		ID:                bankAccount.Id,
+		CreatedAt:         parsedTime,
+		AccountHolderName: bankAccount.AccountHolderName,
+		Metadata:          bankAccount.Metadata,
+		Currency:          bankAccount.Currency,
+		AccountType:       bankAccount.AccountType,
+	}, nil
 
 }
 
-func (c *client) CreateCustomerBankAccount(ctx context.Context, customer string, ba models.BankAccount) (
-	*gocardless.CustomerBankAccount, error,
-) {
+func (c *client) CreateCustomerBankAccount(ctx context.Context, customer string, ba models.BankAccount) (GocardlessGenericAccount, error) {
 
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_customer_bank_account")
 
-	currency := ba.Metadata[GocardlessCurrencyMetadataKey]
-	branchCode := ba.Metadata[GocardlessBranchCodeMetadataKey]
-	accountType := ba.Metadata[GocardlessAccountTypeMetadataKey]
+	currency := models.ExtractNamespacedMetadata(ba.Metadata, GocardlessCurrencyMetadataKey)
+	accountType := models.ExtractNamespacedMetadata(ba.Metadata, GocardlessAccountTypeMetadataKey)
 
-	bankAccount, err := c.service.CreateGocardlessCustomerBankAccount(ctx, gocardless.CustomerBankAccountCreateParams{
+	payload := gocardless.CustomerBankAccountCreateParams{
 		AccountHolderName: ba.Name,
 		AccountNumber:     *ba.AccountNumber,
 		AccountType:       accountType,
-		BankCode:          *ba.SwiftBicCode,
-		BranchCode:        branchCode,
 		CountryCode:       *ba.Country,
 		Currency:          currency,
-		Iban:              *ba.IBAN,
 		Links:             gocardless.CustomerBankAccountCreateParamsLinks{Customer: customer},
-	})
-
-	if err != nil {
-		return nil, err
 	}
 
-	return bankAccount, nil
+	if *ba.Country == "US" {
+		payload.BankCode = *ba.SwiftBicCode
+	} else {
+		payload.BranchCode = *ba.SwiftBicCode
+	}
+
+	bankAccount, err := c.service.CreateGocardlessCustomerBankAccount(ctx, payload)
+
+	if err != nil {
+		return GocardlessGenericAccount{}, err
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339Nano, bankAccount.CreatedAt)
+	if err != nil {
+		return GocardlessGenericAccount{}, fmt.Errorf("failed to parse creation time: %w", err)
+	}
+
+	return GocardlessGenericAccount{
+		ID:                bankAccount.Id,
+		CreatedAt:         parsedTime,
+		AccountHolderName: bankAccount.AccountHolderName,
+		Metadata:          bankAccount.Metadata,
+		Currency:          bankAccount.Currency,
+		AccountType:       bankAccount.AccountType,
+	}, nil
 
 }

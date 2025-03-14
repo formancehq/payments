@@ -32,7 +32,7 @@ func (c *client) GetCustomers(ctx context.Context, pageSize int, after string) (
 
 		customers = append(customers, GocardlessUser{
 			Id:                    customer.Id,
-			CreatedAt:             parsedTime.Unix(),
+			CreatedAt:             parsedTime,
 			Name:                  customer.GivenName + " " + customer.FamilyName,
 			CountryCode:           customer.CountryCode,
 			PostalCode:            customer.PostalCode,

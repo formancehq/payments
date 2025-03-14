@@ -54,9 +54,10 @@ func (c *client) getCreditorExternalAccounts(ctx context.Context, creditor strin
 		bankAccounts = append(bankAccounts, GocardlessGenericAccount{
 			AccountHolderName: creditorBankAccount.AccountHolderName,
 			ID:                creditorBankAccount.Id,
-			CreatedAt:         parsedTime.Unix(),
+			CreatedAt:         parsedTime,
 			Currency:          creditorBankAccount.Currency,
 			Metadata:          creditorBankAccount.Metadata,
+			AccountType:       creditorBankAccount.AccountType,
 		})
 	}
 
@@ -88,7 +89,7 @@ func (c *client) getCustomerExternalAccounts(ctx context.Context, customer strin
 		bankAccounts = append(bankAccounts, GocardlessGenericAccount{
 			AccountHolderName: customerBankAccount.AccountHolderName,
 			ID:                customerBankAccount.Id,
-			CreatedAt:         parsedTime.Unix(),
+			CreatedAt:         parsedTime,
 			Currency:          customerBankAccount.Currency,
 			Metadata:          customerBankAccount.Metadata,
 		})

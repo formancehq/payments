@@ -3,6 +3,7 @@ package gocardless
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -12,6 +13,29 @@ import (
 )
 
 const ProviderName = "gocardless"
+
+/*
+*
+Validation error messages
+*/
+
+var (
+	ErrMissingAccountNumber = fmt.Errorf("account number is required")
+	ErrorMissingCountry     = fmt.Errorf("country is required")
+	ErrMissingSwiftBicCode  = fmt.Errorf("swift bic code is required")
+
+	// Metadata errors
+	ErrMissingCurrency               = fmt.Errorf("required metadata field %s is missing", client.GocardlessCurrencyMetadataKey)
+	ErrNotSupportedCurrency          = fmt.Errorf("invalid currency value for %s metadata field", client.GocardlessCurrencyMetadataKey)
+	ErrInvalidCreditorID             = fmt.Errorf("%s ID must start with 'CR'", client.GocardlessCreditorMetadataKey)
+	ErrInvalidCustomerID             = fmt.Errorf("%s ID must start with 'CU'", client.GocardlessCustomerMetadataKey)
+	ErrCreditorAndCustomerIDProvided = fmt.Errorf("you must provide either %s or %s metadata field but not both", client.GocardlessCustomerMetadataKey, client.GocardlessCreditorMetadataKey)
+
+	ErrMissingSwiftCode    = fmt.Errorf("field swiftBicCode is required for US bank accounts")
+	ErrMissingAccountType  = fmt.Errorf("required metadata field %s is missing", client.GocardlessAccountTypeMetadataKey)
+	ErrAccountTypeProvided = fmt.Errorf("metadata field %s is not required for non USD bank accounts", client.GocardlessAccountTypeMetadataKey)
+	ErrInvalidAccountType  = fmt.Errorf("metadata field %s must be checking or savings", client.GocardlessAccountTypeMetadataKey)
+)
 
 func init() {
 	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
