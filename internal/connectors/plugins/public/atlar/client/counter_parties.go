@@ -21,7 +21,7 @@ func (c *client) GetV1CounterpartiesID(ctx context.Context, counterPartyID strin
 	return counterpartyResponse, wrapSDKErr(err, &counterparties.GetV1CounterpartiesIDNotFound{})
 }
 
-func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
+func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount *models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
 	// TODO: make sure an account with that IBAN does not already exist (Atlar API v2 needed, v1 lacks the filters)
 	// alternatively we could query the local DB
 
@@ -72,7 +72,7 @@ func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccoun
 	return postCounterpartiesResponse, nil
 }
 
-func extractAtlarAccountIdentifiersFromBankAccount(bankAccount models.BankAccount) []*atlar_models.AccountIdentifier {
+func extractAtlarAccountIdentifiersFromBankAccount(bankAccount *models.BankAccount) []*atlar_models.AccountIdentifier {
 	ownerName := bankAccount.Metadata[atlarMetadataSpecNamespace+"owner/name"]
 	ibanType := "IBAN"
 	accountIdentifiers := []*atlar_models.AccountIdentifier{{

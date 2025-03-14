@@ -148,6 +148,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageConnectorsScheduleForDeletion,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageCounterPartiesGet",
+			Func: a.StorageCounterPartiesGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageCounterPartiesDeleteRelatedAccounts",
+			Func: a.StorageCounterPartiesDeleteRelatedAccounts,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageCounterPartiesAddRelatedAccount",
+			Func: a.StorageCounterPartiesAddRelatedAccount,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageSchedulesStore",
 			Func: a.StorageSchedulesStore,
 		}).
@@ -306,6 +318,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "EventsSendPoolDeletion",
 			Func: a.EventsSendPoolDeletion,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendCounterParty",
+			Func: a.EventsSendCounterParty,
 		}).
 		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",

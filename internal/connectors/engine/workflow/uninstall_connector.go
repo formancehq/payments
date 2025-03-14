@@ -92,7 +92,7 @@ func (w Workflow) uninstallConnector(
 	}
 
 	wg := workflow.NewWaitGroup(ctx)
-	errChan := make(chan error, 32)
+	errChan := make(chan error, 64)
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
@@ -140,6 +140,13 @@ func (w Workflow) uninstallConnector(
 	workflow.Go(ctx, func(ctx workflow.Context) {
 		defer wg.Done()
 		err := activities.StorageBankAccountsDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		errChan <- err
+	})
+
+	wg.Add(1)
+	workflow.Go(ctx, func(ctx workflow.Context) {
+		defer wg.Done()
+		err := activities.StorageCounterPartiesDeleteRelatedAccounts(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 		errChan <- err
 	})
 

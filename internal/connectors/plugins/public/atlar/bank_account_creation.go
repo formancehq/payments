@@ -7,7 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-func validateExternalBankAccount(newExternalBankAccount models.BankAccount) error {
+func validateExternalBankAccount(newExternalBankAccount *models.BankAccount) error {
 	_, err := extractNamespacedMetadata(newExternalBankAccount.Metadata, "owner/name")
 	if err != nil {
 		return fmt.Errorf("required metadata field %sowner/name is missing", atlarMetadataSpecNamespace)
@@ -25,7 +25,7 @@ func validateExternalBankAccount(newExternalBankAccount models.BankAccount) erro
 	return nil
 }
 
-func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
+func (p *Plugin) createBankAccount(ctx context.Context, ba *models.BankAccount) (models.CreateBankAccountResponse, error) {
 	err := validateExternalBankAccount(ba)
 	if err != nil {
 		return models.CreateBankAccountResponse{}, err

@@ -12,6 +12,7 @@ const (
 	EventTypeSavedAccounts            = "SAVED_ACCOUNT"
 	EventTypeSavedBalances            = "SAVED_BALANCE"
 	EventTypeSavedBankAccount         = "SAVED_BANK_ACCOUNT"
+	EventTypeSavedCounterParty        = "SAVED_COUNTER_PARTY"
 	EventTypeSavedTransferInitiation  = "SAVED_TRANSFER_INITIATION"
 	EventTypeDeleteTransferInitiation = "DELETED_TRANSFER_INITIATION"
 	EventTypeConnectorReset           = "CONNECTOR_RESET"

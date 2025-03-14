@@ -24,7 +24,6 @@ import (
 type MockStorage struct {
 	ctrl     *gomock.Controller
 	recorder *MockStorageMockRecorder
-	isgomock struct{}
 }
 
 // MockStorageMockRecorder is the mock recorder for MockStorage.
@@ -387,6 +386,78 @@ func (m *MockStorage) ConnectorsUninstall(ctx context.Context, id models.Connect
 func (mr *MockStorageMockRecorder) ConnectorsUninstall(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockStorage)(nil).ConnectorsUninstall), ctx, id)
+}
+
+// CounterPartiesAddRelatedAccount mocks base method.
+func (m *MockStorage) CounterPartiesAddRelatedAccount(ctx context.Context, cpID uuid.UUID, relatedAccount models.CounterPartiesRelatedAccount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesAddRelatedAccount", ctx, cpID, relatedAccount)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CounterPartiesAddRelatedAccount indicates an expected call of CounterPartiesAddRelatedAccount.
+func (mr *MockStorageMockRecorder) CounterPartiesAddRelatedAccount(ctx, cpID, relatedAccount any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesAddRelatedAccount", reflect.TypeOf((*MockStorage)(nil).CounterPartiesAddRelatedAccount), ctx, cpID, relatedAccount)
+}
+
+// CounterPartiesDeleteRelatedAccountFromConnectorID mocks base method.
+func (m *MockStorage) CounterPartiesDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesDeleteRelatedAccountFromConnectorID", ctx, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CounterPartiesDeleteRelatedAccountFromConnectorID indicates an expected call of CounterPartiesDeleteRelatedAccountFromConnectorID.
+func (mr *MockStorageMockRecorder) CounterPartiesDeleteRelatedAccountFromConnectorID(ctx, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesDeleteRelatedAccountFromConnectorID", reflect.TypeOf((*MockStorage)(nil).CounterPartiesDeleteRelatedAccountFromConnectorID), ctx, connectorID)
+}
+
+// CounterPartiesGet mocks base method.
+func (m *MockStorage) CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.CounterParty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesGet", ctx, id)
+	ret0, _ := ret[0].(*models.CounterParty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CounterPartiesGet indicates an expected call of CounterPartiesGet.
+func (mr *MockStorageMockRecorder) CounterPartiesGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesGet", reflect.TypeOf((*MockStorage)(nil).CounterPartiesGet), ctx, id)
+}
+
+// CounterPartiesList mocks base method.
+func (m *MockStorage) CounterPartiesList(ctx context.Context, q ListCounterPartiesQuery) (*bunpaginate.Cursor[models.CounterParty], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesList", ctx, q)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.CounterParty])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CounterPartiesList indicates an expected call of CounterPartiesList.
+func (mr *MockStorageMockRecorder) CounterPartiesList(ctx, q any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesList", reflect.TypeOf((*MockStorage)(nil).CounterPartiesList), ctx, q)
+}
+
+// CounterPartyUpsert mocks base method.
+func (m *MockStorage) CounterPartyUpsert(ctx context.Context, cp models.CounterParty, ba *models.BankAccount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartyUpsert", ctx, cp, ba)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CounterPartyUpsert indicates an expected call of CounterPartyUpsert.
+func (mr *MockStorageMockRecorder) CounterPartyUpsert(ctx, cp, ba any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartyUpsert", reflect.TypeOf((*MockStorage)(nil).CounterPartyUpsert), ctx, cp, ba)
 }
 
 // EventsSentDeleteFromConnectorID mocks base method.

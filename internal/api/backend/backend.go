@@ -39,6 +39,12 @@ type Backend interface {
 	ConnectorsUninstall(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 	ConnectorsReset(ctx context.Context, connectorID models.ConnectorID) (models.Task, error)
 
+	// Counter Parties
+	CounterPartiesCreate(ctx context.Context, counterParty models.CounterParty, ba *models.BankAccount) error
+	CounterPartiesList(ctx context.Context, query storage.ListCounterPartiesQuery) (*bunpaginate.Cursor[models.CounterParty], error)
+	CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.CounterParty, error)
+	CounterPartiesForwardToConnector(ctx context.Context, counterPartyID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+
 	// Payments
 	PaymentsCreate(ctx context.Context, payment models.Payment) error
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error

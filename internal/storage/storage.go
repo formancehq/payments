@@ -51,6 +51,13 @@ type Storage interface {
 	ConnectorTasksTreeGet(ctx context.Context, connectorID models.ConnectorID) (*models.ConnectorTasksTree, error)
 	ConnectorTasksTreeDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
+	// Counter Parties
+	CounterPartyUpsert(ctx context.Context, cp models.CounterParty, ba *models.BankAccount) error
+	CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.CounterParty, error)
+	CounterPartiesList(ctx context.Context, q ListCounterPartiesQuery) (*bunpaginate.Cursor[models.CounterParty], error)
+	CounterPartiesAddRelatedAccount(ctx context.Context, cpID uuid.UUID, relatedAccount models.CounterPartiesRelatedAccount) error
+	CounterPartiesDeleteRelatedAccountFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
 	// Events Sent
 	EventsSentUpsert(ctx context.Context, event models.EventSent) error
 	EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error)

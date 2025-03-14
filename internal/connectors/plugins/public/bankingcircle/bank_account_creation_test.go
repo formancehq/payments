@@ -49,7 +49,7 @@ var _ = Describe("BankingCircle Plugin Bank Account Creation", func() {
 
 		It("should create bank account", func(ctx SpecContext) {
 			resp, err := plg.CreateBankAccount(ctx, models.CreateBankAccountRequest{
-				BankAccount: sampleBankAccount,
+				BankAccount: &sampleBankAccount,
 			})
 
 			raw, _ := json.Marshal(sampleBankAccount)

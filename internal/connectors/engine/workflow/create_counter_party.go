@@ -1,29 +1,32 @@
 package workflow
 
 import (
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
-type CreateBankAccount struct {
-	TaskID        models.TaskID
-	ConnectorID   models.ConnectorID
-	BankAccountID uuid.UUID
+type CreateCounterParty struct {
+	TaskID         models.TaskID
+	ConnectorID    models.ConnectorID
+	CounterPartyID uuid.UUID
 }
 
-func (w Workflow) runCreateBankAccount(
+func (w Workflow) runCreateCounterParty(
 	ctx workflow.Context,
-	createBankAccount CreateBankAccount,
+	createCounterParty CreateCounterParty,
 ) error {
-	accountID, err := w.createBankAccount(ctx, createBankAccount)
+	accountID, err := w.createCounterParty(ctx, createCounterParty)
 	if err != nil {
 		if errUpdateTask := w.updateTasksError(
 			ctx,
-			createBankAccount.TaskID,
-			&createBankAccount.ConnectorID,
+			createCounterParty.TaskID,
+			&createCounterParty.ConnectorID,
 			err,
 		); errUpdateTask != nil {
 			return errUpdateTask
@@ -34,19 +37,31 @@ func (w Workflow) runCreateBankAccount(
 
 	return w.updateTaskSuccess(
 		ctx,
-		createBankAccount.TaskID,
-		&createBankAccount.ConnectorID,
+		createCounterParty.TaskID,
+		&createCounterParty.ConnectorID,
 		accountID,
 	)
 }
 
-func (w Workflow) createBankAccount(
+func (w Workflow) createCounterParty(
 	ctx workflow.Context,
-	createBankAccount CreateBankAccount,
+	createCounterParty CreateCounterParty,
 ) (string, error) {
-	bankAccount, err := activities.StorageBankAccountsGet(
+	counterParty, err := activities.StorageCounterPartiesGet(
 		infiniteRetryContext(ctx),
-		createBankAccount.BankAccountID,
+		createCounterParty.CounterPartyID,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	if counterParty.BankAccountID == nil {
+		return "", temporal.NewNonRetryableApplicationError("bank account not found", "", errors.New("bank account not found"))
+	}
+
+	ba, err := activities.StorageBankAccountsGet(
+		infiniteRetryContext(ctx),
+		*counterParty.BankAccountID,
 		true,
 	)
 	if err != nil {
@@ -55,9 +70,9 @@ func (w Workflow) createBankAccount(
 
 	createBAResponse, err := activities.PluginCreateBankAccount(
 		infiniteRetryContext(ctx),
-		createBankAccount.ConnectorID,
+		createCounterParty.ConnectorID,
 		models.CreateBankAccountRequest{
-			BankAccount: bankAccount,
+			CounterParty: pointer.For(models.ToPSPCounterParty(counterParty, ba)),
 		},
 	)
 	if err != nil {
@@ -67,7 +82,7 @@ func (w Workflow) createBankAccount(
 	account := models.FromPSPAccount(
 		createBAResponse.RelatedAccount,
 		models.ACCOUNT_TYPE_EXTERNAL,
-		createBankAccount.ConnectorID,
+		createCounterParty.ConnectorID,
 	)
 
 	err = activities.StorageAccountsStore(
@@ -78,21 +93,21 @@ func (w Workflow) createBankAccount(
 		return "", err
 	}
 
-	relatedAccount := models.BankAccountRelatedAccount{
+	relatedAccount := models.CounterPartiesRelatedAccount{
 		AccountID: account.ID,
 		CreatedAt: createBAResponse.RelatedAccount.CreatedAt,
 	}
 
-	err = activities.StorageBankAccountsAddRelatedAccount(
+	err = activities.StorageCounterPartiesAddRelatedAccount(
 		infiniteRetryContext(ctx),
-		createBankAccount.BankAccountID,
+		createCounterParty.CounterPartyID,
 		relatedAccount,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
+	counterParty.RelatedAccounts = append(counterParty.RelatedAccounts, relatedAccount)
 
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
@@ -107,7 +122,7 @@ func (w Workflow) createBankAccount(
 		),
 		RunSendEvents,
 		SendEvents{
-			BankAccount: bankAccount,
+			CounterParty: counterParty,
 		},
 	).Get(ctx, nil); err != nil {
 		return "", err
@@ -116,4 +131,4 @@ func (w Workflow) createBankAccount(
 	return account.ID.String(), nil
 }
 
-const RunCreateBankAccount = "CreateBankAccount"
+const RunCreateCounterParty = "CreateCounterParty"

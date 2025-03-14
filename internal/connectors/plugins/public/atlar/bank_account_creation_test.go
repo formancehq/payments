@@ -56,7 +56,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			delete(ba.Metadata, "com.atlar.spec/owner/name")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -69,7 +69,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			delete(ba.Metadata, "com.atlar.spec/owner/type")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -82,7 +82,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.Metadata["com.atlar.spec/owner/type"] = "WRONG"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -94,10 +94,10 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 		It("should return an error - create account error", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
-			m.EXPECT().PostV1CounterParties(ctx, ba).Return(nil, errors.New("test-error"))
+			m.EXPECT().PostV1CounterParties(ctx, &ba).Return(nil, errors.New("test-error"))
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
@@ -108,10 +108,10 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 		It("should work", func(ctx SpecContext) {
 			ba := sampleBankAccount
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
-			m.EXPECT().PostV1CounterParties(ctx, ba).Return(
+			m.EXPECT().PostV1CounterParties(ctx, &ba).Return(
 				&counterparties.PostV1CounterpartiesCreated{
 					Payload: &atlar_models.Counterparty{
 						ContactDetails: &atlar_models.ContactDetails{
