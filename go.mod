@@ -10,6 +10,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.4.5
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
+	github.com/formancehq/go-libs v1.7.2
 	github.com/formancehq/go-libs/v2 v2.2.2
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
@@ -100,7 +101,6 @@ require (
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/formancehq/go-libs v1.7.2 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-chi/render v1.0.3 // indirect
