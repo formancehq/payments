@@ -37,6 +37,17 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 				})
 			})
 
+			// Counter Parties
+			r.Route("/counter-parties", func(r chi.Router) {
+				r.Post("/", counterPartiesCreate(backend, validator))
+				r.Get("/", counterPartiesList(backend))
+
+				r.Route("/{counterPartyID}", func(r chi.Router) {
+					r.Get("/", counterPartiesGet(backend))
+					r.Post("/forward", counterPartiesForwardToConnector(backend, validator))
+				})
+			})
+
 			// Bank Accounts
 			r.Route("/bank-accounts", func(r chi.Router) {
 				r.Post("/", bankAccountsCreate(backend, validator))
@@ -151,6 +162,10 @@ func poolID(r *http.Request) string {
 
 func bankAccountID(r *http.Request) string {
 	return chi.URLParam(r, "bankAccountID")
+}
+
+func counterPartyID(r *http.Request) string {
+	return chi.URLParam(r, "counterPartyID")
 }
 
 func scheduleID(r *http.Request) string {

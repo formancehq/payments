@@ -27,7 +27,6 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
-	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -294,6 +293,65 @@ func (m *MockBackend) ConnectorsUninstall(ctx context.Context, connectorID model
 func (mr *MockBackendMockRecorder) ConnectorsUninstall(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsUninstall", reflect.TypeOf((*MockBackend)(nil).ConnectorsUninstall), ctx, connectorID)
+}
+
+// CounterPartiesCreate mocks base method.
+func (m *MockBackend) CounterPartiesCreate(ctx context.Context, counterParty models.CounterParty, ba *models.BankAccount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesCreate", ctx, counterParty, ba)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CounterPartiesCreate indicates an expected call of CounterPartiesCreate.
+func (mr *MockBackendMockRecorder) CounterPartiesCreate(ctx, counterParty, ba any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesCreate", reflect.TypeOf((*MockBackend)(nil).CounterPartiesCreate), ctx, counterParty, ba)
+}
+
+// CounterPartiesForwardToConnector mocks base method.
+func (m *MockBackend) CounterPartiesForwardToConnector(ctx context.Context, counterPartyID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesForwardToConnector", ctx, counterPartyID, connectorID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CounterPartiesForwardToConnector indicates an expected call of CounterPartiesForwardToConnector.
+func (mr *MockBackendMockRecorder) CounterPartiesForwardToConnector(ctx, counterPartyID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesForwardToConnector", reflect.TypeOf((*MockBackend)(nil).CounterPartiesForwardToConnector), ctx, counterPartyID, connectorID)
+}
+
+// CounterPartiesGet mocks base method.
+func (m *MockBackend) CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.CounterParty, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesGet", ctx, id)
+	ret0, _ := ret[0].(*models.CounterParty)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CounterPartiesGet indicates an expected call of CounterPartiesGet.
+func (mr *MockBackendMockRecorder) CounterPartiesGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesGet", reflect.TypeOf((*MockBackend)(nil).CounterPartiesGet), ctx, id)
+}
+
+// CounterPartiesList mocks base method.
+func (m *MockBackend) CounterPartiesList(ctx context.Context, query storage.ListCounterPartiesQuery) (*bunpaginate.Cursor[models.CounterParty], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CounterPartiesList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.CounterParty])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CounterPartiesList indicates an expected call of CounterPartiesList.
+func (mr *MockBackendMockRecorder) CounterPartiesList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CounterPartiesList", reflect.TypeOf((*MockBackend)(nil).CounterPartiesList), ctx, query)
 }
 
 // PaymentInitiationAdjustmentsGetLast mocks base method.
