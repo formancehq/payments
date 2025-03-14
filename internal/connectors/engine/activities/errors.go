@@ -41,7 +41,8 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 	case errors.Is(err, models.ErrMissingConnectorMetadata):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
-
+	case errors.As(err, &models.NonRetryableError):
+		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 	// Potentially retry
 	case errors.Is(err, plugins.ErrUpstreamRatelimit):
 		// periodic tasks will be repeated in the future anyway so we can skip retry in case of rate-limiting
