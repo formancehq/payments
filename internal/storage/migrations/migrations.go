@@ -22,6 +22,9 @@ var migrateTransferInitiationsFromV2 string
 //go:embed 9-migrate-pools-from-v2.sql
 var migratePoolsFromV2 string
 
+//go:embed 12-create-counter-parties-table.sql
+var createCounterParties string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -163,6 +166,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running add connector reference migration...")
 					err := AddReferenceForConnector(ctx, db)
 					logger.WithField("error", err).Info("finished add connector reference migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "create counter parties table",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running create counter parties table migration...")
+					_, err := tx.ExecContext(ctx, createCounterParties)
+					logger.WithField("error", err).Info("finished create counter parties table migration")
 					return err
 				})
 			},

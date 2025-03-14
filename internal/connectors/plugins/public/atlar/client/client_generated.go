@@ -28,7 +28,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -184,7 +183,7 @@ func (mr *MockClientMockRecorder) GetV1TransactionsID(ctx, id any) *gomock.Call 
 }
 
 // PostV1CounterParties mocks base method.
-func (m *MockClient) PostV1CounterParties(ctx context.Context, newExternalBankAccount models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
+func (m *MockClient) PostV1CounterParties(ctx context.Context, newExternalBankAccount *models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostV1CounterParties", ctx, newExternalBankAccount)
 	ret0, _ := ret[0].(*counterparties.PostV1CounterpartiesCreated)
@@ -211,4 +210,41 @@ func (m *MockClient) PostV1CreditTransfers(ctx context.Context, req *models0.Cre
 func (mr *MockClientMockRecorder) PostV1CreditTransfers(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostV1CreditTransfers", reflect.TypeOf((*MockClient)(nil).PostV1CreditTransfers), ctx, req)
+}
+
+// MockErrorCodeReader is a mock of ErrorCodeReader interface.
+type MockErrorCodeReader struct {
+	ctrl     *gomock.Controller
+	recorder *MockErrorCodeReaderMockRecorder
+}
+
+// MockErrorCodeReaderMockRecorder is the mock recorder for MockErrorCodeReader.
+type MockErrorCodeReaderMockRecorder struct {
+	mock *MockErrorCodeReader
+}
+
+// NewMockErrorCodeReader creates a new mock instance.
+func NewMockErrorCodeReader(ctrl *gomock.Controller) *MockErrorCodeReader {
+	mock := &MockErrorCodeReader{ctrl: ctrl}
+	mock.recorder = &MockErrorCodeReaderMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockErrorCodeReader) EXPECT() *MockErrorCodeReaderMockRecorder {
+	return m.recorder
+}
+
+// Code mocks base method.
+func (m *MockErrorCodeReader) Code() int {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Code")
+	ret0, _ := ret[0].(int)
+	return ret0
+}
+
+// Code indicates an expected call of Code.
+func (mr *MockErrorCodeReaderMockRecorder) Code() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Code", reflect.TypeOf((*MockErrorCodeReader)(nil).Code))
 }

@@ -76,7 +76,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.Metadata = map[string]string{}
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -89,7 +89,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.AccountNumber = nil
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			m.EXPECT().CreateIBANBankAccount(gomock.Any(), "u1", &client.CreateIBANBankAccountRequest{
@@ -110,7 +110,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba := sampleBankAccount
 			ba.AccountNumber = nil
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			expectedBA := &client.BankAccount{
@@ -149,7 +149,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba.AccountNumber = nil
 			ba.Country = pointer.For("US")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -165,7 +165,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "US"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			m.EXPECT().CreateUSBankAccount(gomock.Any(), "u1", &client.CreateUSBankAccountRequest{
@@ -190,7 +190,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "US"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			expectedBA := &client.BankAccount{
@@ -230,7 +230,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba.AccountNumber = nil
 			ba.Country = pointer.For("CA")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -246,7 +246,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "CA"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			m.EXPECT().CreateCABankAccount(gomock.Any(), "u1", &client.CreateCABankAccountRequest{
@@ -272,7 +272,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "CA"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			expectedBA := &client.BankAccount{
@@ -313,7 +313,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba.AccountNumber = nil
 			ba.Country = pointer.For("GB")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -329,7 +329,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "GB"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			m.EXPECT().CreateGBBankAccount(gomock.Any(), "u1", &client.CreateGBBankAccountRequest{
@@ -353,7 +353,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "GB"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			expectedBA := &client.BankAccount{
@@ -392,7 +392,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			ba.AccountNumber = nil
 			ba.Country = pointer.For("TEST_COUNTRY")
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			res, err := plg.CreateBankAccount(ctx, req)
@@ -408,7 +408,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "TEST_COUNTRY"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			m.EXPECT().CreateOtherBankAccount(gomock.Any(), "u1", &client.CreateOtherBankAccountRequest{
@@ -433,7 +433,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 			sca := sampleClientAddress
 			sca.Country = "TEST_COUNTRY"
 			req := models.CreateBankAccountRequest{
-				BankAccount: ba,
+				BankAccount: &ba,
 			}
 
 			expectedBA := &client.BankAccount{

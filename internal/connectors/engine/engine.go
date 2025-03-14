@@ -40,6 +40,12 @@ type Engine interface {
 	// of a payment in the database related to the provided connector id.
 	CreateFormancePayment(ctx context.Context, payment models.Payment) error
 
+	// Create a counter party (and if provided, the related bank account) in the
+	// database and send events.
+	CreateCounterParty(ctx context.Context, counterParty models.CounterParty, ba *models.BankAccount) error
+	// Forward a counter party to the given connector, which will create it
+	// in the external system (PSP).
+	ForwardCounterParty(ctx context.Context, counterPartyID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
 	// Forward a bank account to the given connector, which will create it
 	// in the external system (PSP).
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
@@ -439,6 +445,105 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	}
 
 	return nil
+}
+
+func (e *engine) CreateCounterParty(ctx context.Context, counterParty models.CounterParty, ba *models.BankAccount) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateCounterParty")
+	defer span.End()
+
+	if err := e.storage.CounterPartyUpsert(ctx, counterParty, ba); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s", e.stack, counterParty.ID),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunSendEvents,
+		workflow.SendEvents{
+			CounterParty: &counterParty,
+			BankAccount:  ba,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) ForwardCounterParty(ctx context.Context, counterPartyID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardCounterParty")
+	defer span.End()
+
+	if _, err := e.storage.ConnectorsGet(ctx, connectorID); err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("connector %w", ErrNotFound)
+		}
+		return models.Task{}, err
+	}
+
+	if _, err := e.storage.CounterPartiesGet(ctx, counterPartyID); err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return models.Task{}, fmt.Errorf("counter party %w", ErrNotFound)
+		}
+		return models.Task{}, err
+	}
+
+	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, counterPartyID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateCounterParty,
+		workflow.CreateCounterParty{
+			TaskID:         task.ID,
+			ConnectorID:    connectorID,
+			CounterPartyID: counterPartyID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
 }
 
 func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {

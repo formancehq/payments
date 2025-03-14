@@ -16,6 +16,7 @@ type SendEvents struct {
 	Account        *models.Account
 	Balance        *models.Balance
 	BankAccount    *models.BankAccount
+	CounterParty   *models.CounterParty
 	Payment        *models.Payment
 	ConnectorReset *models.ConnectorID
 	PoolsCreation  *models.Pool
@@ -69,6 +70,23 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendBankAccount(
 					infiniteRetryContext(ctx),
 					*sendEvents.BankAccount,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.CounterParty != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.CounterParty.IdempotencyKey(),
+			nil,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendCounterParty(
+					infiniteRetryContext(ctx),
+					*sendEvents.CounterParty,
 				)
 			},
 		)
