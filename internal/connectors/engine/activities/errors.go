@@ -6,7 +6,7 @@ import (
 
 	enginePlugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/temporal"
@@ -39,7 +39,7 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 	case errors.Is(err, enginePlugins.ErrNotFound):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
-	case errors.Is(err, mangopay.ErrMissingMetadataUserID):
+	case errors.Is(err, models.ErrMissingConnectorMetadata):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, err)
 
 	// Potentially retry
