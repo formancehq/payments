@@ -10,6 +10,8 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -290,6 +292,8 @@ func TestPoolsList(t *testing.T) {
 		cursor, err := store.PoolsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "name", err.Error())
 	})
 
 	t.Run("list pools by name", func(t *testing.T) {
