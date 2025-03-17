@@ -2634,6 +2634,7 @@ components:
         - sourceAccountID
         - destinationAccountID
         - connectorID
+        - provider
         - type
         - amount
         - initialAmount
@@ -2660,6 +2661,9 @@ components:
           type: string
         connectorID:
           type: string
+        provider:
+          type: string
+          nullable: true
         type:
           type: string
           enum:
