@@ -42,10 +42,12 @@ func ConnectorUninstall(ctx context.Context, srv *Server, ver int, id string, re
 
 func ConnectorConfigUpdate(ctx context.Context, srv *Server, ver int, id string, reqBody any) error {
 	path := "connectors/" + id + "/config"
+	method := http.MethodPatch
 	if ver == 2 {
-		return fmt.Errorf("connector update not supported by version %d", ver)
+		path = "connectors/dummypay/" + id + "/config"
+		method = http.MethodPost
 	}
-	return srv.Client().Do(ctx, http.MethodPatch, pathPrefix(ver, path), reqBody, nil)
+	return srv.Client().Do(ctx, method, pathPrefix(ver, path), reqBody, nil)
 }
 
 func ConnectorConfigs(ctx context.Context, srv *Server, ver int, res any) error {
