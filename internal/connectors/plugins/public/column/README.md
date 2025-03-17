@@ -226,8 +226,8 @@ The Column connector supports webhook integration to receive real-time updates a
    | 0   | book.transfer.updated                    | <connectorID> | /book/transfer/updated                    |
    | 1   | wire.outgoing_transfer.completed         | <connectorID> | /wire/outgoing_transfer/completed         |
    | 2   | ach.outgoing_transfer.settled            | <connectorID> | /ach/outgoing_transfer/settled            |
-   | 3   | swift.outgoing_transfer.tracking_updated | <connectorID> | /swift/outgoing_transfer/tracking_updated |
-   | 4   | realtime.outgoing_transfer.completed     | <connectorID> | /realtime/outgoing_transfer/completed |
+   | 3   | swift.outgoing_transfer.completed        | <connectorID> | /swift/outgoing_transfer/completed        |
+   | 4   | realtime.outgoing_transfer.completed     | <connectorID> | /realtime/outgoing_transfer/completed     |
 
 ### Testing Webhooks
 
