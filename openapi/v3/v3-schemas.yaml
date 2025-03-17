@@ -1047,6 +1047,7 @@ components:
       required:
         - id
         - connectorID
+        - provider
         - reference
         - createdAt
         - scheduledAt
@@ -1061,6 +1062,8 @@ components:
         connectorID:
           type: string
           format: byte
+        provider:
+          type: string
         reference:
           type: string
         createdAt:
