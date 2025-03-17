@@ -14,11 +14,11 @@ import (
 type EventCategory string
 
 const (
-	EventCategoryBookTransferUpdated       EventCategory = "book.transfer.updated"
-	EventCategoryWireTransferCompleted     EventCategory = "wire.outgoing_transfer.completed"
-	EventCategoryACHTransferSettled        EventCategory = "ach.outgoing_transfer.settled"
-	EventCategoryInternationalWireUpdated  EventCategory = "swift.outgoing_transfer.tracking_updated"
-	EventCategoryRealtimeTransferCompleted EventCategory = "realtime.outgoing_transfer.completed"
+	EventCategoryBookTransferUpdated        EventCategory = "book.transfer.updated"
+	EventCategoryWireTransferCompleted      EventCategory = "wire.outgoing_transfer.completed"
+	EventCategoryACHTransferSettled         EventCategory = "ach.outgoing_transfer.settled"
+	EventCategoryInternationalWireCompleted EventCategory = "swift.outgoing_transfer.completed"
+	EventCategoryRealtimeTransferCompleted  EventCategory = "realtime.outgoing_transfer.completed"
 )
 
 type WebhookEvent[t any] struct {

@@ -274,20 +274,20 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
-		It("should return an error - swift.outgoing_transfer.tracking_updated error", func(ctx SpecContext) {
+		It("should return an error - swift.outgoing_transfer.completed error", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
-				Name: "swift.outgoing_transfer.tracking_updated",
+				Name: "swift.outgoing_transfer.completed",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type":"swift.outgoing_transfer.tracking_updated"}}`, expectedObjectedID)),
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type":"swift.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
 			}
 
 			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryInternationalWireUpdated: {
-					urlPath: "swift.outgoing_transfer.tracking_updated",
+				client.EventCategoryInternationalWireCompleted: {
+					urlPath: "/swift/outgoing_transfer/completed",
 					fn:      plg.translateInternationalWireTransfer,
 					secret:  secret,
 				},
@@ -469,9 +469,9 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			Expect(res.Responses[0].Payment.Reference).To(Equal("rule456"))
 		})
 
-		It("translate webhooks - swift.outgoing_transfer.tracking_updated", func(ctx SpecContext) {
+		It("translate webhooks - swift.outgoing_transfer.completed", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
-				Name: "swift.outgoing_transfer.tracking_updated",
+				Name: "swift.outgoing_transfer.completed",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
@@ -480,7 +480,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"id":"1", 
 						"data": {
 							"id": "eodl",
-							"type": "swift.outgoing_transfer.tracking_updated",
+							"type": "swift.outgoing_transfer.completed",
 							"created_at": "2023-01-01T00:00:00Z",
 							"updated_at": "2023-01-01T00:00:00Z",
 							"initiated_at": "2023-01-01T00:00:00Z",
@@ -501,8 +501,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 
 			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryInternationalWireUpdated: {
-					urlPath: "/swift/outgoing_transfer/tracking_updated",
+				client.EventCategoryInternationalWireCompleted: {
+					urlPath: "/swift/outgoing_transfer/completed",
 					fn:      plg.translateInternationalWireTransfer,
 					secret:  secret,
 				},

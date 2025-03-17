@@ -45,8 +45,8 @@ func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
 			urlPath: "/ach/outgoing_transfer/settled",
 			fn:      p.translateAchTransfer,
 		},
-		client.EventCategoryInternationalWireUpdated: {
-			urlPath: "/swift/outgoing_transfer/tracking_updated",
+		client.EventCategoryInternationalWireCompleted: {
+			urlPath: "/swift/outgoing_transfer/completed",
 			fn:      p.translateInternationalWireTransfer,
 		},
 		client.EventCategoryWireTransferCompleted: {
