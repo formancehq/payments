@@ -11,6 +11,8 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -381,6 +383,33 @@ func TestAccountsList(t *testing.T) {
 		require.False(t, cursor.HasMore)
 	})
 
+	t.Run("list accounts by id", func(t *testing.T) {
+		q := NewListAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", defaultAccounts2()[0].ID.String())),
+		)
+
+		cursor, err := store.AccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		require.Equal(t, defaultAccounts2()[0], cursor.Data[0])
+	})
+
+	t.Run("list accounts by unknown id", func(t *testing.T) {
+		q := NewListAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", "unknown")),
+		)
+
+		cursor, err := store.AccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+	})
+
 	t.Run("list accounts by type", func(t *testing.T) {
 		q := NewListAccountsQuery(
 			bunpaginate.NewPaginatedQueryOptions(AccountQuery{}).
@@ -526,6 +555,8 @@ func TestAccountsList(t *testing.T) {
 		cursor, err := store.AccountsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "metadata\\[foo\\]", err.Error())
 	})
 
 	t.Run("query builder unknown key", func(t *testing.T) {
