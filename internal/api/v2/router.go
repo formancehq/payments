@@ -112,10 +112,10 @@ func connectorsRouter(backend backend.Backend, r chi.Router) {
 	r.Route("/{connectorID}", func(r chi.Router) {
 		r.Delete("/", connectorsUninstall(backend))
 		r.Get("/config", connectorsConfig(backend))
+		r.Post("/config", connectorsConfigUpdate(backend))
 		r.Post("/reset", connectorsReset(backend))
 		r.Get("/tasks", tasksList(backend))
 		r.Get("/tasks/{taskID}", tasksGet(backend))
-		// TODO(polo): add update config handler
 	})
 }
 

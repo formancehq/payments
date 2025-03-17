@@ -11,6 +11,8 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -343,6 +345,8 @@ func TestBankAccountsList(t *testing.T) {
 		cursor, err := store.BankAccountsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "name", err.Error())
 	})
 
 	t.Run("list bank accounts by name", func(t *testing.T) {
@@ -383,6 +387,37 @@ func TestBankAccountsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("name", "unknown")),
+		)
+
+		cursor, err := store.BankAccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("list bank accounts by id", func(t *testing.T) {
+		q := NewListBankAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", d3.ID.String())),
+		)
+
+		cursor, err := store.BankAccountsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+		compareBankAccounts(t, d3, cursor.Data[0])
+	})
+
+	t.Run("list bank accounts by unknown id", func(t *testing.T) {
+		q := NewListBankAccountsQuery(
+			bunpaginate.NewPaginatedQueryOptions(BankAccountQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", uuid.New().String())),
 		)
 
 		cursor, err := store.BankAccountsList(ctx, q)

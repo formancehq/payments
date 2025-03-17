@@ -80,9 +80,9 @@ func NewListSchedulesQuery(opts bunpaginate.PaginatedQueryOptions[ScheduleQuery]
 func (s *store) schedulesQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "connector_id":
+		case key == "id", key == "connector_id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'connector_id' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		default:

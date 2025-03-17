@@ -183,13 +183,14 @@ func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, []any,
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
 		case key == "reference",
+			key == "id",
 			key == "connector_id",
 			key == "type",
 			key == "asset",
 			key == "source_account_id",
 			key == "destination_account_id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'type' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 

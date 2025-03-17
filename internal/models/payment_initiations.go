@@ -69,6 +69,7 @@ func (pi PaymentInitiation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                   string                `json:"id"`
 		ConnectorID          string                `json:"connectorID"`
+		Provider             string                `json:"provider"`
 		Reference            string                `json:"reference"`
 		CreatedAt            time.Time             `json:"createdAt"`
 		ScheduledAt          time.Time             `json:"scheduledAt"`
@@ -82,6 +83,7 @@ func (pi PaymentInitiation) MarshalJSON() ([]byte, error) {
 	}{
 		ID:          pi.ID.String(),
 		ConnectorID: pi.ConnectorID.String(),
+		Provider:    pi.ConnectorID.Provider,
 		Reference:   pi.Reference,
 		CreatedAt:   pi.CreatedAt,
 		ScheduledAt: pi.ScheduledAt,
@@ -196,6 +198,7 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                   string                `json:"id"`
 		ConnectorID          string                `json:"connectorID"`
+		Provider             string                `json:"provider"`
 		Reference            string                `json:"reference"`
 		CreatedAt            time.Time             `json:"createdAt"`
 		ScheduledAt          time.Time             `json:"scheduledAt"`
@@ -211,6 +214,7 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 	}{
 		ID:          pi.PaymentInitiation.ID.String(),
 		ConnectorID: pi.PaymentInitiation.ConnectorID.String(),
+		Provider:    pi.PaymentInitiation.ConnectorID.Provider,
 		Reference:   pi.PaymentInitiation.Reference,
 		CreatedAt:   pi.PaymentInitiation.CreatedAt,
 		ScheduledAt: pi.PaymentInitiation.ScheduledAt,

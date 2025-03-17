@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -207,6 +208,35 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "reference", err.Error())
+	})
+
+	t.Run("list payment intitiations reversals by id", func(t *testing.T) {
+		q := NewListPaymentInitiationReversalsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", defaultPaymentInitiationReversals()[0].ID.String())),
+		)
+
+		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiationReversals(t, defaultPaymentInitiationReversals()[0], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations reversals by unknown id", func(t *testing.T) {
+		q := NewListPaymentInitiationReversalsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationReversalQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", "unknown")),
+		)
+
+		cursor, err := store.PaymentInitiationReversalsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
 	})
 
 	t.Run("list payment intitiations reversals by reference", func(t *testing.T) {
