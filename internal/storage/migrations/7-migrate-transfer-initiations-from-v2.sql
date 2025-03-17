@@ -3,7 +3,7 @@ DO $$
         IF (SELECT count(*) FROM information_schema.tables WHERE table_schema ='transfers' AND table_name ='transfer_initiation') > 0
         THEN
             INSERT INTO payment_initiations (id, connector_id, reference, created_at, scheduled_at, description, amount, asset, source_account_id, destination_account_id, metadata, type)
-            SELECT id, connector_id, reference, created_at, COALESCE(scheduled_at, '0001-01-01 00:00:00+00'::timestamp without time zone) as scheduled_at, description, amount, asset, source_account_id, destination_account_id, metadata, 
+            SELECT id, connector_id, reference, created_at, COALESCE(scheduled_at, '0001-01-01 00:00:00+00'::timestamp without time zone) as scheduled_at, description, amount, asset, source_account_id, destination_account_id, COALESCE(metadata, '{}'), 
             CASE type+1 
                 WHEN 1 THEN 'TRANSFER'
                 WHEN 2 THEN 'PAYOUT'
