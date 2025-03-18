@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	thirdPartyFufillmentMethod    = "third_party"
-	physicalCheckFufillmentMethod = "physical_check"
-	increaseACHPayoutMethod       = "ach"
-	increaseWirePaymentMethod     = "wire"
-	increaseCheckPaymentMethod    = "check"
-	increaseRTPPaymentMethod      = "rtp"
+	thirdPartyFulfillmentMethod    = "third_party"
+	physicalCheckFulfillmentMethod = "physical_check"
+	increaseACHPayoutMethod        = "ach"
+	increaseWirePaymentMethod      = "wire"
+	increaseCheckPaymentMethod     = "check"
+	increaseRTPPaymentMethod       = "rtp"
 )
 
 func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiation) (*models.PSPPayment, error) {
@@ -59,11 +59,11 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			SourceAccountNumberID: sourceAccountNumberID,
 			FulfillmentMethod:     fulfillmentMethod,
 		}
-		if fulfillmentMethod == thirdPartyFufillmentMethod {
+		if fulfillmentMethod == thirdPartyFulfillmentMethod {
 			check.ThirdParty = &client.ThirdParty{
 				CheckNumber: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCheckNumberMetadataKey),
 			}
-		} else if fulfillmentMethod == physicalCheckFufillmentMethod {
+		} else if fulfillmentMethod == physicalCheckFulfillmentMethod {
 			check.PhysicalCheck = &client.PhysicalCheck{
 				MailingAddress: client.MailingAddress{
 					City:       models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCityMetadataKey),

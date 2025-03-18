@@ -393,8 +393,8 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				Currency:          "USD",
 				Amount:            100,
-				RecipientName:     " ",
-				ExternalAccountId: " ",
+				RecipientName:     "Unknown",
+				ExternalAccountId: "Unknown",
 			}
 
 			mockHTTPClient.EXPECT().Do(
@@ -429,12 +429,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					Scheme:                      models.PAYMENT_SCHEME_OTHER,
 					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 					SourceAccountReference:      pointer.For("234R5432"),
-					DestinationAccountReference: pointer.For(" "),
+					DestinationAccountReference: pointer.For("Unknown"),
 					Raw:                         raw,
 					Metadata: map[string]string{
 						client.IncreaseRoutingNumberMetadataKey: "",
 						client.IncreaseAccountNumberMetadataKey: "",
-						client.IncreaseRecipientNameMetadataKey: " ",
+						client.IncreaseRecipientNameMetadataKey: "Unknown",
 						client.IncreaseCheckNumberMetadataKey:   "",
 					},
 				},
@@ -446,7 +446,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				PaymentInitiation: samplePSPPaymentInitiation,
 			}
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = increaseCheckPaymentMethod
-			req.PaymentInitiation.Metadata[client.IncreaseFulfillmentMethodMetadataKey] = physicalCheckFufillmentMethod
+			req.PaymentInitiation.Metadata[client.IncreaseFulfillmentMethodMetadataKey] = physicalCheckFulfillmentMethod
 
 			trResponse := client.PayoutResponse{
 				ID:                "1",
@@ -455,8 +455,8 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				Currency:          "USD",
 				Amount:            100,
-				RecipientName:     " ",
-				ExternalAccountId: " ",
+				RecipientName:     "Unknown",
+				ExternalAccountId: "Unknown",
 			}
 
 			mockHTTPClient.EXPECT().Do(
@@ -491,12 +491,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					Scheme:                      models.PAYMENT_SCHEME_OTHER,
 					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 					SourceAccountReference:      pointer.For("234R5432"),
-					DestinationAccountReference: pointer.For(" "),
+					DestinationAccountReference: pointer.For("Unknown"),
 					Raw:                         raw,
 					Metadata: map[string]string{
 						client.IncreaseRoutingNumberMetadataKey: "",
 						client.IncreaseAccountNumberMetadataKey: "",
-						client.IncreaseRecipientNameMetadataKey: " ",
+						client.IncreaseRecipientNameMetadataKey: "Unknown",
 						client.IncreaseCheckNumberMetadataKey:   "",
 					},
 				},

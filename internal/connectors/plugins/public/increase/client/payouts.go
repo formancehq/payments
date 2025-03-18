@@ -278,17 +278,19 @@ func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayou
 	}
 
 	payoutResponse := &PayoutResponse{
-		ID:                res.ID,
-		AccountID:         res.AccountID,
-		Amount:            res.Amount,
-		Currency:          res.Currency,
-		CreatedAt:         res.CreatedAt,
-		Status:            res.Status,
-		AccountNumber:     res.AccountNumber,
-		RoutingNumber:     res.RoutingNumber,
-		CheckNumber:       res.CheckNumber,
-		RecipientName:     " ", // check transfer third party has no external account id
-		ExternalAccountId: " ", // check transfer has no external account id
+		ID:            res.ID,
+		AccountID:     res.AccountID,
+		Amount:        res.Amount,
+		Currency:      res.Currency,
+		CreatedAt:     res.CreatedAt,
+		Status:        res.Status,
+		AccountNumber: res.AccountNumber,
+		RoutingNumber: res.RoutingNumber,
+		CheckNumber:   res.CheckNumber,
+		// check transfer third party has no external account id and recipient name.
+		// setting it to empty throws an unmarshal error in the engine
+		RecipientName:     "Unknown",
+		ExternalAccountId: "Unknown",
 	}
 
 	if res.PhysicalCheck != nil {
