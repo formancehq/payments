@@ -3,6 +3,7 @@ package bankingcircle
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -92,7 +93,17 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 	if p.client == nil {
 		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.createBankAccount(req)
+
+	switch {
+	case req.BankAccount != nil:
+		// In order to be backwards compatible with the previous implementation,
+		// we need to support creating bank accounts from bank accounts and counter parties.
+		return p.createBankAccountFromBankAccount(req.BankAccount)
+	case req.CounterParty != nil:
+		return p.createBankAccountFromCounterParty(req.CounterParty)
+	default:
+		return models.CreateBankAccountResponse{}, fmt.Errorf("either bank account or counter party must be provided: %w", models.ErrInvalidRequest)
+	}
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {

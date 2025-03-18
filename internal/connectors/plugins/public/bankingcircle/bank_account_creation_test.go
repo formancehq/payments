@@ -24,9 +24,10 @@ var _ = Describe("BankingCircle Plugin Bank Account Creation", func() {
 
 	Context("fetching next accounts", func() {
 		var (
-			m                 *client.MockClient
-			sampleBankAccount models.BankAccount
-			now               time.Time
+			m                  *client.MockClient
+			sampleBankAccount  models.BankAccount
+			sampleCounterParty models.PSPCounterParty
+			now                time.Time
 		)
 
 		BeforeEach(func() {
@@ -45,9 +46,19 @@ var _ = Describe("BankingCircle Plugin Bank Account Creation", func() {
 					"test": "test",
 				},
 			}
+
+			sampleCounterParty = models.PSPCounterParty{
+				ID:          uuid.New(),
+				Name:        "test",
+				CreatedAt:   now.UTC(),
+				BankAccount: &sampleBankAccount,
+				Metadata: map[string]string{
+					"test": "test",
+				},
+			}
 		})
 
-		It("should create bank account", func(ctx SpecContext) {
+		It("should create bank account from bank account", func(ctx SpecContext) {
 			resp, err := plg.CreateBankAccount(ctx, models.CreateBankAccountRequest{
 				BankAccount: &sampleBankAccount,
 			})
@@ -61,6 +72,25 @@ var _ = Describe("BankingCircle Plugin Bank Account Creation", func() {
 					CreatedAt: now.UTC(),
 					Name:      pointer.For("test"),
 					Metadata:  sampleBankAccount.Metadata,
+					Raw:       raw,
+				},
+			}))
+		})
+
+		It("should create bank account from counter party", func(ctx SpecContext) {
+			resp, err := plg.CreateBankAccount(ctx, models.CreateBankAccountRequest{
+				CounterParty: &sampleCounterParty,
+			})
+
+			raw, _ := json.Marshal(sampleCounterParty)
+
+			Expect(err).To(BeNil())
+			Expect(resp).To(Equal(models.CreateBankAccountResponse{
+				RelatedAccount: models.PSPAccount{
+					Reference: sampleCounterParty.ID.String(),
+					CreatedAt: now.UTC(),
+					Name:      pointer.For("test"),
+					Metadata:  sampleCounterParty.Metadata,
 					Raw:       raw,
 				},
 			}))
