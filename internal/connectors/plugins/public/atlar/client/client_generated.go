@@ -13,14 +13,13 @@ import (
 	context "context"
 	reflect "reflect"
 
-	models "github.com/formancehq/payments/internal/models"
 	accounts "github.com/get-momo/atlar-v1-go-client/client/accounts"
 	counterparties "github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	credit_transfers "github.com/get-momo/atlar-v1-go-client/client/credit_transfers"
 	external_accounts "github.com/get-momo/atlar-v1-go-client/client/external_accounts"
 	third_parties "github.com/get-momo/atlar-v1-go-client/client/third_parties"
 	transactions "github.com/get-momo/atlar-v1-go-client/client/transactions"
-	models0 "github.com/get-momo/atlar-v1-go-client/models"
+	models "github.com/get-momo/atlar-v1-go-client/models"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -183,22 +182,22 @@ func (mr *MockClientMockRecorder) GetV1TransactionsID(ctx, id any) *gomock.Call 
 }
 
 // PostV1CounterParties mocks base method.
-func (m *MockClient) PostV1CounterParties(ctx context.Context, newExternalBankAccount *models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
+func (m *MockClient) PostV1CounterParties(ctx context.Context, createCounterpartyRequest models.CreateCounterpartyRequest) (*counterparties.PostV1CounterpartiesCreated, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PostV1CounterParties", ctx, newExternalBankAccount)
+	ret := m.ctrl.Call(m, "PostV1CounterParties", ctx, createCounterpartyRequest)
 	ret0, _ := ret[0].(*counterparties.PostV1CounterpartiesCreated)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PostV1CounterParties indicates an expected call of PostV1CounterParties.
-func (mr *MockClientMockRecorder) PostV1CounterParties(ctx, newExternalBankAccount any) *gomock.Call {
+func (mr *MockClientMockRecorder) PostV1CounterParties(ctx, createCounterpartyRequest any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostV1CounterParties", reflect.TypeOf((*MockClient)(nil).PostV1CounterParties), ctx, newExternalBankAccount)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PostV1CounterParties", reflect.TypeOf((*MockClient)(nil).PostV1CounterParties), ctx, createCounterpartyRequest)
 }
 
 // PostV1CreditTransfers mocks base method.
-func (m *MockClient) PostV1CreditTransfers(ctx context.Context, req *models0.CreatePaymentRequest) (*credit_transfers.PostV1CreditTransfersCreated, error) {
+func (m *MockClient) PostV1CreditTransfers(ctx context.Context, req *models.CreatePaymentRequest) (*credit_transfers.PostV1CreditTransfersCreated, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PostV1CreditTransfers", ctx, req)
 	ret0, _ := ret[0].(*credit_transfers.PostV1CreditTransfersCreated)

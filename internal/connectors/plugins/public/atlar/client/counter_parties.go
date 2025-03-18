@@ -21,39 +21,9 @@ func (c *client) GetV1CounterpartiesID(ctx context.Context, counterPartyID strin
 	return counterpartyResponse, wrapSDKErr(err, &counterparties.GetV1CounterpartiesIDNotFound{})
 }
 
-func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccount *models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error) {
+func (c *client) PostV1CounterParties(ctx context.Context, createCounterpartyRequest atlar_models.CreateCounterpartyRequest) (*counterparties.PostV1CounterpartiesCreated, error) {
 	// TODO: make sure an account with that IBAN does not already exist (Atlar API v2 needed, v1 lacks the filters)
 	// alternatively we could query the local DB
-
-	createCounterpartyRequest := atlar_models.CreateCounterpartyRequest{
-		Name:      ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/name"),
-		PartyType: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/type"),
-		ContactDetails: &atlar_models.ContactDetails{
-			Email: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/email"),
-			Phone: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/phone"),
-			Address: &atlar_models.Address{
-				StreetName:   *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/streetName"),
-				StreetNumber: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/streetNumber"),
-				City:         *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/city"),
-				PostalCode:   *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/postalCode"),
-				Country:      *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/country"),
-			},
-		},
-		ExternalAccounts: []*atlar_models.CreateEmbeddedExternalAccountRequest{
-			{
-				// ExternalID could cause problems when synchronizing with Accounts[type=external]
-				Bank: &atlar_models.UpdatableBank{
-					Bic: func() string {
-						if newExternalBankAccount.SwiftBicCode == nil {
-							return ""
-						}
-						return *newExternalBankAccount.SwiftBicCode
-					}(),
-				},
-				Identifiers: extractAtlarAccountIdentifiersFromBankAccount(newExternalBankAccount),
-			},
-		},
-	}
 	postCounterpartiesParams := counterparties.PostV1CounterpartiesParams{
 		Context:      metrics.OperationContext(ctx, "create_counter_party"),
 		Counterparty: &createCounterpartyRequest,
@@ -100,4 +70,156 @@ func extractAtlarAccountIdentifiersFromBankAccount(bankAccount *models.BankAccou
 		})
 	}
 	return accountIdentifiers
+}
+
+func extractAtlarAccountIdentifiersFromCounterParty(counterParty *models.PSPCounterParty) []*atlar_models.AccountIdentifier {
+	ownerName := counterParty.Name
+	ibanType := "IBAN"
+
+	var country *string
+	if counterParty.BankAccount != nil && counterParty.BankAccount.Country != nil {
+		country = counterParty.BankAccount.Country
+	}
+
+	var iban *string
+	if counterParty.BankAccount != nil && counterParty.BankAccount.IBAN != nil {
+		iban = counterParty.BankAccount.IBAN
+	}
+
+	accountIdentifiers := []*atlar_models.AccountIdentifier{{
+		HolderName: &ownerName,
+		Market:     country,
+		Type:       &ibanType,
+		Number:     iban,
+	}}
+
+	for k := range counterParty.Metadata {
+		// check whether the key has format com.atlar.spec/identifier/<market>/<type>
+		identifierData, err := metadataToIdentifierData(k, counterParty.Metadata[k])
+		if err != nil {
+			// matadata does not describe an identifier
+			continue
+		}
+		if country != nil && identifierData.Market == *country && identifierData.Type == "IBAN" {
+			// avoid duplicate identifiers
+			continue
+		}
+
+		accountIdentifiers = append(accountIdentifiers, &atlar_models.AccountIdentifier{
+			HolderName: &ownerName,
+			Market:     &identifierData.Market,
+			Type:       &identifierData.Type,
+			Number:     &identifierData.Number,
+		})
+	}
+	return accountIdentifiers
+}
+
+func ToAtlarCreateCounterpartyRequestFromBankAccount(newExternalBankAccount *models.BankAccount) atlar_models.CreateCounterpartyRequest {
+	createCounterpartyRequest := atlar_models.CreateCounterpartyRequest{
+		Name:      ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/name"),
+		PartyType: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/type"),
+		ContactDetails: &atlar_models.ContactDetails{
+			Email: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/email"),
+			Phone: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/phone"),
+			Address: &atlar_models.Address{
+				StreetName:   *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/streetName"),
+				StreetNumber: *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/streetNumber"),
+				City:         *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/city"),
+				PostalCode:   *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/postalCode"),
+				Country:      *ExtractNamespacedMetadataIgnoreEmpty(newExternalBankAccount.Metadata, "owner/contact/address/country"),
+			},
+		},
+		ExternalAccounts: []*atlar_models.CreateEmbeddedExternalAccountRequest{
+			{
+				// ExternalID could cause problems when synchronizing with Accounts[type=external]
+				Bank: &atlar_models.UpdatableBank{
+					Bic: func() string {
+						if newExternalBankAccount.SwiftBicCode == nil {
+							return ""
+						}
+						return *newExternalBankAccount.SwiftBicCode
+					}(),
+				},
+				Identifiers: extractAtlarAccountIdentifiersFromBankAccount(newExternalBankAccount),
+			},
+		},
+	}
+
+	return createCounterpartyRequest
+}
+
+func ToAtlarCreateCounterpartyRequestFromCounterParty(newCounterParty *models.PSPCounterParty) atlar_models.CreateCounterpartyRequest {
+	email := ""
+	if newCounterParty.ContactDetails != nil && newCounterParty.ContactDetails.Email != nil {
+		email = *newCounterParty.ContactDetails.Email
+	}
+
+	phone := ""
+	if newCounterParty.ContactDetails != nil && newCounterParty.ContactDetails.Phone != nil {
+		phone = *newCounterParty.ContactDetails.Phone
+	}
+
+	return atlar_models.CreateCounterpartyRequest{
+		Name:      &newCounterParty.Name,
+		PartyType: *ExtractNamespacedMetadataIgnoreEmpty(newCounterParty.Metadata, "owner/type"),
+		ContactDetails: &atlar_models.ContactDetails{
+			Email:   email,
+			Phone:   phone,
+			Address: toAtlarAddress(newCounterParty.Address),
+		},
+		ExternalAccounts: []*atlar_models.CreateEmbeddedExternalAccountRequest{
+			{
+				// ExternalID could cause problems when synchronizing with Accounts[type=external]
+				Bank: &atlar_models.UpdatableBank{
+					Bic: func() string {
+						if newCounterParty.BankAccount != nil && newCounterParty.BankAccount.SwiftBicCode != nil {
+							return *newCounterParty.BankAccount.SwiftBicCode
+						}
+						return ""
+					}(),
+				},
+				Identifiers: extractAtlarAccountIdentifiersFromCounterParty(newCounterParty),
+			},
+		},
+	}
+}
+
+func toAtlarAddress(address *models.Address) *atlar_models.Address {
+	if address == nil {
+		return &atlar_models.Address{}
+	}
+
+	streetName := ""
+	if address.StreetName != nil {
+		streetName = *address.StreetName
+	}
+
+	streetNumber := ""
+	if address.StreetNumber != nil {
+		streetNumber = *address.StreetNumber
+	}
+
+	city := ""
+	if address.City != nil {
+		city = *address.City
+	}
+
+	postalCode := ""
+	if address.PostalCode != nil {
+		postalCode = *address.PostalCode
+	}
+
+	country := ""
+	if address.Country != nil {
+		country = *address.Country
+	}
+
+	return &atlar_models.Address{
+		StreetName:   streetName,
+		StreetNumber: streetNumber,
+		City:         city,
+		PostalCode:   postalCode,
+		Country:      country,
+	}
 }

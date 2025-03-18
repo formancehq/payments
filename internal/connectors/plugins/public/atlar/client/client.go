@@ -28,7 +28,7 @@ type Client interface {
 	GetV1Accounts(ctx context.Context, token string, pageSize int64) (*accounts.GetV1AccountsOK, error)
 	GetV1AccountsID(ctx context.Context, id string) (*accounts.GetV1AccountsIDOK, error)
 
-	PostV1CounterParties(ctx context.Context, newExternalBankAccount *models.BankAccount) (*counterparties.PostV1CounterpartiesCreated, error)
+	PostV1CounterParties(ctx context.Context, createCounterpartyRequest atlar_models.CreateCounterpartyRequest) (*counterparties.PostV1CounterpartiesCreated, error)
 	GetV1CounterpartiesID(ctx context.Context, counterPartyID string) (*counterparties.GetV1CounterpartiesIDOK, error)
 
 	GetV1ExternalAccounts(ctx context.Context, token string, pageSize int64) (*external_accounts.GetV1ExternalAccountsOK, error)
