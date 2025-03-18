@@ -439,8 +439,6 @@ create table if not exists payment_initiation_adjustments(
     primary key (id)
 );
 create index payment_initiation_adjustments_created_at_sort_id on payment_initiation_adjustments (created_at, sort_id);
-create index payment_initiation_adjustments_pi_id on payment_initiation_adjustments (payment_initiation_id);
-create index payment_initiation_adjustments_sort_id on payment_initiation_adjustments (sort_id);
 alter table payment_initiation_adjustments
     add constraint payment_initiation_adjustments_payment_initiation_id_fk foreign key (payment_initiation_id)
     references payment_initiations (id)
