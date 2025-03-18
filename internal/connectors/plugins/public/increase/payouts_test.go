@@ -73,7 +73,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field sourceAccount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -86,7 +86,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field destinationAccount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -98,7 +98,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("payoutMethod is a required metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/payoutMethod: missing required metadata in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -110,7 +110,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("description is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field description: missing required field in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -122,7 +122,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("amount is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field amount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -135,7 +135,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("fulfillmentMethod is a required metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/fufillmentMethod: missing required metadata in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -148,7 +148,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("sourceAccountNumberID is a required source account metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/sourceAccountNumberID: missing required metadata in request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -160,7 +160,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("payoutMethod must be one of: ach, wire, check, rtp: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/payoutMethod: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -265,7 +265,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
-				Amount:            "1.00",
+				Amount:            100,
 				AccountNumber:     "123456789",
 			}
 
@@ -283,7 +283,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				Currency:          "USD",
-				Amount:            "1.00",
+				Amount:            100,
 				ExternalAccountID: "acc2",
 				AccountNumber:     "123456789",
 			})
@@ -328,7 +328,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
-				Amount:            "1.00",
+				Amount:            100,
 				AccountNumber:     "123456789",
 				RoutingNumber:     "123456789",
 			}
@@ -347,7 +347,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				CreatedAt:         now.Format(time.RFC3339),
 				AccountID:         "234R5432",
 				Currency:          "USD",
-				Amount:            "1.00",
+				Amount:            100,
 				ExternalAccountID: "acc2",
 				AccountNumber:     "123456789",
 				RoutingNumber:     "123456789",
@@ -387,12 +387,14 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			req.PaymentInitiation.Metadata[client.IncreasePayoutMethodMetadataKey] = "check"
 
 			trResponse := client.PayoutResponse{
-				ID:        "1",
-				Status:    "complete",
-				CreatedAt: now.Format(time.RFC3339),
-				AccountID: "234R5432",
-				Currency:  "USD",
-				Amount:    "1.00",
+				ID:                "1",
+				Status:            "complete",
+				CreatedAt:         now.Format(time.RFC3339),
+				AccountID:         "234R5432",
+				Currency:          "USD",
+				Amount:            100,
+				RecipientName:     " ",
+				ExternalAccountId: " ",
 			}
 
 			mockHTTPClient.EXPECT().Do(
@@ -408,7 +410,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID: "234R5432",
 				Status:    "complete",
 				CreatedAt: now.Format(time.RFC3339),
-				Amount:    "1.00",
+				Amount:    100,
 				Currency:  "USD",
 			})
 
@@ -427,12 +429,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					Scheme:                      models.PAYMENT_SCHEME_OTHER,
 					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 					SourceAccountReference:      pointer.For("234R5432"),
-					DestinationAccountReference: pointer.For(""),
+					DestinationAccountReference: pointer.For(" "),
 					Raw:                         raw,
 					Metadata: map[string]string{
 						client.IncreaseRoutingNumberMetadataKey: "",
 						client.IncreaseAccountNumberMetadataKey: "",
-						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: " ",
 						client.IncreaseCheckNumberMetadataKey:   "",
 					},
 				},
@@ -447,12 +449,14 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			req.PaymentInitiation.Metadata[client.IncreaseFulfillmentMethodMetadataKey] = physicalCheckFufillmentMethod
 
 			trResponse := client.PayoutResponse{
-				ID:        "1",
-				Status:    "complete",
-				CreatedAt: now.Format(time.RFC3339),
-				AccountID: "234R5432",
-				Currency:  "USD",
-				Amount:    "1.00",
+				ID:                "1",
+				Status:            "complete",
+				CreatedAt:         now.Format(time.RFC3339),
+				AccountID:         "234R5432",
+				Currency:          "USD",
+				Amount:            100,
+				RecipientName:     " ",
+				ExternalAccountId: " ",
 			}
 
 			mockHTTPClient.EXPECT().Do(
@@ -468,7 +472,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID: "234R5432",
 				Status:    "complete",
 				CreatedAt: now.Format(time.RFC3339),
-				Amount:    "1.00",
+				Amount:    100,
 				Currency:  "USD",
 			})
 
@@ -487,12 +491,12 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 					Scheme:                      models.PAYMENT_SCHEME_OTHER,
 					Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 					SourceAccountReference:      pointer.For("234R5432"),
-					DestinationAccountReference: pointer.For(""),
+					DestinationAccountReference: pointer.For(" "),
 					Raw:                         raw,
 					Metadata: map[string]string{
 						client.IncreaseRoutingNumberMetadataKey: "",
 						client.IncreaseAccountNumberMetadataKey: "",
-						client.IncreaseRecipientNameMetadataKey: "",
+						client.IncreaseRecipientNameMetadataKey: " ",
 						client.IncreaseCheckNumberMetadataKey:   "",
 					},
 				},
@@ -512,7 +516,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				ExternalAccountId: "acc2",
 				Currency:          "USD",
-				Amount:            "1.00",
+				Amount:            100,
 			}
 
 			mockHTTPClient.EXPECT().Do(
@@ -528,7 +532,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 				AccountID:         "234R5432",
 				Status:            "complete",
 				CreatedAt:         now.Format(time.RFC3339),
-				Amount:            "1.00",
+				Amount:            100,
 				Currency:          "USD",
 				ExternalAccountID: "acc2",
 			})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strings"
 	"time"
 
@@ -26,7 +27,6 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return nil, err
 	}
 
-	amount := pi.Amount.String() // increase uses minor units
 	payoutMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey)
 	idempotencyKey := p.generateIdempotencyKey(pi.Reference)
 
@@ -34,7 +34,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 	case increaseWirePaymentMethod:
 		wrp := &client.WireTransferPayoutRequest{
 			AccountID:          pi.SourceAccount.Reference,
-			Amount:             json.Number(amount),
+			Amount:             pi.Amount.Int64(),
 			ExternalAccountID:  pi.DestinationAccount.Reference,
 			MessageToRecipient: pi.Description,
 		}
@@ -55,14 +55,12 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		fulfillmentMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey)
 		check := &client.CheckPayoutRequest{
 			AccountID:             pi.SourceAccount.Reference,
-			Amount:                json.Number(amount),
+			Amount:                pi.Amount.Int64(),
 			SourceAccountNumberID: sourceAccountNumberID,
 			FulfillmentMethod:     fulfillmentMethod,
 		}
 		if fulfillmentMethod == thirdPartyFufillmentMethod {
-			check.ThirdParty = &struct {
-				CheckNumber string `json:"check_number"`
-			}{
+			check.ThirdParty = &client.ThirdParty{
 				CheckNumber: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCheckNumberMetadataKey),
 			}
 		} else if fulfillmentMethod == physicalCheckFufillmentMethod {
@@ -93,7 +91,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 	case increaseRTPPaymentMethod:
 		sourceAccountNumberID := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
 		rtp := &client.RTPPayoutRequest{
-			Amount:                json.Number(amount),
+			Amount:                pi.Amount.Int64(),
 			ExternalAccountID:     pi.DestinationAccount.Reference,
 			RemittanceInformation: pi.Description,
 			SourceAccountNumberID: sourceAccountNumberID,
@@ -113,7 +111,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 	case increaseACHPayoutMethod:
 		apr := &client.ACHPayoutRequest{
 			AccountID:           pi.SourceAccount.Reference,
-			Amount:              json.Number(amount),
+			Amount:              pi.Amount.Int64(),
 			ExternalAccountID:   pi.DestinationAccount.Reference,
 			StatementDescriptor: pi.Description,
 		}
@@ -147,21 +145,11 @@ func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPaymen
 		return nil, fmt.Errorf("failed to parse posted date %s: %w", from.CreatedAt, err)
 	}
 
-	precision, ok := supportedCurrenciesWithDecimal[from.Currency]
-	if !ok {
-		return nil, fmt.Errorf("unsupported currency: %s", from.Currency)
-	}
-
-	amount, err := currency.GetAmountWithPrecisionFromString(from.Amount.String(), precision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse amount %s: %w", from.Amount, err)
-	}
-
 	return &models.PSPPayment{
 		Reference:                   from.ID,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_PAYOUT,
-		Amount:                      amount,
+		Amount:                      big.NewInt(from.Amount),
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, from.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      status,

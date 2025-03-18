@@ -16,21 +16,30 @@ type paymentsState struct {
 	LastSucceededCreatedAt time.Time `json:"last_succeeded_created_at"`
 	LastPendingCreatedAt   time.Time `json:"last_pending_created_at"`
 	LastDeclinedCreatedAt  time.Time `json:"last_declined_created_at"`
+	NextSucceededCursor    string    `json:"next_succeeded_cursor"`
+	NextPendingCursor      string    `json:"next_pending_cursor"`
+	NextDeclinedCursor     string    `json:"next_declined_cursor"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	var (
-		oldState paymentsState
-		newState paymentsState
-	)
+	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
 
+	newState := paymentsState{
+		LastSucceededCreatedAt: oldState.LastSucceededCreatedAt,
+		LastPendingCreatedAt:   oldState.LastPendingCreatedAt,
+		LastDeclinedCreatedAt:  oldState.LastDeclinedCreatedAt,
+		NextSucceededCursor:    oldState.NextSucceededCursor,
+		NextPendingCursor:      oldState.NextPendingCursor,
+		NextDeclinedCursor:     oldState.NextDeclinedCursor,
+	}
+
 	payments := make([]models.PSPPayment, 0, req.PageSize)
-	payments, hasMore, err := p.processPaymentTypes(ctx, oldState, payments, req.PageSize, &newState)
+	payments, hasMore, err := p.processPaymentTypes(ctx, &newState, payments, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -47,18 +56,18 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func (p *Plugin) processPaymentTypes(ctx context.Context, oldState paymentsState, payments []models.PSPPayment, pageSize int, newState *paymentsState) ([]models.PSPPayment, bool, error) {
-	payments, pendingCursor, err := p.processPendingPayments(ctx, oldState, payments, pageSize, newState)
+func (p *Plugin) processPaymentTypes(ctx context.Context, state *paymentsState, payments []models.PSPPayment, pageSize int) ([]models.PSPPayment, bool, error) {
+	payments, pendingCursor, err := p.processPendingPayments(ctx, state, payments, pageSize)
 	if err != nil {
 		return nil, false, err
 	}
 
-	payments, succeededCursor, err := p.processSucceededPayments(ctx, oldState, payments, pageSize, newState)
+	payments, succeededCursor, err := p.processSucceededPayments(ctx, state, payments, pageSize)
 	if err != nil {
 		return nil, false, err
 	}
 
-	payments, declinedCursor, err := p.processDeclinedPayments(ctx, oldState, payments, pageSize, newState)
+	payments, declinedCursor, err := p.processDeclinedPayments(ctx, state, payments, pageSize)
 	if err != nil {
 		return nil, false, err
 	}
@@ -113,8 +122,8 @@ func (p *Plugin) fillPayments(
 	return payments, nil
 }
 
-func (p *Plugin) processPendingPayments(ctx context.Context, oldState paymentsState, payments []models.PSPPayment, pageSize int, newState *paymentsState) ([]models.PSPPayment, string, error) {
-	pagedPendingTransactions, nextPendingCursor, err := p.client.GetPendingTransactions(ctx, pageSize, oldState.LastPendingCreatedAt)
+func (p *Plugin) processPendingPayments(ctx context.Context, state *paymentsState, payments []models.PSPPayment, pageSize int) ([]models.PSPPayment, string, error) {
+	pagedPendingTransactions, nextPendingCursor, err := p.client.GetPendingTransactions(ctx, pageSize, state.LastPendingCreatedAt, state.NextPendingCursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -125,14 +134,16 @@ func (p *Plugin) processPendingPayments(ctx context.Context, oldState paymentsSt
 	}
 
 	if len(payments) > 0 && payments[len(payments)-1].Status == models.PAYMENT_STATUS_PENDING {
-		newState.LastPendingCreatedAt = payments[len(payments)-1].CreatedAt
+		state.LastPendingCreatedAt = payments[len(payments)-1].CreatedAt
 	}
+
+	state.NextPendingCursor = nextPendingCursor
 
 	return payments, nextPendingCursor, nil
 }
 
-func (p *Plugin) processSucceededPayments(ctx context.Context, oldState paymentsState, payments []models.PSPPayment, pageSize int, newState *paymentsState) ([]models.PSPPayment, string, error) {
-	pagedTransactions, nextSucceededCursor, err := p.client.GetTransactions(ctx, pageSize, oldState.LastSucceededCreatedAt)
+func (p *Plugin) processSucceededPayments(ctx context.Context, state *paymentsState, payments []models.PSPPayment, pageSize int) ([]models.PSPPayment, string, error) {
+	pagedTransactions, nextSucceededCursor, err := p.client.GetTransactions(ctx, pageSize, state.LastSucceededCreatedAt, state.NextSucceededCursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -143,14 +154,16 @@ func (p *Plugin) processSucceededPayments(ctx context.Context, oldState payments
 	}
 
 	if len(payments) > 0 && payments[len(payments)-1].Status == models.PAYMENT_STATUS_SUCCEEDED {
-		newState.LastSucceededCreatedAt = payments[len(payments)-1].CreatedAt
+		state.LastSucceededCreatedAt = payments[len(payments)-1].CreatedAt
 	}
+
+	state.NextSucceededCursor = nextSucceededCursor
 
 	return payments, nextSucceededCursor, nil
 }
 
-func (p *Plugin) processDeclinedPayments(ctx context.Context, oldState paymentsState, payments []models.PSPPayment, pageSize int, newState *paymentsState) ([]models.PSPPayment, string, error) {
-	pagedDeclinedTransactions, nextDeclinedCursor, err := p.client.GetDeclinedTransactions(ctx, pageSize, oldState.LastDeclinedCreatedAt)
+func (p *Plugin) processDeclinedPayments(ctx context.Context, state *paymentsState, payments []models.PSPPayment, pageSize int) ([]models.PSPPayment, string, error) {
+	pagedDeclinedTransactions, nextDeclinedCursor, err := p.client.GetDeclinedTransactions(ctx, pageSize, state.LastDeclinedCreatedAt, state.NextDeclinedCursor)
 	if err != nil {
 		return nil, "", err
 	}
@@ -161,8 +174,10 @@ func (p *Plugin) processDeclinedPayments(ctx context.Context, oldState paymentsS
 	}
 
 	if len(payments) > 0 && payments[len(payments)-1].Status == models.PAYMENT_STATUS_FAILED {
-		newState.LastDeclinedCreatedAt = payments[len(payments)-1].CreatedAt
+		state.LastDeclinedCreatedAt = payments[len(payments)-1].CreatedAt
 	}
+
+	state.NextDeclinedCursor = nextDeclinedCursor
 
 	return payments, nextDeclinedCursor, nil
 }

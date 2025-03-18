@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
@@ -22,7 +23,7 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		&client.TransferRequest{
 			AccountID:            pi.SourceAccount.Reference,
 			DestinationAccountID: pi.DestinationAccount.Reference,
-			Amount:               json.Number(pi.Amount.String()),
+			Amount:               pi.Amount.Int64(),
 			Description:          pi.Description,
 		},
 		idempotencyKey,
@@ -47,21 +48,11 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 		return nil, fmt.Errorf("failed to parse posted date %s: %w", transfer.CreatedAt, err)
 	}
 
-	precision, ok := supportedCurrenciesWithDecimal[transfer.Currency]
-	if !ok {
-		return nil, fmt.Errorf("unsupported currency: %s", transfer.Currency)
-	}
-
-	amount, err := currency.GetAmountWithPrecisionFromString(transfer.Amount.String(), precision)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse amount %s: %w", transfer.Amount, err)
-	}
-
 	return &models.PSPPayment{
 		Reference:                   transfer.ID,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
-		Amount:                      amount,
+		Amount:                      big.NewInt(transfer.Amount),
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transfer.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      status,

@@ -65,6 +65,7 @@ NOTE: Amounts are often represented in the smallest unit of the currency (e.g., 
 Bank accounts requests are determined by some metadata in the request:
 ```json
 {
+  "name": "Gitstart Union Bank",
   "accountNumber": "09878762343",
   "metadata": {
     "com.increase.spec/description": "some description",
@@ -76,8 +77,29 @@ Bank accounts requests are determined by some metadata in the request:
 
 ### Creating Payouts
 
-Payout requests are determined by some metadata in the request. Metadata is only available for check and rtp payout methods.
+Payout requests are determined by some metadata in the request.
 Note: Payout destination id must be an account with name.
+
+
+#### ACH
+
+```json
+{
+  "metadata": {
+    "com.increase.spec/payoutMethod": "ach",
+  }
+}
+```
+
+#### Wire
+
+```json
+{
+  "metadata": {
+    "com.increase.spec/payoutMethod": "wire",
+  }
+}
+```
 
 #### Check
 

@@ -80,7 +80,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing routingNumber in bank account metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/routingNumber: missing required metadata in request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -93,7 +93,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing accountHolder in bank account metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/accountHolder: missing required metadata in request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -106,7 +106,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing description in bank account metadata: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field com.increase.spec/description: missing required metadata in request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -170,7 +170,7 @@ var _ = Describe("Increase Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing accountNumber in bank account request: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field AccountNumber: missing required field in request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 	})

@@ -28,7 +28,7 @@ type Transaction struct {
 	Type        string      `json:"type"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
+func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time, nextCursor string) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "transactions", http.NoBody)
@@ -38,7 +38,10 @@ func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedA
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if !lastCreatedAtAfter.IsZero() {
+	if nextCursor != "" {
+		q.Add("cursor", nextCursor)
+	}
+	if !lastCreatedAtAfter.IsZero() && nextCursor == "" {
 		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format(time.RFC3339))
 	}
 	req.URL.RawQuery = q.Encode()
@@ -71,7 +74,7 @@ func (c *client) GetTransaction(ctx context.Context, transactionID string) (*Tra
 	return &res, nil
 }
 
-func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
+func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time, nextCursor string) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_pending_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "pending_transactions", http.NoBody)
@@ -81,8 +84,11 @@ func (c *client) GetPendingTransactions(ctx context.Context, pageSize int, lastC
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if !lastCreatedAtAfter.IsZero() {
-		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format("time.RFC3339"))
+	if nextCursor != "" {
+		q.Add("cursor", nextCursor)
+	}
+	if !lastCreatedAtAfter.IsZero() && nextCursor == "" {
+		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format(time.RFC3339))
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -114,7 +120,7 @@ func (c *client) GetPendingTransaction(ctx context.Context, transactionID string
 	return &res, nil
 }
 
-func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time) ([]*Transaction, string, error) {
+func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time, nextCursor string) ([]*Transaction, string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_declined_transactions")
 
 	req, err := c.newRequest(ctx, http.MethodGet, "declined_transactions", http.NoBody)
@@ -124,8 +130,11 @@ func (c *client) GetDeclinedTransactions(ctx context.Context, pageSize int, last
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if !lastCreatedAtAfter.IsZero() {
-		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format("time.RFC3339"))
+	if nextCursor != "" {
+		q.Add("cursor", nextCursor)
+	}
+	if !lastCreatedAtAfter.IsZero() && nextCursor == "" {
+		q.Add(createdAtAfterQueryParam, lastCreatedAtAfter.Format(time.RFC3339))
 	}
 	req.URL.RawQuery = q.Encode()
 

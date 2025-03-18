@@ -713,6 +713,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				ID:        "4",
 				AccountID: "123454",
 				Currency:  "USD",
+				Amount:    200,
 				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
 			})
 

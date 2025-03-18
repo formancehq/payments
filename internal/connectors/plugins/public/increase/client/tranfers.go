@@ -11,23 +11,23 @@ import (
 )
 
 type TransferRequest struct {
-	AccountID            string      `json:"account_id"`
-	Amount               json.Number `json:"amount"`
-	Description          string      `json:"description"`
-	DestinationAccountID string      `json:"destination_account_id"`
+	AccountID            string `json:"account_id"`
+	Amount               int64  `json:"amount"`
+	Description          string `json:"description"`
+	DestinationAccountID string `json:"destination_account_id"`
 }
 
 type TransferResponse struct {
-	ID                       string      `json:"id"`
-	AccountID                string      `json:"account_id"`
-	Amount                   json.Number `json:"amount"`
-	Currency                 string      `json:"currency"`
-	DestinationAccountID     string      `json:"destination_account_id"`
-	DestinationTransactionID string      `json:"destination_transaction_id"`
-	TransactionID            string      `json:"transaction_id"`
-	Description              string      `json:"description"`
-	Status                   string      `json:"status"`
-	CreatedAt                string      `json:"created_at"`
+	ID                       string `json:"id"`
+	AccountID                string `json:"account_id"`
+	Amount                   int64  `json:"amount"`
+	Currency                 string `json:"currency"`
+	DestinationAccountID     string `json:"destination_account_id"`
+	DestinationTransactionID string `json:"destination_transaction_id"`
+	TransactionID            string `json:"transaction_id"`
+	Description              string `json:"description"`
+	Status                   string `json:"status"`
+	CreatedAt                string `json:"created_at"`
 }
 
 func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest, idempotencyKey string) (*TransferResponse, error) {

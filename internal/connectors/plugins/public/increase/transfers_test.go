@@ -70,7 +70,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 				Currency:             "USD",
 				DestinationAccountID: samplePSPPaymentInitiation.DestinationAccount.Reference,
 				AccountID:            samplePSPPaymentInitiation.SourceAccount.Reference,
-				Amount:               "1.00",
+				Amount:               100,
 			}
 
 			payment = &models.PSPPayment{
@@ -100,7 +100,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("amount is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field amount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -113,7 +113,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("description is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field description: missing required field in request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -126,7 +126,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field sourceAccount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -139,7 +139,7 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("validation error occurred for field destinationAccount: missing required field in request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 

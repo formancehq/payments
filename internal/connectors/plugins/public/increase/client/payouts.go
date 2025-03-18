@@ -11,50 +11,52 @@ import (
 )
 
 type ACHPayoutRequest struct {
-	AccountID           string      `json:"account_id"`
-	Amount              json.Number `json:"amount"`
-	IndividualName      string      `json:"individual_name"`
-	ExternalAccountID   string      `json:"external_account_id"`
-	StatementDescriptor string      `json:"statement_descriptor"`
+	AccountID           string `json:"account_id"`
+	Amount              int64  `json:"amount"`
+	IndividualName      string `json:"individual_name"`
+	ExternalAccountID   string `json:"external_account_id"`
+	StatementDescriptor string `json:"statement_descriptor"`
 }
 
 type ACHPayoutResponse struct {
-	ID                string      `json:"id"`
-	AccountID         string      `json:"account_id"`
-	AccountNumber     string      `json:"account_number"`
-	Amount            json.Number `json:"amount"`
-	Currency          string      `json:"currency"`
-	CreatedAt         string      `json:"created_at"`
-	Status            string      `json:"status"`
-	ExternalAccountID string      `json:"external_account_id"`
+	ID                string `json:"id"`
+	AccountID         string `json:"account_id"`
+	AccountNumber     string `json:"account_number"`
+	Amount            int64  `json:"amount"`
+	Currency          string `json:"currency"`
+	CreatedAt         string `json:"created_at"`
+	Status            string `json:"status"`
+	ExternalAccountID string `json:"external_account_id"`
 }
 
 type WireTransferPayoutRequest struct {
-	AccountID          string      `json:"account_id"`
-	Amount             json.Number `json:"amount"`
-	ExternalAccountID  string      `json:"external_account_id"`
-	BeneficiaryName    string      `json:"beneficiary_name"`
-	MessageToRecipient string      `json:"message_to_recipient"`
+	AccountID          string `json:"account_id"`
+	Amount             int64  `json:"amount"`
+	ExternalAccountID  string `json:"external_account_id"`
+	BeneficiaryName    string `json:"beneficiary_name"`
+	MessageToRecipient string `json:"message_to_recipient"`
 }
 
 type WireTransferPayoutResponse struct {
-	ID                string      `json:"id"`
-	AccountID         string      `json:"account_id"`
-	AccountNumber     string      `json:"account_number"`
-	Amount            json.Number `json:"amount"`
-	Currency          string      `json:"currency"`
-	BeneficiaryName   string      `json:"beneficiary_name"`
-	CreatedAt         string      `json:"created_at"`
-	Status            string      `json:"status"`
-	RoutingNumber     string      `json:"routing_number"`
-	ExternalAccountID string      `json:"external_account_id"`
+	ID                string `json:"id"`
+	AccountID         string `json:"account_id"`
+	AccountNumber     string `json:"account_number"`
+	Amount            int64  `json:"amount"`
+	Currency          string `json:"currency"`
+	BeneficiaryName   string `json:"beneficiary_name"`
+	CreatedAt         string `json:"created_at"`
+	Status            string `json:"status"`
+	RoutingNumber     string `json:"routing_number"`
+	ExternalAccountID string `json:"external_account_id"`
 }
 
 type MailingAddress struct {
-	City       string `json:"city"`
-	Line1      string `json:"line1"`
-	PostalCode string `json:"postal_code"`
-	State      string `json:"state"`
+	City       string  `json:"city"`
+	Line1      string  `json:"line1"`
+	Line2      *string `json:"line2,omitempty"`
+	Name       *string `json:"name,omitempty"`
+	PostalCode string  `json:"postal_code"`
+	State      string  `json:"state"`
 }
 
 type PhysicalCheck struct {
@@ -63,62 +65,71 @@ type PhysicalCheck struct {
 	RecipientName  string         `json:"recipient_name"`
 }
 
+type ThirdParty struct {
+	CheckNumber string `json:"check_number"`
+}
+
 type CheckPayoutRequest struct {
 	AccountID             string         `json:"account_id"`
-	Amount                json.Number    `json:"amount"`
+	Amount                int64          `json:"amount"`
 	SourceAccountNumberID string         `json:"source_account_number_id"`
 	FulfillmentMethod     string         `json:"fulfillment_method"`
 	PhysicalCheck         *PhysicalCheck `json:"physical_check,omitempty"`
-	ThirdParty            *struct {
-		CheckNumber string `json:"check_number"`
-	} `json:"third_party,omitempty"`
+	ThirdParty            *ThirdParty    `json:"third_party,omitempty"`
 }
 
 type CheckPayoutResponse struct {
-	ID            string      `json:"id"`
-	AccountID     string      `json:"account_id"`
-	AccountNumber string      `json:"account_number"`
-	Amount        json.Number `json:"amount"`
-	Currency      string      `json:"currency"`
-	CheckNumber   string      `json:"check_number"`
-	CreatedAt     string      `json:"created_at"`
-	Status        string      `json:"status"`
-	RoutingNumber string      `json:"routing_number"`
+	ID                            string         `json:"id"`
+	AccountID                     string         `json:"account_id"`
+	AccountNumber                 string         `json:"account_number"`
+	Amount                        int64          `json:"amount"`
+	Currency                      string         `json:"currency"`
+	CheckNumber                   string         `json:"check_number"`
+	CreatedAt                     string         `json:"created_at"`
+	Status                        string         `json:"status"`
+	RoutingNumber                 string         `json:"routing_number"`
+	ApprovedInboundCheckDepositID string         `json:"approved_inbound_check_deposit_id"`
+	FulfillmentMethod             string         `json:"fulfillment_method"`
+	PendingTransactionID          string         `json:"pending_transaction_id"`
+	PhysicalCheck                 *PhysicalCheck `json:"physical_check,omitempty"`
+	SourceAccountNumberID         string         `json:"source_account_number_id"`
+	ThirdParty                    *ThirdParty    `json:"third_party,omitempty"`
+	Type                          string         `json:"type"`
 }
 
 type RTPPayoutRequest struct {
-	Amount                json.Number `json:"amount"`
-	CreditorName          string      `json:"creditor_name"`
-	ExternalAccountID     string      `json:"external_account_id"`
-	SourceAccountNumberID string      `json:"source_account_number_id"`
-	RemittanceInformation string      `json:"remittance_information"`
+	Amount                int64  `json:"amount"`
+	CreditorName          string `json:"creditor_name"`
+	ExternalAccountID     string `json:"external_account_id"`
+	SourceAccountNumberID string `json:"source_account_number_id"`
+	RemittanceInformation string `json:"remittance_information"`
 }
 
 type RTPPayoutResponse struct {
-	ID                       string      `json:"id"`
-	AccountID                string      `json:"account_id"`
-	Amount                   json.Number `json:"amount"`
-	Currency                 string      `json:"currency"`
-	CreatedAt                string      `json:"created_at"`
-	Status                   string      `json:"status"`
-	CreditorName             string      `json:"creditor_name"`
-	DestinationAccountNumber string      `json:"destination_account_number"`
-	DestinationRoutingNumber string      `json:"destination_routing_number"`
-	ExternalAccountID        string      `json:"external_account_id"`
+	ID                       string `json:"id"`
+	AccountID                string `json:"account_id"`
+	Amount                   int64  `json:"amount"`
+	Currency                 string `json:"currency"`
+	CreatedAt                string `json:"created_at"`
+	Status                   string `json:"status"`
+	CreditorName             string `json:"creditor_name"`
+	DestinationAccountNumber string `json:"destination_account_number"`
+	DestinationRoutingNumber string `json:"destination_routing_number"`
+	ExternalAccountID        string `json:"external_account_id"`
 }
 
 type PayoutResponse struct {
-	ID                string      `json:"id"`
-	AccountID         string      `json:"account_id"`
-	Amount            json.Number `json:"amount"`
-	Currency          string      `json:"currency"`
-	CreatedAt         string      `json:"created_at"`
-	Status            string      `json:"status"`
-	RecipientName     string      `json:"recipient_name"`
-	ExternalAccountId string      `json:"external_account_id"`
-	AccountNumber     string      `json:"account_number"`
-	RoutingNumber     string      `json:"routing_number"`
-	CheckNumber       string      `json:"check_number"`
+	ID                string `json:"id"`
+	AccountID         string `json:"account_id"`
+	Amount            int64  `json:"amount"`
+	Currency          string `json:"currency"`
+	CreatedAt         string `json:"created_at"`
+	Status            string `json:"status"`
+	RecipientName     string `json:"recipient_name"`
+	ExternalAccountId string `json:"external_account_id"`
+	AccountNumber     string `json:"account_number"`
+	RoutingNumber     string `json:"routing_number"`
+	CheckNumber       string `json:"check_number"`
 }
 
 func (c *client) InitiateACHTransferPayout(ctx context.Context, pr *ACHPayoutRequest, idempotencyKey string) (*PayoutResponse, error) {
@@ -266,17 +277,25 @@ func (c *client) InitiateCheckTransferPayout(ctx context.Context, pr *CheckPayou
 		return nil, fmt.Errorf("failed to create check transfer payout: %w %w", err, errRes.Error())
 	}
 
-	return &PayoutResponse{
-		ID:            res.ID,
-		AccountID:     res.AccountID,
-		Amount:        res.Amount,
-		Currency:      res.Currency,
-		CreatedAt:     res.CreatedAt,
-		Status:        res.Status,
-		AccountNumber: res.AccountNumber,
-		RoutingNumber: res.RoutingNumber,
-		CheckNumber:   res.CheckNumber,
-	}, nil
+	payoutResponse := &PayoutResponse{
+		ID:                res.ID,
+		AccountID:         res.AccountID,
+		Amount:            res.Amount,
+		Currency:          res.Currency,
+		CreatedAt:         res.CreatedAt,
+		Status:            res.Status,
+		AccountNumber:     res.AccountNumber,
+		RoutingNumber:     res.RoutingNumber,
+		CheckNumber:       res.CheckNumber,
+		RecipientName:     " ", // check transfer third party has no external account id
+		ExternalAccountId: " ", // check transfer has no external account id
+	}
+
+	if res.PhysicalCheck != nil {
+		payoutResponse.RecipientName = res.PhysicalCheck.RecipientName
+	}
+
+	return payoutResponse, nil
 }
 
 func (c *client) GetCheckTransferPayout(ctx context.Context, transferID string) (*PayoutResponse, error) {

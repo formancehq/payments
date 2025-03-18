@@ -1,7 +1,6 @@
 package increase
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
@@ -11,7 +10,7 @@ import (
 func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 	payoutMethod := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreasePayoutMethodMetadataKey)
 	if payoutMethod == "" {
-		return fmt.Errorf("payoutMethod is a required metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreasePayoutMethodMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	validMethods := map[string]bool{
@@ -22,32 +21,32 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 	}
 
 	if !validMethods[payoutMethod] {
-		return fmt.Errorf("payoutMethod must be one of: ach, wire, check, rtp: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreasePayoutMethodMetadataKey, models.ErrInvalidRequest)
 	}
 
 	if pi.Description == "" {
-		return fmt.Errorf("description is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("description", models.ErrMissingConnectorField)
 	}
 
 	if pi.Amount == nil {
-		return fmt.Errorf("amount is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("amount", models.ErrMissingConnectorField)
 	}
 
 	if pi.SourceAccount == nil {
-		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("sourceAccount", models.ErrMissingConnectorField)
 	}
 
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("destinationAccount", models.ErrMissingConnectorField)
 	}
 
 	if payoutMethod == increaseCheckPaymentMethod && models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseFulfillmentMethodMetadataKey) == "" {
-		return fmt.Errorf("fulfillmentMethod is a required metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreaseFulfillmentMethodMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	sourceAccountNumberID := models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseSourceAccountNumberIdMetadataKey)
 	if sourceAccountNumberID == "" && (payoutMethod == increaseCheckPaymentMethod || payoutMethod == increaseRTPPaymentMethod) {
-		return fmt.Errorf("sourceAccountNumberID is a required source account metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreaseSourceAccountNumberIdMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	return nil
@@ -55,19 +54,19 @@ func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
 
 func (p *Plugin) validateTransferRequests(pi models.PSPPaymentInitiation) error {
 	if pi.Amount == nil {
-		return fmt.Errorf("amount is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("amount", models.ErrMissingConnectorField)
 	}
 
 	if pi.SourceAccount == nil {
-		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("sourceAccount", models.ErrMissingConnectorField)
 	}
 
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("destinationAccount", models.ErrMissingConnectorField)
 	}
 
 	if pi.Description == "" {
-		return fmt.Errorf("description is required: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("description", models.ErrMissingConnectorField)
 	}
 
 	return nil
@@ -76,21 +75,21 @@ func (p *Plugin) validateTransferRequests(pi models.PSPPaymentInitiation) error 
 func (p *Plugin) validateBankAccountRequests(ba models.BankAccount) error {
 	routingNumber := models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseRoutingNumberMetadataKey)
 	if routingNumber == "" {
-		return fmt.Errorf("missing routingNumber in bank account metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreaseRoutingNumberMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	accountHolder := models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseAccountHolderMetadataKey)
 	if accountHolder == "" {
-		return fmt.Errorf("missing accountHolder in bank account metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreaseAccountHolderMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	description := models.ExtractNamespacedMetadata(ba.Metadata, client.IncreaseDescriptionMetadataKey)
 	if description == "" {
-		return fmt.Errorf("missing description in bank account metadata: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError(client.IncreaseDescriptionMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	if ba.AccountNumber == nil {
-		return fmt.Errorf("missing accountNumber in bank account request: %w", models.ErrInvalidRequest)
+		return models.NewConnectorValidationError("AccountNumber", models.ErrMissingConnectorField)
 	}
 
 	return nil
