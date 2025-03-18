@@ -237,11 +237,11 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 					Phone: pointer.For("0612345678"),
 				},
 				Address: &models.Address{
-					StreetName:   pointer.For("test"),
-					StreetNumber: pointer.For("1"),
-					City:         pointer.For("test"),
-					PostalCode:   pointer.For("12345"),
-					Country:      pointer.For("FR"),
+					StreetName:   "test",
+					StreetNumber: "1",
+					City:         "test",
+					PostalCode:   "12345",
+					Country:      "FR",
 				},
 				BankAccount: &sampleBankAccount,
 				Metadata: map[string]string{

@@ -10,11 +10,11 @@ import (
 )
 
 type CounterPartyAddress struct {
-	StreetName   *string `json:"streetName,omitempty"`
-	StreetNumber *string `json:"streetNumber,omitempty"`
-	City         *string `json:"city,omitempty"`
-	PostalCode   *string `json:"postalCode,omitempty"`
-	Country      *string `json:"country,omitempty"`
+	StreetName   string `json:"streetName,omitempty"`
+	StreetNumber string `json:"streetNumber,omitempty"`
+	City         string `json:"city,omitempty"`
+	PostalCode   string `json:"postalCode,omitempty"`
+	Country      string `json:"country,omitempty"`
 }
 
 type CounterPartyContactDetails struct {

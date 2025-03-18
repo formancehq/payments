@@ -27,6 +27,7 @@ type counterParty struct {
 	StreetNumber *string `bun:"decrypted_street_number,scanonly"`
 	City         *string `bun:"decrypted_city,scanonly"`
 	PostalCode   *string `bun:"decrypted_postal_code,scanonly"`
+	Region       *string `bun:"decrypted_region,scanonly"`
 	Country      *string `bun:"decrypted_country,scanonly"`
 	Email        *string `bun:"decrypted_email,scanonly"`
 	PhoneNumber  *string `bun:"decrypted_phone,scanonly"`
@@ -77,6 +78,7 @@ func (s *store) CounterPartyUpsert(ctx context.Context, cp models.CounterParty, 
 			Set("street_name = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.StreetName, s.configEncryptionKey, encryptionOptions).
 			Set("street_number = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.StreetNumber, s.configEncryptionKey, encryptionOptions).
 			Set("city = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.City, s.configEncryptionKey, encryptionOptions).
+			Set("region = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Region, s.configEncryptionKey, encryptionOptions).
 			Set("postal_code = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.PostalCode, s.configEncryptionKey, encryptionOptions).
 			Set("country = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Country, s.configEncryptionKey, encryptionOptions).
 			Set("email = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Email, s.configEncryptionKey, encryptionOptions).
@@ -112,6 +114,7 @@ func (s *store) CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.Co
 		ColumnExpr("pgp_sym_decrypt(street_name, ?, ?) as decrypted_street_name", s.configEncryptionKey, encryptionOptions).
 		ColumnExpr("pgp_sym_decrypt(street_number, ?, ?) as decrypted_street_number", s.configEncryptionKey, encryptionOptions).
 		ColumnExpr("pgp_sym_decrypt(city, ?, ?) as decrypted_city", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(region, ?, ?) as decrypted_region", s.configEncryptionKey, encryptionOptions).
 		ColumnExpr("pgp_sym_decrypt(postal_code, ?, ?) as decrypted_postal_code", s.configEncryptionKey, encryptionOptions).
 		ColumnExpr("pgp_sym_decrypt(country, ?, ?) as decrypted_country", s.configEncryptionKey, encryptionOptions).
 		ColumnExpr("pgp_sym_decrypt(email, ?, ?) as decrypted_email", s.configEncryptionKey, encryptionOptions).
@@ -187,6 +190,7 @@ func (s *store) CounterPartiesList(ctx context.Context, q ListCounterPartiesQuer
 				ColumnExpr("pgp_sym_decrypt(street_name, ?, ?) as decrypted_street_name", s.configEncryptionKey, encryptionOptions).
 				ColumnExpr("pgp_sym_decrypt(street_number, ?, ?) as decrypted_street_number", s.configEncryptionKey, encryptionOptions).
 				ColumnExpr("pgp_sym_decrypt(city, ?, ?) as decrypted_city", s.configEncryptionKey, encryptionOptions).
+				ColumnExpr("pgp_sym_decrypt(region, ?, ?) as decrypted_region", s.configEncryptionKey, encryptionOptions).
 				ColumnExpr("pgp_sym_decrypt(postal_code, ?, ?) as decrypted_postal_code", s.configEncryptionKey, encryptionOptions).
 				ColumnExpr("pgp_sym_decrypt(country, ?, ?) as decrypted_country", s.configEncryptionKey, encryptionOptions).
 				ColumnExpr("pgp_sym_decrypt(email, ?, ?) as decrypted_email", s.configEncryptionKey, encryptionOptions).
@@ -265,11 +269,12 @@ func fromCounterPartyModels(from models.CounterParty) counterParty {
 	}
 
 	if from.Address != nil {
-		counterParty.StreetName = from.Address.StreetName
-		counterParty.StreetNumber = from.Address.StreetNumber
-		counterParty.City = from.Address.City
-		counterParty.PostalCode = from.Address.PostalCode
-		counterParty.Country = from.Address.Country
+		counterParty.StreetName = &from.Address.StreetName
+		counterParty.StreetNumber = &from.Address.StreetNumber
+		counterParty.City = &from.Address.City
+		counterParty.Region = &from.Address.Region
+		counterParty.PostalCode = &from.Address.PostalCode
+		counterParty.Country = &from.Address.Country
 	}
 
 	if from.ContactDetails != nil {
@@ -308,20 +313,47 @@ func toCounterPartyModels(from counterParty) models.CounterParty {
 }
 
 func fillAddress(from counterParty) *models.Address {
-	if from.StreetName == nil &&
-		from.StreetNumber == nil &&
-		from.City == nil &&
-		from.PostalCode == nil &&
-		from.Country == nil {
+	if from.StreetName == nil && from.StreetNumber == nil && from.City == nil && from.PostalCode == nil && from.Region == nil && from.Country == nil {
 		return nil
 	}
 
+	streetName := ""
+	if from.StreetName != nil {
+		streetName = *from.StreetName
+	}
+
+	streetNumber := ""
+	if from.StreetNumber != nil {
+		streetNumber = *from.StreetNumber
+	}
+
+	city := ""
+	if from.City != nil {
+		city = *from.City
+	}
+
+	postalCode := ""
+	if from.PostalCode != nil {
+		postalCode = *from.PostalCode
+	}
+
+	region := ""
+	if from.Region != nil {
+		region = *from.Region
+	}
+
+	country := ""
+	if from.Country != nil {
+		country = *from.Country
+	}
+
 	return &models.Address{
-		StreetName:   from.StreetName,
-		StreetNumber: from.StreetNumber,
-		City:         from.City,
-		PostalCode:   from.PostalCode,
-		Country:      from.Country,
+		StreetName:   streetName,
+		StreetNumber: streetNumber,
+		City:         city,
+		PostalCode:   postalCode,
+		Region:       region,
+		Country:      country,
 	}
 }
 

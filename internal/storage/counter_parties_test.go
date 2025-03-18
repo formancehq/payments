@@ -24,11 +24,12 @@ var (
 			Phone: pointer.For("test"),
 		},
 		Address: &models.Address{
-			StreetName:   pointer.For("test"),
-			StreetNumber: pointer.For("test"),
-			City:         pointer.For("test"),
-			PostalCode:   pointer.For("test"),
-			Country:      pointer.For("test"),
+			StreetName:   "test",
+			StreetNumber: "test",
+			City:         "test",
+			Region:       "test",
+			PostalCode:   "test",
+			Country:      "test",
 		},
 		BankAccountID: &defaultBankAccount.ID,
 		Metadata: map[string]string{
@@ -56,9 +57,9 @@ var (
 			Email: pointer.For("test"),
 		},
 		Address: &models.Address{
-			StreetName: pointer.For("test"),
-			PostalCode: pointer.For("test"),
-			Country:    pointer.For("test"),
+			StreetName: "test",
+			PostalCode: "test",
+			Country:    "test",
 		},
 		BankAccountID: &defaultBankAccount.ID,
 	}
@@ -91,11 +92,12 @@ func TestCounterPartiesUpsert(t *testing.T) {
 				Phone: pointer.For("changed"),
 			},
 			Address: &models.Address{
-				StreetName:   pointer.For("changed"),
-				StreetNumber: pointer.For("changed"),
-				City:         pointer.For("changed"),
-				PostalCode:   pointer.For("changed"),
-				Country:      pointer.For("changed"),
+				StreetName:   "changed",
+				StreetNumber: "changed",
+				City:         "changed",
+				Region:       "changed",
+				PostalCode:   "changed",
+				Country:      "changed",
 			},
 		}
 
@@ -560,6 +562,7 @@ func compareCounterPartiesAddressed(t *testing.T, expected, actual *models.Addre
 	compareInterface(t, "StreetName", expected.StreetName, actual.StreetName)
 	compareInterface(t, "StreetNumber", expected.StreetNumber, actual.StreetNumber)
 	compareInterface(t, "City", expected.City, actual.City)
+	compareInterface(t, "Region", expected.Region, actual.Region)
 	compareInterface(t, "PostalCode", expected.PostalCode, actual.PostalCode)
 	compareInterface(t, "Country", expected.Country, actual.Country)
 }

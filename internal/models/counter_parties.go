@@ -20,11 +20,12 @@ type PSPCounterParty struct {
 }
 
 type Address struct {
-	StreetName   *string `json:"streetName"`
-	StreetNumber *string `json:"streetNumber"`
-	City         *string `json:"city"`
-	PostalCode   *string `json:"postalCode"`
-	Country      *string `json:"country"`
+	StreetName   string `json:"streetName"`
+	StreetNumber string `json:"streetNumber"`
+	City         string `json:"city"`
+	Region       string `json:"region"`
+	PostalCode   string `json:"postalCode"`
+	Country      string `json:"country"`
 }
 
 type ContactDetails struct {

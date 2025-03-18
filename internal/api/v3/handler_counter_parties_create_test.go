@@ -57,7 +57,7 @@ var _ = Describe("API v3 Counter Parties Create", func() {
 				},
 			}),
 			Entry("name too long", CounterPartiesCreateRequest{Name: generateTextString(1001)}),
-			Entry("country invalid", CounterPartiesCreateRequest{Name: "a", Address: &AddressRequest{Country: pointer.For("invalid")}}),
+			Entry("country invalid", CounterPartiesCreateRequest{Name: "a", Address: &AddressRequest{Country: "invalid"}}),
 			Entry("iban invalid", CounterPartiesCreateRequest{
 				Name: "1",
 				BankAccountInformation: &BankAccountInformationRequest{
@@ -87,11 +87,11 @@ var _ = Describe("API v3 Counter Parties Create", func() {
 					Phone: pointer.For("0612345678"),
 				},
 				Address: &AddressRequest{
-					StreetName:   pointer.For("street"),
-					StreetNumber: pointer.For("1"),
-					City:         pointer.For("city"),
-					PostalCode:   pointer.For("1234"),
-					Country:      pointer.For("FR"),
+					StreetName:   "street",
+					StreetNumber: "1",
+					City:         "city",
+					PostalCode:   "1234",
+					Country:      "FR",
 				},
 				Metadata: map[string]string{
 					"foo": "bar",
@@ -114,11 +114,11 @@ var _ = Describe("API v3 Counter Parties Create", func() {
 					Phone: pointer.For("0612345678"),
 				},
 				Address: &AddressRequest{
-					StreetName:   pointer.For("street"),
-					StreetNumber: pointer.For("1"),
-					City:         pointer.For("city"),
-					PostalCode:   pointer.For("1234"),
-					Country:      pointer.For("FR"),
+					StreetName:   "street",
+					StreetNumber: "1",
+					City:         "city",
+					PostalCode:   "1234",
+					Country:      "FR",
 				},
 				Metadata: map[string]string{
 					"foo": "bar",
@@ -140,11 +140,11 @@ var _ = Describe("API v3 Counter Parties Create", func() {
 					Phone: pointer.For("0612345678"),
 				},
 				Address: &AddressRequest{
-					StreetName:   pointer.For("street"),
-					StreetNumber: pointer.For("1"),
-					City:         pointer.For("city"),
-					PostalCode:   pointer.For("1234"),
-					Country:      pointer.For("FR"),
+					StreetName:   "street",
+					StreetNumber: "1",
+					City:         "city",
+					PostalCode:   "1234",
+					Country:      "FR",
 				},
 				Metadata: map[string]string{
 					"foo": "bar",

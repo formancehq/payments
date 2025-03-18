@@ -13,6 +13,7 @@ create table if not exists counter_parties (
     street_number bytea,
     postal_code bytea,
     city bytea,
+    region bytea,
     country bytea,
     email bytea,
     phone bytea,

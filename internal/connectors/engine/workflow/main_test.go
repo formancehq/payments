@@ -129,11 +129,11 @@ func (s *UnitTestSuite) addData() {
 			Phone: pointer.For("test"),
 		},
 		Address: &models.Address{
-			StreetName:   pointer.For("test"),
-			StreetNumber: pointer.For("test"),
-			City:         pointer.For("test"),
-			PostalCode:   pointer.For("test"),
-			Country:      pointer.For("test"),
+			StreetName:   "test",
+			StreetNumber: "test",
+			City:         "test",
+			PostalCode:   "test",
+			Country:      "test",
 		},
 		BankAccountID: &s.bankAccount.ID,
 		Metadata: map[string]string{

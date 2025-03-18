@@ -190,36 +190,11 @@ func toAtlarAddress(address *models.Address) *atlar_models.Address {
 		return &atlar_models.Address{}
 	}
 
-	streetName := ""
-	if address.StreetName != nil {
-		streetName = *address.StreetName
-	}
-
-	streetNumber := ""
-	if address.StreetNumber != nil {
-		streetNumber = *address.StreetNumber
-	}
-
-	city := ""
-	if address.City != nil {
-		city = *address.City
-	}
-
-	postalCode := ""
-	if address.PostalCode != nil {
-		postalCode = *address.PostalCode
-	}
-
-	country := ""
-	if address.Country != nil {
-		country = *address.Country
-	}
-
 	return &atlar_models.Address{
-		StreetName:   streetName,
-		StreetNumber: streetNumber,
-		City:         city,
-		PostalCode:   postalCode,
-		Country:      country,
+		StreetName:   address.StreetName,
+		StreetNumber: address.StreetNumber,
+		City:         address.City,
+		PostalCode:   address.PostalCode,
+		Country:      address.Country,
 	}
 }

@@ -28,11 +28,11 @@ type BankAccountInformationRequest struct {
 }
 
 type AddressRequest struct {
-	StreetName   *string `json:"streetName" validate:"omitempty"`
-	StreetNumber *string `json:"streetNumber" validate:"omitempty"`
-	City         *string `json:"city" validate:"omitempty"`
-	PostalCode   *string `json:"postalCode" validate:"omitempty"`
-	Country      *string `json:"country" validate:"omitempty,country_code"`
+	StreetName   string `json:"streetName" validate:"omitempty"`
+	StreetNumber string `json:"streetNumber" validate:"omitempty"`
+	City         string `json:"city" validate:"omitempty"`
+	PostalCode   string `json:"postalCode" validate:"omitempty"`
+	Country      string `json:"country" validate:"omitempty,country_code"`
 }
 
 type ContactDetailsRequest struct {
@@ -94,7 +94,7 @@ func counterPartiesCreate(backend backend.Backend, validator *validation.Validat
 			}
 
 			if req.Address != nil {
-				bankAccount.Country = req.Address.Country
+				bankAccount.Country = &req.Address.Country
 			}
 
 			counterParty.BankAccountID = pointer.For(bankAccount.ID)
@@ -156,25 +156,11 @@ func populateSpanFromCounterPartiesCreateRequest(span trace.Span, req CounterPar
 	}
 
 	if req.Address != nil {
-		if req.Address.StreetName != nil {
-			span.SetAttributes(attribute.String("streetName", *req.Address.StreetName))
-		}
-
-		if req.Address.StreetNumber != nil {
-			span.SetAttributes(attribute.String("streetNumber", *req.Address.StreetNumber))
-		}
-
-		if req.Address.City != nil {
-			span.SetAttributes(attribute.String("city", *req.Address.City))
-		}
-
-		if req.Address.PostalCode != nil {
-			span.SetAttributes(attribute.String("postalCode", *req.Address.PostalCode))
-		}
-
-		if req.Address.Country != nil {
-			span.SetAttributes(attribute.String("country", *req.Address.Country))
-		}
+		span.SetAttributes(attribute.String("streetName", req.Address.StreetName))
+		span.SetAttributes(attribute.String("streetNumber", req.Address.StreetNumber))
+		span.SetAttributes(attribute.String("city", req.Address.City))
+		span.SetAttributes(attribute.String("postalCode", req.Address.PostalCode))
+		span.SetAttributes(attribute.String("country", req.Address.Country))
 	}
 
 	if req.ContactDetails != nil {

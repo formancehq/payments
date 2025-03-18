@@ -51,11 +51,11 @@ var _ = Context("Payments API Counter Parties", func() {
 			Phone: pointer.For("test"),
 		},
 		Address: &v3.AddressRequest{
-			StreetName:   pointer.For("test"),
-			StreetNumber: pointer.For("test"),
-			City:         pointer.For("test"),
-			PostalCode:   pointer.For("test"),
-			Country:      pointer.For("FR"),
+			StreetName:   "test",
+			StreetNumber: "test",
+			City:         "test",
+			PostalCode:   "test",
+			Country:      "FR",
 		},
 		Metadata: map[string]string{
 			"foo": "bar",
