@@ -13,6 +13,7 @@ type CounterPartyAddress struct {
 	StreetName   string `json:"streetName,omitempty"`
 	StreetNumber string `json:"streetNumber,omitempty"`
 	City         string `json:"city,omitempty"`
+	Region       string `json:"region,omitempty"`
 	PostalCode   string `json:"postalCode,omitempty"`
 	Country      string `json:"country,omitempty"`
 }
@@ -41,9 +42,10 @@ type CounterPartyRelatedAccountsPayload struct {
 
 func (e Events) NewEventSavedCounterParty(counterParty models.CounterParty) publish.EventMessage {
 	payload := CounterPartyMessagePayload{
-		ID:        counterParty.ID.String(),
-		CreatedAt: counterParty.CreatedAt,
-		Name:      counterParty.Name,
+		ID:              counterParty.ID.String(),
+		CreatedAt:       counterParty.CreatedAt,
+		Name:            counterParty.Name,
+		RelatedAccounts: []CounterPartyRelatedAccountsPayload{},
 	}
 
 	if counterParty.ContactDetails != nil {
@@ -58,6 +60,7 @@ func (e Events) NewEventSavedCounterParty(counterParty models.CounterParty) publ
 			StreetName:   counterParty.Address.StreetName,
 			StreetNumber: counterParty.Address.StreetNumber,
 			City:         counterParty.Address.City,
+			Region:       counterParty.Address.Region,
 			PostalCode:   counterParty.Address.PostalCode,
 			Country:      counterParty.Address.Country,
 		}

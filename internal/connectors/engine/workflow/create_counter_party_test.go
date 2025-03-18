@@ -63,6 +63,28 @@ func (s *UnitTestSuite) Test_CreateCounterParty_Success() {
 	s.NoError(s.env.GetWorkflowError())
 }
 
+func (s *UnitTestSuite) Test_CreateCounterParty_NilBankAccountID() {
+	cp := s.counterParty
+	cp.BankAccountID = nil
+	s.env.OnActivity(activities.StorageCounterPartiesGetActivity, mock.Anything, s.counterParty.ID).Once().Return(&cp, nil)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
+		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunCreateCounterParty, CreateCounterParty{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:    s.connectorID,
+		CounterPartyID: s.counterParty.ID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	s.Error(s.env.GetWorkflowError())
+}
+
 func (s *UnitTestSuite) Test_CreateCounterParty_StorageCounterPartyGet_Error() {
 	s.env.OnActivity(activities.StorageCounterPartiesGetActivity, mock.Anything, s.counterParty.ID).Once().Return(
 		nil,

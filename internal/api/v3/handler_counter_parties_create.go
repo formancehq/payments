@@ -141,35 +141,5 @@ func populateSpanFromCounterPartiesCreateRequest(span trace.Span, req CounterPar
 		if req.BankAccountInformation.BankAccountID != nil {
 			span.SetAttributes(attribute.String("bankAccountId", *req.BankAccountInformation.BankAccountID))
 		}
-
-		if req.BankAccountInformation.AccountNumber != nil {
-			span.SetAttributes(attribute.String("accountNumber", *req.BankAccountInformation.AccountNumber))
-		}
-
-		if req.BankAccountInformation.IBAN != nil {
-			span.SetAttributes(attribute.String("iban", *req.BankAccountInformation.IBAN))
-		}
-
-		if req.BankAccountInformation.SwiftBicCode != nil {
-			span.SetAttributes(attribute.String("swiftBicCode", *req.BankAccountInformation.SwiftBicCode))
-		}
-	}
-
-	if req.Address != nil {
-		span.SetAttributes(attribute.String("streetName", req.Address.StreetName))
-		span.SetAttributes(attribute.String("streetNumber", req.Address.StreetNumber))
-		span.SetAttributes(attribute.String("city", req.Address.City))
-		span.SetAttributes(attribute.String("postalCode", req.Address.PostalCode))
-		span.SetAttributes(attribute.String("country", req.Address.Country))
-	}
-
-	if req.ContactDetails != nil {
-		if req.ContactDetails.Email != nil {
-			span.SetAttributes(attribute.String("email", *req.ContactDetails.Email))
-		}
-
-		if req.ContactDetails.Phone != nil {
-			span.SetAttributes(attribute.String("phone", *req.ContactDetails.Phone))
-		}
 	}
 }
