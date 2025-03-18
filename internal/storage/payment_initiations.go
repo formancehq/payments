@@ -33,6 +33,9 @@ type paymentInitiation struct {
 	SourceAccountID      *models.AccountID `bun:"source_account_id,type:character varying"`
 	DestinationAccountID *models.AccountID `bun:"destination_account_id,type:character varying,notnull"`
 
+	// Fields retrieved with a join
+	Adjustments []paymentInitiationAdjustment `bun:"rel:has-many,join:id=payment_initiation_id"`
+
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -179,7 +182,8 @@ func NewListPaymentInitiationsQuery(opts bunpaginate.PaginatedQueryOptions[Payme
 	}
 }
 
-func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, []any, error) {
+func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, string, []any, error) {
+	join := ""
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
 		case key == "reference",
@@ -194,11 +198,23 @@ func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, []any,
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 
+		case key == "status":
+			if operator != "$match" {
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+			}
+
+			// we only care about the latest adjustment, so we need to sort the adjustments
+			join = `JOIN payment_initiation_adjustments AS current_adj
+ON (current_adj.payment_initiation_id = payment_initiation.id)
+LEFT OUTER JOIN payment_initiation_adjustments newer_adj
+ON (newer_adj.payment_initiation_id = payment_initiation.id AND current_adj.sort_id < newer_adj.sort_id)`
+
+			return fmt.Sprintf("current_adj.%s = ? AND newer_adj.id IS NULL", key), []any{value}, nil
 		case key == "amount":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -206,22 +222,22 @@ func (s *store) paymentsInitiationQueryContext(qb query.Builder) (string, []any,
 			return key + " @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
-		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
 		}
+		return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 	}))
 
-	return where, args, err
+	return join, where, args, err
 }
 
 func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error) {
 	var (
+		join  string
 		where string
 		args  []any
 		err   error
 	)
 	if q.Options.QueryBuilder != nil {
-		where, args, err = s.paymentsInitiationQueryContext(q.Options.QueryBuilder)
+		join, where, args, err = s.paymentsInitiationQueryContext(q.Options.QueryBuilder)
 		if err != nil {
 			return nil, err
 		}
@@ -230,12 +246,19 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery], paymentInitiation](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
+			query = query.
+				Relation("Adjustments")
+
+			if join != "" {
+				query = query.Join(join)
+			}
+
 			if where != "" {
 				query = query.Where(where, args...)
 			}
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC", "sort_id DESC")
+			query = query.Order("payment_initiation.created_at DESC", "payment_initiation.sort_id DESC")
 
 			return query
 		},
