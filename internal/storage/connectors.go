@@ -206,8 +206,7 @@ func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuer
 func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "name",
-			key == "provider":
+		case key == "name", key == "provider", key == "id":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		default:
 			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))

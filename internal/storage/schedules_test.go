@@ -10,6 +10,8 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -176,7 +178,7 @@ func TestSchedulesList(t *testing.T) {
 	upsertSchedule(t, ctx, store, defaultSchedules[1])
 	upsertSchedule(t, ctx, store, defaultSchedules[2])
 
-	t.Run("wrong query builder operator when listing by operator id", func(t *testing.T) {
+	t.Run("wrong query builder operator when listing by connector_id", func(t *testing.T) {
 		q := NewListSchedulesQuery(
 			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
@@ -186,6 +188,8 @@ func TestSchedulesList(t *testing.T) {
 		cursor, err := store.SchedulesList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "connector_id", err.Error())
 	})
 
 	t.Run("list schedules by connector id", func(t *testing.T) {
@@ -210,6 +214,42 @@ func TestSchedulesList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connector_id", models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "unknown",
+				}),
+				),
+		)
+
+		cursor, err := store.SchedulesList(ctx, q)
+		require.NoError(t, err)
+		require.Empty(t, cursor.Data)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+	})
+
+	t.Run("list schedules by id", func(t *testing.T) {
+		q := NewListSchedulesQuery(
+			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", defaultSchedules[1].ID)),
+		)
+
+		cursor, err := store.SchedulesList(ctx, q)
+		require.NoError(t, err)
+		require.Equal(t, 15, cursor.PageSize)
+		require.Equal(t, 1, len(cursor.Data))
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Previous)
+		require.Empty(t, cursor.Next)
+		require.Equal(t, []models.Schedule{defaultSchedules[1]}, cursor.Data)
+	})
+
+	t.Run("list schedules by unknown id", func(t *testing.T) {
+		q := NewListSchedulesQuery(
+			bunpaginate.NewPaginatedQueryOptions(ScheduleQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", models.ConnectorID{
 					Reference: uuid.New(),
 					Provider:  "unknown",
 				}),

@@ -79,15 +79,19 @@ var _ = Describe("Plugin Create Bank Account", func() {
 			Expect(temporalErr.Type()).To(Equal(activities.ErrTypeDefault))
 		})
 
-		It("returns a non-retryable temporal error", func(ctx SpecContext) {
-			p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
-			plugin.EXPECT().CreateBankAccount(ctx, req.Req).Return(sampleResponse, fmt.Errorf("invalid: %w", pluginsError.ErrInvalidClientRequest))
-			_, err := act.PluginCreateBankAccount(ctx, req)
-			Expect(err).ToNot(BeNil())
-			temporalErr, ok := err.(*temporal.ApplicationError)
-			Expect(ok).To(BeTrue())
-			Expect(temporalErr.NonRetryable()).To(BeTrue())
-			Expect(temporalErr.Type()).To(Equal(activities.ErrTypeInvalidArgument))
-		})
+		DescribeTable("converts various errors into non-retryable temporal errors when required",
+			func(ctx SpecContext, incomingErr error) {
+				p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
+				plugin.EXPECT().CreateBankAccount(ctx, req.Req).Return(sampleResponse, incomingErr)
+				_, err := act.PluginCreateBankAccount(ctx, req)
+				Expect(err).ToNot(BeNil())
+				temporalErr, ok := err.(*temporal.ApplicationError)
+				Expect(ok).To(BeTrue())
+				Expect(temporalErr.NonRetryable()).To(BeTrue())
+				Expect(temporalErr.Type()).To(Equal(activities.ErrTypeInvalidArgument))
+			},
+			Entry("wrapped invalid client request", fmt.Errorf("invalid: %w", pluginsError.ErrInvalidClientRequest)),
+			Entry("connector metadata error custom type", models.NewConnectorMetadataError("some-field")),
+		)
 	})
 })

@@ -13,6 +13,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -298,6 +299,8 @@ func TestPaymentInitiationsList(t *testing.T) {
 		cursor, err := store.PaymentInitiationsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "reference", err.Error())
 	})
 
 	t.Run("list payment intitiations by reference", func(t *testing.T) {
@@ -319,6 +322,33 @@ func TestPaymentInitiationsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("list payment intitiations by id", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", defaultPaymentInitiations()[0].ID.String())),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiations(t, defaultPaymentInitiations()[0], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations by unknown id", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", "unknown")),
 		)
 
 		cursor, err := store.PaymentInitiationsList(ctx, q)

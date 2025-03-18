@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -196,20 +195,20 @@ func (s *store) poolsQueryContext(qb query.Builder) (string, string, []any, erro
 		switch {
 		case key == "name", key == "id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case key == "account_id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'account_id' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 
 			join = "JOIN pool_accounts AS pool_accounts ON pool_accounts.pool_id = pool.id"
 
 			return fmt.Sprintf("pool_accounts.%s = ?", key), []any{value}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 

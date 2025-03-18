@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -160,14 +159,14 @@ func NewListBankAccountsQuery(opts bunpaginate.PaginatedQueryOptions[BankAccount
 func (s *store) bankAccountsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "name", key == "country":
+		case key == "name", key == "country", key == "id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("'%s' column can only be used with $match", key))
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -176,7 +175,7 @@ func (s *store) bankAccountsQueryContext(qb query.Builder) (string, []any, error
 				match[0][1]: value,
 			}}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 }

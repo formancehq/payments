@@ -12,6 +12,8 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -909,6 +911,8 @@ func TestPaymentsList(t *testing.T) {
 		cursor, err := store.PaymentsList(ctx, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+		assert.True(t, errors.Is(err, ErrValidation))
+		assert.Regexp(t, "reference", err.Error())
 	})
 
 	t.Run("list payments by reference", func(t *testing.T) {
@@ -930,6 +934,33 @@ func TestPaymentsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("reference", "unknown")),
+		)
+
+		cursor, err := store.PaymentsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("list payments by id", func(t *testing.T) {
+		q := NewListPaymentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", dps[0].ID.String())),
+		)
+
+		cursor, err := store.PaymentsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePayments(t, dps[0], cursor.Data[0])
+	})
+
+	t.Run("list payments by unknown id", func(t *testing.T) {
+		q := NewListPaymentsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("id", "unknown")),
 		)
 
 		cursor, err := store.PaymentsList(ctx, q)
