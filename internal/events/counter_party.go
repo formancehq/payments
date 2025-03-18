@@ -3,7 +3,7 @@ package events
 import (
 	"time"
 
-	"github.com/formancehq/go-libs/pointer"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/go-libs/v2/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/events"

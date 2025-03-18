@@ -3,8 +3,8 @@
 package test_suite
 
 import (
-	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/go-libs/v2/testing/utils"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
