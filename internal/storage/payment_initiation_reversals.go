@@ -142,7 +142,7 @@ func (s *store) paymentsInitiationReversalQueryContext(qb query.Builder) (string
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -151,7 +151,7 @@ func (s *store) paymentsInitiationReversalQueryContext(qb query.Builder) (string
 				match[0][1]: value,
 			}}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 

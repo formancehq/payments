@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -46,48 +45,48 @@ func (s *store) CounterPartyUpsert(ctx context.Context, cp models.CounterParty, 
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+
+	var errTx error
+	defer func() {
+		if errTx != nil {
+			if err := tx.Rollback(); err != nil {
+				s.logger.Errorf("failed to rollback transaction: %v", err)
+			}
+		}
+	}()
 
 	if bankAccount != nil {
 		if err := s.insertBankAccountWithTx(ctx, tx, *bankAccount); err != nil {
+			errTx = err
 			return err
 		}
 	}
 
 	toInsert := fromCounterPartyModels(cp)
 
-	res, err := tx.NewInsert().
-		Model(&toInsert).
-		Column("id", "created_at", "bank_account_id", "metadata").
-		On("CONFLICT (id) DO NOTHING").
-		Returning("id").
-		Exec(ctx)
+	_, err = tx.NewRaw(`
+		INSERT INTO counter_parties (id, created_at, bank_account_id, metadata, name, street_name, street_number, city, region, postal_code, country, email, phone)
+		VALUES (?0, ?1, ?2, ?3,
+			pgp_sym_encrypt(?4::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?5::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?6::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?7::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?8::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?9::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?10::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?11::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?12::TEXT, ?13, ?14)
+		)
+		ON CONFLICT (id) DO NOTHING
+		RETURNING id
+	`, toInsert.ID, toInsert.CreatedAt, toInsert.BankAccountID, toInsert.Metadata,
+		toInsert.Name, toInsert.StreetName, toInsert.StreetNumber, toInsert.City,
+		toInsert.Region, toInsert.PostalCode, toInsert.Country, toInsert.Email,
+		toInsert.PhoneNumber, s.configEncryptionKey, encryptionOptions,
+	).Exec(ctx)
 	if err != nil {
+		errTx = err
 		return e("insert counter party: %w", err)
-	}
-
-	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		return e("insert bank account", err)
-	}
-
-	if rowsAffected > 0 {
-		_, err = tx.NewUpdate().
-			Model((*counterParty)(nil)).
-			Set("name = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Name, s.configEncryptionKey, encryptionOptions).
-			Set("street_name = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.StreetName, s.configEncryptionKey, encryptionOptions).
-			Set("street_number = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.StreetNumber, s.configEncryptionKey, encryptionOptions).
-			Set("city = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.City, s.configEncryptionKey, encryptionOptions).
-			Set("region = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Region, s.configEncryptionKey, encryptionOptions).
-			Set("postal_code = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.PostalCode, s.configEncryptionKey, encryptionOptions).
-			Set("country = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Country, s.configEncryptionKey, encryptionOptions).
-			Set("email = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.Email, s.configEncryptionKey, encryptionOptions).
-			Set("phone = pgp_sym_encrypt(?::TEXT, ?, ?)", toInsert.PhoneNumber, s.configEncryptionKey, encryptionOptions).
-			Where("id = ?", toInsert.ID).
-			Exec(ctx)
-		if err != nil {
-			return e("update counter party: %w", err)
-		}
 	}
 
 	if len(toInsert.RelatedAccounts) > 0 {
@@ -97,30 +96,30 @@ func (s *store) CounterPartyUpsert(ctx context.Context, cp models.CounterParty, 
 			On("CONFLICT (counter_party_id, account_id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
+			errTx = err
 			return e("insert related accounts", err)
 		}
 	}
 
-	return e("commit transaction", tx.Commit())
+	if err := tx.Commit(); err != nil {
+		errTx = err
+		return e("commit transaction", tx.Commit())
+	}
+
+	return nil
 }
 
 func (s *store) CounterPartiesGet(ctx context.Context, id uuid.UUID) (*models.CounterParty, error) {
 	var counterParty counterParty
 
-	err := s.db.NewSelect().
+	query := s.db.NewSelect().
 		Model(&counterParty).
 		Column("id", "created_at", "bank_account_id", "metadata").
-		ColumnExpr("pgp_sym_decrypt(name, ?, ?) as decrypted_name", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(street_name, ?, ?) as decrypted_street_name", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(street_number, ?, ?) as decrypted_street_number", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(city, ?, ?) as decrypted_city", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(region, ?, ?) as decrypted_region", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(postal_code, ?, ?) as decrypted_postal_code", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(country, ?, ?) as decrypted_country", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(email, ?, ?) as decrypted_email", s.configEncryptionKey, encryptionOptions).
-		ColumnExpr("pgp_sym_decrypt(phone, ?, ?) as decrypted_phone", s.configEncryptionKey, encryptionOptions).
 		Where("id = ?", id).
-		Relation("RelatedAccounts").
+		Relation("RelatedAccounts")
+	query = s.counterPartiesSelectDecryptColumnExpr(query)
+
+	err := query.
 		Scan(ctx)
 	if err != nil {
 		return nil, e("select counter party: %w", err)
@@ -148,12 +147,12 @@ func (s *store) counterPartiesQueryContext(qb query.Builder) (string, []any, err
 		switch {
 		case key == "id", key == "bank_account_id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("'%s' column can only be used with $match", key))
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'metadata' column can only be used with $match")
+				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
@@ -162,7 +161,7 @@ func (s *store) counterPartiesQueryContext(qb query.Builder) (string, []any, err
 				match[0][1]: value,
 			}}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 }
@@ -184,17 +183,8 @@ func (s *store) CounterPartiesList(ctx context.Context, q ListCounterPartiesQuer
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[CounterPartyQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.Relation("RelatedAccounts")
-			query = query.
-				Column("id", "created_at", "bank_account_id", "metadata").
-				ColumnExpr("pgp_sym_decrypt(name, ?, ?) as decrypted_name", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(street_name, ?, ?) as decrypted_street_name", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(street_number, ?, ?) as decrypted_street_number", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(city, ?, ?) as decrypted_city", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(region, ?, ?) as decrypted_region", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(postal_code, ?, ?) as decrypted_postal_code", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(country, ?, ?) as decrypted_country", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(email, ?, ?) as decrypted_email", s.configEncryptionKey, encryptionOptions).
-				ColumnExpr("pgp_sym_decrypt(phone, ?, ?) as decrypted_phone", s.configEncryptionKey, encryptionOptions)
+			query = query.Column("id", "created_at", "bank_account_id", "metadata")
+			query = s.counterPartiesSelectDecryptColumnExpr(query)
 
 			if where != "" {
 				query = query.Where(where, args...)
@@ -221,6 +211,19 @@ func (s *store) CounterPartiesList(ctx context.Context, q ListCounterPartiesQuer
 		Next:     cursor.Next,
 		Data:     counterParties,
 	}, nil
+}
+
+func (s *store) counterPartiesSelectDecryptColumnExpr(query *bun.SelectQuery) *bun.SelectQuery {
+	return query.
+		ColumnExpr("pgp_sym_decrypt(name, ?, ?) as decrypted_name", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(street_name, ?, ?) as decrypted_street_name", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(street_number, ?, ?) as decrypted_street_number", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(city, ?, ?) as decrypted_city", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(region, ?, ?) as decrypted_region", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(postal_code, ?, ?) as decrypted_postal_code", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(country, ?, ?) as decrypted_country", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(email, ?, ?) as decrypted_email", s.configEncryptionKey, encryptionOptions).
+		ColumnExpr("pgp_sym_decrypt(phone, ?, ?) as decrypted_phone", s.configEncryptionKey, encryptionOptions)
 }
 
 type counterPartiesRelatedAccount struct {
