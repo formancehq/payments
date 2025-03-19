@@ -33,9 +33,6 @@ type paymentInitiation struct {
 	SourceAccountID      *models.AccountID `bun:"source_account_id,type:character varying"`
 	DestinationAccountID *models.AccountID `bun:"destination_account_id,type:character varying,notnull"`
 
-	// Fields retrieved with a join
-	Adjustments []paymentInitiationAdjustment `bun:"rel:has-many,join:id=payment_initiation_id"`
-
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -246,9 +243,6 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery], paymentInitiation](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentInitiationQuery]])(&q),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
-			query = query.
-				Relation("Adjustments")
-
 			if join != "" {
 				query = query.Join(join)
 			}
