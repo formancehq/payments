@@ -46,7 +46,7 @@ var _ = Describe("Increase Plugin Payments", func() {
 				sampleSucceededTransactions = append(sampleSucceededTransactions, &client.Transaction{
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
-					Amount:    "100.01",
+					Amount:    100,
 					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
@@ -56,7 +56,7 @@ var _ = Describe("Increase Plugin Payments", func() {
 				samplePendingTransactions = append(samplePendingTransactions, &client.Transaction{
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
-					Amount:    "100.01",
+					Amount:    100,
 					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
@@ -66,7 +66,7 @@ var _ = Describe("Increase Plugin Payments", func() {
 				sampleDeclinedTransactions = append(sampleDeclinedTransactions, &client.Transaction{
 					ID:        fmt.Sprintf("%d", i),
 					AccountID: "2345433",
-					Amount:    "100.01",
+					Amount:    100,
 					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",

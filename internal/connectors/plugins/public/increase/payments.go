@@ -3,7 +3,7 @@ package increase
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/pointer"
@@ -88,16 +88,6 @@ func (p *Plugin) fillPayments(
 			break
 		}
 
-		precision, ok := supportedCurrenciesWithDecimal[transaction.Currency]
-		if !ok {
-			return nil, fmt.Errorf("unsupported currency: %s", transaction.Currency)
-		}
-
-		amount, err := currency.GetAmountWithPrecisionFromString(transaction.Amount.String(), precision)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse amount %s: %w", transaction.Amount, err)
-		}
-
 		createdTime, err := time.Parse(time.RFC3339, transaction.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -113,7 +103,7 @@ func (p *Plugin) fillPayments(
 			CreatedAt: createdTime,
 			Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Currency)),
 			Status:    status,
-			Amount:    amount,
+			Amount:    big.NewInt(transaction.Amount),
 			Type:      models.PAYMENT_TYPE_OTHER,
 			Raw:       raw,
 		})
@@ -188,16 +178,6 @@ func (p *Plugin) mapPayment(transaction *client.Transaction, status models.Payme
 		return models.PSPPayment{}, err
 	}
 
-	precision, ok := supportedCurrenciesWithDecimal[transaction.Currency]
-	if !ok {
-		return models.PSPPayment{}, nil
-	}
-
-	amount, err := currency.GetAmountWithPrecisionFromString(transaction.Amount.String(), precision)
-	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to parse amount %s: %w", transaction.Amount, err)
-	}
-
 	raw, err := json.Marshal(transaction)
 	if err != nil {
 		return models.PSPPayment{}, err
@@ -208,7 +188,7 @@ func (p *Plugin) mapPayment(transaction *client.Transaction, status models.Payme
 		CreatedAt: createdTime,
 		Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Currency)),
 		Status:    status,
-		Amount:    amount,
+		Amount:    big.NewInt(transaction.Amount),
 		Type:      models.PAYMENT_TYPE_OTHER,
 		Raw:       raw,
 	}

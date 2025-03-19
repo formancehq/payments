@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -16,16 +15,16 @@ const (
 )
 
 type Transaction struct {
-	ID          string      `json:"id"`
-	AccountID   string      `json:"account_id"`
-	Amount      json.Number `json:"amount"`
-	Currency    string      `json:"currency"`
-	CreatedAt   string      `json:"created_at"`
-	Date        string      `json:"date"`
-	Description string      `json:"description"`
-	RouteID     string      `json:"route_id"`
-	RouteType   string      `json:"route_type"`
-	Type        string      `json:"type"`
+	ID          string `json:"id"`
+	AccountID   string `json:"account_id"`
+	Amount      int64  `json:"amount"`
+	Currency    string `json:"currency"`
+	CreatedAt   string `json:"created_at"`
+	Date        string `json:"date"`
+	Description string `json:"description"`
+	RouteID     string `json:"route_id"`
+	RouteType   string `json:"route_type"`
+	Type        string `json:"type"`
 }
 
 func (c *client) GetTransactions(ctx context.Context, pageSize int, lastCreatedAtAfter time.Time, nextCursor string) ([]*Transaction, string, error) {

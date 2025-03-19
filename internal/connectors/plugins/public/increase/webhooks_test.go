@@ -57,7 +57,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			samplePaymentCreated = &client.Transaction{
 				ID:        "2",
 				AccountID: "2345433",
-				Amount:    "100.01",
+				Amount:    100,
 				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
 				Date:      now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
 				Currency:  "USD",
