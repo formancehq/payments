@@ -167,6 +167,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "add payment_initiation_adjustments indexes",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add payment_initiation_adjustments index migration...")
+				err := AddPaymentInitiationAdjustmentsIndexes(ctx, db)
+				logger.WithField("error", err).Info("finished add payment_initiation_adjustments index migration")
+				return err
+			},
+		},
 	)
 }
 
