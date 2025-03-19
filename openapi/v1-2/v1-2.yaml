@@ -2497,10 +2497,6 @@ components:
         status:
           type: string
           enum:
-            - WAITING_FOR_VALIDATION
-            - PROCESSING
-            - PROCESSED
-            - FAILED
             - REJECTED
             - VALIDATED
     AccountType:
