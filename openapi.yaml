@@ -4740,13 +4740,13 @@ components:
       type: object
       required:
         - name
-        - baseURL
+        - baseUrl
         - accessKey
         - secret
       properties:
         accessKey:
           type: string
-        baseURL:
+        baseUrl:
           type: string
         name:
           type: string

@@ -9,7 +9,7 @@ import (
 )
 
 type Config struct {
-	BaseURL   string `json:"baseURL" validate:"required"`
+	BaseURL   string `json:"baseUrl" validate:"required"`
 	AccessKey string `json:"accessKey" validate:"required"`
 	Secret    string `json:"secret" validate:"required"`
 }
