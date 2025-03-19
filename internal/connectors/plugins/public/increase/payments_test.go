@@ -86,13 +86,25 @@ var _ = Describe("Increase Plugin Payments", func() {
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: samplePendingTransactions[:20],
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
 				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get pending transactions: test error : : status code: 0"))
+			Expect(err).To(MatchError("failed to get transactions: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
@@ -130,13 +142,37 @@ var _ = Describe("Increase Plugin Payments", func() {
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: samplePendingTransactions[:20],
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: sampleSucceededTransactions[:20],
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
 				500,
 				errors.New("test error"),
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get pending transactions: test error : : status code: 0"))
+			Expect(err).To(MatchError("failed to get declined transactions: test error : : status code: 0"))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
