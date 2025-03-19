@@ -73,9 +73,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		return e("upsert payment initiations", err)
 	}
 	defer func() {
-		if err != nil {
-			tx.Rollback()
-		}
+		rollbackOnTxError(ctx, tx, err)
 	}()
 
 	toInsert := fromPaymentInitiationModels(pi)
