@@ -2444,8 +2444,6 @@ components:
           type: string
         connectorID:
           type: string
-        provider:
-          $ref: '#/components/schemas/Connector'
         type:
           type: string
           enum:

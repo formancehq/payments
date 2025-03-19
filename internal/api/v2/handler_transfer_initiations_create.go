@@ -23,7 +23,6 @@ type CreateTransferInitiationRequest struct {
 	SourceAccountID      string            `json:"sourceAccountID" validate:"omitempty,accountID"`
 	DestinationAccountID string            `json:"destinationAccountID" validate:"required,accountID"`
 	ConnectorID          string            `json:"connectorID" validate:"required,connectorID"`
-	Provider             string            `json:"provider" validate:""`
 	Type                 string            `json:"type" validate:"required,paymentInitiationType"`
 	Amount               *big.Int          `json:"amount" validate:"required"`
 	Asset                string            `json:"asset" validate:"required,asset"`
@@ -126,7 +125,6 @@ func setSpanAttributesFromRequest(span trace.Span, transfer CreateTransferInitia
 		attribute.String("sourceAccountID", transfer.SourceAccountID),
 		attribute.String("destinationAccountID", transfer.DestinationAccountID),
 		attribute.String("connectorID", transfer.ConnectorID),
-		attribute.String("provider", transfer.Provider),
 		attribute.String("type", transfer.Type),
 		attribute.String("amount", transfer.Amount.String()),
 		attribute.String("asset", transfer.Asset),
