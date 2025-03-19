@@ -288,6 +288,7 @@ func TestPaymentInitiationsList(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations())
+	upsertPaymentInitiationAdjustments(t, ctx, store, defaultPaymentInitiationAdjustments())
 
 	t.Run("wrong query builder operator when listing by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
@@ -420,6 +421,47 @@ func TestPaymentInitiationsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "UNKNOWN")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("list payment initiations by status multiple adjustments", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED.String())),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiations(t, defaultPaymentInitiations()[0], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations by status single adjustment", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String())),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiations(t, defaultPaymentInitiations()[1], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations by unknown status", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", "UNKNOWN")),
 		)
 
 		cursor, err := store.PaymentInitiationsList(ctx, q)
