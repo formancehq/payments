@@ -781,6 +781,25 @@ func (mr *MockStorageMockRecorder) PaymentInitiationsGet(ctx, piID any) *gomock.
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsGet", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsGet), ctx, piID)
 }
 
+// PaymentInitiationsInsert mocks base method.
+func (m *MockStorage) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error {
+	m.ctrl.T.Helper()
+	varargs := []any{ctx, pi}
+	for _, a := range adjustments {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "PaymentInitiationsInsert", varargs...)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentInitiationsInsert indicates an expected call of PaymentInitiationsInsert.
+func (mr *MockStorageMockRecorder) PaymentInitiationsInsert(ctx, pi any, adjustments ...any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]any{ctx, pi}, adjustments...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsInsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsInsert), varargs...)
+}
+
 // PaymentInitiationsList mocks base method.
 func (m *MockStorage) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiationsQuery) (*bunpaginate.Cursor[models.PaymentInitiation], error) {
 	m.ctrl.T.Helper()
@@ -808,25 +827,6 @@ func (m *MockStorage) PaymentInitiationsUpdateMetadata(ctx context.Context, piID
 func (mr *MockStorageMockRecorder) PaymentInitiationsUpdateMetadata(ctx, piID, metadata any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsUpdateMetadata", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsUpdateMetadata), ctx, piID, metadata)
-}
-
-// PaymentInitiationsUpsert mocks base method.
-func (m *MockStorage) PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error {
-	m.ctrl.T.Helper()
-	varargs := []any{ctx, pi}
-	for _, a := range adjustments {
-		varargs = append(varargs, a)
-	}
-	ret := m.ctrl.Call(m, "PaymentInitiationsUpsert", varargs...)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PaymentInitiationsUpsert indicates an expected call of PaymentInitiationsUpsert.
-func (mr *MockStorageMockRecorder) PaymentInitiationsUpsert(ctx, pi any, adjustments ...any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	varargs := append([]any{ctx, pi}, adjustments...)
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsUpsert", reflect.TypeOf((*MockStorage)(nil).PaymentInitiationsUpsert), varargs...)
 }
 
 // PaymentsDeleteFromConnectorID mocks base method.

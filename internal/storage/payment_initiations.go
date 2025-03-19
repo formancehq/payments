@@ -66,12 +66,17 @@ type paymentInitiationAdjustment struct {
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
-func (s *store) PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error {
-	tx, err := s.db.BeginTx(ctx, nil)
+func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) (err error) {
+	var tx bun.Tx
+	tx, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return e("upsert payment initiations", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err != nil {
+			tx.Rollback()
+		}
+	}()
 
 	toInsert := fromPaymentInitiationModels(pi)
 	adjustmentsToInsert := make([]paymentInitiationAdjustment, 0, len(adjustments))
@@ -81,7 +86,6 @@ func (s *store) PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentI
 
 	_, err = tx.NewInsert().
 		Model(&toInsert).
-		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
 		return e("failed to insert payment initiations", err)

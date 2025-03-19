@@ -85,12 +85,12 @@ func defaultPaymentInitiations() []models.PaymentInitiation {
 
 func upsertPaymentInitiations(t *testing.T, ctx context.Context, storage Storage, paymentInitiations []models.PaymentInitiation) {
 	for _, pi := range paymentInitiations {
-		err := storage.PaymentInitiationsUpsert(ctx, pi)
+		err := storage.PaymentInitiationsInsert(ctx, pi)
 		require.NoError(t, err)
 	}
 }
 
-func TestPaymentInitiationsUpsert(t *testing.T) {
+func TestPaymentInitiationsInsert(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -109,11 +109,11 @@ func TestPaymentInitiationsUpsert(t *testing.T) {
 		p.ID.ConnectorID = connector
 		p.ConnectorID = connector
 
-		err := store.PaymentInitiationsUpsert(ctx, p)
+		err := store.PaymentInitiationsInsert(ctx, p)
 		require.Error(t, err)
 	})
 
-	t.Run("upsert with same id", func(t *testing.T) {
+	t.Run("attempt insert with same id", func(t *testing.T) {
 		defaultAccounts := defaultAccounts()
 		pi := models.PaymentInitiation{
 			ID:                   piID1,
@@ -128,7 +128,9 @@ func TestPaymentInitiationsUpsert(t *testing.T) {
 			Asset:                "DKK/2",
 		}
 
-		upsertPaymentInitiations(t, ctx, store, []models.PaymentInitiation{pi})
+		err := store.PaymentInitiationsInsert(ctx, pi)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrDuplicateKeyValue)
 
 		actual, err := store.PaymentInitiationsGet(ctx, piID1)
 		require.NoError(t, err)
