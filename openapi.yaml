@@ -2306,7 +2306,21 @@ components:
         - PARTIALLY_REVERSED
         - REVERSED
     ConnectorConfig:
-      anyOf:
+      discriminator:
+        propertyName: provider
+        mapping:
+          Stripe: '#/components/schemas/StripeConfig'
+          Dummypay: '#/components/schemas/DummyPayConfig'
+          Wise: '#/components/schemas/WiseConfig'
+          Modulr: '#/components/schemas/ModulrConfig'
+          Currencycloud: '#/components/schemas/CurrencyCloudConfig'
+          Bankingcircle: '#/components/schemas/BankingCircleConfig'
+          Mangopay: '#/components/schemas/MangoPayConfig'
+          Moneycorp: '#/components/schemas/MoneycorpConfig'
+          Atlar: '#/components/schemas/AtlarConfig'
+          Adyen: '#/components/schemas/AdyenConfig'
+          Generic: '#/components/schemas/GenericConfig'
+      oneOf:
         - $ref: '#/components/schemas/StripeConfig'
         - $ref: '#/components/schemas/DummyPayConfig'
         - $ref: '#/components/schemas/WiseConfig'
@@ -2327,6 +2341,9 @@ components:
         name:
           type: string
           example: My Stripe Account
+        provider:
+          type: string
+          default: Stripe
         pollingPeriod:
           type: string
           example: 60s
@@ -2353,6 +2370,9 @@ components:
         name:
           type: string
           example: My DummyPay Account
+        provider:
+          type: string
+          default: Dummypay
         filePollingPeriod:
           type: string
           example: 60s
@@ -2378,6 +2398,9 @@ components:
         name:
           type: string
           example: My Wise Account
+        provider:
+          type: string
+          default: Wise
         apiKey:
           type: string
           example: XXX
@@ -2397,6 +2420,9 @@ components:
         name:
           type: string
           example: My Modulr Account
+        provider:
+          type: string
+          default: Modulr
         apiKey:
           type: string
           example: XXX
@@ -2426,6 +2452,9 @@ components:
         name:
           type: string
           example: My Banking Circle Account
+        provider:
+          type: string
+          default: Bankingcircle
         username:
           type: string
           example: XXX
@@ -2460,6 +2489,9 @@ components:
         name:
           type: string
           example: My Generic Account
+        provider:
+          type: string
+          default: Generic
         apiKey:
           type: string
           example: XXX
@@ -2483,6 +2515,9 @@ components:
         name:
           type: string
           example: My MangoPay Account
+        provider:
+          type: string
+          default: Mangopay
         pollingPeriod:
           type: string
           example: 60s
@@ -2509,6 +2544,9 @@ components:
         name:
           type: string
           example: My Moneycorp Account
+        provider:
+          type: string
+          default: Moneycorp
         clientID:
           type: string
           example: XXX
@@ -2534,6 +2572,9 @@ components:
         name:
           type: string
           example: My CurrencyCloud Account
+        provider:
+          type: string
+          default: Currencycloud
         apiKey:
           type: string
           example: XXX
@@ -2560,6 +2601,9 @@ components:
         name:
           type: string
           example: My Adyen Account
+        provider:
+          type: string
+          default: Adyen
         apiKey:
           type: string
           example: XXX
@@ -2585,6 +2629,9 @@ components:
         name:
           type: string
           example: My Atlar Account
+        provider:
+          type: string
+          default: Atlar
         baseUrl:
           type: string
           example: https://api.example.com
@@ -4695,7 +4742,21 @@ components:
         - NOT_FOUND
       example: VALIDATION
     V3ConnectorConfig:
-      anyOf:
+      discriminator:
+        propertyName: provider
+        mapping:
+          Adyen: '#/components/schemas/V3AdyenConfig'
+          Atlar: '#/components/schemas/V3AtlarConfig'
+          Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
+          Dummypay: '#/components/schemas/V3DummypayConfig'
+          Generic: '#/components/schemas/V3GenericConfig'
+          Mangopay: '#/components/schemas/V3MangopayConfig'
+          Modulr: '#/components/schemas/V3ModulrConfig'
+          Moneycorp: '#/components/schemas/V3MoneycorpConfig'
+          Stripe: '#/components/schemas/V3StripeConfig'
+          Wise: '#/components/schemas/V3WiseConfig'
+      oneOf:
         - $ref: '#/components/schemas/V3AdyenConfig'
         - $ref: '#/components/schemas/V3AtlarConfig'
         - $ref: '#/components/schemas/V3BankingcircleConfig'
@@ -4728,6 +4789,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Adyen
         webhookPassword:
           type: string
         webhookUsername:
@@ -4752,6 +4816,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Atlar
         secret:
           type: string
     V3BankingcircleConfig:
@@ -4779,6 +4846,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Bankingcircle
         userCertificate:
           type: string
         userCertificateKey:
@@ -4807,6 +4877,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Currencycloud
     V3DummypayConfig:
       type: object
       required:
@@ -4823,6 +4896,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Dummypay
     V3GenericConfig:
       type: object
       required:
@@ -4842,6 +4918,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Generic
     V3MangopayConfig:
       type: object
       required:
@@ -4864,6 +4943,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Mangopay
     V3ModulrConfig:
       type: object
       required:
@@ -4886,6 +4968,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Modulr
     V3MoneycorpConfig:
       type: object
       required:
@@ -4908,6 +4993,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Moneycorp
     V3StripeConfig:
       type: object
       required:
@@ -4924,6 +5012,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Stripe
     V3WiseConfig:
       type: object
       required:
@@ -4941,6 +5032,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Wise
         webhookPublicKey:
           type: string
   parameters:
