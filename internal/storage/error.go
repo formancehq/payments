@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -12,11 +13,23 @@ import (
 )
 
 var (
-	ErrValidation          = errors.New("validation error")
-	ErrNotFound            = errors.New("not found")
-	ErrDuplicateKeyValue   = errors.New("duplicate key value")
-	ErrForeignKeyViolation = errors.New("foreign key constraint violation: referenced row missing")
+	ErrValidation        = errors.New("validation error")
+	ErrNotFound          = errors.New("not found")
+	ErrDuplicateKeyValue = errors.New("object already exists")
+	// Don't want to expose the internal that is a foreign key violation to the
+	// client through the API
+	ErrForeignKeyViolation = errors.New("value not found")
 )
+
+var FKViolationColumn = []string{
+	"connector_id",
+	"bank_account_id",
+	"payment_id",
+	"pool_id",
+	"schedule_id",
+	"payment_initiation_id",
+	"payment_initiation_reversal_id",
+}
 
 func e(msg string, err error) error {
 	if err == nil {
@@ -25,10 +38,18 @@ func e(msg string, err error) error {
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		fmt.Println(pgErr)
+
 		return ErrDuplicateKeyValue
 	}
 
 	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+		for _, column := range FKViolationColumn {
+			if strings.Contains(pgErr.ConstraintName, column) {
+				return fmt.Errorf("%s: %w", column, ErrForeignKeyViolation)
+			}
+		}
+
 		return ErrForeignKeyViolation
 	}
 
