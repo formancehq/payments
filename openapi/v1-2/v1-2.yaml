@@ -1404,7 +1404,21 @@ components:
         - PARTIALLY_REVERSED
         - REVERSED
     ConnectorConfig:
-      anyOf:
+      discriminator:
+        propertyName: provider
+        mapping:
+          Stripe: '#/components/schemas/StripeConfig'
+          Dummypay: '#/components/schemas/DummyPayConfig'
+          Wise: '#/components/schemas/WiseConfig'
+          Modulr: '#/components/schemas/ModulrConfig'
+          Currencycloud: '#/components/schemas/CurrencyCloudConfig'
+          Bankingcircle: '#/components/schemas/BankingCircleConfig'
+          Mangopay: '#/components/schemas/MangoPayConfig'
+          Moneycorp: '#/components/schemas/MoneycorpConfig'
+          Atlar: '#/components/schemas/AtlarConfig'
+          Adyen: '#/components/schemas/AdyenConfig'
+          Generic: '#/components/schemas/GenericConfig'
+      oneOf:
         - $ref: '#/components/schemas/StripeConfig'
         - $ref: '#/components/schemas/DummyPayConfig'
         - $ref: '#/components/schemas/WiseConfig'
@@ -1425,6 +1439,9 @@ components:
         name:
           type: string
           example: My Stripe Account
+        provider:
+          type: string
+          default: Stripe
         pollingPeriod:
           type: string
           example: 60s
@@ -1452,6 +1469,9 @@ components:
         name:
           type: string
           example: My DummyPay Account
+        provider:
+          type: string
+          default: Dummypay
         filePollingPeriod:
           type: string
           example: 60s
@@ -1479,6 +1499,9 @@ components:
         name:
           type: string
           example: My Wise Account
+        provider:
+          type: string
+          default: Wise
         apiKey:
           type: string
           example: XXX
@@ -1499,6 +1522,9 @@ components:
         name:
           type: string
           example: My Modulr Account
+        provider:
+          type: string
+          default: Modulr
         apiKey:
           type: string
           example: XXX
@@ -1529,6 +1555,9 @@ components:
         name:
           type: string
           example: My Banking Circle Account
+        provider:
+          type: string
+          default: Bankingcircle
         username:
           type: string
           example: XXX
@@ -1564,6 +1593,9 @@ components:
         name:
           type: string
           example: My Generic Account
+        provider:
+          type: string
+          default: Generic
         apiKey:
           type: string
           example: XXX
@@ -1588,6 +1620,9 @@ components:
         name:
           type: string
           example: My MangoPay Account
+        provider:
+          type: string
+          default: Mangopay
         pollingPeriod:
           type: string
           example: 60s
@@ -1615,6 +1650,9 @@ components:
         name:
           type: string
           example: My Moneycorp Account
+        provider:
+          type: string
+          default: Moneycorp
         clientID:
           type: string
           example: XXX
@@ -1641,6 +1679,9 @@ components:
         name:
           type: string
           example: My CurrencyCloud Account
+        provider:
+          type: string
+          default: Currencycloud
         apiKey:
           type: string
           example: XXX
@@ -1669,6 +1710,9 @@ components:
         name:
           type: string
           example: My Adyen Account
+        provider:
+          type: string
+          default: Adyen
         apiKey:
           type: string
           example: XXX
@@ -1695,6 +1739,9 @@ components:
         name:
           type: string
           example: My Atlar Account
+        provider:
+          type: string
+          default: Atlar
         baseUrl:
           type: string
           example: https://api.example.com
