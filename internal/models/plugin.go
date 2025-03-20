@@ -110,7 +110,15 @@ type FetchNextBalancesResponse struct {
 }
 
 type CreateBankAccountRequest struct {
-	BankAccount BankAccount
+	// Deprecated: use CounterParty instead, we still keep it for backward
+	// compatibility with existing plugins (Atlar, BankingCircle and Mangopay)
+	// until all clients have migrated to the new model
+	BankAccount *BankAccount
+
+	// CounterParty is the new model to create a bank account. It contains all
+	// the information needed to create a bank account instead of passing
+	// everything in metadata like we did before with BankAccounts
+	CounterParty *PSPCounterParty
 }
 
 type CreateBankAccountResponse struct {

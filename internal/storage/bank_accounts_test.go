@@ -320,7 +320,6 @@ func TestBankAccountsList(t *testing.T) {
 		Metadata:        defaultBankAccount2.Metadata,
 		RelatedAccounts: defaultBankAccount2.RelatedAccounts,
 	}
-	_ = d2
 
 	d3 := models.BankAccount{
 		ID:        defaultBankAccount3.ID,

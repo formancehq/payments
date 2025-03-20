@@ -8,6 +8,7 @@ import (
 
 const (
 	IDPrefixBankAccountCreate  = "create-bank-account"
+	IDPrefixCounterPartyCreate = "create-counter-party"
 	IDPrefixConnectorInstall   = "install"
 	IDPrefixConnectorUninstall = "uninstall"
 	IDPrefixConnectorReset     = "reset"

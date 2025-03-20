@@ -57,7 +57,7 @@ func (w Workflow) createBankAccount(
 		infiniteRetryContext(ctx),
 		createBankAccount.ConnectorID,
 		models.CreateBankAccountRequest{
-			BankAccount: *bankAccount,
+			BankAccount: bankAccount,
 		},
 	)
 	if err != nil {

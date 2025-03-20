@@ -24,7 +24,6 @@ import (
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
-	isgomock struct{}
 }
 
 // MockEngineMockRecorder is the mock recorder for MockEngine.
@@ -56,6 +55,20 @@ func (m *MockEngine) AddAccountToPool(ctx context.Context, id uuid.UUID, account
 func (mr *MockEngineMockRecorder) AddAccountToPool(ctx, id, accountID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccountToPool", reflect.TypeOf((*MockEngine)(nil).AddAccountToPool), ctx, id, accountID)
+}
+
+// CreateCounterParty mocks base method.
+func (m *MockEngine) CreateCounterParty(ctx context.Context, counterParty models.CounterParty, ba *models.BankAccount) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateCounterParty", ctx, counterParty, ba)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateCounterParty indicates an expected call of CreateCounterParty.
+func (mr *MockEngineMockRecorder) CreateCounterParty(ctx, counterParty, ba any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateCounterParty", reflect.TypeOf((*MockEngine)(nil).CreateCounterParty), ctx, counterParty, ba)
 }
 
 // CreateFormanceAccount mocks base method.
@@ -157,6 +170,21 @@ func (m *MockEngine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.
 func (mr *MockEngineMockRecorder) ForwardBankAccount(ctx, bankAccountID, connectorID, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardBankAccount", reflect.TypeOf((*MockEngine)(nil).ForwardBankAccount), ctx, bankAccountID, connectorID, waitResult)
+}
+
+// ForwardCounterParty mocks base method.
+func (m *MockEngine) ForwardCounterParty(ctx context.Context, counterPartyID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ForwardCounterParty", ctx, counterPartyID, connectorID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ForwardCounterParty indicates an expected call of ForwardCounterParty.
+func (mr *MockEngineMockRecorder) ForwardCounterParty(ctx, counterPartyID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardCounterParty", reflect.TypeOf((*MockEngine)(nil).ForwardCounterParty), ctx, counterPartyID, connectorID)
 }
 
 // HandleWebhook mocks base method.

@@ -9,7 +9,6 @@ import (
 	"github.com/formancehq/go-libs/v2/query"
 	"github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -86,7 +85,7 @@ func (s *store) schedulesQueryContext(qb query.Builder) (string, []any, error) {
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 }

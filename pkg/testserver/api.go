@@ -95,6 +95,18 @@ func GetAccountBalances(ctx context.Context, srv *Server, ver int, id string, re
 	return srv.Client().Get(ctx, pathPrefix(ver, "accounts/"+id+"/balances"), res)
 }
 
+func CreateCounterParty(ctx context.Context, srv *Server, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, "/v3/counter-parties", reqBody, res)
+}
+
+func ForwardCounterParty(ctx context.Context, srv *Server, id string, reqBody any, res any) error {
+	return srv.Client().Do(ctx, http.MethodPost, "/v3/counter-parties/"+id+"/forward", reqBody, res)
+}
+
+func GetCounterParty(ctx context.Context, srv *Server, id string, res any) error {
+	return srv.Client().Get(ctx, "/v3/counter-parties/"+id, res)
+}
+
 func CreateBankAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "bank-accounts"), reqBody, res)
 }

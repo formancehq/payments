@@ -3,9 +3,9 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -20,7 +20,7 @@ type connectorTasksTree struct {
 func (s *store) ConnectorTasksTreeUpsert(ctx context.Context, connectorID models.ConnectorID, ts models.ConnectorTasksTree) error {
 	payload, err := json.Marshal(&ts)
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal tasks")
+		return fmt.Errorf("failed to marshal tasks: %w", err)
 	}
 
 	tasks := connectorTasksTree{
@@ -49,7 +49,7 @@ func (s *store) ConnectorTasksTreeGet(ctx context.Context, connectorID models.Co
 
 	var tasks models.ConnectorTasksTree
 	if err := json.Unmarshal(ts.TasksTree, &tasks); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal tasks")
+		return nil, fmt.Errorf("failed to unmarshal tasks: %w", err)
 	}
 
 	return &tasks, nil

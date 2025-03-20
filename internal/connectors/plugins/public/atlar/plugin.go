@@ -3,6 +3,7 @@ package atlar
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/url"
 
 	"github.com/formancehq/go-libs/v2/logging"
@@ -95,7 +96,17 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 	if p.client == nil {
 		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.createBankAccount(ctx, req.BankAccount)
+
+	switch {
+	case req.BankAccount != nil:
+		// In order to be backward compatible with the existing implementation,
+		// we need to support both BankAccount and CounterParty
+		return p.createBankAccountFromBankAccount(ctx, req.BankAccount)
+	case req.CounterParty != nil:
+		return p.createBankAccountFromCounterParty(ctx, req.CounterParty)
+	default:
+		return models.CreateBankAccountResponse{}, fmt.Errorf("either BankAccount or CounterParty must be provided: %w", models.ErrInvalidRequest)
+	}
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {

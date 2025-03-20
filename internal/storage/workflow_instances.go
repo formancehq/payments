@@ -10,7 +10,6 @@ import (
 	"github.com/formancehq/go-libs/v2/query"
 	internalTime "github.com/formancehq/go-libs/v2/time"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -87,11 +86,11 @@ func (s *store) instancesQueryContext(qb query.Builder) (string, []any, error) {
 		case key == "schedule_id",
 			key == "connector_id":
 			if operator != "$match" {
-				return "", nil, errors.Wrap(ErrValidation, "'connector_id' column can only be used with $match")
+				return "", nil, fmt.Errorf("'connector_id' column can only be used with $match: %w", ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 }

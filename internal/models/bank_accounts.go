@@ -38,8 +38,21 @@ type BankAccount struct {
 	RelatedAccounts []BankAccountRelatedAccount `json:"relatedAccounts"`
 }
 
+type bankAccountIK struct {
+	ID            uuid.UUID  `json:"id"`
+	LastAccountID *AccountID `json:"lastAccountID,omitempty"`
+}
+
 func (b *BankAccount) IdempotencyKey() string {
-	return IdempotencyKey(b.ID)
+	ik := bankAccountIK{
+		ID: b.ID,
+	}
+
+	if len(b.RelatedAccounts) > 0 {
+		ik.LastAccountID = &b.RelatedAccounts[len(b.RelatedAccounts)-1].AccountID
+	}
+
+	return IdempotencyKey(ik)
 }
 
 func (a *BankAccount) Obfuscate() error {

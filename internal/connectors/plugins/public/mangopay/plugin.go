@@ -116,7 +116,15 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 	if p.client == nil {
 		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
 	}
-	return p.createBankAccount(ctx, req.BankAccount)
+
+	switch {
+	case req.BankAccount != nil:
+		return p.createBankAccountFromBankAccountModels(ctx, req.BankAccount)
+	case req.CounterParty != nil:
+		return p.createBankAccountFromCounterPartyModels(ctx, req.CounterParty)
+	default:
+		return models.CreateBankAccountResponse{}, fmt.Errorf("missing BankAccount or CounterParty: %w", models.ErrInvalidRequest)
+	}
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {

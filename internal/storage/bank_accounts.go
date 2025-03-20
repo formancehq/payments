@@ -44,6 +44,14 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 	}
 	defer tx.Rollback()
 
+	if err := s.insertBankAccountWithTx(ctx, tx, ba); err != nil {
+		return err
+	}
+
+	return e("commit transaction", tx.Commit())
+}
+
+func (s *store) insertBankAccountWithTx(ctx context.Context, tx bun.Tx, ba models.BankAccount) error {
 	toInsert := fromBankAccountModels(ba)
 	// Insert or update the bank account
 	res, err := tx.NewInsert().
@@ -85,7 +93,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		}
 	}
 
-	return e("commit transaction", tx.Commit())
+	return nil
 }
 
 func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error {
