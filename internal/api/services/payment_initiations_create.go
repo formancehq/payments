@@ -21,10 +21,10 @@ func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiatio
 	}
 
 	if !sendToPSP {
-		return models.Task{}, newStorageError(s.storage.PaymentInitiationsUpsert(ctx, paymentInitiation, waitingForValidationAdjustment), "cannot create payment initiation")
+		return models.Task{}, newStorageError(s.storage.PaymentInitiationsInsert(ctx, paymentInitiation, waitingForValidationAdjustment), "cannot create payment initiation")
 	}
 
-	if err := s.storage.PaymentInitiationsUpsert(ctx, paymentInitiation, waitingForValidationAdjustment); err != nil {
+	if err := s.storage.PaymentInitiationsInsert(ctx, paymentInitiation, waitingForValidationAdjustment); err != nil {
 		return models.Task{}, newStorageError(err, "cannot create payment initiation")
 	}
 

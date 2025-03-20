@@ -1,11 +1,14 @@
 package storage
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
+	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
+	"github.com/uptrace/bun"
 )
 
 var (
@@ -34,4 +37,15 @@ func e(msg string, err error) error {
 	}
 
 	return fmt.Errorf("%s: %w", msg, err)
+}
+
+// meant to be called in defer block
+func rollbackOnTxError(ctx context.Context, tx bun.Tx, err error) {
+	if err == nil {
+		return
+	}
+
+	if rollbackErr := tx.Rollback(); rollbackErr != nil {
+		logging.FromContext(ctx).WithField("original_error", err.Error()).Errorf("failed to rollback transaction: %w", rollbackErr)
+	}
 }
