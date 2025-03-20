@@ -46,7 +46,7 @@ create table if not exists counter_parties_related_accounts (
     -- Primary key
     primary key (counter_party_id, account_id)
 );
-create index counter_parties_counter_party_id on counter_parties_related_accounts (counter_party_id);
+create index counter_parties_related_accounts_counter_party_id on counter_parties_related_accounts (counter_party_id);
 create index counter_parties_related_accounts_created_at_sort_id on counter_parties_related_accounts (created_at, sort_id);
 alter table counter_parties_related_accounts
     add constraint counter_parties_related_accounts_counter_party_id_fk foreign key (counter_party_id)
