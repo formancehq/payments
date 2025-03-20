@@ -442,7 +442,7 @@ func (s *store) paymentsInitiationAdjustmentsQueryContext(qb query.Builder) (str
 		switch {
 		case key == "status":
 			if operator != "$match" {
-				return "", nil, fmt.Errorf("'type' column can only be used with $match: %w", ErrValidation)
+				return "", nil, fmt.Errorf("'status' column can only be used with $match: %w", ErrValidation)
 			}
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):

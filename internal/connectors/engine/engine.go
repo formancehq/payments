@@ -460,7 +460,7 @@ func (e *engine) CreateCounterParty(ctx context.Context, counterParty models.Cou
 	_, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
 		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-payment-send-events-%s-%s", e.stack, counterParty.ID),
+			ID:                                       fmt.Sprintf("create-counter-party-send-events-%s-%s", e.stack, counterParty.ID),
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,

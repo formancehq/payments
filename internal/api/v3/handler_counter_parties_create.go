@@ -31,6 +31,7 @@ type AddressRequest struct {
 	StreetName   string `json:"streetName" validate:"omitempty"`
 	StreetNumber string `json:"streetNumber" validate:"omitempty"`
 	City         string `json:"city" validate:"omitempty"`
+	Region       string `json:"region" validate:"omitempty"`
 	PostalCode   string `json:"postalCode" validate:"omitempty"`
 	Country      string `json:"country" validate:"omitempty,country_code"`
 }
@@ -105,6 +106,7 @@ func counterPartiesCreate(backend backend.Backend, validator *validation.Validat
 				StreetName:   req.Address.StreetName,
 				StreetNumber: req.Address.StreetNumber,
 				City:         req.Address.City,
+				Region:       req.Address.Region,
 				PostalCode:   req.Address.PostalCode,
 				Country:      req.Address.Country,
 			}
