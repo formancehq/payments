@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -9,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
@@ -65,6 +67,25 @@ var _ = Describe("API v2 Payment Initiation Creation", func() {
 			Entry("asset missing", CreateTransferInitiationRequest{Reference: "asset", SourceAccountID: sourceID, DestinationAccountID: destID, Type: "TRANSFER", Amount: big.NewInt(1313)}),
 			Entry("connectorID missing", CreateTransferInitiationRequest{Reference: "connector", SourceAccountID: sourceID, DestinationAccountID: destID, Type: "TRANSFER", Amount: big.NewInt(1717), Asset: "USD"}),
 		)
+
+		It("should return a CONFLICT error when entity already exists", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("already exists: %w", storage.ErrDuplicateKeyValue)
+			m.EXPECT().PaymentInitiationsCreate(gomock.Any(), gomock.Any(), false, true).Return(
+				models.Task{},
+				expectedErr,
+			)
+			picr = CreateTransferInitiationRequest{
+				Reference:            "ref-err",
+				ConnectorID:          connID.String(),
+				SourceAccountID:      sourceID,
+				DestinationAccountID: destID,
+				Type:                 "TRANSFER",
+				Amount:               big.NewInt(144),
+				Asset:                "EUR/2",
+			}
+			handlerFn(w, prepareJSONRequest(http.MethodPost, &picr))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, "CONFLICT")
+		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("payment initiation create err")

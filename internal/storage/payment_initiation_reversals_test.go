@@ -83,6 +83,7 @@ func TestPaymentInitiationReversalsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -128,6 +129,7 @@ func TestPaymentInitiationReversalsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -157,6 +159,7 @@ func TestPaymentInitiationReversalsDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -192,6 +195,7 @@ func TestPaymentInitiationReversalsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -571,6 +575,7 @@ func TestPaymentInitiationReversalAdjustmentsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -619,6 +624,7 @@ func TestPaymentInitiationReversalAdjustmentsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -647,6 +653,7 @@ func TestPaymentInitiationReversalAdjustmentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
