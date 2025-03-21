@@ -38,8 +38,6 @@ func e(msg string, err error) error {
 
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
-		fmt.Println(pgErr)
-
 		return ErrDuplicateKeyValue
 	}
 

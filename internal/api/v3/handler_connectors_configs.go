@@ -6,6 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/otel"
 )
@@ -22,7 +23,7 @@ func connectorsConfigs(backend backend.Backend) http.HandlerFunc {
 		})
 		if err != nil {
 			otel.RecordError(span, err)
-			api.InternalServerError(w, r, err)
+			common.InternalServerError(w, r, err)
 			return
 		}
 	}
