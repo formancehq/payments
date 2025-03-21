@@ -1898,7 +1898,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/TransferInitiationStatus'
+          $ref: '#/components/schemas/PaymentStatus'
         error:
           type: string
     BankAccount:

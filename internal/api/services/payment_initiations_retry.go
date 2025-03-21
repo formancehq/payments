@@ -3,7 +3,6 @@ package services
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/payments/internal/models"
@@ -36,16 +35,15 @@ func (s *Service) PaymentInitiationsRetry(ctx context.Context, id models.Payment
 
 	attempts := getAttemps(adjustments)
 
-	startDelay := 0 * time.Second
 	switch pi.Type {
 	case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-		task, err := s.engine.CreateTransfer(ctx, pi.ID, startDelay, attempts+1, waitResult)
+		task, err := s.engine.CreateTransfer(ctx, pi.ID, attempts+1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}
 		return task, nil
 	case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-		task, err := s.engine.CreatePayout(ctx, pi.ID, startDelay, attempts+1, waitResult)
+		task, err := s.engine.CreatePayout(ctx, pi.ID, attempts+1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}

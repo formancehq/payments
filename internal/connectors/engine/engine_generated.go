@@ -13,7 +13,6 @@ import (
 	context "context"
 	json "encoding/json"
 	reflect "reflect"
-	time "time"
 
 	models "github.com/formancehq/payments/internal/models"
 	uuid "github.com/google/uuid"
@@ -24,7 +23,6 @@ import (
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
-	isgomock struct{}
 }
 
 // MockEngineMockRecorder is the mock recorder for MockEngine.
@@ -87,18 +85,18 @@ func (mr *MockEngineMockRecorder) CreateFormancePayment(ctx, payment any) *gomoc
 }
 
 // CreatePayout mocks base method.
-func (m *MockEngine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error) {
+func (m *MockEngine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePayout", ctx, piID, startDelay, attempt, waitResult)
+	ret := m.ctrl.Call(m, "CreatePayout", ctx, piID, attempt, waitResult)
 	ret0, _ := ret[0].(models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreatePayout indicates an expected call of CreatePayout.
-func (mr *MockEngineMockRecorder) CreatePayout(ctx, piID, startDelay, attempt, waitResult any) *gomock.Call {
+func (mr *MockEngineMockRecorder) CreatePayout(ctx, piID, attempt, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockEngine)(nil).CreatePayout), ctx, piID, startDelay, attempt, waitResult)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockEngine)(nil).CreatePayout), ctx, piID, attempt, waitResult)
 }
 
 // CreatePool mocks base method.
@@ -116,18 +114,18 @@ func (mr *MockEngineMockRecorder) CreatePool(ctx, pool any) *gomock.Call {
 }
 
 // CreateTransfer mocks base method.
-func (m *MockEngine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error) {
+func (m *MockEngine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTransfer", ctx, piID, startDelay, attempt, waitResult)
+	ret := m.ctrl.Call(m, "CreateTransfer", ctx, piID, attempt, waitResult)
 	ret0, _ := ret[0].(models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateTransfer indicates an expected call of CreateTransfer.
-func (mr *MockEngineMockRecorder) CreateTransfer(ctx, piID, startDelay, attempt, waitResult any) *gomock.Call {
+func (mr *MockEngineMockRecorder) CreateTransfer(ctx, piID, attempt, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockEngine)(nil).CreateTransfer), ctx, piID, startDelay, attempt, waitResult)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockEngine)(nil).CreateTransfer), ctx, piID, attempt, waitResult)
 }
 
 // DeletePool mocks base method.
