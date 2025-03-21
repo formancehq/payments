@@ -65,7 +65,7 @@ func validateExternalBankAccount(newExternalBankAccount models.BankAccount) erro
 		return models.NewConnectorValidationError(client.GocardlessAccountTypeMetadataKey, ErrMissingAccountType)
 	}
 
-	if accountType != "checking" && accountType != "savings" {
+	if accountType != "" && accountType != "checking" && accountType != "savings" {
 		return models.NewConnectorValidationError(client.GocardlessAccountTypeMetadataKey, ErrInvalidAccountType)
 
 	}
