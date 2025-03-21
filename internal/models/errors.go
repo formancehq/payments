@@ -13,20 +13,23 @@ var (
 	ErrInvalidRequest              = errors.New("invalid request")
 
 	ErrMissingConnectorMetadata = errors.New("missing required metadata in request")
+	ErrMissingConnectorField    = errors.New("missing required field in request")
 )
 
-type ConnectorMetadataError struct {
+type ConnectorValidationError struct {
 	internal error
 	field    string
 }
 
-func NewConnectorMetadataError(field string) *ConnectorMetadataError {
-	return &ConnectorMetadataError{
-		internal: fmt.Errorf("field %q is required: %w", field, ErrMissingConnectorMetadata),
+var NonRetryableError *ConnectorValidationError
+
+func NewConnectorValidationError(field string, err error) *ConnectorValidationError {
+	return &ConnectorValidationError{
+		internal: fmt.Errorf("validation error occurred for field %s: %w", field, err),
 		field:    field,
 	}
 }
 
-func (e *ConnectorMetadataError) Error() string { return e.internal.Error() }
+func (e *ConnectorValidationError) Error() string { return e.internal.Error() }
 
-func (e *ConnectorMetadataError) Unwrap() error { return e.internal }
+func (e *ConnectorValidationError) Unwrap() error { return e.internal }
