@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/common"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
 )
@@ -49,8 +50,18 @@ func transferInitiationsList(backend backend.Backend) http.HandlerFunc {
 				return
 			}
 
+			status := ""
+			switch lastAdjustment.Status {
+			case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING:
+				// PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING is not supported
+				// in v2 as it is introduced in v3. We map it to PROCESSING for backward compatibility.
+				status = models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String()
+			default:
+				status = lastAdjustment.Status.String()
+			}
+
 			if lastAdjustment != nil {
-				data[i].Status = lastAdjustment.Status.String()
+				data[i].Status = status
 				data[i].Error = func() string {
 					if lastAdjustment.Error == nil {
 						return ""

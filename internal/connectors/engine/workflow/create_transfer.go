@@ -52,6 +52,29 @@ func (w Workflow) createTransfer(
 		return err
 	}
 
+	now := workflow.Now(ctx)
+	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
+		err = w.addPIAdjustment(
+			ctx,
+			models.PaymentInitiationAdjustmentID{
+				PaymentInitiationID: createTransfer.PaymentInitiationID,
+				CreatedAt:           workflow.Now(ctx),
+				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING,
+			},
+			pi.Amount,
+			&pi.Asset,
+			nil,
+			map[string]string{
+				"scheduledAt": pi.ScheduledAt.String(),
+			},
+		)
+		if err != nil {
+			return err
+		}
+
+		workflow.Sleep(ctx, pi.ScheduledAt.Sub(now))
+	}
+
 	pspPI, err := w.getPSPPI(ctx, pi)
 	if err != nil {
 		return err

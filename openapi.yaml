@@ -2779,7 +2779,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/TransferInitiationStatus'
+          $ref: '#/components/schemas/PaymentStatus'
         error:
           type: string
     BankAccount:
@@ -4559,6 +4559,7 @@ components:
       enum:
         - UNKNOWN
         - WAITING_FOR_VALIDATION
+        - SCHEDULED_FOR_PROCESSING
         - PROCESSING
         - PROCESSED
         - FAILED
