@@ -52,6 +52,9 @@ func (w Workflow) createTransfer(
 		return err
 	}
 
+	// If the transfer is scheduled in the future, we need to add a schedule
+	// for processing adjustment to the payment initiation, and then sleep until
+	// the scheduled time.
 	now := workflow.Now(ctx)
 	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
 		err = w.addPIAdjustment(
