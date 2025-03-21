@@ -40,13 +40,18 @@ func main() {
 	output := V3ConnectorConfigYaml{
 		Components: Components{
 			Schemas: Schemas{
-				V3ConnectorConfig: V3ConnectorConfig{},
-				V3Configs:         map[string]V3Config{},
+				V3ConnectorConfig: V3ConnectorConfig{
+					Discriminator: Discriminator{
+						PropertyName: "provider",
+					},
+				},
+				V3Configs: map[string]V3Config{},
 			},
 		},
 	}
 
-	anyOf := []AnyOf{}
+	oneOf := []OneOf{}
+	mapping := map[string]string{}
 	configs := map[string]V3Config{}
 	for _, e := range entries {
 		if !e.IsDir() {
@@ -55,12 +60,13 @@ func main() {
 
 		configName := "V3" + caser.String(e.Name()) + "Config"
 
-		config, err := readConfig(e.Name())
+		config, err := readConfig(e.Name(), caser.String(e.Name()))
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		anyOf = append(anyOf, AnyOf{
+		mapping[caser.String(e.Name())] = "#/components/schemas/" + configName
+		oneOf = append(oneOf, OneOf{
 			Ref: map[string]string{
 				"$ref": "#/components/schemas/" + configName,
 			},
@@ -70,7 +76,8 @@ func main() {
 	}
 
 	output.Components.Schemas.V3Configs = configs
-	output.Components.Schemas.V3ConnectorConfig.AnyOf = anyOf
+	output.Components.Schemas.V3ConnectorConfig.OneOf = oneOf
+	output.Components.Schemas.V3ConnectorConfig.Discriminator.Mapping = mapping
 
 	d, err := yaml.Marshal(&output)
 	if err != nil {
@@ -89,7 +96,7 @@ func main() {
 	}
 }
 
-func readConfig(name string) (V3Config, error) {
+func readConfig(name string, caserName string) (V3Config, error) {
 	// Verify the opened file is within the intended directory
 	absPath, err := filepath.Abs(*path)
 	if err != nil {
@@ -111,6 +118,10 @@ func readConfig(name string) (V3Config, error) {
 
 	required := []string{"name"}
 	var properties = map[string]Property{
+		"provider": {
+			Type:    "string",
+			Default: caserName,
+		},
 		"name": {
 			Type: "string",
 		},

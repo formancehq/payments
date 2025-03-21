@@ -70,6 +70,7 @@ func TestBalancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -286,6 +287,7 @@ func TestBalancesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -322,6 +324,7 @@ func TestBalancesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -574,6 +577,7 @@ func TestBalancesGetAt(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())

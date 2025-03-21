@@ -54,6 +54,7 @@ func TestInstancesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -101,6 +102,7 @@ func TestInstancesUpdate(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -144,6 +146,7 @@ func TestInstancesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {
@@ -184,6 +187,7 @@ func TestInstancesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, schedule := range defaultSchedules {

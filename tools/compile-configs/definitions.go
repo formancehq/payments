@@ -13,11 +13,17 @@ type Schemas struct {
 	V3Configs         map[string]V3Config `yaml:",inline"`
 }
 
-type V3ConnectorConfig struct {
-	AnyOf []AnyOf `yaml:"anyOf"`
+type Discriminator struct {
+	PropertyName string            `yaml:"propertyName"`
+	Mapping      map[string]string `yaml:"mapping"`
 }
 
-type AnyOf struct {
+type V3ConnectorConfig struct {
+	Discriminator Discriminator `yaml:"discriminator"`
+	OneOf         []OneOf       `yaml:"oneOf"`
+}
+
+type OneOf struct {
 	Ref map[string]string `yaml:",inline"`
 }
 

@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -118,7 +119,7 @@ func bankAccountsCreate(backend backend.Backend, validator *validation.Validator
 
 		if err := bankAccount.Obfuscate(); err != nil {
 			otel.RecordError(span, err)
-			api.InternalServerError(w, r, err)
+			common.InternalServerError(w, r, err)
 			return
 		}
 
@@ -160,7 +161,7 @@ func bankAccountsCreate(backend backend.Backend, validator *validation.Validator
 		})
 		if err != nil {
 			otel.RecordError(span, err)
-			api.InternalServerError(w, r, err)
+			common.InternalServerError(w, r, err)
 			return
 		}
 	}

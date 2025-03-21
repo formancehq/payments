@@ -7,7 +7,7 @@ toolchain go1.23.5
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
-	github.com/ThreeDotsLabs/watermill v1.4.5
+	github.com/ThreeDotsLabs/watermill v1.4.6
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/formancehq/go-libs v1.7.2
@@ -30,7 +30,7 @@ require (
 	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.39.1
-	github.com/onsi/ginkgo/v2 v2.23.0
+	github.com/onsi/ginkgo/v2 v2.23.1
 	github.com/onsi/gomega v1.36.2
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3

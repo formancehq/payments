@@ -65,7 +65,7 @@ type Storage interface {
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 
 	// Payment Initiations
-	PaymentInitiationsUpsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error
+	PaymentInitiationsInsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error
 	PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error
 	PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error)
 	PaymentInitiationsDelete(ctx context.Context, piID models.PaymentInitiationID) error

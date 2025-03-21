@@ -85,16 +85,17 @@ func defaultPaymentInitiations() []models.PaymentInitiation {
 
 func upsertPaymentInitiations(t *testing.T, ctx context.Context, storage Storage, paymentInitiations []models.PaymentInitiation) {
 	for _, pi := range paymentInitiations {
-		err := storage.PaymentInitiationsUpsert(ctx, pi)
+		err := storage.PaymentInitiationsInsert(ctx, pi)
 		require.NoError(t, err)
 	}
 }
 
-func TestPaymentInitiationsUpsert(t *testing.T) {
+func TestPaymentInitiationsInsert(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -109,11 +110,11 @@ func TestPaymentInitiationsUpsert(t *testing.T) {
 		p.ID.ConnectorID = connector
 		p.ConnectorID = connector
 
-		err := store.PaymentInitiationsUpsert(ctx, p)
+		err := store.PaymentInitiationsInsert(ctx, p)
 		require.Error(t, err)
 	})
 
-	t.Run("upsert with same id", func(t *testing.T) {
+	t.Run("attempt insert with same id", func(t *testing.T) {
 		defaultAccounts := defaultAccounts()
 		pi := models.PaymentInitiation{
 			ID:                   piID1,
@@ -128,7 +129,9 @@ func TestPaymentInitiationsUpsert(t *testing.T) {
 			Asset:                "DKK/2",
 		}
 
-		upsertPaymentInitiations(t, ctx, store, []models.PaymentInitiation{pi})
+		err := store.PaymentInitiationsInsert(ctx, pi)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrDuplicateKeyValue)
 
 		actual, err := store.PaymentInitiationsGet(ctx, piID1)
 		require.NoError(t, err)
@@ -141,6 +144,7 @@ func TestPaymentInitiationsUpdateMetadata(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -194,6 +198,7 @@ func TestPaymentInitiationsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -222,6 +227,7 @@ func TestPaymentInitiationsDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -250,6 +256,7 @@ func TestPaymentInitiationsDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -284,10 +291,12 @@ func TestPaymentInitiationsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPaymentInitiations(t, ctx, store, defaultPaymentInitiations())
+	upsertPaymentInitiationAdjustments(t, ctx, store, defaultPaymentInitiationAdjustments())
 
 	t.Run("wrong query builder operator when listing by reference", func(t *testing.T) {
 		q := NewListPaymentInitiationsQuery(
@@ -420,6 +429,47 @@ func TestPaymentInitiationsList(t *testing.T) {
 			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("type", "UNKNOWN")),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 0)
+		require.False(t, cursor.HasMore)
+	})
+
+	t.Run("list payment initiations by status multiple adjustments", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED.String())),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiations(t, defaultPaymentInitiations()[0], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations by status single adjustment", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String())),
+		)
+
+		cursor, err := store.PaymentInitiationsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 1)
+		require.False(t, cursor.HasMore)
+		comparePaymentInitiations(t, defaultPaymentInitiations()[1], cursor.Data[0])
+	})
+
+	t.Run("list payment initiations by unknown status", func(t *testing.T) {
+		q := NewListPaymentInitiationsQuery(
+			bunpaginate.NewPaginatedQueryOptions(PaymentInitiationQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("status", "UNKNOWN")),
 		)
 
 		cursor, err := store.PaymentInitiationsList(ctx, q)
@@ -685,6 +735,7 @@ func TestPaymentInitiationsRelatedPaymentUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -727,6 +778,7 @@ func TestPaymentInitiationIDsFromPaymentID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -754,6 +806,7 @@ func TestPaymentInitiationRelatedPaymentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -897,6 +950,7 @@ func TestPaymentInitiationAdjustmentsUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -941,6 +995,8 @@ func TestPaymentInitiationAdjustmentsUpsertIfStatusEqual(t *testing.T) {
 	t.Parallel()
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
+
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertPayments(t, ctx, store, defaultPayments())
@@ -999,6 +1055,7 @@ func TestPaymentInitiationAdjustmentsGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
@@ -1026,6 +1083,7 @@ func TestPaymentInitiationAdjustmentsList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())

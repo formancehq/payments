@@ -44,6 +44,7 @@ func TestSchedulesUpsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -83,6 +84,7 @@ func TestSchedulesDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -118,6 +120,7 @@ func TestSchedulesDelete(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -148,6 +151,7 @@ func TestSchedulesGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])
@@ -172,6 +176,7 @@ func TestSchedulesList(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertSchedule(t, ctx, store, defaultSchedules[0])

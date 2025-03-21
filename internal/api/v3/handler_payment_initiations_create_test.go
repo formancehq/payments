@@ -2,6 +2,7 @@ package v3
 
 import (
 	"errors"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
@@ -72,6 +74,25 @@ var _ = Describe("API v3 Payment Initiation Creation", func() {
 			Entry("connectorID is invalid", PaymentInitiationsCreateRequest{Reference: "connectorID_invalid", ConnectorID: "somestr", SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "PAYOUT", Amount: big.NewInt(1717), Asset: "eur/2", ScheduledAt: time.Now().Add(time.Hour)}),
 			Entry("schedule is in the past", PaymentInitiationsCreateRequest{Reference: "schedule_is_past", ConnectorID: testConnectorID().String(), SourceAccountID: &sourceID, DestinationAccountID: &destID, Type: "TRANSFER", Amount: big.NewInt(1717), Asset: "USD/2", ScheduledAt: time.Now().Add(-time.Hour)}),
 		)
+
+		It("should return an CONFLICT error when entity already exists", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("already exists: %w", storage.ErrDuplicateKeyValue)
+			m.EXPECT().PaymentInitiationsCreate(gomock.Any(), gomock.Any(), false, false).Return(
+				models.Task{},
+				expectedErr,
+			)
+			picr = PaymentInitiationsCreateRequest{
+				Reference:            "ref-err",
+				ConnectorID:          connID.String(),
+				SourceAccountID:      &sourceID,
+				DestinationAccountID: &destID,
+				Type:                 "TRANSFER",
+				Amount:               big.NewInt(144),
+				Asset:                "EUR/2",
+			}
+			handlerFn(w, prepareJSONRequest(http.MethodPost, &picr))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, "CONFLICT")
+		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			expectedErr := errors.New("payment initiation create err")

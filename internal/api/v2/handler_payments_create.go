@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/api/validation"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
@@ -58,7 +59,7 @@ func paymentsCreate(backend backend.Backend, validator *validation.Validator) ht
 		raw, err := json.Marshal(req)
 		if err != nil {
 			otel.RecordError(span, err)
-			api.InternalServerError(w, r, err)
+			common.InternalServerError(w, r, err)
 			return
 		}
 		pid := models.PaymentID{
@@ -160,7 +161,7 @@ func paymentsCreate(backend backend.Backend, validator *validation.Validator) ht
 		})
 		if err != nil {
 			otel.RecordError(span, err)
-			api.InternalServerError(w, r, err)
+			common.InternalServerError(w, r, err)
 			return
 		}
 	}

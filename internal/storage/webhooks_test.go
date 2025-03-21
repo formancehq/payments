@@ -46,6 +46,7 @@ func TestWebhooksInsert(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, webhook := range defaultWebhooks {
@@ -83,6 +84,7 @@ func TestWebhooksGet(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, webhook := range defaultWebhooks {
@@ -108,6 +110,7 @@ func TestWebhooksDeleteFromConnectorID(t *testing.T) {
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
+	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	for _, webhook := range defaultWebhooks {
