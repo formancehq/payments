@@ -71,6 +71,22 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 		return nil, fmt.Errorf("failed to parse posted date %s: %w", transfer.CreatedAt, err)
 	}
 
+	metadata := map[string]string{
+		client.ColumnUpdatedAtMetadataKey:             transfer.UpdatedAt,
+		client.ColumnIdempotencyKeyMetadataKey:        transfer.IdempotencyKey,
+		client.ColumnSenderBankAccountIDMetadataKey:   transfer.SenderBankAccountID,
+		client.ColumnReceiverBankAccountIDMetadataKey: transfer.ReceiverBankAccountID,
+		client.ColumnDescriptionMetadataKey:           transfer.Description,
+		client.ColumnAllowOverdraftMetadataKey:        fmt.Sprintf("%t", transfer.AllowOverdraft),
+	}
+
+	if len(transfer.Details) > 0 {
+		detailsJSON, err := json.Marshal(transfer.Details)
+		if err == nil {
+			metadata[client.ColumnDetailsMetadataKey] = string(detailsJSON)
+		}
+	}
+
 	return &models.PSPPayment{
 		Reference:                   transfer.ID,
 		CreatedAt:                   createdAt,
@@ -82,6 +98,7 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 		SourceAccountReference:      &transfer.SenderAccountNumberID,
 		DestinationAccountReference: &transfer.ReceiverAccountNumberID,
 		Raw:                         raw,
+		Metadata:                    metadata,
 	}, nil
 }
 

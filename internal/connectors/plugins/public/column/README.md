@@ -223,7 +223,7 @@ The Column connector supports webhook integration to receive real-time updates a
 
    | ID  | Name                                     | ConnectorID   | URLPath                                   |
    | --- | ---------------------------------------- | ------------- | ----------------------------------------- |
-   | 0   | book.transfer.updated                    | <connectorID> | /book/transfer/updated                    |
+   | 0   | book.transfer.completed                    | <connectorID> | /book/transfer/completed                    |
    | 1   | wire.outgoing_transfer.completed         | <connectorID> | /wire/outgoing_transfer/completed         |
    | 2   | ach.outgoing_transfer.settled            | <connectorID> | /ach/outgoing_transfer/settled            |
    | 3   | swift.outgoing_transfer.completed        | <connectorID> | /swift/outgoing_transfer/completed        |

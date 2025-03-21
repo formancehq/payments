@@ -47,6 +47,14 @@ var _ = Describe("Column Plugin Payments", func() {
 				"manual_review",    // PAYMENT_STATUS_AUTHORISATION
 				"hold",             // PAYMENT_STATUS_CAPTURE
 			}
+			transactionTypes := []string{
+				"book",
+				"swift",
+				"realtime",
+				"wire",
+				"ach_debit",
+				"ach_credit",
+			}
 			for i := range 50 {
 				sampleTransactions = append(sampleTransactions, &client.Transaction{
 					ID:           fmt.Sprintf("%d", i),
@@ -55,6 +63,7 @@ var _ = Describe("Column Plugin Payments", func() {
 					CreatedAt:    now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					CompletedAt:  now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					CurrencyCode: "USD",
+					Type:         transactionTypes[i%len(transactionTypes)],
 				})
 			}
 		})

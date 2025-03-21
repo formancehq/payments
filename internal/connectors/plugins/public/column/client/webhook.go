@@ -14,7 +14,7 @@ import (
 type EventCategory string
 
 const (
-	EventCategoryBookTransferUpdated        EventCategory = "book.transfer.updated"
+	EventCategoryBookTransferCompleted      EventCategory = "book.transfer.completed"
 	EventCategoryWireTransferCompleted      EventCategory = "wire.outgoing_transfer.completed"
 	EventCategoryACHTransferSettled         EventCategory = "ach.outgoing_transfer.settled"
 	EventCategoryInternationalWireCompleted EventCategory = "swift.outgoing_transfer.completed"

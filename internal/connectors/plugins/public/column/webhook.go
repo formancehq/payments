@@ -37,8 +37,8 @@ func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
 			urlPath: "/realtime/outgoing_transfer/completed",
 			fn:      p.translateRealtimeTransfer,
 		},
-		client.EventCategoryBookTransferUpdated: {
-			urlPath: "/book/transfer/updated",
+		client.EventCategoryBookTransferCompleted: {
+			urlPath: "/book/transfer/completed",
 			fn:      p.translateBookTransfer,
 		},
 		client.EventCategoryACHTransferSettled: {

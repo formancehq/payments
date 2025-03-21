@@ -212,20 +212,20 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
-		It("should return an error book.transfer.updated error", func(ctx SpecContext) {
+		It("should return an error book.transfer.completed error", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
-				Name: "book.transfer.updated",
+				Name: "book.transfer.completed",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "book.transfer.updated"}}`, expectedObjectedID)),
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "book.transfer.completed"}}`, expectedObjectedID)),
 				},
 			}
 
 			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryBookTransferUpdated: {
-					urlPath: "/book/transfer/updated",
+				client.EventCategoryBookTransferCompleted: {
+					urlPath: "/book/transfer/completed",
 					fn:      plg.translateBookTransfer,
 					secret:  secret,
 				},
@@ -335,9 +335,9 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
-		It("translate webhooks - book.transfer.updated", func(ctx SpecContext) {
+		It("translate webhooks - book.transfer.completed", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
-				Name: "book.transfer.updated",
+				Name: "book.transfer.completed",
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
@@ -346,7 +346,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"id":"1", 
 						"data": {
 							"id": "%s",
-							"type":"book.transfer.updated",
+							"type":"book.transfer.completed",
 							"created_at": "2023-01-01T00:00:00Z",
 							"updated_at": "2023-01-01T00:00:00Z",
 							"idempotency_key": "sample-idempotency-key",
@@ -361,8 +361,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 
 			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryBookTransferUpdated: {
-					urlPath: "/book/transfer/updated",
+				client.EventCategoryBookTransferCompleted: {
+					urlPath: "/book/transfer/completed",
 					fn:      plg.translateBookTransfer,
 					secret:  secret,
 				},

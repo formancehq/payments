@@ -7,6 +7,15 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+type ColumnAddress struct {
+	Line1      string
+	Line2      string
+	City       string
+	State      string
+	PostalCode string
+	Country    string
+}
+
 func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 
 	if pi.Amount == nil {
@@ -57,60 +66,9 @@ func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 	}
 
 	countryCode := models.ExtractNamespacedMetadata(pi.Metadata, client.ColumnAddressCountryCodeMetadataKey)
-	err := validateAddress(pi.Metadata, countryCode, true)
+	address := extractAddressFromMetadata(pi.Metadata, countryCode)
 
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func validateAddress(addressMetadata map[string]string, country string, isCountryInMetadata bool) error {
-	addressLine1 := models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressLine1MetadataKey)
-
-	if addressLine1 != "" {
-		city := models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressCityMetadataKey)
-
-		if city == "" {
-			return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMissingMetadataAddressCity)
-		}
-
-		if country == "" {
-			if isCountryInMetadata {
-				return models.NewConnectorValidationError(client.ColumnAddressCountryCodeMetadataKey, ErrMissingMetadataCountry)
-			} else {
-				return models.NewConnectorValidationError(client.ColumnAddressCountryCodeMetadataKey, ErrMissingCountry)
-			}
-		}
-		return nil
-	}
-
-	if models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressLine2MetadataKey) != "" {
-		return models.NewConnectorValidationError(client.ColumnAddressLine2MetadataKey, ErrMetadataAddressLine2NotRequired)
-	}
-
-	if models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressCityMetadataKey) != "" {
-		return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMetadataAddressCityNotRequired)
-	}
-
-	if models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressStateMetadataKey) != "" {
-		return models.NewConnectorValidationError(client.ColumnAddressStateMetadataKey, ErrMetadataAddressStateNotRequired)
-	}
-
-	if models.ExtractNamespacedMetadata(addressMetadata, client.ColumnAddressPostalCodeMetadataKey) != "" {
-		return models.NewConnectorValidationError(client.ColumnAddressPostalCodeMetadataKey, ErrMetadataPostalCodeNotRequired)
-	}
-
-	if country != "" {
-		if isCountryInMetadata {
-			return models.NewConnectorValidationError(client.ColumnAddressCountryCodeMetadataKey, ErrMetadataAddressCountryNotRequired)
-		} else {
-			return models.NewConnectorValidationError("country", ErrCountryNotRequired)
-		}
-	}
-
-	return nil
+	return validateAddressForTransfer(address)
 }
 
 func (p *Plugin) validatePayoutRequests(pi models.PSPPaymentInitiation) error {
@@ -193,32 +151,99 @@ func (p *Plugin) validateExternalBankAccount(newExternalBankAccount models.BankA
 		country = *newExternalBankAccount.Country
 	}
 
-	err := validateAddress(newExternalBankAccount.Metadata, country, false)
+	address := extractAddressFromMetadata(newExternalBankAccount.Metadata, country)
+	return validateAddressForBankAccount(address)
+}
 
-	if err != nil {
-		return err
+func validateAddressForTransfer(address ColumnAddress) error {
+	// If Line1 is provided, we need a complete address
+	if address.Line1 != "" {
+		if address.City == "" {
+			return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMissingMetadataAddressCity)
+		}
+
+		if address.Country == "" {
+			return models.NewConnectorValidationError(client.ColumnAddressCountryCodeMetadataKey, ErrMissingMetadataCountry)
+		}
+
+		return nil
+	}
+
+	// No address line provided, ensure no other address fields are provided
+	if address.Line2 != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressLine2MetadataKey, ErrMetadataAddressLine2NotRequired)
+	}
+
+	if address.City != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMetadataAddressCityNotRequired)
+	}
+
+	if address.State != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressStateMetadataKey, ErrMetadataAddressStateNotRequired)
+	}
+
+	if address.PostalCode != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressPostalCodeMetadataKey, ErrMetadataPostalCodeNotRequired)
+	}
+
+	if address.Country != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressCountryCodeMetadataKey, ErrMetadataAddressCountryNotRequired)
 	}
 
 	return nil
 }
 
-func ParseColumnTimestamp(value string) (time.Time, error) {
-	return time.Parse(time.RFC3339, value)
-}
+func validateAddressForBankAccount(address ColumnAddress) error {
+	// If Line1 is provided, we need a complete address
+	if address.Line1 != "" {
+		if address.City == "" {
+			return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMissingMetadataAddressCity)
+		}
 
-func (p *Plugin) matchStatus(status string) models.PaymentStatus {
-	switch status {
-	case "REJECTED":
-		return models.PAYMENT_STATUS_FAILED
-	case "COMPLETED":
-		return models.PAYMENT_STATUS_SUCCEEDED
-	case "HOLD":
-		return models.PAYMENT_STATUS_PENDING
-	case "CANCELED":
-		return models.PAYMENT_STATUS_CANCELLED
+		if address.Country == "" {
+			return models.NewConnectorValidationError("country", ErrMissingCountry)
+		}
+
+		return nil
 	}
 
-	return models.PAYMENT_STATUS_UNKNOWN
+	// No address line provided, ensure no other address fields are provided
+	if address.Line2 != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressLine2MetadataKey, ErrMetadataAddressLine2NotRequired)
+	}
+
+	if address.City != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressCityMetadataKey, ErrMetadataAddressCityNotRequired)
+	}
+
+	if address.State != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressStateMetadataKey, ErrMetadataAddressStateNotRequired)
+	}
+
+	if address.PostalCode != "" {
+		return models.NewConnectorValidationError(client.ColumnAddressPostalCodeMetadataKey, ErrMetadataPostalCodeNotRequired)
+	}
+
+	if address.Country != "" {
+		return models.NewConnectorValidationError("country", ErrCountryNotRequired)
+	}
+
+	return nil
+}
+
+func extractAddressFromMetadata(metadata map[string]string, country string) ColumnAddress {
+	return ColumnAddress{
+		Line1:      models.ExtractNamespacedMetadata(metadata, client.ColumnAddressLine1MetadataKey),
+		Line2:      models.ExtractNamespacedMetadata(metadata, client.ColumnAddressLine2MetadataKey),
+		City:       models.ExtractNamespacedMetadata(metadata, client.ColumnAddressCityMetadataKey),
+		State:      models.ExtractNamespacedMetadata(metadata, client.ColumnAddressStateMetadataKey),
+		PostalCode: models.ExtractNamespacedMetadata(metadata, client.ColumnAddressPostalCodeMetadataKey),
+		Country:    country,
+	}
+}
+
+func ParseColumnTimestamp(value string) (time.Time, error) {
+	return time.Parse(time.RFC3339, value)
 }
 
 func IsValidReversePayoutReason(reason string) bool {

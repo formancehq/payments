@@ -4746,6 +4746,7 @@ components:
           Adyen: '#/components/schemas/V3AdyenConfig'
           Atlar: '#/components/schemas/V3AtlarConfig'
           Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
           Dummypay: '#/components/schemas/V3DummypayConfig'
           Generic: '#/components/schemas/V3GenericConfig'
@@ -4873,6 +4874,9 @@ components:
         pollingPeriod:
           type: string
           default: 2m
+        provider:
+          type: string
+          default: Column
     V3CurrencycloudConfig:
       type: object
       required:

@@ -34,13 +34,17 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 	localBankCode := models.ExtractNamespacedMetadata(ba.Metadata, client.ColumnLocalBankCodeMetadataKey)
 	localAccountNumber := models.ExtractNamespacedMetadata(ba.Metadata, client.ColumnLocalAccountNumberMetadataKey)
 
-	address := client.ColumnAddress{
-		Line1:       addressLine1,
-		Line2:       addressLine2,
-		City:        city,
-		State:       state,
-		PostalCode:  postalCode,
-		CountryCode: *ba.Country,
+	address := client.ColumnAddress{}
+
+	if addressLine1 != "" {
+		address = client.ColumnAddress{
+			Line1:       addressLine1,
+			Line2:       addressLine2,
+			City:        city,
+			State:       state,
+			PostalCode:  postalCode,
+			CountryCode: *ba.Country,
+		}
 	}
 
 	data := client.CounterPartyBankAccountRequest{

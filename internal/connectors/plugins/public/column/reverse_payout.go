@@ -49,7 +49,7 @@ func (p *Plugin) transformReversePayoutResponse(resp *client.ReversePayoutRespon
 	return models.PSPPayment{
 		Amount:                      big.NewInt(resp.Amount),
 		Asset:                       resp.CurrencyCode,
-		Status:                      p.matchStatus(resp.Status),
+		Status:                      p.mapTransactionStatus(resp.Status),
 		Raw:                         raw,
 		Reference:                   resp.ID,
 		CreatedAt:                   createdAt,

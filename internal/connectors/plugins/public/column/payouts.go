@@ -47,10 +47,6 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.CreatePayoutResponse{}, err
 	}
 
-	if err != nil {
-		return models.CreatePayoutResponse{}, err
-	}
-
 	return models.CreatePayoutResponse{
 		Payment: payment,
 	}, nil
@@ -76,13 +72,15 @@ func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPaymen
 	}
 
 	return &models.PSPPayment{
-		Amount:                 big.NewInt(from.Amount),
-		Asset:                  curr,
-		Status:                 p.matchStatus(from.Status),
-		Raw:                    raw,
-		Reference:              from.ID,
-		Type:                   models.PAYMENT_TYPE_PAYOUT,
-		SourceAccountReference: pointer.For(from.BankAccountID),
-		CreatedAt:              createdAt,
+		Amount:                      big.NewInt(from.Amount),
+		Asset:                       curr,
+		Status:                      p.mapTransactionStatus(from.Status),
+		Raw:                         raw,
+		Reference:                   from.ID,
+		Type:                        models.PAYMENT_TYPE_PAYOUT,
+		SourceAccountReference:      pointer.For(from.BankAccountID),
+		DestinationAccountReference: pointer.For(from.CounterpartyId),
+		CreatedAt:                   createdAt,
+		Metadata:                    from.Metadata,
 	}, nil
 }

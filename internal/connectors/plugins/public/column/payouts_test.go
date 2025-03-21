@@ -644,22 +644,50 @@ var _ = Describe("Column Plugin Payouts", func() {
 		})
 	})
 
-	Context("matchStatus", func() {
+	Context("mapTransactionStatus", func() {
 		It("should map status values correctly", func() {
 			testCases := []struct {
 				status         string
 				expectedStatus models.PaymentStatus
 			}{
-				{"COMPLETED", models.PAYMENT_STATUS_SUCCEEDED},
-				{"REJECTED", models.PAYMENT_STATUS_FAILED},
-				{"HOLD", models.PAYMENT_STATUS_PENDING},
-				{"CANCELED", models.PAYMENT_STATUS_CANCELLED},
-				{"UNKNOWN", models.PAYMENT_STATUS_UNKNOWN},
-				{"ANYTHING_ELSE", models.PAYMENT_STATUS_UNKNOWN},
+				{"submitted", models.PAYMENT_STATUS_PENDING},
+				{"pending_submission", models.PAYMENT_STATUS_PENDING},
+				{"initiated", models.PAYMENT_STATUS_PENDING},
+				{"pending_deposit", models.PAYMENT_STATUS_PENDING},
+				{"pending_first_return", models.PAYMENT_STATUS_PENDING},
+				{"pending_reclear", models.PAYMENT_STATUS_PENDING},
+				{"pending_return", models.PAYMENT_STATUS_PENDING},
+				{"pending_second_return", models.PAYMENT_STATUS_PENDING},
+				{"pending_stop", models.PAYMENT_STATUS_PENDING},
+				{"pending_user_initiated_return", models.PAYMENT_STATUS_PENDING},
+				{"scheduled", models.PAYMENT_STATUS_PENDING},
+				{"pending", models.PAYMENT_STATUS_PENDING},
+				{"completed", models.PAYMENT_STATUS_SUCCEEDED},
+				{"deposited", models.PAYMENT_STATUS_SUCCEEDED},
+				{"recleared", models.PAYMENT_STATUS_SUCCEEDED},
+				{"settled", models.PAYMENT_STATUS_SUCCEEDED},
+				{"accepted", models.PAYMENT_STATUS_SUCCEEDED},
+				{"canceled", models.PAYMENT_STATUS_CANCELLED},
+				{"stopped", models.PAYMENT_STATUS_CANCELLED},
+				{"blocked", models.PAYMENT_STATUS_CANCELLED},
+				{"failed", models.PAYMENT_STATUS_FAILED},
+				{"rejected", models.PAYMENT_STATUS_FAILED},
+				{"returned", models.PAYMENT_STATUS_REFUNDED},
+				{"user_initiated_returned", models.PAYMENT_STATUS_REFUNDED},
+				{"return_contested", models.PAYMENT_STATUS_REFUND_REVERSED},
+				{"return_dishonored", models.PAYMENT_STATUS_REFUND_REVERSED},
+				{"user_initiated_return_dishonored", models.PAYMENT_STATUS_REFUND_REVERSED},
+				{"first_return", models.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"second_return", models.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"user_initiated_return_submitted", models.PAYMENT_STATUS_REFUNDED_FAILURE},
+				{"manual_review", models.PAYMENT_STATUS_AUTHORISATION},
+				{"manual_review_approved", models.PAYMENT_STATUS_AUTHORISATION},
+				{"hold", models.PAYMENT_STATUS_CAPTURE},
+				{"unknown", models.PAYMENT_STATUS_UNKNOWN},
 			}
 
 			for _, tc := range testCases {
-				result := plg.matchStatus(tc.status)
+				result := plg.mapTransactionStatus(tc.status)
 				Expect(result).To(Equal(tc.expectedStatus), "Status %s should map to %s", tc.status, tc.expectedStatus)
 			}
 		})

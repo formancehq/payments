@@ -245,15 +245,17 @@ type PayoutRequest struct {
 }
 
 type PayoutResponse struct {
-	ID            string          `json:"id"`
-	Amount        int64           `json:"amount"`
-	BankAccountID string          `json:"bank_account_id"`
-	Description   string          `json:"description"`
-	CreatedAt     string          `json:"created_at"`
-	UpdatedAt     string          `json:"updated_at"`
-	CurrencyCode  string          `json:"currency_code"`
-	Status        string          `json:"status"`
-	Raw           json.RawMessage `json:"raw"`
+	ID             string            `json:"id"`
+	Amount         int64             `json:"amount"`
+	BankAccountID  string            `json:"bank_account_id"`
+	CounterpartyId string            `json:"counterparty_id"`
+	Description    string            `json:"description"`
+	CreatedAt      string            `json:"created_at"`
+	UpdatedAt      string            `json:"updated_at"`
+	CurrencyCode   string            `json:"currency_code"`
+	Status         string            `json:"status"`
+	Metadata       map[string]string `json:"metadata"`
+	Raw            json.RawMessage   `json:"raw"`
 }
 
 type InternationalWireTransfer struct {
@@ -485,15 +487,94 @@ func MapInternationalWirePayout(response InternationalWirePayoutResponse) (*Payo
 		return &PayoutResponse{}, err
 	}
 
+	metadata := map[string]string{
+		ColumnInitiatedAtMetadataKey:                response.InitiatedAt,
+		ColumnPendingSubmissionAtMetadataKey:        response.PendingSubmissionAt,
+		ColumnSubmittedAtMetadataKey:                response.SubmittedAt,
+		ColumnCompletedAtMetadataKey:                stringPtrToString(response.CompletedAt),
+		ColumnManualReviewAtMetadataKey:             stringPtrToString(response.ManualReviewAt),
+		ColumnReturnedAtMetadataKey:                 stringPtrToString(response.ReturnedAt),
+		ColumnIdempotencyKeyMetadataKey:             stringPtrToString(response.IdempotencyKey),
+		ColumnRawMessageMetadataKey:                 stringPtrToString(response.RawMessage),
+		ColumnReturnReasonMetadataKey:               stringPtrToString(response.ReturnReason),
+		ColumnReturnedAmountMetadataKey:             intPtrToString(response.ReturnedAmount),
+		ColumnReturnedCurrencyCodeMetadataKey:       stringPtrToString(response.ReturnedCurrencyCode),
+		ColumnSettlementDateMetadataKey:             response.SettlementDate,
+		ColumnUETRMetadataKey:                       response.UETR,
+		ColumnInstructionIDMetadataKey:              response.InstructionID,
+		ColumnEndToEndIDMetadataKey:                 response.EndToEndID,
+		ColumnAccountNumberIDMetadataKey:            response.AccountNumberID,
+		ColumnFXQuoteIDMetadataKey:                  response.FXQuoteID,
+		ColumnFXRateMetadataKey:                     response.FXRate,
+		ColumnInstructedAmountMetadataKey:           fmt.Sprintf("%d", response.InstructedAmount),
+		ColumnInstructedCurrencyCodeMetadataKey:     response.InstructedCurrencyCode,
+		ColumnSettledAmountMetadataKey:              fmt.Sprintf("%d", response.SettledAmount),
+		ColumnSettledCurrencyCodeMetadataKey:        response.SettledCurrencyCode,
+		ColumnAllowOverdraftMetadataKey:             fmt.Sprintf("%t", response.AllowOverdraft),
+		ColumnIsIncomingMetadataKey:                 fmt.Sprintf("%t", response.IsIncoming),
+		ColumnInstructionToBeneficiaryFIMetadataKey: response.InstructionToBeneficiaryFI,
+		ColumnBeneficiaryAccountNumberMetadataKey:   response.BeneficiaryAccountNumber,
+		ColumnBeneficiaryFIMetadataKey:              response.BeneficiaryFI,
+		ColumnBeneficiaryNameMetadataKey:            response.BeneficiaryName,
+		ColumnOriginatorAccountNumberMetadataKey:    response.OriginatorAccountNumber,
+		ColumnOriginatorFIMetadataKey:               response.OriginatorFI,
+		ColumnOriginatorNameMetadataKey:             response.OriginatorName,
+		ColumnUltimateBeneficiaryNameMetadataKey:    response.UltimateBeneficiaryName,
+		ColumnUltimateOriginatorNameMetadataKey:     response.UltimateOriginatorName,
+		ColumnChargeBearerMetadataKey:               response.ChargeBearer,
+	}
+
+	if len(response.Charges) > 0 {
+		chargesJson, err := json.Marshal(response.Charges)
+		if err == nil {
+			metadata[ColumnChargesMetadataKey] = string(chargesJson)
+		}
+	}
+
+	if response.RemittanceInfo.GeneralInfo != "" || response.RemittanceInfo.BeneficiaryReference != "" || response.RemittanceInfo.PurposeCode != "" {
+		remittanceJson, err := json.Marshal(response.RemittanceInfo)
+		if err == nil {
+			metadata[ColumnRemittanceInfoMetadataKey] = string(remittanceJson)
+		}
+	}
+
+	// Handle address objects
+	beneficiaryAddressJson, err := json.Marshal(response.BeneficiaryAddress)
+	if err == nil {
+		metadata[ColumnBeneficiaryAddressMetadataKey] = string(beneficiaryAddressJson)
+	}
+
+	originatorAddressJson, err := json.Marshal(response.OriginatorAddress)
+	if err == nil {
+		metadata[ColumnOriginatorAddressMetadataKey] = string(originatorAddressJson)
+	}
+
+	if response.UltimateBeneficiaryAddress != nil {
+		ultimateBeneficiaryAddressJson, err := json.Marshal(*response.UltimateBeneficiaryAddress)
+		if err == nil {
+			metadata[ColumnUltimateBeneficiaryAddressMetadataKey] = string(ultimateBeneficiaryAddressJson)
+		}
+	}
+
+	if response.UltimateOriginatorAddress != nil {
+		ultimateOriginatorAddressJson, err := json.Marshal(*response.UltimateOriginatorAddress)
+		if err == nil {
+			metadata[ColumnUltimateOriginatorAddressMetadataKey] = string(ultimateOriginatorAddressJson)
+		}
+	}
+
 	return &PayoutResponse{
-		ID:            response.ID,
-		Amount:        response.Amount,
-		BankAccountID: response.BankAccountID,
-		Description:   response.Description,
-		CurrencyCode:  response.CurrencyCode,
-		CreatedAt:     response.CreatedAt,
-		UpdatedAt:     response.UpdatedAt,
-		Raw:           raw,
+		ID:             response.ID,
+		Amount:         response.Amount,
+		BankAccountID:  response.BankAccountID,
+		CounterpartyId: response.CounterpartyID,
+		Description:    response.Description,
+		CurrencyCode:   response.CurrencyCode,
+		CreatedAt:      response.CreatedAt,
+		UpdatedAt:      response.UpdatedAt,
+		Status:         response.Status,
+		Metadata:       metadata,
+		Raw:            raw,
 	}, nil
 }
 
@@ -503,13 +584,38 @@ func MapRealtimePayout(response RealtimeTransferResponse) (*PayoutResponse, erro
 		return &PayoutResponse{}, err
 	}
 
+	metadata := map[string]string{
+		ColumnAcceptedAtMetadataKey:                   stringPtrToString(response.AcceptedAt),
+		ColumnAccountNumberIDMetadataKey:              response.AccountNumberID,
+		ColumnAllowOverdraftMetadataKey:               fmt.Sprintf("%t", response.AllowOverdraft),
+		ColumnBlockedAtMetadataKey:                    stringPtrToString(response.BlockedAt),
+		ColumnCompletedAtMetadataKey:                  stringPtrToString(response.CompletedAt),
+		ColumnUltimateDebtorCounterpartyIdMetadataKey: response.UltimateDebtorCounterpartyID,
+		ColumnIdempotencyKeyMetadataKey:               stringPtrToString(response.IdempotencyKey),
+		ColumnIsIncomingMetadataKey:                   fmt.Sprintf("%t", response.IsIncoming),
+		ColumnIsOnUsMetadataKey:                       fmt.Sprintf("%t", response.IsOnUs),
+		ColumnManualReviewApprovedAtMetadataKey:       stringPtrToString(response.ManualReviewApprovedAt),
+		ColumnManualReviewAtMetadataKey:               stringPtrToString(response.ManualReviewAt),
+		ColumnManualReviewRejectedAtMetadataKey:       stringPtrToString(response.ManualReviewRejectedAt),
+		ColumnPendingAtMetadataKey:                    stringPtrToString(response.PendingAt),
+		ColumnRejectedAtMetadataKey:                   stringPtrToString(response.RejectedAt),
+		ColumnRejectedCodeMetadataKey:                 stringPtrToString(response.RejectedCode),
+		ColumnRejectionCodeDescriptionMetadataKey:     stringPtrToString(response.RejectionCodeDescription),
+		ColumnRejectionAdditionalInfoMetadataKey:      stringPtrToString(response.RejectionAdditionalInfo),
+		ColumnReturnPairTransferIDMetadataKey:         stringPtrToString(response.ReturnPairTransferID),
+	}
+
 	return &PayoutResponse{
-		ID:            response.ID,
-		Amount:        response.Amount,
-		BankAccountID: response.BankAccountID,
-		Description:   response.Description,
-		CurrencyCode:  response.CurrencyCode,
-		Raw:           raw,
+		ID:             response.ID,
+		Amount:         response.Amount,
+		BankAccountID:  response.BankAccountID,
+		CounterpartyId: response.CounterpartyID,
+		Description:    response.Description,
+		CurrencyCode:   response.CurrencyCode,
+		CreatedAt:      response.InitiatedAt,
+		Status:         response.Status,
+		Metadata:       metadata,
+		Raw:            raw,
 	}, nil
 }
 
@@ -519,15 +625,32 @@ func MapWirePayout(response WirePayoutResponse) (*PayoutResponse, error) {
 		return &PayoutResponse{}, err
 	}
 
+	metadata := map[string]string{
+		ColumnInitiatedAtMetadataKey:           response.InitiatedAt,
+		ColumnPendingSubmissionAtMetadataKey:   response.PendingSubmissionAt,
+		ColumnSubmittedAtMetadataKey:           response.SubmittedAt,
+		ColumnCompletedAtMetadataKey:           response.CompletedAt,
+		ColumnRejectedAtMetadataKey:            response.RejectedAt,
+		ColumnIdempotencyKeyMetadataKey:        response.IdempotencyKey,
+		ColumnAllowOverdraftMetadataKey:        fmt.Sprintf("%t", response.AllowOverdraft),
+		ColumnPlatformIDMetadataKey:            response.PlatformID,
+		ColumnIsOnUsMetadataKey:                fmt.Sprintf("%t", response.IsOnUs),
+		ColumnIsIncomingMetadataKey:            fmt.Sprintf("%t", response.IsIncoming),
+		ColumnWireDrawdownRequestIDMetadataKey: response.WireDrawdownRequestID,
+	}
+
 	return &PayoutResponse{
-		ID:            response.ID,
-		Amount:        response.Amount,
-		BankAccountID: response.BankAccountID,
-		Description:   response.Description,
-		CurrencyCode:  response.CurrencyCode,
-		CreatedAt:     response.CreatedAt,
-		UpdatedAt:     response.UpdatedAt,
-		Raw:           raw,
+		ID:             response.ID,
+		Amount:         response.Amount,
+		BankAccountID:  response.BankAccountID,
+		CounterpartyId: response.CounterpartyID,
+		Description:    response.Description,
+		CurrencyCode:   response.CurrencyCode,
+		CreatedAt:      response.CreatedAt,
+		UpdatedAt:      response.UpdatedAt,
+		Status:         response.Status,
+		Metadata:       metadata,
+		Raw:            raw,
 	}, nil
 }
 
@@ -538,15 +661,72 @@ func MapAchPayout(response ACHPayoutResponse) (*PayoutResponse, error) {
 		return &PayoutResponse{}, err
 	}
 
+	metadata := map[string]string{
+		ColumnTypeMetadataKey:                              response.Type,
+		ColumnIsOnUsMetadataKey:                            fmt.Sprintf("%t", response.IsOnUs),
+		ColumnSameDayMetadataKey:                           fmt.Sprintf("%t", response.SameDay),
+		ColumnCompanyIDMetadataKey:                         response.CompanyID,
+		ColumnSettledAtMetadataKey:                         stringPtrToString(response.SettledAt),
+		ColumnIsIncomingMetadataKey:                        fmt.Sprintf("%t", response.IsIncoming),
+		ColumnReceiverIDMetadataKey:                        response.ReceiverID,
+		ColumnReturnedAtMetadataKey:                        stringPtrToString(response.ReturnedAt),
+		ColumnCancelledAtMetadataKey:                       stringPtrToString(response.CancelledAt),
+		ColumnCompanyNameMetadataKey:                       response.CompanyName,
+		ColumnCompletedAtMetadataKey:                       stringPtrToString(response.CompletedAt),
+		ColumnEffectiveDateMetadataKey:                     response.EffectiveOn,
+		ColumnInitiatedAtMetadataKey:                       response.InitiatedAt,
+		ColumnNSFDeadlineMetadataKey:                       stringPtrToString(response.NSFDeadline),
+		ColumnSubmittedAtMetadataKey:                       response.SubmittedAt,
+		ColumnTraceNumberMetadataKey:                       response.TraceNumber,
+		ColumnReceiverNameMetadataKey:                      response.ReceiverName,
+		ColumnAcknowledgedAtMetadataKey:                    stringPtrToString(response.AcknowledgedAt),
+		ColumnAllowOverdraftMetadataKey:                    fmt.Sprintf("%t", response.AllowOverdraft),
+		ColumnIdempotencyKeyMetadataKey:                    response.IdempotencyKey,
+		ColumnEntryClassCodeMetadataKey:                    response.EntryClassCode,
+		ColumnManualReviewAtMetadataKey:                    stringPtrToString(response.ManualReviewAt),
+		ColumnAccountNumberIDMetadataKey:                   response.AccountNumberID,
+		ColumnFundsAvailabilityMetadataKey:                 response.FundsAvailability,
+		ColumnODFIRoutingNumberMetadataKey:                 response.ODFIRoutingNumber,
+		ColumnReturnContestedAtMetadataKey:                 stringPtrToString(response.ReturnContestedAt),
+		ColumnPaymentRelatedInfoMetadataKey:                response.PaymentRelatedInfo,
+		ColumnReturnDishonoredAtMetadataKey:                stringPtrToString(response.ReturnDishonoredAt),
+		ColumnReturnDishonoredFundsUnlockedAtMetadataKey:   stringPtrToString(response.ReturnDishonoredFundsUnlockedAt),
+		ColumnCompanyEntryDescriptionMetadataKey:           stringPtrToString(response.CompanyEntryDescription),
+		ColumnReversalPairTransferIDMetadataKey:            stringPtrToString(response.ReversalPairTransferID),
+		ColumnCompanyDiscretionaryDataMetadataKey:          stringPtrToString(response.CompanyDiscretionaryData),
+		ColumnUltimateBeneficiaryCounterpartyIDMetadataKey: stringPtrToString(response.UltimateBeneficiaryCounterpartyID),
+		ColumnUltimateOriginatorCounterpartyIDMetadataKey:  stringPtrToString(response.UltimateOriginatorCounterpartyID),
+	}
+
+	if response.IAT != nil {
+		metadata[ColumnIATMetadataKey] = *response.IAT
+	}
+
 	return &PayoutResponse{
-		ID:            response.ID,
-		Amount:        response.Amount,
-		BankAccountID: response.BankAccountID,
-		Description:   response.Description,
-		CurrencyCode:  response.CurrencyCode,
-		CreatedAt:     response.CreatedAt,
-		UpdatedAt:     response.UpdatedAt,
-		Status:        response.Status,
-		Raw:           raw,
+		ID:             response.ID,
+		Amount:         response.Amount,
+		BankAccountID:  response.BankAccountID,
+		CounterpartyId: response.CounterpartyID,
+		Description:    response.Description,
+		CurrencyCode:   response.CurrencyCode,
+		CreatedAt:      response.CreatedAt,
+		UpdatedAt:      response.UpdatedAt,
+		Status:         response.Status,
+		Metadata:       metadata,
+		Raw:            raw,
 	}, nil
+}
+
+func stringPtrToString(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
+func intPtrToString(i *int64) string {
+	if i == nil {
+		return ""
+	}
+	return fmt.Sprintf("%d", *i)
 }

@@ -29,12 +29,12 @@ type Client interface {
 }
 
 type ColumnAddress struct {
-	Line1       string `json:"line_1"`
+	Line1       string `json:"line_1,omitempty"`
 	Line2       string `json:"line_2,omitempty"`
-	City        string `json:"city"`
+	City        string `json:"city,omitempty"`
 	State       string `json:"state,omitempty"`
-	PostalCode  string `json:"postal_code"`
-	CountryCode string `json:"country_code"`
+	PostalCode  string `json:"postal_code,omitempty"`
+	CountryCode string `json:"country_code,omitempty"`
 }
 
 //go:generate mockgen -destination=http_generated.go -package=client . HTTPClient

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"math/big"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v2/pointer"
@@ -78,13 +79,13 @@ func (p *Plugin) fillPayments(
 		}
 
 		status := p.mapTransactionStatus(transaction.Status)
-		payments = append(payments, models.PSPPayment{
+		pspPayment := models.PSPPayment{
 			Reference: transaction.ID,
 			CreatedAt: createdTime,
 			Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.CurrencyCode)),
 			Status:    status,
 			Amount:    big.NewInt(transaction.Amount),
-			Type:      models.PAYMENT_TYPE_OTHER,
+			Type:      mapTransactionType(transaction),
 			Raw:       raw,
 			Metadata: map[string]string{
 				client.ColumnUpdatedAtMetadataKey:                         transaction.UpdatedAt,
@@ -102,12 +103,15 @@ func (p *Plugin) fillPayments(
 				client.ColumnReceiverInternalAccountNumberIDMetadataKey:   transaction.ReceiverInternalAccount.AccountNumberID,
 				client.ColumnExternalDestinationCounterpartyIDMetadataKey: transaction.ExternalDestination.CounterpartyID,
 			},
-		})
+		}
+		pspPayment = fillAccountID(transaction, pspPayment)
+		payments = append(payments, pspPayment)
 	}
 	return payments, nil
 }
 
 func (p *Plugin) mapTransactionStatus(status string) models.PaymentStatus {
+	status = strings.ToLower(status)
 	switch status {
 	case "submitted", "pending_submission", "initiated", "pending_deposit", "pending_first_return", "pending_reclear", "pending_return", "pending_second_return", "pending_stop", "pending_user_initiated_return", "scheduled", "pending":
 		return models.PAYMENT_STATUS_PENDING
@@ -129,5 +133,38 @@ func (p *Plugin) mapTransactionStatus(status string) models.PaymentStatus {
 		return models.PAYMENT_STATUS_CAPTURE
 	default:
 		return models.PAYMENT_STATUS_UNKNOWN
+	}
+}
+
+func fillAccountID(transaction *client.Transaction, pspPayment models.PSPPayment) models.PSPPayment {
+	assignIfNotEmpty := func(target **string, source *string) {
+		if source != nil && *source != "" {
+			*target = source
+		}
+	}
+
+	if transaction.Type == "book" {
+		assignIfNotEmpty(&pspPayment.SourceAccountReference, &transaction.SenderInternalAccount.AccountNumberID)
+		assignIfNotEmpty(&pspPayment.DestinationAccountReference, &transaction.ReceiverInternalAccount.BankAccountID)
+	} else if transaction.IsIncoming {
+		assignIfNotEmpty(&pspPayment.SourceAccountReference, &transaction.ExternalSource.CounterpartyID)
+		assignIfNotEmpty(&pspPayment.DestinationAccountReference, &transaction.ReceiverInternalAccount.AccountNumberID)
+	} else {
+		assignIfNotEmpty(&pspPayment.SourceAccountReference, &transaction.SenderInternalAccount.AccountNumberID)
+		assignIfNotEmpty(&pspPayment.DestinationAccountReference, &transaction.ExternalDestination.CounterpartyID)
+	}
+
+	return pspPayment
+}
+
+func mapTransactionType(transaction *client.Transaction) models.PaymentType {
+	if transaction.IsIncoming {
+		return models.PAYMENT_TYPE_PAYIN
+	} else if transaction.Type == "book" || transaction.Type == "wire" ||
+		transaction.Type == "swift" || transaction.Type == "realtime" ||
+		transaction.Type == "check_credit" || transaction.Type == "ach_credit" {
+		return models.PAYMENT_TYPE_PAYOUT
+	} else {
+		return models.PAYMENT_TYPE_TRANSFER
 	}
 }
