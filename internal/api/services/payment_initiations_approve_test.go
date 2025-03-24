@@ -41,7 +41,7 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 	}
 	piWithScheduledAt := models.PaymentInitiation{
 		Type:        models.PAYMENT_INITIATION_TYPE_PAYOUT,
-		ScheduledAt: time.Now(),
+		ScheduledAt: time.Now().Add(time.Hour),
 	}
 
 	tests := []struct {
@@ -141,17 +141,22 @@ func TestPaymentInitiationsApprove(t *testing.T) {
 			if test.expectedAdjError == nil {
 				store.EXPECT().PaymentInitiationsGet(gomock.Any(), pid).Return(&test.pi, test.piGetStorageErr)
 
+				waitResult := true
+				if !test.pi.ScheduledAt.IsZero() {
+					waitResult = false
+				}
+
 				if test.piGetStorageErr == nil {
 					switch test.pi.Type {
 					case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-						eng.EXPECT().CreateTransfer(gomock.Any(), pid, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
+						eng.EXPECT().CreateTransfer(gomock.Any(), pid, 1, waitResult).Return(models.Task{}, test.engineErr)
 					case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-						eng.EXPECT().CreatePayout(gomock.Any(), pid, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+						eng.EXPECT().CreatePayout(gomock.Any(), pid, 1, waitResult).Return(models.Task{}, test.engineErr)
 					}
 				}
 			}
 
-			_, err := s.PaymentInitiationsApprove(context.Background(), pid, false)
+			_, err := s.PaymentInitiationsApprove(context.Background(), pid, true)
 			switch {
 			case test.expectedAdjError == nil && test.expectedPIError == nil && test.expectedEngineError == nil:
 				require.NoError(t, err)
