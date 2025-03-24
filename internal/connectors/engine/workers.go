@@ -112,7 +112,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 	return nil
 }
 
-func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connector) error {
+func (w *WorkerPool) onStartPlugin(_ context.Context, connector models.Connector) error {
 	// Even if the connector is scheduled for deletion, we still need to register
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow

@@ -39,21 +39,21 @@ func (s *Service) PaymentInitiationsApprove(ctx context.Context, id models.Payme
 		return models.Task{}, newStorageError(err, "cannot get payment initiation")
 	}
 
-	startDelay := 0 * time.Second
-	now := time.Now()
-	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
-		startDelay = pi.ScheduledAt.Sub(now)
+	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(time.Now()) {
+		// In any case, if the payment initiation is scheduled for the future,
+		// we do not want to wait for the results
+		waitResult = false
 	}
 
 	switch pi.Type {
 	case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-		task, err := s.engine.CreateTransfer(ctx, pi.ID, startDelay, 1, waitResult)
+		task, err := s.engine.CreateTransfer(ctx, pi.ID, 1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}
 		return task, nil
 	case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-		task, err := s.engine.CreatePayout(ctx, pi.ID, startDelay, 1, waitResult)
+		task, err := s.engine.CreatePayout(ctx, pi.ID, 1, waitResult)
 		if err != nil {
 			return models.Task{}, handleEngineErrors(err)
 		}

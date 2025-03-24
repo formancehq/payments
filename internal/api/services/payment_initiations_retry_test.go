@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"testing"
-	"time"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/payments/internal/connectors/engine"
@@ -143,9 +142,9 @@ func TestPaymentInitiationsRetry(t *testing.T) {
 				if test.piGetStorageErr == nil {
 					switch test.pi.Type {
 					case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-						eng.EXPECT().CreateTransfer(gomock.Any(), pid, 0*time.Second, 2, false).Return(models.Task{}, test.engineErr)
+						eng.EXPECT().CreateTransfer(gomock.Any(), pid, 2, false).Return(models.Task{}, test.engineErr)
 					case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-						eng.EXPECT().CreatePayout(gomock.Any(), pid, gomock.Any(), 2, false).Return(models.Task{}, test.engineErr)
+						eng.EXPECT().CreatePayout(gomock.Any(), pid, 2, false).Return(models.Task{}, test.engineErr)
 					}
 				}
 			}
