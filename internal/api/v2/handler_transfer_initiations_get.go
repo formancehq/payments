@@ -118,10 +118,14 @@ func transferInitiationsGet(backend backend.Backend) http.HandlerFunc {
 func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferInitiationAdjustmentsResponse {
 	to := make([]transferInitiationAdjustmentsResponse, len(from))
 	for i, adjustment := range from {
+		status, toSend := translateStatus(adjustment.Status)
+		if !toSend {
+			continue
+		}
 		to[i] = transferInitiationAdjustmentsResponse{
 			AdjustmentID: adjustment.ID.String(),
 			CreatedAt:    adjustment.CreatedAt,
-			Status:       adjustment.Status.String(),
+			Status:       status,
 			Error: func() string {
 				if adjustment.Error == nil {
 					return ""
@@ -132,6 +136,18 @@ func translateAdjustments(from []models.PaymentInitiationAdjustment) []transferI
 		}
 	}
 	return to
+}
+
+func translateStatus(from models.PaymentInitiationAdjustmentStatus) (string, bool) {
+	switch from {
+	case models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING:
+		// PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING is not supported
+		// in v2 as it is introduced in v3. Since we're gonna list all adjustments
+		// we can drop this one
+		return "", false
+	default:
+		return from.String(), true
+	}
 }
 
 func translateRelatedPayments(from []models.Payment) []transferInitiationPaymentsResponse {

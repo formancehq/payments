@@ -1131,6 +1131,7 @@ components:
       enum:
         - UNKNOWN
         - WAITING_FOR_VALIDATION
+        - SCHEDULED_FOR_PROCESSING
         - PROCESSING
         - PROCESSED
         - FAILED

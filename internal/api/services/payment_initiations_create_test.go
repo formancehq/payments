@@ -97,9 +97,9 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 			if test.piUpsertStorageErr == nil && test.sendToPSP {
 				switch test.pi.Type {
 				case models.PAYMENT_INITIATION_TYPE_TRANSFER:
-					eng.EXPECT().CreateTransfer(gomock.Any(), models.PaymentInitiationID{}, 0*time.Second, 1, false).Return(models.Task{}, test.engineErr)
+					eng.EXPECT().CreateTransfer(gomock.Any(), models.PaymentInitiationID{}, 1, false).Return(models.Task{}, test.engineErr)
 				case models.PAYMENT_INITIATION_TYPE_PAYOUT:
-					eng.EXPECT().CreatePayout(gomock.Any(), models.PaymentInitiationID{}, gomock.Any(), 1, false).Return(models.Task{}, test.engineErr)
+					eng.EXPECT().CreatePayout(gomock.Any(), models.PaymentInitiationID{}, 1, false).Return(models.Task{}, test.engineErr)
 				}
 			}
 

@@ -44,11 +44,11 @@ type Engine interface {
 	// in the external system (PSP).
 	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 	// Create a transfer between two accounts on the given connector (PSP).
-	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error)
+	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
 	// Reverse a transfer on the given connector (PSP).
 	ReverseTransfer(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
 	// Create a payout on the given connector (PSP).
-	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error)
+	CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
 	// Reverse a payout on the given connector (PSP).
 	ReversePayout(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
 
@@ -513,7 +513,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 	return task, nil
 }
 
-func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error) {
+func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateTransfer")
 	defer span.End()
 
@@ -540,7 +540,6 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			StartDelay:                               startDelay,
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
@@ -632,7 +631,7 @@ func (e *engine) ReverseTransfer(ctx context.Context, reversal models.PaymentIni
 	return task, nil
 }
 
-func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, startDelay time.Duration, attempt int, waitResult bool) (models.Task, error) {
+func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePayout")
 	defer span.End()
 
@@ -659,7 +658,6 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		ctx,
 		client.StartWorkflowOptions{
 			ID:                                       id,
-			StartDelay:                               startDelay,
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
 			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
