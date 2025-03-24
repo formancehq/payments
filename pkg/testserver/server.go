@@ -5,11 +5,13 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"time"
 
 	"github.com/nats-io/nats.go"
 
+	formance "github.com/formancehq/formance-sdk-go/v3"
 	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
 
 	"github.com/formancehq/go-libs/v2/otlp"
@@ -63,6 +65,8 @@ type Server struct {
 	logger        Logger
 	worker        *Worker
 	httpClient    *Client
+	stackServer   *httptest.Server
+	sdk           *formance.Formance
 	cancel        func()
 	ctx           context.Context
 	errorChan     chan error
@@ -120,10 +124,17 @@ func (s *Server) Start() error {
 		return err
 	}
 	s.httpClient = httpClient
+
+	s.stackServer = StackServer(httpserver.URL(s.ctx))
+	s.sdk, err = NewStackClient(s.stackServer.URL, s.configuration.HttpClientTimeout, transport)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 func (s *Server) Stop(ctx context.Context) error {
+	defer s.stackServer.Close()
 	if s.cancel == nil {
 		return nil
 	}
@@ -148,6 +159,10 @@ func (s *Server) Stop(ctx context.Context) error {
 
 func (s *Server) Client() *Client {
 	return s.httpClient
+}
+
+func (s *Server) SDK() *formance.Formance {
+	return s.sdk
 }
 
 func (s *Server) Restart(ctx context.Context) error {
