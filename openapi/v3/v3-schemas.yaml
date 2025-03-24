@@ -550,7 +550,7 @@ components:
         - connectorID
         - scheduleID
         - createdAt
-        - udpatedAt
+        - updatedAt
         - terminated
       properties:
         id:

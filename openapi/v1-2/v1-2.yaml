@@ -144,7 +144,7 @@ paths:
       summary: Update the status of a transfer initiation
       tags:
         - payments.v1
-      operationId: udpateTransferInitiationStatus
+      operationId: updateTransferInitiationStatus
       description: Update a transfer initiation status
       parameters:
         - $ref: '#/components/parameters/TransferId'
