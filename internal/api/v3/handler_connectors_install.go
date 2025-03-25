@@ -3,6 +3,7 @@ package v3
 import (
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/api"
 	"github.com/formancehq/payments/internal/api/backend"
@@ -32,7 +33,7 @@ func connectorsInstall(backend backend.Backend) http.HandlerFunc {
 		span.SetAttributes(attribute.String("config", string(config)))
 		span.SetAttributes(attribute.String("provider", connector(r)))
 
-		provider := connector(r)
+		provider := strings.ToLower(connector(r))
 
 		connectorID, err := backend.ConnectorsInstall(ctx, provider, config)
 		if err != nil {
