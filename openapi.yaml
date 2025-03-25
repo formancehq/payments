@@ -2687,7 +2687,6 @@ components:
         - initialAmount
         - asset
         - status
-        - error
       properties:
         id:
           type: string
@@ -2749,7 +2748,6 @@ components:
         - adjustmentID
         - createdAt
         - status
-        - error
       properties:
         adjustmentID:
           type: string
@@ -2771,7 +2769,6 @@ components:
         - paymentID
         - createdAt
         - status
-        - error
       properties:
         paymentID:
           type: string
