@@ -1847,6 +1847,7 @@ components:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
+          nullable: true
         metadata:
           type: object
           additionalProperties:
@@ -1877,6 +1878,7 @@ components:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
+          nullable: true
         metadata:
           type: object
           additionalProperties:
@@ -1898,6 +1900,7 @@ components:
           $ref: '#/components/schemas/PaymentStatus'
         error:
           type: string
+          nullable: true
     BankAccount:
       type: object
       required:
@@ -2189,6 +2192,7 @@ components:
           type: object
         error:
           type: string
+          nullable: true
     TaskStatus:
       type: string
       enum:
