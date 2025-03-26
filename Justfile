@@ -26,3 +26,7 @@ compile-api-docs:
 
 [group('openapi')]
 openapi: compile-api-yaml compile-api-docs
+
+[group('test')]
+generate-client: openapi
+    @cd pkg/client && speakeasy run --skip-versioning

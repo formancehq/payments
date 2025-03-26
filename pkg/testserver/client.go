@@ -9,9 +9,9 @@ import (
 	"net/http"
 	"time"
 
-	formance "github.com/formancehq/formance-sdk-go/v3"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
+	formance "github.com/formancehq/payments/pkg/client"
 	"github.com/stretchr/testify/require"
 )
 
@@ -22,7 +22,7 @@ func NewStackClient(urlStr string, clientTimeout time.Duration, transport http.R
 	}
 
 	return formance.New(
-		formance.WithServerURL(urlStr),
+		urlStr,
 		formance.WithClient(httpClient),
 	), nil
 }

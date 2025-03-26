@@ -10,13 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/formance-sdk-go/v3/pkg/models/operations"
-	"github.com/formancehq/formance-sdk-go/v3/pkg/models/shared"
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
@@ -191,9 +190,7 @@ var _ = Context("Payments API Connectors", func() {
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, operations.V3UninstallConnectorRequest{
-				ConnectorID: connectorRes.Data,
-			})
+			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorRes.Data)
 			Expect(err).To(BeNil())
 
 			delRes := resp.V3UninstallConnectorResponse
@@ -214,10 +211,7 @@ var _ = Context("Payments API Connectors", func() {
 			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, operations.UninstallConnectorV1Request{
-				ConnectorID: connectorRes.Data.ConnectorID,
-				Connector:   shared.ConnectorDummyPay,
-			})
+			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorRes.Data.ConnectorID)
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "uninstall")
 		})

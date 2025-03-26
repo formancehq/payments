@@ -4,15 +4,17 @@ go 1.23.2
 
 toolchain go1.23.5
 
+replace github.com/formancehq/payments/pkg/client => ./pkg/client
+
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
 	github.com/ThreeDotsLabs/watermill v1.4.6
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
-	github.com/formancehq/formance-sdk-go/v3 v3.4.1
 	github.com/formancehq/go-libs/v2 v2.2.2
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-chi/chi/v5 v5.2.1

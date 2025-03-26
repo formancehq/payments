@@ -1,0 +1,9 @@
+# ForwardBankAccountRequest
+
+
+## Fields
+
+| Field                                                                                        | Type                                                                                         | Required                                                                                     | Description                                                                                  | Example                                                                                      |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `BankAccountID`                                                                              | *string*                                                                                     | :heavy_check_mark:                                                                           | The bank account ID.                                                                         | XXX                                                                                          |
+| `ForwardBankAccountRequest`                                                                  | [components.ForwardBankAccountRequest](../../models/components/forwardbankaccountrequest.md) | :heavy_check_mark:                                                                           | N/A                                                                                          |                                                                                              |
