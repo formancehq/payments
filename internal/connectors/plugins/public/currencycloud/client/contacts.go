@@ -9,6 +9,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Contact struct {
@@ -39,11 +40,17 @@ func (c *client) GetContactID(ctx context.Context, accountID string) (*Contact, 
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get contacts %w, %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get contacts: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	if len(res.Contacts) == 0 {
-		return nil, fmt.Errorf("no contact found for account %s: %w", accountID, models.ErrInvalidRequest)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("no contact found for account %s", accountID),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return res.Contacts[0], nil

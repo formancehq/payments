@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/pkg/errors"
 )
 
@@ -47,7 +48,10 @@ func handleEngineErrors(err error) error {
 
 	switch {
 	case errors.Is(err, engine.ErrValidation):
-		return fmt.Errorf("%w: %w", err, ErrValidation)
+		return errorsutils.NewWrappedError(
+			err,
+			ErrValidation,
+		)
 	case errors.Is(err, engine.ErrNotFound):
 		return fmt.Errorf("%w: %w", err, ErrNotFound)
 	default:

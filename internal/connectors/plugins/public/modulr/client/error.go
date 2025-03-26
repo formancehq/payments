@@ -1,8 +1,11 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 )
+
+type modulrErrors []modulrError
 
 type modulrError struct {
 	StatusCode    int    `json:"-"`
@@ -13,7 +16,13 @@ type modulrError struct {
 	SourceService string `json:"sourceService"`
 }
 
-func (me *modulrError) Error() error {
+func (mes modulrErrors) Error() error {
+	if len(mes) == 0 {
+		return errors.New("unexpected error")
+	}
+
+	me := mes[0]
+
 	var err error
 	if me.Message == "" {
 		err = fmt.Errorf("unexpected status code: %d", me.StatusCode)

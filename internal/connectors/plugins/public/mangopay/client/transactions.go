@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Payment struct {
@@ -51,7 +51,10 @@ func (c *client) GetTransactions(ctx context.Context, walletsID string, page, pa
 	var payments []Payment
 	statusCode, err := c.httpClient.Do(ctx, req, &payments, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get transactions: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transactions: status code %d", statusCode),
+			err,
+		)
 	}
 	return payments, nil
 }

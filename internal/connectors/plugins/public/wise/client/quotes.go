@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/google/uuid"
 )
 
@@ -43,7 +44,10 @@ func (c *client) CreateQuote(ctx context.Context, profileID, currency string, am
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &quote, &errRes)
 	if err != nil {
-		return quote, fmt.Errorf("failed to get response from quote: %w %w", err, errRes.Error(statusCode).Error())
+		return Quote{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create quote: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return quote, nil
 }

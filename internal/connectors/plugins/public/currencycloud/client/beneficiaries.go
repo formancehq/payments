@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Beneficiary struct {
@@ -52,7 +53,10 @@ func (c *client) GetBeneficiaries(ctx context.Context, page int, pageSize int) (
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get beneficiaries %w, %w", err, errRes.Error())
+		return nil, 0, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get beneficiaries: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Beneficiaries, res.Pagination.NextPage, nil
 }

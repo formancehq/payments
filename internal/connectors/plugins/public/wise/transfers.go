@@ -8,6 +8,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (models.PSPPayment, error) {
@@ -20,12 +21,18 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 
 	curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %w: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get currency and precision from asset: %w", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to convert amount to string: %w: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to convert big int amount to string %v: %w", pi.Amount, err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	quote, err := p.client.CreateQuote(ctx, sourceProfileID, curr, json.Number(amount))

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type DestinationType string
@@ -69,10 +70,13 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 	req.Header.Set("x-mod-nonce", transferRequest.IdempotencyKey)
 
 	var res TransferResponse
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 	return &res, nil
 }
@@ -86,10 +90,13 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (TransferRe
 	}
 
 	var res getTransferResponse
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return TransferResponse{}, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
+		return TransferResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	if len(res.Content) == 0 {

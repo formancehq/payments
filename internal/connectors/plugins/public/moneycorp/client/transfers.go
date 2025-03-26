@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type transferRequest struct {
@@ -71,10 +72,13 @@ func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*Tr
 	req.Header.Set("Idempotency-Key", tr.IdempotencyKey)
 
 	var transferResponse transferResponse
-	var errRes moneycorpError
+	var errRes moneycorpErrors
 	_, err = c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return transferResponse.Transfer, nil
@@ -91,10 +95,13 @@ func (c *client) GetTransfer(ctx context.Context, accountID string, transferID s
 	req.Header.Set("Content-Type", "application/json")
 
 	var transferResponse transferResponse
-	var errRes moneycorpError
+	var errRes moneycorpErrors
 	_, err = c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return transferResponse.Transfer, nil

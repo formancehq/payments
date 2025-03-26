@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type BalanceAmount struct {
@@ -51,7 +52,10 @@ func (c *client) GetBalances(ctx context.Context, profileID uint64) ([]Balance, 
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
-		return balances, fmt.Errorf("failed to get balances: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get balances: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return balances, nil
 }
@@ -69,7 +73,10 @@ func (c *client) GetBalance(ctx context.Context, profileID uint64, balanceID uin
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &balance, &errRes)
 	if err != nil {
-		return &balance, fmt.Errorf("failed to get balance: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get balance: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &balance, nil
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type balancesResponse struct {
@@ -38,15 +39,17 @@ func (c *client) GetAccountBalances(ctx context.Context, accountID string) ([]*B
 	req.Header.Set("Content-Type", "application/json")
 
 	balances := balancesResponse{Balances: make([]*Balance, 0)}
-	var errRes moneycorpError
-
-	_, err = c.httpClient.Do(ctx, req, &balances, &errRes)
+	var errRes moneycorpErrors
+	statusCode, err := c.httpClient.Do(ctx, req, &balances, &errRes)
 	if err != nil {
-		if errRes.StatusCode == http.StatusNotFound {
+		if statusCode == http.StatusNotFound {
 			// No balances found
 			return []*Balance{}, nil
 		}
-		return nil, fmt.Errorf("failed to get account balances: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get accounts balances: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return balances.Balances, nil

@@ -10,6 +10,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
@@ -89,14 +90,20 @@ func (t *apiTransport) login(ctx context.Context) error {
 	var errRes moneycorpErrors
 	statusCode, err := httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return fmt.Errorf("failed to login: %w", err)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to login: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	if statusCode != http.StatusOK {
 		if statusCode >= http.StatusInternalServerError {
 			return toError(statusCode, errRes).Error()
 		}
-		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, toError(statusCode, errRes).Error())
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to login: %v", errRes.Error()),
+			toError(statusCode, errRes).Error(),
+		)
 	}
 
 	t.accessToken = res.Data.AccessToken

@@ -205,7 +205,7 @@ func GetPrecision(currencies map[string]int, cur string) (int, error) {
 
 	def, ok := currencies[asset]
 	if !ok {
-		return 0, ErrMissingCurrencies
+		return 0, fmt.Errorf("%s: %w", asset, ErrMissingCurrencies)
 	}
 
 	return def, nil
@@ -214,7 +214,7 @@ func GetPrecision(currencies map[string]int, cur string) (int, error) {
 func GetCurrencyAndPrecisionFromAsset(currencies map[string]int, asset string) (string, int, error) {
 	parts := strings.Split(asset, "/")
 	if len(parts) != 2 {
-		return "", 0, errors.New("invalid asset")
+		return "", 0, fmt.Errorf("invalid asset: %s", asset)
 	}
 
 	currency := parts[0]

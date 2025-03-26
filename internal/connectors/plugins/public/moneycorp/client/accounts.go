@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type accountsResponse struct {
@@ -39,10 +40,13 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 	req.URL.RawQuery = q.Encode()
 
 	accounts := accountsResponse{Accounts: make([]*Account, 0)}
-	var errRes moneycorpError
+	var errRes moneycorpErrors
 	_, err = c.httpClient.Do(ctx, req, &accounts, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get accounts: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get accounts: %v", errRes.Error()),
+			err,
+		)
 	}
 	return accounts.Accounts, nil
 }

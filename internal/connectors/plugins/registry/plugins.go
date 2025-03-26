@@ -40,11 +40,11 @@ func RegisterPlugin(
 	pluginsRegistry[provider] = PluginInformation{
 		capabilities: capabilities,
 		createFunc:   createFunc,
-		config:       setupConfig(provider, conf),
+		config:       setupConfig(conf),
 	}
 }
 
-func setupConfig(provider string, conf any) Config {
+func setupConfig(conf any) Config {
 	config := make(Config)
 	for paramName, param := range defaultParameters {
 		if _, ok := config[paramName]; !ok {

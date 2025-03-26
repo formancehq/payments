@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Profile struct {
@@ -25,7 +26,10 @@ func (c *client) GetProfiles(ctx context.Context) ([]Profile, error) {
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &profiles, &errRes)
 	if err != nil {
-		return profiles, fmt.Errorf("failed to make profiles: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get profiles: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return profiles, nil
 }

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type PayoutRequest struct {
@@ -46,10 +47,13 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	req.Header.Set("x-mod-nonce", payoutRequest.IdempotencyKey)
 
 	var res PayoutResponse
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create payout: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create payout: %v", errRes.Error()),
+			err,
+		)
 	}
 	return &res, nil
 }
@@ -63,10 +67,13 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (PayoutResponse
 	}
 
 	var res PayoutResponse
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return PayoutResponse{}, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error())
+		return PayoutResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payout: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res, nil
 }

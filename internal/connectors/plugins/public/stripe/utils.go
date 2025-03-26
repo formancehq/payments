@@ -4,11 +4,15 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) validatePayoutTransferRequest(pi models.PSPPaymentInitiation) error {
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("destination account is required in transfer/payout request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return nil

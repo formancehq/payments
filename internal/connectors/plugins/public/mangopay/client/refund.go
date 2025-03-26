@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Refund struct {
@@ -42,7 +42,10 @@ func (c *client) GetRefund(ctx context.Context, refundID string) (*Refund, error
 	var refund Refund
 	statusCode, err := c.httpClient.Do(ctx, req, &refund, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get refund: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get refund: status code %d", statusCode),
+			err,
+		)
 	}
 	return &refund, nil
 }

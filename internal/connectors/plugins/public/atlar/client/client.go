@@ -3,13 +3,13 @@ package client
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	atlar_client "github.com/get-momo/atlar-v1-go-client/client"
 	"github.com/get-momo/atlar-v1-go-client/client/accounts"
 	"github.com/get-momo/atlar-v1-go-client/client/counterparties"
@@ -101,13 +101,13 @@ func wrapSDKErr(err error, atlarErr any) error {
 	}
 
 	if code == http.StatusTooManyRequests {
-		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeTooManyRequests)
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooManyRequests)
 	}
 
 	if code >= http.StatusBadRequest && code < http.StatusInternalServerError {
-		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeClientError)
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeClientError)
 	} else if code >= http.StatusInternalServerError {
-		return fmt.Errorf("atlar error: %w: %w", err, httpwrapper.ErrStatusCodeServerError)
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeServerError)
 	}
 
 	return err

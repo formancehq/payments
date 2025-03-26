@@ -12,6 +12,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -71,11 +72,11 @@ func New(
 // so that activities can classify this error for temporal
 func (c *client) wrapSDKError(err error, statusCode int) error {
 	if statusCode == http.StatusTooManyRequests {
-		return fmt.Errorf("rate-limited by adyen %w: %w", httpwrapper.ErrStatusCodeTooManyRequests, err)
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeTooManyRequests)
 	}
 
 	if statusCode >= http.StatusBadRequest && statusCode < http.StatusInternalServerError {
-		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
+		return errorsutils.NewWrappedError(err, httpwrapper.ErrStatusCodeClientError)
 	}
 
 	// Adyen SDK doesn't appear to catch anything above 500

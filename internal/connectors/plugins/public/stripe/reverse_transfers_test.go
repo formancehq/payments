@@ -75,7 +75,7 @@ var _ = Describe("Stripe Plugin Transfers Reversal", func() {
 			}
 			resp, err := plg.ReverseTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("transfer id is required in metadata: invalid request"))
+			Expect(err).To(MatchError("transfer id is required in metadata of transfer reversal request: invalid request"))
 			Expect(resp).To(Equal(models.ReverseTransferResponse{}))
 		})
 		It("should return an error - reverse transfer error", func(ctx SpecContext) {

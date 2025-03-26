@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type TransferRequest struct {
@@ -73,7 +74,10 @@ func (c *client) InitiateTransfer(ctx context.Context, transferRequest *Transfer
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transfer: %w, %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return &res, nil

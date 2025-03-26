@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Transfer struct {
@@ -80,7 +81,10 @@ func (c *client) GetTransfers(ctx context.Context, profileID uint64, offset int,
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &transfers, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfers: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transfers: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 
 	for i, transfer := range transfers {
@@ -168,7 +172,10 @@ func (c *client) GetTransfer(ctx context.Context, transferID string) (*Transfer,
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transfer: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transfer: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &transfer, nil
 }
@@ -195,7 +202,10 @@ func (c *client) CreateTransfer(ctx context.Context, quote Quote, targetAccount 
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &transfer, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create transfer: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create transfer: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &transfer, nil
 }

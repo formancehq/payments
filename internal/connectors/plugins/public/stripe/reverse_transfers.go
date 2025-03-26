@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -21,7 +22,10 @@ const (
 func validateReverseTransferRequest(pir models.PSPPaymentInitiationReversal) error {
 	_, ok := pir.Metadata[transferIDMetadataKey]
 	if !ok {
-		return fmt.Errorf("transfer id is required in metadata: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("transfer id is required in metadata of transfer reversal request"),
+			models.ErrInvalidRequest,
+		)
 	}
 	return nil
 }
