@@ -197,7 +197,7 @@ func (w Workflow) createPayout(
 			},
 			pi.Amount,
 			&pi.Asset,
-			err,
+			errPlugin,
 			nil,
 		)
 		if err != nil {
