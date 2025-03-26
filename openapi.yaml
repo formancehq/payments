@@ -2687,7 +2687,6 @@ components:
         - initialAmount
         - asset
         - status
-        - error
       properties:
         id:
           type: string
@@ -2729,6 +2728,7 @@ components:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
+          nullable: true
         metadata:
           type: object
           additionalProperties:
@@ -2749,7 +2749,6 @@ components:
         - adjustmentID
         - createdAt
         - status
-        - error
       properties:
         adjustmentID:
           type: string
@@ -2760,6 +2759,7 @@ components:
           $ref: '#/components/schemas/TransferInitiationStatus'
         error:
           type: string
+          nullable: true
         metadata:
           type: object
           additionalProperties:
@@ -2771,7 +2771,6 @@ components:
         - paymentID
         - createdAt
         - status
-        - error
       properties:
         paymentID:
           type: string
@@ -2782,6 +2781,7 @@ components:
           $ref: '#/components/schemas/PaymentStatus'
         error:
           type: string
+          nullable: true
     BankAccount:
       type: object
       required:
@@ -3073,6 +3073,7 @@ components:
           type: object
         error:
           type: string
+          nullable: true
     TaskStatus:
       type: string
       enum:
@@ -4030,6 +4031,7 @@ components:
           format: date-time
         error:
           type: string
+          nullable: true
     V3CreatePaymentRequest:
       type: object
       required:
@@ -4522,6 +4524,7 @@ components:
           format: byte
         error:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3PaymentInitiationAdjustment:
@@ -4545,6 +4548,7 @@ components:
           type: string
         error:
           type: string
+          nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
     V3GetPaymentInitiationResponse:
@@ -4703,6 +4707,7 @@ components:
           type: string
         error:
           type: string
+          nullable: true
     V3TaskStatusEnum:
       type: string
       enum:
