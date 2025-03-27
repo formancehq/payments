@@ -6,40 +6,40 @@ import (
 	"github.com/formancehq/payments/pkg/client/models/components"
 )
 
-type UdpateTransferInitiationStatusRequest struct {
+type UpdateTransferInitiationStatusRequest struct {
 	// The transfer ID.
 	TransferID                            string                                           `pathParam:"style=simple,explode=false,name=transferId"`
 	UpdateTransferInitiationStatusRequest components.UpdateTransferInitiationStatusRequest `request:"mediaType=application/json"`
 }
 
-func (o *UdpateTransferInitiationStatusRequest) GetTransferID() string {
+func (o *UpdateTransferInitiationStatusRequest) GetTransferID() string {
 	if o == nil {
 		return ""
 	}
 	return o.TransferID
 }
 
-func (o *UdpateTransferInitiationStatusRequest) GetUpdateTransferInitiationStatusRequest() components.UpdateTransferInitiationStatusRequest {
+func (o *UpdateTransferInitiationStatusRequest) GetUpdateTransferInitiationStatusRequest() components.UpdateTransferInitiationStatusRequest {
 	if o == nil {
 		return components.UpdateTransferInitiationStatusRequest{}
 	}
 	return o.UpdateTransferInitiationStatusRequest
 }
 
-type UdpateTransferInitiationStatusResponse struct {
+type UpdateTransferInitiationStatusResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Error
 	PaymentsErrorResponse *components.PaymentsErrorResponse
 }
 
-func (o *UdpateTransferInitiationStatusResponse) GetHTTPMeta() components.HTTPMetadata {
+func (o *UpdateTransferInitiationStatusResponse) GetHTTPMeta() components.HTTPMetadata {
 	if o == nil {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
 }
 
-func (o *UdpateTransferInitiationStatusResponse) GetPaymentsErrorResponse() *components.PaymentsErrorResponse {
+func (o *UpdateTransferInitiationStatusResponse) GetPaymentsErrorResponse() *components.PaymentsErrorResponse {
 	if o == nil {
 		return nil
 	}

@@ -56,7 +56,7 @@ func (s *V3) CreateAccount(ctx context.Context, request *components.V3CreateAcco
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3CreateAccount",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "Request", "json", `request:"mediaType=application/json"`)
@@ -285,7 +285,7 @@ func (s *V3) ListAccounts(ctx context.Context, pageSize *int64, cursor *string, 
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListAccounts",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -516,7 +516,7 @@ func (s *V3) GetAccount(ctx context.Context, accountID string, opts ...operation
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetAccount",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -732,7 +732,7 @@ func (s *V3) GetAccountBalances(ctx context.Context, request operations.V3GetAcc
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetAccountBalances",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -952,7 +952,7 @@ func (s *V3) CreateBankAccount(ctx context.Context, request *components.V3Create
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3CreateBankAccount",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "Request", "json", `request:"mediaType=application/json"`)
@@ -1181,7 +1181,7 @@ func (s *V3) ListBankAccounts(ctx context.Context, pageSize *int64, cursor *stri
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListBankAccounts",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -1412,7 +1412,7 @@ func (s *V3) GetBankAccount(ctx context.Context, bankAccountID string, opts ...o
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetBankAccount",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -1633,7 +1633,7 @@ func (s *V3) UpdateBankAccountMetadata(ctx context.Context, bankAccountID string
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3UpdateBankAccountMetadata",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3UpdateBankAccountMetadataRequest", "json", `request:"mediaType=application/json"`)
@@ -1841,7 +1841,7 @@ func (s *V3) ForwardBankAccount(ctx context.Context, bankAccountID string, v3For
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ForwardBankAccount",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3ForwardBankAccountRequest", "json", `request:"mediaType=application/json"`)
@@ -2070,7 +2070,7 @@ func (s *V3) ListConnectors(ctx context.Context, pageSize *int64, cursor *string
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListConnectors",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -2302,7 +2302,7 @@ func (s *V3) InstallConnector(ctx context.Context, connector string, v3InstallCo
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3InstallConnector",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3InstallConnectorRequest", "json", `request:"mediaType=application/json"`)
@@ -2525,7 +2525,7 @@ func (s *V3) ListConnectorConfigs(ctx context.Context, opts ...operations.Option
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListConnectorConfigs",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -2745,7 +2745,7 @@ func (s *V3) UninstallConnector(ctx context.Context, connectorID string, opts ..
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3UninstallConnector",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -2965,7 +2965,7 @@ func (s *V3) GetConnectorConfig(ctx context.Context, connectorID string, opts ..
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetConnectorConfig",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3185,7 +3185,7 @@ func (s *V3) ResetConnector(ctx context.Context, connectorID string, opts ...ope
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ResetConnector",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3408,7 +3408,7 @@ func (s *V3) ListConnectorSchedules(ctx context.Context, connectorID string, pag
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListConnectorSchedules",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -3640,7 +3640,7 @@ func (s *V3) GetConnectorSchedule(ctx context.Context, connectorID string, sched
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetConnectorSchedule",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3863,7 +3863,7 @@ func (s *V3) ListConnectorScheduleInstances(ctx context.Context, connectorID str
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListConnectorScheduleInstances",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -4083,7 +4083,7 @@ func (s *V3) CreatePayment(ctx context.Context, request *components.V3CreatePaym
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3CreatePayment",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "Request", "json", `request:"mediaType=application/json"`)
@@ -4312,7 +4312,7 @@ func (s *V3) ListPayments(ctx context.Context, pageSize *int64, cursor *string, 
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListPayments",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -4543,7 +4543,7 @@ func (s *V3) GetPayment(ctx context.Context, paymentID string, opts ...operation
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetPayment",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -4764,7 +4764,7 @@ func (s *V3) UpdatePaymentMetadata(ctx context.Context, paymentID string, v3Upda
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3UpdatePaymentMetadata",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3UpdatePaymentMetadataRequest", "json", `request:"mediaType=application/json"`)
@@ -4972,7 +4972,7 @@ func (s *V3) InitiatePayment(ctx context.Context, noValidation *bool, v3Initiate
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3InitiatePayment",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3InitiatePaymentRequest", "json", `request:"mediaType=application/json"`)
@@ -5205,7 +5205,7 @@ func (s *V3) ListPaymentInitiations(ctx context.Context, pageSize *int64, cursor
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListPaymentInitiations",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -5436,7 +5436,7 @@ func (s *V3) DeletePaymentInitiation(ctx context.Context, paymentInitiationID st
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3DeletePaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -5636,7 +5636,7 @@ func (s *V3) GetPaymentInitiation(ctx context.Context, paymentInitiationID strin
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetPaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -5856,7 +5856,7 @@ func (s *V3) RetryPaymentInitiation(ctx context.Context, paymentInitiationID str
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3RetryPaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6076,7 +6076,7 @@ func (s *V3) ApprovePaymentInitiation(ctx context.Context, paymentInitiationID s
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ApprovePaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6296,7 +6296,7 @@ func (s *V3) RejectPaymentInitiation(ctx context.Context, paymentInitiationID st
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3RejectPaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6497,7 +6497,7 @@ func (s *V3) ReversePaymentInitiation(ctx context.Context, paymentInitiationID s
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ReversePaymentInitiation",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "V3ReversePaymentInitiationRequest", "json", `request:"mediaType=application/json"`)
@@ -6727,7 +6727,7 @@ func (s *V3) ListPaymentInitiationAdjustments(ctx context.Context, paymentInitia
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListPaymentInitiationAdjustments",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -6961,7 +6961,7 @@ func (s *V3) ListPaymentInitiationRelatedPayments(ctx context.Context, paymentIn
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListPaymentInitiationRelatedPayments",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -7188,7 +7188,7 @@ func (s *V3) CreatePool(ctx context.Context, request *components.V3CreatePoolReq
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3CreatePool",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "Request", "json", `request:"mediaType=application/json"`)
@@ -7417,7 +7417,7 @@ func (s *V3) ListPools(ctx context.Context, pageSize *int64, cursor *string, req
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3ListPools",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -7648,7 +7648,7 @@ func (s *V3) GetPool(ctx context.Context, poolID string, opts ...operations.Opti
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetPool",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -7868,7 +7868,7 @@ func (s *V3) DeletePool(ctx context.Context, poolID string, opts ...operations.O
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3DeletePool",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8069,7 +8069,7 @@ func (s *V3) GetPoolBalances(ctx context.Context, poolID string, at *time.Time, 
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetPoolBalances",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8294,7 +8294,7 @@ func (s *V3) AddAccountToPool(ctx context.Context, poolID string, accountID stri
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3AddAccountToPool",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8495,7 +8495,7 @@ func (s *V3) RemoveAccountFromPool(ctx context.Context, poolID string, accountID
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3RemoveAccountFromPool",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8695,7 +8695,7 @@ func (s *V3) GetTask(ctx context.Context, taskID string, opts ...operations.Opti
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "v3GetTask",
-		OAuth2Scopes:   []string{},
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 

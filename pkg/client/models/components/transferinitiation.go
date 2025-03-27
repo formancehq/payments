@@ -51,7 +51,7 @@ type TransferInitiation struct {
 	InitialAmount        *big.Int                       `json:"initialAmount"`
 	Asset                string                         `json:"asset"`
 	Status               TransferInitiationStatus       `json:"status"`
-	Error                string                         `json:"error"`
+	Error                *string                        `json:"error,omitempty"`
 	Metadata             map[string]string              `json:"metadata,omitempty"`
 	RelatedPayments      []TransferInitiationPayments   `json:"relatedPayments,omitempty"`
 	RelatedAdjustments   []TransferInitiationAdjusments `json:"relatedAdjustments,omitempty"`
@@ -166,9 +166,9 @@ func (o *TransferInitiation) GetStatus() TransferInitiationStatus {
 	return o.Status
 }
 
-func (o *TransferInitiation) GetError() string {
+func (o *TransferInitiation) GetError() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.Error
 }

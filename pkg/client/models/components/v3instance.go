@@ -12,7 +12,7 @@ type V3Instance struct {
 	ConnectorID  string     `json:"connectorID"`
 	ScheduleID   string     `json:"scheduleID"`
 	CreatedAt    time.Time  `json:"createdAt"`
-	UpdatedAt    *time.Time `json:"updatedAt,omitempty"`
+	UpdatedAt    time.Time  `json:"updatedAt"`
 	Terminated   bool       `json:"terminated"`
 	TerminatedAt *time.Time `json:"terminatedAt,omitempty"`
 	Error        *string    `json:"error,omitempty"`
@@ -57,9 +57,9 @@ func (o *V3Instance) GetCreatedAt() time.Time {
 	return o.CreatedAt
 }
 
-func (o *V3Instance) GetUpdatedAt() *time.Time {
+func (o *V3Instance) GetUpdatedAt() time.Time {
 	if o == nil {
-		return nil
+		return time.Time{}
 	}
 	return o.UpdatedAt
 }

@@ -1,4 +1,4 @@
-# ConnectorsResponseDatum
+# ConnectorsResponseData
 
 
 ## Fields

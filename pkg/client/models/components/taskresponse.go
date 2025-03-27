@@ -8,20 +8,20 @@ import (
 	"github.com/formancehq/payments/pkg/client/internal/utils"
 )
 
-type DataUnionType string
+type TaskResponseDataType string
 
 const (
-	DataUnionTypeTaskStripe        DataUnionType = "TaskStripe"
-	DataUnionTypeTaskWise          DataUnionType = "TaskWise"
-	DataUnionTypeTaskCurrencyCloud DataUnionType = "TaskCurrencyCloud"
-	DataUnionTypeTaskDummyPay      DataUnionType = "TaskDummyPay"
-	DataUnionTypeTaskModulr        DataUnionType = "TaskModulr"
-	DataUnionTypeTaskBankingCircle DataUnionType = "TaskBankingCircle"
-	DataUnionTypeTaskMangoPay      DataUnionType = "TaskMangoPay"
-	DataUnionTypeTaskMoneycorp     DataUnionType = "TaskMoneycorp"
+	TaskResponseDataTypeTaskStripe        TaskResponseDataType = "TaskStripe"
+	TaskResponseDataTypeTaskWise          TaskResponseDataType = "TaskWise"
+	TaskResponseDataTypeTaskCurrencyCloud TaskResponseDataType = "TaskCurrencyCloud"
+	TaskResponseDataTypeTaskDummyPay      TaskResponseDataType = "TaskDummyPay"
+	TaskResponseDataTypeTaskModulr        TaskResponseDataType = "TaskModulr"
+	TaskResponseDataTypeTaskBankingCircle TaskResponseDataType = "TaskBankingCircle"
+	TaskResponseDataTypeTaskMangoPay      TaskResponseDataType = "TaskMangoPay"
+	TaskResponseDataTypeTaskMoneycorp     TaskResponseDataType = "TaskMoneycorp"
 )
 
-type DataUnion struct {
+type TaskResponseData struct {
 	TaskStripe        *TaskStripe        `queryParam:"inline"`
 	TaskWise          *TaskWise          `queryParam:"inline"`
 	TaskCurrencyCloud *TaskCurrencyCloud `queryParam:"inline"`
@@ -31,143 +31,143 @@ type DataUnion struct {
 	TaskMangoPay      *TaskMangoPay      `queryParam:"inline"`
 	TaskMoneycorp     *TaskMoneycorp     `queryParam:"inline"`
 
-	Type DataUnionType
+	Type TaskResponseDataType
 }
 
-func CreateDataUnionTaskStripe(taskStripe TaskStripe) DataUnion {
-	typ := DataUnionTypeTaskStripe
+func CreateTaskResponseDataTaskStripe(taskStripe TaskStripe) TaskResponseData {
+	typ := TaskResponseDataTypeTaskStripe
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskStripe: &taskStripe,
 		Type:       typ,
 	}
 }
 
-func CreateDataUnionTaskWise(taskWise TaskWise) DataUnion {
-	typ := DataUnionTypeTaskWise
+func CreateTaskResponseDataTaskWise(taskWise TaskWise) TaskResponseData {
+	typ := TaskResponseDataTypeTaskWise
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskWise: &taskWise,
 		Type:     typ,
 	}
 }
 
-func CreateDataUnionTaskCurrencyCloud(taskCurrencyCloud TaskCurrencyCloud) DataUnion {
-	typ := DataUnionTypeTaskCurrencyCloud
+func CreateTaskResponseDataTaskCurrencyCloud(taskCurrencyCloud TaskCurrencyCloud) TaskResponseData {
+	typ := TaskResponseDataTypeTaskCurrencyCloud
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskCurrencyCloud: &taskCurrencyCloud,
 		Type:              typ,
 	}
 }
 
-func CreateDataUnionTaskDummyPay(taskDummyPay TaskDummyPay) DataUnion {
-	typ := DataUnionTypeTaskDummyPay
+func CreateTaskResponseDataTaskDummyPay(taskDummyPay TaskDummyPay) TaskResponseData {
+	typ := TaskResponseDataTypeTaskDummyPay
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskDummyPay: &taskDummyPay,
 		Type:         typ,
 	}
 }
 
-func CreateDataUnionTaskModulr(taskModulr TaskModulr) DataUnion {
-	typ := DataUnionTypeTaskModulr
+func CreateTaskResponseDataTaskModulr(taskModulr TaskModulr) TaskResponseData {
+	typ := TaskResponseDataTypeTaskModulr
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskModulr: &taskModulr,
 		Type:       typ,
 	}
 }
 
-func CreateDataUnionTaskBankingCircle(taskBankingCircle TaskBankingCircle) DataUnion {
-	typ := DataUnionTypeTaskBankingCircle
+func CreateTaskResponseDataTaskBankingCircle(taskBankingCircle TaskBankingCircle) TaskResponseData {
+	typ := TaskResponseDataTypeTaskBankingCircle
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskBankingCircle: &taskBankingCircle,
 		Type:              typ,
 	}
 }
 
-func CreateDataUnionTaskMangoPay(taskMangoPay TaskMangoPay) DataUnion {
-	typ := DataUnionTypeTaskMangoPay
+func CreateTaskResponseDataTaskMangoPay(taskMangoPay TaskMangoPay) TaskResponseData {
+	typ := TaskResponseDataTypeTaskMangoPay
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskMangoPay: &taskMangoPay,
 		Type:         typ,
 	}
 }
 
-func CreateDataUnionTaskMoneycorp(taskMoneycorp TaskMoneycorp) DataUnion {
-	typ := DataUnionTypeTaskMoneycorp
+func CreateTaskResponseDataTaskMoneycorp(taskMoneycorp TaskMoneycorp) TaskResponseData {
+	typ := TaskResponseDataTypeTaskMoneycorp
 
-	return DataUnion{
+	return TaskResponseData{
 		TaskMoneycorp: &taskMoneycorp,
 		Type:          typ,
 	}
 }
 
-func (u *DataUnion) UnmarshalJSON(data []byte) error {
+func (u *TaskResponseData) UnmarshalJSON(data []byte) error {
 
 	var taskStripe TaskStripe = TaskStripe{}
 	if err := utils.UnmarshalJSON(data, &taskStripe, "", true, true); err == nil {
 		u.TaskStripe = &taskStripe
-		u.Type = DataUnionTypeTaskStripe
+		u.Type = TaskResponseDataTypeTaskStripe
 		return nil
 	}
 
 	var taskWise TaskWise = TaskWise{}
 	if err := utils.UnmarshalJSON(data, &taskWise, "", true, true); err == nil {
 		u.TaskWise = &taskWise
-		u.Type = DataUnionTypeTaskWise
+		u.Type = TaskResponseDataTypeTaskWise
 		return nil
 	}
 
 	var taskCurrencyCloud TaskCurrencyCloud = TaskCurrencyCloud{}
 	if err := utils.UnmarshalJSON(data, &taskCurrencyCloud, "", true, true); err == nil {
 		u.TaskCurrencyCloud = &taskCurrencyCloud
-		u.Type = DataUnionTypeTaskCurrencyCloud
+		u.Type = TaskResponseDataTypeTaskCurrencyCloud
 		return nil
 	}
 
 	var taskDummyPay TaskDummyPay = TaskDummyPay{}
 	if err := utils.UnmarshalJSON(data, &taskDummyPay, "", true, true); err == nil {
 		u.TaskDummyPay = &taskDummyPay
-		u.Type = DataUnionTypeTaskDummyPay
+		u.Type = TaskResponseDataTypeTaskDummyPay
 		return nil
 	}
 
 	var taskModulr TaskModulr = TaskModulr{}
 	if err := utils.UnmarshalJSON(data, &taskModulr, "", true, true); err == nil {
 		u.TaskModulr = &taskModulr
-		u.Type = DataUnionTypeTaskModulr
+		u.Type = TaskResponseDataTypeTaskModulr
 		return nil
 	}
 
 	var taskBankingCircle TaskBankingCircle = TaskBankingCircle{}
 	if err := utils.UnmarshalJSON(data, &taskBankingCircle, "", true, true); err == nil {
 		u.TaskBankingCircle = &taskBankingCircle
-		u.Type = DataUnionTypeTaskBankingCircle
+		u.Type = TaskResponseDataTypeTaskBankingCircle
 		return nil
 	}
 
 	var taskMangoPay TaskMangoPay = TaskMangoPay{}
 	if err := utils.UnmarshalJSON(data, &taskMangoPay, "", true, true); err == nil {
 		u.TaskMangoPay = &taskMangoPay
-		u.Type = DataUnionTypeTaskMangoPay
+		u.Type = TaskResponseDataTypeTaskMangoPay
 		return nil
 	}
 
 	var taskMoneycorp TaskMoneycorp = TaskMoneycorp{}
 	if err := utils.UnmarshalJSON(data, &taskMoneycorp, "", true, true); err == nil {
 		u.TaskMoneycorp = &taskMoneycorp
-		u.Type = DataUnionTypeTaskMoneycorp
+		u.Type = TaskResponseDataTypeTaskMoneycorp
 		return nil
 	}
 
-	return fmt.Errorf("could not unmarshal `%s` into any supported union types for DataUnion", string(data))
+	return fmt.Errorf("could not unmarshal `%s` into any supported union types for TaskResponseData", string(data))
 }
 
-func (u DataUnion) MarshalJSON() ([]byte, error) {
+func (u TaskResponseData) MarshalJSON() ([]byte, error) {
 	if u.TaskStripe != nil {
 		return utils.MarshalJSON(u.TaskStripe, "", true)
 	}
@@ -200,17 +200,17 @@ func (u DataUnion) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.TaskMoneycorp, "", true)
 	}
 
-	return nil, errors.New("could not marshal union type DataUnion: all fields are null")
+	return nil, errors.New("could not marshal union type TaskResponseData: all fields are null")
 }
 
 // TaskResponse - OK
 type TaskResponse struct {
-	Data DataUnion `json:"data"`
+	Data TaskResponseData `json:"data"`
 }
 
-func (o *TaskResponse) GetData() DataUnion {
+func (o *TaskResponse) GetData() TaskResponseData {
 	if o == nil {
-		return DataUnion{}
+		return TaskResponseData{}
 	}
 	return o.Data
 }

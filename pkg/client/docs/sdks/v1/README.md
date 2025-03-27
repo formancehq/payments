@@ -14,7 +14,7 @@
 * [CreateTransferInitiation](#createtransferinitiation) - Create a TransferInitiation
 * [GetTransferInitiation](#gettransferinitiation) - Get a transfer initiation
 * [DeleteTransferInitiation](#deletetransferinitiation) - Delete a transfer initiation
-* [UdpateTransferInitiationStatus](#udpatetransferinitiationstatus) - Update the status of a transfer initiation
+* [UpdateTransferInitiationStatus](#updatetransferinitiationstatus) - Update the status of a transfer initiation
 * [ReverseTransferInitiation](#reversetransferinitiation) - Reverse a transfer initiation
 * [RetryTransferInitiation](#retrytransferinitiation) - Retry a failed transfer initiation
 * [ListPools](#listpools) - List Pools
@@ -557,7 +557,7 @@ func main() {
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
 
-## UdpateTransferInitiationStatus
+## UpdateTransferInitiationStatus
 
 Update a transfer initiation status
 
@@ -582,7 +582,7 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V1.UdpateTransferInitiationStatus(ctx, "XXX", components.UpdateTransferInitiationStatusRequest{
+    res, err := s.Payments.V1.UpdateTransferInitiationStatus(ctx, "XXX", components.UpdateTransferInitiationStatusRequest{
         Status: components.StatusValidated,
     })
     if err != nil {
@@ -605,7 +605,7 @@ func main() {
 
 ### Response
 
-**[*operations.UdpateTransferInitiationStatusResponse](../../models/operations/udpatetransferinitiationstatusresponse.md), error**
+**[*operations.UpdateTransferInitiationStatusResponse](../../models/operations/updatetransferinitiationstatusresponse.md), error**
 
 ### Errors
 

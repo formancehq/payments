@@ -144,7 +144,7 @@ func main() {
 * [CreateTransferInitiation](docs/sdks/v1/README.md#createtransferinitiation) - Create a TransferInitiation
 * [GetTransferInitiation](docs/sdks/v1/README.md#gettransferinitiation) - Get a transfer initiation
 * [DeleteTransferInitiation](docs/sdks/v1/README.md#deletetransferinitiation) - Delete a transfer initiation
-* [UdpateTransferInitiationStatus](docs/sdks/v1/README.md#udpatetransferinitiationstatus) - Update the status of a transfer initiation
+* [UpdateTransferInitiationStatus](docs/sdks/v1/README.md#updatetransferinitiationstatus) - Update the status of a transfer initiation
 * [ReverseTransferInitiation](docs/sdks/v1/README.md#reversetransferinitiation) - Reverse a transfer initiation
 * [RetryTransferInitiation](docs/sdks/v1/README.md#retrytransferinitiation) - Retry a failed transfer initiation
 * [ListPools](docs/sdks/v1/README.md#listpools) - List Pools

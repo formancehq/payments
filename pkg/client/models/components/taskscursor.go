@@ -8,20 +8,20 @@ import (
 	"github.com/formancehq/payments/pkg/client/internal/utils"
 )
 
-type DatumUnionType string
+type TasksCursorDataType string
 
 const (
-	DatumUnionTypeTaskStripe        DatumUnionType = "TaskStripe"
-	DatumUnionTypeTaskWise          DatumUnionType = "TaskWise"
-	DatumUnionTypeTaskCurrencyCloud DatumUnionType = "TaskCurrencyCloud"
-	DatumUnionTypeTaskDummyPay      DatumUnionType = "TaskDummyPay"
-	DatumUnionTypeTaskModulr        DatumUnionType = "TaskModulr"
-	DatumUnionTypeTaskBankingCircle DatumUnionType = "TaskBankingCircle"
-	DatumUnionTypeTaskMangoPay      DatumUnionType = "TaskMangoPay"
-	DatumUnionTypeTaskMoneycorp     DatumUnionType = "TaskMoneycorp"
+	TasksCursorDataTypeTaskStripe        TasksCursorDataType = "TaskStripe"
+	TasksCursorDataTypeTaskWise          TasksCursorDataType = "TaskWise"
+	TasksCursorDataTypeTaskCurrencyCloud TasksCursorDataType = "TaskCurrencyCloud"
+	TasksCursorDataTypeTaskDummyPay      TasksCursorDataType = "TaskDummyPay"
+	TasksCursorDataTypeTaskModulr        TasksCursorDataType = "TaskModulr"
+	TasksCursorDataTypeTaskBankingCircle TasksCursorDataType = "TaskBankingCircle"
+	TasksCursorDataTypeTaskMangoPay      TasksCursorDataType = "TaskMangoPay"
+	TasksCursorDataTypeTaskMoneycorp     TasksCursorDataType = "TaskMoneycorp"
 )
 
-type DatumUnion struct {
+type TasksCursorData struct {
 	TaskStripe        *TaskStripe        `queryParam:"inline"`
 	TaskWise          *TaskWise          `queryParam:"inline"`
 	TaskCurrencyCloud *TaskCurrencyCloud `queryParam:"inline"`
@@ -31,143 +31,143 @@ type DatumUnion struct {
 	TaskMangoPay      *TaskMangoPay      `queryParam:"inline"`
 	TaskMoneycorp     *TaskMoneycorp     `queryParam:"inline"`
 
-	Type DatumUnionType
+	Type TasksCursorDataType
 }
 
-func CreateDatumUnionTaskStripe(taskStripe TaskStripe) DatumUnion {
-	typ := DatumUnionTypeTaskStripe
+func CreateTasksCursorDataTaskStripe(taskStripe TaskStripe) TasksCursorData {
+	typ := TasksCursorDataTypeTaskStripe
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskStripe: &taskStripe,
 		Type:       typ,
 	}
 }
 
-func CreateDatumUnionTaskWise(taskWise TaskWise) DatumUnion {
-	typ := DatumUnionTypeTaskWise
+func CreateTasksCursorDataTaskWise(taskWise TaskWise) TasksCursorData {
+	typ := TasksCursorDataTypeTaskWise
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskWise: &taskWise,
 		Type:     typ,
 	}
 }
 
-func CreateDatumUnionTaskCurrencyCloud(taskCurrencyCloud TaskCurrencyCloud) DatumUnion {
-	typ := DatumUnionTypeTaskCurrencyCloud
+func CreateTasksCursorDataTaskCurrencyCloud(taskCurrencyCloud TaskCurrencyCloud) TasksCursorData {
+	typ := TasksCursorDataTypeTaskCurrencyCloud
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskCurrencyCloud: &taskCurrencyCloud,
 		Type:              typ,
 	}
 }
 
-func CreateDatumUnionTaskDummyPay(taskDummyPay TaskDummyPay) DatumUnion {
-	typ := DatumUnionTypeTaskDummyPay
+func CreateTasksCursorDataTaskDummyPay(taskDummyPay TaskDummyPay) TasksCursorData {
+	typ := TasksCursorDataTypeTaskDummyPay
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskDummyPay: &taskDummyPay,
 		Type:         typ,
 	}
 }
 
-func CreateDatumUnionTaskModulr(taskModulr TaskModulr) DatumUnion {
-	typ := DatumUnionTypeTaskModulr
+func CreateTasksCursorDataTaskModulr(taskModulr TaskModulr) TasksCursorData {
+	typ := TasksCursorDataTypeTaskModulr
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskModulr: &taskModulr,
 		Type:       typ,
 	}
 }
 
-func CreateDatumUnionTaskBankingCircle(taskBankingCircle TaskBankingCircle) DatumUnion {
-	typ := DatumUnionTypeTaskBankingCircle
+func CreateTasksCursorDataTaskBankingCircle(taskBankingCircle TaskBankingCircle) TasksCursorData {
+	typ := TasksCursorDataTypeTaskBankingCircle
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskBankingCircle: &taskBankingCircle,
 		Type:              typ,
 	}
 }
 
-func CreateDatumUnionTaskMangoPay(taskMangoPay TaskMangoPay) DatumUnion {
-	typ := DatumUnionTypeTaskMangoPay
+func CreateTasksCursorDataTaskMangoPay(taskMangoPay TaskMangoPay) TasksCursorData {
+	typ := TasksCursorDataTypeTaskMangoPay
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskMangoPay: &taskMangoPay,
 		Type:         typ,
 	}
 }
 
-func CreateDatumUnionTaskMoneycorp(taskMoneycorp TaskMoneycorp) DatumUnion {
-	typ := DatumUnionTypeTaskMoneycorp
+func CreateTasksCursorDataTaskMoneycorp(taskMoneycorp TaskMoneycorp) TasksCursorData {
+	typ := TasksCursorDataTypeTaskMoneycorp
 
-	return DatumUnion{
+	return TasksCursorData{
 		TaskMoneycorp: &taskMoneycorp,
 		Type:          typ,
 	}
 }
 
-func (u *DatumUnion) UnmarshalJSON(data []byte) error {
+func (u *TasksCursorData) UnmarshalJSON(data []byte) error {
 
 	var taskStripe TaskStripe = TaskStripe{}
 	if err := utils.UnmarshalJSON(data, &taskStripe, "", true, true); err == nil {
 		u.TaskStripe = &taskStripe
-		u.Type = DatumUnionTypeTaskStripe
+		u.Type = TasksCursorDataTypeTaskStripe
 		return nil
 	}
 
 	var taskWise TaskWise = TaskWise{}
 	if err := utils.UnmarshalJSON(data, &taskWise, "", true, true); err == nil {
 		u.TaskWise = &taskWise
-		u.Type = DatumUnionTypeTaskWise
+		u.Type = TasksCursorDataTypeTaskWise
 		return nil
 	}
 
 	var taskCurrencyCloud TaskCurrencyCloud = TaskCurrencyCloud{}
 	if err := utils.UnmarshalJSON(data, &taskCurrencyCloud, "", true, true); err == nil {
 		u.TaskCurrencyCloud = &taskCurrencyCloud
-		u.Type = DatumUnionTypeTaskCurrencyCloud
+		u.Type = TasksCursorDataTypeTaskCurrencyCloud
 		return nil
 	}
 
 	var taskDummyPay TaskDummyPay = TaskDummyPay{}
 	if err := utils.UnmarshalJSON(data, &taskDummyPay, "", true, true); err == nil {
 		u.TaskDummyPay = &taskDummyPay
-		u.Type = DatumUnionTypeTaskDummyPay
+		u.Type = TasksCursorDataTypeTaskDummyPay
 		return nil
 	}
 
 	var taskModulr TaskModulr = TaskModulr{}
 	if err := utils.UnmarshalJSON(data, &taskModulr, "", true, true); err == nil {
 		u.TaskModulr = &taskModulr
-		u.Type = DatumUnionTypeTaskModulr
+		u.Type = TasksCursorDataTypeTaskModulr
 		return nil
 	}
 
 	var taskBankingCircle TaskBankingCircle = TaskBankingCircle{}
 	if err := utils.UnmarshalJSON(data, &taskBankingCircle, "", true, true); err == nil {
 		u.TaskBankingCircle = &taskBankingCircle
-		u.Type = DatumUnionTypeTaskBankingCircle
+		u.Type = TasksCursorDataTypeTaskBankingCircle
 		return nil
 	}
 
 	var taskMangoPay TaskMangoPay = TaskMangoPay{}
 	if err := utils.UnmarshalJSON(data, &taskMangoPay, "", true, true); err == nil {
 		u.TaskMangoPay = &taskMangoPay
-		u.Type = DatumUnionTypeTaskMangoPay
+		u.Type = TasksCursorDataTypeTaskMangoPay
 		return nil
 	}
 
 	var taskMoneycorp TaskMoneycorp = TaskMoneycorp{}
 	if err := utils.UnmarshalJSON(data, &taskMoneycorp, "", true, true); err == nil {
 		u.TaskMoneycorp = &taskMoneycorp
-		u.Type = DatumUnionTypeTaskMoneycorp
+		u.Type = TasksCursorDataTypeTaskMoneycorp
 		return nil
 	}
 
-	return fmt.Errorf("could not unmarshal `%s` into any supported union types for DatumUnion", string(data))
+	return fmt.Errorf("could not unmarshal `%s` into any supported union types for TasksCursorData", string(data))
 }
 
-func (u DatumUnion) MarshalJSON() ([]byte, error) {
+func (u TasksCursorData) MarshalJSON() ([]byte, error) {
 	if u.TaskStripe != nil {
 		return utils.MarshalJSON(u.TaskStripe, "", true)
 	}
@@ -200,15 +200,15 @@ func (u DatumUnion) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.TaskMoneycorp, "", true)
 	}
 
-	return nil, errors.New("could not marshal union type DatumUnion: all fields are null")
+	return nil, errors.New("could not marshal union type TasksCursorData: all fields are null")
 }
 
 type TasksCursorCursor struct {
-	PageSize int64        `json:"pageSize"`
-	HasMore  bool         `json:"hasMore"`
-	Previous *string      `json:"previous,omitempty"`
-	Next     *string      `json:"next,omitempty"`
-	Data     []DatumUnion `json:"data"`
+	PageSize int64             `json:"pageSize"`
+	HasMore  bool              `json:"hasMore"`
+	Previous *string           `json:"previous,omitempty"`
+	Next     *string           `json:"next,omitempty"`
+	Data     []TasksCursorData `json:"data"`
 }
 
 func (o *TasksCursorCursor) GetPageSize() int64 {
@@ -239,9 +239,9 @@ func (o *TasksCursorCursor) GetNext() *string {
 	return o.Next
 }
 
-func (o *TasksCursorCursor) GetData() []DatumUnion {
+func (o *TasksCursorCursor) GetData() []TasksCursorData {
 	if o == nil {
-		return []DatumUnion{}
+		return []TasksCursorData{}
 	}
 	return o.Data
 }

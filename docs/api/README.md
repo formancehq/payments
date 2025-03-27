@@ -3482,10 +3482,10 @@ None ( Scopes: payments:read )
 |connectorID|string(byte)|true|none|none|
 |scheduleID|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|false|none|none|
+|updatedAt|string(date-time)|true|none|none|
 |terminated|boolean|true|none|none|
 |terminatedAt|string(date-time)|false|none|none|
-|error|string|false|none|none|
+|error|string¦null|false|none|none|
 
 <h2 id="tocS_V3CreatePaymentRequest">V3CreatePaymentRequest</h2>
 <!-- backwards compatibility -->
@@ -4320,7 +4320,7 @@ None ( Scopes: payments:read )
 |status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
 |sourceAccountID|string(byte)|false|none|none|
 |destinationAccountID|string(byte)|false|none|none|
-|error|string|false|none|none|
+|error|string¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 
 <h2 id="tocS_V3PaymentInitiationAdjustment">V3PaymentInitiationAdjustment</h2>
@@ -4355,7 +4355,7 @@ None ( Scopes: payments:read )
 |status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
 |amount|integer(bigint)|false|none|none|
 |asset|string|false|none|none|
-|error|string|false|none|none|
+|error|string¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
 
 <h2 id="tocS_V3GetPaymentInitiationResponse">V3GetPaymentInitiationResponse</h2>
@@ -4723,7 +4723,7 @@ None ( Scopes: payments:read )
 |updatedAt|string(date-time)|true|none|none|
 |connectorID|string(byte)|false|none|none|
 |createdObjectID|string|false|none|none|
-|error|string|false|none|none|
+|error|string¦null|false|none|none|
 
 <h2 id="tocS_V3TaskStatusEnum">V3TaskStatusEnum</h2>
 <!-- backwards compatibility -->

@@ -2,35 +2,35 @@
 
 package components
 
-type ConnectorsResponseDatum struct {
+type ConnectorsResponseData struct {
 	Provider    ConnectorEnum `json:"provider"`
 	Name        string        `json:"name"`
 	ConnectorID string        `json:"connectorID"`
 	Enabled     *bool         `json:"enabled,omitempty"`
 }
 
-func (o *ConnectorsResponseDatum) GetProvider() ConnectorEnum {
+func (o *ConnectorsResponseData) GetProvider() ConnectorEnum {
 	if o == nil {
 		return ConnectorEnum("")
 	}
 	return o.Provider
 }
 
-func (o *ConnectorsResponseDatum) GetName() string {
+func (o *ConnectorsResponseData) GetName() string {
 	if o == nil {
 		return ""
 	}
 	return o.Name
 }
 
-func (o *ConnectorsResponseDatum) GetConnectorID() string {
+func (o *ConnectorsResponseData) GetConnectorID() string {
 	if o == nil {
 		return ""
 	}
 	return o.ConnectorID
 }
 
-func (o *ConnectorsResponseDatum) GetEnabled() *bool {
+func (o *ConnectorsResponseData) GetEnabled() *bool {
 	if o == nil {
 		return nil
 	}
@@ -39,12 +39,12 @@ func (o *ConnectorsResponseDatum) GetEnabled() *bool {
 
 // ConnectorsResponse - OK
 type ConnectorsResponse struct {
-	Data []ConnectorsResponseDatum `json:"data"`
+	Data []ConnectorsResponseData `json:"data"`
 }
 
-func (o *ConnectorsResponse) GetData() []ConnectorsResponseDatum {
+func (o *ConnectorsResponse) GetData() []ConnectorsResponseData {
 	if o == nil {
-		return []ConnectorsResponseDatum{}
+		return []ConnectorsResponseData{}
 	}
 	return o.Data
 }

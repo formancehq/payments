@@ -11,7 +11,7 @@ type TransferInitiationPayments struct {
 	PaymentID string        `json:"paymentID"`
 	CreatedAt time.Time     `json:"createdAt"`
 	Status    PaymentStatus `json:"status"`
-	Error     string        `json:"error"`
+	Error     *string       `json:"error,omitempty"`
 }
 
 func (t TransferInitiationPayments) MarshalJSON() ([]byte, error) {
@@ -46,9 +46,9 @@ func (o *TransferInitiationPayments) GetStatus() PaymentStatus {
 	return o.Status
 }
 
-func (o *TransferInitiationPayments) GetError() string {
+func (o *TransferInitiationPayments) GetError() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.Error
 }

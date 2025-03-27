@@ -1,4 +1,4 @@
-# UdpateTransferInitiationStatusRequest
+# UpdateTransferInitiationStatusRequest
 
 
 ## Fields
