@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func ParseAtlarTimestamp(value string) (time.Time, error) {
@@ -15,11 +16,17 @@ func ParseAtlarTimestamp(value string) (time.Time, error) {
 
 func validateTransferPayoutRequest(pi models.PSPPaymentInitiation) error {
 	if pi.SourceAccount == nil {
-		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("source account is required in transfer/payout request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("destination account is required in transfer/payout request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return nil

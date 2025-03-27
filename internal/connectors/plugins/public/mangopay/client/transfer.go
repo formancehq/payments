@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Funds struct {
@@ -63,9 +63,12 @@ func (c *client) InitiateWalletTransfer(ctx context.Context, transferRequest *Tr
 
 	var transferResponse TransferResponse
 	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(ctx, req, &transferResponse, &errRes)
+	_, err = c.httpClient.Do(ctx, req, &transferResponse, &errRes)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error()), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate transfer: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return &transferResponse, nil
@@ -83,9 +86,9 @@ func (c *client) GetWalletTransfer(ctx context.Context, transferID string) (Tran
 	var transfer TransferResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &transfer, nil)
 	if err != nil {
-		return transfer, errorsutils.NewErrorWithExitCode(
-			fmt.Errorf("failed to get transfer response: %w", err),
-			statusCode,
+		return transfer, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transfer: status code %d", statusCode),
+			err,
 		)
 	}
 	return transfer, nil

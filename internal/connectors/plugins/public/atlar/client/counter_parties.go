@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/get-momo/atlar-v1-go-client/client/counterparties"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )
@@ -66,7 +67,10 @@ func (c *client) PostV1CounterParties(ctx context.Context, newExternalBankAccoun
 
 	if len(postCounterpartiesResponse.Payload.ExternalAccounts) != 1 {
 		// should never occur, but when in case it happens it's nice to have an error to search for
-		return nil, fmt.Errorf("counterparty was not created with exactly one account: %w", httpwrapper.ErrStatusCodeUnexpected)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("counterparty was not created with exactly one account"),
+			httpwrapper.ErrStatusCodeUnexpected,
+		)
 	}
 
 	return postCounterpartiesResponse, nil

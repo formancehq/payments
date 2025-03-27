@@ -5,21 +5,31 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func validateExternalBankAccount(newExternalBankAccount models.BankAccount) error {
 	_, err := extractNamespacedMetadata(newExternalBankAccount.Metadata, "owner/name")
 	if err != nil {
-		return fmt.Errorf("required metadata field %sowner/name is missing", atlarMetadataSpecNamespace)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("required metadata field %sowner/name is missing", atlarMetadataSpecNamespace),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	ownerType, err := extractNamespacedMetadata(newExternalBankAccount.Metadata, "owner/type")
 	if err != nil {
-		return fmt.Errorf("required metadata field %sowner/type is missing", atlarMetadataSpecNamespace)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("required metadata field %sowner/type is missing", atlarMetadataSpecNamespace),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	if ownerType != "INDIVIDUAL" && ownerType != "COMPANY" {
-		return fmt.Errorf("metadata field %sowner/type needs to be one of [ INDIVIDUAL COMPANY ]", atlarMetadataSpecNamespace)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("metadata field %sowner/type needs to be one of [ INDIVIDUAL COMPANY ]", atlarMetadataSpecNamespace),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return nil
@@ -37,7 +47,11 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 	}
 
 	if resp == nil {
-		return models.CreateBankAccountResponse{}, fmt.Errorf("unexpected empty response: %w", models.ErrFailedAccountCreation)
+		return models.CreateBankAccountResponse{},
+			errorsutils.NewWrappedError(
+				fmt.Errorf("PostV1CounterParties: unexpected empty response"),
+				models.ErrFailedAccountCreation,
+			)
 	}
 
 	newAccount, err := externalAccountFromAtlarData(resp.Payload.ExternalAccounts[0], resp.Payload)

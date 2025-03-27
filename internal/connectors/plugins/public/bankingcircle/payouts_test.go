@@ -99,7 +99,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("source account is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -112,7 +112,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("destination account is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -125,7 +125,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(err).To(MatchError("failed to get currency and precision from asset: HUF: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -136,7 +136,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account number or IBAN is required: invalid request"))
+			Expect(err).To(MatchError("destination account number or IBAN is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -148,7 +148,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account name is required: invalid request"))
+			Expect(err).To(MatchError("destination account name is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -162,7 +162,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get source account: test error: invalid request"))
+			Expect(err).To(MatchError("failed to get source account acc1: test error: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -178,7 +178,7 @@ var _ = Describe("BankingCircle Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("no account identifiers provided for source account: invalid request"))
+			Expect(err).To(MatchError("no account identifiers provided for source account acc1: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 

@@ -2,11 +2,11 @@ package client
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
 	"github.com/stripe/stripe-go/v79/balance"
@@ -72,12 +72,18 @@ func wrapSDKErr(err error) error {
 	}
 
 	if stripeErr.Code == stripe.ErrorCodeRateLimit {
-		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeTooManyRequests, err)
+		return errorsutils.NewWrappedError(
+			err,
+			httpwrapper.ErrStatusCodeTooManyRequests,
+		)
 	}
 
 	switch stripeErr.Type {
 	case stripe.ErrorTypeInvalidRequest, stripe.ErrorTypeIdempotency:
-		return fmt.Errorf("%w: %w", httpwrapper.ErrStatusCodeClientError, err)
+		return errorsutils.NewWrappedError(
+			err,
+			httpwrapper.ErrStatusCodeClientError,
+		)
 	}
 	return err
 }

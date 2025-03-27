@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type User struct {
@@ -33,7 +33,10 @@ func (c *client) GetUsers(ctx context.Context, page int, pageSize int) ([]User, 
 	var users []User
 	statusCode, err := c.httpClient.Do(ctx, req, &users, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get user response: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get users: status code %d", statusCode),
+			err,
+		)
 	}
 	return users, nil
 }

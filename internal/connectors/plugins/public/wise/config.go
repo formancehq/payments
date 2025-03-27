@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 )
@@ -22,19 +23,28 @@ type Config struct {
 func (c *Config) validate() error {
 	p, _ := pem.Decode([]byte(c.WebhookPublicKey))
 	if p == nil {
-		return fmt.Errorf("invalid webhook public key in config: %w", models.ErrInvalidConfig)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("invalid webhook public key in config"),
+			models.ErrInvalidConfig,
+		)
 	}
 
 	publicKey, err := x509.ParsePKIXPublicKey(p.Bytes)
 	if err != nil {
-		return fmt.Errorf("failed to parse webhook public key in config %w: %w", err, models.ErrInvalidConfig)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to parse webhook public key in config %w", err),
+			models.ErrInvalidConfig,
+		)
 	}
 
 	switch pub := publicKey.(type) {
 	case *rsa.PublicKey:
 		c.webhookPublicKey = pub
 	default:
-		return fmt.Errorf("invalid webhook public key in config: %w", models.ErrInvalidConfig)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("invalid webhook public key in config"),
+			models.ErrInvalidConfig,
+		)
 	}
 
 	return nil

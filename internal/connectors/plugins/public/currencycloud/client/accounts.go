@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Account struct {
@@ -49,7 +50,10 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get accounts: %w, %w", err, errRes.Error())
+		return nil, 0, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get accounts: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Accounts, res.Pagination.NextPage, nil
 }

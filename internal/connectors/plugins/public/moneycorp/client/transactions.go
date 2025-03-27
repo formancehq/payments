@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type transactionsResponse struct {
@@ -96,10 +97,13 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 	req.URL.RawQuery = q.Encode()
 
 	transactions := transactionsResponse{Transactions: make([]*Transaction, 0)}
-	var errRes moneycorpError
+	var errRes moneycorpErrors
 	_, err = c.httpClient.Do(ctx, req, &transactions, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transactions: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return transactions.Transactions, nil

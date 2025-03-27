@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type RecipientAccountsResponse struct {
@@ -48,7 +49,10 @@ func (c *client) GetRecipientAccounts(ctx context.Context, profileID uint64, pag
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &accounts, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get recipient accounts: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get recipient accounts: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &accounts, nil
 }
@@ -78,7 +82,10 @@ func (c *client) GetRecipientAccount(ctx context.Context, accountID uint64) (*Re
 			// our recipients.
 			return &RecipientAccount{}, nil
 		}
-		return nil, fmt.Errorf("failed to get recipient account: %w %w", err, e.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get recipient account: %v", e.Error()),
+			err,
+		)
 	}
 
 	c.recipientAccountsCache.Add(accountID, &res)

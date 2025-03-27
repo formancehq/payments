@@ -5,6 +5,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/temporal"
@@ -188,6 +189,10 @@ func (w Workflow) createPayout(
 		return nil
 
 	default:
+		// Temporal errors do not have a Cause method, so we need to unwrap them
+		// to get the underlying error and not store the whole stack trace inside
+		// the database.
+		cause := errorsutils.Cause(errPlugin)
 		err = w.addPIAdjustment(
 			ctx,
 			models.PaymentInitiationAdjustmentID{
@@ -197,7 +202,7 @@ func (w Workflow) createPayout(
 			},
 			pi.Amount,
 			&pi.Asset,
-			err,
+			cause,
 			nil,
 		)
 		if err != nil {

@@ -8,12 +8,16 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("from payload is required: %w", models.ErrInvalidRequest)
+		return models.FetchNextBalancesResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("from payload is required"),
+			models.ErrInvalidRequest,
+		)
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextBalancesResponse{}, err

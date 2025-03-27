@@ -73,7 +73,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("reference is required as an uuid: invalid request"))
+			Expect(err).To(MatchError("reference test is required to be an uuid in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -86,7 +86,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing source account: invalid request"))
+			Expect(err).To(MatchError("source account is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -99,7 +99,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing destination account: invalid request"))
+			Expect(err).To(MatchError("destination account is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -112,7 +112,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account metadata with user id is required: invalid request"))
+			Expect(err).To(MatchError("source account metadata with user id is required in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -125,7 +125,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("description must be alphanumeric and less than 12 characters: invalid request"))
+			Expect(err).To(MatchError("description must be alphanumeric and less than 12 characters in payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -138,7 +138,7 @@ var _ = Describe("Mangopay Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(err).To(MatchError("failed to get currency and precision from asset: HUF: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 

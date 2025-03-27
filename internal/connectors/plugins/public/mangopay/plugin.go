@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 const ProviderName = "mangopay"
@@ -181,19 +182,31 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 	// URL query.
 	eventType, ok := req.Webhook.QueryValues["EventType"]
 	if !ok || len(eventType) == 0 {
-		return models.TranslateWebhookResponse{}, fmt.Errorf("missing EventType query parameter: %w", models.ErrInvalidRequest)
+		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("missing EventType query parameter"),
+			models.ErrInvalidRequest,
+		)
 	}
 	resourceID, ok := req.Webhook.QueryValues["RessourceId"]
 	if !ok || len(resourceID) == 0 {
-		return models.TranslateWebhookResponse{}, fmt.Errorf("missing RessourceId query parameter: %w", models.ErrInvalidRequest)
+		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("missing RessourceId query parameter"),
+			models.ErrInvalidRequest,
+		)
 	}
 	v, ok := req.Webhook.QueryValues["Date"]
 	if !ok || len(v) == 0 {
-		return models.TranslateWebhookResponse{}, fmt.Errorf("missing Date query parameter: %w", models.ErrInvalidRequest)
+		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("missing Date query parameter"),
+			models.ErrInvalidRequest,
+		)
 	}
 	date, err := strconv.ParseInt(v[0], 10, 64)
 	if err != nil {
-		return models.TranslateWebhookResponse{}, fmt.Errorf("invalid Date query parameter: %w", models.ErrInvalidRequest)
+		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("invalid Date query parameter: %w", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	webhook := client.Webhook{
@@ -204,7 +217,10 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 
 	config, ok := p.webhookConfigs[webhook.EventType]
 	if !ok {
-		return models.TranslateWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %w", models.ErrInvalidRequest)
+		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
+			fmt.Errorf("unsupported webhook event type: %s", webhook.EventType),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	webhookResponse, err := config.fn(ctx, webhookTranslateRequest{

@@ -8,15 +8,22 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 	if pi.SourceAccount == nil {
-		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("source account is required in payout request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("destination account is required in payout request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return nil
@@ -29,12 +36,18 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 
 	curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get currency and precision from asset: %v", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get string amount from big int amount %v: %v", pi.Amount, err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	resp, err := p.client.InitiatePayout(ctx, &client.PayoutRequest{

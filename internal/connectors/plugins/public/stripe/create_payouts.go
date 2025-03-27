@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -21,7 +22,10 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 
 	curr, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get currency and precision from asset: %w", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	var source *string = nil

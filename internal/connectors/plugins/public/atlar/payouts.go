@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"
 )
 
@@ -18,7 +19,10 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 
 	currency, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return "", fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return "", errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get currency and precision from asset: %w", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	paymentSchemeType := "SCT" // SEPA Credit Transfer

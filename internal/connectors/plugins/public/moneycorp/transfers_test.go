@@ -69,7 +69,7 @@ var _ = Describe("Moneycorp *Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("source account is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("Moneycorp *Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("destination account is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -95,7 +95,7 @@ var _ = Describe("Moneycorp *Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(err).To(MatchError("failed to get currency and precision from asset: HUF: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 

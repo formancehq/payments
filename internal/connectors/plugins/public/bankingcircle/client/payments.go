@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type DebtorInformation struct {
@@ -119,7 +120,10 @@ func (c *client) GetPayments(ctx context.Context, page int, pageSize int) ([]Pay
 	res := response{Result: make([]Payment, 0)}
 	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payments, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payments: status code %d", statusCode),
+			err,
+		)
 	}
 	return res.Result, nil
 }
@@ -140,7 +144,10 @@ func (c *client) GetPayment(ctx context.Context, paymentID string) (*Payment, er
 	var res Payment
 	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payment, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payment: status code %d", statusCode),
+			err,
+		)
 	}
 	return &res, nil
 }
@@ -164,7 +171,10 @@ func (c *client) GetPaymentStatus(ctx context.Context, paymentID string) (*Statu
 	var res StatusResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payment status, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payment status: status code %d", statusCode),
+			err,
+		)
 	}
 	return &res, nil
 }

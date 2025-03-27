@@ -148,7 +148,7 @@ var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("STACK_PUBLIC_URL is not set: invalid request"))
+			Expect(err).To(MatchError("webhook base URL is required: invalid request"))
 			Expect(resp).To(Equal(models.CreateWebhooksResponse{}))
 		})
 
@@ -371,7 +371,7 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 
 			resp, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid Date query parameter: invalid request"))
+			Expect(err).To(MatchError("invalid Date query parameter: strconv.ParseInt: parsing \"test\": invalid syntax: invalid request"))
 			Expect(resp).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -389,7 +389,7 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 
 			resp, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unsupported webhook event type: invalid request"))
+			Expect(err).To(MatchError("unsupported webhook event type: TEST: invalid request"))
 			Expect(resp).To(Equal(models.TranslateWebhookResponse{}))
 		})
 

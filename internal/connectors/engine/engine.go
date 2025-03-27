@@ -15,6 +15,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -116,7 +117,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 
 	if err := config.Validate(); err != nil {
 		otel.RecordError(span, err)
-		return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
+		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 	}
 
 	connector := models.Connector{
@@ -134,7 +135,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
-			return models.ConnectorID{}, errors.Wrap(ErrValidation, err.Error())
+			return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 		}
 		return models.ConnectorID{}, err
 	}
@@ -321,7 +322,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
-			return errors.Wrap(ErrValidation, err.Error())
+			return errorsutils.NewWrappedError(err, ErrValidation)
 		}
 		return err
 	}
@@ -563,7 +564,7 @@ func (e *engine) CreateTransfer(ctx context.Context, piID models.PaymentInitiati
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 
@@ -681,7 +682,7 @@ func (e *engine) CreatePayout(ctx context.Context, piID models.PaymentInitiation
 		// Wait for bank account creation to complete
 		if err := run.Get(ctx, nil); err != nil {
 			otel.RecordError(span, err)
-			return models.Task{}, err
+			return models.Task{}, handleWorkflowError(err)
 		}
 	}
 

@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -43,7 +44,10 @@ func New(
 ) (Client, error) {
 	cert, err := tls.X509KeyPair([]byte(uCertificate), []byte(uCertificateKey))
 	if err != nil {
-		return nil, fmt.Errorf("failed to load user certificate: %w: %w", err, models.ErrInvalidConfig)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to load user certificate: %w", err),
+			models.ErrInvalidConfig,
+		)
 	}
 
 	tr := http.DefaultTransport.(*http.Transport).Clone()

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -42,10 +43,13 @@ func (c *client) GetTransactions(ctx context.Context, accountID string, page, pa
 	req.URL.RawQuery = q.Encode()
 
 	var res responseWrapper[[]Transaction]
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transactions: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Content, nil
 }

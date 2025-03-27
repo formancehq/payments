@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Balance struct {
@@ -53,7 +54,10 @@ func (c *client) GetBalances(ctx context.Context, page int, pageSize int) ([]*Ba
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get balances %w, %w", err, errRes.Error())
+		return nil, 0, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get balances: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Balances, res.Pagination.NextPage, nil
 }

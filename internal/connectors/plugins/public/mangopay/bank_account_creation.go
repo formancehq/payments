@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v2/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
@@ -49,7 +50,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 		var err error
 		mangopayBankAccount, err = p.client.CreateIBANBankAccount(ctx, userID, req)
 		if err != nil {
-			return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
+			return models.CreateBankAccountResponse{}, errorsutils.NewWrappedError(
+				fmt.Errorf("failed to create IBAN bank account: %w", err),
+				models.ErrFailedAccountCreation,
+			)
 		}
 	} else {
 		if ba.Country == nil {
@@ -73,7 +77,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			var err error
 			mangopayBankAccount, err = p.client.CreateUSBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
+				return models.CreateBankAccountResponse{}, errorsutils.NewWrappedError(
+					fmt.Errorf("failed to create US bank account: %w", err),
+					models.ErrFailedAccountCreation,
+				)
 			}
 
 		case "CA":
@@ -93,7 +100,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			var err error
 			mangopayBankAccount, err = p.client.CreateCABankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
+				return models.CreateBankAccountResponse{}, errorsutils.NewWrappedError(
+					fmt.Errorf("failed to create CA bank account: %w", err),
+					models.ErrFailedAccountCreation,
+				)
 			}
 
 		case "GB":
@@ -112,7 +122,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			var err error
 			mangopayBankAccount, err = p.client.CreateGBBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
+				return models.CreateBankAccountResponse{}, errorsutils.NewWrappedError(
+					fmt.Errorf("failed to create GB bank account: %w", err),
+					models.ErrFailedAccountCreation,
+				)
 			}
 
 		default:
@@ -137,7 +150,10 @@ func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (
 			var err error
 			mangopayBankAccount, err = p.client.CreateOtherBankAccount(ctx, userID, req)
 			if err != nil {
-				return models.CreateBankAccountResponse{}, fmt.Errorf("%w: %w", models.ErrFailedAccountCreation, err)
+				return models.CreateBankAccountResponse{}, errorsutils.NewWrappedError(
+					fmt.Errorf("failed to create other bank account: %w", err),
+					models.ErrFailedAccountCreation,
+				)
 			}
 		}
 	}
