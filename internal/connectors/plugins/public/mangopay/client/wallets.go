@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Wallet struct {
@@ -39,10 +39,12 @@ func (c *client) GetWallets(ctx context.Context, userID string, page, pageSize i
 	req.URL.RawQuery = q.Encode()
 
 	var wallets []Wallet
-	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(ctx, req, &wallets, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &wallets, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallets: %w %w", err, errRes.Error()), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get wallets: status code %d", statusCode),
+			err,
+		)
 	}
 	return wallets, nil
 }
@@ -57,10 +59,12 @@ func (c *client) GetWallet(ctx context.Context, walletID string) (*Wallet, error
 	}
 
 	var wallet Wallet
-	var errRes mangopayError
-	statusCode, err := c.httpClient.Do(ctx, req, &wallet, &errRes)
+	statusCode, err := c.httpClient.Do(ctx, req, &wallet, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get wallet: %w %w", err, errRes.Error()), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get wallet: status code %d", statusCode),
+			err,
+		)
 	}
 	return &wallet, nil
 }

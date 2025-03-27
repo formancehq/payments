@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type PaymentAccount struct {
@@ -56,7 +57,10 @@ func (c *client) InitiateTransferOrPayouts(ctx context.Context, transferRequest 
 	var res PaymentResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to make payout, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to make payment, status code %d", statusCode),
+			err,
+		)
 	}
 	return &res, nil
 }

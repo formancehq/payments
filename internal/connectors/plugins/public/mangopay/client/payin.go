@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type PayinResponse struct {
@@ -41,7 +41,10 @@ func (c *client) GetPayin(ctx context.Context, payinID string) (*PayinResponse, 
 	var payinResponse PayinResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &payinResponse, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payin: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payin: status code %d", statusCode),
+			err,
+		)
 	}
 	return &payinResponse, nil
 }

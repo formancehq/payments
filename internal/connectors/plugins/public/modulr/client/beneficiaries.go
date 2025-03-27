@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Beneficiary struct {
@@ -33,10 +34,13 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int, modif
 	req.URL.RawQuery = q.Encode()
 
 	var res responseWrapper[[]Beneficiary]
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get beneficiaries: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get beneficiaries: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Content, nil
 }

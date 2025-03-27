@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type PaymentType string
@@ -57,10 +58,13 @@ func (c *client) GetPayments(ctx context.Context, paymentType PaymentType, page,
 	req.URL.RawQuery = q.Encode()
 
 	var res responseWrapper[[]Payment]
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get payments: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payments: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Content, nil
 }

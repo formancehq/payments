@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 //nolint:tagliatelle // allow for clients
@@ -46,10 +47,13 @@ func (c *client) GetAccounts(ctx context.Context, page, pageSize int, fromCreate
 	req.URL.RawQuery = q.Encode()
 
 	var res responseWrapper[[]Account]
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get accounts: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get accounts: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Content, nil
 }
@@ -63,10 +67,13 @@ func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	}
 
 	var res Account
-	var errRes modulrError
+	var errRes modulrErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get account: %v", errRes.Error()),
+			err,
+		)
 	}
 	return &res, nil
 }

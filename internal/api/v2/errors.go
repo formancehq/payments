@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/api/common"
 	"github.com/formancehq/payments/internal/api/services"
 	"github.com/formancehq/payments/internal/storage"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 const (
@@ -27,7 +28,8 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, storage.ErrValidation):
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrValidation):
-		api.BadRequest(w, ErrValidation, err)
+		cause := errorsutils.Cause(err)
+		api.BadRequest(w, ErrValidation, cause)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
 	default:

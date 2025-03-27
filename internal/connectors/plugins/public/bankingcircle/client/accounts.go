@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Balance struct {
@@ -71,7 +72,10 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int, fromOp
 	res := response{Result: make([]Account, 0)}
 	statusCode, err := c.httpClient.Do(ctx, req, &res, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get accounts, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get accounts: status code %d", statusCode),
+			err,
+		)
 	}
 	return res.Result, nil
 }
@@ -91,7 +95,10 @@ func (c *client) GetAccount(ctx context.Context, accountID string) (*Account, er
 	var account Account
 	statusCode, err := c.httpClient.Do(ctx, req, &account, nil)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get account, status code %d: %w", statusCode, err)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get account: status code %d", statusCode),
+			err,
+		)
 	}
 	return &account, nil
 }

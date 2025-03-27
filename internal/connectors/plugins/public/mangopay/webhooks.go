@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type webhookTranslateRequest struct {
@@ -101,7 +102,10 @@ func (p *Plugin) initWebhookConfig() {
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
 	if req.WebhookBaseUrl == "" {
-		return fmt.Errorf("STACK_PUBLIC_URL is not set: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("webhook base URL is required"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	activeHooks, err := p.getActiveHooks(ctx)

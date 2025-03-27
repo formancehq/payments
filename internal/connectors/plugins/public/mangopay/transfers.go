@@ -10,26 +10,39 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/google/uuid"
 )
 
 func (p *Plugin) validateTransferRequest(pi models.PSPPaymentInitiation) error {
 	_, err := uuid.Parse(pi.Reference)
 	if err != nil {
-		return fmt.Errorf("reference is required as an uuid: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("reference %s is required to be an uuid in transfer request", pi.Reference),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	if pi.SourceAccount == nil {
-		return fmt.Errorf("source account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("source account is required in transfer request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	if pi.DestinationAccount == nil {
-		return fmt.Errorf("destination account is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("destination account is required in transfer request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	_, ok := pi.SourceAccount.Metadata[userIDMetadataKey]
 	if !ok {
-		return fmt.Errorf("source account metadata with user id is required: %w", models.ErrInvalidRequest)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("source account metadata with user id is required in transfer request"),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	return nil
@@ -44,7 +57,10 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 
 	curr, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
 	if err != nil {
-		return models.PSPPayment{}, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
+		return models.PSPPayment{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get currency and precision from asset: %v", err),
+			models.ErrInvalidRequest,
+		)
 	}
 
 	resp, err := p.client.InitiateWalletTransfer(

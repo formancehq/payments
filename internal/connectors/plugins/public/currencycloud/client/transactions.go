@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 //nolint:tagliatelle // allow different styled tags in client
@@ -67,7 +68,10 @@ func (c *client) GetTransactions(ctx context.Context, page int, pageSize int, up
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, 0, fmt.Errorf("failed to get transactions: %w, %w", err, errRes.Error())
+		return nil, 0, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get transactions: %v", errRes.Error()),
+			err,
+		)
 	}
 	return res.Transactions, res.Pagination.NextPage, nil
 }

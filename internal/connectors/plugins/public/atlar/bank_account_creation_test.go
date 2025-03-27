@@ -61,7 +61,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("required metadata field com.atlar.spec/owner/name is missing"))
+			Expect(err).To(MatchError("required metadata field com.atlar.spec/owner/name is missing: invalid request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -74,7 +74,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("required metadata field com.atlar.spec/owner/type is missing"))
+			Expect(err).To(MatchError("required metadata field com.atlar.spec/owner/type is missing: invalid request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("metadata field com.atlar.spec/owner/type needs to be one of [ INDIVIDUAL COMPANY ]"))
+			Expect(err).To(MatchError("metadata field com.atlar.spec/owner/type needs to be one of [ INDIVIDUAL COMPANY ]: invalid request"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 

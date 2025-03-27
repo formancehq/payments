@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type Payout struct {
@@ -74,7 +75,10 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*Payout, error
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
-		return &payout, fmt.Errorf("failed to get payout: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payout: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &payout, nil
 }
@@ -101,7 +105,10 @@ func (c *client) CreatePayout(ctx context.Context, quote Quote, targetAccount ui
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &payout, &errRes)
 	if err != nil {
-		return &payout, fmt.Errorf("failed to make payout: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate payout: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &payout, nil
 }

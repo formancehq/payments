@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type payoutRequest struct {
@@ -80,10 +81,13 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 	req.Header.Set("Idempotency-Key", pr.IdempotencyKey)
 
 	var res payoutResponse
-	var errRes moneycorpError
+	var errRes moneycorpErrors
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initiate transfer: %w %w", err, errRes.Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate payout: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	return res.Payout, nil

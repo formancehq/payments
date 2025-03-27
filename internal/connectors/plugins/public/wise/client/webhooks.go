@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type WebhookDelivery struct {
@@ -64,7 +66,10 @@ func (c *client) CreateWebhook(ctx context.Context, profileID uint64, name, trig
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create subscription: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create subscription: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return &res, nil
 }
@@ -80,7 +85,10 @@ func (c *client) ListWebhooksSubscription(ctx context.Context, profileID uint64)
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subscription: %w %w", err, errRes.Error(statusCode).Error())
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to list subscriptions: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return res, nil
 }
@@ -95,7 +103,10 @@ func (c *client) DeleteWebhooks(ctx context.Context, profileID uint64, subscript
 	var errRes wiseErrors
 	statusCode, err := c.httpClient.Do(ctx, req, nil, &errRes)
 	if err != nil {
-		return fmt.Errorf("failed to delete webhooks: %w %w", err, errRes.Error(statusCode).Error())
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to delete subscription: %v", errRes.Error(statusCode)),
+			err,
+		)
 	}
 	return nil
 }

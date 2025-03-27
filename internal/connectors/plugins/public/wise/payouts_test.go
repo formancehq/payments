@@ -76,7 +76,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("source account is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -89,7 +89,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("destination account is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -102,7 +102,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account metadata with profile id is required: invalid request"))
+			Expect(err).To(MatchError("source account metadata with profile id is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -115,7 +115,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account metadata with profile id is required as an integer: invalid request"))
+			Expect(err).To(MatchError("source account metadata with profile id is required as an integer in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -128,7 +128,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account metadata with profile id is required: invalid request"))
+			Expect(err).To(MatchError("destination account metadata with profile id is required in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -141,7 +141,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account metadata with profile id is required as an integer: invalid request"))
+			Expect(err).To(MatchError("destination account metadata with profile id is required as an integer in transfer/payout request: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 
@@ -154,7 +154,7 @@ var _ = Describe("Wise Plugin Payouts Creation", func() {
 
 			resp, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(err).To(MatchError("failed to get currency and precision from asset: HUF: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreatePayoutResponse{}))
 		})
 

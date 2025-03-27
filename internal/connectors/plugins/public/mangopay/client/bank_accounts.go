@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type OwnerAddress struct {
@@ -116,9 +116,13 @@ func (c *client) createBankAccount(ctx context.Context, endpoint string, req any
 	httpReq.Header.Set("Content-Type", "application/json")
 
 	var bankAccount BankAccount
-	statusCode, err := c.httpClient.Do(ctx, httpReq, &bankAccount, nil)
+	var errRes mangopayError
+	_, err = c.httpClient.Do(ctx, httpReq, &bankAccount, &errRes)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to create bank account: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to create bank account: %v", errRes.Error()),
+			err,
+		)
 	}
 	return &bankAccount, nil
 }
@@ -147,7 +151,10 @@ func (c *client) GetBankAccounts(ctx context.Context, userID string, page, pageS
 	var bankAccounts []BankAccount
 	statusCode, err := c.httpClient.Do(ctx, req, &bankAccounts, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get bank accounts: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get bank accounts: status code %d", statusCode),
+			err,
+		)
 	}
 	return bankAccounts, nil
 }

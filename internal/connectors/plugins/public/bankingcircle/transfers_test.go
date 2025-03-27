@@ -69,7 +69,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("source account is required: invalid request"))
+			Expect(err).To(MatchError("source account is required in transfer request: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -82,7 +82,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("destination account is required: invalid request"))
+			Expect(err).To(MatchError("destination account is required in transfer request: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -95,7 +95,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get currency and precision from asset: missing currencies: invalid request"))
+			Expect(err).To(MatchError("failed to get currency and precision from asset: HUF: missing currencies: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -109,7 +109,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get source account: test error: invalid request"))
+			Expect(err).To(MatchError("failed to get source account acc1: test error: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -125,7 +125,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("no account identifiers provided for source account: invalid request"))
+			Expect(err).To(MatchError("no account identifiers provided for source account acc1: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -144,7 +144,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get destination account: test error: invalid request"))
+			Expect(err).To(MatchError("failed to get destination account acc2: test error: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 
@@ -165,7 +165,7 @@ var _ = Describe("BankingCircle Plugin Transfers Creation", func() {
 
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("no account identifiers provided for destination account: invalid request"))
+			Expect(err).To(MatchError("no account identifiers provided for destination account acc2: invalid request"))
 			Expect(resp).To(Equal(models.CreateTransferResponse{}))
 		})
 

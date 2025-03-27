@@ -3,12 +3,12 @@ package client
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (c *client) login(ctx context.Context) error {
@@ -37,9 +37,15 @@ func (c *client) login(ctx context.Context) error {
 	statusCode, err := c.httpClient.Do(ctx, req, &res, &errors)
 	if err != nil {
 		if len(errors) > 0 {
-			log.Printf("bankingcircle auth failed with code %s: %s", errors[0].ErrorCode, errors[0].ErrorText)
+			return errorsutils.NewWrappedError(
+				fmt.Errorf("failed to login, status code %d: %s", statusCode, errors[0].ErrorText),
+				err,
+			)
 		}
-		return fmt.Errorf("failed to login, status code %d: %w", statusCode, err)
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to login, status code %d", statusCode),
+			err,
+		)
 	}
 
 	c.accessToken = res.AccessToken

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/errorsutils"
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 type PayoutRequest struct {
@@ -62,9 +62,13 @@ func (c *client) InitiatePayout(ctx context.Context, payoutRequest *PayoutReques
 	req.Header.Set("Idempotency-Key", payoutRequest.Reference)
 
 	var payoutResponse PayoutResponse
-	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
+	var errRes mangopayError
+	_, err = c.httpClient.Do(ctx, req, &payoutResponse, &errRes)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to initiate payout: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to initiate payout: %v", errRes.Error()),
+			err,
+		)
 	}
 	return &payoutResponse, nil
 }
@@ -82,7 +86,10 @@ func (c *client) GetPayout(ctx context.Context, payoutID string) (*PayoutRespons
 	var payoutResponse PayoutResponse
 	statusCode, err := c.httpClient.Do(ctx, req, &payoutResponse, nil)
 	if err != nil {
-		return nil, errorsutils.NewErrorWithExitCode(fmt.Errorf("failed to get payout: %w", err), statusCode)
+		return nil, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get payout: status code %d", statusCode),
+			err,
+		)
 	}
 	return &payoutResponse, nil
 }

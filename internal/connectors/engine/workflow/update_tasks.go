@@ -3,6 +3,7 @@ package workflow
 import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -12,6 +13,7 @@ func (w Workflow) updateTasksError(
 	connectorID *models.ConnectorID,
 	err error,
 ) error {
+	cause := errorsutils.Cause(err)
 	return activities.StorageTasksStore(
 		infiniteRetryContext(ctx),
 		models.Task{
@@ -19,7 +21,7 @@ func (w Workflow) updateTasksError(
 			ConnectorID: connectorID,
 			Status:      models.TASK_STATUS_FAILED,
 			UpdatedAt:   workflow.Now(ctx).UTC(),
-			Error:       err,
+			Error:       cause,
 		})
 }
 

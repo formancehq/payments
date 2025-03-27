@@ -102,7 +102,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create account: test error"))
+			Expect(err).To(MatchError("failed to create IBAN bank account: test error: failed to create account"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -179,7 +179,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create account: test error"))
+			Expect(err).To(MatchError("failed to create US bank account: test error: failed to create account"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -261,7 +261,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create account: test error"))
+			Expect(err).To(MatchError("failed to create CA bank account: test error: failed to create account"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -342,7 +342,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create account: test error"))
+			Expect(err).To(MatchError("failed to create GB bank account: test error: failed to create account"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 
@@ -422,7 +422,7 @@ var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to create account: test error"))
+			Expect(err).To(MatchError("failed to create other bank account: test error: failed to create account"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 

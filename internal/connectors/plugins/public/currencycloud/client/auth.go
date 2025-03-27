@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func (c *client) authenticate(ctx context.Context) error {
@@ -36,7 +37,10 @@ func (c *client) authenticate(ctx context.Context) error {
 	var errRes currencyCloudError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return fmt.Errorf("failed to get authenticate: %w, %w", err, errRes.Error())
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get authenticate: %v", errRes.Error()),
+			err,
+		)
 	}
 
 	c.authToken = res.AuthToken
