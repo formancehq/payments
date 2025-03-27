@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"strings"
 	"time"
 
@@ -65,7 +64,6 @@ type Server struct {
 	logger        Logger
 	worker        *Worker
 	httpClient    *Client
-	stackServer   *httptest.Server
 	sdk           *formance.Formance
 	cancel        func()
 	ctx           context.Context
@@ -125,8 +123,7 @@ func (s *Server) Start() error {
 	}
 	s.httpClient = httpClient
 
-	s.stackServer = StackServer(httpserver.URL(s.ctx))
-	s.sdk, err = NewStackClient(s.stackServer.URL, s.configuration.HttpClientTimeout, transport)
+	s.sdk, err = NewStackClient(httpserver.URL(s.ctx), s.configuration.HttpClientTimeout, transport)
 	if err != nil {
 		return err
 	}
@@ -134,7 +131,6 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) Stop(ctx context.Context) error {
-	defer s.stackServer.Close()
 	if s.cancel == nil {
 		return nil
 	}
