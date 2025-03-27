@@ -3,8 +3,20 @@ set dotenv-load
 default:
   @just --list
 
+pre-commit: generate-client tidy lint
+pc: pre-commit
+
+lint:
+  @golangci-lint run --fix --build-tags it --timeout 5m
+
 tidy:
   @go mod tidy
+
+tests:
+  @go test -race -covermode=atomic \
+    -coverprofile coverage.txt \
+    -tags it \
+    ./...
 
 [group('openapi')]
 compile-connector-configs:

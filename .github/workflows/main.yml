@@ -16,7 +16,7 @@ jobs:
   PR:
     if: github.event_name == 'pull_request'
     name: Check PR Title
-    runs-on: ubuntu-latest
+    runs-on: "formance-runner"
     permissions:
       statuses: write
     steps:
@@ -35,18 +35,15 @@ jobs:
         with:
           token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
       - run: >
-          earthly
-          --allow-privileged
-          --secret SPEAKEASY_API_KEY=$SPEAKEASY_API_KEY
-          ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') && '--no-cache' || '' }}
-          +pre-commit
+          /nix/var/nix/profiles/default/bin/nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
+          develop --impure --command just pre-commit
         env:
           SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
       - name: Get changed files
         id: changed-files
         shell: bash
         run: |
-          hasChanged=$(git status --porcelain) 
+          hasChanged=$(git status --porcelain)
           if (( $(echo ${#hasChanged}) != 0 )); then
             git status
             echo "There are changes in the repository"
@@ -66,13 +63,8 @@ jobs:
         with:
           token: ${{ secrets.NUMARY_GITHUB_TOKEN }}
       - run: >
-          earthly
-          --allow-privileged
-          --secret SPEAKEASY_API_KEY=$SPEAKEASY_API_KEY
-          ${{ contains(github.event.pull_request.labels.*.name, 'no-cache') && '--no-cache' || '' }}
-          +tests --coverage=true
-        env:
-          SPEAKEASY_API_KEY: ${{ secrets.SPEAKEASY_API_KEY }}
+          /nix/var/nix/profiles/default/bin/nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
+          develop --impure --command just tests
       - name: Upload coverage reports to Codecov with GitHub Action
         uses: codecov/codecov-action@v5.4.0
         with:
@@ -116,7 +108,7 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
   Deploy:
-    runs-on: "ubuntu-latest"
+    runs-on: "formance-runner"
     if: github.ref == 'refs/heads/main'
     environment: staging
     needs:

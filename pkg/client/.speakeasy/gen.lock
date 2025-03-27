@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: 9b596a9612e17d461bf51204ea259f12
+  docChecksum: 329ad9d8d7a013fa64d58c87dcfa610d
   docVersion: v1
-  speakeasyVersion: 1.517.3
-  generationVersion: 2.548.6
-  releaseVersion: 0.0.1
-  configChecksum: 15fa500028e38b8ee635a3f0dab06d1d
+  speakeasyVersion: 1.525.0
+  generationVersion: 2.562.2
+  releaseVersion: 0.0.2
+  configChecksum: 90f4ddd2eabc08712bd7d89d6f6b66d4
 features:
   go:
     additionalDependencies: 0.1.0
@@ -220,12 +220,12 @@ generatedFiles:
   - /models/operations/resetconnectorv1.go
   - /models/operations/retrytransferinitiation.go
   - /models/operations/reversetransferinitiation.go
-  - /models/operations/udpatetransferinitiationstatus.go
   - /models/operations/uninstallconnector.go
   - /models/operations/uninstallconnectorv1.go
   - /models/operations/updatebankaccountmetadata.go
   - /models/operations/updateconnectorconfigv1.go
   - /models/operations/updatemetadata.go
+  - /models/operations/updatetransferinitiationstatus.go
   - /models/operations/v3addaccounttopool.go
   - /models/operations/v3approvepaymentinitiation.go
   - /models/operations/v3createaccount.go
@@ -298,10 +298,8 @@ generatedFiles:
   - docs/models/components/connectorsconfigsresponsedata.md
   - docs/models/components/connectorsconfigsresponsekey.md
   - docs/models/components/connectorsresponse.md
-  - docs/models/components/connectorsresponsedatum.md
+  - docs/models/components/connectorsresponsedata.md
   - docs/models/components/currencycloudconfig.md
-  - docs/models/components/dataunion.md
-  - docs/models/components/datumunion.md
   - docs/models/components/dummypayconfig.md
   - docs/models/components/forwardbankaccountrequest.md
   - docs/models/components/genericconfig.md
@@ -354,8 +352,10 @@ generatedFiles:
   - docs/models/components/taskmoneycorpdescriptor.md
   - docs/models/components/taskmoneycorpstate.md
   - docs/models/components/taskresponse.md
+  - docs/models/components/taskresponsedata.md
   - docs/models/components/taskscursor.md
   - docs/models/components/taskscursorcursor.md
+  - docs/models/components/taskscursordata.md
   - docs/models/components/taskstatus.md
   - docs/models/components/taskstripe.md
   - docs/models/components/taskstripedescriptor.md
@@ -545,8 +545,6 @@ generatedFiles:
   - docs/models/operations/retrytransferinitiationresponse.md
   - docs/models/operations/reversetransferinitiationrequest.md
   - docs/models/operations/reversetransferinitiationresponse.md
-  - docs/models/operations/udpatetransferinitiationstatusrequest.md
-  - docs/models/operations/udpatetransferinitiationstatusresponse.md
   - docs/models/operations/uninstallconnectorrequest.md
   - docs/models/operations/uninstallconnectorresponse.md
   - docs/models/operations/uninstallconnectorv1request.md
@@ -557,6 +555,8 @@ generatedFiles:
   - docs/models/operations/updateconnectorconfigv1response.md
   - docs/models/operations/updatemetadatarequest.md
   - docs/models/operations/updatemetadataresponse.md
+  - docs/models/operations/updatetransferinitiationstatusrequest.md
+  - docs/models/operations/updatetransferinitiationstatusresponse.md
   - docs/models/operations/v3addaccounttopoolrequest.md
   - docs/models/operations/v3addaccounttopoolresponse.md
   - docs/models/operations/v3approvepaymentinitiationrequest.md
@@ -1279,7 +1279,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2024-02-15T21:59:37.501Z", "terminated": false}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-09-07T21:29:03.593Z", "terminated": true}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-02-18T04:47:10.180Z", "terminated": false}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2024-02-15T21:59:37.501Z", "updatedAt": "2025-08-17T16:51:51.108Z", "terminated": false}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-09-07T21:29:03.593Z", "updatedAt": "2024-02-15T21:59:37.501Z", "terminated": true}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-02-18T04:47:10.180Z", "updatedAt": "2024-08-01T04:53:30.171Z", "terminated": false}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3CreatePayment:
@@ -1496,5 +1496,15 @@ examples:
           application/json: {"data": {"id": "<id>", "status": "FAILED", "createdAt": "2025-09-07T00:11:01.351Z", "updatedAt": "2023-03-17T17:53:01.920Z"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  updateTransferInitiationStatus:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      requestBody:
+        application/json: {"status": "VALIDATED"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
 examplesVersion: 1.0.0
 generatedTests: {}

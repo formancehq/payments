@@ -33,7 +33,7 @@
           f { pkgs = pkgs; system = system; }
         );
 
-      speakeasyVersion = "v1.517.3";
+      speakeasyVersion = "v1.525.0";
       speakeasyPlatforms = {
         "x86_64-linux"   = "linux_amd64";
         "aarch64-linux"  = "linux_arm64";
