@@ -10,10 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-type ConnectorResetResponse struct {
-	TaskID string `json:"taskID"`
-}
-
 func connectorsReset(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_connectorsReset")
@@ -34,8 +30,6 @@ func connectorsReset(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		api.Accepted(w, ConnectorResetResponse{
-			TaskID: task.ID.String(),
-		})
+		api.Accepted(w, task.ID.String())
 	}
 }
