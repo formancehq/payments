@@ -91,10 +91,14 @@
               go
               gotools
               golangci-lint
+              mockgen
               ginkgo
+              yq-go
+              jq
               pkgs.nur.repos.goreleaser.goreleaser-pro
               self.packages.${system}.speakeasy
               just
+              nodejs_22
             ];
           };
         }

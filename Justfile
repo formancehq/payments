@@ -42,11 +42,20 @@ tests:
 
 [group('test')]
 generate-sdk: openapi
-    @cd pkg/client && speakeasy run --skip-versioning
+    @export PATH=$PATH:$(go env GOPATH)/bin && cd pkg/client && speakeasy run --skip-versioning
 
 [group('test')]
 generate: generate-sdk
-    @go install go.uber.org/mock/mockgen@latest
     @go generate ./...
-g: generate
 
+[group('releases')]
+release-local:
+    @goreleaser release --nightly --skip=publish --clean
+
+[group('releases')]
+release-ci:
+    @goreleaser release --nightly --clean
+
+[group('releases')]
+release:
+    @goreleaser release --clean
