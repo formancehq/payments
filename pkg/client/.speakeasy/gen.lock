@@ -1,0 +1,1510 @@
+lockVersion: 2.0.0
+id: 86668c33-fde8-4164-be98-cfc24d333a1e
+management:
+  docChecksum: 329ad9d8d7a013fa64d58c87dcfa610d
+  docVersion: v1
+  speakeasyVersion: 1.525.0
+  generationVersion: 2.562.2
+  releaseVersion: 0.0.2
+  configChecksum: 90f4ddd2eabc08712bd7d89d6f6b66d4
+features:
+  go:
+    additionalDependencies: 0.1.0
+    bigint: 0.0.2
+    constsAndDefaults: 0.1.11
+    core: 3.7.2
+    defaultEnabledRetries: 0.2.0
+    deprecations: 2.81.3
+    envVarSecurityUsage: 0.3.2
+    flattening: 2.81.1
+    getRequestBodies: 2.81.1
+    globalSecurity: 2.82.11
+    globalSecurityCallbacks: 0.1.0
+    globalSecurityFlattening: 0.1.0
+    globalServerURLs: 2.82.2
+    intellisenseMarkdownSupport: 0.1.0
+    nameOverrides: 2.81.2
+    nullables: 0.1.1
+    responseFormat: 0.1.2
+    retries: 2.83.2
+    sdkHooks: 0.1.0
+    unions: 2.85.10
+generatedFiles:
+  - .gitattributes
+  - /models/components/account.go
+  - /models/components/accountbalance.go
+  - /models/components/accountrequest.go
+  - /models/components/accountresponse.go
+  - /models/components/accountscursor.go
+  - /models/components/accounttype.go
+  - /models/components/addaccounttopoolrequest.go
+  - /models/components/adyenconfig.go
+  - /models/components/atlarconfig.go
+  - /models/components/balancescursor.go
+  - /models/components/bankaccount.go
+  - /models/components/bankaccountrelatedaccounts.go
+  - /models/components/bankaccountrequest.go
+  - /models/components/bankaccountresponse.go
+  - /models/components/bankaccountscursor.go
+  - /models/components/bankingcircleconfig.go
+  - /models/components/connectorconfig.go
+  - /models/components/connectorconfigresponse.go
+  - /models/components/connectorenum.go
+  - /models/components/connectorresponse.go
+  - /models/components/connectorsconfigsresponse.go
+  - /models/components/connectorsresponse.go
+  - /models/components/currencycloudconfig.go
+  - /models/components/dummypayconfig.go
+  - /models/components/forwardbankaccountrequest.go
+  - /models/components/genericconfig.go
+  - /models/components/httpmetadata.go
+  - /models/components/mangopayconfig.go
+  - /models/components/modulrconfig.go
+  - /models/components/moneycorpconfig.go
+  - /models/components/payment.go
+  - /models/components/paymentadjustment.go
+  - /models/components/paymentrequest.go
+  - /models/components/paymentresponse.go
+  - /models/components/paymentscheme.go
+  - /models/components/paymentscursor.go
+  - /models/components/paymentserrorresponse.go
+  - /models/components/paymentserrorsenum.go
+  - /models/components/paymentstatus.go
+  - /models/components/paymenttype.go
+  - /models/components/pool.go
+  - /models/components/poolbalance.go
+  - /models/components/poolbalances.go
+  - /models/components/poolbalancesresponse.go
+  - /models/components/poolrequest.go
+  - /models/components/poolresponse.go
+  - /models/components/poolscursor.go
+  - /models/components/reversetransferinitiationrequest.go
+  - /models/components/security.go
+  - /models/components/serverinfo.go
+  - /models/components/stripeconfig.go
+  - /models/components/taskbankingcircle.go
+  - /models/components/taskcurrencycloud.go
+  - /models/components/taskdummypay.go
+  - /models/components/taskmangopay.go
+  - /models/components/taskmodulr.go
+  - /models/components/taskmoneycorp.go
+  - /models/components/taskresponse.go
+  - /models/components/taskscursor.go
+  - /models/components/taskstatus.go
+  - /models/components/taskstripe.go
+  - /models/components/taskwise.go
+  - /models/components/transferinitiation.go
+  - /models/components/transferinitiationadjusments.go
+  - /models/components/transferinitiationpayments.go
+  - /models/components/transferinitiationrequest.go
+  - /models/components/transferinitiationresponse.go
+  - /models/components/transferinitiationscursor.go
+  - /models/components/transferinitiationstatus.go
+  - /models/components/transferrequest.go
+  - /models/components/transferresponse.go
+  - /models/components/updatebankaccountmetadatarequest.go
+  - /models/components/updatetransferinitiationstatusrequest.go
+  - /models/components/v3account.go
+  - /models/components/v3accountscursorresponse.go
+  - /models/components/v3accounttypeenum.go
+  - /models/components/v3adyenconfig.go
+  - /models/components/v3approvepaymentinitiationresponse.go
+  - /models/components/v3atlarconfig.go
+  - /models/components/v3balance.go
+  - /models/components/v3balancescursorresponse.go
+  - /models/components/v3bankaccount.go
+  - /models/components/v3bankaccountrelatedaccount.go
+  - /models/components/v3bankaccountscursorresponse.go
+  - /models/components/v3bankingcircleconfig.go
+  - /models/components/v3connector.go
+  - /models/components/v3connectorconfig.go
+  - /models/components/v3connectorconfigsresponse.go
+  - /models/components/v3connectorscheduleinstancescursorresponse.go
+  - /models/components/v3connectorscheduleresponse.go
+  - /models/components/v3connectorschedulescursorresponse.go
+  - /models/components/v3connectorscursorresponse.go
+  - /models/components/v3createaccountrequest.go
+  - /models/components/v3createaccountresponse.go
+  - /models/components/v3createbankaccountrequest.go
+  - /models/components/v3createbankaccountresponse.go
+  - /models/components/v3createpaymentadjustmentrequest.go
+  - /models/components/v3createpaymentrequest.go
+  - /models/components/v3createpaymentresponse.go
+  - /models/components/v3createpoolrequest.go
+  - /models/components/v3createpoolresponse.go
+  - /models/components/v3currencycloudconfig.go
+  - /models/components/v3dummypayconfig.go
+  - /models/components/v3errorresponse.go
+  - /models/components/v3errorsenum.go
+  - /models/components/v3forwardbankaccountrequest.go
+  - /models/components/v3forwardbankaccountresponse.go
+  - /models/components/v3genericconfig.go
+  - /models/components/v3getaccountresponse.go
+  - /models/components/v3getbankaccountresponse.go
+  - /models/components/v3getconnectorconfigresponse.go
+  - /models/components/v3getpaymentinitiationresponse.go
+  - /models/components/v3getpaymentresponse.go
+  - /models/components/v3getpoolresponse.go
+  - /models/components/v3gettaskresponse.go
+  - /models/components/v3initiatepaymentrequest.go
+  - /models/components/v3initiatepaymentresponse.go
+  - /models/components/v3installconnectorrequest.go
+  - /models/components/v3installconnectorresponse.go
+  - /models/components/v3instance.go
+  - /models/components/v3mangopayconfig.go
+  - /models/components/v3modulrconfig.go
+  - /models/components/v3moneycorpconfig.go
+  - /models/components/v3payment.go
+  - /models/components/v3paymentadjustment.go
+  - /models/components/v3paymentinitiation.go
+  - /models/components/v3paymentinitiationadjustment.go
+  - /models/components/v3paymentinitiationadjustmentscursorresponse.go
+  - /models/components/v3paymentinitiationrelatedpaymentscursorresponse.go
+  - /models/components/v3paymentinitiationscursorresponse.go
+  - /models/components/v3paymentinitiationstatusenum.go
+  - /models/components/v3paymentinitiationtypeenum.go
+  - /models/components/v3paymentscursorresponse.go
+  - /models/components/v3paymentstatusenum.go
+  - /models/components/v3paymenttypeenum.go
+  - /models/components/v3pool.go
+  - /models/components/v3poolbalance.go
+  - /models/components/v3poolbalancesresponse.go
+  - /models/components/v3poolscursorresponse.go
+  - /models/components/v3resetconnectorresponse.go
+  - /models/components/v3retrypaymentinitiationresponse.go
+  - /models/components/v3reversepaymentinitiationrequest.go
+  - /models/components/v3reversepaymentinitiationresponse.go
+  - /models/components/v3schedule.go
+  - /models/components/v3stripeconfig.go
+  - /models/components/v3task.go
+  - /models/components/v3taskstatusenum.go
+  - /models/components/v3uninstallconnectorresponse.go
+  - /models/components/v3updatebankaccountmetadatarequest.go
+  - /models/components/v3updatepaymentmetadatarequest.go
+  - /models/components/v3wiseconfig.go
+  - /models/components/wiseconfig.go
+  - /models/operations/addaccounttopool.go
+  - /models/operations/connectorstransfer.go
+  - /models/operations/createaccount.go
+  - /models/operations/createbankaccount.go
+  - /models/operations/createpayment.go
+  - /models/operations/createpool.go
+  - /models/operations/createtransferinitiation.go
+  - /models/operations/deletepool.go
+  - /models/operations/deletetransferinitiation.go
+  - /models/operations/forwardbankaccount.go
+  - /models/operations/getaccount.go
+  - /models/operations/getaccountbalances.go
+  - /models/operations/getbankaccount.go
+  - /models/operations/getconnectortask.go
+  - /models/operations/getconnectortaskv1.go
+  - /models/operations/getpayment.go
+  - /models/operations/getpool.go
+  - /models/operations/getpoolbalances.go
+  - /models/operations/getserverinfo.go
+  - /models/operations/gettransferinitiation.go
+  - /models/operations/installconnector.go
+  - /models/operations/listaccounts.go
+  - /models/operations/listallconnectors.go
+  - /models/operations/listbankaccounts.go
+  - /models/operations/listconfigsavailableconnectors.go
+  - /models/operations/listconnectortasks.go
+  - /models/operations/listconnectortasksv1.go
+  - /models/operations/listpayments.go
+  - /models/operations/listpools.go
+  - /models/operations/listtransferinitiations.go
+  - /models/operations/readconnectorconfig.go
+  - /models/operations/readconnectorconfigv1.go
+  - /models/operations/removeaccountfrompool.go
+  - /models/operations/resetconnector.go
+  - /models/operations/resetconnectorv1.go
+  - /models/operations/retrytransferinitiation.go
+  - /models/operations/reversetransferinitiation.go
+  - /models/operations/uninstallconnector.go
+  - /models/operations/uninstallconnectorv1.go
+  - /models/operations/updatebankaccountmetadata.go
+  - /models/operations/updateconnectorconfigv1.go
+  - /models/operations/updatemetadata.go
+  - /models/operations/updatetransferinitiationstatus.go
+  - /models/operations/v3addaccounttopool.go
+  - /models/operations/v3approvepaymentinitiation.go
+  - /models/operations/v3createaccount.go
+  - /models/operations/v3createbankaccount.go
+  - /models/operations/v3createpayment.go
+  - /models/operations/v3createpool.go
+  - /models/operations/v3deletepaymentinitiation.go
+  - /models/operations/v3deletepool.go
+  - /models/operations/v3forwardbankaccount.go
+  - /models/operations/v3getaccount.go
+  - /models/operations/v3getaccountbalances.go
+  - /models/operations/v3getbankaccount.go
+  - /models/operations/v3getconnectorconfig.go
+  - /models/operations/v3getconnectorschedule.go
+  - /models/operations/v3getpayment.go
+  - /models/operations/v3getpaymentinitiation.go
+  - /models/operations/v3getpool.go
+  - /models/operations/v3getpoolbalances.go
+  - /models/operations/v3gettask.go
+  - /models/operations/v3initiatepayment.go
+  - /models/operations/v3installconnector.go
+  - /models/operations/v3listaccounts.go
+  - /models/operations/v3listbankaccounts.go
+  - /models/operations/v3listconnectorconfigs.go
+  - /models/operations/v3listconnectors.go
+  - /models/operations/v3listconnectorscheduleinstances.go
+  - /models/operations/v3listconnectorschedules.go
+  - /models/operations/v3listpaymentinitiationadjustments.go
+  - /models/operations/v3listpaymentinitiationrelatedpayments.go
+  - /models/operations/v3listpaymentinitiations.go
+  - /models/operations/v3listpayments.go
+  - /models/operations/v3listpools.go
+  - /models/operations/v3rejectpaymentinitiation.go
+  - /models/operations/v3removeaccountfrompool.go
+  - /models/operations/v3resetconnector.go
+  - /models/operations/v3retrypaymentinitiation.go
+  - /models/operations/v3reversepaymentinitiation.go
+  - /models/operations/v3uninstallconnector.go
+  - /models/operations/v3updatebankaccountmetadata.go
+  - /models/operations/v3updatepaymentmetadata.go
+  - USAGE.md
+  - docs/models/components/account.md
+  - docs/models/components/accountbalance.md
+  - docs/models/components/accountraw.md
+  - docs/models/components/accountrequest.md
+  - docs/models/components/accountresponse.md
+  - docs/models/components/accountscursor.md
+  - docs/models/components/accountscursorcursor.md
+  - docs/models/components/accounttype.md
+  - docs/models/components/addaccounttopoolrequest.md
+  - docs/models/components/adyenconfig.md
+  - docs/models/components/atlarconfig.md
+  - docs/models/components/balancescursor.md
+  - docs/models/components/balancescursorcursor.md
+  - docs/models/components/bankaccount.md
+  - docs/models/components/bankaccountrelatedaccounts.md
+  - docs/models/components/bankaccountrequest.md
+  - docs/models/components/bankaccountresponse.md
+  - docs/models/components/bankaccountscursor.md
+  - docs/models/components/bankaccountscursorcursor.md
+  - docs/models/components/bankingcircleconfig.md
+  - docs/models/components/config.md
+  - docs/models/components/connectorconfig.md
+  - docs/models/components/connectorconfigresponse.md
+  - docs/models/components/connectorenum.md
+  - docs/models/components/connectorresponse.md
+  - docs/models/components/connectorresponsedata.md
+  - docs/models/components/connectorsconfigsresponse.md
+  - docs/models/components/connectorsconfigsresponseconnector.md
+  - docs/models/components/connectorsconfigsresponsedata.md
+  - docs/models/components/connectorsconfigsresponsekey.md
+  - docs/models/components/connectorsresponse.md
+  - docs/models/components/connectorsresponsedata.md
+  - docs/models/components/currencycloudconfig.md
+  - docs/models/components/dummypayconfig.md
+  - docs/models/components/forwardbankaccountrequest.md
+  - docs/models/components/genericconfig.md
+  - docs/models/components/httpmetadata.md
+  - docs/models/components/mangopayconfig.md
+  - docs/models/components/modulrconfig.md
+  - docs/models/components/moneycorpconfig.md
+  - docs/models/components/payment.md
+  - docs/models/components/paymentadjustment.md
+  - docs/models/components/paymentadjustmentraw.md
+  - docs/models/components/paymentraw.md
+  - docs/models/components/paymentrequest.md
+  - docs/models/components/paymentresponse.md
+  - docs/models/components/paymentscheme.md
+  - docs/models/components/paymentscursor.md
+  - docs/models/components/paymentscursorcursor.md
+  - docs/models/components/paymentserrorresponse.md
+  - docs/models/components/paymentserrorsenum.md
+  - docs/models/components/paymentstatus.md
+  - docs/models/components/paymenttype.md
+  - docs/models/components/pool.md
+  - docs/models/components/poolbalance.md
+  - docs/models/components/poolbalances.md
+  - docs/models/components/poolbalancesresponse.md
+  - docs/models/components/poolrequest.md
+  - docs/models/components/poolresponse.md
+  - docs/models/components/poolscursor.md
+  - docs/models/components/poolscursorcursor.md
+  - docs/models/components/reversetransferinitiationrequest.md
+  - docs/models/components/security.md
+  - docs/models/components/serverinfo.md
+  - docs/models/components/status.md
+  - docs/models/components/stripeconfig.md
+  - docs/models/components/taskbankingcircle.md
+  - docs/models/components/taskbankingcircledescriptor.md
+  - docs/models/components/taskbankingcirclestate.md
+  - docs/models/components/taskcurrencycloud.md
+  - docs/models/components/taskcurrencyclouddescriptor.md
+  - docs/models/components/taskcurrencycloudstate.md
+  - docs/models/components/taskdummypay.md
+  - docs/models/components/taskdummypaydescriptor.md
+  - docs/models/components/taskdummypaystate.md
+  - docs/models/components/taskmangopay.md
+  - docs/models/components/taskmangopaydescriptor.md
+  - docs/models/components/taskmangopaystate.md
+  - docs/models/components/taskmodulr.md
+  - docs/models/components/taskmodulrdescriptor.md
+  - docs/models/components/taskmodulrstate.md
+  - docs/models/components/taskmoneycorp.md
+  - docs/models/components/taskmoneycorpdescriptor.md
+  - docs/models/components/taskmoneycorpstate.md
+  - docs/models/components/taskresponse.md
+  - docs/models/components/taskresponsedata.md
+  - docs/models/components/taskscursor.md
+  - docs/models/components/taskscursorcursor.md
+  - docs/models/components/taskscursordata.md
+  - docs/models/components/taskstatus.md
+  - docs/models/components/taskstripe.md
+  - docs/models/components/taskstripedescriptor.md
+  - docs/models/components/taskstripestate.md
+  - docs/models/components/taskwise.md
+  - docs/models/components/taskwisedescriptor.md
+  - docs/models/components/taskwisestate.md
+  - docs/models/components/transferinitiation.md
+  - docs/models/components/transferinitiationadjusments.md
+  - docs/models/components/transferinitiationpayments.md
+  - docs/models/components/transferinitiationrequest.md
+  - docs/models/components/transferinitiationrequesttype.md
+  - docs/models/components/transferinitiationresponse.md
+  - docs/models/components/transferinitiationscursor.md
+  - docs/models/components/transferinitiationscursorcursor.md
+  - docs/models/components/transferinitiationstatus.md
+  - docs/models/components/transferinitiationtype.md
+  - docs/models/components/transferrequest.md
+  - docs/models/components/transferresponse.md
+  - docs/models/components/updatebankaccountmetadatarequest.md
+  - docs/models/components/updatetransferinitiationstatusrequest.md
+  - docs/models/components/v3account.md
+  - docs/models/components/v3accountraw.md
+  - docs/models/components/v3accountscursorresponse.md
+  - docs/models/components/v3accountscursorresponsecursor.md
+  - docs/models/components/v3accounttypeenum.md
+  - docs/models/components/v3adyenconfig.md
+  - docs/models/components/v3approvepaymentinitiationresponse.md
+  - docs/models/components/v3approvepaymentinitiationresponsedata.md
+  - docs/models/components/v3atlarconfig.md
+  - docs/models/components/v3balance.md
+  - docs/models/components/v3balancescursorresponse.md
+  - docs/models/components/v3balancescursorresponsecursor.md
+  - docs/models/components/v3bankaccount.md
+  - docs/models/components/v3bankaccountrelatedaccount.md
+  - docs/models/components/v3bankaccountscursorresponse.md
+  - docs/models/components/v3bankaccountscursorresponsecursor.md
+  - docs/models/components/v3bankingcircleconfig.md
+  - docs/models/components/v3connector.md
+  - docs/models/components/v3connectorconfig.md
+  - docs/models/components/v3connectorconfigsresponse.md
+  - docs/models/components/v3connectorconfigsresponseconnector.md
+  - docs/models/components/v3connectorconfigsresponsedata.md
+  - docs/models/components/v3connectorconfigsresponsekey.md
+  - docs/models/components/v3connectorscheduleinstancescursorresponse.md
+  - docs/models/components/v3connectorscheduleinstancescursorresponsecursor.md
+  - docs/models/components/v3connectorscheduleresponse.md
+  - docs/models/components/v3connectorschedulescursorresponse.md
+  - docs/models/components/v3connectorschedulescursorresponsecursor.md
+  - docs/models/components/v3connectorscursorresponse.md
+  - docs/models/components/v3connectorscursorresponsecursor.md
+  - docs/models/components/v3createaccountrequest.md
+  - docs/models/components/v3createaccountresponse.md
+  - docs/models/components/v3createbankaccountrequest.md
+  - docs/models/components/v3createbankaccountresponse.md
+  - docs/models/components/v3createpaymentadjustmentrequest.md
+  - docs/models/components/v3createpaymentrequest.md
+  - docs/models/components/v3createpaymentresponse.md
+  - docs/models/components/v3createpoolrequest.md
+  - docs/models/components/v3createpoolresponse.md
+  - docs/models/components/v3currencycloudconfig.md
+  - docs/models/components/v3dummypayconfig.md
+  - docs/models/components/v3errorresponse.md
+  - docs/models/components/v3errorsenum.md
+  - docs/models/components/v3forwardbankaccountrequest.md
+  - docs/models/components/v3forwardbankaccountresponse.md
+  - docs/models/components/v3forwardbankaccountresponsedata.md
+  - docs/models/components/v3genericconfig.md
+  - docs/models/components/v3getaccountresponse.md
+  - docs/models/components/v3getbankaccountresponse.md
+  - docs/models/components/v3getconnectorconfigresponse.md
+  - docs/models/components/v3getpaymentinitiationresponse.md
+  - docs/models/components/v3getpaymentresponse.md
+  - docs/models/components/v3getpoolresponse.md
+  - docs/models/components/v3gettaskresponse.md
+  - docs/models/components/v3initiatepaymentrequest.md
+  - docs/models/components/v3initiatepaymentresponse.md
+  - docs/models/components/v3initiatepaymentresponsedata.md
+  - docs/models/components/v3installconnectorrequest.md
+  - docs/models/components/v3installconnectorresponse.md
+  - docs/models/components/v3instance.md
+  - docs/models/components/v3mangopayconfig.md
+  - docs/models/components/v3modulrconfig.md
+  - docs/models/components/v3moneycorpconfig.md
+  - docs/models/components/v3payment.md
+  - docs/models/components/v3paymentadjustment.md
+  - docs/models/components/v3paymentadjustmentraw.md
+  - docs/models/components/v3paymentinitiation.md
+  - docs/models/components/v3paymentinitiationadjustment.md
+  - docs/models/components/v3paymentinitiationadjustmentscursorresponse.md
+  - docs/models/components/v3paymentinitiationadjustmentscursorresponsecursor.md
+  - docs/models/components/v3paymentinitiationrelatedpaymentscursorresponse.md
+  - docs/models/components/v3paymentinitiationrelatedpaymentscursorresponsecursor.md
+  - docs/models/components/v3paymentinitiationscursorresponse.md
+  - docs/models/components/v3paymentinitiationscursorresponsecursor.md
+  - docs/models/components/v3paymentinitiationstatusenum.md
+  - docs/models/components/v3paymentinitiationtypeenum.md
+  - docs/models/components/v3paymentscursorresponse.md
+  - docs/models/components/v3paymentscursorresponsecursor.md
+  - docs/models/components/v3paymentstatusenum.md
+  - docs/models/components/v3paymenttypeenum.md
+  - docs/models/components/v3pool.md
+  - docs/models/components/v3poolbalance.md
+  - docs/models/components/v3poolbalancesresponse.md
+  - docs/models/components/v3poolscursorresponse.md
+  - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3resetconnectorresponse.md
+  - docs/models/components/v3retrypaymentinitiationresponse.md
+  - docs/models/components/v3retrypaymentinitiationresponsedata.md
+  - docs/models/components/v3reversepaymentinitiationrequest.md
+  - docs/models/components/v3reversepaymentinitiationresponse.md
+  - docs/models/components/v3reversepaymentinitiationresponsedata.md
+  - docs/models/components/v3schedule.md
+  - docs/models/components/v3stripeconfig.md
+  - docs/models/components/v3task.md
+  - docs/models/components/v3taskstatusenum.md
+  - docs/models/components/v3uninstallconnectorresponse.md
+  - docs/models/components/v3uninstallconnectorresponsedata.md
+  - docs/models/components/v3updatebankaccountmetadatarequest.md
+  - docs/models/components/v3updatepaymentmetadatarequest.md
+  - docs/models/components/v3wiseconfig.md
+  - docs/models/components/wiseconfig.md
+  - docs/models/operations/addaccounttopoolrequest.md
+  - docs/models/operations/addaccounttopoolresponse.md
+  - docs/models/operations/connectorstransferrequest.md
+  - docs/models/operations/connectorstransferresponse.md
+  - docs/models/operations/createaccountresponse.md
+  - docs/models/operations/createbankaccountresponse.md
+  - docs/models/operations/createpaymentresponse.md
+  - docs/models/operations/createpoolresponse.md
+  - docs/models/operations/createtransferinitiationresponse.md
+  - docs/models/operations/deletepoolrequest.md
+  - docs/models/operations/deletepoolresponse.md
+  - docs/models/operations/deletetransferinitiationrequest.md
+  - docs/models/operations/deletetransferinitiationresponse.md
+  - docs/models/operations/forwardbankaccountrequest.md
+  - docs/models/operations/forwardbankaccountresponse.md
+  - docs/models/operations/getaccountbalancesrequest.md
+  - docs/models/operations/getaccountbalancesresponse.md
+  - docs/models/operations/getaccountrequest.md
+  - docs/models/operations/getaccountresponse.md
+  - docs/models/operations/getbankaccountrequest.md
+  - docs/models/operations/getbankaccountresponse.md
+  - docs/models/operations/getconnectortaskrequest.md
+  - docs/models/operations/getconnectortaskresponse.md
+  - docs/models/operations/getconnectortaskv1request.md
+  - docs/models/operations/getconnectortaskv1response.md
+  - docs/models/operations/getpaymentrequest.md
+  - docs/models/operations/getpaymentresponse.md
+  - docs/models/operations/getpoolbalancesrequest.md
+  - docs/models/operations/getpoolbalancesresponse.md
+  - docs/models/operations/getpoolrequest.md
+  - docs/models/operations/getpoolresponse.md
+  - docs/models/operations/getserverinforesponse.md
+  - docs/models/operations/gettransferinitiationrequest.md
+  - docs/models/operations/gettransferinitiationresponse.md
+  - docs/models/operations/installconnectorrequest.md
+  - docs/models/operations/installconnectorresponse.md
+  - docs/models/operations/listaccountsrequest.md
+  - docs/models/operations/listaccountsresponse.md
+  - docs/models/operations/listallconnectorsresponse.md
+  - docs/models/operations/listbankaccountsrequest.md
+  - docs/models/operations/listbankaccountsresponse.md
+  - docs/models/operations/listconfigsavailableconnectorsresponse.md
+  - docs/models/operations/listconnectortasksrequest.md
+  - docs/models/operations/listconnectortasksresponse.md
+  - docs/models/operations/listconnectortasksv1request.md
+  - docs/models/operations/listconnectortasksv1response.md
+  - docs/models/operations/listpaymentsrequest.md
+  - docs/models/operations/listpaymentsresponse.md
+  - docs/models/operations/listpoolsrequest.md
+  - docs/models/operations/listpoolsresponse.md
+  - docs/models/operations/listtransferinitiationsrequest.md
+  - docs/models/operations/listtransferinitiationsresponse.md
+  - docs/models/operations/option.md
+  - docs/models/operations/readconnectorconfigrequest.md
+  - docs/models/operations/readconnectorconfigresponse.md
+  - docs/models/operations/readconnectorconfigv1request.md
+  - docs/models/operations/readconnectorconfigv1response.md
+  - docs/models/operations/removeaccountfrompoolrequest.md
+  - docs/models/operations/removeaccountfrompoolresponse.md
+  - docs/models/operations/resetconnectorrequest.md
+  - docs/models/operations/resetconnectorresponse.md
+  - docs/models/operations/resetconnectorv1request.md
+  - docs/models/operations/resetconnectorv1response.md
+  - docs/models/operations/retrytransferinitiationrequest.md
+  - docs/models/operations/retrytransferinitiationresponse.md
+  - docs/models/operations/reversetransferinitiationrequest.md
+  - docs/models/operations/reversetransferinitiationresponse.md
+  - docs/models/operations/uninstallconnectorrequest.md
+  - docs/models/operations/uninstallconnectorresponse.md
+  - docs/models/operations/uninstallconnectorv1request.md
+  - docs/models/operations/uninstallconnectorv1response.md
+  - docs/models/operations/updatebankaccountmetadatarequest.md
+  - docs/models/operations/updatebankaccountmetadataresponse.md
+  - docs/models/operations/updateconnectorconfigv1request.md
+  - docs/models/operations/updateconnectorconfigv1response.md
+  - docs/models/operations/updatemetadatarequest.md
+  - docs/models/operations/updatemetadataresponse.md
+  - docs/models/operations/updatetransferinitiationstatusrequest.md
+  - docs/models/operations/updatetransferinitiationstatusresponse.md
+  - docs/models/operations/v3addaccounttopoolrequest.md
+  - docs/models/operations/v3addaccounttopoolresponse.md
+  - docs/models/operations/v3approvepaymentinitiationrequest.md
+  - docs/models/operations/v3approvepaymentinitiationresponse.md
+  - docs/models/operations/v3createaccountresponse.md
+  - docs/models/operations/v3createbankaccountresponse.md
+  - docs/models/operations/v3createpaymentresponse.md
+  - docs/models/operations/v3createpoolresponse.md
+  - docs/models/operations/v3deletepaymentinitiationrequest.md
+  - docs/models/operations/v3deletepaymentinitiationresponse.md
+  - docs/models/operations/v3deletepoolrequest.md
+  - docs/models/operations/v3deletepoolresponse.md
+  - docs/models/operations/v3forwardbankaccountrequest.md
+  - docs/models/operations/v3forwardbankaccountresponse.md
+  - docs/models/operations/v3getaccountbalancesrequest.md
+  - docs/models/operations/v3getaccountbalancesresponse.md
+  - docs/models/operations/v3getaccountrequest.md
+  - docs/models/operations/v3getaccountresponse.md
+  - docs/models/operations/v3getbankaccountrequest.md
+  - docs/models/operations/v3getbankaccountresponse.md
+  - docs/models/operations/v3getconnectorconfigrequest.md
+  - docs/models/operations/v3getconnectorconfigresponse.md
+  - docs/models/operations/v3getconnectorschedulerequest.md
+  - docs/models/operations/v3getconnectorscheduleresponse.md
+  - docs/models/operations/v3getpaymentinitiationrequest.md
+  - docs/models/operations/v3getpaymentinitiationresponse.md
+  - docs/models/operations/v3getpaymentrequest.md
+  - docs/models/operations/v3getpaymentresponse.md
+  - docs/models/operations/v3getpoolbalancesrequest.md
+  - docs/models/operations/v3getpoolbalancesresponse.md
+  - docs/models/operations/v3getpoolrequest.md
+  - docs/models/operations/v3getpoolresponse.md
+  - docs/models/operations/v3gettaskrequest.md
+  - docs/models/operations/v3gettaskresponse.md
+  - docs/models/operations/v3initiatepaymentrequest.md
+  - docs/models/operations/v3initiatepaymentresponse.md
+  - docs/models/operations/v3installconnectorrequest.md
+  - docs/models/operations/v3installconnectorresponse.md
+  - docs/models/operations/v3listaccountsrequest.md
+  - docs/models/operations/v3listaccountsresponse.md
+  - docs/models/operations/v3listbankaccountsrequest.md
+  - docs/models/operations/v3listbankaccountsresponse.md
+  - docs/models/operations/v3listconnectorconfigsresponse.md
+  - docs/models/operations/v3listconnectorscheduleinstancesrequest.md
+  - docs/models/operations/v3listconnectorscheduleinstancesresponse.md
+  - docs/models/operations/v3listconnectorschedulesrequest.md
+  - docs/models/operations/v3listconnectorschedulesresponse.md
+  - docs/models/operations/v3listconnectorsrequest.md
+  - docs/models/operations/v3listconnectorsresponse.md
+  - docs/models/operations/v3listpaymentinitiationadjustmentsrequest.md
+  - docs/models/operations/v3listpaymentinitiationadjustmentsresponse.md
+  - docs/models/operations/v3listpaymentinitiationrelatedpaymentsrequest.md
+  - docs/models/operations/v3listpaymentinitiationrelatedpaymentsresponse.md
+  - docs/models/operations/v3listpaymentinitiationsrequest.md
+  - docs/models/operations/v3listpaymentinitiationsresponse.md
+  - docs/models/operations/v3listpaymentsrequest.md
+  - docs/models/operations/v3listpaymentsresponse.md
+  - docs/models/operations/v3listpoolsrequest.md
+  - docs/models/operations/v3listpoolsresponse.md
+  - docs/models/operations/v3rejectpaymentinitiationrequest.md
+  - docs/models/operations/v3rejectpaymentinitiationresponse.md
+  - docs/models/operations/v3removeaccountfrompoolrequest.md
+  - docs/models/operations/v3removeaccountfrompoolresponse.md
+  - docs/models/operations/v3resetconnectorrequest.md
+  - docs/models/operations/v3resetconnectorresponse.md
+  - docs/models/operations/v3retrypaymentinitiationrequest.md
+  - docs/models/operations/v3retrypaymentinitiationresponse.md
+  - docs/models/operations/v3reversepaymentinitiationrequest.md
+  - docs/models/operations/v3reversepaymentinitiationresponse.md
+  - docs/models/operations/v3uninstallconnectorrequest.md
+  - docs/models/operations/v3uninstallconnectorresponse.md
+  - docs/models/operations/v3updatebankaccountmetadatarequest.md
+  - docs/models/operations/v3updatebankaccountmetadataresponse.md
+  - docs/models/operations/v3updatepaymentmetadatarequest.md
+  - docs/models/operations/v3updatepaymentmetadataresponse.md
+  - docs/sdks/formance/README.md
+  - docs/sdks/payments/README.md
+  - docs/sdks/v1/README.md
+  - docs/sdks/v3/README.md
+  - formance.go
+  - go.mod
+  - internal/hooks/hooks.go
+  - internal/utils/contenttype.go
+  - internal/utils/env.go
+  - internal/utils/form.go
+  - internal/utils/headers.go
+  - internal/utils/json.go
+  - internal/utils/pathparams.go
+  - internal/utils/queryparams.go
+  - internal/utils/requestbody.go
+  - internal/utils/retries.go
+  - internal/utils/security.go
+  - internal/utils/utils.go
+  - models/operations/options.go
+  - models/sdkerrors/sdkerror.go
+  - payments.go
+  - retry/config.go
+  - types/bigint.go
+  - types/date.go
+  - types/datetime.go
+  - types/decimal.go
+  - types/pointers.go
+  - v1.go
+  - v3.go
+examples:
+  getServerInfo:
+    speakeasy-default-get-server-info:
+      responses:
+        "200":
+          application/json: {}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  createPayment:
+    speakeasy-default-create-payment:
+      requestBody:
+        application/json: {"reference": "<value>", "connectorID": "<id>", "createdAt": "2025-11-09T01:03:21.011Z", "amount": 100, "type": "OTHER", "status": "REFUNDED_FAILURE", "scheme": "sepa debit", "asset": "USD"}
+      responses:
+        "200":
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAY-IN", "status": "PENDING", "initialAmount": 100, "amount": 100, "scheme": "ach", "asset": "USD", "createdAt": "2024-04-23T08:26:30.361Z", "raw": {}, "adjustments": [{"reference": "<value>", "createdAt": "2023-07-29T05:53:39.120Z", "status": "EXPIRED", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2023-12-28T05:11:50.197Z", "status": "DISPUTE_WON", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2024-10-30T00:37:27.585Z", "status": "DISPUTE_LOST", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listPayments:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getPayment:
+    "":
+      parameters:
+        path:
+          paymentId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "type": "PAYOUT", "status": "OTHER", "initialAmount": 100, "amount": 100, "scheme": "alipay", "asset": "USD", "createdAt": "2024-02-18T17:18:36.576Z", "raw": {}, "adjustments": [{"reference": "<value>", "createdAt": "2024-01-26T23:28:34.008Z", "status": "DISPUTE", "amount": 100, "raw": {}}, {"reference": "<value>", "createdAt": "2025-02-22T23:33:22.047Z", "status": "REFUNDED_FAILURE", "amount": 100, "raw": {}}], "metadata": {"key": "<value>", "key1": "<value>"}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  updateMetadata:
+    "":
+      parameters:
+        path:
+          paymentId: "XXX"
+      requestBody:
+        application/json: {"key": "<value>", "key1": "<value>"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listTransferInitiations:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "XXX", "reference": "<value>", "createdAt": "2023-01-31T00:09:09.490Z", "scheduledAt": "2024-04-12T17:55:51.446Z", "description": "shovel aw scrutinise delicious a machine provided thongs eek pfft", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 991707, "initialAmount": 603953, "asset": "USD", "status": "PROCESSING", "error": "<value>"}, {"id": "XXX", "reference": "<value>", "createdAt": "2023-04-20T00:00:16.449Z", "scheduledAt": "2024-05-14T08:21:14.101Z", "description": "vice programme downchange lucky", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "TRANSFER", "amount": 454279, "initialAmount": 185400, "asset": "USD", "status": "PROCESSING", "error": "<value>"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  createTransferInitiation:
+    speakeasy-default-create-transfer-initiation:
+      requestBody:
+        application/json: {"reference": "XXX", "scheduledAt": "2023-10-09T08:11:40.585Z", "description": "worthy pace vague ick liberalize between um", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "type": "PAYOUT", "amount": 847873, "asset": "USD", "validated": true}
+      responses:
+        "200":
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2024-04-08T05:30:28.870Z", "scheduledAt": "2023-01-07T23:05:45.713Z", "description": "jut profane apud newsstand printer fondly", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 10465, "initialAmount": 216310, "asset": "USD", "status": "PARTIALLY_REVERSED", "error": "<value>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getTransferInitiation:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2023-03-21T19:16:05.818Z", "scheduledAt": "2023-06-13T16:04:12.992Z", "description": "lack sick cheerfully minor", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 688024, "initialAmount": 52065, "asset": "USD", "status": "ASK_REVERSED", "error": "<value>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  deleteTransferInitiation:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  udpateTransferInitiationStatus:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      requestBody:
+        application/json: {"status": "VALIDATED"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  reverseTransferInitiation:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      requestBody:
+        application/json: {"reference": "XXX", "description": "emerge whose mechanically outside kissingly", "amount": 978360, "asset": "USD", "metadata": {"key": "<value>"}}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  retryTransferInitiation:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listPools:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "accounts": ["<value>", "<value>"]}, {"id": "<id>", "name": "<value>", "accounts": ["<value>"]}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  createPool:
+    speakeasy-default-create-pool:
+      requestBody:
+        application/json: {"name": "<value>", "accountIDs": ["<value>", "<value>", "<value>"]}
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getPool:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "accounts": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  deletePool:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  addAccountToPool:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      requestBody:
+        application/json: {"accountID": "<id>"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  removeAccountFromPool:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+          accountId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getPoolBalances:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+        query:
+          at: "2024-05-04T06:40:23.119Z"
+      responses:
+        "200":
+          application/json: {"data": {"balances": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  createAccount:
+    speakeasy-default-create-account:
+      requestBody:
+        application/json: {"reference": "<value>", "connectorID": "<id>", "createdAt": "2025-08-19T02:15:08.152Z", "type": "INTERNAL"}
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "createdAt": "2023-04-28T00:06:23.447Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>"}, "raw": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listAccounts:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "createdAt": "2024-03-27T20:54:54.896Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>"}, "raw": {}}, {"id": "<id>", "createdAt": "2023-09-13T13:13:06.843Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>"}, "raw": {}}, {"id": "<id>", "createdAt": "2025-04-06T19:28:56.662Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "EXTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {}}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getAccount:
+    "":
+      parameters:
+        path:
+          accountId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "createdAt": "2023-11-03T16:09:57.355Z", "reference": "<value>", "connectorID": "<id>", "defaultCurrency": "<value>", "defaultAsset": "<value>", "accountName": "<value>", "type": "INTERNAL", "metadata": {"key": "<value>", "key1": "<value>", "key2": "<value>"}, "raw": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getAccountBalances:
+    "":
+      parameters:
+        path:
+          accountId: "XXX"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"accountId": "<id>", "createdAt": "2023-05-18T12:09:40.505Z", "lastUpdatedAt": "2024-01-30T03:48:20.670Z", "currency": "Argentine Peso", "asset": "<value>", "balance": 832651}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  createBankAccount:
+    speakeasy-default-create-bank-account:
+      requestBody:
+        application/json: {"country": "GB", "connectorID": "<id>", "name": "My account"}
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-03-09T13:07:34.182Z", "country": "Marshall Islands"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listBankAccounts:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+          sort: ["date:asc", "status:desc"]
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2023-03-17T14:45:10.625Z", "country": "Aruba"}, {"id": "<id>", "name": "<value>", "createdAt": "2024-11-02T11:19:01.699Z", "country": "Georgia"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getBankAccount:
+    "":
+      parameters:
+        path:
+          bankAccountId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2023-07-31T19:01:02.281Z", "country": "Austria"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  forwardBankAccount:
+    "":
+      parameters:
+        path:
+          bankAccountId: "XXX"
+      requestBody:
+        application/json: {"connectorID": "<id>"}
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2023-04-10T07:33:20.634Z", "country": "American Samoa"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  updateBankAccountMetadata:
+    "":
+      parameters:
+        path:
+          bankAccountId: "XXX"
+      requestBody:
+        application/json: {}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listAllConnectors:
+    speakeasy-default-list-all-connectors:
+      responses:
+        "200":
+          application/json: {"data": [{"provider": "MONEYCORP", "name": "<value>", "connectorID": "<id>"}, {"provider": "CURRENCY-CLOUD", "name": "<value>", "connectorID": "<id>"}]}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listConfigsAvailableConnectors:
+    speakeasy-default-list-configs-available-connectors:
+      responses:
+        "200":
+          application/json: {"data": {"connector": {"key": {"dataType": "real", "required": false}}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  installConnector:
+    speakeasy-default-install-connector:
+      parameters:
+        path:
+          connector: "ATLAR"
+      requestBody:
+        application/json: {"name": "My Wise Account", "provider": "Wise", "apiKey": "XXX", "pollingPeriod": "60s"}
+      responses:
+        "201":
+          application/json: {"data": {"connectorID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  uninstallConnector:
+    speakeasy-default-uninstall-connector:
+      parameters:
+        path:
+          connector: "MODULR"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  uninstallConnectorV1:
+    "":
+      parameters:
+        path:
+          connector: "GENERIC"
+          connectorId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  readConnectorConfig:
+    speakeasy-default-read-connector-config:
+      parameters:
+        path:
+          connector: "GENERIC"
+      responses:
+        "200":
+          application/json: {"data": {"name": "My Atlar Account", "provider": "Atlar", "baseUrl": "https://api.example.com", "pollingPeriod": "60s", "transferInitiationStatusPollingPeriod": "60s", "accessKey": "XXX", "secret": "XXX", "pageSize": 50}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  updateConnectorConfigV1:
+    "":
+      parameters:
+        path:
+          connector: "ADYEN"
+          connectorId: "XXX"
+      requestBody:
+        application/json: {"name": "My Stripe Account", "provider": "Stripe", "pollingPeriod": "120s", "apiKey": "XXX", "pageSize": 10}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  readConnectorConfigV1:
+    "":
+      parameters:
+        path:
+          connector: "CURRENCY-CLOUD"
+          connectorId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"name": "My Modulr Account", "provider": "Modulr", "apiKey": "XXX", "apiSecret": "XXX", "endpoint": "XXX", "pollingPeriod": "120s"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  resetConnector:
+    speakeasy-default-reset-connector:
+      parameters:
+        path:
+          connector: "ATLAR"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  resetConnectorV1:
+    "":
+      parameters:
+        path:
+          connector: "GENERIC"
+          connectorId: "XXX"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listConnectorTasks:
+    "":
+      parameters:
+        path:
+          connector: "MODULR"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "6943abad-61f7-4aa0-9d99-1cf9266dd481", "connectorID": "<id>", "createdAt": "2025-07-04T01:56:37.650Z", "updatedAt": "2024-10-08T13:20:53.465Z", "status": "STOPPED", "descriptor": {}}, {"id": "3f678351-bc60-40cf-93ef-fe2c5cad006d", "connectorID": "<id>", "createdAt": "2025-12-26T02:29:47.666Z", "updatedAt": "2025-07-09T19:34:39.545Z", "status": "ACTIVE", "descriptor": {}}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  listConnectorTasksV1:
+    "":
+      parameters:
+        path:
+          connector: "BANKING-CIRCLE"
+          connectorId: "XXX"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "8119bf1d-77f0-4d7a-995f-6d1de55906fa", "connectorID": "<id>", "createdAt": "2023-05-12T10:18:09.979Z", "updatedAt": "2024-03-20T09:33:37.490Z", "status": "PENDING", "descriptor": {}}, {"id": "a636e772-b1d5-43e6-ae1a-0f8d94fbd4d0", "connectorID": "<id>", "createdAt": "2025-05-01T19:24:21.069Z", "updatedAt": "2023-07-22T00:43:14.965Z", "status": "TERMINATED", "descriptor": {}}, {"id": "c3d5edc7-f3fc-4d2b-a143-091094b0590a", "connectorID": "<id>", "createdAt": "2025-01-14T12:09:57.416Z", "updatedAt": "2024-06-23T13:40:46.786Z", "status": "PENDING", "descriptor": {}}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getConnectorTask:
+    "":
+      parameters:
+        path:
+          connector: "ADYEN"
+          taskId: "task1"
+      responses:
+        "200":
+          application/json: {"data": {"id": "b8d4a71b-a457-4542-9afd-b17eed3b13ec", "connectorID": "<id>", "createdAt": "2024-02-23T14:24:02.658Z", "updatedAt": "2023-08-01T16:40:57.832Z", "status": "TERMINATED", "descriptor": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getConnectorTaskV1:
+    "":
+      parameters:
+        path:
+          connector: "BANKING-CIRCLE"
+          connectorId: "XXX"
+          taskId: "task1"
+      responses:
+        "200":
+          application/json: {"data": {"id": "2592c3a8-ba28-46c9-923f-e1c798f795cd", "connectorID": "<id>", "createdAt": "2023-10-03T13:49:03.180Z", "updatedAt": "2023-05-07T01:38:27.888Z", "status": "FAILED", "descriptor": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  connectorsTransfer:
+    speakeasy-default-connectors-transfer:
+      parameters:
+        path:
+          connector: "BANKING-CIRCLE"
+      requestBody:
+        application/json: {"amount": 100, "asset": "USD", "destination": "acct_1Gqj58KZcSIg2N2q", "source": "acct_1Gqj58KZcSIg2N2q"}
+      responses:
+        "200":
+          application/json: {}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3CreateAccount:
+    speakeasy-default-v3-create-account:
+      responses:
+        "201":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-08-09T11:34:36.410Z", "type": "UNKNOWN", "raw": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListAccounts:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetAccount:
+    speakeasy-default-v3-get-account:
+      parameters:
+        path:
+          accountID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-06-03T07:35:25.500Z", "type": "INTERNAL", "raw": {}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetAccountBalances:
+    "":
+      parameters:
+        path:
+          accountID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"accountID": "<id>", "createdAt": "2024-03-15T19:53:02.609Z", "lastUpdatedAt": "2023-07-10T00:38:07.826Z", "asset": "<value>", "balance": 832204}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3CreateBankAccount:
+    speakeasy-default-v3-create-bank-account:
+      responses:
+        "201":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListBankAccounts:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "createdAt": "2023-04-07T16:35:38.005Z", "name": "<value>"}, {"id": "<id>", "createdAt": "2024-07-11T05:58:56.792Z", "name": "<value>"}, {"id": "<id>", "createdAt": "2025-10-15T15:52:02.711Z", "name": "<value>"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetBankAccount:
+    speakeasy-default-v3-get-bank-account:
+      parameters:
+        path:
+          bankAccountID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "createdAt": "2023-11-05T20:09:51.675Z", "name": "<value>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3UpdateBankAccountMetadata:
+    speakeasy-default-v3-update-bank-account-metadata:
+      parameters:
+        path:
+          bankAccountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ForwardBankAccount:
+    speakeasy-default-v3-forward-bank-account:
+      parameters:
+        path:
+          bankAccountID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListConnectors:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "reference": "<value>", "name": "<value>", "createdAt": "2025-09-02T22:23:44.264Z", "provider": "<value>", "scheduledForDeletion": false, "config": {}}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3InstallConnector:
+    speakeasy-default-v3-install-connector:
+      parameters:
+        path:
+          connector: "<value>"
+      responses:
+        "202":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListConnectorConfigs:
+    speakeasy-default-v3-list-connector-configs:
+      responses:
+        "200":
+          application/json: {"data": {"connector": {"key": {"dataType": "set", "required": false}}}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3UninstallConnector:
+    speakeasy-default-v3-uninstall-connector:
+      parameters:
+        path:
+          connectorID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetConnectorConfig:
+    speakeasy-default-v3-get-connector-config:
+      parameters:
+        path:
+          connectorID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"apiKey": "<value>", "apiSecret": "<value>", "endpoint": "<value>", "name": "<value>", "pageSize": "25", "pollingPeriod": "2m", "provider": "Modulr"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ResetConnector:
+    speakeasy-default-v3-reset-connector:
+      parameters:
+        path:
+          connectorID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListConnectorSchedules:
+    "":
+      parameters:
+        path:
+          connectorID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "createdAt": "2023-12-07T01:38:17.309Z"}, {"id": "<id>", "connectorID": "<value>", "createdAt": "2023-11-04T20:51:22.049Z"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetConnectorSchedule:
+    speakeasy-default-v3-get-connector-schedule:
+      parameters:
+        path:
+          connectorID: "<id>"
+          scheduleID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "createdAt": "2023-12-11T20:45:37.151Z"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListConnectorScheduleInstances:
+    "":
+      parameters:
+        path:
+          connectorID: "<id>"
+          scheduleID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2024-02-15T21:59:37.501Z", "updatedAt": "2025-08-17T16:51:51.108Z", "terminated": false}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-09-07T21:29:03.593Z", "updatedAt": "2024-02-15T21:59:37.501Z", "terminated": true}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-02-18T04:47:10.180Z", "updatedAt": "2024-08-01T04:53:30.171Z", "terminated": false}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3CreatePayment:
+    speakeasy-default-v3-create-payment:
+      responses:
+        "201":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-10-04T19:11:41.956Z", "type": "TRANSFER", "initialAmount": 581056, "amount": 444061, "asset": "<value>", "scheme": "<value>", "status": "PENDING"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPayments:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-09-09T20:02:23.902Z", "type": "TRANSFER", "initialAmount": 182258, "amount": 160875, "asset": "<value>", "scheme": "<value>", "status": "REFUNDED"}, {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-11-09T08:15:48.445Z", "type": "TRANSFER", "initialAmount": 529755, "amount": 403026, "asset": "<value>", "scheme": "<value>", "status": "OTHER"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPayment:
+    speakeasy-default-v3-get-payment:
+      parameters:
+        path:
+          paymentID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-05-03T06:04:38.400Z", "type": "TRANSFER", "initialAmount": 485409, "amount": 556194, "asset": "<value>", "scheme": "<value>", "status": "DISPUTE"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3UpdatePaymentMetadata:
+    speakeasy-default-v3-update-payment-metadata:
+      parameters:
+        path:
+          paymentID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3InitiatePayment:
+    speakeasy-default-v3-initiate-payment:
+      parameters:
+        query:
+          noValidation: false
+      responses:
+        "202":
+          application/json: {"data": {}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentInitiations:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-08-12T00:13:06.404Z", "scheduledAt": "2024-03-08T03:55:10.091Z", "description": "inside pessimistic small adrenalin reach measly boohoo eek soap amid", "type": "PAYOUT", "amount": 56798, "asset": "<value>", "status": "REJECTED"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePaymentInitiation:
+    speakeasy-default-v3-delete-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPaymentInitiation:
+    speakeasy-default-v3-get-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2023-02-16T17:13:29.437Z", "scheduledAt": "2025-07-18T19:40:16.233Z", "description": "off of between vacantly though instead gazebo", "type": "PAYOUT", "amount": 801138, "asset": "<value>", "status": "FAILED"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3RetryPaymentInitiation:
+    speakeasy-default-v3-retry-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ApprovePaymentInitiation:
+    speakeasy-default-v3-approve-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3RejectPaymentInitiation:
+    speakeasy-default-v3-reject-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ReversePaymentInitiation:
+    speakeasy-default-v3-reverse-payment-initiation:
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentInitiationAdjustments:
+    "":
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "createdAt": "2023-08-26T07:31:32.403Z", "status": "SCHEDULED_FOR_PROCESSING"}, {"id": "<id>", "createdAt": "2025-06-06T23:22:17.845Z", "status": "PROCESSED"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentInitiationRelatedPayments:
+    "":
+      parameters:
+        path:
+          paymentInitiationID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-09-23T09:42:34.012Z", "type": "TRANSFER", "initialAmount": 927729, "amount": 913421, "asset": "<value>", "scheme": "<value>", "status": "REFUND_REVERSED"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3CreatePool:
+    speakeasy-default-v3-create-pool:
+      responses:
+        "201":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPools:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "poolAccounts": ["<value>"]}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPool:
+    speakeasy-default-v3-get-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "poolAccounts": ["<value>"]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePool:
+    speakeasy-default-v3-delete-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPoolBalances:
+    speakeasy-default-v3-get-pool-balances:
+      parameters:
+        path:
+          poolID: "<id>"
+        query: {}
+      responses:
+        "200":
+          application/json: {"data": [{"asset": "<value>", "amount": 857230}]}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3AddAccountToPool:
+    speakeasy-default-v3-add-account-to-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+          accountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3RemoveAccountFromPool:
+    speakeasy-default-v3-remove-account-from-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+          accountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetTask:
+    speakeasy-default-v3-get-task:
+      parameters:
+        path:
+          taskID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "status": "FAILED", "createdAt": "2025-09-07T00:11:01.351Z", "updatedAt": "2023-03-17T17:53:01.920Z"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  updateTransferInitiationStatus:
+    "":
+      parameters:
+        path:
+          transferId: "XXX"
+      requestBody:
+        application/json: {"status": "VALIDATED"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+examplesVersion: 1.0.0
+generatedTests: {}

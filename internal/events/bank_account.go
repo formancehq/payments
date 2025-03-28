@@ -26,8 +26,10 @@ type BankAccountRelatedAccountsPayload struct {
 	Provider    string    `json:"provider"`
 }
 
-func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publish.EventMessage {
-	bankAccount.Obfuscate()
+func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) (publish.EventMessage, error) {
+	if err := bankAccount.Obfuscate(); err != nil {
+		return publish.EventMessage{}, err
+	}
 
 	payload := BankAccountMessagePayload{
 		ID:        bankAccount.ID.String(),
@@ -69,5 +71,5 @@ func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publis
 		Version:        events.EventVersion,
 		Type:           events.EventTypeSavedBankAccount,
 		Payload:        payload,
-	}
+	}, nil
 }

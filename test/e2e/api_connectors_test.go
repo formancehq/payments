@@ -15,7 +15,8 @@ import (
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
-	. "github.com/formancehq/payments/pkg/testserver"
+	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -29,8 +30,8 @@ var _ = Context("Payments API Connectors", func() {
 		ctx = logging.TestingContext()
 	)
 
-	app := NewTestServer(func() Configuration {
-		return Configuration{
+	app := testserver.NewTestServer(func() testserver.Configuration {
+		return testserver.Configuration{
 			Stack:                 stack,
 			PostgresConfiguration: db.GetValue().ConnectionOptions(),
 			TemporalNamespace:     temporalServer.GetValue().DefaultNamespace(),
@@ -53,12 +54,13 @@ var _ = Context("Payments API Connectors", func() {
 			ver := 3
 			var connectorRes struct{ Data string }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			cl := temporalServer.GetValue().DefaultClient()
 			req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
 			workflowRes, err := cl.ListOpenWorkflow(ctx, req)
+			Expect(err).To(BeNil())
 			for _, info := range workflowRes.Executions {
 				if strings.HasPrefix(info.Execution.WorkflowId, "run-tasks-") {
 					workflowID = info.Execution.WorkflowId
@@ -68,7 +70,7 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
 
 			getRes := struct{ Data ConnectorConf }{}
-			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data, &getRes)
+			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(connectorConf))
 		})
@@ -77,11 +79,11 @@ var _ = Context("Payments API Connectors", func() {
 			ver := 2
 			var connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			getRes := struct{ Data ConnectorConf }{}
-			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, &getRes)
+			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(connectorConf))
 		})
@@ -90,7 +92,7 @@ var _ = Context("Payments API Connectors", func() {
 			func(ver int, dirVal string, expectedErr string) {
 				connectorConf := newConnectorConfigurationFn()(id)
 				connectorConf.Directory = dirVal
-				err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
+				err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
 				fmt.Println("TOTO", err.Error(), expectedErr)
@@ -118,18 +120,18 @@ var _ = Context("Payments API Connectors", func() {
 
 			connectorConf := newConnectorConfigurationFn()(id)
 			var connectorRes struct{ Data v2.ConnectorInstallResponse }
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 			connectorID = connectorRes.Data.ConnectorID
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 			config := newConnectorConfigurationFn()(id)
 			config.PollingPeriod = "2m"
-			err = ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
 			Expect(err).To(BeNil())
 
 			getRes := struct{ Data ConnectorConf }{}
-			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
+			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(config))
 		})
@@ -139,18 +141,18 @@ var _ = Context("Payments API Connectors", func() {
 			ver := 3
 
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 			connectorID = connectorRes.Data
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 			config := newConnectorConfigurationFn()(id)
 			config.PollingPeriod = "2m"
-			err = ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
 			Expect(err).To(BeNil())
 
 			getRes := struct{ Data ConnectorConf }{}
-			err = ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
+			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
 			Expect(err).To(BeNil())
 			Expect(getRes.Data).To(Equal(config))
 		})
@@ -158,13 +160,13 @@ var _ = Context("Payments API Connectors", func() {
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
 			func(ver int, dirValue string, expectedErr string) {
 				connectorConf := newConnectorConfigurationFn()(id)
-				err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
 				connectorID = connectorRes.Data
 				blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 				connectorConf.Directory = dirValue
-				err = ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &connectorConf)
+				err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &connectorConf)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
 				Expect(err.Error()).To(ContainSubstring(expectedErr))
@@ -186,31 +188,31 @@ var _ = Context("Payments API Connectors", func() {
 			ver := 3
 			var connectorRes struct{ Data string }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			delRes := struct {
-				Data v3.ConnectorUninstallResponse `json:"data"`
-			}{}
-			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data, &delRes)
+			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorRes.Data)
+			Expect(err).To(BeNil())
+
+			delRes := resp.V3UninstallConnectorResponse
 			Expect(err).To(BeNil())
 			Expect(delRes.Data).NotTo(BeNil())
 			taskID, err := models.TaskIDFromString(delRes.Data.TaskID)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("uninstall"))
-			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			taskPoller := testserver.TaskPoller(ctx, GinkgoT(), app.GetValue())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
-			Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
 		It("should be ok with v2", func() {
 			ver := 2
 			var connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			err = ConnectorUninstall(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
+			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorRes.Data.ConnectorID)
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "uninstall")
 		})
@@ -228,31 +230,31 @@ var _ = Context("Payments API Connectors", func() {
 			ver := 3
 			var connectorRes struct{ Data string }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			resetRes := struct {
 				Data v3.ConnectorResetResponse `json:"data"`
 			}{}
-			err = ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data, &resetRes)
+			err = testserver.ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data, &resetRes)
 			Expect(err).To(BeNil())
 			Expect(resetRes.Data).NotTo(BeNil())
 			taskID, err := models.TaskIDFromString(resetRes.Data.TaskID)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("reset"))
-			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
+			taskPoller := testserver.TaskPoller(ctx, GinkgoT(), app.GetValue())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "reset")
-			Eventually(taskPoller(resetRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(resetRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
 		It("should be ok with v2", func() {
 			ver := 2
 			var connectorRes struct{ Data v2.ConnectorInstallResponse }
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
-			err = ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
+			err = testserver.ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "reset")
 		})
@@ -271,7 +273,7 @@ var _ = Context("Payments API Connectors", func() {
 			id = uuid.New()
 
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
@@ -280,7 +282,7 @@ var _ = Context("Payments API Connectors", func() {
 			listRes := struct {
 				Cursor bunpaginate.Cursor[models.Schedule]
 			}{}
-			err = ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &listRes)
+			err = testserver.ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &listRes)
 			Expect(err).To(BeNil())
 			Expect(len(listRes.Cursor.Data) > 0).To(BeTrue())
 			expectedSchedule = listRes.Cursor.Data[0]
@@ -290,7 +292,7 @@ var _ = Context("Payments API Connectors", func() {
 			res := struct {
 				Data models.Schedule
 			}{}
-			err := GetConnectorSchedule(ctx, app.GetValue(), ver, connectorRes.Data, expectedSchedule.ID, &res)
+			err := testserver.GetConnectorSchedule(ctx, app.GetValue(), ver, connectorRes.Data, expectedSchedule.ID, &res)
 			Expect(err).To(BeNil())
 			schedule := res.Data
 			Expect(schedule).NotTo(BeNil())
@@ -318,7 +320,7 @@ var _ = Context("Payments API Connectors", func() {
 			id = uuid.New()
 
 			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
 			Expect(err).To(BeNil())
 
 			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
@@ -344,7 +346,7 @@ var _ = Context("Payments API Connectors", func() {
 			res := struct {
 				Cursor bunpaginate.Cursor[models.Schedule]
 			}{}
-			err = ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &res)
+			err = testserver.ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &res)
 			Expect(err).To(BeNil())
 			Expect(len(res.Cursor.Data) > 0).To(BeTrue())
 			for _, schedule := range res.Cursor.Data {
@@ -366,7 +368,7 @@ var _ = Context("Payments API Connectors", func() {
 
 		DescribeTable("should respond with detailed config json for each connector",
 			func(ver int) {
-				err := ConnectorConfigs(ctx, app.GetValue(), ver, &res)
+				err := testserver.ConnectorConfigs(ctx, app.GetValue(), ver, &res)
 				Expect(err).To(BeNil())
 				Expect(len(res.Data)).To(BeNumerically(">", 1))
 				Expect(res.Data["dummypay"]).NotTo(BeNil())
@@ -410,6 +412,7 @@ func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searc
 	cl := temporalServer.GetValue().DefaultClient()
 	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
 	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
+	Expect(err).To(BeNil())
 	for _, info := range workflowRes.Executions {
 		if (strings.Contains(info.Execution.WorkflowId, connectorID.Reference.String()) ||
 			strings.Contains(info.Execution.WorkflowId, connectorID.String())) &&

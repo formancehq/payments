@@ -45,12 +45,14 @@ var _ = Describe("ClientWrapper", func() {
 			statusCode, err := strconv.Atoi(code)
 			Expect(err).To(BeNil())
 			if statusCode == http.StatusOK {
-				w.Write([]byte(`{"id":"someid"}`))
+				_, err := w.Write([]byte(`{"id":"someid"}`))
+				Expect(err).To(BeNil())
 				return
 			}
 
 			w.WriteHeader(statusCode)
-			w.Write([]byte(`{"code":"err123"}`))
+			_, err = w.Write([]byte(`{"code":"err123"}`))
+			Expect(err).To(BeNil())
 		}))
 	})
 	AfterEach(func() {

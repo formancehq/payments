@@ -1,4 +1,5 @@
 ignore:
+  - "pkg/client"
   - "pkg/events"
   - "pkg/testserver"
   - "test"

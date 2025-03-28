@@ -32,14 +32,6 @@ func ConnectorReset(ctx context.Context, srv *Server, ver int, id string, res an
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), nil, res)
 }
 
-func ConnectorUninstall(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	path := "connectors/" + id
-	if ver == 2 {
-		path = "connectors/dummypay/" + id
-	}
-	return srv.Client().Do(ctx, http.MethodDelete, pathPrefix(ver, path), nil, res)
-}
-
 func ConnectorConfigUpdate(ctx context.Context, srv *Server, ver int, id string, reqBody any) error {
 	path := "connectors/" + id + "/config"
 	method := http.MethodPatch

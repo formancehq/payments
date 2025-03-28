@@ -78,7 +78,7 @@ func (w Workflow) terminateInstance(
 func getPaymentScheduleID(
 	info *workflow.Info,
 ) (string, error) {
-	attributes := info.SearchAttributes.GetIndexedFields()
+	attributes := info.SearchAttributes.GetIndexedFields() //nolint:staticcheck
 	if attributes == nil {
 		return "", errNotFromSchedule
 	}

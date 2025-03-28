@@ -3,6 +3,7 @@ package engine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"sync"
 
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
@@ -66,11 +67,13 @@ func NewWorkerPool(
 }
 
 func (w *WorkerPool) OnStart(ctx context.Context) error {
-	w.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
+	if err := w.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
 		storage.ConnectorChangesInsert: w.onInsertPlugin,
 		storage.ConnectorChangesUpdate: w.onUpdatePlugin,
 		storage.ConnectorChangesDelete: w.onDeletePlugin,
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to start worker pool: %w", err)
+	}
 
 	query := storage.NewListConnectorsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).

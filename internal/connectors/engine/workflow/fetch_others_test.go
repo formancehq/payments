@@ -88,7 +88,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Success() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -99,7 +100,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Success() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -149,7 +150,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_HasMoreLoop_Success() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -160,7 +162,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_HasMoreLoop_Success() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -169,7 +171,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesStore_Error() {
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
 	)
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -180,7 +183,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesStore_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.Error(err)
 }
 
@@ -196,7 +199,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesGet_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -207,7 +211,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesGet_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -234,7 +238,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_PluginFetchNextOthers_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -245,7 +250,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_PluginFetchNextOthers_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -278,7 +283,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Run_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -289,7 +295,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_Run_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -323,7 +329,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesStore_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -334,7 +341,7 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageStatesStore_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -366,7 +373,8 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesUpdate_Error() {
 		return temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test"))
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextOthers, FetchNextOthers{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -377,6 +385,6 @@ func (s *UnitTestSuite) Test_FetchNextOthers_StorageInstancesUpdate_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.Error(err)
 }

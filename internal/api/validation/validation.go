@@ -32,7 +32,7 @@ func NewValidator() *Validator {
 	translator, _ := uni.GetTranslator(defaultLocale.Locale())
 
 	validate := validator.New(validator.WithRequiredStructEnabled())
-	en_translations.RegisterDefaultTranslations(validate, translator)
+	en_translations.RegisterDefaultTranslations(validate, translator) //nolint:errcheck
 
 	registerCustomChecker("accountID", IsAccountID, "", validate, translator)
 	registerCustomChecker("accountType", IsAccountType, "", validate, translator)
