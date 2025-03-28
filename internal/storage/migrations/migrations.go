@@ -22,6 +22,9 @@ var migrateTransferInitiationsFromV2 string
 //go:embed 9-migrate-pools-from-v2.sql
 var migratePoolsFromV2 string
 
+//go:embed 13-connector-providers-lowercase.sql
+var connectorProvidersLower string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -174,6 +177,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				err := AddPaymentInitiationAdjustmentsIndexes(ctx, db)
 				logger.WithField("error", err).Info("finished add payment_initiation_adjustments index migration")
 				return err
+			},
+		},
+		migrations.Migration{
+			Name: "connector providers lowercase",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running connector providers lowercase migration...")
+					_, err := tx.ExecContext(ctx, connectorProvidersLower)
+					logger.WithField("error", err).Info("finished connector providers lowercase migration")
+					return err
+				})
 			},
 		},
 	)

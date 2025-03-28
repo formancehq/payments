@@ -292,6 +292,35 @@ func TestConnectorsList(t *testing.T) {
 		require.Equal(t, defaultConnector, cursor.Data[1])
 	})
 
+	t.Run("list connectors by provider uppercase", func(t *testing.T) {
+		q := NewListConnectorsQuery(
+			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("provider", "DEFAULT")),
+		)
+
+		cursor, err := store.ConnectorsList(ctx, q)
+		require.NoError(t, err)
+		require.Len(t, cursor.Data, 2)
+		require.False(t, cursor.HasMore)
+		require.Empty(t, cursor.Next)
+		require.Empty(t, cursor.Previous)
+		require.Equal(t, defaultConnector3, cursor.Data[0])
+		require.Equal(t, defaultConnector, cursor.Data[1])
+	})
+
+	t.Run("list connectors by provider with wrong type", func(t *testing.T) {
+		q := NewListConnectorsQuery(
+			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).
+				WithPageSize(15).
+				WithQueryBuilder(query.Match("provider", 1)),
+		)
+
+		cursor, err := store.ConnectorsList(ctx, q)
+		require.Error(t, err)
+		require.Nil(t, cursor)
+	})
+
 	t.Run("list connectors by unknown provider", func(t *testing.T) {
 		q := NewListConnectorsQuery(
 			bunpaginate.NewPaginatedQueryOptions(ConnectorQuery{}).

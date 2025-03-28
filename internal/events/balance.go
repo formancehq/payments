@@ -23,7 +23,7 @@ func (e Events) NewEventSavedBalances(balance models.Balance) publish.EventMessa
 	payload := BalanceMessagePayload{
 		AccountID:     balance.AccountID.String(),
 		ConnectorID:   balance.AccountID.ConnectorID.String(),
-		Provider:      balance.AccountID.ConnectorID.Provider,
+		Provider:      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
 		CreatedAt:     balance.CreatedAt,
 		LastUpdatedAt: balance.LastUpdatedAt,
 		Asset:         balance.Asset,

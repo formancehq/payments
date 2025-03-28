@@ -26,7 +26,7 @@ func (e Events) NewEventSavedAccounts(account models.Account) publish.EventMessa
 	payload := AccountMessagePayload{
 		ID:          account.ID.String(),
 		ConnectorID: account.ConnectorID.String(),
-		Provider:    account.ConnectorID.Provider,
+		Provider:    models.ToV3Provider(account.ConnectorID.Provider),
 		CreatedAt:   account.CreatedAt,
 		Reference:   account.Reference,
 		Type:        string(account.Type),
