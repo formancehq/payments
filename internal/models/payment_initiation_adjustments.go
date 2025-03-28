@@ -27,6 +27,10 @@ type PaymentInitiationAdjustment struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
+func (p *PaymentInitiationAdjustment) IdempotencyKey() string {
+	return IdempotencyKey(p.ID)
+}
+
 func (pia PaymentInitiationAdjustment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID        string                            `json:"id"`
