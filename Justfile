@@ -3,7 +3,7 @@ set dotenv-load
 default:
   @just --list
 
-pre-commit: generate tidy lint
+pre-commit: tidy generate lint
 pc: pre-commit
 
 lint:

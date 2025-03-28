@@ -102,8 +102,6 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_Success() {
 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
 	s.NoError(err)
-	err = s.env.GetWorkflowError()
-	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextExternalAccounts, FetchNextExternalAccounts{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
