@@ -26,22 +26,24 @@ type paymentMessagePayload struct {
 	Links                []api.Link      `json:"links"`
 	RawData              json.RawMessage `json:"rawData"`
 
-	Amount   *big.Int          `json:"amount"`
-	Metadata map[string]string `json:"metadata"`
+	InitialAmount *big.Int          `json:"initialAmount"`
+	Amount        *big.Int          `json:"amount"`
+	Metadata      map[string]string `json:"metadata"`
 }
 
 func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.PaymentAdjustment) publish.EventMessage {
 	payload := paymentMessagePayload{
-		ID:          payment.ID.String(),
-		Reference:   payment.Reference,
-		Type:        payment.Type.String(),
-		Status:      payment.Status.String(),
-		Amount:      payment.Amount,
-		Scheme:      payment.Scheme.String(),
-		Asset:       payment.Asset,
-		CreatedAt:   payment.CreatedAt,
-		ConnectorID: payment.ConnectorID.String(),
-		Provider:    models.ToV3Provider(payment.ConnectorID.Provider),
+		ID:            payment.ID.String(),
+		Reference:     payment.Reference,
+		Type:          payment.Type.String(),
+		Status:        payment.Status.String(),
+		InitialAmount: payment.InitialAmount,
+		Amount:        payment.Amount,
+		Scheme:        payment.Scheme.String(),
+		Asset:         payment.Asset,
+		CreatedAt:     payment.CreatedAt,
+		ConnectorID:   payment.ConnectorID.String(),
+		Provider:      models.ToV3Provider(payment.ConnectorID.Provider),
 		SourceAccountID: func() string {
 			if payment.SourceAccountID == nil {
 				return ""
@@ -61,14 +63,14 @@ func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.
 	if payment.SourceAccountID != nil {
 		payload.Links = append(payload.Links, api.Link{
 			Name: "source_account",
-			URI:  e.stackURL + "/api/payments/accounts/" + payment.SourceAccountID.String(),
+			URI:  e.stackURL + "/api/payments/v3/accounts/" + payment.SourceAccountID.String(),
 		})
 	}
 
 	if payment.DestinationAccountID != nil {
 		payload.Links = append(payload.Links, api.Link{
 			Name: "destination_account",
-			URI:  e.stackURL + "/api/payments/accounts/" + payment.DestinationAccountID.String(),
+			URI:  e.stackURL + "/api/payments/v3/accounts/" + payment.DestinationAccountID.String(),
 		})
 	}
 

@@ -61,6 +61,40 @@ var (
 			account.ID,
 		},
 	}
+
+	paymentInitiation = models.PaymentInitiation{
+		ID: models.PaymentInitiationID{
+			Reference:   "test",
+			ConnectorID: connectorID,
+		},
+		ConnectorID: connectorID,
+		Reference:   "test",
+		Description: "test",
+		Type:        models.PAYMENT_INITIATION_TYPE_PAYOUT,
+		Amount:      big.NewInt(100),
+		Asset:       "USD/2",
+	}
+
+	paymentInitiationAdjustment = models.PaymentInitiationAdjustment{
+		ID: models.PaymentInitiationAdjustmentID{
+			PaymentInitiationID: models.PaymentInitiationID{
+				Reference:   "test",
+				ConnectorID: connectorID,
+			},
+			Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+		},
+		Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+		Amount: big.NewInt(100),
+		Asset:  pointer.For("USD/2"),
+	}
+
+	paymentInitiationRelatedPayment = models.PaymentInitiationRelatedPayments{
+		PaymentInitiationID: models.PaymentInitiationID{
+			Reference:   "test",
+			ConnectorID: connectorID,
+		},
+		PaymentID: payment.ID,
+	}
 )
 
 func (s *UnitTestSuite) Test_RunSendEvents_EmptyInput_Success() {
@@ -423,6 +457,116 @@ func (s *UnitTestSuite) Test_RunSendEvents_Pool_Error() {
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PoolsDeletion: &pool.ID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Success() {
+	paymentInitiation.CreatedAt = s.env.Now()
+	paymentInitiation.ScheduledAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiation.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiation: &paymentInitiation,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Error() {
+	paymentInitiation.CreatedAt = s.env.Now()
+	paymentInitiation.ScheduledAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiation.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiation: &paymentInitiation,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Success() {
+	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiationAdjustment.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationAdjustmentActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiationAdjustment: &paymentInitiationAdjustment,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Error() {
+	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiationAdjustment.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationAdjustmentActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiationAdjustment: &paymentInitiationAdjustment,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Success() {
+	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiationRelatedPayment.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationRelatedPaymentActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiationRelatedPayment: &paymentInitiationRelatedPayment,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Error() {
+	paymentInitiationAdjustment.CreatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: paymentInitiationRelatedPayment.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentInitiationRelatedPaymentActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentInitiationRelatedPayment: &paymentInitiationRelatedPayment,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

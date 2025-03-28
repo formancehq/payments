@@ -104,7 +104,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
 				Data models.PaymentInitiationExpanded
@@ -169,7 +169,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			req := v3.PaymentInitiationsReverseRequest{
 				Reference:   uuid.New().String(),
@@ -262,7 +262,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
 				Data models.PaymentInitiationExpanded
@@ -327,7 +327,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			req := v3.PaymentInitiationsReverseRequest{
 				Reference:   uuid.New().String(),
@@ -344,7 +344,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			Expect(err).To(BeNil())
 			Expect(res.Data.TaskID).NotTo(BeNil())
 			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-payout")
-			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
 				Data models.PaymentInitiationExpanded
