@@ -10,10 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
 	v2 "github.com/formancehq/payments/internal/api/v2"
-	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/testserver"
@@ -183,14 +183,11 @@ var _ = Context("Payments API Connectors", func() {
 			id = uuid.New()
 		})
 
-		It("should be ok with v3", func() {
-			ver := 3
-			var connectorRes struct{ Data string }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can be uninstalled with v3 API", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorRes.Data)
+			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorID)
 			Expect(err).To(BeNil())
 
 			delRes := resp.V3UninstallConnectorResponse
@@ -200,20 +197,17 @@ var _ = Context("Payments API Connectors", func() {
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("uninstall"))
 			taskPoller := testserver.TaskPoller(ctx, GinkgoT(), app.GetValue())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "uninstall")
+			blockTillWorkflowComplete(ctx, connectorID, "uninstall")
 			Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
-		It("should be ok with v2", func() {
-			ver := 2
-			var connectorRes struct{ Data v2.ConnectorInstallResponse }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can be uninstalled using v2 API", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorRes.Data.ConnectorID)
+			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorID)
 			Expect(err).To(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "uninstall")
+			blockTillWorkflowComplete(ctx, connectorID, "uninstall")
 		})
 	})
 
@@ -225,37 +219,29 @@ var _ = Context("Payments API Connectors", func() {
 			id = uuid.New()
 		})
 
-		It("should be ok with v3", func() {
-			ver := 3
-			var connectorRes struct{ Data string }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can be reset with v3 API", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			resetRes := struct {
-				Data v3.ConnectorResetResponse `json:"data"`
-			}{}
-			err = testserver.ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data, &resetRes)
+			reset, err := app.GetValue().SDK().Payments.V3.ResetConnector(ctx, connectorID)
 			Expect(err).To(BeNil())
-			Expect(resetRes.Data).NotTo(BeNil())
-			taskID, err := models.TaskIDFromString(resetRes.Data.TaskID)
+			Expect(reset.V3ResetConnectorResponse.Data).NotTo(BeNil())
+			taskID, err := models.TaskIDFromString(reset.V3ResetConnectorResponse.Data)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("reset"))
+
 			taskPoller := testserver.TaskPoller(ctx, GinkgoT(), app.GetValue())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "reset")
-			Eventually(taskPoller(resetRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			blockTillWorkflowComplete(ctx, connectorID, "reset")
+			Eventually(taskPoller(taskID.String())).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 		})
 
-		It("should be ok with v2", func() {
-			ver := 2
-			var connectorRes struct{ Data v2.ConnectorInstallResponse }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can be reset with v2 API", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			err = testserver.ConnectorReset(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, nil)
+			_, err = app.GetValue().SDK().Payments.V1.ResetConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorID)
 			Expect(err).To(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data.ConnectorID, "reset")
+			blockTillWorkflowComplete(ctx, connectorID, "reset")
 		})
 	})
 
@@ -432,6 +418,34 @@ func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searc
 	return workflowID
 }
 
+func installConnector(ctx context.Context, srv *testserver.Server, ref uuid.UUID) (connectorID string, err error) {
+	connectorConf := newConnectorConfigFn()(ref)
+	install, err := srv.SDK().Payments.V3.InstallConnector(ctx, "dummypay", &connectorConf)
+	if err != nil {
+		return "", err
+	}
+	return install.V3InstallConnectorResponse.Data, nil
+}
+
+func newConnectorConfigFn() func(id uuid.UUID) components.V3InstallConnectorRequest {
+	return func(id uuid.UUID) components.V3InstallConnectorRequest {
+		dir, err := os.MkdirTemp("", "dummypay")
+		Expect(err).To(BeNil())
+		GinkgoT().Cleanup(func() {
+			os.RemoveAll(dir)
+		})
+
+		return components.V3InstallConnectorRequest{
+			V3DummypayConfig: &components.V3DummypayConfig{
+				Name:          fmt.Sprintf("connector-%s", id.String()),
+				PollingPeriod: pointer.For("30s"),
+				PageSize:      pointer.For(int64(30)),
+				Provider:      pointer.For("DummyPay"),
+				Directory:     dir,
+			},
+		}
+	}
+}
 func newConnectorConfigurationFn() func(id uuid.UUID) ConnectorConf {
 	return func(id uuid.UUID) ConnectorConf {
 		dir, err := os.MkdirTemp("", "dummypay")
