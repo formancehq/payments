@@ -159,7 +159,6 @@ func (w Workflow) runSendEvents(
 			sendEvents.PaymentInitiation.IdempotencyKey(),
 			&sendEvents.PaymentInitiation.ConnectorID,
 			func(ctx workflow.Context) error {
-				workflow.GetLogger(ctx).Info("TATA")
 				return activities.EventsSendPaymentInitiation(
 					infiniteRetryContext(ctx),
 					*sendEvents.PaymentInitiation,

@@ -32,13 +32,14 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		sendToPSP           bool
-		pi                  models.PaymentInitiation
-		engineErr           error
-		expectedPIError     error
-		expectedEngineError error
-		typedError          bool
+		name                          string
+		sendToPSP                     bool
+		pi                            models.PaymentInitiation
+		engineCreatePaymentInitiation error
+		engineErr                     error
+		expectedPIError               error
+		expectedEngineError           error
+		typedError                    bool
 	}{
 		{
 			name:      "success without scheduled at and transfer",
@@ -70,11 +71,24 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 			engineErr:           fmt.Errorf("error"),
 			expectedEngineError: fmt.Errorf("error"),
 		},
+		{
+			name:                          "not found error",
+			pi:                            piWithoutScheduledAt,
+			engineCreatePaymentInitiation: engine.ErrNotFound,
+			expectedEngineError:           ErrNotFound,
+			typedError:                    true,
+		},
+		{
+			name:                          "other error",
+			pi:                            piWithoutScheduledAt,
+			engineCreatePaymentInitiation: fmt.Errorf("error"),
+			expectedEngineError:           fmt.Errorf("error"),
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().CreateFormancePaymentInitiation(gomock.Any(), test.pi, gomock.Any()).Return(nil)
+			eng.EXPECT().CreateFormancePaymentInitiation(gomock.Any(), test.pi, gomock.Any()).Return(test.engineCreatePaymentInitiation)
 			if test.sendToPSP {
 				switch test.pi.Type {
 				case models.PAYMENT_INITIATION_TYPE_TRANSFER:

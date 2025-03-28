@@ -21,7 +21,7 @@ type paymentInitiationMessagePayload struct {
 	Type                 string            `json:"type"`
 	SourceAccountID      string            `json:"sourceAccountId,omitempty"`
 	DestinationAccountID string            `json:"destinationAccountId,omitempty"`
-	Amound               *big.Int          `json:"amount"`
+	Amount               *big.Int          `json:"amount"`
 	Asset                string            `json:"asset"`
 	Metadata             map[string]string `json:"metadata"`
 }
@@ -53,7 +53,7 @@ func (e Events) NewEventSavedPaymentInitiation(pi models.PaymentInitiation) publ
 		Type:                 pi.Type.String(),
 		SourceAccountID:      pi.SourceAccountID.String(),
 		DestinationAccountID: pi.DestinationAccountID.String(),
-		Amound:               pi.Amount,
+		Amount:               pi.Amount,
 		Asset:                pi.Asset,
 		Metadata:             pi.Metadata,
 	}
