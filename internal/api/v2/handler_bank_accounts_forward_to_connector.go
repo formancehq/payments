@@ -98,7 +98,7 @@ func bankAccountsForwardToConnector(backend backend.Backend, validator *validati
 				CreatedAt:   relatedAccount.CreatedAt,
 				AccountID:   relatedAccount.AccountID.String(),
 				ConnectorID: relatedAccount.AccountID.ConnectorID.String(),
-				Provider:    relatedAccount.AccountID.ConnectorID.Provider,
+				Provider:    toV2Provider(relatedAccount.AccountID.ConnectorID.Provider),
 			})
 		}
 

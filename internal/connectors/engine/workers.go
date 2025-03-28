@@ -122,7 +122,7 @@ func (w *WorkerPool) onStartPlugin(_ context.Context, connector models.Connector
 		return err
 	}
 
-	err := w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false)
+	err := w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %w", err)
 		// We don't want to crash the pod if the plugin registration fails,
@@ -153,7 +153,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if err := w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false); err != nil {
+	if err := w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
 		return err
 	}
 
@@ -194,7 +194,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	err = w.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, true)
+	err = w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
 		return err

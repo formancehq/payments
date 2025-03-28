@@ -55,7 +55,7 @@ func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) publis
 		relatedAccount := BankAccountRelatedAccountsPayload{
 			CreatedAt:   relatedAccount.CreatedAt,
 			AccountID:   relatedAccount.AccountID.String(),
-			Provider:    relatedAccount.AccountID.ConnectorID.Provider,
+			Provider:    models.ToV3Provider(relatedAccount.AccountID.ConnectorID.Provider),
 			ConnectorID: relatedAccount.AccountID.ConnectorID.String(),
 		}
 
