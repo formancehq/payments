@@ -65,7 +65,11 @@ func purgeOptions(cmd *cobra.Command) error {
 	if err := app.Start(cmd.Context()); err != nil {
 		return err
 	}
-	defer app.Stop(context.Background())
+	defer func() {
+		if err := app.Stop(context.Background()); err != nil {
+			logger.Errorf("failed to stop purge app: %w", err)
+		}
+	}()
 
 	return purge.clean(cmd.Context(), temporalNamespace, stack)
 }

@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +24,7 @@ func assertExpectedResponse(res *http.Response, expectedStatusCode int, expected
 	defer res.Body.Close()
 	Expect(res.StatusCode).To(Equal(expectedStatusCode))
 
-	data, err := ioutil.ReadAll(res.Body)
+	data, err := io.ReadAll(res.Body)
 	Expect(err).To(BeNil())
 	Expect(string(data)).To(ContainSubstring(expectedBodyString))
 }

@@ -45,6 +45,7 @@ func NewWorker(t T, configuration Configuration, serverID string) *Worker {
 	return worker
 }
 
+//nolint:govet
 func (w *Worker) Start() error {
 	rootCmd := cmd.NewRootCommand()
 	args := Flags("worker", w.id, w.configuration)

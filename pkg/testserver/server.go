@@ -70,6 +70,7 @@ type Server struct {
 	errorChan     chan error
 }
 
+//nolint:govet
 func (s *Server) Start() error {
 	rootCmd := cmd.NewRootCommand()
 	args := Flags("serve", s.id, s.configuration)
