@@ -41,7 +41,7 @@ func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.
 		Asset:       payment.Asset,
 		CreatedAt:   payment.CreatedAt,
 		ConnectorID: payment.ConnectorID.String(),
-		Provider:    payment.ConnectorID.Provider,
+		Provider:    models.ToV3Provider(payment.ConnectorID.Provider),
 		SourceAccountID: func() string {
 			if payment.SourceAccountID == nil {
 				return ""

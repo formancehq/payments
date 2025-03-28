@@ -131,7 +131,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Config:    rawConfig,
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, false)
+	err := e.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -310,15 +310,24 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return errors.Wrap(ErrValidation, err.Error())
 	}
 
-	connector := models.Connector{
-		ID:        connectorID,
-		Name:      config.Name,
-		CreatedAt: time.Now().UTC(),
-		Provider:  connectorID.Provider,
-		Config:    rawConfig,
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		otel.RecordError(span, err)
+		if errors.Is(err, storage.ErrNotFound) {
+			return fmt.Errorf("connector %w", ErrNotFound)
+		}
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Name, config, connector.Config, true)
+	if connector == nil {
+		err := fmt.Errorf("connector %w", ErrNotFound)
+		otel.RecordError(span, err)
+		return err
+	}
+
+	connector.Config = rawConfig
+	connector.Name = config.Name
+
+	err = e.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -327,7 +336,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	if err := e.storage.ConnectorsConfigUpdate(ctx, connector); err != nil {
+	if err := e.storage.ConnectorsConfigUpdate(ctx, *connector); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -338,7 +347,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceAccount")
 	defer span.End()
 
-	capabilities, err := registry.GetCapabilities(account.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(models.ToV3Provider(account.ConnectorID.Provider))
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -392,7 +401,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePayment")
 	defer span.End()
 
-	capabilities, err := registry.GetCapabilities(payment.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(models.ToV3Provider(payment.ConnectorID.Provider))
 	if err != nil {
 		otel.RecordError(span, err)
 		return err

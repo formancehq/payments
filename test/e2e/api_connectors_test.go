@@ -157,9 +157,14 @@ var _ = Context("Payments API Connectors", func() {
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
 			func(ver int, dirValue string, expectedErr string) {
-				config := newConnectorConfigurationFn()(id)
-				config.Directory = dirValue
-				err := ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+				connectorConf := newConnectorConfigurationFn()(id)
+				err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				Expect(err).To(BeNil())
+				connectorID = connectorRes.Data
+				blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
+
+				connectorConf.Directory = dirValue
+				err = ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &connectorConf)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
 				Expect(err.Error()).To(ContainSubstring(expectedErr))

@@ -126,7 +126,7 @@ func paymentsCreate(backend backend.Backend, validator *validation.Validator) ht
 			ID:            payment.ID.String(),
 			Reference:     payment.Reference,
 			Type:          payment.Type.String(),
-			Provider:      payment.ConnectorID.Provider,
+			Provider:      toV2Provider(payment.ConnectorID.Provider),
 			ConnectorID:   payment.ConnectorID.String(),
 			Status:        payment.Status.String(),
 			Amount:        payment.Amount,
