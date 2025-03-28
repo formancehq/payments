@@ -62,23 +62,6 @@ deploy:
 deploy-staging:
     BUILD --pass-args core+deploy-staging
 
-compile-openapi-configs:
-    FROM core+builder-image
-    COPY (+sources/*) /src
-    WORKDIR /src/tools/compile-configs
-    RUN go build -o compile-configs
-    RUN ./compile-configs --path /src/internal/connectors/plugins/public --output ./v3-connectors-config.yaml
-    SAVE ARTIFACT ./v3-connectors-config.yaml /v3-connectors-config.yaml
-
-generate:
-    FROM core+builder-image
-    RUN apk update && apk add openjdk11
-    DO --pass-args core+GO_INSTALL --package=go.uber.org/mock/mockgen@latest
-    COPY (+sources/*) /src
-    WORKDIR /src
-    DO --pass-args core+GO_GENERATE
-    SAVE ARTIFACT internal AS LOCAL internal
-
 release:
     FROM core+builder-image
     ARG mode=local

@@ -3,7 +3,7 @@ set dotenv-load
 default:
   @just --list
 
-pre-commit: generate-client tidy lint
+pre-commit: generate tidy lint
 pc: pre-commit
 
 lint:
@@ -11,12 +11,6 @@ lint:
 
 tidy:
   @go mod tidy
-
-tests:
-  @go test -race -covermode=atomic \
-    -coverprofile coverage.txt \
-    -tags it \
-    ./...
 
 [group('openapi')]
 compile-connector-configs:
@@ -40,5 +34,19 @@ compile-api-docs:
 openapi: compile-api-yaml compile-api-docs
 
 [group('test')]
-generate-client: openapi
+tests:
+  @go test -race -covermode=atomic \
+    -coverprofile coverage.txt \
+    -tags it \
+    ./...
+
+[group('test')]
+generate-sdk: openapi
     @cd pkg/client && speakeasy run --skip-versioning
+
+[group('test')]
+generate: generate-sdk
+    @go install go.uber.org/mock/mockgen@latest
+    @go generate ./...
+g: generate
+
