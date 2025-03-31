@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
@@ -49,21 +50,24 @@ func (w Workflow) validateOnlyReverse(
 	validateReverse ValidateReverse,
 ) error {
 	now := workflow.Now(ctx)
+
+	adj := models.PaymentInitiationAdjustment{
+		ID: models.PaymentInitiationAdjustmentID{
+			PaymentInitiationID: validateReverse.PIReversal.PaymentInitiationID,
+			CreatedAt:           now,
+			Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_PROCESSING,
+		},
+		CreatedAt: now,
+		Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_PROCESSING,
+		Amount:    validateReverse.PIReversal.Amount,
+		Asset:     &validateReverse.PI.Asset,
+		Metadata:  validateReverse.PIReversal.Metadata,
+	}
+
 	// Second, ensure that we do not have another reverse currently being processed
 	inserted, err := activities.StoragePaymentInitiationsAdjusmentsIfPredicateStore(
 		infiniteRetryContext(ctx),
-		models.PaymentInitiationAdjustment{
-			ID: models.PaymentInitiationAdjustmentID{
-				PaymentInitiationID: validateReverse.PIReversal.PaymentInitiationID,
-				CreatedAt:           now,
-				Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_PROCESSING,
-			},
-			CreatedAt: now,
-			Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_PROCESSING,
-			Amount:    validateReverse.PIReversal.Amount,
-			Asset:     &validateReverse.PI.Asset,
-			Metadata:  validateReverse.PIReversal.Metadata,
-		},
+		adj,
 		[]models.PaymentInitiationAdjustmentStatus{
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSE_PROCESSING,
 		},
@@ -75,6 +79,25 @@ func (w Workflow) validateOnlyReverse(
 	if !inserted {
 		err = errors.New("another reverse is already in progress")
 		return temporal.NewNonRetryableApplicationError(err.Error(), "ANOTHER_REVERSE_IN_PROGRESS", err)
+	}
+
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				TaskQueue:         w.getDefaultTaskQueue(),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunSendEvents,
+		SendEvents{
+			PaymentInitiationAdjustment: &adj,
+		},
+	).Get(ctx, nil); err != nil {
+		return err
 	}
 
 	return nil

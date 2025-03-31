@@ -40,6 +40,9 @@ type Engine interface {
 	// Create a Formance payment, no call to the plugin, just a creation
 	// of a payment in the database related to the provided connector id.
 	CreateFormancePayment(ctx context.Context, payment models.Payment) error
+	// Create a Formance payment initiation, no call to the plugin, just a creation
+	// of a payment initiation in the database and the sending of the related event.
+	CreateFormancePaymentInitiation(ctx context.Context, paymentInitiation models.PaymentInitiation, adj models.PaymentInitiationAdjustment) error
 
 	// Forward a bank account to the given connector, which will create it
 	// in the external system (PSP).
@@ -441,6 +444,41 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 		workflow.RunSendEvents,
 		workflow.SendEvents{
 			Payment: &payment,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) CreateFormancePaymentInitiation(ctx context.Context, pi models.PaymentInitiation, adj models.PaymentInitiationAdjustment) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePaymentInitiation")
+	defer span.End()
+
+	if err := e.storage.PaymentInitiationsInsert(ctx, pi, adj); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	// Do not wait for sending of events
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       fmt.Sprintf("create-payment-initiation-send-events-%s-%s-%s", e.stack, pi.ConnectorID.String(), pi.Reference),
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunSendEvents,
+		workflow.SendEvents{
+			PaymentInitiation:           &pi,
+			PaymentInitiationAdjustment: &adj,
 		},
 	)
 	if err != nil {

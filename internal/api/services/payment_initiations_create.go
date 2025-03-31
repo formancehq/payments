@@ -20,11 +20,11 @@ func (s *Service) PaymentInitiationsCreate(ctx context.Context, paymentInitiatio
 	}
 
 	if !sendToPSP {
-		return models.Task{}, newStorageError(s.storage.PaymentInitiationsInsert(ctx, paymentInitiation, waitingForValidationAdjustment), "cannot create payment initiation")
+		return models.Task{}, handleEngineErrors(s.engine.CreateFormancePaymentInitiation(ctx, paymentInitiation, waitingForValidationAdjustment))
 	}
 
-	if err := s.storage.PaymentInitiationsInsert(ctx, paymentInitiation, waitingForValidationAdjustment); err != nil {
-		return models.Task{}, newStorageError(err, "cannot create payment initiation")
+	if err := s.engine.CreateFormancePaymentInitiation(ctx, paymentInitiation, waitingForValidationAdjustment); err != nil {
+		return models.Task{}, handleEngineErrors(err)
 	}
 
 	switch paymentInitiation.Type {

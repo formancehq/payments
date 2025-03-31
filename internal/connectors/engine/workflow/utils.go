@@ -28,6 +28,16 @@ func (w Workflow) storePIPaymentWithStatus(
 		return err
 	}
 
+	err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
+		infiniteRetryContext(ctx),
+		paymentInitiationID,
+		payment.ID,
+		payment.CreatedAt,
+	)
+	if err != nil {
+		return err
+	}
+
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -42,18 +52,12 @@ func (w Workflow) storePIPaymentWithStatus(
 		RunSendEvents,
 		SendEvents{
 			Payment: &payment,
+			PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
+				PaymentInitiationID: paymentInitiationID,
+				PaymentID:           payment.ID,
+			},
 		},
 	).Get(ctx, nil); err != nil {
-		return err
-	}
-
-	err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
-		infiniteRetryContext(ctx),
-		paymentInitiationID,
-		payment.ID,
-		payment.CreatedAt,
-	)
-	if err != nil {
 		return err
 	}
 
@@ -93,10 +97,33 @@ func (w Workflow) addPIAdjustment(
 		Metadata:  metadata,
 	}
 
-	return activities.StoragePaymentInitiationsAdjustmentsStore(
+	if err := activities.StoragePaymentInitiationsAdjustmentsStore(
 		infiniteRetryContext(ctx),
 		adj,
-	)
+	); err != nil {
+		return err
+	}
+
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				TaskQueue:         w.getDefaultTaskQueue(),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunSendEvents,
+		SendEvents{
+			PaymentInitiationAdjustment: &adj,
+		},
+	).Get(ctx, nil); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (w Workflow) getPSPPI(
