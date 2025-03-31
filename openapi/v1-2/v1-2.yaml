@@ -2617,3 +2617,10 @@ components:
         - VALIDATION
         - NOT_FOUND
       example: VALIDATION
+    ServerInfo:
+      type: object
+      properties:
+        version:
+          type: string
+        debug:
+          type: boolean

@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+//nolint:errcheck
 func registerCustomChecker(
 	tagName string,
 	fn func(validator.FieldLevel) bool,
@@ -132,7 +133,7 @@ func IsAsset(fl validator.FieldLevel) bool {
 	}
 
 	_, _, err = currency.GetCurrencyAndPrecisionFromAsset(currency.ISO4217Currencies, str)
-	if err != nil {
+	if err != nil { //nolint:gosimple
 		return false
 	}
 	return true

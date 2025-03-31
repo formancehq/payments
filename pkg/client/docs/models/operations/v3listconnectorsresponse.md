@@ -1,0 +1,10 @@
+# V3ListConnectorsResponse
+
+
+## Fields
+
+| Field                                                                                           | Type                                                                                            | Required                                                                                        | Description                                                                                     |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `HTTPMeta`                                                                                      | [components.HTTPMetadata](../../models/components/httpmetadata.md)                              | :heavy_check_mark:                                                                              | N/A                                                                                             |
+| `V3ConnectorsCursorResponse`                                                                    | [*components.V3ConnectorsCursorResponse](../../models/components/v3connectorscursorresponse.md) | :heavy_minus_sign:                                                                              | OK                                                                                              |
+| `V3ErrorResponse`                                                                               | [*components.V3ErrorResponse](../../models/components/v3errorresponse.md)                       | :heavy_minus_sign:                                                                              | Error                                                                                           |

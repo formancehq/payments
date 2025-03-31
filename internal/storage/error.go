@@ -59,7 +59,7 @@ func e(msg string, err error) error {
 }
 
 // meant to be called in defer block
-func rollbackOnTxError(ctx context.Context, tx bun.Tx, err error) {
+func rollbackOnTxError(ctx context.Context, tx *bun.Tx, err error) {
 	if err == nil {
 		return
 	}

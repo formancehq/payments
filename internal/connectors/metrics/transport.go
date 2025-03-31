@@ -9,7 +9,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-const MetricOperationContextKey string = "_metric_operation_context_key"
+type MetricOpContextKey string
+
+const MetricOperationContextKey MetricOpContextKey = "_metric_operation_context_key"
 
 func OperationContext(ctx context.Context, operation string) context.Context {
 	return context.WithValue(ctx, MetricOperationContextKey, operation)

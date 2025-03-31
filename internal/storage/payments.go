@@ -113,7 +113,9 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 	if err != nil {
 		return errors.Wrap(err, "failed to create transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	if len(paymentsToInsert) > 0 {
 		_, err = tx.NewInsert().
@@ -176,7 +178,9 @@ func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID,
 	if err != nil {
 		return e("update payment metadata", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var payment payment
 	err = tx.NewSelect().

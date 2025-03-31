@@ -4,6 +4,8 @@ go 1.23.2
 
 toolchain go1.23.5
 
+replace github.com/formancehq/payments/pkg/client => ./pkg/client
+
 replace github.com/formancehq/payments/genericclient => ./internal/connectors/plugins/public/generic/client/generated
 
 require (
@@ -12,6 +14,7 @@ require (
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/formancehq/go-libs/v2 v2.2.2
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
+	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
 	github.com/gibson042/canonicaljson-go v1.0.3
 	github.com/go-chi/chi/v5 v5.2.1
@@ -97,6 +100,7 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230731223053-c322873962e3 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/ebitengine/purego v0.8.2 // indirect
+	github.com/ericlagergren/decimal v0.0.0-20221120152707-495c53812d05 // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect

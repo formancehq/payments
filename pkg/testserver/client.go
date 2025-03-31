@@ -11,8 +11,21 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/models"
+	formance "github.com/formancehq/payments/pkg/client"
 	"github.com/stretchr/testify/require"
 )
+
+func NewStackClient(urlStr string, clientTimeout time.Duration, transport http.RoundTripper) (*formance.Formance, error) {
+	httpClient := &http.Client{
+		Timeout:   clientTimeout,
+		Transport: transport,
+	}
+
+	return formance.New(
+		urlStr,
+		formance.WithClient(httpClient),
+	), nil
+}
 
 type Client struct {
 	baseUrl        string
