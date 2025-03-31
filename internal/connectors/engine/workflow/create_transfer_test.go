@@ -27,6 +27,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithPayment_Success() {
 		s.Nil(adj.Error)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
+		return nil
+	})
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateTransferRequest) (*models.CreateTransferResponse, error) {
 		s.Equal(s.connectorID, req.ConnectorID)
 		s.Equal(s.paymentInitiationID.Reference, req.Req.PaymentInitiation.Reference)
@@ -39,19 +43,20 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithPayment_Success() {
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
+		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
+		s.Equal(s.paymentPayoutID, relatedPayment.PID)
+		return nil
+	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
 		s.NotNil(req.Payment)
+		s.NotNil(req.PaymentInitiationRelatedPayment)
 		s.Nil(req.Account)
 		s.Nil(req.Balance)
 		s.Nil(req.BankAccount)
 		s.Nil(req.ConnectorReset)
 		s.Nil(req.PoolsCreation)
 		s.Nil(req.PoolsDeletion)
-		return nil
-	})
-	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
-		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
-		s.Equal(s.paymentPayoutID, relatedPayment.PID)
 		return nil
 	})
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
@@ -61,6 +66,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithPayment_Success() {
 		s.NotNil(adj.Asset)
 		s.Equal("USD/2", *adj.Asset)
 		s.Nil(adj.Error)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -95,6 +104,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success(
 		s.Nil(adj.Error)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
+		return nil
+	})
 
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
@@ -105,6 +118,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success(
 		s.NotNil(adj.Asset)
 		s.Equal("USD/2", *adj.Asset)
 		s.Nil(adj.Error)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateTransferRequest) (*models.CreateTransferResponse, error) {
@@ -119,6 +136,11 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success(
 		s.Equal(s.paymentPayoutID, payments[0].ID)
 		return nil
 	})
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
+		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
+		s.Equal(s.paymentPayoutID, relatedPayment.PID)
+		return nil
+	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
 		s.NotNil(req.Payment)
 		s.Nil(req.Account)
@@ -129,11 +151,6 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success(
 		s.Nil(req.PoolsDeletion)
 		return nil
 	})
-	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
-		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
-		s.Equal(s.paymentPayoutID, relatedPayment.PID)
-		return nil
-	})
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 		s.Equal(s.paymentInitiationID, adj.ID.PaymentInitiationID)
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED, adj.Status)
@@ -141,6 +158,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithScheduledAt_WithPayment_Success(
 		s.NotNil(adj.Asset)
 		s.Equal("USD/2", *adj.Asset)
 		s.Nil(adj.Error)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -171,6 +192,10 @@ func (s *UnitTestSuite) Test_CreateTransfer_WithPollingPayment_Success() {
 		s.NotNil(adj.Asset)
 		s.Equal("USD/2", *adj.Asset)
 		s.Nil(adj.Error)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreateTransferRequest) (*models.CreateTransferResponse, error) {
@@ -287,6 +312,7 @@ func (s *UnitTestSuite) Test_CreateTransfer_PluginCreateTransfer_Error() {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, adj.Status)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
 		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test")),
@@ -295,6 +321,7 @@ func (s *UnitTestSuite) Test_CreateTransfer_PluginCreateTransfer_Error() {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED, adj.Status)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
@@ -319,6 +346,7 @@ func (s *UnitTestSuite) Test_CreateTransfer_StoragePaymentsStore_Error() {
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateTransferResponse{
 		Payment: &s.pspPayment,
 	}, nil)
@@ -349,10 +377,12 @@ func (s *UnitTestSuite) Test_CreateTransfer_RunSendEvents_Error() {
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateTransferResponse{
 		Payment: &s.pspPayment,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
@@ -378,11 +408,11 @@ func (s *UnitTestSuite) Test_CreateTransferStoragePaymentInitiationsRelatedPayme
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateTransferResponse{
 		Payment: &s.pspPayment,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
 	)
@@ -410,6 +440,7 @@ func (s *UnitTestSuite) Test_CreateTransfer_StorageSchedulesStore_Error() {
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateTransferResponse{
 		PollingTransferID: pointer.For("test"),
 	}, nil)
@@ -440,6 +471,7 @@ func (s *UnitTestSuite) Test_CreateTransfer_TemporalScheduleCreate_Error() {
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreateTransferActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateTransferResponse{
 		PollingTransferID: pointer.For("test"),
 	}, nil)

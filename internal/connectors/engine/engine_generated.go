@@ -85,6 +85,20 @@ func (mr *MockEngineMockRecorder) CreateFormancePayment(ctx, payment any) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFormancePayment", reflect.TypeOf((*MockEngine)(nil).CreateFormancePayment), ctx, payment)
 }
 
+// CreateFormancePaymentInitiation mocks base method.
+func (m *MockEngine) CreateFormancePaymentInitiation(ctx context.Context, paymentInitiation models.PaymentInitiation, adj models.PaymentInitiationAdjustment) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateFormancePaymentInitiation", ctx, paymentInitiation, adj)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateFormancePaymentInitiation indicates an expected call of CreateFormancePaymentInitiation.
+func (mr *MockEngineMockRecorder) CreateFormancePaymentInitiation(ctx, paymentInitiation, adj any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFormancePaymentInitiation", reflect.TypeOf((*MockEngine)(nil).CreateFormancePaymentInitiation), ctx, paymentInitiation, adj)
+}
+
 // CreatePayout mocks base method.
 func (m *MockEngine) CreatePayout(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()

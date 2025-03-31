@@ -95,7 +95,6 @@ var _ = Context("Payments API Connectors", func() {
 				err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
-				fmt.Println("TOTO", err.Error(), expectedErr)
 				Expect(err.Error()).To(ContainSubstring(expectedErr))
 			},
 			Entry("empty directory with v2", 2, "", "validation for 'Directory' failed on the 'required' tag"),

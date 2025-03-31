@@ -32,14 +32,14 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		sendToPSP           bool
-		pi                  models.PaymentInitiation
-		engineErr           error
-		piUpsertStorageErr  error
-		expectedPIError     error
-		expectedEngineError error
-		typedError          bool
+		name                          string
+		sendToPSP                     bool
+		pi                            models.PaymentInitiation
+		engineCreatePaymentInitiation error
+		engineErr                     error
+		expectedPIError               error
+		expectedEngineError           error
+		typedError                    bool
 	}{
 		{
 			name:      "success without scheduled at and transfer",
@@ -72,29 +72,24 @@ func TestPaymentInitiationsCreate(t *testing.T) {
 			expectedEngineError: fmt.Errorf("error"),
 		},
 		{
-			name:               "storage error not found",
-			sendToPSP:          true,
-			piUpsertStorageErr: storage.ErrNotFound,
-			expectedPIError:    newStorageError(storage.ErrNotFound, "cannot create payment initiation"),
+			name:                          "not found error",
+			pi:                            piWithoutScheduledAt,
+			engineCreatePaymentInitiation: engine.ErrNotFound,
+			expectedEngineError:           ErrNotFound,
+			typedError:                    true,
 		},
 		{
-			name:               "storage error duplicate key",
-			sendToPSP:          true,
-			piUpsertStorageErr: storage.ErrDuplicateKeyValue,
-			expectedPIError:    newStorageError(storage.ErrDuplicateKeyValue, "cannot create payment initiation"),
-		},
-		{
-			name:               "other error",
-			sendToPSP:          true,
-			piUpsertStorageErr: fmt.Errorf("error"),
-			expectedPIError:    newStorageError(fmt.Errorf("error"), "cannot create payment initiation"),
+			name:                          "other error",
+			pi:                            piWithoutScheduledAt,
+			engineCreatePaymentInitiation: fmt.Errorf("error"),
+			expectedEngineError:           fmt.Errorf("error"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			store.EXPECT().PaymentInitiationsInsert(gomock.Any(), test.pi, gomock.Any()).Return(test.piUpsertStorageErr)
-			if test.piUpsertStorageErr == nil && test.sendToPSP {
+			eng.EXPECT().CreateFormancePaymentInitiation(gomock.Any(), test.pi, gomock.Any()).Return(test.engineCreatePaymentInitiation)
+			if test.sendToPSP {
 				switch test.pi.Type {
 				case models.PAYMENT_INITIATION_TYPE_TRANSFER:
 					eng.EXPECT().CreateTransfer(gomock.Any(), models.PaymentInitiationID{}, 1, false).Return(models.Task{}, test.engineErr)

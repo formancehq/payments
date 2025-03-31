@@ -13,13 +13,16 @@ import (
 type sendEventActivityFunction func(ctx workflow.Context) error
 
 type SendEvents struct {
-	Account        *models.Account
-	Balance        *models.Balance
-	BankAccount    *models.BankAccount
-	Payment        *models.Payment
-	ConnectorReset *models.ConnectorID
-	PoolsCreation  *models.Pool
-	PoolsDeletion  *uuid.UUID
+	Account                         *models.Account
+	Balance                         *models.Balance
+	BankAccount                     *models.BankAccount
+	Payment                         *models.Payment
+	ConnectorReset                  *models.ConnectorID
+	PoolsCreation                   *models.Pool
+	PoolsDeletion                   *uuid.UUID
+	PaymentInitiation               *models.PaymentInitiation
+	PaymentInitiationAdjustment     *models.PaymentInitiationAdjustment
+	PaymentInitiationRelatedPayment *models.PaymentInitiationRelatedPayments
 }
 
 func (w Workflow) runSendEvents(
@@ -142,6 +145,57 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendPoolDeletion(
 					infiniteRetryContext(ctx),
 					*sendEvents.PoolsDeletion,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.PaymentInitiation != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.PaymentInitiation.IdempotencyKey(),
+			&sendEvents.PaymentInitiation.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPaymentInitiation(
+					infiniteRetryContext(ctx),
+					*sendEvents.PaymentInitiation,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.PaymentInitiationAdjustment != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.PaymentInitiationAdjustment.IdempotencyKey(),
+			&sendEvents.PaymentInitiationAdjustment.ID.PaymentInitiationID.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPaymentInitiationAdjustment(
+					infiniteRetryContext(ctx),
+					*sendEvents.PaymentInitiationAdjustment,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.PaymentInitiationRelatedPayment != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.PaymentInitiationRelatedPayment.IdempotencyKey(),
+			&sendEvents.PaymentInitiationRelatedPayment.PaymentInitiationID.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPaymentInitiationRelatedPayment(
+					infiniteRetryContext(ctx),
+					*sendEvents.PaymentInitiationRelatedPayment,
 				)
 			},
 		)
