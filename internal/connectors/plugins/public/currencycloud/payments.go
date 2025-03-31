@@ -45,7 +45,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		needMore := true
+		var needMore bool
 		needMore, hasMore, payments = shouldFetchMore(payments, nextPage, req.PageSize)
 
 		if len(payments) > 0 {

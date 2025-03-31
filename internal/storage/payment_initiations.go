@@ -72,9 +72,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	if err != nil {
 		return e("upsert payment initiations", err)
 	}
-	defer func() {
-		rollbackOnTxError(ctx, tx, err)
-	}()
+	defer tx.Rollback() //nolint:errcheck
 
 	toInsert := fromPaymentInitiationModels(pi)
 	adjustmentsToInsert := make([]paymentInitiationAdjustment, 0, len(adjustments))
@@ -107,7 +105,7 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 	if err != nil {
 		return e("update payment metadata", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	var pi paymentInitiation
 	err = tx.NewSelect().
@@ -383,7 +381,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 	if err != nil {
 		return false, e("upsert payment initiations", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	var previousAdj paymentInitiationAdjustment
 	err = tx.NewSelect().

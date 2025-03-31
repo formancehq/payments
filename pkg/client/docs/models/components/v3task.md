@@ -1,0 +1,14 @@
+# V3Task
+
+
+## Fields
+
+| Field                                                                      | Type                                                                       | Required                                                                   | Description                                                                |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `ID`                                                                       | *string*                                                                   | :heavy_check_mark:                                                         | N/A                                                                        |
+| `Status`                                                                   | [components.V3TaskStatusEnum](../../models/components/v3taskstatusenum.md) | :heavy_check_mark:                                                         | N/A                                                                        |
+| `CreatedAt`                                                                | [time.Time](https://pkg.go.dev/time#Time)                                  | :heavy_check_mark:                                                         | N/A                                                                        |
+| `UpdatedAt`                                                                | [time.Time](https://pkg.go.dev/time#Time)                                  | :heavy_check_mark:                                                         | N/A                                                                        |
+| `ConnectorID`                                                              | **string*                                                                  | :heavy_minus_sign:                                                         | N/A                                                                        |
+| `CreatedObjectID`                                                          | **string*                                                                  | :heavy_minus_sign:                                                         | N/A                                                                        |
+| `Error`                                                                    | **string*                                                                  | :heavy_minus_sign:                                                         | N/A                                                                        |

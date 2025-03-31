@@ -49,7 +49,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		needMore := true
+		var needMore bool
 		needMore, hasMore, accounts = shouldFetchMore(accounts, nextPage, req.PageSize)
 		if !needMore {
 			break

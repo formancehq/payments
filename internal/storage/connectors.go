@@ -97,7 +97,9 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 	if err != nil {
 		return errors.Wrap(err, "cannot begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := connector{
 		ID:                   c.ID,
@@ -133,7 +135,9 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 	if err != nil {
 		return errors.Wrap(err, "cannot begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	_, err = s.ConnectorsGet(ctx, c.ID)
 	if err != nil {

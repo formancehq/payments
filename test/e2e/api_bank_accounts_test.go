@@ -158,8 +158,8 @@ var _ = Context("Payments API Bank Accounts", func() {
 				events.BankAccountMessagePayload{
 					ID:            id.String(),
 					Name:          createRequest.Name,
-					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:len(accountNumber)]),
-					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:len(iban)]),
+					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
+					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
 					CreatedAt:     getResponse.Data.CreatedAt,
 					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
 						{

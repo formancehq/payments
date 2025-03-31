@@ -11,6 +11,7 @@ import (
 	"github.com/nats-io/nats.go"
 
 	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
+	formance "github.com/formancehq/payments/pkg/client"
 
 	"github.com/formancehq/go-libs/v2/otlp"
 	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
@@ -63,11 +64,13 @@ type Server struct {
 	logger        Logger
 	worker        *Worker
 	httpClient    *Client
+	sdk           *formance.Formance
 	cancel        func()
 	ctx           context.Context
 	errorChan     chan error
 }
 
+//nolint:govet
 func (s *Server) Start() error {
 	rootCmd := cmd.NewRootCommand()
 	args := Flags("serve", s.id, s.configuration)
@@ -120,6 +123,11 @@ func (s *Server) Start() error {
 		return err
 	}
 	s.httpClient = httpClient
+
+	s.sdk, err = NewStackClient(httpserver.URL(s.ctx), s.configuration.HttpClientTimeout, transport)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -148,6 +156,10 @@ func (s *Server) Stop(ctx context.Context) error {
 
 func (s *Server) Client() *Client {
 	return s.httpClient
+}
+
+func (s *Server) SDK() *formance.Formance {
+	return s.sdk
 }
 
 func (s *Server) Restart(ctx context.Context) error {
