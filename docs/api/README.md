@@ -907,6 +907,58 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
+## Update the config of a connector
+
+<a id="opIdv3UpdateConnectorConfig"></a>
+
+> Code samples
+
+```http
+PATCH /v3/connectors/{connectorID}/config HTTP/1.1
+
+Content-Type: application/json
+
+```
+
+`PATCH /v3/connectors/{connectorID}/config`
+
+Update connector config
+
+> Body parameter
+
+```json
+{
+  "apiKey": "string",
+  "companyID": "string",
+  "liveEndpointPrefix": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Adyen",
+  "webhookPassword": "string",
+  "webhookUsername": "string"
+}
+```
+
+<h3 id="update-the-config-of-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|connectorID|path|string|true|The connector ID|
+|body|body|[V3ConnectorConfig](#schemav3connectorconfig)|false|none|
+
+<h3 id="update-the-config-of-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|none|None|
+|default|Default|none|None|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
 ## Reset a connector. Be aware that this will delete all data and stop all existing tasks like payment initiations and bank account creations.
 
 <a id="opIdv3ResetConnector"></a>
@@ -3252,6 +3304,32 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |data|[V3ConnectorConfig](#schemav3connectorconfig)|true|none|none|
+
+<h2 id="tocS_V3UpdateConnectorRequest">V3UpdateConnectorRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3updateconnectorrequest"></a>
+<a id="schema_V3UpdateConnectorRequest"></a>
+<a id="tocSv3updateconnectorrequest"></a>
+<a id="tocsv3updateconnectorrequest"></a>
+
+```json
+{
+  "apiKey": "string",
+  "companyID": "string",
+  "liveEndpointPrefix": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Adyen",
+  "webhookPassword": "string",
+  "webhookUsername": "string"
+}
+
+```
+
+### Properties
+
+*None*
 
 <h2 id="tocS_V3ConnectorsCursorResponse">V3ConnectorsCursorResponse</h2>
 <!-- backwards compatibility -->
