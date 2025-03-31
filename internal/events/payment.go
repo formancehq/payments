@@ -12,23 +12,25 @@ import (
 )
 
 type paymentMessagePayload struct {
-	ID                   string          `json:"id"`
-	ConnectorID          string          `json:"connectorId"`
-	Provider             string          `json:"provider"`
-	Reference            string          `json:"reference"`
-	CreatedAt            time.Time       `json:"createdAt"`
-	Type                 string          `json:"type"`
-	Status               string          `json:"status"`
-	Scheme               string          `json:"scheme"`
-	Asset                string          `json:"asset"`
-	SourceAccountID      string          `json:"sourceAccountId,omitempty"`
-	DestinationAccountID string          `json:"destinationAccountId,omitempty"`
-	Links                []api.Link      `json:"links"`
-	RawData              json.RawMessage `json:"rawData"`
+	// Mandatory fields
+	ID            string          `json:"id"`
+	ConnectorID   string          `json:"connectorID"`
+	Provider      string          `json:"provider"`
+	Reference     string          `json:"reference"`
+	CreatedAt     time.Time       `json:"createdAt"`
+	Type          string          `json:"type"`
+	Status        string          `json:"status"`
+	Scheme        string          `json:"scheme"`
+	Asset         string          `json:"asset"`
+	RawData       json.RawMessage `json:"rawData"`
+	InitialAmount *big.Int        `json:"initialAmount"`
+	Amount        *big.Int        `json:"amount"`
 
-	InitialAmount *big.Int          `json:"initialAmount"`
-	Amount        *big.Int          `json:"amount"`
-	Metadata      map[string]string `json:"metadata"`
+	// Optional fields
+	SourceAccountID      string            `json:"sourceAccountID,omitempty"`
+	DestinationAccountID string            `json:"destinationAccountID,omitempty"`
+	Links                []api.Link        `json:"links,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
 }
 
 func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.PaymentAdjustment) publish.EventMessage {

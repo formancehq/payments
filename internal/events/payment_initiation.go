@@ -11,34 +11,40 @@ import (
 )
 
 type paymentInitiationMessagePayload struct {
-	ID                   string            `json:"id"`
-	ConnectorID          string            `json:"connectorId"`
-	Provider             string            `json:"provider"`
-	Reference            string            `json:"reference"`
-	CreatedAt            time.Time         `json:"createdAt"`
-	ScheduledAt          time.Time         `json:"scheduledAt"`
-	Description          string            `json:"description"`
-	Type                 string            `json:"type"`
-	SourceAccountID      string            `json:"sourceAccountId,omitempty"`
-	DestinationAccountID string            `json:"destinationAccountId,omitempty"`
-	Amount               *big.Int          `json:"amount"`
-	Asset                string            `json:"asset"`
-	Metadata             map[string]string `json:"metadata"`
+	// Mandatory fields
+	ID          string    `json:"id"`
+	ConnectorID string    `json:"connectorID"`
+	Provider    string    `json:"provider"`
+	Reference   string    `json:"reference"`
+	CreatedAt   time.Time `json:"createdAt"`
+	ScheduledAt time.Time `json:"scheduledAt"`
+	Description string    `json:"description"`
+	Type        string    `json:"type"`
+	Amount      *big.Int  `json:"amount"`
+	Asset       string    `json:"asset"`
+
+	// Optional fields
+	SourceAccountID      string            `json:"sourceAccountID,omitempty"`
+	DestinationAccountID string            `json:"destinationAccountID,omitempty"`
+	Metadata             map[string]string `json:"metadata,omitempty"`
 }
 
 type paymentInitiationAdjustmentMessagePayload struct {
-	ID                  string            `json:"id"`
-	PaymentInitiationID string            `json:"paymentInitiationId"`
-	Status              string            `json:"status"`
-	Amount              *big.Int          `json:"amount,omitempty"`
-	Asset               *string           `json:"asset,omitempty"`
-	Error               *string           `json:"error,omitempty"`
-	Metadata            map[string]string `json:"metadata"`
+	// Mandatory fields
+	ID                  string `json:"id"`
+	PaymentInitiationID string `json:"paymentInitiationID"`
+	Status              string `json:"status"`
+
+	// Optional fields
+	Amount   *big.Int          `json:"amount,omitempty"`
+	Asset    *string           `json:"asset,omitempty"`
+	Error    *string           `json:"error,omitempty"`
+	Metadata map[string]string `json:"metadata,omitempty"`
 }
 
 type paymentInitiationRelatedPaymentMessagePayload struct {
-	PaymentInitiationID string `json:"paymentInitiationId"`
-	PaymentID           string `json:"paymentId"`
+	PaymentInitiationID string `json:"paymentInitiationID"`
+	PaymentID           string `json:"paymentID"`
 }
 
 func (e Events) NewEventSavedPaymentInitiation(pi models.PaymentInitiation) publish.EventMessage {

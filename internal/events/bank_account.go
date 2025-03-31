@@ -9,14 +9,18 @@ import (
 )
 
 type BankAccountMessagePayload struct {
-	ID              string                              `json:"id"`
-	CreatedAt       time.Time                           `json:"createdAt"`
-	Name            string                              `json:"name"`
-	AccountNumber   string                              `json:"accountNumber"`
-	IBAN            string                              `json:"iban"`
-	SwiftBicCode    string                              `json:"swiftBicCode"`
-	Country         string                              `json:"country"`
-	RelatedAccounts []BankAccountRelatedAccountsPayload `json:"relatedAccounts"`
+	// Mandatory fields
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	Name      string    `json:"name"`
+
+	// Optional fields
+	AccountNumber   string                              `json:"accountNumber,omitempty"`
+	IBAN            string                              `json:"iban,omitempty"`
+	SwiftBicCode    string                              `json:"swiftBicCode,omitempty"`
+	Country         string                              `json:"country,omitempty"`
+	Metadata        map[string]string                   `json:"metadata,omitempty"`
+	RelatedAccounts []BankAccountRelatedAccountsPayload `json:"relatedAccounts,omitempty"`
 }
 
 type BankAccountRelatedAccountsPayload struct {
@@ -35,6 +39,7 @@ func (e Events) NewEventSavedBankAccounts(bankAccount models.BankAccount) (publi
 		ID:        bankAccount.ID.String(),
 		CreatedAt: bankAccount.CreatedAt,
 		Name:      bankAccount.Name,
+		Metadata:  bankAccount.Metadata,
 	}
 
 	if bankAccount.AccountNumber != nil {
