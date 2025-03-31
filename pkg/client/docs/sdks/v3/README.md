@@ -21,6 +21,7 @@
 * [ListConnectorConfigs](#listconnectorconfigs) - List all connector configurations
 * [UninstallConnector](#uninstallconnector) - Uninstall a connector
 * [GetConnectorConfig](#getconnectorconfig) - Get a connector configuration by ID
+* [V3UpdateConnectorConfig](#v3updateconnectorconfig) - Update the config of a connector
 * [ResetConnector](#resetconnector) - Reset a connector. Be aware that this will delete all data and stop all existing tasks like payment initiations and bank account creations.
 * [ListConnectorSchedules](#listconnectorschedules) - List all connector schedules
 * [GetConnectorSchedule](#getconnectorschedule) - Get a connector schedule by ID
@@ -785,6 +786,59 @@ func main() {
 ### Response
 
 **[*operations.V3GetConnectorConfigResponse](../../models/operations/v3getconnectorconfigresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## V3UpdateConnectorConfig
+
+Update connector config
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.V3UpdateConnectorConfig(ctx, "<id>", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                                   | Type                                                                                        | Required                                                                                    | Description                                                                                 |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `ctx`                                                                                       | [context.Context](https://pkg.go.dev/context#Context)                                       | :heavy_check_mark:                                                                          | The context to use for the request.                                                         |
+| `connectorID`                                                                               | *string*                                                                                    | :heavy_check_mark:                                                                          | The connector ID                                                                            |
+| `v3UpdateConnectorRequest`                                                                  | [*components.V3UpdateConnectorRequest](../../models/components/v3updateconnectorrequest.md) | :heavy_minus_sign:                                                                          | N/A                                                                                         |
+| `opts`                                                                                      | [][operations.Option](../../models/operations/option.md)                                    | :heavy_minus_sign:                                                                          | The options for this request.                                                               |
+
+### Response
+
+**[*operations.V3UpdateConnectorConfigResponse](../../models/operations/v3updateconnectorconfigresponse.md), error**
 
 ### Errors
 

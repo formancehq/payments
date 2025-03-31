@@ -169,41 +169,38 @@ var _ = Context("Payments API Connectors", func() {
 
 		It("can update a connector config with v3 API", func() {
 			id := uuid.New()
-			ver := 3
-
-			var err error
-			connectorID, _, err = installConnector(ctx, app.GetValue(), id)
+			connectorID, config, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-			config := newConnectorConfigurationFn()(id)
-			config.PollingPeriod = "2m"
-			err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			config.PollingPeriod = pointer.For("2m")
+			_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
+				V3DummypayConfig: config,
+			})
 			Expect(err).To(BeNil())
 
-			getRes := struct{ Data ConnectorConf }{}
-			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
+			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data).To(Equal(config))
+			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig).To(Equal(config))
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
-			func(ver int, dirValue string, expectedErr string) {
-				connectorConf := newConnectorConfigFn()(id)
-				install, err := app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "dummypay", &connectorConf)
+			func(dirValue string, expectedErr string) {
+				connectorID, config, err := installConnector(ctx, app.GetValue(), id)
 				Expect(err).To(BeNil())
-				Expect(install.V3InstallConnectorResponse).NotTo(BeNil())
-				connectorID := install.V3InstallConnectorResponse.Data
 				blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-				connectorConf.V3DummypayConfig.Directory = dirValue
-				err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &connectorConf)
+				config.Directory = dirValue
+				_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
+					V3DummypayConfig: config,
+				})
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
 				Expect(err.Error()).To(ContainSubstring(expectedErr))
 			},
-			Entry("empty directory", 3, "", "validation for 'Directory' failed on the 'required' tag"),
-			Entry("invalid directory", 3, "$#2djskajdj", "validation for 'Directory' failed on the 'dirpath' tag"),
+			Entry("empty directory", "", "validation for 'Directory' failed on the 'required' tag"),
+			Entry("invalid directory", "$#2djskajdj", "validation for 'Directory' failed on the 'dirpath' tag"),
 		)
 	})
 

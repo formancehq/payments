@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: 329ad9d8d7a013fa64d58c87dcfa610d
+  docChecksum: ad8faa4c230b316c7f45a98da4e1f25a
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -180,6 +180,7 @@ generatedFiles:
   - /models/components/v3taskstatusenum.go
   - /models/components/v3uninstallconnectorresponse.go
   - /models/components/v3updatebankaccountmetadatarequest.go
+  - /models/components/v3updateconnectorrequest.go
   - /models/components/v3updatepaymentmetadatarequest.go
   - /models/components/v3wiseconfig.go
   - /models/components/wiseconfig.go
@@ -265,6 +266,7 @@ generatedFiles:
   - /models/operations/v3reversepaymentinitiation.go
   - /models/operations/v3uninstallconnector.go
   - /models/operations/v3updatebankaccountmetadata.go
+  - /models/operations/v3updateconnectorconfig.go
   - /models/operations/v3updatepaymentmetadata.go
   - USAGE.md
   - docs/models/components/account.md
@@ -475,6 +477,7 @@ generatedFiles:
   - docs/models/components/v3uninstallconnectorresponse.md
   - docs/models/components/v3uninstallconnectorresponsedata.md
   - docs/models/components/v3updatebankaccountmetadatarequest.md
+  - docs/models/components/v3updateconnectorrequest.md
   - docs/models/components/v3updatepaymentmetadatarequest.md
   - docs/models/components/v3wiseconfig.md
   - docs/models/components/wiseconfig.md
@@ -630,6 +633,8 @@ generatedFiles:
   - docs/models/operations/v3uninstallconnectorresponse.md
   - docs/models/operations/v3updatebankaccountmetadatarequest.md
   - docs/models/operations/v3updatebankaccountmetadataresponse.md
+  - docs/models/operations/v3updateconnectorconfigrequest.md
+  - docs/models/operations/v3updateconnectorconfigresponse.md
   - docs/models/operations/v3updatepaymentmetadatarequest.md
   - docs/models/operations/v3updatepaymentmetadataresponse.md
   - docs/sdks/formance/README.md
@@ -1503,6 +1508,14 @@ examples:
           transferId: "XXX"
       requestBody:
         application/json: {"status": "VALIDATED"}
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3UpdateConnectorConfig:
+    speakeasy-default-v3-update-connector-config:
+      parameters:
+        path:
+          connectorID: "<id>"
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
