@@ -398,6 +398,27 @@ paths:
       security:
         - Authorization:
             - payments:read
+    patch:
+      tags:
+        - payments.v3
+      summary: Update the config of a connector
+      operationId: v3UpdateConnectorConfig
+      description: Update connector config
+      parameters:
+        - $ref: '#/components/parameters/V3ConnectorID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3UpdateConnectorRequest"
+      responses:
+        '204':
+          $ref: '#/components/responses/NoContent'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
 
   /v3/connectors/{connectorID}/reset:
     post:

@@ -23,51 +23,8 @@ func ConnectorInstall(ctx context.Context, srv *Server, ver int, reqBody any, re
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), reqBody, res)
 }
 
-func ConnectorReset(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	path := "connectors/" + id
-	if ver == 2 {
-		path = "connectors/dummypay/" + id
-	}
-	path += "/reset"
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), nil, res)
-}
-
-func ConnectorConfigUpdate(ctx context.Context, srv *Server, ver int, id string, reqBody any) error {
-	path := "connectors/" + id + "/config"
-	method := http.MethodPatch
-	if ver == 2 {
-		path = "connectors/dummypay/" + id + "/config"
-		method = http.MethodPost
-	}
-	return srv.Client().Do(ctx, method, pathPrefix(ver, path), reqBody, nil)
-}
-
 func ConnectorConfigs(ctx context.Context, srv *Server, ver int, res any) error {
 	path := "connectors/configs"
-	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
-}
-
-func ConnectorConfig(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	path := "connectors/" + id + "/config"
-	if ver == 2 {
-		path = "connectors/dummypay/" + id + "/config"
-	}
-	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
-}
-
-func ConnectorSchedules(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	path := "connectors/" + id + "/schedules"
-	if ver == 2 {
-		path = "connectors/dummypay/" + id + "/schedules"
-	}
-	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
-}
-
-func GetConnectorSchedule(ctx context.Context, srv *Server, ver int, connID string, id string, res any) error {
-	path := "connectors/" + connID + "/schedules/" + id
-	if ver == 2 {
-		path = "connectors/dummypay/" + connID + "/schedules/" + id
-	}
 	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
 }
 
