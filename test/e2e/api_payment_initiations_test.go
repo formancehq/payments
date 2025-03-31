@@ -101,9 +101,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			Expect(taskID.Reference).To(ContainSubstring("create-transfer"))
 
 			var paymentMsg = struct {
-				ConnectorID          string `json:"connectorId"`
-				SourceAccountID      string `json:"sourceAccountId,omitempty"`
-				DestinationAccountID string `json:"destinationAccountId,omitempty"`
+				ConnectorID          string `json:"connectorID"`
+				SourceAccountID      string `json:"sourceAccountID,omitempty"`
+				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
 				ConnectorID:          connectorRes.Data,
 				SourceAccountID:      debtorID,
@@ -180,9 +180,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			Expect(err).To(BeNil())
 
 			var msg = struct {
-				ConnectorID          string `json:"connectorId"`
-				SourceAccountID      string `json:"sourceAccountId,omitempty"`
-				DestinationAccountID string `json:"destinationAccountId,omitempty"`
+				ConnectorID          string `json:"connectorID"`
+				SourceAccountID      string `json:"sourceAccountID,omitempty"`
+				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
 				ConnectorID:          connectorRes.Data,
 				SourceAccountID:      debtorID,
@@ -273,9 +273,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			Expect(taskID.Reference).To(ContainSubstring("create-payout"))
 
 			var msg = struct {
-				ConnectorID          string `json:"connectorId"`
-				SourceAccountID      string `json:"sourceAccountId,omitempty"`
-				DestinationAccountID string `json:"destinationAccountId,omitempty"`
+				ConnectorID          string `json:"connectorID"`
+				SourceAccountID      string `json:"sourceAccountID,omitempty"`
+				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
 				ConnectorID:          connectorRes.Data,
 				SourceAccountID:      debtorID,
@@ -338,9 +338,9 @@ var _ = Context("Payments API Payment Initiation", func() {
 			Expect(err).To(BeNil())
 
 			var msg = struct {
-				ConnectorID          string `json:"connectorId"`
-				SourceAccountID      string `json:"sourceAccountId,omitempty"`
-				DestinationAccountID string `json:"destinationAccountId,omitempty"`
+				ConnectorID          string `json:"connectorID"`
+				SourceAccountID      string `json:"sourceAccountID,omitempty"`
+				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
 				ConnectorID:          connectorRes.Data,
 				SourceAccountID:      debtorID,
