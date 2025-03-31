@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/pointer"
-	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v2/logging"
-	v2 "github.com/formancehq/payments/internal/api/v2"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/testserver"
@@ -50,11 +48,10 @@ var _ = Context("Payments API Connectors", func() {
 			id = uuid.New()
 		})
 
-		It("should be ok with v3", func() {
-			ver := 3
-			var connectorRes struct{ Data string }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can install a connector with v3 API", func() {
+			connectorID, connectorConf, err := installConnector(ctx, app.GetValue(), id)
+			Expect(err).To(BeNil())
+			_, err = models.ConnectorIDFromString(connectorID)
 			Expect(err).To(BeNil())
 
 			cl := temporalServer.GetValue().DefaultClient()
@@ -67,33 +64,60 @@ var _ = Context("Payments API Connectors", func() {
 					break
 				}
 			}
-			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
 
-			getRes := struct{ Data ConnectorConf }{}
-			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data, &getRes)
+			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data).To(Equal(connectorConf))
+			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig).To(Equal(connectorConf))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
 		})
 
-		It("should be ok with v2", func() {
-			ver := 2
-			var connectorRes struct{ Data v2.ConnectorInstallResponse }
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can install a connector with v2 API", func() {
+			dir, err := os.MkdirTemp("", "dummypay")
 			Expect(err).To(BeNil())
+			GinkgoT().Cleanup(func() {
+				os.RemoveAll(dir)
+			})
 
-			getRes := struct{ Data ConnectorConf }{}
-			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorRes.Data.ConnectorID, &getRes)
+			connectorConf := components.ConnectorConfig{
+				DummyPayConfig: &components.DummyPayConfig{
+					Name:              fmt.Sprintf("connector-%s", id.String()),
+					FilePollingPeriod: pointer.For("30s"),
+					Provider:          pointer.For("Dummypay"),
+					Directory:         dir,
+				},
+			}
+			res, err := app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorEnumDummyPay, connectorConf)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data).To(Equal(connectorConf))
+			Expect(res.ConnectorResponse).NotTo(BeNil())
+			connectorID := res.ConnectorResponse.Data.ConnectorID
+
+			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorEnumDummyPay, connectorID)
+			Expect(err).To(BeNil())
+			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig).To(Equal(connectorConf.DummyPayConfig))
+			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
 		})
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
 			func(ver int, dirVal string, expectedErr string) {
-				connectorConf := newConnectorConfigurationFn()(id)
-				connectorConf.Directory = dirVal
-				err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, nil)
-				Expect(err).NotTo(BeNil())
+				connectorConf := newConnectorConfigFn()(id)
+				connectorConf.V3DummypayConfig.Directory = dirVal
+				var err error
+				if ver == 3 {
+					_, err = app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "dummypay", &connectorConf)
+				} else {
+					connectorConf := components.ConnectorConfig{
+						DummyPayConfig: &components.DummyPayConfig{
+							Name:              connectorConf.V3DummypayConfig.Name,
+							FilePollingPeriod: connectorConf.V3DummypayConfig.PollingPeriod,
+							Provider:          pointer.For("Dummypay"),
+							Directory:         connectorConf.V3DummypayConfig.Directory,
+						},
+					}
+					_, err = app.GetValue().SDK().Payments.V1.InstallConnector(ctx, components.ConnectorEnumDummyPay, connectorConf)
+				}
 				Expect(err.Error()).To(ContainSubstring("400"))
 				Expect(err.Error()).To(ContainSubstring(expectedErr))
 			},
@@ -106,43 +130,50 @@ var _ = Context("Payments API Connectors", func() {
 
 	When("updating a connector config", func() {
 		var (
-			connectorRes struct{ Data string }
-			connectorID  string
-			id           uuid.UUID
+			connectorID string
+			id          uuid.UUID
 		)
 		JustBeforeEach(func() {
 			id = uuid.New()
 		})
 
-		It("should be ok with v2", func() {
-			ver := 2
-
-			connectorConf := newConnectorConfigurationFn()(id)
-			var connectorRes struct{ Data v2.ConnectorInstallResponse }
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+		It("can update a connector config with v2 API", func() {
+			var err error
+			connectorID, _, err = installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data.ConnectorID
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-			config := newConnectorConfigurationFn()(id)
-			config.PollingPeriod = "2m"
-			err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &config)
+			dir, err := os.MkdirTemp("", "updateddir")
+			Expect(err).To(BeNil())
+			GinkgoT().Cleanup(func() {
+				os.RemoveAll(dir)
+			})
+
+			config := components.ConnectorConfig{
+				DummyPayConfig: &components.DummyPayConfig{
+					Name:              "some name",
+					FilePollingPeriod: pointer.For("2m"),
+					Provider:          pointer.For("Dummypay"),
+					Directory:         dir,
+				},
+			}
+			_, err = app.GetValue().SDK().Payments.V1.UpdateConnectorConfigV1(ctx, components.ConnectorEnumDummyPay, connectorID, config)
 			Expect(err).To(BeNil())
 
-			getRes := struct{ Data ConnectorConf }{}
-			err = testserver.ConnectorConfig(ctx, app.GetValue(), ver, connectorID, &getRes)
+			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorEnumDummyPay, connectorID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data).To(Equal(config))
+			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig).To(Equal(config.DummyPayConfig))
+			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
 		})
 
-		It("should be ok with v3", func() {
+		It("can update a connector config with v3 API", func() {
 			id := uuid.New()
 			ver := 3
 
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			var err error
+			connectorID, _, err = installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
 			config := newConnectorConfigurationFn()(id)
@@ -158,13 +189,14 @@ var _ = Context("Payments API Connectors", func() {
 
 		DescribeTable("should respond with a validation error when plugin-side config invalid",
 			func(ver int, dirValue string, expectedErr string) {
-				connectorConf := newConnectorConfigurationFn()(id)
-				err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+				connectorConf := newConnectorConfigFn()(id)
+				install, err := app.GetValue().SDK().Payments.V3.InstallConnector(ctx, "dummypay", &connectorConf)
 				Expect(err).To(BeNil())
-				connectorID = connectorRes.Data
+				Expect(install.V3InstallConnectorResponse).NotTo(BeNil())
+				connectorID := install.V3InstallConnectorResponse.Data
 				blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-				connectorConf.Directory = dirValue
+				connectorConf.V3DummypayConfig.Directory = dirValue
 				err = testserver.ConnectorConfigUpdate(ctx, app.GetValue(), ver, connectorID, &connectorConf)
 				Expect(err).NotTo(BeNil())
 				Expect(err.Error()).To(ContainSubstring("400"))
@@ -184,7 +216,7 @@ var _ = Context("Payments API Connectors", func() {
 		})
 
 		It("can be uninstalled with v3 API", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), id)
+			connectorID, _, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
 			resp, err := app.GetValue().SDK().Payments.V3.UninstallConnector(ctx, connectorID)
@@ -202,7 +234,7 @@ var _ = Context("Payments API Connectors", func() {
 		})
 
 		It("can be uninstalled using v2 API", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), id)
+			connectorID, _, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
 			_, err = app.GetValue().SDK().Payments.V1.UninstallConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorID)
@@ -220,7 +252,7 @@ var _ = Context("Payments API Connectors", func() {
 		})
 
 		It("can be reset with v3 API", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), id)
+			connectorID, _, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
 			reset, err := app.GetValue().SDK().Payments.V3.ResetConnector(ctx, connectorID)
@@ -236,7 +268,7 @@ var _ = Context("Payments API Connectors", func() {
 		})
 
 		It("can be reset with v2 API", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), id)
+			connectorID, _, err := installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
 			_, err = app.GetValue().SDK().Payments.V1.ResetConnectorV1(ctx, components.ConnectorEnumDummyPay, connectorID)
@@ -247,42 +279,36 @@ var _ = Context("Payments API Connectors", func() {
 
 	When("fetching a single schedule for a connector", func() {
 		var (
-			connectorRes struct{ Data string }
-			id           uuid.UUID
-			ver          int
+			connectorID string
+			id          uuid.UUID
 
-			expectedSchedule models.Schedule
+			expectedSchedule components.V3Schedule
 		)
 		JustBeforeEach(func() {
-			ver = 3
 			id = uuid.New()
 
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			var err error
+			connectorID, _, err = installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
-			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
+			workflowID := blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
 
-			listRes := struct {
-				Cursor bunpaginate.Cursor[models.Schedule]
-			}{}
-			err = testserver.ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &listRes)
+			listRes, err := app.GetValue().SDK().Payments.V3.ListConnectorSchedules(ctx, connectorID, nil, nil, nil)
 			Expect(err).To(BeNil())
-			Expect(len(listRes.Cursor.Data) > 0).To(BeTrue())
-			expectedSchedule = listRes.Cursor.Data[0]
+			Expect(listRes.V3ConnectorSchedulesCursorResponse).NotTo(BeNil())
+			schedules := listRes.V3ConnectorSchedulesCursorResponse.Cursor.Data
+			Expect(len(schedules) > 0).To(BeTrue())
+			expectedSchedule = schedules[0]
 		})
 
-		It("should be ok with v3", func(ctx SpecContext) {
-			res := struct {
-				Data models.Schedule
-			}{}
-			err := testserver.GetConnectorSchedule(ctx, app.GetValue(), ver, connectorRes.Data, expectedSchedule.ID, &res)
+		It("can fetch a single schedule with v3 API", func(ctx SpecContext) {
+			res, err := app.GetValue().SDK().Payments.V3.GetConnectorSchedule(ctx, connectorID, expectedSchedule.ID)
 			Expect(err).To(BeNil())
-			schedule := res.Data
+			Expect(res.V3ConnectorScheduleResponse).NotTo(BeNil())
+			schedule := res.V3ConnectorScheduleResponse.Data
 			Expect(schedule).NotTo(BeNil())
-			Expect(schedule.ConnectorID.String()).To(Equal(connectorRes.Data))
-			Expect(schedule.ConnectorID.Provider).To(Equal("dummypay"))
+			Expect(schedule.ConnectorID).To(Equal(connectorID))
 			Expect(schedule.ID).To(Equal(expectedSchedule.ID))
 			Expect(schedule.CreatedAt).To(Equal(expectedSchedule.CreatedAt))
 		})
@@ -290,9 +316,8 @@ var _ = Context("Payments API Connectors", func() {
 
 	When("searching for schedules for a connector", func() {
 		var (
-			connectorRes  struct{ Data string }
+			connectorID   string
 			id            uuid.UUID
-			ver           int
 			expectedTypes = map[string]struct{}{
 				"FetchAccounts":         {},
 				"FetchExternalAccounts": {},
@@ -301,18 +326,17 @@ var _ = Context("Payments API Connectors", func() {
 			}
 		)
 		JustBeforeEach(func() {
-			ver = 3
 			id = uuid.New()
 
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := testserver.ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			var err error
+			connectorID, _, err = installConnector(ctx, app.GetValue(), id)
 			Expect(err).To(BeNil())
 
-			workflowID := blockTillWorkflowComplete(ctx, connectorRes.Data, "run-tasks-")
-			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorRes.Data)))
+			workflowID := blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
 		})
 
-		It("should be ok with v3", func(ctx SpecContext) {
+		It("can search for schedules with v3 API", func(ctx SpecContext) {
 			schCl := temporalServer.GetValue().DefaultClient().ScheduleClient()
 			list, err := schCl.List(ctx, client.ScheduleListOptions{PageSize: 1})
 			Expect(err).To(BeNil())
@@ -320,7 +344,7 @@ var _ = Context("Payments API Connectors", func() {
 
 			for list.HasNext() {
 				schedule, err := list.Next()
-				if !strings.Contains(schedule.ID, connectorRes.Data) {
+				if !strings.Contains(schedule.ID, connectorID) {
 					continue
 				}
 				Expect(err).To(BeNil())
@@ -328,15 +352,13 @@ var _ = Context("Payments API Connectors", func() {
 				Expect(ok).To(BeTrue())
 			}
 
-			res := struct {
-				Cursor bunpaginate.Cursor[models.Schedule]
-			}{}
-			err = testserver.ConnectorSchedules(ctx, app.GetValue(), ver, connectorRes.Data, &res)
+			res, err := app.GetValue().SDK().Payments.V3.ListConnectorSchedules(ctx, connectorID, nil, nil, nil)
 			Expect(err).To(BeNil())
-			Expect(len(res.Cursor.Data) > 0).To(BeTrue())
-			for _, schedule := range res.Cursor.Data {
-				Expect(schedule.ConnectorID.String()).To(Equal(connectorRes.Data))
-				Expect(schedule.ConnectorID.Provider).To(Equal("dummypay"))
+			Expect(res.V3ConnectorSchedulesCursorResponse).NotTo(BeNil())
+			schedules := res.V3ConnectorSchedulesCursorResponse.Cursor.Data
+			Expect(len(schedules) > 0).To(BeTrue())
+			for _, schedule := range schedules {
+				Expect(schedule.ConnectorID).To(Equal(connectorID))
 			}
 		})
 	})
@@ -418,13 +440,17 @@ func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searc
 	return workflowID
 }
 
-func installConnector(ctx context.Context, srv *testserver.Server, ref uuid.UUID) (connectorID string, err error) {
+func installConnector(
+	ctx context.Context,
+	srv *testserver.Server,
+	ref uuid.UUID,
+) (connectorID string, config *components.V3DummypayConfig, err error) {
 	connectorConf := newConnectorConfigFn()(ref)
 	install, err := srv.SDK().Payments.V3.InstallConnector(ctx, "dummypay", &connectorConf)
 	if err != nil {
-		return "", err
+		return "", config, err
 	}
-	return install.V3InstallConnectorResponse.Data, nil
+	return install.V3InstallConnectorResponse.Data, connectorConf.V3DummypayConfig, nil
 }
 
 func newConnectorConfigFn() func(id uuid.UUID) components.V3InstallConnectorRequest {
@@ -440,7 +466,7 @@ func newConnectorConfigFn() func(id uuid.UUID) components.V3InstallConnectorRequ
 				Name:          fmt.Sprintf("connector-%s", id.String()),
 				PollingPeriod: pointer.For("30s"),
 				PageSize:      pointer.For(int64(30)),
-				Provider:      pointer.For("DummyPay"),
+				Provider:      pointer.For("Dummypay"),
 				Directory:     dir,
 			},
 		}
