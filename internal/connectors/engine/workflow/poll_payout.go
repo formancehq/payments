@@ -9,11 +9,11 @@ import (
 )
 
 type PollPayout struct {
-	TaskID              models.TaskID
-	ConnectorID         models.ConnectorID
-	PaymentInitiationID models.PaymentInitiationID
-	PayoutID            string
-	ScheduleID          string
+	TaskID            models.TaskID
+	ConnectorID       models.ConnectorID
+	PaymentInitiation *models.PaymentInitiation
+	PayoutID          string
+	ScheduleID        string
 }
 
 func (w Workflow) runPollPayout(
@@ -70,7 +70,7 @@ func (w Workflow) pollPayout(
 		if err := w.storePIPaymentWithStatus(
 			ctx,
 			payment,
-			pollPayout.PaymentInitiationID,
+			pollPayout.PaymentInitiation,
 			getPIStatusFromPayment(payment.Status),
 		); err != nil {
 			return "", err

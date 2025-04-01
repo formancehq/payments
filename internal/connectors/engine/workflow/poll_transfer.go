@@ -9,11 +9,11 @@ import (
 )
 
 type PollTransfer struct {
-	TaskID              models.TaskID
-	ConnectorID         models.ConnectorID
-	PaymentInitiationID models.PaymentInitiationID
-	TransferID          string
-	ScheduleID          string
+	TaskID            models.TaskID
+	ConnectorID       models.ConnectorID
+	PaymentInitiation *models.PaymentInitiation
+	TransferID        string
+	ScheduleID        string
 }
 
 func (w Workflow) runPollTransfer(
@@ -70,7 +70,7 @@ func (w Workflow) pollTransfer(
 		if err := w.storePIPaymentWithStatus(
 			ctx,
 			payment,
-			pollTransfer.PaymentInitiationID,
+			pollTransfer.PaymentInitiation,
 			getPIStatusFromPayment(payment.Status),
 		); err != nil {
 			return "", err

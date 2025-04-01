@@ -9,7 +9,7 @@ import (
 )
 
 func (a Activities) EventsSendConnectorReset(ctx context.Context, connectorID models.ConnectorID, at time.Time) error {
-	return a.events.Publish(ctx, a.events.NewEventResetConnector(connectorID, at))
+	return a.events.Publish(ctx, a.events.NewEventResetConnector(connectorID, at)...)
 }
 
 var EventsSendConnectorResetActivity = Activities{}.EventsSendConnectorReset

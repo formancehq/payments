@@ -13,7 +13,7 @@ type EventsSendPaymentRequest struct {
 }
 
 func (a Activities) EventsSendPayment(ctx context.Context, req EventsSendPaymentRequest) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedPayments(req.Payment, req.Adjustment))
+	return a.events.Publish(ctx, a.events.NewEventSavedPayments(req.Payment, req.Adjustment)...)
 }
 
 var EventsSendPaymentActivity = Activities{}.EventsSendPayment

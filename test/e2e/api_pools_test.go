@@ -68,7 +68,8 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := res.Data
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			var getRes struct{ Data models.Pool }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -103,11 +104,13 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := res.Data
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			err = RemovePool(ctx, app.GetValue(), ver, poolID)
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeDeletePool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
@@ -146,7 +149,8 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := res.Data.ID
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			var getRes struct{ Data v2.PoolResponse }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -181,11 +185,13 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := res.Data.ID
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			err = RemovePool(ctx, app.GetValue(), ver, poolID)
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeDeletePool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
@@ -229,13 +235,15 @@ var _ = Context("Payments API Pools", func() {
 			Expect(err).To(BeNil())
 			poolID = res.Data
 			eventPayload = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
 		It("should be possible to remove account from pool", func() {
 			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
 			var getRes struct{ Data models.Pool }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -252,7 +260,8 @@ var _ = Context("Payments API Pools", func() {
 		It("should be possible to add account to pool", func() {
 			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
 			var getRes struct{ Data models.Pool }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -300,13 +309,15 @@ var _ = Context("Payments API Pools", func() {
 			Expect(err).To(BeNil())
 			poolID = res.Data.ID
 			eventPayload = GenericEventPayload{ID: poolID}
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
 		It("should be possible to remove account from pool", func() {
 			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
 			var getRes struct{ Data v2.PoolResponse }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -323,7 +334,8 @@ var _ = Context("Payments API Pools", func() {
 		It("should be possible to add account to pool", func() {
 			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
-			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
 			var getRes struct{ Data v2.PoolResponse }
 			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
@@ -369,7 +381,8 @@ func setupAccounts(
 			AccountID:   accountResponse.Data.ID.String(),
 			Reference:   accountRequest.Reference,
 		}
-		Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(msg))))
+		Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedAccounts, WithPayloadSubset(msg))))
+		Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedAccounts, WithPayloadSubset(msg))))
 		accountIDs = append(accountIDs, accountResponse.Data.ID.String())
 	}
 	return accountIDs

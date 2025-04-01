@@ -96,7 +96,7 @@ func (w Workflow) reversePayout(
 		if err := w.storePIPaymentWithStatus(
 			ctx,
 			payment,
-			pi.ID,
+			pi,
 			getPIStatusFromPayment(payment.Status),
 		); err != nil {
 			return "", err
@@ -135,6 +135,7 @@ func (w Workflow) reversePayout(
 
 		err = w.addPIAdjustment(
 			ctx,
+			pi,
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: pi.ID,
 				CreatedAt:           workflow.Now(ctx),

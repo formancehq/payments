@@ -21,7 +21,10 @@ func New(p message.Publisher, stackURL string) *Events {
 	}
 }
 
-func (e *Events) Publish(ctx context.Context, em publish.EventMessage) error {
-	return e.publisher.Publish(eventsdef.TopicPayments,
-		publish.NewMessage(ctx, em))
+func (e *Events) Publish(ctx context.Context, em ...publish.EventMessage) error {
+	messages := make([]*message.Message, 0, len(em))
+	for _, e := range em {
+		messages = append(messages, publish.NewMessage(ctx, e))
+	}
+	return e.publisher.Publish(eventsdef.TopicPayments, messages...)
 }
