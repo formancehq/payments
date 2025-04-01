@@ -94,7 +94,10 @@ func (w Workflow) validateOnlyReverse(
 		),
 		RunSendEvents,
 		SendEvents{
-			PaymentInitiationAdjustment: &adj,
+			SendEventPaymentInitiationAdjustment: &SendEventPaymentInitiationAdjustment{
+				PaymentInitiation:           validateReverse.PI,
+				PaymentInitiationAdjustment: &adj,
+			},
 		},
 	).Get(ctx, nil); err != nil {
 		return err

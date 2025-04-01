@@ -76,7 +76,8 @@ var _ = Context("Payments API Accounts", func() {
 				Expect(err).To(BeNil())
 				Expect(getResponse.Data).To(Equal(createResponse.Data))
 
-				Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+				Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedAccounts)))
+				Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedAccounts)))
 			},
 			Entry("with v2", 2),
 			Entry("with v3", 3),
@@ -101,11 +102,12 @@ var _ = Context("Payments API Accounts", func() {
 
 				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
 				Expect(err).To(BeNil())
-				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedAccounts)))
 
-				var msg events.BalanceMessagePayload
+				var msg events.V3BalanceMessagePayload
 				// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedBalances)))
+				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedBalances, WithCallback(
 					msg,
 					func(b []byte) error {
 						return json.Unmarshal(b, &msg)

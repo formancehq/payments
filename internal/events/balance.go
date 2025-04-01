@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type BalanceMessagePayload struct {
+type V3BalanceMessagePayload struct {
 	AccountID     string    `json:"accountID"`
 	ConnectorID   string    `json:"connectorID"`
 	Provider      string    `json:"provider"`
@@ -19,8 +19,24 @@ type BalanceMessagePayload struct {
 	Balance       *big.Int  `json:"balance"`
 }
 
-func (e Events) NewEventSavedBalances(balance models.Balance) publish.EventMessage {
-	payload := BalanceMessagePayload{
+type V2BalanceMessagePayload struct {
+	AccountID   string    `json:"accountID"`
+	ConnectorID string    `json:"connectorId"`
+	Provider    string    `json:"provider"`
+	CreatedAt   time.Time `json:"createdAt"`
+	Asset       string    `json:"asset"`
+	Balance     *big.Int  `json:"balance"`
+}
+
+func (e Events) NewEventSavedBalances(balance models.Balance) []publish.EventMessage {
+	return []publish.EventMessage{
+		toV2BalanceEvent(balance),
+		toV3BalanceEvent(balance),
+	}
+}
+
+func toV3BalanceEvent(balance models.Balance) publish.EventMessage {
+	payload := V3BalanceMessagePayload{
 		AccountID:     balance.AccountID.String(),
 		ConnectorID:   balance.AccountID.ConnectorID.String(),
 		Provider:      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
@@ -35,7 +51,26 @@ func (e Events) NewEventSavedBalances(balance models.Balance) publish.EventMessa
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeSavedBalances,
+		Type:           events.V3EventTypeSavedBalances,
 		Payload:        payload,
+	}
+}
+
+func toV2BalanceEvent(balance models.Balance) publish.EventMessage {
+	payload := V2BalanceMessagePayload{
+		CreatedAt:   balance.CreatedAt,
+		ConnectorID: balance.AccountID.ConnectorID.String(),
+		Provider:    models.ToV2Provider(balance.AccountID.ConnectorID.Provider),
+		AccountID:   balance.AccountID.String(),
+		Asset:       balance.Asset,
+		Balance:     balance.Balance,
+	}
+
+	return publish.EventMessage{
+		Date:    time.Now().UTC(),
+		App:     events.EventApp,
+		Version: events.EventVersion,
+		Type:    events.V2EventTypeSavedBalances,
+		Payload: payload,
 	}
 }

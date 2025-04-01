@@ -12,17 +12,28 @@ import (
 
 type sendEventActivityFunction func(ctx workflow.Context) error
 
-type SendEvents struct {
-	Account                         *models.Account
-	Balance                         *models.Balance
-	BankAccount                     *models.BankAccount
-	Payment                         *models.Payment
-	ConnectorReset                  *models.ConnectorID
-	PoolsCreation                   *models.Pool
-	PoolsDeletion                   *uuid.UUID
+type SendEventPaymentInitiationAdjustment struct {
+	PaymentInitiation           *models.PaymentInitiation
+	PaymentInitiationAdjustment *models.PaymentInitiationAdjustment
+}
+
+type SendEventPaymentInitiationRelatedPayment struct {
 	PaymentInitiation               *models.PaymentInitiation
-	PaymentInitiationAdjustment     *models.PaymentInitiationAdjustment
 	PaymentInitiationRelatedPayment *models.PaymentInitiationRelatedPayments
+	Status                          models.PaymentInitiationAdjustmentStatus
+}
+
+type SendEvents struct {
+	Account                                  *models.Account
+	Balance                                  *models.Balance
+	BankAccount                              *models.BankAccount
+	Payment                                  *models.Payment
+	ConnectorReset                           *models.ConnectorID
+	PoolsCreation                            *models.Pool
+	PoolsDeletion                            *uuid.UUID
+	PaymentInitiation                        *models.PaymentInitiation
+	SendEventPaymentInitiationAdjustment     *SendEventPaymentInitiationAdjustment
+	SendEventPaymentInitiationRelatedPayment *SendEventPaymentInitiationRelatedPayment
 }
 
 func (w Workflow) runSendEvents(
@@ -145,6 +156,7 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendPoolDeletion(
 					infiniteRetryContext(ctx),
 					*sendEvents.PoolsDeletion,
+					workflow.Now(ctx).UTC(),
 				)
 			},
 		)
@@ -170,15 +182,18 @@ func (w Workflow) runSendEvents(
 		}
 	}
 
-	if sendEvents.PaymentInitiationAdjustment != nil {
+	if sendEvents.SendEventPaymentInitiationAdjustment != nil &&
+		sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiation != nil &&
+		sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiationAdjustment != nil {
 		err := sendEvent(
 			ctx,
-			sendEvents.PaymentInitiationAdjustment.IdempotencyKey(),
-			&sendEvents.PaymentInitiationAdjustment.ID.PaymentInitiationID.ConnectorID,
+			sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiationAdjustment.IdempotencyKey(),
+			&sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiation.ConnectorID,
 			func(ctx workflow.Context) error {
 				return activities.EventsSendPaymentInitiationAdjustment(
 					infiniteRetryContext(ctx),
-					*sendEvents.PaymentInitiationAdjustment,
+					*sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiationAdjustment,
+					*sendEvents.SendEventPaymentInitiationAdjustment.PaymentInitiation,
 				)
 			},
 		)
@@ -187,15 +202,19 @@ func (w Workflow) runSendEvents(
 		}
 	}
 
-	if sendEvents.PaymentInitiationRelatedPayment != nil {
+	if sendEvents.SendEventPaymentInitiationRelatedPayment != nil &&
+		sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiation != nil &&
+		sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiationRelatedPayment != nil {
 		err := sendEvent(
 			ctx,
-			sendEvents.PaymentInitiationRelatedPayment.IdempotencyKey(),
-			&sendEvents.PaymentInitiationRelatedPayment.PaymentInitiationID.ConnectorID,
+			sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiationRelatedPayment.IdempotencyKey(),
+			&sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiation.ConnectorID,
 			func(ctx workflow.Context) error {
 				return activities.EventsSendPaymentInitiationRelatedPayment(
 					infiniteRetryContext(ctx),
-					*sendEvents.PaymentInitiationRelatedPayment,
+					*sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiationRelatedPayment,
+					*sendEvents.SendEventPaymentInitiationRelatedPayment.PaymentInitiation,
+					sendEvents.SendEventPaymentInitiationRelatedPayment.Status,
 				)
 			},
 		)

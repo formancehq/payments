@@ -28,7 +28,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPayment_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreatePayoutRequest) (*models.CreatePayoutResponse, error) {
@@ -50,7 +50,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPayment_Success() {
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
 		s.NotNil(req.Payment)
-		s.NotNil(req.PaymentInitiationRelatedPayment)
+		s.NotNil(req.SendEventPaymentInitiationRelatedPayment)
 		s.Nil(req.Account)
 		s.Nil(req.Balance)
 		s.Nil(req.BankAccount)
@@ -69,7 +69,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPayment_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -104,7 +104,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithScheduledAt_WithPayment_Success() 
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.SourceAccountID).Once().Return(&s.account, nil)
@@ -119,7 +119,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithScheduledAt_WithPayment_Success() 
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreatePayoutRequest) (*models.CreatePayoutResponse, error) {
@@ -141,7 +141,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithScheduledAt_WithPayment_Success() 
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
 		s.NotNil(req.Payment)
-		s.NotNil(req.PaymentInitiationRelatedPayment)
+		s.NotNil(req.SendEventPaymentInitiationRelatedPayment)
 		s.Nil(req.Account)
 		s.Nil(req.Balance)
 		s.Nil(req.BankAccount)
@@ -160,7 +160,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithScheduledAt_WithPayment_Success() 
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -194,7 +194,7 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPollingPayment_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CreatePayoutRequest) (*models.CreatePayoutResponse, error) {

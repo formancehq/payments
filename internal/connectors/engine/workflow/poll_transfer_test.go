@@ -35,7 +35,7 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 		s.Nil(sendEvents.Account)
 		s.Nil(sendEvents.ConnectorReset)
 		s.NotNil(sendEvents.Payment)
-		s.NotNil(sendEvents.PaymentInitiationRelatedPayment)
+		s.NotNil(sendEvents.SendEventPaymentInitiationRelatedPayment)
 		s.Nil(sendEvents.PoolsCreation)
 		s.Nil(sendEvents.PoolsDeletion)
 		s.Nil(sendEvents.BankAccount)
@@ -47,7 +47,7 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.PaymentInitiationAdjustment)
+		s.NotNil(req.SendEventPaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test-schedule").Once().Return(nil)
@@ -62,10 +62,10 @@ func (s *UnitTestSuite) Test_PollTransfer_WithPayment_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -85,10 +85,10 @@ func (s *UnitTestSuite) Test_PollTransfer_WithoutPaymentAndError_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -119,10 +119,10 @@ func (s *UnitTestSuite) Test_PollTransfer_WithError_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -147,10 +147,10 @@ func (s *UnitTestSuite) Test_PollTransfer_PluginPollTransferStatus_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -179,10 +179,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentsStore_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -217,10 +217,10 @@ func (s *UnitTestSuite) Test_PollTransfer_RunSendEvents_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -250,10 +250,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsRelatedPaymen
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -285,10 +285,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsAdjustmentsSt
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -322,10 +322,10 @@ func (s *UnitTestSuite) Test_PollTransfer_TemporalDeleteSchedule_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -360,10 +360,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StorageSchedulesDelete_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -396,10 +396,10 @@ func (s *UnitTestSuite) Test_PollTransfer_StorageTasksStore_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:         s.connectorID,
-		PaymentInitiationID: s.paymentInitiationID,
-		TransferID:          "test-transfer",
-		ScheduleID:          "test-schedule",
+		ConnectorID:       s.connectorID,
+		PaymentInitiation: &s.paymentInitiationTransfer,
+		TransferID:        "test-transfer",
+		ScheduleID:        "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

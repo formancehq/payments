@@ -60,6 +60,7 @@ func (w Workflow) createTransfer(
 	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
 		err = w.addPIAdjustment(
 			ctx,
+			pi,
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createTransfer.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),
@@ -89,6 +90,7 @@ func (w Workflow) createTransfer(
 
 	err = w.addPIAdjustment(
 		ctx,
+		pi,
 		models.PaymentInitiationAdjustmentID{
 			PaymentInitiationID: createTransfer.PaymentInitiationID,
 			CreatedAt:           workflow.Now(ctx),
@@ -119,7 +121,7 @@ func (w Workflow) createTransfer(
 			if err := w.storePIPaymentWithStatus(
 				ctx,
 				payment,
-				createTransfer.PaymentInitiationID,
+				pi,
 				getPIStatusFromPayment(payment.Status),
 			); err != nil {
 				return err
@@ -164,11 +166,11 @@ func (w Workflow) createTransfer(
 						Workflow: RunPollTransfer,
 						Args: []interface{}{
 							PollTransfer{
-								TaskID:              createTransfer.TaskID,
-								ConnectorID:         createTransfer.ConnectorID,
-								PaymentInitiationID: createTransfer.PaymentInitiationID,
-								TransferID:          *createTransferResponse.PollingTransferID,
-								ScheduleID:          scheduleID,
+								TaskID:            createTransfer.TaskID,
+								ConnectorID:       createTransfer.ConnectorID,
+								PaymentInitiation: pi,
+								TransferID:        *createTransferResponse.PollingTransferID,
+								ScheduleID:        scheduleID,
 							},
 						},
 						TaskQueue: w.getDefaultTaskQueue(),
@@ -200,6 +202,7 @@ func (w Workflow) createTransfer(
 		cause := errorsutils.Cause(errPlugin)
 		err := w.addPIAdjustment(
 			ctx,
+			pi,
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createTransfer.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),

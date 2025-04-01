@@ -16,7 +16,7 @@ import (
 func (w Workflow) storePIPaymentWithStatus(
 	ctx workflow.Context,
 	payment models.Payment,
-	paymentInitiationID models.PaymentInitiationID,
+	pi *models.PaymentInitiation,
 	status models.PaymentInitiationAdjustmentStatus,
 ) error {
 	// payment is available, storing it
@@ -30,7 +30,7 @@ func (w Workflow) storePIPaymentWithStatus(
 
 	err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
 		infiniteRetryContext(ctx),
-		paymentInitiationID,
+		pi.ID,
 		payment.ID,
 		payment.CreatedAt,
 	)
@@ -52,9 +52,13 @@ func (w Workflow) storePIPaymentWithStatus(
 		RunSendEvents,
 		SendEvents{
 			Payment: &payment,
-			PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
-				PaymentInitiationID: paymentInitiationID,
-				PaymentID:           payment.ID,
+			SendEventPaymentInitiationRelatedPayment: &SendEventPaymentInitiationRelatedPayment{
+				PaymentInitiation: pi,
+				PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
+					PaymentInitiationID: pi.ID,
+					PaymentID:           payment.ID,
+				},
+				Status: status,
 			},
 		},
 	).Get(ctx, nil); err != nil {
@@ -63,8 +67,9 @@ func (w Workflow) storePIPaymentWithStatus(
 
 	err = w.addPIAdjustment(
 		ctx,
+		pi,
 		models.PaymentInitiationAdjustmentID{
-			PaymentInitiationID: paymentInitiationID,
+			PaymentInitiationID: pi.ID,
 			CreatedAt:           workflow.Now(ctx),
 			Status:              status,
 		},
@@ -81,6 +86,7 @@ func (w Workflow) storePIPaymentWithStatus(
 
 func (w Workflow) addPIAdjustment(
 	ctx workflow.Context,
+	pi *models.PaymentInitiation,
 	adjustmentID models.PaymentInitiationAdjustmentID,
 	amount *big.Int,
 	asset *string,
@@ -117,7 +123,10 @@ func (w Workflow) addPIAdjustment(
 		),
 		RunSendEvents,
 		SendEvents{
-			PaymentInitiationAdjustment: &adj,
+			SendEventPaymentInitiationAdjustment: &SendEventPaymentInitiationAdjustment{
+				PaymentInitiation:           pi,
+				PaymentInitiationAdjustment: &adj,
+			},
 		},
 	).Get(ctx, nil); err != nil {
 		return err

@@ -60,6 +60,7 @@ func (w Workflow) createPayout(
 	if !pi.ScheduledAt.IsZero() && pi.ScheduledAt.After(now) {
 		err = w.addPIAdjustment(
 			ctx,
+			pi,
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createPayout.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),
@@ -89,6 +90,7 @@ func (w Workflow) createPayout(
 
 	err = w.addPIAdjustment(
 		ctx,
+		pi,
 		models.PaymentInitiationAdjustmentID{
 			PaymentInitiationID: createPayout.PaymentInitiationID,
 			CreatedAt:           workflow.Now(ctx),
@@ -118,7 +120,7 @@ func (w Workflow) createPayout(
 			if err := w.storePIPaymentWithStatus(
 				ctx,
 				payment,
-				createPayout.PaymentInitiationID,
+				pi,
 				getPIStatusFromPayment(payment.Status),
 			); err != nil {
 				return err
@@ -162,11 +164,11 @@ func (w Workflow) createPayout(
 						Workflow: RunPollPayout,
 						Args: []interface{}{
 							PollPayout{
-								TaskID:              createPayout.TaskID,
-								ConnectorID:         createPayout.ConnectorID,
-								PaymentInitiationID: createPayout.PaymentInitiationID,
-								PayoutID:            *createPayoutResponse.PollingPayoutID,
-								ScheduleID:          scheduleID,
+								TaskID:            createPayout.TaskID,
+								ConnectorID:       createPayout.ConnectorID,
+								PaymentInitiation: pi,
+								PayoutID:          *createPayoutResponse.PollingPayoutID,
+								ScheduleID:        scheduleID,
 							},
 						},
 						TaskQueue: w.getDefaultTaskQueue(),
@@ -198,6 +200,7 @@ func (w Workflow) createPayout(
 		cause := errorsutils.Cause(errPlugin)
 		err = w.addPIAdjustment(
 			ctx,
+			pi,
 			models.PaymentInitiationAdjustmentID{
 				PaymentInitiationID: createPayout.PaymentInitiationID,
 				CreatedAt:           workflow.Now(ctx),

@@ -9,11 +9,11 @@ import (
 )
 
 func (a Activities) EventsSendBankAccount(ctx context.Context, bankAccount models.BankAccount) error {
-	ba, err := a.events.NewEventSavedBankAccounts(bankAccount)
+	bas, err := a.events.NewEventSavedBankAccounts(bankAccount)
 	if err != nil {
-		return fmt.Errorf("failed to send bank account: %w", err)
+		return fmt.Errorf("failed to send bank account events: %w", err)
 	}
-	return a.events.Publish(ctx, ba)
+	return a.events.Publish(ctx, bas...)
 }
 
 var EventsSendBankAccountActivity = Activities{}.EventsSendBankAccount
