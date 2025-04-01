@@ -50,7 +50,7 @@ func toV3BalanceEvent(balance models.Balance) publish.EventMessage {
 		IdempotencyKey: balance.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedBalances,
 		Payload:        payload,
 	}
@@ -69,7 +69,7 @@ func toV2BalanceEvent(balance models.Balance) publish.EventMessage {
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedBalances,
 		Payload: payload,
 	}

@@ -101,7 +101,7 @@ func toV3PaymentInitiationEvent(pi models.PaymentInitiation) publish.EventMessag
 		IdempotencyKey: pi.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedPaymentInitiation,
 		Payload:        payload,
 	}
@@ -129,7 +129,7 @@ func toV2TransferInitiationsEvent(pi models.PaymentInitiation) publish.EventMess
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedTransferInitiation,
 		Payload: payload,
 	}
@@ -163,7 +163,7 @@ func toV3PaymentInitiationAdjustmentEvent(adj models.PaymentInitiationAdjustment
 		IdempotencyKey: adj.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedPaymentInitiationAdjustment,
 		Payload:        payload,
 	}
@@ -194,7 +194,7 @@ func toV2TransferInitiationAdjustmentEvent(adj models.PaymentInitiationAdjustmen
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedTransferInitiation,
 		Payload: payload,
 	}
@@ -220,7 +220,7 @@ func toV3PaymentInitiationRelatedPayment(relatedPayment models.PaymentInitiation
 		IdempotencyKey: relatedPayment.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedPaymentInitiationRelatedPayment,
 		Payload:        payload,
 	}
@@ -256,7 +256,7 @@ func toV2PaymentInitiationRelatedPayment(
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedTransferInitiation,
 		Payload: payload,
 	}

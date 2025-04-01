@@ -31,7 +31,7 @@ func toV3ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.Ev
 		IdempotencyKey: resetConnectorIdempotencyKey(connectorID, at),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeConnectorReset,
 		Payload: V3ConnectorMessagePayload{
 			CreatedAt:   at,
@@ -44,7 +44,7 @@ func toV2ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.Ev
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeConnectorReset,
 		Payload: V2ConnectorMessagePayload{
 			CreatedAt:   at,

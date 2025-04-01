@@ -3,8 +3,9 @@ package events
 const (
 	TopicPayments = "payments"
 
-	EventVersion = "v3"
-	EventApp     = "payments"
+	V2EventVersion = "v2"
+	V3EventVersion = "v3"
+	EventApp       = "payments"
 
 	V2EventTypeSavedPool                = "SAVED_POOL"
 	V2EventTypeDeletePool               = "DELETED_POOL"

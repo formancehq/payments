@@ -98,7 +98,7 @@ func toV3BankAccountEvent(bankAccount models.BankAccount) publish.EventMessage {
 		IdempotencyKey: bankAccount.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedBankAccount,
 		Payload:        payload,
 	}
@@ -141,7 +141,7 @@ func toV2BankAccountEvent(bankAccount models.BankAccount) publish.EventMessage {
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedBankAccount,
 		Payload: payload,
 	}

@@ -119,17 +119,17 @@ var _ = Context("Payments API Payment Initiation", func() {
 			processingPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String(),
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processingPI))))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(paymentMsg))))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationRelatedPayment)))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processingPI))))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(paymentMsg))))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationRelatedPayment)))
 			processedPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
+			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 

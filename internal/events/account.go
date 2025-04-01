@@ -67,7 +67,7 @@ func toV3AccountEvent(account models.Account) publish.EventMessage {
 		IdempotencyKey: account.IdempotencyKey(),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.EventVersion,
+		Version:        events.V3EventVersion,
 		Type:           events.V3EventTypeSavedAccounts,
 		Payload:        payload,
 	}
@@ -94,7 +94,7 @@ func toV2AccountEvent(account models.Account) publish.EventMessage {
 	return publish.EventMessage{
 		Date:    time.Now().UTC(),
 		App:     events.EventApp,
-		Version: events.EventVersion,
+		Version: events.V2EventVersion,
 		Type:    events.V2EventTypeSavedAccounts,
 		Payload: payload,
 	}
