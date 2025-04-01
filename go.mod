@@ -1,8 +1,7 @@
 module github.com/formancehq/payments
 
 go 1.23.2
-
-toolchain go1.23.5
+toolchain go1.24.1
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
@@ -23,7 +22,7 @@ require (
 	github.com/go-openapi/strfmt v0.23.0
 	github.com/go-playground/locales v0.14.1
 	github.com/go-playground/universal-translator v0.18.1
-	github.com/go-playground/validator/v10 v10.25.0
+	github.com/go-playground/validator/v10 v10.26.0
 	github.com/golang/mock v1.7.0-rc.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
