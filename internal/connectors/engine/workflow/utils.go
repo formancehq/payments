@@ -38,6 +38,7 @@ func (w Workflow) storePIPaymentWithStatus(
 		return err
 	}
 
+	// Do not wait for the event to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -61,7 +62,7 @@ func (w Workflow) storePIPaymentWithStatus(
 				Status: status,
 			},
 		},
-	).Get(ctx, nil); err != nil {
+	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
 		return err
 	}
 
@@ -110,6 +111,7 @@ func (w Workflow) addPIAdjustment(
 		return err
 	}
 
+	// Do not wait for the event to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -128,7 +130,7 @@ func (w Workflow) addPIAdjustment(
 				PaymentInitiationAdjustment: &adj,
 			},
 		},
-	).Get(ctx, nil); err != nil {
+	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
 		return err
 	}
 

@@ -190,44 +190,6 @@ func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentsStore_Error() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_PollTransfer_RunSendEvents_Error() {
-	s.env.OnActivity(activities.PluginPollTransferStatusActivity, mock.Anything, mock.Anything).Once().Return(
-		&models.PollTransferStatusResponse{
-			Payment: &s.pspPayment,
-		},
-		nil,
-	)
-	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
-		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
-		s.Equal(s.paymentPayoutID, relatedPayment.PID)
-		return nil
-	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", fmt.Errorf("test")),
-	)
-	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
-		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		s.ErrorContains(task.Error, "test")
-		return nil
-	})
-
-	s.env.ExecuteWorkflow(RunPollTransfer, PollTransfer{
-		TaskID: models.TaskID{
-			Reference:   "test",
-			ConnectorID: s.connectorID,
-		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationTransfer,
-		TransferID:        "test-transfer",
-		ScheduleID:        "test-schedule",
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err)
-}
-
 func (s *UnitTestSuite) Test_PollTransfer_StoragePaymentInitiationsRelatedPaymentsStore_Error() {
 	s.env.OnActivity(activities.PluginPollTransferStatusActivity, mock.Anything, mock.Anything).Once().Return(
 		&models.PollTransferStatusResponse{
