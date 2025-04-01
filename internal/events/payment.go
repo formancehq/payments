@@ -157,10 +157,11 @@ func (e Events) toV2PaymentEvent(payment models.Payment, adjustment models.Payme
 	}
 
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeSavedPayments,
-		Payload: payload,
+		IdempotencyKey: adjustment.IdempotencyKey(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeSavedPayments,
+		Payload:        payload,
 	}
 }

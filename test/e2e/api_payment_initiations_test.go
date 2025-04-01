@@ -128,7 +128,6 @@ var _ = Context("Payments API Payment Initiation", func() {
 			processedPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
 			}
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
 			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))

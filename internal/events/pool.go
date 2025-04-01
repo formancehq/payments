@@ -65,11 +65,12 @@ func toV2PoolEvent(pool models.Pool) publish.EventMessage {
 	}
 
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeSavedPool,
-		Payload: payload,
+		IdempotencyKey: pool.IdempotencyKey(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeSavedPool,
+		Payload:        payload,
 	}
 }
 
@@ -106,10 +107,11 @@ func toV3PoolDeleteEvent(id uuid.UUID, at time.Time) publish.EventMessage {
 
 func toV2PoolDeleteEvent(id uuid.UUID, at time.Time) publish.EventMessage {
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeDeletePool,
+		IdempotencyKey: id.String(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeDeletePool,
 		Payload: V2DeletePoolMessagePayload{
 			CreatedAt: at,
 			ID:        id.String(),

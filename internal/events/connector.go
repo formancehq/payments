@@ -42,10 +42,11 @@ func toV3ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.Ev
 
 func toV2ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.EventMessage {
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeConnectorReset,
+		IdempotencyKey: resetConnectorIdempotencyKey(connectorID, at),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeConnectorReset,
 		Payload: V2ConnectorMessagePayload{
 			CreatedAt:   at,
 			ConnectorID: connectorID.String(),

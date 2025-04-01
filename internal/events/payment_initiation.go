@@ -127,11 +127,12 @@ func toV2TransferInitiationsEvent(pi models.PaymentInitiation) publish.EventMess
 	}
 
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeSavedTransferInitiation,
-		Payload: payload,
+		IdempotencyKey: pi.IdempotencyKey(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeSavedTransferInitiation,
+		Payload:        payload,
 	}
 }
 
@@ -192,11 +193,12 @@ func toV2TransferInitiationAdjustmentEvent(adj models.PaymentInitiationAdjustmen
 	}
 
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeSavedTransferInitiation,
-		Payload: payload,
+		IdempotencyKey: adj.IdempotencyKey(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeSavedTransferInitiation,
+		Payload:        payload,
 	}
 }
 
@@ -254,10 +256,11 @@ func toV2PaymentInitiationRelatedPayment(
 	})
 
 	return publish.EventMessage{
-		Date:    time.Now().UTC(),
-		App:     events.EventApp,
-		Version: events.V2EventVersion,
-		Type:    events.V2EventTypeSavedTransferInitiation,
-		Payload: payload,
+		IdempotencyKey: relatedPayment.IdempotencyKey(),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.V2EventVersion,
+		Type:           events.V2EventTypeSavedTransferInitiation,
+		Payload:        payload,
 	}
 }
