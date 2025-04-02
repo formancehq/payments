@@ -80,15 +80,13 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err := CreatePaymentInitiation(ctx, app.GetValue(), ver, payReq, &initRes)
 			Expect(err).To(BeNil())
 			Expect(initRes.Data.TaskID).To(Equal("")) // task nil when not sending to PSP
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiation)))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiation)))
 			var msg = struct {
 				Status string `json:"status"`
 			}{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.String(),
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(msg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(msg))))
 		})
 
 		It("can be processed", func() {
@@ -119,16 +117,13 @@ var _ = Context("Payments API Payment Initiation", func() {
 			processingPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING.String(),
 			}
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processingPI))))
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(paymentMsg))))
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedTransferInitiation)))
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationRelatedPayment)))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processingPI))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(paymentMsg))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationRelatedPayment)))
 			processedPI := PIAdjMsg{
 				Status: models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String(),
 			}
-			Eventually(e).WithTimeout(3 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
@@ -193,8 +188,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(msg))))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
@@ -287,8 +281,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(msg))))
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
@@ -353,8 +346,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
-			Eventually(e).WithTimeout(5 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedPayments, WithPayloadSubset(msg))))
-			Eventually(e).WithTimeout(5 * time.Second).Should(Receive(Event(evts.V3EventTypeSavedPayments)))
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
 			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 

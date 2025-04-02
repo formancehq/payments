@@ -107,35 +107,3 @@ func ToV3Provider(provider string) string {
 		return provider
 	}
 }
-
-// We're still using the v2 provider in some places because we need to support
-// the previous version of the API. This function is used to convert the legacy
-// providers to the v2 version.
-func ToV2Provider(provider string) string {
-	switch provider {
-	case "adyen":
-		return "ADYEN"
-	case "atlar":
-		return "ATLAR"
-	case "bankingcircle":
-		return "BANKING-CIRCLE"
-	case "currencycloud":
-		return "CURRENCY-CLOUD"
-	case "dummypay":
-		return "DUMMY-PAY"
-	case "generic":
-		return "GENERIC"
-	case "mangopay":
-		return "MANGOPAY"
-	case "modulr":
-		return "MODULR"
-	case "moneycorp":
-		return "MONEYCORP"
-	case "stripe":
-		return "STRIPE"
-	case "wise":
-		return "WISE"
-	default:
-		return provider
-	}
-}

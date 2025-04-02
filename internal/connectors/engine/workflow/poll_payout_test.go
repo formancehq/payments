@@ -35,7 +35,7 @@ func (s *UnitTestSuite) Test_PollPayout_WithPayment_Success() {
 		s.Nil(sendEvents.Account)
 		s.Nil(sendEvents.ConnectorReset)
 		s.NotNil(sendEvents.Payment)
-		s.NotNil(sendEvents.SendEventPaymentInitiationRelatedPayment)
+		s.NotNil(sendEvents.PaymentInitiationRelatedPayment)
 		s.Nil(sendEvents.PoolsCreation)
 		s.Nil(sendEvents.PoolsDeletion)
 		s.Nil(sendEvents.BankAccount)
@@ -47,7 +47,7 @@ func (s *UnitTestSuite) Test_PollPayout_WithPayment_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.SendEventPaymentInitiationAdjustment)
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test-schedule").Once().Return(nil)
@@ -62,10 +62,10 @@ func (s *UnitTestSuite) Test_PollPayout_WithPayment_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -85,10 +85,10 @@ func (s *UnitTestSuite) Test_PollPayout_WithoutPaymentAndError_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -119,10 +119,10 @@ func (s *UnitTestSuite) Test_PollPayout_WithError_Success() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -147,10 +147,10 @@ func (s *UnitTestSuite) Test_PollPayout_PluginPollPayoutStatus_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -179,10 +179,48 @@ func (s *UnitTestSuite) Test_PollPayout_StoragePaymentsStore_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_PollPayout_RunSendEvents_Error() {
+	s.env.OnActivity(activities.PluginPollPayoutStatusActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.PollPayoutStatusResponse{
+			Payment: &s.pspPayment,
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, relatedPayment activities.RelatedPayment) error {
+		s.Equal(s.paymentInitiationID, relatedPayment.PiID)
+		s.Equal(s.paymentPayoutID, relatedPayment.PID)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
+		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", fmt.Errorf("test")),
+	)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
+		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		s.ErrorContains(task.Error, "test")
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunPollPayout, PollPayout{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -212,10 +250,10 @@ func (s *UnitTestSuite) Test_PollPayout_StoragePaymentInitiationsRelatedPayments
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -247,10 +285,10 @@ func (s *UnitTestSuite) Test_PollPayout_StoragePaymentInitiationsAdjustmentsStor
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -284,10 +322,10 @@ func (s *UnitTestSuite) Test_PollPayout_TemporalDeleteSchedule_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -322,10 +360,10 @@ func (s *UnitTestSuite) Test_PollPayout_StorageSchedulesDelete_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -358,10 +396,10 @@ func (s *UnitTestSuite) Test_PollPayout_StorageTasksStore_Error() {
 			Reference:   "test",
 			ConnectorID: s.connectorID,
 		},
-		ConnectorID:       s.connectorID,
-		PaymentInitiation: &s.paymentInitiationPayout,
-		PayoutID:          "test-payout",
-		ScheduleID:        "test-schedule",
+		ConnectorID:         s.connectorID,
+		PaymentInitiationID: s.paymentInitiationID,
+		PayoutID:            "test-payout",
+		ScheduleID:          "test-schedule",
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

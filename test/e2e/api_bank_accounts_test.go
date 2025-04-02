@@ -4,7 +4,6 @@ package test_suite
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/go-libs/v2/testing/utils"
@@ -155,32 +154,14 @@ var _ = Context("Payments API Bank Accounts", func() {
 				ConnectorID: connectorID,
 			}
 
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.V2EventTypeSavedBankAccount, WithPayload(
-				events.V2BankAccountMessagePayload{
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount, WithPayload(
+				events.BankAccountMessagePayload{
 					ID:            id.String(),
 					Name:          createRequest.Name,
 					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
 					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
 					CreatedAt:     getResponse.Data.CreatedAt,
-					RelatedAccounts: []events.V2BankAccountRelatedAccountsPayload{
-						{
-							AccountID:   accountID.String(),
-							CreatedAt:   getResponse.Data.CreatedAt,
-							ConnectorID: connectorID.String(),
-							Provider:    "DUMMY-PAY",
-						},
-					},
-				},
-			))))
-
-			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedBankAccount, WithPayload(
-				events.V3BankAccountMessagePayload{
-					ID:            id.String(),
-					Name:          createRequest.Name,
-					AccountNumber: fmt.Sprintf("%s****%s", accountNumber[0:2], accountNumber[len(accountNumber)-3:]),
-					IBAN:          fmt.Sprintf("%s**************%s", iban[0:4], iban[len(iban)-4:]),
-					CreatedAt:     getResponse.Data.CreatedAt,
-					RelatedAccounts: []events.V3BankAccountRelatedAccountsPayload{
+					RelatedAccounts: []events.BankAccountRelatedAccountsPayload{
 						{
 							AccountID:   accountID.String(),
 							CreatedAt:   getResponse.Data.CreatedAt,
@@ -228,8 +209,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(res.Data.RelatedAccounts).To(HaveLen(1))
 			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorRes.Data.ConnectorID))
 
-			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedBankAccount)))
-			Eventually(e).Should(Receive(Event(evts.V3EventTypeSavedBankAccount)))
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount)))
 		})
 	})
 

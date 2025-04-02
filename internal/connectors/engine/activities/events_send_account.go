@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendAccount(ctx context.Context, account models.Account) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedAccounts(account)...)
+	return a.events.Publish(ctx, a.events.NewEventSavedAccounts(account))
 }
 
 var EventsSendAccountActivity = Activities{}.EventsSendAccount

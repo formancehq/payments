@@ -16,7 +16,7 @@ import (
 func (w Workflow) storePIPaymentWithStatus(
 	ctx workflow.Context,
 	payment models.Payment,
-	pi *models.PaymentInitiation,
+	paymentInitiationID models.PaymentInitiationID,
 	status models.PaymentInitiationAdjustmentStatus,
 ) error {
 	// payment is available, storing it
@@ -30,7 +30,7 @@ func (w Workflow) storePIPaymentWithStatus(
 
 	err = activities.StoragePaymentInitiationsRelatedPaymentsStore(
 		infiniteRetryContext(ctx),
-		pi.ID,
+		paymentInitiationID,
 		payment.ID,
 		payment.CreatedAt,
 	)
@@ -38,7 +38,6 @@ func (w Workflow) storePIPaymentWithStatus(
 		return err
 	}
 
-	// Do not wait for the event to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -53,24 +52,19 @@ func (w Workflow) storePIPaymentWithStatus(
 		RunSendEvents,
 		SendEvents{
 			Payment: &payment,
-			SendEventPaymentInitiationRelatedPayment: &SendEventPaymentInitiationRelatedPayment{
-				PaymentInitiation: pi,
-				PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
-					PaymentInitiationID: pi.ID,
-					PaymentID:           payment.ID,
-				},
-				Status: status,
+			PaymentInitiationRelatedPayment: &models.PaymentInitiationRelatedPayments{
+				PaymentInitiationID: paymentInitiationID,
+				PaymentID:           payment.ID,
 			},
 		},
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+	).Get(ctx, nil); err != nil {
 		return err
 	}
 
 	err = w.addPIAdjustment(
 		ctx,
-		pi,
 		models.PaymentInitiationAdjustmentID{
-			PaymentInitiationID: pi.ID,
+			PaymentInitiationID: paymentInitiationID,
 			CreatedAt:           workflow.Now(ctx),
 			Status:              status,
 		},
@@ -87,7 +81,6 @@ func (w Workflow) storePIPaymentWithStatus(
 
 func (w Workflow) addPIAdjustment(
 	ctx workflow.Context,
-	pi *models.PaymentInitiation,
 	adjustmentID models.PaymentInitiationAdjustmentID,
 	amount *big.Int,
 	asset *string,
@@ -111,7 +104,6 @@ func (w Workflow) addPIAdjustment(
 		return err
 	}
 
-	// Do not wait for the event to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -125,12 +117,9 @@ func (w Workflow) addPIAdjustment(
 		),
 		RunSendEvents,
 		SendEvents{
-			SendEventPaymentInitiationAdjustment: &SendEventPaymentInitiationAdjustment{
-				PaymentInitiation:           pi,
-				PaymentInitiationAdjustment: &adj,
-			},
+			PaymentInitiationAdjustment: &adj,
 		},
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+	).Get(ctx, nil); err != nil {
 		return err
 	}
 

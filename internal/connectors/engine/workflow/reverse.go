@@ -81,7 +81,6 @@ func (w Workflow) validateOnlyReverse(
 		return temporal.NewNonRetryableApplicationError(err.Error(), "ANOTHER_REVERSE_IN_PROGRESS", err)
 	}
 
-	// Do not wait for the events to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -95,12 +94,9 @@ func (w Workflow) validateOnlyReverse(
 		),
 		RunSendEvents,
 		SendEvents{
-			SendEventPaymentInitiationAdjustment: &SendEventPaymentInitiationAdjustment{
-				PaymentInitiation:           validateReverse.PI,
-				PaymentInitiationAdjustment: &adj,
-			},
+			PaymentInitiationAdjustment: &adj,
 		},
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+	).Get(ctx, nil); err != nil {
 		return err
 	}
 

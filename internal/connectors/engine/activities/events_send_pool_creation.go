@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendPoolCreation(ctx context.Context, pool models.Pool) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedPool(pool)...)
+	return a.events.Publish(ctx, a.events.NewEventSavedPool(pool))
 }
 
 var EventsSendPoolCreationActivity = Activities{}.EventsSendPoolCreation

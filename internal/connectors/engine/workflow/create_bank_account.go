@@ -94,7 +94,6 @@ func (w Workflow) createBankAccount(
 
 	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
 
-	// Do not wait for the events to be sent
 	if err := workflow.ExecuteChildWorkflow(
 		workflow.WithChildOptions(
 			ctx,
@@ -110,7 +109,7 @@ func (w Workflow) createBankAccount(
 		SendEvents{
 			BankAccount: bankAccount,
 		},
-	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+	).Get(ctx, nil); err != nil {
 		return "", err
 	}
 

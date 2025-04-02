@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendBalance(ctx context.Context, balance models.Balance) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedBalances(balance)...)
+	return a.events.Publish(ctx, a.events.NewEventSavedBalances(balance))
 }
 
 var EventsSendBalanceActivity = Activities{}.EventsSendBalance
