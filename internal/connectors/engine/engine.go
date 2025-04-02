@@ -477,11 +477,8 @@ func (e *engine) CreateFormancePaymentInitiation(ctx context.Context, pi models.
 		},
 		workflow.RunSendEvents,
 		workflow.SendEvents{
-			PaymentInitiation: &pi,
-			SendEventPaymentInitiationAdjustment: &workflow.SendEventPaymentInitiationAdjustment{
-				PaymentInitiation:           &pi,
-				PaymentInitiationAdjustment: &adj,
-			},
+			PaymentInitiation:           &pi,
+			PaymentInitiationAdjustment: &adj,
 		},
 	)
 	if err != nil {
