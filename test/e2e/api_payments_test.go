@@ -92,7 +92,7 @@ var _ = Context("Payments API Payments", func() {
 			err = CreatePayment(ctx, app.GetValue(), ver, createRequest, &createResponse)
 			Expect(err).To(BeNil())
 
-			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPayments)))
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
 			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID.String(), &getResponse)
 			Expect(err).To(BeNil())
@@ -146,7 +146,7 @@ var _ = Context("Payments API Payments", func() {
 			Expect(err).To(BeNil())
 			Expect(createResponse.Data.ID).NotTo(Equal(""))
 
-			Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedPayments)))
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
 			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID, &getResponse)
 			Expect(err).To(BeNil())
@@ -180,7 +180,7 @@ func setupDebtorAndCreditorAccounts(
 	}
 	err := CreateAccount(ctx, app, ver, creditorRequest, &creditorRes)
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedAccounts)))
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	debtorRequest := v3.CreateAccountRequest{
 		Reference:    "debtor",
@@ -193,7 +193,7 @@ func setupDebtorAndCreditorAccounts(
 	}
 	err = CreateAccount(ctx, app, ver, debtorRequest, &debtorRes)
 	Expect(err).To(BeNil())
-	Eventually(e).Should(Receive(Event(evts.V2EventTypeSavedAccounts)))
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
 	return debtorRes.Data.ID.String(), creditorRes.Data.ID.String()
 }

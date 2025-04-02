@@ -9,45 +9,19 @@ import (
 	"github.com/formancehq/payments/pkg/events"
 )
 
-type V3ConnectorMessagePayload struct {
+type connectorMessagePayload struct {
 	CreatedAt   time.Time `json:"createdAt"`
 	ConnectorID string    `json:"connectorID"`
 }
 
-type V2ConnectorMessagePayload struct {
-	CreatedAt   time.Time `json:"createdAt"`
-	ConnectorID string    `json:"connectorId"`
-}
-
-func (e Events) NewEventResetConnector(connectorID models.ConnectorID, at time.Time) []publish.EventMessage {
-	return []publish.EventMessage{
-		toV2ConnectorEvent(connectorID, at),
-		toV3ConnectorEvent(connectorID, at),
-	}
-}
-
-func toV3ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.EventMessage {
+func (e Events) NewEventResetConnector(connectorID models.ConnectorID, at time.Time) publish.EventMessage {
 	return publish.EventMessage{
 		IdempotencyKey: resetConnectorIdempotencyKey(connectorID, at),
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
-		Version:        events.V3EventVersion,
-		Type:           events.V3EventTypeConnectorReset,
-		Payload: V3ConnectorMessagePayload{
-			CreatedAt:   at,
-			ConnectorID: connectorID.String(),
-		},
-	}
-}
-
-func toV2ConnectorEvent(connectorID models.ConnectorID, at time.Time) publish.EventMessage {
-	return publish.EventMessage{
-		IdempotencyKey: resetConnectorIdempotencyKey(connectorID, at),
-		Date:           time.Now().UTC(),
-		App:            events.EventApp,
-		Version:        events.V2EventVersion,
-		Type:           events.V2EventTypeConnectorReset,
-		Payload: V2ConnectorMessagePayload{
+		Version:        events.EventVersion,
+		Type:           events.EventTypeConnectorReset,
+		Payload: connectorMessagePayload{
 			CreatedAt:   at,
 			ConnectorID: connectorID.String(),
 		},

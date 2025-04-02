@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) EventsSendPaymentInitiationAdjustment(ctx context.Context, adj models.PaymentInitiationAdjustment, pi models.PaymentInitiation) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedPaymentInitiationAdjustment(adj, pi)...)
+func (a Activities) EventsSendPaymentInitiationAdjustment(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
+	return a.events.Publish(ctx, a.events.NewEventSavedPaymentInitiationAdjustment(adj))
 }
 
 var EventsSendPaymentInitiationAdjustmentActivity = Activities{}.EventsSendPaymentInitiationAdjustment
 
-func EventsSendPaymentInitiationAdjustment(ctx workflow.Context, adj models.PaymentInitiationAdjustment, pi models.PaymentInitiation) error {
-	return executeActivity(ctx, EventsSendPaymentInitiationAdjustmentActivity, nil, adj, pi)
+func EventsSendPaymentInitiationAdjustment(ctx workflow.Context, adj models.PaymentInitiationAdjustment) error {
+	return executeActivity(ctx, EventsSendPaymentInitiationAdjustmentActivity, nil, adj)
 }

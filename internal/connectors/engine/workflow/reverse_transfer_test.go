@@ -57,7 +57,7 @@ func (s *UnitTestSuite) Test_ReverseTransfer_Success() {
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(true, nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.SendEventPaymentInitiationAdjustment)
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(
@@ -90,7 +90,7 @@ func (s *UnitTestSuite) Test_ReverseTransfer_Success() {
 		s.Nil(sendEvents.Account)
 		s.Nil(sendEvents.ConnectorReset)
 		s.NotNil(sendEvents.Payment)
-		s.NotNil(sendEvents.SendEventPaymentInitiationRelatedPayment)
+		s.NotNil(sendEvents.PaymentInitiationRelatedPayment)
 		s.Nil(sendEvents.PoolsCreation)
 		s.Nil(sendEvents.PoolsDeletion)
 		s.Nil(sendEvents.BankAccount)
@@ -105,7 +105,7 @@ func (s *UnitTestSuite) Test_ReverseTransfer_Success() {
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.SendEventPaymentInitiationAdjustment)
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -170,7 +170,7 @@ func (s *UnitTestSuite) Test_ReverseTransfer_PluginReverseTransfer_Error_Success
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(true, nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.SendEventPaymentInitiationAdjustment)
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(
@@ -193,7 +193,7 @@ func (s *UnitTestSuite) Test_ReverseTransfer_PluginReverseTransfer_Error_Success
 		return nil
 	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.SendEventPaymentInitiationAdjustment)
+		s.NotNil(req.PaymentInitiationAdjustment)
 		return nil
 	})
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -798,6 +798,88 @@ func (s *UnitTestSuite) Test_ReverseTransfer_StoragePaymentsStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
+		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+	)
+	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
+		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunReverseTransfer, ReverseTransfer{
+		TaskID: models.TaskID{
+			Reference:   "test",
+			ConnectorID: s.connectorID,
+		},
+		ConnectorID:                 s.connectorID,
+		PaymentInitiationReversalID: s.paymentReversalID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "test-error")
+}
+
+func (s *UnitTestSuite) Test_ReverseTransfer_RunSendEvents_Error() {
+	s.env.OnActivity(activities.StoragePaymentInitiationReversalsGetActivity, mock.Anything, s.paymentReversalID).Once().Return(
+		&s.paymentReversal,
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(
+		&s.paymentInitiationTransfer,
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+			PageSize: 1,
+			HasMore:  false,
+			Data: []models.PaymentInitiationAdjustment{
+				{
+					ID: models.PaymentInitiationAdjustmentID{
+						PaymentInitiationID: s.paymentInitiationID,
+						CreatedAt:           s.env.Now(),
+						Status:              models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+					},
+					CreatedAt: s.env.Now(),
+					Status:    models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
+					Amount:    big.NewInt(100),
+					Asset:     pointer.For("USD/2"),
+					Error:     nil,
+					Metadata: map[string]string{
+						"test": "test",
+					},
+				},
+			},
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentInitiationAdjustmentsListActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+		&bunpaginate.Cursor[models.PaymentInitiationAdjustment]{
+			PageSize: 0,
+			HasMore:  false,
+			Data:     []models.PaymentInitiationAdjustment{},
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(true, nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.SourceAccountID).Once().Return(
+		&s.account,
+		nil,
+	)
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationTransfer.DestinationAccountID).Once().Return(
+		&s.account,
+		nil,
+	)
+	s.env.OnActivity(activities.PluginReverseTransferActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.ReverseTransferResponse{
+			Payment: s.pspPaymentReversed,
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {

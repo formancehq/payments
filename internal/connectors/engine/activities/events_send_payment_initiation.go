@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendPaymentInitiation(ctx context.Context, pi models.PaymentInitiation) error {
-	return a.events.Publish(ctx, a.events.NewEventSavedPaymentInitiation(pi)...)
+	return a.events.Publish(ctx, a.events.NewEventSavedPaymentInitiation(pi))
 }
 
 var EventsSendPaymentInitiationActivity = Activities{}.EventsSendPaymentInitiation
