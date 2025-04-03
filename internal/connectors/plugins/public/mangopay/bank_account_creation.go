@@ -15,7 +15,7 @@ import (
 func (p *Plugin) createBankAccount(ctx context.Context, ba models.BankAccount) (models.CreateBankAccountResponse, error) {
 	userID := models.ExtractNamespacedMetadata(ba.Metadata, client.MangopayUserIDMetadataKey)
 	if userID == "" {
-		return models.CreateBankAccountResponse{}, models.NewConnectorMetadataError(client.MangopayUserIDMetadataKey)
+		return models.CreateBankAccountResponse{}, models.NewConnectorValidationError(client.MangopayUserIDMetadataKey, models.ErrMissingConnectorMetadata)
 	}
 
 	ownerAddress := client.OwnerAddress{
