@@ -58,7 +58,9 @@ func (s *store) PaymentInitiationReversalsUpsert(
 	if err != nil {
 		return e("upsert payment initiation reversal", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := fromPaymentInitiationReversalModels(pir)
 	reversalAdjustementsToInsert := make([]paymentInitiationReversalAdjustment, 0, len(reversalAdjustments))

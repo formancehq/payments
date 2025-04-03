@@ -1,0 +1,13 @@
+# V3CreatePaymentAdjustmentRequest
+
+
+## Fields
+
+| Field                                                                            | Type                                                                             | Required                                                                         | Description                                                                      |
+| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `Reference`                                                                      | *string*                                                                         | :heavy_check_mark:                                                               | N/A                                                                              |
+| `CreatedAt`                                                                      | [time.Time](https://pkg.go.dev/time#Time)                                        | :heavy_check_mark:                                                               | N/A                                                                              |
+| `Status`                                                                         | [components.V3PaymentStatusEnum](../../models/components/v3paymentstatusenum.md) | :heavy_check_mark:                                                               | N/A                                                                              |
+| `Amount`                                                                         | [*big.Int](https://pkg.go.dev/math/big#Int)                                      | :heavy_minus_sign:                                                               | N/A                                                                              |
+| `Asset`                                                                          | **string*                                                                        | :heavy_minus_sign:                                                               | N/A                                                                              |
+| `Metadata`                                                                       | map[string]*string*                                                              | :heavy_minus_sign:                                                               | N/A                                                                              |

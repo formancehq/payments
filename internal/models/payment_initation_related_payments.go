@@ -7,3 +7,7 @@ type PaymentInitiationRelatedPayments struct {
 	// Related Payment ID
 	PaymentID PaymentID `json:"paymentID"`
 }
+
+func (p *PaymentInitiationRelatedPayments) IdempotencyKey() string {
+	return IdempotencyKey(p)
+}

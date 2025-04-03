@@ -37,7 +37,7 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	poolToInsert, accountsToInsert := fromPoolModel(pool)
 
@@ -94,7 +94,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	if err != nil {
 		return false, e("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	res, err := tx.NewDelete().
 		Model((*pool)(nil)).
@@ -125,7 +125,7 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 	if err != nil {
 		return e("begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer tx.Rollback() //nolint:errcheck
 
 	exists, err := tx.NewSelect().
 		Model((*account)(nil)).

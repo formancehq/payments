@@ -65,6 +65,10 @@ type PaymentInitiation struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
+func (p *PaymentInitiation) IdempotencyKey() string {
+	return IdempotencyKey(p.ID)
+}
+
 func (pi PaymentInitiation) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                   string                `json:"id"`
@@ -83,7 +87,7 @@ func (pi PaymentInitiation) MarshalJSON() ([]byte, error) {
 	}{
 		ID:          pi.ID.String(),
 		ConnectorID: pi.ConnectorID.String(),
-		Provider:    pi.ConnectorID.Provider,
+		Provider:    ToV3Provider(pi.ConnectorID.Provider),
 		Reference:   pi.Reference,
 		CreatedAt:   pi.CreatedAt,
 		ScheduledAt: pi.ScheduledAt,
@@ -214,7 +218,7 @@ func (pi PaymentInitiationExpanded) MarshalJSON() ([]byte, error) {
 	}{
 		ID:          pi.PaymentInitiation.ID.String(),
 		ConnectorID: pi.PaymentInitiation.ConnectorID.String(),
-		Provider:    pi.PaymentInitiation.ConnectorID.Provider,
+		Provider:    ToV3Provider(pi.PaymentInitiation.ConnectorID.Provider),
 		Reference:   pi.PaymentInitiation.Reference,
 		CreatedAt:   pi.PaymentInitiation.CreatedAt,
 		ScheduledAt: pi.PaymentInitiation.ScheduledAt,

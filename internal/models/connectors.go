@@ -74,3 +74,36 @@ func (c *Connector) UnmarshalJSON(data []byte) error {
 
 	return nil
 }
+
+// When using the provider inside the connectorID struct, we need to convert it
+// to the v3 version. This is because we can't change the connectorID struct
+// when migrating from v2 to v3 because we do not want to break the API for the
+// client if they are relying on the connectorID on their side.
+func ToV3Provider(provider string) string {
+	switch provider {
+	case "ADYEN":
+		return "adyen"
+	case "ATLAR":
+		return "atlar"
+	case "BANKING-CIRCLE":
+		return "bankingcircle"
+	case "CURRENCY-CLOUD":
+		return "currencycloud"
+	case "DUMMY-PAY":
+		return "dummypay"
+	case "GENERIC":
+		return "generic"
+	case "MANGOPAY":
+		return "mangopay"
+	case "MODULR":
+		return "modulr"
+	case "MONEYCORP":
+		return "moneycorp"
+	case "STRIPE":
+		return "stripe"
+	case "WISE":
+		return "wise"
+	default:
+		return provider
+	}
+}

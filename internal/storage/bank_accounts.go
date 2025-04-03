@@ -42,7 +42,9 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 	if err != nil {
 		return e("begin transaction", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := fromBankAccountModels(ba)
 	// Insert or update the bank account
@@ -93,7 +95,9 @@ func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, me
 	if err != nil {
 		return e("update bank account metadata", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	var account bankAccount
 	err = tx.NewSelect().

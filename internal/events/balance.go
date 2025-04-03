@@ -11,7 +11,7 @@ import (
 
 type BalanceMessagePayload struct {
 	AccountID     string    `json:"accountID"`
-	ConnectorID   string    `json:"connectorId"`
+	ConnectorID   string    `json:"connectorID"`
 	Provider      string    `json:"provider"`
 	CreatedAt     time.Time `json:"createdAt"`
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
@@ -23,7 +23,7 @@ func (e Events) NewEventSavedBalances(balance models.Balance) publish.EventMessa
 	payload := BalanceMessagePayload{
 		AccountID:     balance.AccountID.String(),
 		ConnectorID:   balance.AccountID.ConnectorID.String(),
-		Provider:      balance.AccountID.ConnectorID.Provider,
+		Provider:      models.ToV3Provider(balance.AccountID.ConnectorID.Provider),
 		CreatedAt:     balance.CreatedAt,
 		LastUpdatedAt: balance.LastUpdatedAt,
 		Asset:         balance.Asset,

@@ -97,7 +97,9 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 	if err != nil {
 		return errors.Wrap(err, "cannot begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	toInsert := connector{
 		ID:                   c.ID,
@@ -133,7 +135,9 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 	if err != nil {
 		return errors.Wrap(err, "cannot begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
 
 	_, err = s.ConnectorsGet(ctx, c.ID)
 	if err != nil {
@@ -206,7 +210,13 @@ func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuer
 func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "name", key == "provider", key == "id":
+		case key == "provider":
+			v, ok := value.(string)
+			if !ok {
+				return "", nil, fmt.Errorf("expected string type for provider, got %T: %w", value, ErrValidation)
+			}
+			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{strings.ToLower(models.ToV3Provider(v))}, nil
+		case key == "name", key == "id":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		default:
 			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))

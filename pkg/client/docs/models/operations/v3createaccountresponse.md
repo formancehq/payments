@@ -1,0 +1,10 @@
+# V3CreateAccountResponse
+
+
+## Fields
+
+| Field                                                                                     | Type                                                                                      | Required                                                                                  | Description                                                                               |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `HTTPMeta`                                                                                | [components.HTTPMetadata](../../models/components/httpmetadata.md)                        | :heavy_check_mark:                                                                        | N/A                                                                                       |
+| `V3CreateAccountResponse`                                                                 | [*components.V3CreateAccountResponse](../../models/components/v3createaccountresponse.md) | :heavy_minus_sign:                                                                        | Created                                                                                   |
+| `V3ErrorResponse`                                                                         | [*components.V3ErrorResponse](../../models/components/v3errorresponse.md)                 | :heavy_minus_sign:                                                                        | Error                                                                                     |

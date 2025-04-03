@@ -69,7 +69,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	}{
 		ID:           a.ID.String(),
 		ConnectorID:  a.ConnectorID.String(),
-		Provider:     a.ConnectorID.Provider,
+		Provider:     ToV3Provider(a.ConnectorID.Provider),
 		Reference:    a.Reference,
 		CreatedAt:    a.CreatedAt,
 		Type:         a.Type,

@@ -32,8 +32,6 @@ compile:
     FROM core+builder-image
     COPY (+sources/*) /src
     COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
-    # We want this target to compile before merging anything
-    COPY (+compile-openapi-configs/v3-connectors-config.yaml) ./openapi/v3/v3-connectors-config.yaml
     WORKDIR /src
     ARG VERSION=latest
     DO --pass-args core+GO_COMPILE --VERSION=$VERSION
@@ -50,40 +48,6 @@ build-image:
     ARG tag=latest
     DO core+SAVE_IMAGE --COMPONENT=payments --REPOSITORY=${REPOSITORY} --TAG=$tag
 
-tests:
-    FROM +tidy
-    COPY (+sources/*) /src
-    WORKDIR /src
-
-    ARG includeIntegrationTests="true"
-    ARG coverage=""
-
-    ENV CGO_ENABLED=1 # required for -race
-
-    LET goFlags="-race"
-
-    IF [ "$coverage" = "true" ]
-        SET goFlags="$goFlags -covermode=atomic"
-        SET goFlags="$goFlags -coverpkg=./..."
-        SET goFlags="$goFlags -coverprofile coverage.txt"
-    END
-
-    IF [ "$includeIntegrationTests" = "true" ]
-        COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
-        SET goFlags="$goFlags -tags it"
-        WITH DOCKER --load=postgres:15-alpine=+postgres
-            RUN go test $goFlags ./...
-        END
-    ELSE
-        WITH DOCKER --pull=postgres:15-alpine
-            DO --pass-args +GO_TESTS
-        END
-    END
-
-    IF [ "$coverage" = "true" ]
-        SAVE ARTIFACT coverage.txt AS LOCAL coverage.txt
-    END
-
 deploy:
     COPY (+sources/*) /src
     LET tag=$(tar cf - /src | sha1sum | awk '{print $1}')
@@ -95,78 +59,6 @@ deploy:
 
 deploy-staging:
     BUILD --pass-args core+deploy-staging
-
-lint:
-    FROM core+builder-image
-    COPY (+sources/*) /src
-    COPY --pass-args +tidy/go.* .
-    WORKDIR /src
-    DO --pass-args core+GO_LINT
-    COPY (+compile-plugins/list.go) .
-    COPY (+openapi/openapi.yaml) .
-    SAVE ARTIFACT cmd AS LOCAL cmd
-    SAVE ARTIFACT internal AS LOCAL internal
-    SAVE ARTIFACT pkg AS LOCAL pkg
-    SAVE ARTIFACT main.go AS LOCAL main.go
-    SAVE ARTIFACT list.go AS LOCAL internal/connectors/plugins/public/list.go
-    SAVE ARTIFACT openapi.yaml AS LOCAL ./openapi.yaml
-
-pre-commit:
-    WAIT
-      BUILD --pass-args +tidy
-    END
-    BUILD --pass-args +lint
-
-compile-openapi-configs:
-    FROM core+builder-image
-    COPY (+sources/*) /src
-    WORKDIR /src/tools/compile-configs
-    RUN go build -o compile-configs
-    RUN ./compile-configs --path /src/internal/connectors/plugins/public --output ./v3-connectors-config.yaml
-    SAVE ARTIFACT ./v3-connectors-config.yaml /v3-connectors-config.yaml
-
-openapi:
-    FROM node:20-alpine
-    RUN apk update && apk add yq
-    RUN npm install -g openapi-merge-cli
-    WORKDIR /src
-    COPY --dir openapi openapi
-    COPY (+compile-openapi-configs/v3-connectors-config.yaml) ./openapi/v3/v3-connectors-config.yaml
-    RUN openapi-merge-cli --config ./openapi/openapi-merge.json
-    RUN yq -oy ./openapi.json > openapi.yaml
-    SAVE ARTIFACT ./openapi.yaml AS LOCAL ./openapi.yaml
-
-tidy:
-    FROM core+builder-image
-    COPY --pass-args (+sources/src) /src
-    WORKDIR /src
-    COPY --dir test .
-    DO --pass-args core+GO_TIDY
-
-generate:
-    FROM core+builder-image
-    RUN apk update && apk add openjdk11
-    DO --pass-args core+GO_INSTALL --package=go.uber.org/mock/mockgen@latest
-    COPY (+sources/*) /src
-    WORKDIR /src
-    DO --pass-args core+GO_GENERATE
-    SAVE ARTIFACT internal AS LOCAL internal
-
-# generate-generic-connector-client:
-#     FROM openapitools/openapi-generator-cli:v6.6.0
-#     WORKDIR /src
-#     COPY cmd/connectors/internal/connectors/generic/client/generic-openapi.yaml .
-#     RUN docker-entrypoint.sh generate \
-#         -i ./generic-openapi.yaml \
-#         -g go \
-#         -o ./generated \
-#         --git-user-id=formancehq \
-#         --git-repo-id=payments \
-#         -p packageVersion=latest \
-#         -p isGoSubmodule=true \
-#         -p packageName=genericclient
-#     RUN rm -rf ./generated/test
-#     SAVE ARTIFACT ./generated AS LOCAL ./cmd/connectors/internal/connectors/generic/client/generated
 
 release:
     FROM core+builder-image

@@ -308,6 +308,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.EventsSendPoolDeletion,
 		}).
 		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiation",
+			Func: a.EventsSendPaymentInitiation,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiationAdjustment",
+			Func: a.EventsSendPaymentInitiationAdjustment,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentInitiationRelatedPayment",
+			Func: a.EventsSendPaymentInitiationRelatedPayment,
+		}).
+		Append(temporalworker.Definition{
 			Name: "TemporalScheduleCreate",
 			Func: a.TemporalScheduleCreate,
 		}).

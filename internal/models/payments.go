@@ -116,7 +116,7 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 	}{
 		ID:            p.ID.String(),
 		ConnectorID:   p.ConnectorID.String(),
-		Provider:      p.ConnectorID.Provider,
+		Provider:      ToV3Provider(p.ConnectorID.Provider),
 		Reference:     p.Reference,
 		CreatedAt:     p.CreatedAt,
 		Type:          p.Type,

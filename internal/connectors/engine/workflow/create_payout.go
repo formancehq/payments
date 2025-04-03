@@ -76,7 +76,10 @@ func (w Workflow) createPayout(
 			return err
 		}
 
-		workflow.Sleep(ctx, pi.ScheduledAt.Sub(now))
+		err = workflow.Sleep(ctx, pi.ScheduledAt.Sub(now))
+		if err != nil {
+			return err
+		}
 	}
 
 	pspPI, err := w.getPSPPI(ctx, pi)

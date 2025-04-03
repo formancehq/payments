@@ -399,6 +399,9 @@ components:
         data:
           $ref: '#/components/schemas/V3ConnectorConfig'
 
+    V3UpdateConnectorRequest:
+      $ref: '#/components/schemas/V3ConnectorConfig'
+
     V3ConnectorsCursorResponse:
       type: object
       required:

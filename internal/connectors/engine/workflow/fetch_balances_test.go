@@ -100,7 +100,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Success() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -111,7 +112,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Success() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -167,7 +168,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_HasMoreLoop_Success() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -178,7 +180,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_HasMoreLoop_Success() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -187,7 +189,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesStore_Error() {
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
 	)
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -198,7 +201,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesStore_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.Error(err)
 }
 
@@ -214,7 +217,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesGet_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -225,7 +229,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesGet_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -252,7 +256,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_PluginFetchNextBalances_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -263,7 +268,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_PluginFetchNextBalances_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -296,7 +301,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageBalancesStore_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -307,7 +313,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageBalancesStore_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -341,7 +347,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_RunSendEvents_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -352,7 +359,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_RunSendEvents_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -387,7 +394,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Run_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -398,7 +406,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_Run_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -434,7 +442,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesStore_Error() {
 		return nil
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -445,7 +454,7 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageStatesStore_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.NoError(err)
 }
 
@@ -479,7 +488,8 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesUpdate_Error() {
 		return temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test"))
 	})
 
-	s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
 	s.env.ExecuteWorkflow(RunFetchNextBalances, FetchNextBalances{
 		Config:       models.DefaultConfig(),
 		ConnectorID:  s.connectorID,
@@ -490,6 +500,6 @@ func (s *UnitTestSuite) Test_FetchNextBalances_StorageInstancesUpdate_Error() {
 	}})
 
 	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
+	err = s.env.GetWorkflowError()
 	s.Error(err)
 }

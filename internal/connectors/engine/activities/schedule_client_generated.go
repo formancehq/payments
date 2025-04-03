@@ -21,6 +21,7 @@ import (
 type MockScheduleClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockScheduleClientMockRecorder
+	isgomock struct{}
 }
 
 // MockScheduleClientMockRecorder is the mock recorder for MockScheduleClient.
@@ -88,6 +89,7 @@ func (mr *MockScheduleClientMockRecorder) List(ctx, options any) *gomock.Call {
 type MockScheduleHandle struct {
 	ctrl     *gomock.Controller
 	recorder *MockScheduleHandleMockRecorder
+	isgomock struct{}
 }
 
 // MockScheduleHandleMockRecorder is the mock recorder for MockScheduleHandle.

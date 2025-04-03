@@ -11,7 +11,7 @@ import (
 
 type connectorMessagePayload struct {
 	CreatedAt   time.Time `json:"createdAt"`
-	ConnectorID string    `json:"connectorId"`
+	ConnectorID string    `json:"connectorID"`
 }
 
 func (e Events) NewEventResetConnector(connectorID models.ConnectorID, at time.Time) publish.EventMessage {

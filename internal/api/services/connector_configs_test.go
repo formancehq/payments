@@ -53,8 +53,9 @@ func TestConnectorConfig(t *testing.T) {
 			Reference: uuid.New(),
 		}
 		connector := &models.Connector{
-			ID:     connectorID,
-			Config: json.RawMessage(`{}`),
+			ID:       connectorID,
+			Provider: provider,
+			Config:   json.RawMessage(`{}`),
 		}
 		store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 

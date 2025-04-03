@@ -78,6 +78,7 @@ func TestMigrationsWithV2(t *testing.T) {
 	test.Append(10, testPoolsMigrations())
 	test.Append(11, testPaymentReversalsMigrations())
 	test.Append(12, testReferenceConnectorMigrations())
+	test.Append(14, testConnectorsProviderLowercaseMigration())
 	test.Run()
 }
 
@@ -104,6 +105,51 @@ func testConnectorsMigration() testmigrations.Hook {
 			} {
 				exists, err := db.NewSelect().TableExpr("connectors").
 					Where("id = ?", connectorID).
+					Exists(ctx)
+				require.NoError(t, err)
+				require.True(t, exists)
+			}
+		},
+	}
+}
+
+func testConnectorsProviderLowercaseMigration() testmigrations.Hook {
+	return testmigrations.Hook{
+		After: func(ctx context.Context, t *testing.T, db bun.IDB) {
+			for _, provider := range []string{
+				"BANKING-CIRCLE",
+				"CURRENCY-CLOUD",
+				"DUMMY-PAY",
+				"MODULR",
+				"STRIPE",
+				"WISE",
+				"MANGOPAY",
+				"MONEYCORP",
+				"ATLAR",
+				"ADYEN",
+				"GENERIC",
+			} {
+				exists, err := db.NewSelect().TableExpr("connectors").
+					Where("provider = ?", provider).
+					Exists(ctx)
+				require.NoError(t, err)
+				require.False(t, exists)
+			}
+
+			for _, provider := range []string{
+				"bankingcircle",
+				"currencycloud",
+				"modulr",
+				"stripe",
+				"wise",
+				"mangopay",
+				"moneycorp",
+				"atlar",
+				"adyen",
+				"generic",
+			} {
+				exists, err := db.NewSelect().TableExpr("connectors").
+					Where("provider = ?", provider).
 					Exists(ctx)
 				require.NoError(t, err)
 				require.True(t, exists)

@@ -29,7 +29,7 @@ func (s *Service) ConnectorsConfig(ctx context.Context, connectorID models.Conne
 
 	// inject provider into config json so SDK can distinguish between config types
 	caser := cases.Title(language.English)
-	m["provider"] = caser.String(connectorID.Provider)
+	m["provider"] = caser.String(connector.Provider)
 	result, err := json.Marshal(m)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal connector config: %w", err)

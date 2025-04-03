@@ -47,10 +47,10 @@ var _ = Describe("API v3 Connectors reset", func() {
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
-		It("should return status no content on success", func(ctx SpecContext) {
+		It("should return status accepted on success", func(ctx SpecContext) {
 			m.EXPECT().ConnectorsReset(gomock.Any(), connID).Return(models.Task{}, nil)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "connectorID", connID.String()))
-			assertExpectedResponse(w.Result(), http.StatusAccepted, "")
+			assertExpectedResponse(w.Result(), http.StatusAccepted, "data")
 		})
 	})
 })
