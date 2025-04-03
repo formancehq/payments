@@ -54,8 +54,17 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
+	for name, config := range p.webhookConfigs {
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:    string(name),
+			URLPath: config.urlPath,
+		})
+	}
+
 	return models.InstallResponse{
-		Workflow: workflow(),
+		Workflow:        workflow(),
+		WebhooksConfigs: configs,
 	}, nil
 }
 

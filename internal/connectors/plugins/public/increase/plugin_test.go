@@ -41,11 +41,12 @@ var _ = Describe("Increase Plugin", func() {
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test", "webhookSharedSecret": "secret"}`)
-			_, err := New(ProviderName, logger, config)
+			plg, err := New(ProviderName, logger, config)
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
+			Expect(len(res.WebhooksConfigs) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 		})
