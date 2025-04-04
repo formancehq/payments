@@ -32,7 +32,9 @@ func PluginInstallConnector(ctx workflow.Context, connectorID models.ConnectorID
 	ret := models.InstallResponse{}
 	if err := executeActivity(ctx, PluginInstallConnectorActivity, &ret, InstallConnectorRequest{
 		ConnectorID: connectorID,
-		Req:         models.InstallRequest{},
+		Req:         models.InstallRequest{
+			ConnectorID: connectorID.String(),
+		},
 	}); err != nil {
 		return nil, err
 	}

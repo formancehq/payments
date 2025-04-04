@@ -7,6 +7,7 @@ components:
                     Adyen: '#/components/schemas/V3AdyenConfig'
                     Atlar: '#/components/schemas/V3AtlarConfig'
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+                    Column: '#/components/schemas/V3ColumnConfig'
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
                     Generic: '#/components/schemas/V3GenericConfig'
@@ -19,6 +20,7 @@ components:
                 - $ref: '#/components/schemas/V3AdyenConfig'
                 - $ref: '#/components/schemas/V3AtlarConfig'
                 - $ref: '#/components/schemas/V3BankingcircleConfig'
+                - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
                 - $ref: '#/components/schemas/V3GenericConfig'
@@ -114,6 +116,28 @@ components:
                     type: string
                 username:
                     type: string
+        V3ColumnConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - endpoint
+            properties:
+                apiKey:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                provider:
+                    type: string
+                    default: Column
         V3CurrencycloudConfig:
             type: object
             required:

@@ -15,6 +15,7 @@ const (
 	V3ConnectorConfigTypeAdyen         V3ConnectorConfigType = "Adyen"
 	V3ConnectorConfigTypeAtlar         V3ConnectorConfigType = "Atlar"
 	V3ConnectorConfigTypeBankingcircle V3ConnectorConfigType = "Bankingcircle"
+	V3ConnectorConfigTypeColumn        V3ConnectorConfigType = "Column"
 	V3ConnectorConfigTypeCurrencycloud V3ConnectorConfigType = "Currencycloud"
 	V3ConnectorConfigTypeDummypay      V3ConnectorConfigType = "Dummypay"
 	V3ConnectorConfigTypeGeneric       V3ConnectorConfigType = "Generic"
@@ -29,6 +30,7 @@ type V3ConnectorConfig struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
@@ -74,6 +76,18 @@ func CreateV3ConnectorConfigBankingcircle(bankingcircle V3BankingcircleConfig) V
 	return V3ConnectorConfig{
 		V3BankingcircleConfig: &bankingcircle,
 		Type:                  typ,
+	}
+}
+
+func CreateV3ConnectorConfigColumn(column V3ColumnConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeColumn
+
+	typStr := string(typ)
+	column.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3ColumnConfig: &column,
+		Type:           typ,
 	}
 }
 
@@ -212,6 +226,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3ConnectorConfigTypeBankingcircle
 		return nil
+	case "Column":
+		v3ColumnConfig := new(V3ColumnConfig)
+		if err := utils.UnmarshalJSON(data, &v3ColumnConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Column) type V3ColumnConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3ColumnConfig = v3ColumnConfig
+		u.Type = V3ConnectorConfigTypeColumn
+		return nil
 	case "Currencycloud":
 		v3CurrencycloudConfig := new(V3CurrencycloudConfig)
 		if err := utils.UnmarshalJSON(data, &v3CurrencycloudConfig, "", true, false); err != nil {
@@ -300,6 +323,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3BankingcircleConfig != nil {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
+	}
+
+	if u.V3ColumnConfig != nil {
+		return utils.MarshalJSON(u.V3ColumnConfig, "", true)
 	}
 
 	if u.V3CurrencycloudConfig != nil {
