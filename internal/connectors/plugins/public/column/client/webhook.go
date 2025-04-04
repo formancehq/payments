@@ -125,6 +125,10 @@ func (c *client) ListEventSubscriptions(ctx context.Context) ([]*EventSubscripti
 		return nil, fmt.Errorf("%w: %v", ErrWebhookRequestFailed, err)
 	}
 
+	q := req.URL.Query()
+	q.Add("limit", "100")
+	req.URL.RawQuery = q.Encode()
+
 	var res ListWebhookResponseWrapper[[]*EventSubscription]
 	var errRes columnError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)

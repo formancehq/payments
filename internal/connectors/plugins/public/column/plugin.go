@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -98,9 +99,38 @@ func (p *Plugin) Name() string {
 	return p.name
 }
 
-func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	var isSecretMissing bool
+
+	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
+	for name, config := range p.webhookConfigs {
+		if config.secret == "" {
+			isSecretMissing = true
+		}
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:    string(name),
+			URLPath: config.urlPath,
+		})
+	}
+
+	if isSecretMissing {
+		webhooks, err := p.client.ListEventSubscriptions(ctx)
+		if err != nil {
+			return models.InstallResponse{}, err
+		}
+		for _, webhook := range webhooks {
+			if !strings.Contains(webhook.URL, req.ConnectorID) {
+				continue
+			}
+			eventCategory := client.EventCategory(webhook.EnabledEvents[0])
+			config := p.webhookConfigs[eventCategory]
+			config.secret = webhook.Secret
+			p.webhookConfigs[eventCategory] = config
+		}
+	}
 	return models.InstallResponse{
-		Workflow: workflow(),
+		Workflow:        workflow(),
+		WebhooksConfigs: configs,
 	}, nil
 }
 

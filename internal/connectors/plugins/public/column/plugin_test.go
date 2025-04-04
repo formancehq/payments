@@ -6,9 +6,11 @@ import (
 
 	"github.com/formancehq/go-libs/v2/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
@@ -47,12 +49,27 @@ var _ = Describe("Column Plugin", func() {
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
+			ctrl := gomock.NewController(GinkgoT())
+			mockHTTPClient := client.NewMockHTTPClient(ctrl)
+
 			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
-			_, err := New(ProviderName, logger, config)
+			plg, err := New(ProviderName, logger, config)
+			plg.client.SetHttpClient(mockHTTPClient)
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			)
+
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
+			Expect(len(res.WebhooksConfigs) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 		})
