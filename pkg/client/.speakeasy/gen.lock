@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: ad8faa4c230b316c7f45a98da4e1f25a
+  docChecksum: 35f34d46d371031a5a4d565d4843662b
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -47,9 +47,9 @@ generatedFiles:
   - /models/components/bankaccountresponse.go
   - /models/components/bankaccountscursor.go
   - /models/components/bankingcircleconfig.go
+  - /models/components/connector.go
   - /models/components/connectorconfig.go
   - /models/components/connectorconfigresponse.go
-  - /models/components/connectorenum.go
   - /models/components/connectorresponse.go
   - /models/components/connectorsconfigsresponse.go
   - /models/components/connectorsresponse.go
@@ -290,15 +290,13 @@ generatedFiles:
   - docs/models/components/bankaccountscursorcursor.md
   - docs/models/components/bankingcircleconfig.md
   - docs/models/components/config.md
+  - docs/models/components/connector.md
   - docs/models/components/connectorconfig.md
   - docs/models/components/connectorconfigresponse.md
-  - docs/models/components/connectorenum.md
   - docs/models/components/connectorresponse.md
   - docs/models/components/connectorresponsedata.md
   - docs/models/components/connectorsconfigsresponse.md
-  - docs/models/components/connectorsconfigsresponseconnector.md
   - docs/models/components/connectorsconfigsresponsedata.md
-  - docs/models/components/connectorsconfigsresponsekey.md
   - docs/models/components/connectorsresponse.md
   - docs/models/components/connectorsresponsedata.md
   - docs/models/components/currencycloudconfig.md
@@ -399,9 +397,7 @@ generatedFiles:
   - docs/models/components/v3connector.md
   - docs/models/components/v3connectorconfig.md
   - docs/models/components/v3connectorconfigsresponse.md
-  - docs/models/components/v3connectorconfigsresponseconnector.md
   - docs/models/components/v3connectorconfigsresponsedata.md
-  - docs/models/components/v3connectorconfigsresponsekey.md
   - docs/models/components/v3connectorscheduleinstancescursorresponse.md
   - docs/models/components/v3connectorscheduleinstancescursorresponsecursor.md
   - docs/models/components/v3connectorscheduleresponse.md
@@ -961,7 +957,7 @@ examples:
     speakeasy-default-list-configs-available-connectors:
       responses:
         "200":
-          application/json: {"data": {"connector": {"key": {"dataType": "real", "required": false}}}}
+          application/json: {}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   installConnector:

@@ -15,19 +15,6 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func ConnectorInstall(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
-	path := "connectors/install/dummypay"
-	if ver == 2 {
-		path = "connectors/dummypay"
-	}
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, path), reqBody, res)
-}
-
-func ConnectorConfigs(ctx context.Context, srv *Server, ver int, res any) error {
-	path := "connectors/configs"
-	return srv.Client().Get(ctx, pathPrefix(ver, path), res)
-}
-
 func CreateAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "accounts"), reqBody, res)
 }

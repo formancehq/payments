@@ -49,8 +49,8 @@ var _ = Context("Payments API Payment Initiation", func() {
 			creditorID string
 			payReq     v3.PaymentInitiationsCreateRequest
 
-			connectorRes struct{ Data string }
-			initRes      struct {
+			connectorID string
+			initRes     struct {
 				Data v3.PaymentInitiationsCreateResponse
 			}
 			approveRes struct {
@@ -60,14 +60,13 @@ var _ = Context("Payments API Payment Initiation", func() {
 
 		JustBeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				Description:          "some description",
 				Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER.String(),
 				Amount:               big.NewInt(3200),
@@ -105,7 +104,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
@@ -184,7 +183,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
@@ -206,7 +205,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.TaskID).NotTo(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-transfer")
+			blockTillWorkflowComplete(ctx, connectorID, "reverse-transfer")
 			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {
@@ -228,8 +227,8 @@ var _ = Context("Payments API Payment Initiation", func() {
 			creditorID string
 			payReq     v3.PaymentInitiationsCreateRequest
 
-			connectorRes struct{ Data string }
-			initRes      struct {
+			connectorID string
+			initRes     struct {
 				Data v3.PaymentInitiationsCreateResponse
 			}
 			approveRes struct {
@@ -239,14 +238,13 @@ var _ = Context("Payments API Payment Initiation", func() {
 
 		JustBeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				Description:          "payout description",
 				Type:                 models.PAYMENT_INITIATION_TYPE_PAYOUT.String(),
 				Amount:               big.NewInt(2233),
@@ -277,7 +275,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
@@ -342,7 +340,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
@@ -364,7 +362,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.TaskID).NotTo(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-payout")
+			blockTillWorkflowComplete(ctx, connectorID, "reverse-payout")
 			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
 			var paymentRes struct {

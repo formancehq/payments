@@ -1336,24 +1336,20 @@ components:
       properties:
         data:
           type: object
-          required:
-            - connector
-          properties:
-            connector:
+          additionalProperties:
+            type: object
+            additionalProperties:
               type: object
               required:
-                - key
+                - dataType
+                - required
               properties:
-                key:
-                  type: object
-                  required:
-                    - dataType
-                    - required
-                  properties:
-                    dataType:
-                      type: string
-                    required:
-                      type: boolean
+                dataType:
+                  type: string
+                required:
+                  type: boolean
+                defaultValue:
+                  type: string
     TaskResponse:
       type: object
       required:

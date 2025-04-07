@@ -54,21 +54,18 @@ var _ = Context("Payments API Accounts", func() {
 
 	When("creating a new account", func() {
 		var (
-			connectorRes   struct{ Data string }
 			createResponse struct{ Data models.Account }
 			getResponse    struct{ Data models.Account }
 			e              chan *nats.Msg
-			err            error
 		)
 
 		DescribeTable("should be successful",
 			func(ver int) {
-				e = Subscribe(GinkgoT(), app.GetValue())
-				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
+				connectorID, err := installConnector(ctx, app.GetValue(), uuid.New(), ver)
 				Expect(err).To(BeNil())
+				createRequest.ConnectorID = connectorID
 
-				createRequest.ConnectorID = connectorRes.Data
+				e = Subscribe(GinkgoT(), app.GetValue())
 				err = CreateAccount(ctx, app.GetValue(), ver, createRequest, &createResponse)
 				Expect(err).To(BeNil())
 
@@ -85,24 +82,26 @@ var _ = Context("Payments API Accounts", func() {
 
 	When("fetching account balances", func() {
 		var (
-			connectorRes struct{ Data string }
-			res          struct {
+			res struct {
 				Cursor bunpaginate.Cursor[models.Balance]
 			}
-			e chan *nats.Msg
+			e   chan *nats.Msg
+			err error
 		)
+
+		BeforeEach(func() {
+			e = Subscribe(GinkgoT(), app.GetValue())
+			id := uuid.New()
+			connectorConf := newV3ConnectorConfigFn()(id)
+			_, err := installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
+			Expect(err).To(BeNil())
+			_, err = GeneratePSPData(connectorConf.Directory)
+			Expect(err).To(BeNil())
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+		})
 
 		DescribeTable("should be successful",
 			func(ver int) {
-				e = Subscribe(GinkgoT(), app.GetValue())
-				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				_, err := GeneratePSPData(connectorConf.Directory)
-				Expect(err).To(BeNil())
-
-				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
-				Expect(err).To(BeNil())
-				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-
 				var msg events.BalanceMessagePayload
 				// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
 				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(

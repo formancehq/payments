@@ -3,15 +3,15 @@
 package components
 
 type ConnectorsResponseData struct {
-	Provider    ConnectorEnum `json:"provider"`
-	Name        string        `json:"name"`
-	ConnectorID string        `json:"connectorID"`
-	Enabled     *bool         `json:"enabled,omitempty"`
+	Provider    Connector `json:"provider"`
+	Name        string    `json:"name"`
+	ConnectorID string    `json:"connectorID"`
+	Enabled     *bool     `json:"enabled,omitempty"`
 }
 
-func (o *ConnectorsResponseData) GetProvider() ConnectorEnum {
+func (o *ConnectorsResponseData) GetProvider() Connector {
 	if o == nil {
-		return ConnectorEnum("")
+		return Connector("")
 	}
 	return o.Provider
 }

@@ -8,15 +8,15 @@ import (
 
 type UpdateConnectorConfigV1Request struct {
 	// The name of the connector.
-	Connector components.ConnectorEnum `pathParam:"style=simple,explode=false,name=connector"`
+	Connector components.Connector `pathParam:"style=simple,explode=false,name=connector"`
 	// The connector ID.
 	ConnectorID     string                     `pathParam:"style=simple,explode=false,name=connectorId"`
 	ConnectorConfig components.ConnectorConfig `request:"mediaType=application/json"`
 }
 
-func (o *UpdateConnectorConfigV1Request) GetConnector() components.ConnectorEnum {
+func (o *UpdateConnectorConfigV1Request) GetConnector() components.Connector {
 	if o == nil {
-		return components.ConnectorEnum("")
+		return components.Connector("")
 	}
 	return o.Connector
 }

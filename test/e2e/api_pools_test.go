@@ -41,19 +41,17 @@ var _ = Context("Payments API Pools", func() {
 
 	When("creating a new pool with v3", func() {
 		var (
-			connectorRes struct{ Data string }
-			connectorID  string
-			e            chan *nats.Msg
-			ver          int
+			connectorID string
+			e           chan *nats.Msg
+			ver         int
+			err         error
 		)
 
 		JustBeforeEach(func() {
 			ver = 3
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
 		})
 
 		It("should be ok when underlying accounts exist", func() {
@@ -119,19 +117,17 @@ var _ = Context("Payments API Pools", func() {
 
 	When("creating a new pool with v2", func() {
 		var (
-			connectorRes struct{ Data v2.ConnectorInstallResponse }
-			connectorID  string
-			e            chan *nats.Msg
-			ver          int
+			connectorID string
+			e           chan *nats.Msg
+			ver         int
+			err         error
 		)
 
 		JustBeforeEach(func() {
 			ver = 2
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data.ConnectorID
 		})
 
 		It("should be ok when underlying accounts exist", func() {
@@ -197,13 +193,13 @@ var _ = Context("Payments API Pools", func() {
 
 	When("adding and removing accounts to a pool with v3", func() {
 		var (
-			connectorRes    struct{ Data string }
 			connectorID     string
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
 			e               chan *nats.Msg
 			ver             int
+			err             error
 
 			eventPayload GenericEventPayload
 		)
@@ -211,10 +207,8 @@ var _ = Context("Payments API Pools", func() {
 		JustBeforeEach(func() {
 			ver = 3
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
 			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
@@ -268,13 +262,13 @@ var _ = Context("Payments API Pools", func() {
 
 	When("adding and removing accounts to a pool with v2", func() {
 		var (
-			connectorRes    struct{ Data v2.ConnectorInstallResponse }
 			connectorID     string
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
 			e               chan *nats.Msg
 			ver             int
+			err             error
 
 			eventPayload GenericEventPayload
 		)
@@ -282,10 +276,8 @@ var _ = Context("Payments API Pools", func() {
 		JustBeforeEach(func() {
 			ver = 2
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data.ConnectorID
 			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]

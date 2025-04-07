@@ -9,7 +9,7 @@ import (
 
 type ListConnectorTasksRequest struct {
 	// The name of the connector.
-	Connector components.ConnectorEnum `pathParam:"style=simple,explode=false,name=connector"`
+	Connector components.Connector `pathParam:"style=simple,explode=false,name=connector"`
 	// The maximum number of results to return per page.
 	//
 	PageSize *int64 `default:"15" queryParam:"style=form,explode=true,name=pageSize"`
@@ -32,9 +32,9 @@ func (l *ListConnectorTasksRequest) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func (o *ListConnectorTasksRequest) GetConnector() components.ConnectorEnum {
+func (o *ListConnectorTasksRequest) GetConnector() components.Connector {
 	if o == nil {
-		return components.ConnectorEnum("")
+		return components.Connector("")
 	}
 	return o.Connector
 }

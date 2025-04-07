@@ -17,7 +17,7 @@ type Payment struct {
 	SourceAccountID      string              `json:"sourceAccountID"`
 	DestinationAccountID string              `json:"destinationAccountID"`
 	ConnectorID          string              `json:"connectorID"`
-	Provider             *ConnectorEnum      `json:"provider,omitempty"`
+	Provider             *Connector          `json:"provider,omitempty"`
 	Type                 PaymentType         `json:"type"`
 	Status               PaymentStatus       `json:"status"`
 	InitialAmount        *big.Int            `json:"initialAmount"`
@@ -76,7 +76,7 @@ func (o *Payment) GetConnectorID() string {
 	return o.ConnectorID
 }
 
-func (o *Payment) GetProvider() *ConnectorEnum {
+func (o *Payment) GetProvider() *Connector {
 	if o == nil {
 		return nil
 	}

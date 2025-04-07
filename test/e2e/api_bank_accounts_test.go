@@ -99,11 +99,11 @@ var _ = Context("Payments API Bank Accounts", func() {
 
 	When("forwarding a bank account to a connector with v3", func() {
 		var (
-			ver          int
-			createRes    struct{ Data string }
-			forwardReq   v3.BankAccountsForwardToConnectorRequest
-			connectorRes struct{ Data string }
-			res          struct {
+			connectorID string
+			ver         int
+			createRes   struct{ Data string }
+			forwardReq  v3.BankAccountsForwardToConnectorRequest
+			res         struct {
 				Data v3.BankAccountsForwardToConnectorResponse
 			}
 			err error
@@ -118,8 +118,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			id, err = uuid.Parse(createRes.Data)
 			Expect(err).To(BeNil())
 
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 		})
 
@@ -130,16 +129,16 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok when connector is installed", func() {
-			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data}
+			forwardReq = v3.BankAccountsForwardToConnectorRequest{ConnectorID: connectorID}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
 			taskID, err := models.TaskIDFromString(res.Data.TaskID)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring(id.String()))
-			cID := models.MustConnectorIDFromString(connectorRes.Data)
+			cID := models.MustConnectorIDFromString(connectorID)
 			Expect(taskID.Reference).To(ContainSubstring(cID.Reference.String()))
 
-			connectorID, err := models.ConnectorIDFromString(connectorRes.Data)
+			connectorID, err := models.ConnectorIDFromString(connectorID)
 			Expect(err).To(BeNil())
 
 			var getResponse struct{ Data models.BankAccount }
@@ -176,14 +175,14 @@ var _ = Context("Payments API Bank Accounts", func() {
 
 	When("forwarding a bank account to a connector with v2", func() {
 		var (
-			ver          int
-			createRes    struct{ Data v2.BankAccountResponse }
-			forwardReq   v2.BankAccountsForwardToConnectorRequest
-			connectorRes struct{ Data v2.ConnectorInstallResponse }
-			res          struct{ Data v2.BankAccountResponse }
-			e            chan *nats.Msg
-			err          error
-			id           uuid.UUID
+			connectorID string
+			ver         int
+			createRes   struct{ Data v2.BankAccountResponse }
+			forwardReq  v2.BankAccountsForwardToConnectorRequest
+			res         struct{ Data v2.BankAccountResponse }
+			e           chan *nats.Msg
+			err         error
+			id          uuid.UUID
 		)
 		JustBeforeEach(func() {
 			ver = 2
@@ -192,8 +191,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createRes.Data.ID)
 			Expect(err).To(BeNil())
-			connectorConf := newConnectorConfigurationFn()(id)
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
 		})
 		It("should fail when connector ID is invalid", func() {
@@ -203,11 +201,11 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err.Error()).To(ContainSubstring("400"))
 		})
 		It("should be ok", func() {
-			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorRes.Data.ConnectorID}
+			forwardReq = v2.BankAccountsForwardToConnectorRequest{ConnectorID: connectorID}
 			err = ForwardBankAccount(ctx, app.GetValue(), ver, id.String(), &forwardReq, &res)
 			Expect(err).To(BeNil())
 			Expect(res.Data.RelatedAccounts).To(HaveLen(1))
-			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorRes.Data.ConnectorID))
+			Expect(res.Data.RelatedAccounts[0].ConnectorID).To(Equal(connectorID))
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedBankAccount)))
 		})
