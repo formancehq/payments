@@ -8,8 +8,6 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
-	v2 "github.com/formancehq/payments/internal/api/v2"
-	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
@@ -43,18 +41,14 @@ var _ = Context("Payments API Payments", func() {
 
 	When("creating a new payment with v3", func() {
 		var (
-			connectorID    string
-			createResponse struct{ Data models.Payment }
-			getResponse    struct{ Data models.Payment }
-			e              chan *nats.Msg
-			ver            int
-			createdAt      time.Time
-			initialAmount  *big.Int
-			asset          string
-			err            error
+			connectorID   string
+			e             chan *nats.Msg
+			createdAt     time.Time
+			initialAmount *big.Int
+			asset         string
+			err           error
 		)
 		JustBeforeEach(func() {
-			ver = 3
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
@@ -65,59 +59,54 @@ var _ = Context("Payments API Payments", func() {
 		})
 
 		It("should be ok", func() {
-			adj := []v3.CreatePaymentsAdjustmentsRequest{
+			adj := []components.V3CreatePaymentAdjustmentRequest{
 				{
 					Reference: "ref_adjustment",
 					CreatedAt: createdAt,
 					Amount:    big.NewInt(55),
 					Asset:     &asset,
-					Status:    models.PAYMENT_STATUS_REFUNDED.String(),
+					Status:    "REFUNDED",
 				},
 			}
 
 			debtorID, creditorID := setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
-			createRequest := v3.CreatePaymentRequest{
+			createRequest := &components.V3CreatePaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
 				CreatedAt:            createdAt,
 				InitialAmount:        initialAmount,
 				Amount:               initialAmount,
 				Asset:                asset,
-				Type:                 models.PAYMENT_TYPE_PAYIN.String(),
+				Type:                 "PAY-IN",
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
 				Scheme:               models.PAYMENT_SCHEME_CARD_AMEX.String(),
-				Adjustments:          adj,
 				Metadata:             map[string]string{"key": "val"},
+				Adjustments:          adj,
 			}
-
-			err = CreatePayment(ctx, app.GetValue(), ver, createRequest, &createResponse)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
-			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID.String(), &getResponse)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, createResponse.GetV3CreatePaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
-			Expect(getResponse.Data.Amount).To(Equal(big.NewInt(0).Sub(createRequest.Amount, adj[0].Amount)))
-			Expect(getResponse.Data.Status.String()).To(Equal(adj[0].Status))
-			Expect(getResponse.Data.Adjustments).To(HaveLen(1))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Amount).To(Equal(big.NewInt(0).Sub(createRequest.Amount, adj[0].Amount)))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Status).To(Equal(adj[0].Status))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Adjustments).To(HaveLen(1))
 		})
 	})
 
 	When("creating a new payment with v2", func() {
 		var (
-			connectorID    string
-			createResponse struct{ Data v2.PaymentResponse }
-			getResponse    struct{ Data v2.PaymentResponse }
-			e              chan *nats.Msg
-			ver            int
-			createdAt      time.Time
-			initialAmount  *big.Int
-			asset          string
-			err            error
+			connectorID   string
+			e             chan *nats.Msg
+			createdAt     time.Time
+			initialAmount *big.Int
+			asset         string
+			err           error
 		)
 		JustBeforeEach(func() {
-			ver = 2
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
@@ -129,30 +118,29 @@ var _ = Context("Payments API Payments", func() {
 
 		It("should be ok", func() {
 			debtorID, creditorID := setupDebtorAndCreditorV2Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
-			createRequest := v2.CreatePaymentRequest{
+			createRequest := components.PaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
 				CreatedAt:            createdAt,
 				Amount:               initialAmount,
 				Asset:                asset,
-				Type:                 models.PAYMENT_TYPE_PAYIN.String(),
-				Status:               models.PAYMENT_STATUS_SUCCEEDED.String(),
+				Type:                 "PAY-IN",
+				Status:               "SUCCEEDED",
+				Scheme:               components.PaymentSchemeAmex,
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
-				Scheme:               models.PAYMENT_SCHEME_CARD_AMEX.String(),
-				Metadata:             map[string]string{"key": "val"},
 			}
 
-			err = CreatePayment(ctx, app.GetValue(), ver, createRequest, &createResponse)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
-			Expect(createResponse.Data.ID).NotTo(Equal(""))
+			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
-			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID, &getResponse)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPayment(ctx, createResponse.GetPaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
-			Expect(getResponse.Data.Amount).To(Equal(createRequest.Amount))
-			Expect(getResponse.Data.Status).To(Equal(createRequest.Status))
+			Expect(getResponse.GetPaymentResponse().Data.Amount).To(Equal(createRequest.Amount))
+			Expect(getResponse.GetPaymentResponse().Data.Status).To(Equal(createRequest.Status))
 		})
 	})
 })

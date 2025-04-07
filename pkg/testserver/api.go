@@ -15,14 +15,6 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func CreatePayment(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payments"), reqBody, res)
-}
-
-func GetPayment(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	return srv.Client().Get(ctx, pathPrefix(ver, "payments/"+id), res)
-}
-
 func CreatePaymentInitiation(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations"), reqBody, res)
 }
