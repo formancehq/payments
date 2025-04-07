@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v3/pointer"
 )
 
 type PaymentInitiationReversalAdjustment struct {

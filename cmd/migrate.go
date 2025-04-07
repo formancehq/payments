@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"github.com/formancehq/go-libs/v2/bun/bunmigrate"
-	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v3/bun/bunmigrate"
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/spf13/cobra"
 	"github.com/uptrace/bun"

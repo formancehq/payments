@@ -14,7 +14,7 @@ import (
 	reflect "reflect"
 	time "time"
 
-	bunpaginate "github.com/formancehq/go-libs/v2/bun/bunpaginate"
+	bunpaginate "github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	models "github.com/formancehq/payments/internal/models"
 	uuid "github.com/google/uuid"
 	gomock "go.uber.org/mock/gomock"
