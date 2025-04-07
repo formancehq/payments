@@ -2363,7 +2363,6 @@ components:
       type: object
       required:
         - country
-        - connectorID
         - name
       properties:
         country:
