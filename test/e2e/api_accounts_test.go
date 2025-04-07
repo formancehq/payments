@@ -4,11 +4,11 @@ package test_suite
 
 import (
 	"encoding/json"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/testing/utils"
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/logging"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -28,7 +28,7 @@ var _ = Context("Payments API Accounts", func() {
 
 		createRequest v3.CreateAccountRequest
 
-		app *utils.Deferred[*Server]
+		app *deferred.Deferred[*Server]
 	)
 
 	app = NewTestServer(func() Configuration {

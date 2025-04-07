@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"

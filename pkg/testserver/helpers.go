@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"os"
 	"path"
 	"time"
@@ -14,12 +15,11 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/stretchr/testify/require"
 
-	. "github.com/formancehq/go-libs/v2/testing/utils"
 	. "github.com/onsi/ginkgo/v2"
 )
 
-func NewTestServer(configurationProvider func() Configuration) *Deferred[*Server] {
-	d := NewDeferred[*Server]()
+func NewTestServer(configurationProvider func() Configuration) *deferred.Deferred[*Server] {
+	d := deferred.New[*Server]()
 	BeforeEach(func() {
 		d.Reset()
 		d.SetValue(New(GinkgoT(), configurationProvider()))

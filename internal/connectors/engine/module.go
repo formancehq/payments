@@ -3,7 +3,7 @@ package engine
 import (
 	"context"
 
-	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/client"

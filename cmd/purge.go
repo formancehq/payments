@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/temporal"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/spf13/cobra"
 	"go.opentelemetry.io/otel/metric"

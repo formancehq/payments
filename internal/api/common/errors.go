@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/formancehq/go-libs/v2/api"
+	"github.com/formancehq/go-libs/v3/api"
 )
 
 func InternalServerError(w http.ResponseWriter, r *http.Request, err error) {

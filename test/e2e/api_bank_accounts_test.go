@@ -4,9 +4,9 @@ package test_suite
 
 import (
 	"fmt"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/testing/utils"
+	"github.com/formancehq/go-libs/v3/logging"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/events"
@@ -30,7 +30,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		createRequest   v3.BankAccountsCreateRequest
 		v2createRequest v2.BankAccountsCreateRequest
 
-		app *utils.Deferred[*Server]
+		app *deferred.Deferred[*Server]
 	)
 
 	app = NewTestServer(func() Configuration {

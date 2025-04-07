@@ -13,16 +13,16 @@ import (
 	_ "github.com/formancehq/payments/internal/connectors/plugins/public"
 	formance "github.com/formancehq/payments/pkg/client"
 
-	"github.com/formancehq/go-libs/v2/otlp"
-	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
+	"github.com/formancehq/go-libs/v3/otlp"
+	"github.com/formancehq/go-libs/v3/otlp/otlpmetrics"
 	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 
-	"github.com/formancehq/go-libs/v2/bun/bunconnect"
-	"github.com/formancehq/go-libs/v2/httpclient"
-	"github.com/formancehq/go-libs/v2/httpserver"
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/go-libs/v3/bun/bunconnect"
+	"github.com/formancehq/go-libs/v3/httpclient"
+	"github.com/formancehq/go-libs/v3/httpserver"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/cmd"
 	"github.com/stretchr/testify/require"
 )
