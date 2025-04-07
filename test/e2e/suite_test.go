@@ -5,17 +5,18 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"os"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunconnect"
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/go-libs/v3/testing/docker"
 	"github.com/formancehq/go-libs/v3/testing/platform/natstesting"
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

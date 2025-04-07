@@ -2,19 +2,22 @@ package test_suite
 
 import (
 	"context"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
-	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+
+	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -72,7 +75,7 @@ var _ = Context("Payments API Payments", func() {
 				},
 			}
 
-			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
+			debtorID, creditorID := setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
 			createRequest := v3.CreatePaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
@@ -125,7 +128,7 @@ var _ = Context("Payments API Payments", func() {
 		})
 
 		It("should be ok", func() {
-			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
+			debtorID, creditorID := setupDebtorAndCreditorV2Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
 			createRequest := v2.CreatePaymentRequest{
 				Reference:            "ref",
 				ConnectorID:          connectorID,
@@ -154,44 +157,78 @@ var _ = Context("Payments API Payments", func() {
 	})
 })
 
-func setupDebtorAndCreditorAccounts(
+func setupDebtorAndCreditorV3Accounts(
 	ctx context.Context,
 	app *testserver.Server,
 	e chan *nats.Msg,
-	ver int,
 	connectorID string,
 	createdAt time.Time,
-) (debtorID, creditorID string) {
-	var (
-		creditorRes struct{ Data models.Account }
-		debtorRes   struct{ Data models.Account }
-	)
-
-	creditorRequest := v3.CreateAccountRequest{
+) (string, string) {
+	creditorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "creditor",
-		Name:         "creditor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt.Add(-time.Hour),
-		DefaultAsset: "USD/2",
-		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
-		Metadata:     map[string]string{"key": "val"},
-	}
-	err := CreateAccount(ctx, app, ver, creditorRequest, &creditorRes)
+		AccountName:  "creditor",
+		Type:         "INTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"key": "val",
+		},
+	})
 	Expect(err).To(BeNil())
 	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
-	debtorRequest := v3.CreateAccountRequest{
+	debtorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "debtor",
-		Name:         "debtor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt,
-		DefaultAsset: "USD/2",
-		Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
-		Metadata:     map[string]string{"ping": "pong"},
-	}
-	err = CreateAccount(ctx, app, ver, debtorRequest, &debtorRes)
+		AccountName:  "debtor",
+		Type:         "EXTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"ping": "pong",
+		},
+	})
 	Expect(err).To(BeNil())
 	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
-	return debtorRes.Data.ID.String(), creditorRes.Data.ID.String()
+	return debtorID, creditorID
+}
+
+func setupDebtorAndCreditorV2Accounts(
+	ctx context.Context,
+	app *testserver.Server,
+	e chan *nats.Msg,
+	connectorID string,
+	createdAt time.Time,
+) (string, string) {
+	creditorID, err := createV2Account(ctx, app, components.AccountRequest{
+		Reference:    "creditor",
+		ConnectorID:  connectorID,
+		CreatedAt:    createdAt.Add(-time.Hour),
+		AccountName:  pointer.For("creditor"),
+		Type:         "INTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"key": "val",
+		},
+	})
+	Expect(err).To(BeNil())
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+
+	debtorID, err := createV2Account(ctx, app, components.AccountRequest{
+		Reference:    "debtor",
+		ConnectorID:  connectorID,
+		CreatedAt:    createdAt,
+		AccountName:  pointer.For("debtor"),
+		Type:         "EXTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"ping": "pong",
+		},
+	})
+	Expect(err).To(BeNil())
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+
+	return debtorID, creditorID
 }

@@ -15,22 +15,6 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func CreateAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "accounts"), reqBody, res)
-}
-
-func ListAccounts(ctx context.Context, srv *Server, ver int, res any) error {
-	return srv.Client().Get(ctx, pathPrefix(ver, "accounts"), res)
-}
-
-func GetAccount(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	return srv.Client().Get(ctx, pathPrefix(ver, "accounts/"+id), res)
-}
-
-func GetAccountBalances(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	return srv.Client().Get(ctx, pathPrefix(ver, "accounts/"+id+"/balances"), res)
-}
-
 func CreateBankAccount(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "bank-accounts"), reqBody, res)
 }

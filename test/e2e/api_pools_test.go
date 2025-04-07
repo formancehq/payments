@@ -3,13 +3,15 @@ package test_suite
 import (
 	"context"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
@@ -55,7 +57,7 @@ var _ = Context("Payments API Pools", func() {
 		})
 
 		It("should be ok when underlying accounts exist", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 5)
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
 			req := v3.CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
@@ -90,7 +92,7 @@ var _ = Context("Payments API Pools", func() {
 		})
 
 		It("should be possible to delete a pool", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 1)
 			req := v3.CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
@@ -131,7 +133,7 @@ var _ = Context("Payments API Pools", func() {
 		})
 
 		It("should be ok when underlying accounts exist", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 5)
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
 			req := v2.CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
@@ -166,7 +168,7 @@ var _ = Context("Payments API Pools", func() {
 		})
 
 		It("should be possible to delete a pool", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 1)
 			req := v2.CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
@@ -209,7 +211,7 @@ var _ = Context("Payments API Pools", func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
-			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
+			ids := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
 
@@ -278,7 +280,7 @@ var _ = Context("Payments API Pools", func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
-			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
+			ids := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
 
@@ -330,39 +332,70 @@ var _ = Context("Payments API Pools", func() {
 	})
 })
 
-func setupAccounts(
+func setupV3PoolAccounts(
 	ctx context.Context,
 	app *testserver.Server,
 	e chan *nats.Msg,
-	ver int,
 	connectorID string,
 	count int,
 ) []string {
 	accountIDs := make([]string, 0, count)
 	for i := 0; i < count; i++ {
-		var accountResponse struct{ Data models.Account }
-		accountRequest := v3.CreateAccountRequest{
-			Reference:   fmt.Sprintf("account%d-ref", i),
-			Name:        fmt.Sprintf("account%d-name", i),
+		reference := fmt.Sprintf("account%d-ref", i)
+		accountID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
+			Reference:   reference,
 			ConnectorID: connectorID,
 			CreatedAt:   time.Now().Truncate(time.Second),
-			Type:        string(models.ACCOUNT_TYPE_INTERNAL),
+			AccountName: fmt.Sprintf("account%d-name", i),
+			Type:        "INTERNAL",
 			Metadata:    map[string]string{"key": "val"},
-		}
-
-		err := CreateAccount(ctx, app, ver, accountRequest, &accountResponse)
+		})
 		Expect(err).To(BeNil())
 		var msg = struct {
-			ConnectorID string `json:"connectorId"`
+			ConnectorID string `json:"connectorID"`
 			AccountID   string `json:"id"`
 			Reference   string `json:"reference"`
 		}{
 			ConnectorID: connectorID,
-			AccountID:   accountResponse.Data.ID.String(),
-			Reference:   accountRequest.Reference,
+			AccountID:   accountID,
+			Reference:   reference,
 		}
 		Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(msg))))
-		accountIDs = append(accountIDs, accountResponse.Data.ID.String())
+		accountIDs = append(accountIDs, accountID)
+	}
+	return accountIDs
+}
+
+func setupV2PoolAccounts(
+	ctx context.Context,
+	app *testserver.Server,
+	e chan *nats.Msg,
+	connectorID string,
+	count int,
+) []string {
+	accountIDs := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		reference := fmt.Sprintf("account%d-ref", i)
+		accountID, err := createV2Account(ctx, app, components.AccountRequest{
+			Reference:   reference,
+			ConnectorID: connectorID,
+			CreatedAt:   time.Now().Truncate(time.Second),
+			AccountName: pointer.For(fmt.Sprintf("account%d-name", i)),
+			Type:        "INTERNAL",
+			Metadata:    map[string]string{"key": "val"},
+		})
+		Expect(err).To(BeNil())
+		var msg = struct {
+			ConnectorID string `json:"connectorID"`
+			AccountID   string `json:"id"`
+			Reference   string `json:"reference"`
+		}{
+			ConnectorID: connectorID,
+			AccountID:   accountID,
+			Reference:   reference,
+		}
+		Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(msg))))
+		accountIDs = append(accountIDs, accountID)
 	}
 	return accountIDs
 }

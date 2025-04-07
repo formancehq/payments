@@ -1,11 +1,11 @@
 package test_suite
 
 import (
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
@@ -63,7 +63,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
 				ConnectorID:          connectorID,
@@ -241,7 +241,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorID, createdAt)
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
 			payReq = v3.PaymentInitiationsCreateRequest{
 				Reference:            uuid.New().String(),
 				ConnectorID:          connectorID,
