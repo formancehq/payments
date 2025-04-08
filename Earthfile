@@ -66,3 +66,7 @@ release:
     COPY --dir . /src
     COPY (+compile-plugins/list.go) /src/internal/connectors/plugins/public/list.go
     DO core+GORELEASER --mode=$mode
+
+openapi:
+    COPY openapi.yaml /openapi.yaml
+    SAVE ARTIFACT /openapi.yaml AS LOCAL openapi.yaml
