@@ -8,12 +8,12 @@ import (
 
 type ResetConnectorRequest struct {
 	// The name of the connector.
-	Connector components.ConnectorEnum `pathParam:"style=simple,explode=false,name=connector"`
+	Connector components.Connector `pathParam:"style=simple,explode=false,name=connector"`
 }
 
-func (o *ResetConnectorRequest) GetConnector() components.ConnectorEnum {
+func (o *ResetConnectorRequest) GetConnector() components.Connector {
 	if o == nil {
-		return components.ConnectorEnum("")
+		return components.Connector("")
 	}
 	return o.Connector
 }

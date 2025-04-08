@@ -45,6 +45,7 @@ func paymentsCreate(backend backend.Backend, validator *validation.Validator) ht
 			return
 		}
 
+		req.Scheme = toV3PaymentScheme(req.Scheme)
 		populateSpanFromPaymentCreateRequest(span, req)
 
 		if _, err := validator.Validate(req); err != nil {
@@ -78,6 +79,7 @@ func paymentsCreate(backend backend.Backend, validator *validation.Validator) ht
 			Type:          paymentType,
 			InitialAmount: req.Amount,
 			Amount:        req.Amount,
+			Status:        status,
 			Asset:         req.Asset,
 			Scheme:        models.MustPaymentSchemeFromString(req.Scheme),
 			SourceAccountID: func() *models.AccountID {

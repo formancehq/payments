@@ -1,14 +1,15 @@
 package test_suite
 
 import (
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
@@ -41,35 +42,28 @@ var _ = Context("Payments API Payment Initiation", func() {
 
 	When("initiating a new transfer with v3", func() {
 		var (
-			ver = 3
 			e   chan *nats.Msg
 			err error
 
-			debtorID   string
-			creditorID string
-			payReq     v3.PaymentInitiationsCreateRequest
+			debtorID            string
+			creditorID          string
+			payReq              *components.V3InitiatePaymentRequest
+			paymentInitiationID string
 
-			connectorRes struct{ Data string }
-			initRes      struct {
-				Data v3.PaymentInitiationsCreateResponse
-			}
-			approveRes struct {
-				Data v3.PaymentInitiationsApproveResponse
-			}
+			connectorID string
 		)
 
 		JustBeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
-			payReq = v3.PaymentInitiationsCreateRequest{
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			payReq = &components.V3InitiatePaymentRequest{
 				Reference:            uuid.New().String(),
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				Description:          "some description",
-				Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER.String(),
+				Type:                 "TRANSFER",
 				Amount:               big.NewInt(3200),
 				Asset:                "EUR/2",
 				SourceAccountID:      &debtorID,
@@ -77,9 +71,12 @@ var _ = Context("Payments API Payment Initiation", func() {
 				Metadata:             map[string]string{"key": "val"},
 			}
 
-			err := CreatePaymentInitiation(ctx, app.GetValue(), ver, payReq, &initRes)
+			createResponse, err := app.GetValue().SDK().Payments.V3.InitiatePayment(ctx, pointer.For(false), payReq)
 			Expect(err).To(BeNil())
-			Expect(initRes.Data.TaskID).To(Equal("")) // task nil when not sending to PSP
+			Expect(createResponse.GetV3InitiatePaymentResponse().Data.TaskID).ToNot(BeNil())
+			Expect(*createResponse.GetV3InitiatePaymentResponse().Data.TaskID).To(Equal(""))              // task empty when not sending to PSP
+			Expect(createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID).ToNot(BeNil()) // task nil when not sending to PSP
+			paymentInitiationID = *createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiation)))
 			var msg = struct {
 				Status string `json:"status"`
@@ -90,13 +87,10 @@ var _ = Context("Payments API Payment Initiation", func() {
 		})
 
 		It("can be processed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			approveResponse, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-
-			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
-			Expect(err).To(BeNil())
-			Expect(approveRes.Data).NotTo(BeNil())
-			taskID, err := models.TaskIDFromString(approveRes.Data.TaskID)
+			Expect(approveResponse.GetV3ApprovePaymentInitiationResponse().Data).NotTo(BeNil())
+			taskID, err := models.TaskIDFromString(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("create-transfer"))
 
@@ -105,7 +99,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
@@ -125,58 +119,39 @@ var _ = Context("Payments API Payment Initiation", func() {
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPaymentInitiationAdjustment, WithPayloadSubset(processedPI))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String()))
 		})
 
 		It("can be rejected", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			_, err := app.GetValue().SDK().Payments.V3.RejectPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
 
-			err = RejectPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String())
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
 			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED.String()))
 		})
 
 		It("cannot be reversed if the payment is unprocessed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
-			Expect(err).To(BeNil())
-
-			req := v3.PaymentInitiationsReverseRequest{
+			reverseResponse, err := app.GetValue().SDK().Payments.V3.ReversePaymentInitiation(ctx, paymentInitiationID, &components.V3ReversePaymentInitiationRequest{
 				Reference:   uuid.New().String(),
 				Description: payReq.Description,
 				Amount:      payReq.Amount,
 				Asset:       payReq.Asset,
 				Metadata:    map[string]string{"reversal": "data"},
-			}
-
-			var res struct {
-				Data v3.PaymentInitiationsReverseResponse
-			}
-			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			})
 			Expect(err).To(BeNil())
-			Expect(res.Data.TaskID).NotTo(BeNil())
+			Expect(reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID).NotTo(BeNil())
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(res.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_FAILED, WithError(workflow.ErrPaymentInitiationNotProcessed)))
+			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_FAILED, WithError(workflow.ErrPaymentInitiationNotProcessed)))
 		})
 
 		It("can be reversed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
-			Expect(err).To(BeNil())
-
-			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
+			approveResponse, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
 
 			var msg = struct {
@@ -184,71 +159,56 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			req := v3.PaymentInitiationsReverseRequest{
+			reverseResponse, err := app.GetValue().SDK().Payments.V3.ReversePaymentInitiation(ctx, paymentInitiationID, &components.V3ReversePaymentInitiationRequest{
 				Reference:   uuid.New().String(),
 				Description: payReq.Description,
 				Amount:      payReq.Amount,
 				Asset:       payReq.Asset,
 				Metadata:    map[string]string{"reversal": "data"},
-			}
-
-			var res struct {
-				Data v3.PaymentInitiationsReverseResponse
-			}
-			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			})
 			Expect(err).To(BeNil())
-			Expect(res.Data.TaskID).NotTo(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-transfer")
-			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Expect(reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID).NotTo(BeNil())
+			blockTillWorkflowComplete(ctx, connectorID, "reverse-transfer")
+			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).WithTimeout(2 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED.String()))
 		})
 	})
 
 	When("initiating a new payout with v3", func() {
 		var (
-			ver = 3
 			e   chan *nats.Msg
 			err error
 
-			debtorID   string
-			creditorID string
-			payReq     v3.PaymentInitiationsCreateRequest
+			debtorID            string
+			creditorID          string
+			payReq              *components.V3InitiatePaymentRequest
+			paymentInitiationID string
 
-			connectorRes struct{ Data string }
-			initRes      struct {
-				Data v3.PaymentInitiationsCreateResponse
-			}
-			approveRes struct {
-				Data v3.PaymentInitiationsApproveResponse
-			}
+			connectorID string
 		)
 
 		JustBeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 
-			debtorID, creditorID = setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
-			payReq = v3.PaymentInitiationsCreateRequest{
+			debtorID, creditorID = setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			payReq = &components.V3InitiatePaymentRequest{
 				Reference:            uuid.New().String(),
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				Description:          "payout description",
-				Type:                 models.PAYMENT_INITIATION_TYPE_PAYOUT.String(),
+				Type:                 "PAYOUT",
 				Amount:               big.NewInt(2233),
 				Asset:                "EUR/2",
 				SourceAccountID:      &debtorID,
@@ -256,19 +216,19 @@ var _ = Context("Payments API Payment Initiation", func() {
 				Metadata:             map[string]string{"pay": "out"},
 			}
 
-			err := CreatePaymentInitiation(ctx, app.GetValue(), ver, payReq, &initRes)
+			createResponse, err := app.GetValue().SDK().Payments.V3.InitiatePayment(ctx, pointer.For(false), payReq)
 			Expect(err).To(BeNil())
-			Expect(initRes.Data.TaskID).To(Equal("")) // task nil when not sending to PSP
+			Expect(createResponse.GetV3InitiatePaymentResponse().Data.TaskID).ToNot(BeNil())              // task nil when not sending to PSP
+			Expect(*createResponse.GetV3InitiatePaymentResponse().Data.TaskID).To(Equal(""))              // task nil when not sending to PSP
+			Expect(createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID).ToNot(BeNil()) // task nil when not sending to PSP
+			paymentInitiationID = *createResponse.GetV3InitiatePaymentResponse().Data.PaymentInitiationID
 		})
 
 		It("can be processed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			approveResponse, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-
-			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
-			Expect(err).To(BeNil())
-			Expect(approveRes.Data).NotTo(BeNil())
-			taskID, err := models.TaskIDFromString(approveRes.Data.TaskID)
+			Expect(approveResponse.GetV3ApprovePaymentInitiationResponse().Data).NotTo(BeNil())
+			taskID, err := models.TaskIDFromString(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)
 			Expect(err).To(BeNil())
 			Expect(taskID.Reference).To(ContainSubstring("create-payout"))
 
@@ -277,64 +237,44 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED.String()))
 		})
 
 		It("can be rejected", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
+			_, err := app.GetValue().SDK().Payments.V3.RejectPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
 
-			err = RejectPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String())
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
-			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REJECTED.String()))
 		})
 
 		It("cannot be reversed if the payment is unprocessed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
-			Expect(err).To(BeNil())
-
-			req := v3.PaymentInitiationsReverseRequest{
+			reverseResponse, err := app.GetValue().SDK().Payments.V3.ReversePaymentInitiation(ctx, paymentInitiationID, &components.V3ReversePaymentInitiationRequest{
 				Reference:   uuid.New().String(),
 				Description: payReq.Description,
 				Amount:      payReq.Amount,
 				Asset:       payReq.Asset,
 				Metadata:    map[string]string{"reversal": "data"},
-			}
-
-			var res struct {
-				Data v3.PaymentInitiationsReverseResponse
-			}
-			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			})
 			Expect(err).To(BeNil())
-			Expect(res.Data.TaskID).NotTo(BeNil())
+			Expect(reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID).NotTo(BeNil())
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(res.Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_FAILED, WithError(workflow.ErrPaymentInitiationNotProcessed)))
+			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).Should(HaveTaskStatus(models.TASK_STATUS_FAILED, WithError(workflow.ErrPaymentInitiationNotProcessed)))
 		})
 
 		It("can be reversed", func() {
-			paymentID, err := models.PaymentInitiationIDFromString(initRes.Data.PaymentInitiationID)
-			Expect(err).To(BeNil())
-
-			err = ApprovePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &approveRes)
+			approveResponse, err := app.GetValue().SDK().Payments.V3.ApprovePaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
 
 			var msg = struct {
@@ -342,37 +282,29 @@ var _ = Context("Payments API Payment Initiation", func() {
 				SourceAccountID      string `json:"sourceAccountID,omitempty"`
 				DestinationAccountID string `json:"destinationAccountID,omitempty"`
 			}{
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				SourceAccountID:      debtorID,
 				DestinationAccountID: creditorID,
 			}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPayments, WithPayloadSubset(msg))))
 			taskPoller := TaskPoller(ctx, GinkgoT(), app.GetValue())
-			Eventually(taskPoller(approveRes.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Eventually(taskPoller(approveResponse.GetV3ApprovePaymentInitiationResponse().Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			req := v3.PaymentInitiationsReverseRequest{
+			reverseResponse, err := app.GetValue().SDK().Payments.V3.ReversePaymentInitiation(ctx, paymentInitiationID, &components.V3ReversePaymentInitiationRequest{
 				Reference:   uuid.New().String(),
 				Description: payReq.Description,
 				Amount:      payReq.Amount,
 				Asset:       payReq.Asset,
 				Metadata:    map[string]string{"reversal": "data"},
-			}
-
-			var res struct {
-				Data v3.PaymentInitiationsReverseResponse
-			}
-			err = ReversePaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), req, &res)
+			})
 			Expect(err).To(BeNil())
-			Expect(res.Data.TaskID).NotTo(BeNil())
-			blockTillWorkflowComplete(ctx, connectorRes.Data, "reverse-payout")
-			Eventually(taskPoller(res.Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
+			Expect(reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID).NotTo(BeNil())
+			blockTillWorkflowComplete(ctx, connectorID, "reverse-payout")
+			Eventually(taskPoller(*reverseResponse.GetV3ReversePaymentInitiationResponse().Data.TaskID)).WithTimeout(5 * time.Second).Should(HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 
-			var paymentRes struct {
-				Data models.PaymentInitiationExpanded
-			}
-			err = GetPaymentInitiation(ctx, app.GetValue(), ver, paymentID.String(), &paymentRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPaymentInitiation(ctx, paymentInitiationID)
 			Expect(err).To(BeNil())
-			Expect(paymentRes.Data.Status).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED))
+			Expect(string(getResponse.GetV3GetPaymentInitiationResponse().Data.Status)).To(Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_REVERSED.String()))
 		})
 	})
 })
