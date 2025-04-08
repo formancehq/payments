@@ -8,12 +8,12 @@ import (
 
 type UninstallConnectorRequest struct {
 	// The name of the connector.
-	Connector components.ConnectorEnum `pathParam:"style=simple,explode=false,name=connector"`
+	Connector components.Connector `pathParam:"style=simple,explode=false,name=connector"`
 }
 
-func (o *UninstallConnectorRequest) GetConnector() components.ConnectorEnum {
+func (o *UninstallConnectorRequest) GetConnector() components.Connector {
 	if o == nil {
-		return components.ConnectorEnum("")
+		return components.Connector("")
 	}
 	return o.Connector
 }

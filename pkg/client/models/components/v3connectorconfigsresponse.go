@@ -2,54 +2,40 @@
 
 package components
 
-type V3ConnectorConfigsResponseKey struct {
-	DataType string `json:"dataType"`
-	Required bool   `json:"required"`
+type V3ConnectorConfigsResponseData struct {
+	DataType     string  `json:"dataType"`
+	Required     bool    `json:"required"`
+	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
-func (o *V3ConnectorConfigsResponseKey) GetDataType() string {
+func (o *V3ConnectorConfigsResponseData) GetDataType() string {
 	if o == nil {
 		return ""
 	}
 	return o.DataType
 }
 
-func (o *V3ConnectorConfigsResponseKey) GetRequired() bool {
+func (o *V3ConnectorConfigsResponseData) GetRequired() bool {
 	if o == nil {
 		return false
 	}
 	return o.Required
 }
 
-type V3ConnectorConfigsResponseConnector struct {
-	Key V3ConnectorConfigsResponseKey `json:"key"`
-}
-
-func (o *V3ConnectorConfigsResponseConnector) GetKey() V3ConnectorConfigsResponseKey {
+func (o *V3ConnectorConfigsResponseData) GetDefaultValue() *string {
 	if o == nil {
-		return V3ConnectorConfigsResponseKey{}
+		return nil
 	}
-	return o.Key
-}
-
-type V3ConnectorConfigsResponseData struct {
-	Connector V3ConnectorConfigsResponseConnector `json:"connector"`
-}
-
-func (o *V3ConnectorConfigsResponseData) GetConnector() V3ConnectorConfigsResponseConnector {
-	if o == nil {
-		return V3ConnectorConfigsResponseConnector{}
-	}
-	return o.Connector
+	return o.DefaultValue
 }
 
 type V3ConnectorConfigsResponse struct {
-	Data V3ConnectorConfigsResponseData `json:"data"`
+	Data map[string]map[string]V3ConnectorConfigsResponseData `json:"data"`
 }
 
-func (o *V3ConnectorConfigsResponse) GetData() V3ConnectorConfigsResponseData {
+func (o *V3ConnectorConfigsResponse) GetData() map[string]map[string]V3ConnectorConfigsResponseData {
 	if o == nil {
-		return V3ConnectorConfigsResponseData{}
+		return map[string]map[string]V3ConnectorConfigsResponseData{}
 	}
 	return o.Data
 }

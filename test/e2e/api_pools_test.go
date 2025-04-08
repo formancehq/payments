@@ -3,13 +3,13 @@ package test_suite
 import (
 	"context"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	v2 "github.com/formancehq/payments/internal/api/v2"
-	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
@@ -41,39 +41,32 @@ var _ = Context("Payments API Pools", func() {
 
 	When("creating a new pool with v3", func() {
 		var (
-			connectorRes struct{ Data string }
-			connectorID  string
-			e            chan *nats.Msg
-			ver          int
+			connectorID string
+			e           chan *nats.Msg
+			err         error
 		)
 
 		JustBeforeEach(func() {
-			ver = 3
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
 		})
 
 		It("should be ok when underlying accounts exist", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 5)
-			req := v3.CreatePoolRequest{
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-			var res struct{ Data string }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
 
-			poolID := res.Data
+			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
-			var getRes struct{ Data models.Pool }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.PoolAccounts).To(HaveLen(len(accountIDs)))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs)))
 		})
 
 		It("should fail when underlying accounts don't exist", func() {
@@ -81,77 +74,66 @@ var _ = Context("Payments API Pools", func() {
 				Reference:   "v3blahblahblah",
 				ConnectorID: models.MustConnectorIDFromString(connectorID),
 			}
-			req := v3.CreatePoolRequest{
+			_, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: []string{accountID.String()},
-			}
-			var res struct{ Data v2.PoolResponse }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("404"))
 		})
 
 		It("should be possible to delete a pool", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
-			req := v3.CreatePoolRequest{
+			accountIDs := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 1)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-			var res struct{ Data string }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
 
-			poolID := res.Data
+			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
-			err = RemovePool(ctx, app.GetValue(), ver, poolID)
+			_, err = app.GetValue().SDK().Payments.V3.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
 			poolID := uuid.New().String()
-			err := RemovePool(ctx, app.GetValue(), ver, poolID)
+			_, err := app.GetValue().SDK().Payments.V3.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
 		})
 	})
 
 	When("creating a new pool with v2", func() {
 		var (
-			connectorRes struct{ Data v2.ConnectorInstallResponse }
-			connectorID  string
-			e            chan *nats.Msg
-			ver          int
+			connectorID string
+			e           chan *nats.Msg
+			err         error
 		)
 
 		JustBeforeEach(func() {
-			ver = 2
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data.ConnectorID
 		})
 
 		It("should be ok when underlying accounts exist", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 5)
-			req := v2.CreatePoolRequest{
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 5)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-			var res struct{ Data v2.PoolResponse }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
 
-			poolID := res.Data.ID
+			poolID := createResponse.GetPoolResponse().Data.ID
 			var msg = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
-			var getRes struct{ Data v2.PoolResponse }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.Accounts).To(HaveLen(len(accountIDs)))
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs)))
 		})
 
 		It("should fail when underlying accounts don't exist", func() {
@@ -159,218 +141,231 @@ var _ = Context("Payments API Pools", func() {
 				Reference:   "blahblahblah",
 				ConnectorID: models.MustConnectorIDFromString(connectorID),
 			}
-			req := v2.CreatePoolRequest{
-				Name:       "some-pool",
+			_, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
+				Name:       "blahblahblah",
 				AccountIDs: []string{accountID.String()},
-			}
-			var res struct{ Data v2.PoolResponse }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("404"))
 		})
 
 		It("should be possible to delete a pool", func() {
-			accountIDs := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 1)
-			req := v2.CreatePoolRequest{
+			accountIDs := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 1)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-			var res struct{ Data v2.PoolResponse }
-			err := CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
 
-			poolID := res.Data.ID
+			poolID := createResponse.GetPoolResponse().Data.ID
 			var msg = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
-			err = RemovePool(ctx, app.GetValue(), ver, poolID)
+			_, err = app.GetValue().SDK().Payments.V1.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeDeletePool, WithPayloadSubset(msg))))
 		})
 
 		It("should not fail when attempting to delete a pool that doesn't exist", func() {
 			poolID := uuid.New().String()
-			err := RemovePool(ctx, app.GetValue(), ver, poolID)
+			_, err := app.GetValue().SDK().Payments.V1.DeletePool(ctx, poolID)
 			Expect(err).To(BeNil())
 		})
 	})
 
 	When("adding and removing accounts to a pool with v3", func() {
 		var (
-			connectorRes    struct{ Data string }
 			connectorID     string
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
 			e               chan *nats.Msg
-			ver             int
+			err             error
 
 			eventPayload GenericEventPayload
 		)
 
 		JustBeforeEach(func() {
-			ver = 3
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data
-			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
+			ids := setupV3PoolAccounts(ctx, app.GetValue(), e, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
 
-			req := v3.CreatePoolRequest{
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-
-			var res struct{ Data string }
-			err = CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
-			poolID = res.Data
+			poolID = createResponse.GetV3CreatePoolResponse().Data
 			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
 		It("should be possible to remove account from pool", func() {
-			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
-			var getRes struct{ Data models.Pool }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.PoolAccounts).To(HaveLen(len(accountIDs) - 1))
-			Expect(getRes.Data.PoolAccounts[0].String()).To(Equal(accountIDs[1]))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs) - 1))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts[0]).To(Equal(accountIDs[1]))
 		})
 
 		It("should not fail even when removing underlying account not attached to pool", func() {
-			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V3.RemoveAccountFromPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
 		})
 
 		It("should be possible to add account to pool", func() {
-			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V3.AddAccountToPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
-			var getRes struct{ Data models.Pool }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.PoolAccounts).To(HaveLen(len(accountIDs) + 1))
+			Expect(getResponse.GetV3GetPoolResponse().Data.PoolAccounts).To(HaveLen(len(accountIDs) + 1))
 		})
 
 		It("should not fail event when adding underlying account already in pool", func() {
-			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V3.AddAccountToPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
 		})
 	})
 
 	When("adding and removing accounts to a pool with v2", func() {
 		var (
-			connectorRes    struct{ Data v2.ConnectorInstallResponse }
 			connectorID     string
 			accountIDs      []string
 			extraAccountIDs []string
 			poolID          string
 			e               chan *nats.Msg
-			ver             int
+			err             error
 
 			eventPayload GenericEventPayload
 		)
 
 		JustBeforeEach(func() {
-			ver = 2
 			e = Subscribe(GinkgoT(), app.GetValue())
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err := ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
-			connectorID = connectorRes.Data.ConnectorID
-			ids := setupAccounts(ctx, app.GetValue(), e, ver, connectorID, 4)
+			ids := setupV2PoolAccounts(ctx, app.GetValue(), e, connectorID, 4)
 			accountIDs = ids[0:2]
 			extraAccountIDs = ids[2:4]
 
-			req := v2.CreatePoolRequest{
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePool(ctx, components.PoolRequest{
 				Name:       "some-pool",
 				AccountIDs: accountIDs,
-			}
-
-			var res struct{ Data v2.PoolResponse }
-			err = CreatePool(ctx, app.GetValue(), ver, req, &res)
+			})
 			Expect(err).To(BeNil())
-			poolID = res.Data.ID
+			poolID = createResponse.GetPoolResponse().Data.ID
 			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 		})
 
 		It("should be possible to remove account from pool", func() {
-			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V1.RemoveAccountFromPool(ctx, poolID, accountIDs[0])
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
-			var getRes struct{ Data v2.PoolResponse }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.Accounts).To(HaveLen(len(accountIDs) - 1))
-			Expect(getRes.Data.Accounts[0]).To(Equal(accountIDs[1]))
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs) - 1))
+			Expect(getResponse.GetPoolResponse().Data.Accounts[0]).To(Equal(accountIDs[1]))
 		})
 
 		It("should not fail even when removing underlying account not attached to pool", func() {
-			err := RemovePoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V1.RemoveAccountFromPool(ctx, poolID, extraAccountIDs[0])
 			Expect(err).To(BeNil())
 		})
 
 		It("should be possible to add account to pool", func() {
-			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, extraAccountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V1.AddAccountToPool(ctx, poolID, components.AddAccountToPoolRequest{
+				AccountID: extraAccountIDs[0],
+			})
 			Expect(err).To(BeNil())
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
 
-			var getRes struct{ Data v2.PoolResponse }
-			err = GetPool(ctx, app.GetValue(), ver, poolID, &getRes)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
-			Expect(getRes.Data.Accounts).To(HaveLen(len(accountIDs) + 1))
+			Expect(getResponse.GetPoolResponse().Data.Accounts).To(HaveLen(len(accountIDs) + 1))
 		})
 
 		It("should not fail event when adding underlying account already in pool", func() {
-			err := AddPoolAccount(ctx, app.GetValue(), ver, poolID, accountIDs[0])
+			_, err := app.GetValue().SDK().Payments.V1.AddAccountToPool(ctx, poolID, components.AddAccountToPoolRequest{
+				AccountID: accountIDs[0],
+			})
 			Expect(err).To(BeNil())
 		})
 	})
 })
 
-func setupAccounts(
+func setupV3PoolAccounts(
 	ctx context.Context,
 	app *testserver.Server,
 	e chan *nats.Msg,
-	ver int,
 	connectorID string,
 	count int,
 ) []string {
 	accountIDs := make([]string, 0, count)
 	for i := 0; i < count; i++ {
-		var accountResponse struct{ Data models.Account }
-		accountRequest := v3.CreateAccountRequest{
-			Reference:   fmt.Sprintf("account%d-ref", i),
-			Name:        fmt.Sprintf("account%d-name", i),
+		reference := fmt.Sprintf("account%d-ref", i)
+		accountID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
+			Reference:   reference,
 			ConnectorID: connectorID,
 			CreatedAt:   time.Now().Truncate(time.Second),
-			Type:        string(models.ACCOUNT_TYPE_INTERNAL),
+			AccountName: fmt.Sprintf("account%d-name", i),
+			Type:        "INTERNAL",
 			Metadata:    map[string]string{"key": "val"},
-		}
-
-		err := CreateAccount(ctx, app, ver, accountRequest, &accountResponse)
+		})
 		Expect(err).To(BeNil())
 		var msg = struct {
-			ConnectorID string `json:"connectorId"`
+			ConnectorID string `json:"connectorID"`
 			AccountID   string `json:"id"`
 			Reference   string `json:"reference"`
 		}{
 			ConnectorID: connectorID,
-			AccountID:   accountResponse.Data.ID.String(),
-			Reference:   accountRequest.Reference,
+			AccountID:   accountID,
+			Reference:   reference,
 		}
 		Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(msg))))
-		accountIDs = append(accountIDs, accountResponse.Data.ID.String())
+		accountIDs = append(accountIDs, accountID)
+	}
+	return accountIDs
+}
+
+func setupV2PoolAccounts(
+	ctx context.Context,
+	app *testserver.Server,
+	e chan *nats.Msg,
+	connectorID string,
+	count int,
+) []string {
+	accountIDs := make([]string, 0, count)
+	for i := 0; i < count; i++ {
+		reference := fmt.Sprintf("account%d-ref", i)
+		accountID, err := createV2Account(ctx, app, components.AccountRequest{
+			Reference:   reference,
+			ConnectorID: connectorID,
+			CreatedAt:   time.Now().Truncate(time.Second),
+			AccountName: pointer.For(fmt.Sprintf("account%d-name", i)),
+			Type:        "INTERNAL",
+			Metadata:    map[string]string{"key": "val"},
+		})
+		Expect(err).To(BeNil())
+		var msg = struct {
+			ConnectorID string `json:"connectorID"`
+			AccountID   string `json:"id"`
+			Reference   string `json:"reference"`
+		}{
+			ConnectorID: connectorID,
+			AccountID:   accountID,
+			Reference:   reference,
+		}
+		Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts, WithPayloadSubset(msg))))
+		accountIDs = append(accountIDs, accountID)
 	}
 	return accountIDs
 }

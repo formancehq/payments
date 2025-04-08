@@ -8,14 +8,14 @@ import (
 
 type GetConnectorTaskRequest struct {
 	// The name of the connector.
-	Connector components.ConnectorEnum `pathParam:"style=simple,explode=false,name=connector"`
+	Connector components.Connector `pathParam:"style=simple,explode=false,name=connector"`
 	// The task ID.
 	TaskID string `pathParam:"style=simple,explode=false,name=taskId"`
 }
 
-func (o *GetConnectorTaskRequest) GetConnector() components.ConnectorEnum {
+func (o *GetConnectorTaskRequest) GetConnector() components.Connector {
 	if o == nil {
-		return components.ConnectorEnum("")
+		return components.Connector("")
 	}
 	return o.Connector
 }

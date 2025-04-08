@@ -3,16 +3,18 @@
 package test_suite
 
 import (
+	"context"
 	"encoding/json"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
-	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/events"
-	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/client/models/operations"
 	evts "github.com/formancehq/payments/pkg/events"
+	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
 
@@ -25,8 +27,6 @@ var _ = Context("Payments API Accounts", func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
-
-		createRequest v3.CreateAccountRequest
 
 		app *deferred.Deferred[*Server]
 	)
@@ -43,87 +43,149 @@ var _ = Context("Payments API Accounts", func() {
 	})
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
-	createRequest = v3.CreateAccountRequest{
-		Reference:    "ref",
-		Name:         "foo",
-		CreatedAt:    createdAt,
-		DefaultAsset: "USD/2",
-		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
-		Metadata:     map[string]string{"key": "val"},
-	}
 
 	When("creating a new account", func() {
 		var (
-			connectorRes   struct{ Data string }
-			createResponse struct{ Data models.Account }
-			getResponse    struct{ Data models.Account }
-			e              chan *nats.Msg
-			err            error
+			e chan *nats.Msg
 		)
 
-		DescribeTable("should be successful",
-			func(ver int) {
-				e = Subscribe(GinkgoT(), app.GetValue())
-				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
-				Expect(err).To(BeNil())
+		It("should be successful with v2", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), uuid.New(), 2)
+			Expect(err).To(BeNil())
 
-				createRequest.ConnectorID = connectorRes.Data
-				err = CreateAccount(ctx, app.GetValue(), ver, createRequest, &createResponse)
-				Expect(err).To(BeNil())
+			e = Subscribe(GinkgoT(), app.GetValue())
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreateAccount(ctx, components.AccountRequest{
+				Reference:    "ref",
+				ConnectorID:  connectorID,
+				CreatedAt:    createdAt,
+				Type:         "INTERNAL",
+				DefaultAsset: pointer.For("USD/2"),
+				AccountName:  pointer.For("foo"),
+				Metadata: map[string]string{
+					"key": "val",
+				},
+			})
+			Expect(err).To(BeNil())
 
-				err = GetAccount(ctx, app.GetValue(), ver, createResponse.Data.ID.String(), &getResponse)
-				Expect(err).To(BeNil())
-				Expect(getResponse.Data).To(Equal(createResponse.Data))
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetAccount(ctx, createResponse.GetAccountResponse().Data.ID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetAccountResponse().Data).To(Equal(createResponse.GetAccountResponse().Data))
 
-				Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
-			},
-			Entry("with v2", 2),
-			Entry("with v3", 3),
-		)
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+		})
+
+		It("should be successful with v3", func() {
+			connectorID, err := installConnector(ctx, app.GetValue(), uuid.New(), 3)
+			Expect(err).To(BeNil())
+
+			e = Subscribe(GinkgoT(), app.GetValue())
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
+				Reference:    "ref",
+				ConnectorID:  connectorID,
+				CreatedAt:    createdAt,
+				AccountName:  "foo",
+				Type:         "INTERNAL",
+				DefaultAsset: pointer.For("USD/2"),
+				Metadata: map[string]string{
+					"key": "val",
+				},
+			})
+			Expect(err).To(BeNil())
+
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetAccount(ctx, createResponse.GetV3CreateAccountResponse().Data.ID)
+			Expect(err).To(BeNil())
+			Expect(getResponse.GetV3GetAccountResponse().Data).To(Equal(createResponse.GetV3CreateAccountResponse().Data))
+
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+		})
 	})
 
 	When("fetching account balances", func() {
 		var (
-			connectorRes struct{ Data string }
-			res          struct {
-				Cursor bunpaginate.Cursor[models.Balance]
-			}
 			e chan *nats.Msg
 		)
 
-		DescribeTable("should be successful",
-			func(ver int) {
-				e = Subscribe(GinkgoT(), app.GetValue())
-				connectorConf := newConnectorConfigurationFn()(uuid.New())
-				_, err := GeneratePSPData(connectorConf.Directory)
-				Expect(err).To(BeNil())
+		BeforeEach(func() {
+			e = Subscribe(GinkgoT(), app.GetValue())
+			id := uuid.New()
+			connectorConf := newV3ConnectorConfigFn()(id)
+			_, err := installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
+			Expect(err).To(BeNil())
+			_, err = GeneratePSPData(connectorConf.Directory)
+			Expect(err).To(BeNil())
+			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+		})
 
-				err = ConnectorInstall(ctx, app.GetValue(), 3, connectorConf, &connectorRes)
-				Expect(err).To(BeNil())
-				Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+		It("should be successful with v2", func() {
+			var msg events.BalanceMessagePayload
+			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
+			Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				msg,
+				func(b []byte) error {
+					return json.Unmarshal(b, &msg)
+				},
+			))))
 
-				var msg events.BalanceMessagePayload
-				// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-				Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
-					msg,
-					func(b []byte) error {
-						return json.Unmarshal(b, &msg)
-					},
-				))))
+			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
+				AccountID: msg.AccountID,
+			})
+			Expect(err).To(BeNil())
+			res := balanceResponse.GetBalancesCursor()
+			Expect(res.Cursor.Data).To(HaveLen(1))
 
-				err = GetAccountBalances(ctx, app.GetValue(), ver, msg.AccountID, &res)
-				Expect(err).To(BeNil())
-				Expect(res.Cursor.Data).To(HaveLen(1))
+			balance := res.Cursor.Data[0]
+			Expect(balance.AccountID).To(Equal(msg.AccountID))
+			Expect(balance.Balance).To(Equal(msg.Balance))
+			Expect(balance.Asset).To(Equal(msg.Asset))
+			Expect(balance.CreatedAt).To(Equal(msg.CreatedAt.UTC().Truncate(time.Second)))
+		})
 
-				balance := res.Cursor.Data[0]
-				Expect(balance.AccountID.String()).To(Equal(msg.AccountID))
-				Expect(balance.Balance).To(Equal(msg.Balance))
-				Expect(balance.Asset).To(Equal(msg.Asset))
-				Expect(balance.CreatedAt).To(Equal(msg.CreatedAt.UTC().Truncate(time.Second)))
-			},
-			Entry("with v2", 2),
-			Entry("with v3", 3),
-		)
+		It("should be successful with v3", func() {
+			var msg events.BalanceMessagePayload
+			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
+			Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				msg,
+				func(b []byte) error {
+					return json.Unmarshal(b, &msg)
+				},
+			))))
+
+			balanceResponse, err := app.GetValue().SDK().Payments.V3.GetAccountBalances(ctx, operations.V3GetAccountBalancesRequest{
+				AccountID: msg.AccountID,
+			})
+			Expect(err).To(BeNil())
+			res := balanceResponse.GetV3BalancesCursorResponse()
+			Expect(res.Cursor.Data).To(HaveLen(1))
+
+			balance := res.Cursor.Data[0]
+			Expect(balance.AccountID).To(Equal(msg.AccountID))
+			Expect(balance.Balance).To(Equal(msg.Balance))
+			Expect(balance.Asset).To(Equal(msg.Asset))
+			Expect(balance.CreatedAt).To(Equal(msg.CreatedAt.UTC().Truncate(time.Second)))
+		})
 	})
 })
+
+func createV3Account(
+	ctx context.Context,
+	app *testserver.Server,
+	req *components.V3CreateAccountRequest,
+) (string, error) {
+	createResponse, err := app.SDK().Payments.V3.CreateAccount(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return createResponse.GetV3CreateAccountResponse().Data.ID, nil
+}
+
+func createV2Account(
+	ctx context.Context,
+	app *testserver.Server,
+	req components.AccountRequest,
+) (string, error) {
+	createResponse, err := app.SDK().Payments.V1.CreateAccount(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	return createResponse.GetAccountResponse().Data.ID, nil
+}

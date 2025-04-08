@@ -2,55 +2,41 @@
 
 package components
 
-type ConnectorsConfigsResponseKey struct {
-	DataType string `json:"dataType"`
-	Required bool   `json:"required"`
+type ConnectorsConfigsResponseData struct {
+	DataType     string  `json:"dataType"`
+	Required     bool    `json:"required"`
+	DefaultValue *string `json:"defaultValue,omitempty"`
 }
 
-func (o *ConnectorsConfigsResponseKey) GetDataType() string {
+func (o *ConnectorsConfigsResponseData) GetDataType() string {
 	if o == nil {
 		return ""
 	}
 	return o.DataType
 }
 
-func (o *ConnectorsConfigsResponseKey) GetRequired() bool {
+func (o *ConnectorsConfigsResponseData) GetRequired() bool {
 	if o == nil {
 		return false
 	}
 	return o.Required
 }
 
-type ConnectorsConfigsResponseConnector struct {
-	Key ConnectorsConfigsResponseKey `json:"key"`
-}
-
-func (o *ConnectorsConfigsResponseConnector) GetKey() ConnectorsConfigsResponseKey {
+func (o *ConnectorsConfigsResponseData) GetDefaultValue() *string {
 	if o == nil {
-		return ConnectorsConfigsResponseKey{}
+		return nil
 	}
-	return o.Key
-}
-
-type ConnectorsConfigsResponseData struct {
-	Connector ConnectorsConfigsResponseConnector `json:"connector"`
-}
-
-func (o *ConnectorsConfigsResponseData) GetConnector() ConnectorsConfigsResponseConnector {
-	if o == nil {
-		return ConnectorsConfigsResponseConnector{}
-	}
-	return o.Connector
+	return o.DefaultValue
 }
 
 // ConnectorsConfigsResponse - OK
 type ConnectorsConfigsResponse struct {
-	Data ConnectorsConfigsResponseData `json:"data"`
+	Data map[string]map[string]ConnectorsConfigsResponseData `json:"data"`
 }
 
-func (o *ConnectorsConfigsResponse) GetData() ConnectorsConfigsResponseData {
+func (o *ConnectorsConfigsResponse) GetData() map[string]map[string]ConnectorsConfigsResponseData {
 	if o == nil {
-		return ConnectorsConfigsResponseData{}
+		return map[string]map[string]ConnectorsConfigsResponseData{}
 	}
 	return o.Data
 }

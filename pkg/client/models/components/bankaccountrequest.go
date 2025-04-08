@@ -4,7 +4,7 @@ package components
 
 type BankAccountRequest struct {
 	Country       string            `json:"country"`
-	ConnectorID   string            `json:"connectorID"`
+	ConnectorID   *string           `json:"connectorID,omitempty"`
 	Name          string            `json:"name"`
 	AccountNumber *string           `json:"accountNumber,omitempty"`
 	Iban          *string           `json:"iban,omitempty"`
@@ -19,9 +19,9 @@ func (o *BankAccountRequest) GetCountry() string {
 	return o.Country
 }
 
-func (o *BankAccountRequest) GetConnectorID() string {
+func (o *BankAccountRequest) GetConnectorID() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.ConnectorID
 }

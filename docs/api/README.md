@@ -787,10 +787,28 @@ Accept: application/json
 ```json
 {
   "data": {
-    "connector": {
-      "key": {
+    "property1": {
+      "property1": {
         "dataType": "string",
-        "required": true
+        "required": true,
+        "defaultValue": "string"
+      },
+      "property2": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
+      }
+    },
+    "property2": {
+      "property1": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
+      },
+      "property2": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
       }
     }
   }
@@ -3254,10 +3272,28 @@ None ( Scopes: payments:read )
 ```json
 {
   "data": {
-    "connector": {
-      "key": {
+    "property1": {
+      "property1": {
         "dataType": "string",
-        "required": true
+        "required": true,
+        "defaultValue": "string"
+      },
+      "property2": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
+      }
+    },
+    "property2": {
+      "property1": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
+      },
+      "property2": {
+        "dataType": "string",
+        "required": true,
+        "defaultValue": "string"
       }
     }
   }
@@ -3270,10 +3306,11 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |data|object|true|none|none|
-|» connector|object|true|none|none|
-|»» key|object|true|none|none|
+|» **additionalProperties**|object|false|none|none|
+|»» **additionalProperties**|object|false|none|none|
 |»»» dataType|string|true|none|none|
 |»»» required|boolean|true|none|none|
+|»»» defaultValue|string|false|none|none|
 
 <h2 id="tocS_V3GetConnectorConfigResponse">V3GetConnectorConfigResponse</h2>
 <!-- backwards compatibility -->

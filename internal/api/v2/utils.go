@@ -196,3 +196,58 @@ func toV2PaymentScheme(scheme models.PaymentScheme) string {
 		return paymentSchemeUnknown
 	}
 }
+
+func toV3PaymentScheme(scheme string) string {
+	switch scheme {
+	case "unknown":
+		return models.PAYMENT_SCHEME_UNKNOWN.String()
+	case "other":
+		return models.PAYMENT_SCHEME_OTHER.String()
+	case "visa":
+		return models.PAYMENT_SCHEME_CARD_VISA.String()
+	case "mastercard":
+		return models.PAYMENT_SCHEME_CARD_MASTERCARD.String()
+	case "amex":
+		return models.PAYMENT_SCHEME_CARD_AMEX.String()
+	case "diners":
+		return models.PAYMENT_SCHEME_CARD_DINERS.String()
+	case "discover":
+		return models.PAYMENT_SCHEME_CARD_DISCOVER.String()
+	case "jcb":
+		return models.PAYMENT_SCHEME_CARD_JCB.String()
+	case "unionpay":
+		return models.PAYMENT_SCHEME_CARD_UNION_PAY.String()
+	case "alipay":
+		return models.PAYMENT_SCHEME_CARD_ALIPAY.String()
+	case "cup":
+		return models.PAYMENT_SCHEME_CARD_CUP.String()
+	case "sepa debit":
+		return models.PAYMENT_SCHEME_SEPA_DEBIT.String()
+	case "sepa credit":
+		return models.PAYMENT_SCHEME_SEPA_CREDIT.String()
+	case "sepa":
+		return models.PAYMENT_SCHEME_SEPA.String()
+	case "apple pay":
+		return models.PAYMENT_SCHEME_APPLE_PAY.String()
+	case "google pay":
+		return models.PAYMENT_SCHEME_GOOGLE_PAY.String()
+	case "doku":
+		return models.PAYMENT_SCHEME_DOKU.String()
+	case "dragonpay":
+		return models.PAYMENT_SCHEME_DRAGON_PAY.String()
+	case "maestro":
+		return models.PAYMENT_SCHEME_MAESTRO.String()
+	case "molpay":
+		return models.PAYMENT_SCHEME_MOL_PAY.String()
+	case "a2a":
+		return models.PAYMENT_SCHEME_A2A.String()
+	case "ach debit":
+		return models.PAYMENT_SCHEME_ACH_DEBIT.String()
+	case "ach":
+		return models.PAYMENT_SCHEME_ACH.String()
+	case "rtp":
+		return models.PAYMENT_SCHEME_RTP.String()
+	default:
+		return scheme
+	}
+}

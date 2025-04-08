@@ -2,19 +2,20 @@ package test_suite
 
 import (
 	"context"
-	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	v2 "github.com/formancehq/payments/internal/api/v2"
-	v3 "github.com/formancehq/payments/internal/api/v3"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
-	. "github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
 	"github.com/nats-io/nats.go"
+
+	. "github.com/formancehq/payments/pkg/testserver"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -40,160 +41,182 @@ var _ = Context("Payments API Payments", func() {
 
 	When("creating a new payment with v3", func() {
 		var (
-			connectorRes   struct{ Data string }
-			createResponse struct{ Data models.Payment }
-			getResponse    struct{ Data models.Payment }
-			e              chan *nats.Msg
-			ver            int
-			createdAt      time.Time
-			initialAmount  *big.Int
-			asset          string
-			err            error
+			connectorID   string
+			e             chan *nats.Msg
+			createdAt     time.Time
+			initialAmount *big.Int
+			asset         string
+			err           error
 		)
 		JustBeforeEach(func() {
-			ver = 3
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
 		})
 
 		It("should be ok", func() {
-			adj := []v3.CreatePaymentsAdjustmentsRequest{
+			adj := []components.V3CreatePaymentAdjustmentRequest{
 				{
 					Reference: "ref_adjustment",
 					CreatedAt: createdAt,
 					Amount:    big.NewInt(55),
 					Asset:     &asset,
-					Status:    models.PAYMENT_STATUS_REFUNDED.String(),
+					Status:    "REFUNDED",
 				},
 			}
 
-			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data, createdAt)
-			createRequest := v3.CreatePaymentRequest{
+			debtorID, creditorID := setupDebtorAndCreditorV3Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			createRequest := &components.V3CreatePaymentRequest{
 				Reference:            "ref",
-				ConnectorID:          connectorRes.Data,
+				ConnectorID:          connectorID,
 				CreatedAt:            createdAt,
 				InitialAmount:        initialAmount,
 				Amount:               initialAmount,
 				Asset:                asset,
-				Type:                 models.PAYMENT_TYPE_PAYIN.String(),
+				Type:                 "PAY-IN",
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
 				Scheme:               models.PAYMENT_SCHEME_CARD_AMEX.String(),
-				Adjustments:          adj,
 				Metadata:             map[string]string{"key": "val"},
+				Adjustments:          adj,
 			}
-
-			err = CreatePayment(ctx, app.GetValue(), ver, createRequest, &createResponse)
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
-			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID.String(), &getResponse)
+			getResponse, err := app.GetValue().SDK().Payments.V3.GetPayment(ctx, createResponse.GetV3CreatePaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
-			Expect(getResponse.Data.Amount).To(Equal(big.NewInt(0).Sub(createRequest.Amount, adj[0].Amount)))
-			Expect(getResponse.Data.Status.String()).To(Equal(adj[0].Status))
-			Expect(getResponse.Data.Adjustments).To(HaveLen(1))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Amount).To(Equal(big.NewInt(0).Sub(createRequest.Amount, adj[0].Amount)))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Status).To(Equal(adj[0].Status))
+			Expect(getResponse.GetV3GetPaymentResponse().Data.Adjustments).To(HaveLen(1))
 		})
 	})
 
 	When("creating a new payment with v2", func() {
 		var (
-			connectorRes   struct{ Data v2.ConnectorInstallResponse }
-			createResponse struct{ Data v2.PaymentResponse }
-			getResponse    struct{ Data v2.PaymentResponse }
-			e              chan *nats.Msg
-			ver            int
-			createdAt      time.Time
-			initialAmount  *big.Int
-			asset          string
-			err            error
+			connectorID   string
+			e             chan *nats.Msg
+			createdAt     time.Time
+			initialAmount *big.Int
+			asset         string
+			err           error
 		)
 		JustBeforeEach(func() {
-			ver = 2
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
 			e = Subscribe(GinkgoT(), app.GetValue())
 
-			connectorConf := newConnectorConfigurationFn()(uuid.New())
-			err = ConnectorInstall(ctx, app.GetValue(), ver, connectorConf, &connectorRes)
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
 		})
 
 		It("should be ok", func() {
-			debtorID, creditorID := setupDebtorAndCreditorAccounts(ctx, app.GetValue(), e, ver, connectorRes.Data.ConnectorID, createdAt)
-			createRequest := v2.CreatePaymentRequest{
+			debtorID, creditorID := setupDebtorAndCreditorV2Accounts(ctx, app.GetValue(), e, connectorID, createdAt)
+			createRequest := components.PaymentRequest{
 				Reference:            "ref",
-				ConnectorID:          connectorRes.Data.ConnectorID,
+				ConnectorID:          connectorID,
 				CreatedAt:            createdAt,
 				Amount:               initialAmount,
 				Asset:                asset,
-				Type:                 models.PAYMENT_TYPE_PAYIN.String(),
-				Status:               models.PAYMENT_STATUS_SUCCEEDED.String(),
+				Type:                 "PAY-IN",
+				Status:               "SUCCEEDED",
+				Scheme:               components.PaymentSchemeAmex,
 				SourceAccountID:      &debtorID,
 				DestinationAccountID: &creditorID,
-				Scheme:               models.PAYMENT_SCHEME_CARD_AMEX.String(),
-				Metadata:             map[string]string{"key": "val"},
 			}
 
-			err = CreatePayment(ctx, app.GetValue(), ver, createRequest, &createResponse)
+			createResponse, err := app.GetValue().SDK().Payments.V1.CreatePayment(ctx, createRequest)
 			Expect(err).To(BeNil())
-			Expect(createResponse.Data.ID).NotTo(Equal(""))
+			Expect(createResponse.GetPaymentResponse().Data.ID).NotTo(Equal(""))
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPayments)))
 
-			err = GetPayment(ctx, app.GetValue(), ver, createResponse.Data.ID, &getResponse)
+			getResponse, err := app.GetValue().SDK().Payments.V1.GetPayment(ctx, createResponse.GetPaymentResponse().Data.ID)
 			Expect(err).To(BeNil())
-			Expect(getResponse.Data.Amount).To(Equal(createRequest.Amount))
-			Expect(getResponse.Data.Status).To(Equal(createRequest.Status))
+			Expect(getResponse.GetPaymentResponse().Data.Amount).To(Equal(createRequest.Amount))
+			Expect(getResponse.GetPaymentResponse().Data.Status).To(Equal(createRequest.Status))
 		})
 	})
 })
 
-func setupDebtorAndCreditorAccounts(
+func setupDebtorAndCreditorV3Accounts(
 	ctx context.Context,
 	app *testserver.Server,
 	e chan *nats.Msg,
-	ver int,
 	connectorID string,
 	createdAt time.Time,
-) (debtorID, creditorID string) {
-	var (
-		creditorRes struct{ Data models.Account }
-		debtorRes   struct{ Data models.Account }
-	)
-
-	creditorRequest := v3.CreateAccountRequest{
+) (string, string) {
+	creditorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "creditor",
-		Name:         "creditor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt.Add(-time.Hour),
-		DefaultAsset: "USD/2",
-		Type:         string(models.ACCOUNT_TYPE_INTERNAL),
-		Metadata:     map[string]string{"key": "val"},
-	}
-	err := CreateAccount(ctx, app, ver, creditorRequest, &creditorRes)
+		AccountName:  "creditor",
+		Type:         "INTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"key": "val",
+		},
+	})
 	Expect(err).To(BeNil())
 	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
-	debtorRequest := v3.CreateAccountRequest{
+	debtorID, err := createV3Account(ctx, app, &components.V3CreateAccountRequest{
 		Reference:    "debtor",
-		Name:         "debtor",
 		ConnectorID:  connectorID,
 		CreatedAt:    createdAt,
-		DefaultAsset: "USD/2",
-		Type:         string(models.ACCOUNT_TYPE_EXTERNAL),
-		Metadata:     map[string]string{"ping": "pong"},
-	}
-	err = CreateAccount(ctx, app, ver, debtorRequest, &debtorRes)
+		AccountName:  "debtor",
+		Type:         "EXTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"ping": "pong",
+		},
+	})
 	Expect(err).To(BeNil())
 	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 
-	return debtorRes.Data.ID.String(), creditorRes.Data.ID.String()
+	return debtorID, creditorID
+}
+
+func setupDebtorAndCreditorV2Accounts(
+	ctx context.Context,
+	app *testserver.Server,
+	e chan *nats.Msg,
+	connectorID string,
+	createdAt time.Time,
+) (string, string) {
+	creditorID, err := createV2Account(ctx, app, components.AccountRequest{
+		Reference:    "creditor",
+		ConnectorID:  connectorID,
+		CreatedAt:    createdAt.Add(-time.Hour),
+		AccountName:  pointer.For("creditor"),
+		Type:         "INTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"key": "val",
+		},
+	})
+	Expect(err).To(BeNil())
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+
+	debtorID, err := createV2Account(ctx, app, components.AccountRequest{
+		Reference:    "debtor",
+		ConnectorID:  connectorID,
+		CreatedAt:    createdAt,
+		AccountName:  pointer.For("debtor"),
+		Type:         "EXTERNAL",
+		DefaultAsset: pointer.For("USD/2"),
+		Metadata: map[string]string{
+			"ping": "pong",
+		},
+	})
+	Expect(err).To(BeNil())
+	Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
+
+	return debtorID, creditorID
 }

@@ -6555,7 +6555,7 @@ func (s *V1) ListConfigsAvailableConnectors(ctx context.Context, opts ...operati
 
 // InstallConnector - Install a connector
 // Install a connector by its name and config.
-func (s *V1) InstallConnector(ctx context.Context, connector components.ConnectorEnum, connectorConfig components.ConnectorConfig, opts ...operations.Option) (*operations.InstallConnectorResponse, error) {
+func (s *V1) InstallConnector(ctx context.Context, connector components.Connector, connectorConfig components.ConnectorConfig, opts ...operations.Option) (*operations.InstallConnectorResponse, error) {
 	request := operations.InstallConnectorRequest{
 		Connector:       connector,
 		ConnectorConfig: connectorConfig,
@@ -6786,7 +6786,7 @@ func (s *V1) InstallConnector(ctx context.Context, connector components.Connecto
 // Uninstall a connector by its name.
 //
 // Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-func (s *V1) UninstallConnector(ctx context.Context, connector components.ConnectorEnum, opts ...operations.Option) (*operations.UninstallConnectorResponse, error) {
+func (s *V1) UninstallConnector(ctx context.Context, connector components.Connector, opts ...operations.Option) (*operations.UninstallConnectorResponse, error) {
 	request := operations.UninstallConnectorRequest{
 		Connector: connector,
 	}
@@ -6987,7 +6987,7 @@ func (s *V1) UninstallConnector(ctx context.Context, connector components.Connec
 
 // UninstallConnectorV1 - Uninstall a connector
 // Uninstall a connector by its name.
-func (s *V1) UninstallConnectorV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, opts ...operations.Option) (*operations.UninstallConnectorV1Response, error) {
+func (s *V1) UninstallConnectorV1(ctx context.Context, connector components.Connector, connectorID string, opts ...operations.Option) (*operations.UninstallConnectorV1Response, error) {
 	request := operations.UninstallConnectorV1Request{
 		Connector:   connector,
 		ConnectorID: connectorID,
@@ -7191,7 +7191,7 @@ func (s *V1) UninstallConnectorV1(ctx context.Context, connector components.Conn
 // Read connector config
 //
 // Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-func (s *V1) ReadConnectorConfig(ctx context.Context, connector components.ConnectorEnum, opts ...operations.Option) (*operations.ReadConnectorConfigResponse, error) {
+func (s *V1) ReadConnectorConfig(ctx context.Context, connector components.Connector, opts ...operations.Option) (*operations.ReadConnectorConfigResponse, error) {
 	request := operations.ReadConnectorConfigRequest{
 		Connector: connector,
 	}
@@ -7412,7 +7412,7 @@ func (s *V1) ReadConnectorConfig(ctx context.Context, connector components.Conne
 
 // UpdateConnectorConfigV1 - Update the config of a connector
 // Update connector config
-func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, connectorConfig components.ConnectorConfig, opts ...operations.Option) (*operations.UpdateConnectorConfigV1Response, error) {
+func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.Connector, connectorID string, connectorConfig components.ConnectorConfig, opts ...operations.Option) (*operations.UpdateConnectorConfigV1Response, error) {
 	request := operations.UpdateConnectorConfigV1Request{
 		Connector:       connector,
 		ConnectorID:     connectorID,
@@ -7622,7 +7622,7 @@ func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.C
 
 // ReadConnectorConfigV1 - Read the config of a connector
 // Read connector config
-func (s *V1) ReadConnectorConfigV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, opts ...operations.Option) (*operations.ReadConnectorConfigV1Response, error) {
+func (s *V1) ReadConnectorConfigV1(ctx context.Context, connector components.Connector, connectorID string, opts ...operations.Option) (*operations.ReadConnectorConfigV1Response, error) {
 	request := operations.ReadConnectorConfigV1Request{
 		Connector:   connector,
 		ConnectorID: connectorID,
@@ -7847,7 +7847,7 @@ func (s *V1) ReadConnectorConfigV1(ctx context.Context, connector components.Con
 // It will remove the connector and ALL PAYMENTS generated with it.
 //
 // Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-func (s *V1) ResetConnector(ctx context.Context, connector components.ConnectorEnum, opts ...operations.Option) (*operations.ResetConnectorResponse, error) {
+func (s *V1) ResetConnector(ctx context.Context, connector components.Connector, opts ...operations.Option) (*operations.ResetConnectorResponse, error) {
 	request := operations.ResetConnectorRequest{
 		Connector: connector,
 	}
@@ -8049,7 +8049,7 @@ func (s *V1) ResetConnector(ctx context.Context, connector components.ConnectorE
 // ResetConnectorV1 - Reset a connector
 // Reset a connector by its name.
 // It will remove the connector and ALL PAYMENTS generated with it.
-func (s *V1) ResetConnectorV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, opts ...operations.Option) (*operations.ResetConnectorV1Response, error) {
+func (s *V1) ResetConnectorV1(ctx context.Context, connector components.Connector, connectorID string, opts ...operations.Option) (*operations.ResetConnectorV1Response, error) {
 	request := operations.ResetConnectorV1Request{
 		Connector:   connector,
 		ConnectorID: connectorID,
@@ -8253,7 +8253,7 @@ func (s *V1) ResetConnectorV1(ctx context.Context, connector components.Connecto
 // List all tasks associated with this connector.
 //
 // Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-func (s *V1) ListConnectorTasks(ctx context.Context, connector components.ConnectorEnum, pageSize *int64, cursor *string, opts ...operations.Option) (*operations.ListConnectorTasksResponse, error) {
+func (s *V1) ListConnectorTasks(ctx context.Context, connector components.Connector, pageSize *int64, cursor *string, opts ...operations.Option) (*operations.ListConnectorTasksResponse, error) {
 	request := operations.ListConnectorTasksRequest{
 		Connector: connector,
 		PageSize:  pageSize,
@@ -8480,7 +8480,7 @@ func (s *V1) ListConnectorTasks(ctx context.Context, connector components.Connec
 
 // ListConnectorTasksV1 - List tasks from a connector
 // List all tasks associated with this connector.
-func (s *V1) ListConnectorTasksV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, pageSize *int64, cursor *string, opts ...operations.Option) (*operations.ListConnectorTasksV1Response, error) {
+func (s *V1) ListConnectorTasksV1(ctx context.Context, connector components.Connector, connectorID string, pageSize *int64, cursor *string, opts ...operations.Option) (*operations.ListConnectorTasksV1Response, error) {
 	request := operations.ListConnectorTasksV1Request{
 		Connector:   connector,
 		ConnectorID: connectorID,
@@ -8710,7 +8710,7 @@ func (s *V1) ListConnectorTasksV1(ctx context.Context, connector components.Conn
 // Get a specific task associated to the connector.
 //
 // Deprecated: This will be removed in a future release, please migrate away from it as soon as possible.
-func (s *V1) GetConnectorTask(ctx context.Context, connector components.ConnectorEnum, taskID string, opts ...operations.Option) (*operations.GetConnectorTaskResponse, error) {
+func (s *V1) GetConnectorTask(ctx context.Context, connector components.Connector, taskID string, opts ...operations.Option) (*operations.GetConnectorTaskResponse, error) {
 	request := operations.GetConnectorTaskRequest{
 		Connector: connector,
 		TaskID:    taskID,
@@ -8932,7 +8932,7 @@ func (s *V1) GetConnectorTask(ctx context.Context, connector components.Connecto
 
 // GetConnectorTaskV1 - Read a specific task of the connector
 // Get a specific task associated to the connector.
-func (s *V1) GetConnectorTaskV1(ctx context.Context, connector components.ConnectorEnum, connectorID string, taskID string, opts ...operations.Option) (*operations.GetConnectorTaskV1Response, error) {
+func (s *V1) GetConnectorTaskV1(ctx context.Context, connector components.Connector, connectorID string, taskID string, opts ...operations.Option) (*operations.GetConnectorTaskV1Response, error) {
 	request := operations.GetConnectorTaskV1Request{
 		Connector:   connector,
 		ConnectorID: connectorID,
@@ -9155,7 +9155,7 @@ func (s *V1) GetConnectorTaskV1(ctx context.Context, connector components.Connec
 
 // ConnectorsTransfer - Transfer funds between Connector accounts
 // Execute a transfer between two accounts.
-func (s *V1) ConnectorsTransfer(ctx context.Context, connector components.ConnectorEnum, transferRequest components.TransferRequest, opts ...operations.Option) (*operations.ConnectorsTransferResponse, error) {
+func (s *V1) ConnectorsTransfer(ctx context.Context, connector components.Connector, transferRequest components.TransferRequest, opts ...operations.Option) (*operations.ConnectorsTransferResponse, error) {
 	request := operations.ConnectorsTransferRequest{
 		Connector:       connector,
 		TransferRequest: transferRequest,
