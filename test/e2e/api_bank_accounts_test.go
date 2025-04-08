@@ -229,6 +229,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetBankAccount(ctx, id.String())
+			Expect(err).To(BeNil())
 			Expect(getResponse.GetV3GetBankAccountResponse().Data.ID).To(Equal(id.String()))
 			Expect(getResponse.GetV3GetBankAccountResponse().Data.Metadata).To(Equal(metadata))
 		})
@@ -258,6 +259,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			Expect(err).To(BeNil())
 
 			getResponse, err := app.GetValue().SDK().Payments.V1.GetBankAccount(ctx, id.String())
+			Expect(err).To(BeNil())
 			Expect(getResponse.GetBankAccountResponse().Data.ID).To(Equal(id.String()))
 			Expect(getResponse.GetBankAccountResponse().Data.Metadata).To(Equal(metadata))
 		})

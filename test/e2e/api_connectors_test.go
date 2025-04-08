@@ -366,12 +366,6 @@ var _ = Context("Payments API Connectors", func() {
 	})
 
 	When("fetching connector configurations", func() {
-		type connectorDef struct {
-			DataType     string `json:"dataType"`
-			Required     bool   `json:"required"`
-			DefaultValue string `json:"defaultValue"`
-		}
-
 		It("should respond with detailed config json for each connector in v3", func() {
 			resp, err := app.GetValue().SDK().Payments.V3.ListConnectorConfigs(ctx)
 			Expect(err).To(BeNil())
