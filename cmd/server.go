@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/v2/auth"
-	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/go-libs/v3/auth"
+	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/internal/api"
 	v2 "github.com/formancehq/payments/internal/api/v2"
 	v3 "github.com/formancehq/payments/internal/api/v3"

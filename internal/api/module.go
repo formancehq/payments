@@ -1,10 +1,10 @@
 package api
 
 import (
-	"github.com/formancehq/go-libs/v2/api"
-	"github.com/formancehq/go-libs/v2/auth"
-	"github.com/formancehq/go-libs/v2/health"
-	"github.com/formancehq/go-libs/v2/httpserver"
+	"github.com/formancehq/go-libs/v3/api"
+	"github.com/formancehq/go-libs/v3/auth"
+	"github.com/formancehq/go-libs/v3/health"
+	"github.com/formancehq/go-libs/v3/httpserver"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/services"
 	"github.com/formancehq/payments/internal/connectors/engine"

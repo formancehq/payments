@@ -4,8 +4,8 @@ import (
 	"errors"
 	"math/big"
 
-	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v2/query"
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"

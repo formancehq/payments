@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/temporal"
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"

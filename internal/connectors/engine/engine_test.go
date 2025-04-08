@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/formancehq/go-libs/v2/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/logging"
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/events"

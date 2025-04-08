@@ -1,11 +1,11 @@
 package test_suite
 
 import (
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"math/big"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/testing/utils"
+	"github.com/formancehq/go-libs/v3/logging"
 	v3 "github.com/formancehq/payments/internal/api/v3"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
@@ -23,7 +23,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
 
-		app *utils.Deferred[*Server]
+		app *deferred.Deferred[*Server]
 	)
 
 	app = NewTestServer(func() Configuration {

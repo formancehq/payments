@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/formancehq/go-libs/v2/bun/bunconnect"
-	"github.com/formancehq/go-libs/v2/otlp"
-	"github.com/formancehq/go-libs/v2/otlp/otlpmetrics"
-	"github.com/formancehq/go-libs/v2/profiling"
-	"github.com/formancehq/go-libs/v2/publish"
-	"github.com/formancehq/go-libs/v2/service"
-	"github.com/formancehq/go-libs/v2/temporal"
+	"github.com/formancehq/go-libs/v3/bun/bunconnect"
+	"github.com/formancehq/go-libs/v3/otlp"
+	"github.com/formancehq/go-libs/v3/otlp/otlpmetrics"
+	"github.com/formancehq/go-libs/v3/profiling"
+	"github.com/formancehq/go-libs/v3/publish"
+	"github.com/formancehq/go-libs/v3/service"
+	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/cmd"
 )
 

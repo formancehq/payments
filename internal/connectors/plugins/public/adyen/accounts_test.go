@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/management"
-	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/adyen/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"

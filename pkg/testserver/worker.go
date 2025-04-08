@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/profiling"
-	"github.com/formancehq/go-libs/v2/service"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/profiling"
+	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/cmd"
 	"github.com/stretchr/testify/require"
 )

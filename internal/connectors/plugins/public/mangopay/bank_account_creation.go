@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/formancehq/go-libs/v2/pointer"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/mangopay/client"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
