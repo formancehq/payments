@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	_ "embed"
 
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/migrations"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/migrations"
 	"github.com/uptrace/bun"
 )
 

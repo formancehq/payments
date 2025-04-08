@@ -5,16 +5,16 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
+	"github.com/formancehq/go-libs/v3/testing/deferred"
 	"os"
 	"testing"
 
-	"github.com/formancehq/go-libs/v2/bun/bunconnect"
-	"github.com/formancehq/go-libs/v2/logging"
-	"github.com/formancehq/go-libs/v2/testing/docker"
-	"github.com/formancehq/go-libs/v2/testing/platform/natstesting"
-	"github.com/formancehq/go-libs/v2/testing/platform/pgtesting"
-	"github.com/formancehq/go-libs/v2/testing/platform/temporaltesting"
-	. "github.com/formancehq/go-libs/v2/testing/utils"
+	"github.com/formancehq/go-libs/v3/bun/bunconnect"
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/testing/docker"
+	"github.com/formancehq/go-libs/v3/testing/platform/natstesting"
+	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
+	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -27,10 +27,10 @@ func Test(t *testing.T) {
 }
 
 var (
-	dockerPool     = NewDeferred[*docker.Pool]()
-	pgServer       = NewDeferred[*pgtesting.PostgresServer]()
-	temporalServer = NewDeferred[*temporaltesting.TemporalServer]()
-	natsServer     = NewDeferred[*natstesting.NatsServer]()
+	dockerPool     = deferred.New[*docker.Pool]()
+	pgServer       = deferred.New[*pgtesting.PostgresServer]()
+	temporalServer = deferred.New[*temporaltesting.TemporalServer]()
+	natsServer     = deferred.New[*natstesting.NatsServer]()
 	debug          = os.Getenv("DEBUG") == "true"
 	logger         = logging.NewDefaultLogger(GinkgoWriter, debug, false, false)
 	stack          = "somestackval-abcd"
@@ -57,10 +57,12 @@ type ParallelExecutionContext struct {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+	deferred.RegisterRecoverHandler(GinkgoRecover)
+
 	By("Initializing docker pool")
 	dockerPool.SetValue(docker.NewPool(GinkgoT(), logger))
 
-	pgServer.LoadAsync(func() *pgtesting.PostgresServer {
+	pgServer.LoadAsync(func() (*pgtesting.PostgresServer, error) {
 		By("Initializing postgres server")
 		ret := pgtesting.CreatePostgresServer(
 			GinkgoT(),
@@ -79,23 +81,23 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Expect(err).To(BeNil())
 		Expect(bunDB.Close()).To(BeNil())
 
-		return ret
+		return ret, nil
 	})
-	natsServer.LoadAsync(func() *natstesting.NatsServer {
+	natsServer.LoadAsync(func() (*natstesting.NatsServer, error) {
 		By("Initializing nats server")
 		ret := natstesting.CreateServer(GinkgoT(), debug, logger)
 		By("Nats address: " + ret.ClientURL())
-		return ret
+		return ret, nil
 	})
 
-	temporalServer.LoadAsync(func() *temporaltesting.TemporalServer {
+	temporalServer.LoadAsync(func() (*temporaltesting.TemporalServer, error) {
 		By("Initializing temporal server")
 		ret := temporaltesting.CreateTemporalServer(GinkgoT(), GinkgoWriter)
-		return ret
+		return ret, nil
 	})
 
 	By("Waiting services alive")
-	Wait(pgServer, natsServer, temporalServer)
+	deferred.Wait(pgServer, natsServer, temporalServer)
 	By("All services ready.")
 
 	data, err := json.Marshal(ParallelExecutionContext{
@@ -122,6 +124,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	temporalServer.SetValue(pec.TemporalServer)
 })
 
-func UseTemplatedDatabase() *Deferred[*pgtesting.Database] {
+func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 	return pgtesting.UsePostgresDatabase(pgServer, pgtesting.CreateWithTemplate(DBTemplate))
 }

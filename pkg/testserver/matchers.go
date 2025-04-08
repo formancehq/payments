@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/formancehq/go-libs/v2/publish"
+	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/go-cmp/cmp"
 	"github.com/invopop/jsonschema"
