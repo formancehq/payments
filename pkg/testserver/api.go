@@ -15,26 +15,6 @@ func pathPrefix(version int, path string) string {
 	return fmt.Sprintf("/v%d/%s", version, path)
 }
 
-func CreatePaymentInitiation(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations"), reqBody, res)
-}
-
-func GetPaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	return srv.Client().Get(ctx, pathPrefix(ver, "payment-initiations/"+id), res)
-}
-
-func ApprovePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, res any) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/approve"), nil, res)
-}
-
-func RejectPaymentInitiation(ctx context.Context, srv *Server, ver int, id string) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reject"), nil, nil)
-}
-
-func ReversePaymentInitiation(ctx context.Context, srv *Server, ver int, id string, reqBody any, res any) error {
-	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "payment-initiations/"+id+"/reverse"), reqBody, res)
-}
-
 func CreatePool(ctx context.Context, srv *Server, ver int, reqBody any, res any) error {
 	return srv.Client().Do(ctx, http.MethodPost, pathPrefix(ver, "pools"), reqBody, res)
 }
