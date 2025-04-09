@@ -91,7 +91,7 @@ var _ = Describe("Plugin Create Bank Account", func() {
 				Expect(temporalErr.Type()).To(Equal(activities.ErrTypeInvalidArgument))
 			},
 			Entry("wrapped invalid client request", fmt.Errorf("invalid: %w", pluginsError.ErrInvalidClientRequest)),
-			Entry("connector metadata error custom type", models.NewConnectorMetadataError("some-field")),
+			Entry("connector metadata error custom type", models.NewConnectorValidationError("some-field", models.ErrMissingConnectorMetadata)),
 		)
 	})
 })
