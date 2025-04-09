@@ -62,7 +62,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		var (
 			bankAccountID string
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateBankAccount(ctx, v3CreateRequest)
 			Expect(err).To(BeNil())
 			bankAccountID = createResponse.GetV3CreateBankAccountResponse().Data
@@ -82,7 +82,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		var (
 			bankAccountID string
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateBankAccount(ctx, v2CreateRequest)
 			Expect(err).To(BeNil())
 			bankAccountID = createResponse.GetBankAccountResponse().Data.ID
@@ -103,7 +103,8 @@ var _ = Context("Payments API Bank Accounts", func() {
 			e           chan *nats.Msg
 			id          uuid.UUID
 		)
-		JustBeforeEach(func() {
+
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateBankAccount(ctx, v3CreateRequest)
@@ -113,6 +114,10 @@ var _ = Context("Payments API Bank Accounts", func() {
 
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should fail when connector ID is invalid", func() {
@@ -176,7 +181,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 			e           chan *nats.Msg
 			id          uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateBankAccount(ctx, v2CreateRequest)
@@ -186,6 +191,11 @@ var _ = Context("Payments API Bank Accounts", func() {
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
 		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
+		})
+
 		It("should fail when connector ID is invalid", func() {
 			_, err := app.GetValue().SDK().Payments.V1.ForwardBankAccount(ctx, id.String(), components.ForwardBankAccountRequest{
 				ConnectorID: "invalid",
@@ -209,7 +219,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		var (
 			id uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateBankAccount(ctx, v3CreateRequest)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createResponse.GetV3CreateBankAccountResponse().Data)
@@ -239,7 +249,7 @@ var _ = Context("Payments API Bank Accounts", func() {
 		var (
 			id uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateBankAccount(ctx, v2CreateRequest)
 			Expect(err).To(BeNil())
 			id, err = uuid.Parse(createResponse.GetBankAccountResponse().Data.ID)
