@@ -51,7 +51,7 @@ require (
 	go.temporal.io/sdk v1.33.1
 	go.uber.org/fx v1.23.0
 	go.uber.org/mock v0.5.1
-	golang.org/x/oauth2 v0.28.0
+	golang.org/x/oauth2 v0.29.0
 	golang.org/x/sync v0.13.0
 	golang.org/x/text v0.24.0
 	google.golang.org/protobuf v1.36.6
