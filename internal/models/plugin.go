@@ -35,7 +35,9 @@ type Plugin interface {
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 
-type InstallRequest struct{}
+type InstallRequest struct{
+	ConnectorID string
+}
 
 type InstallResponse struct {
 	Workflow        ConnectorTasksTree

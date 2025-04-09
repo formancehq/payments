@@ -5002,6 +5002,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3CurrencycloudConfig](#schemav3currencycloudconfig)|false|none|none|
 
 xor
@@ -5151,6 +5157,36 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3columnconfig"></a>
+<a id="schema_V3ColumnConfig"></a>
+<a id="tocSv3columnconfig"></a>
+<a id="tocsv3columnconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Column"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3CurrencycloudConfig">V3CurrencycloudConfig</h2>
 <!-- backwards compatibility -->

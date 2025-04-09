@@ -25,6 +25,10 @@ func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleCo
 	return o.GetData().V3BankingcircleConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataColumn() *V3ColumnConfig {
+	return o.GetData().V3ColumnConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataCurrencycloud() *V3CurrencycloudConfig {
 	return o.GetData().V3CurrencycloudConfig
 }
