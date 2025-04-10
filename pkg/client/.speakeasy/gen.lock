@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: 5f20771a5daabbffb6f654f7ef009068
+  docChecksum: 2b89b94fa4d7fdc91e9e4b71b62b7378
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -116,6 +116,7 @@ generatedFiles:
   - /models/components/v3bankaccountrelatedaccount.go
   - /models/components/v3bankaccountscursorresponse.go
   - /models/components/v3bankingcircleconfig.go
+  - /models/components/v3columnconfig.go
   - /models/components/v3connector.go
   - /models/components/v3connectorconfig.go
   - /models/components/v3connectorconfigsresponse.go
@@ -394,6 +395,7 @@ generatedFiles:
   - docs/models/components/v3bankaccountscursorresponse.md
   - docs/models/components/v3bankaccountscursorresponsecursor.md
   - docs/models/components/v3bankingcircleconfig.md
+  - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connector.md
   - docs/models/components/v3connectorconfig.md
   - docs/models/components/v3connectorconfigsresponse.md
