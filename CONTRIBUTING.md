@@ -794,5 +794,5 @@ Other data should be transformed into Formance Other object with:
       the response
 - [ ] If it creates another entity than a payments, you must use the *PollingTransferID* field
       of the response to poll the entity until a payments is created
-- [ ] Ensure that if the payments succeeds or fails later, the status of the
-      payment initiations changes also
+- [ ] Ensure that if the payment succeeds or fails later, the status of the
+      related payment initiation changes also
