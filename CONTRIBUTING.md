@@ -747,7 +747,7 @@ Other data should be transformed into Formance Other object with:
 - [ ] Installing with a different pageSize should still fetch all the history
 - [ ] Should have a state in order to only fetch new accounts and not the history
       at every polling
-- [ ] After fetch the history, creating a new object on the PSP (account,
+- [ ] Once the connector has caught up to the backlog of historical data, creating a new object on the PSP (account,
       payment, etc...) should add it to Formance list of related objects
       after the next polling
 
