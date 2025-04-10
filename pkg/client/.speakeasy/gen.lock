@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: 2b89b94fa4d7fdc91e9e4b71b62b7378
+  docChecksum: 0144ed91e5c5c66fa9546efe2828a901
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -147,6 +147,7 @@ generatedFiles:
   - /models/components/v3getpaymentresponse.go
   - /models/components/v3getpoolresponse.go
   - /models/components/v3gettaskresponse.go
+  - /models/components/v3increaseconfig.go
   - /models/components/v3initiatepaymentrequest.go
   - /models/components/v3initiatepaymentresponse.go
   - /models/components/v3installconnectorrequest.go
@@ -431,6 +432,7 @@ generatedFiles:
   - docs/models/components/v3getpaymentresponse.md
   - docs/models/components/v3getpoolresponse.md
   - docs/models/components/v3gettaskresponse.md
+  - docs/models/components/v3increaseconfig.md
   - docs/models/components/v3initiatepaymentrequest.md
   - docs/models/components/v3initiatepaymentresponse.md
   - docs/models/components/v3initiatepaymentresponsedata.md
