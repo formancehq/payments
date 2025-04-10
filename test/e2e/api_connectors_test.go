@@ -44,7 +44,8 @@ var _ = Context("Payments API Connectors", func() {
 			id         uuid.UUID
 			workflowID string
 		)
-		JustBeforeEach(func() {
+
+		BeforeEach(func() {
 			id = uuid.New()
 		})
 
@@ -136,7 +137,7 @@ var _ = Context("Payments API Connectors", func() {
 			connectorID string
 			id          uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			id = uuid.New()
 		})
 
@@ -213,7 +214,7 @@ var _ = Context("Payments API Connectors", func() {
 		var (
 			id uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			id = uuid.New()
 		})
 
@@ -249,7 +250,7 @@ var _ = Context("Payments API Connectors", func() {
 		var (
 			id uuid.UUID
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			id = uuid.New()
 		})
 
@@ -286,7 +287,7 @@ var _ = Context("Payments API Connectors", func() {
 
 			expectedSchedule components.V3Schedule
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			id = uuid.New()
 
 			var err error
@@ -327,7 +328,7 @@ var _ = Context("Payments API Connectors", func() {
 				"FetchBalances":         {},
 			}
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			id = uuid.New()
 
 			var err error
@@ -516,6 +517,25 @@ func installV2Connector(
 		return "", err
 	}
 	return install.GetConnectorResponse().Data.ConnectorID, nil
+}
+
+func uninstallConnector(
+	ctx context.Context,
+	srv *testserver.Server,
+	connectorID string,
+) {
+	resp, err := srv.SDK().Payments.V3.UninstallConnector(ctx, connectorID)
+	Expect(err).To(BeNil())
+
+	delRes := resp.V3UninstallConnectorResponse
+	Expect(err).To(BeNil())
+	Expect(delRes.Data).NotTo(BeNil())
+	taskID, err := models.TaskIDFromString(delRes.Data.TaskID)
+	Expect(err).To(BeNil())
+	Expect(taskID.Reference).To(ContainSubstring("uninstall"))
+	taskPoller := testserver.TaskPoller(ctx, GinkgoT(), srv)
+	blockTillWorkflowComplete(ctx, connectorID, "uninstall")
+	Eventually(taskPoller(delRes.Data.TaskID)).WithTimeout(models.DefaultConnectorClientTimeout * 2).Should(testserver.HaveTaskStatus(models.TASK_STATUS_SUCCEEDED))
 }
 
 func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {

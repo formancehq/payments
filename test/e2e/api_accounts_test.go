@@ -46,13 +46,21 @@ var _ = Context("Payments API Accounts", func() {
 
 	When("creating a new account", func() {
 		var (
-			e chan *nats.Msg
+			e           chan *nats.Msg
+			connectorID string
+			err         error
 		)
 
-		It("should be successful with v2", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), uuid.New(), 2)
+		BeforeEach(func() {
+			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
+		})
 
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
+		})
+
+		It("should be successful with v2", func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V1.CreateAccount(ctx, components.AccountRequest{
 				Reference:    "ref",
@@ -75,9 +83,6 @@ var _ = Context("Payments API Accounts", func() {
 		})
 
 		It("should be successful with v3", func() {
-			connectorID, err := installConnector(ctx, app.GetValue(), uuid.New(), 3)
-			Expect(err).To(BeNil())
-
 			e = Subscribe(GinkgoT(), app.GetValue())
 			createResponse, err := app.GetValue().SDK().Payments.V3.CreateAccount(ctx, &components.V3CreateAccountRequest{
 				Reference:    "ref",
@@ -102,24 +107,30 @@ var _ = Context("Payments API Accounts", func() {
 
 	When("fetching account balances", func() {
 		var (
-			e chan *nats.Msg
+			e           chan *nats.Msg
+			connectorID string
+			err         error
 		)
 
 		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			id := uuid.New()
 			connectorConf := newV3ConnectorConfigFn()(id)
-			_, err := installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
+			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
 			Expect(err).To(BeNil())
 			_, err = GeneratePSPData(connectorConf.Directory)
 			Expect(err).To(BeNil())
 			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 		})
 
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
+		})
+
 		It("should be successful with v2", func() {
 			var msg events.BalanceMessagePayload
 			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
 				msg,
 				func(b []byte) error {
 					return json.Unmarshal(b, &msg)
@@ -143,7 +154,7 @@ var _ = Context("Payments API Accounts", func() {
 		It("should be successful with v3", func() {
 			var msg events.BalanceMessagePayload
 			// poll more frequently to filter out ACCOUNT_SAVED messages that we don't care about quicker
-			Eventually(e).WithPolling(5 * time.Millisecond).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+			Eventually(e).WithTimeout(2 * time.Second).WithPolling(5 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
 				msg,
 				func(b []byte) error {
 					return json.Unmarshal(b, &msg)

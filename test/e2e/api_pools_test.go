@@ -46,10 +46,14 @@ var _ = Context("Payments API Pools", func() {
 			err         error
 		)
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be ok when underlying accounts exist", func() {
@@ -62,7 +66,7 @@ var _ = Context("Payments API Pools", func() {
 
 			poolID := createResponse.GetV3CreatePoolResponse().Data
 			var msg = GenericEventPayload{ID: poolID}
-			Eventually(e).WithTimeout(2 * time.Second).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(msg))))
 
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetPool(ctx, poolID)
 			Expect(err).To(BeNil())
@@ -113,10 +117,14 @@ var _ = Context("Payments API Pools", func() {
 			err         error
 		)
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be ok when underlying accounts exist", func() {
@@ -185,7 +193,7 @@ var _ = Context("Payments API Pools", func() {
 			eventPayload GenericEventPayload
 		)
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
@@ -201,6 +209,10 @@ var _ = Context("Payments API Pools", func() {
 			poolID = createResponse.GetV3CreatePoolResponse().Data
 			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be possible to remove account from pool", func() {
@@ -247,7 +259,7 @@ var _ = Context("Payments API Pools", func() {
 			eventPayload GenericEventPayload
 		)
 
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			e = Subscribe(GinkgoT(), app.GetValue())
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
@@ -263,6 +275,10 @@ var _ = Context("Payments API Pools", func() {
 			poolID = createResponse.GetPoolResponse().Data.ID
 			eventPayload = GenericEventPayload{ID: poolID}
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be possible to remove account from pool", func() {
