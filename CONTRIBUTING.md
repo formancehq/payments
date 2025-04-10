@@ -783,7 +783,7 @@ Other data should be transformed into Formance Other object with:
 #### Errors
 
 - [ ] Should return *plugins.ErrNotYetInstalled* if client is nil
-- [ ] Should return *plugins.ErrNotImplemented* if PSP does not handle bank account creation
+- [ ] Should return *plugins.ErrNotImplemented* if PSP does not handle transfer/payout creation
 - [ ] Should validate incoming transfer/payout object and send *models.ErrInvalidRequest* error
       if needed
 
