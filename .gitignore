@@ -10,3 +10,4 @@ dist/
 payments
 tools/compile-configs/compile-configs
 tools/connector-template/connector-template
+coverage.txt

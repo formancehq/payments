@@ -48,7 +48,7 @@ var _ = Context("Payments API Payments", func() {
 			asset         string
 			err           error
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
@@ -56,6 +56,10 @@ var _ = Context("Payments API Payments", func() {
 
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be ok", func() {
@@ -106,7 +110,7 @@ var _ = Context("Payments API Payments", func() {
 			asset         string
 			err           error
 		)
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			createdAt = time.Now()
 			initialAmount = big.NewInt(1340)
 			asset = "USD/2"
@@ -114,6 +118,10 @@ var _ = Context("Payments API Payments", func() {
 
 			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 2)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
 		It("should be ok", func() {
