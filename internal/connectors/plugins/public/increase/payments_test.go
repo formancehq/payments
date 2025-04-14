@@ -53,7 +53,8 @@ var _ = Describe("Increase Plugin Payments", func() {
 					RouteID:   "234",
 					RouteType: "123",
 					Source: client.Source{
-						Category: "inbound_ach_transfer",
+						Category:   "inbound_ach_transfer",
+						TransferID: "account_transfer",
 					},
 				})
 			}
@@ -66,7 +67,8 @@ var _ = Describe("Increase Plugin Payments", func() {
 					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
 					Source: client.Source{
-						Category: "check_deposit_acceptance",
+						Category:   "check_deposit_acceptance",
+						TransferID: "account_transfer",
 					},
 				})
 			}
@@ -78,6 +80,10 @@ var _ = Describe("Increase Plugin Payments", func() {
 					CreatedAt: now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Date:      now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 					Currency:  "USD",
+					Source: client.Source{
+						Category:   "check_deposit_acceptance",
+						TransferID: "account_transfer",
+					},
 				})
 			}
 		})
@@ -373,6 +379,7 @@ var _ = Describe("Increase Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Payments).To(HaveLen(39))
+			Expect(resp.Payments[0].Reference).To(Equal("account_transfer"))
 			Expect(resp.HasMore).To(BeTrue())
 			Expect(resp.NewState).ToNot(BeNil())
 

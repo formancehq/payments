@@ -10,7 +10,8 @@ import (
 )
 
 type Source struct {
-	Category string `json:"category"`
+	Category   string `json:"category"`
+	TransferID string `json:"transfer_id"`
 }
 
 type Transaction struct {

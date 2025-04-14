@@ -60,6 +60,9 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 				CreatedAt: now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
 				Date:      now.Add(-time.Duration(50) * time.Minute).UTC().Format(time.RFC3339),
 				Currency:  "USD",
+				Source: client.Source{
+					TransferID: "123456",
+				},
 			}
 			samplePayoutCreated = &client.PayoutResponse{
 				ID:        "4",
@@ -549,7 +552,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.ID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.Source.TransferID))
 		})
 
 		It("translate webhooks - pending_transaction.created", func(ctx SpecContext) {
@@ -587,7 +590,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.ID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.Source.TransferID))
 		})
 
 		It("translate webhooks - transaction.created", func(ctx SpecContext) {
@@ -625,7 +628,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.ID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.Source.TransferID))
 		})
 
 		It("translate webhooks - declined_transaction.created", func(ctx SpecContext) {
@@ -663,7 +666,7 @@ var _ = Describe("Increase Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.ID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(samplePaymentCreated.Source.TransferID))
 		})
 	})
 })

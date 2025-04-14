@@ -91,31 +91,10 @@ func (p *Plugin) fillPayments(
 			break
 		}
 
-		createdTime, err := time.Parse(time.RFC3339, transaction.CreatedAt)
+		pspPayment, err := p.mapPayment(transaction, status)
 		if err != nil {
 			return nil, err
 		}
-
-		raw, err := json.Marshal(transaction)
-		if err != nil {
-			return nil, err
-		}
-
-		pspPayment := models.PSPPayment{
-			Reference: transaction.ID,
-			CreatedAt: createdTime,
-			Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Currency)),
-			Status:    status,
-			Amount:    big.NewInt(int64(math.Abs(float64(transaction.Amount)))),
-			Type:      mapTransactionType(transaction.Source.Category),
-			Raw:       raw,
-			Metadata: map[string]string{
-				client.IncreaseRouteIDMetadataKey:        transaction.RouteID,
-				client.IncreaseRouteTypeMetadataKey:      transaction.RouteType,
-				client.IncreaseSourceCategoryMetadataKey: transaction.Source.Category,
-			},
-		}
-		pspPayment = fillAccountID(transaction, pspPayment)
 		payments = append(payments, pspPayment)
 	}
 
@@ -200,7 +179,7 @@ func (p *Plugin) mapPayment(transaction *client.Transaction, status models.Payme
 	}
 
 	pspPayment := models.PSPPayment{
-		Reference: transaction.ID,
+		Reference: transaction.Source.TransferID,
 		CreatedAt: createdTime,
 		Asset:     *pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, transaction.Currency)),
 		Status:    status,
