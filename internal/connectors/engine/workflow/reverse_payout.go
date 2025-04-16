@@ -3,6 +3,7 @@ package workflow
 import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -90,7 +91,14 @@ func (w Workflow) reversePayout(
 	)
 	switch errPlugin {
 	case nil:
-		payment := models.FromPSPPaymentToPayment(reversePayoutResponse.Payment, reversePayout.ConnectorID)
+		payment, err := models.FromPSPPaymentToPayment(reversePayoutResponse.Payment, reversePayout.ConnectorID)
+		if err != nil {
+			return "", temporal.NewNonRetryableApplicationError(
+				"failed to convert payment",
+				ErrValidation,
+				err,
+			)
+		}
 
 		// Store refund for the payment initiation
 		if err := w.storePIPaymentWithStatus(
@@ -102,7 +110,7 @@ func (w Workflow) reversePayout(
 			return "", err
 		}
 
-		err := w.addPIReversalAdjustment(
+		err = w.addPIReversalAdjustment(
 			ctx,
 			models.PaymentInitiationReversalAdjustmentID{
 				PaymentInitiationReversalID: reversePayout.PaymentInitiationReversalID,

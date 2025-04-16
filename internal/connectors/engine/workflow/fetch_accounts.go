@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -63,11 +64,18 @@ func (w Workflow) fetchAccounts(
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		accounts := models.FromPSPAccounts(
+		accounts, err := models.FromPSPAccounts(
 			accountsResponse.Accounts,
 			models.ACCOUNT_TYPE_INTERNAL,
 			fetchNextAccount.ConnectorID,
 		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate accounts",
+				ErrValidation,
+				err,
+			)
+		}
 
 		if len(accountsResponse.Accounts) > 0 {
 			err = activities.StorageAccountsStore(

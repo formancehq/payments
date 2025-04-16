@@ -2,8 +2,11 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 type PSPBalance struct {
@@ -19,6 +22,26 @@ type PSPBalance struct {
 	// Currency. Should be in minor currencies unit.
 	// For example: USD/2
 	Asset string
+}
+
+func (p *PSPBalance) Validate() error {
+	if p.AccountReference == "" {
+		return fmt.Errorf("missing account reference: %w", ErrValidation)
+	}
+
+	if p.CreatedAt.IsZero() {
+		return fmt.Errorf("missing balance createdAt: %w", ErrValidation)
+	}
+
+	if p.Amount == nil {
+		return fmt.Errorf("missing balance amount: %w", ErrValidation)
+	}
+
+	if !assets.IsValid(p.Asset) {
+		return fmt.Errorf("invalid balance asset: %w", ErrValidation)
+	}
+
+	return nil
 }
 
 type Balance struct {
@@ -97,7 +120,11 @@ type AggregatedBalance struct {
 	Amount *big.Int `json:"amount"`
 }
 
-func FromPSPBalance(from PSPBalance, connectorID ConnectorID) Balance {
+func FromPSPBalance(from PSPBalance, connectorID ConnectorID) (Balance, error) {
+	if err := from.Validate(); err != nil {
+		return Balance{}, err
+	}
+
 	return Balance{
 		AccountID: AccountID{
 			Reference:   from.AccountReference,
@@ -107,13 +134,17 @@ func FromPSPBalance(from PSPBalance, connectorID ConnectorID) Balance {
 		LastUpdatedAt: from.CreatedAt,
 		Asset:         from.Asset,
 		Balance:       from.Amount,
-	}
+	}, nil
 }
 
-func FromPSPBalances(from []PSPBalance, connectorID ConnectorID) []Balance {
+func FromPSPBalances(from []PSPBalance, connectorID ConnectorID) ([]Balance, error) {
 	balances := make([]Balance, 0, len(from))
 	for _, b := range from {
-		balances = append(balances, FromPSPBalance(b, connectorID))
+		balance, err := FromPSPBalance(b, connectorID)
+		if err != nil {
+			return nil, err
+		}
+		balances = append(balances, balance)
 	}
-	return balances
+	return balances, nil
 }
