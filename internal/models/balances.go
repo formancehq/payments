@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"math/big"
 	"time"
+
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 type PSPBalance struct {
@@ -35,8 +37,8 @@ func (p *PSPBalance) Validate() error {
 		return fmt.Errorf("missing balance amount: %w", ErrValidation)
 	}
 
-	if p.Asset == "" {
-		return fmt.Errorf("missing balance asset: %w", ErrValidation)
+	if !assets.IsValid(p.Asset) {
+		return fmt.Errorf("invalid balance asset: %w", ErrValidation)
 	}
 
 	return nil

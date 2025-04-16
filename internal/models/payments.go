@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 // Internal struct used by the plugins
@@ -68,8 +69,8 @@ func (p *PSPPayment) Validate() error {
 		return fmt.Errorf("missing payment amount: %w", ErrValidation)
 	}
 
-	if p.Asset == "" {
-		return fmt.Errorf("missing payment asset: %w", ErrValidation)
+	if !assets.IsValid(p.Asset) {
+		return fmt.Errorf("invalid payment asset: %w", ErrValidation)
 	}
 
 	if p.Raw == nil {

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 // Internal struct used by the plugins
@@ -38,6 +40,10 @@ func (p *PSPAccount) Validate() error {
 
 	if p.Raw == nil {
 		return fmt.Errorf("missing account raw: %w", ErrValidation)
+	}
+
+	if p.DefaultAsset != nil && !assets.IsValid(*p.DefaultAsset) {
+		return fmt.Errorf("invalid default asset: %w", ErrValidation)
 	}
 
 	return nil
