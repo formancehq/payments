@@ -11,6 +11,7 @@ var (
 	ErrMissingFromPayloadInRequest = errors.New("missing from payload in request")
 	ErrMissingAccountInRequest     = errors.New("missing account number in request")
 	ErrInvalidRequest              = errors.New("invalid request")
+	ErrValidation                  = errors.New("validation error")
 
 	ErrMissingConnectorMetadata = errors.New("missing required metadata in request")
 )

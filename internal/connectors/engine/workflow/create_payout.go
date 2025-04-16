@@ -113,7 +113,14 @@ func (w Workflow) createPayout(
 	switch errPlugin {
 	case nil:
 		if createPayoutResponse.Payment != nil {
-			payment := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, createPayout.ConnectorID)
+			payment, err := models.FromPSPPaymentToPayment(*createPayoutResponse.Payment, createPayout.ConnectorID)
+			if err != nil {
+				return temporal.NewNonRetryableApplicationError(
+					"failed to translate psp payment",
+					ErrValidation,
+					err,
+				)
+			}
 
 			if err := w.storePIPaymentWithStatus(
 				ctx,

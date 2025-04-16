@@ -114,7 +114,14 @@ func (w Workflow) createTransfer(
 	case nil:
 		if createTransferResponse.Payment != nil {
 			// payment is already available, storing it
-			payment := models.FromPSPPaymentToPayment(*createTransferResponse.Payment, createTransfer.ConnectorID)
+			payment, err := models.FromPSPPaymentToPayment(*createTransferResponse.Payment, createTransfer.ConnectorID)
+			if err != nil {
+				return temporal.NewNonRetryableApplicationError(
+					"failed to translate psp payment",
+					ErrValidation,
+					err,
+				)
+			}
 
 			if err := w.storePIPaymentWithStatus(
 				ctx,
