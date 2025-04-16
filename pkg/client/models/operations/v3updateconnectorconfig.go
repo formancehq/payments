@@ -75,6 +75,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestGeneric() *c
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestIncrease() *components.V3IncreaseConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3IncreaseConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMangopay() *components.V3MangopayConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3MangopayConfig
