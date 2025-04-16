@@ -2,7 +2,10 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 // Internal struct used by the plugins
@@ -24,6 +27,26 @@ type PSPAccount struct {
 
 	// PSP response in raw
 	Raw json.RawMessage
+}
+
+func (p *PSPAccount) Validate() error {
+	if p.Reference == "" {
+		return fmt.Errorf("missing account reference: %w", ErrValidation)
+	}
+
+	if p.CreatedAt.IsZero() {
+		return fmt.Errorf("missing account createdAt: %w", ErrValidation)
+	}
+
+	if p.Raw == nil {
+		return fmt.Errorf("missing account raw: %w", ErrValidation)
+	}
+
+	if p.DefaultAsset != nil && !assets.IsValid(*p.DefaultAsset) {
+		return fmt.Errorf("invalid default asset: %w", ErrValidation)
+	}
+
+	return nil
 }
 
 type Account struct {
@@ -124,7 +147,11 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID ConnectorID) Account {
+func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID ConnectorID) (Account, error) {
+	if err := from.Validate(); err != nil {
+		return Account{}, err
+	}
+
 	return Account{
 		ID: AccountID{
 			Reference:   from.Reference,
@@ -138,15 +165,20 @@ func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID Connec
 		DefaultAsset: from.DefaultAsset,
 		Metadata:     from.Metadata,
 		Raw:          from.Raw,
-	}
+	}, nil
 }
 
-func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID) []Account {
+func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID) ([]Account, error) {
 	accounts := make([]Account, 0, len(from))
 	for _, a := range from {
-		accounts = append(accounts, FromPSPAccount(a, accountType, connectorID))
+		account, err := FromPSPAccount(a, accountType, connectorID)
+		if err != nil {
+			return nil, err
+		}
+
+		accounts = append(accounts, account)
 	}
-	return accounts
+	return accounts, nil
 }
 
 func ToPSPAccount(from *Account) *PSPAccount {
