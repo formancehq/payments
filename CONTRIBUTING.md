@@ -7,55 +7,35 @@ This guide demonstrates the process of building a basic connector for a hypothet
 ## Table of Contents
 
 - [How to build a connector](#how-to-build-a-connector)
-  - [Table of Contents](#table-of-contents)
-  - [Understanding the Plugin interface](#understanding-the-plugin-interface)
-  - [Building a connector](#building-a-connector)
-    - [Set up the project](#set-up-the-project)
-    - [Define connector capabilities](#define-connector-capabilities)
-    - [Define connector configuration](#define-connector-configuration)
-    - [Define the Connector Struct](#define-the-connector-struct)
-    - [Implement Plugin interface methods](#implement-plugin-interface-methods)
-    - [Implement installation logic](#implement-installation-logic)
-    - [Implement uninstallation logic](#implement-uninstallation-logic)
-    - [Connect to the PSP and fetch data](#connect-to-the-psp-and-fetch-data)
-    - [Implement state management](#implement-state-management)
-    - [Set up state persistence](#set-up-state-persistence)
-    - [Handle child tasks](#handle-child-tasks)
-  - [Launching a new connector](#launching-a-new-connector)
-    - [Additional Connector Configuration](#additional-connector-configuration)
-  - [Testing a connector](#testing-a-connector)
-    - [Installing](#installing)
-    - [Uninstalling](#uninstalling)
-    - [Data Transformation](#data-transformation)
-      - [Account/External Account Transformation](#accountexternal-account-transformation)
-      - [Balances Transformation](#balances-transformation)
-      - [Payments Transformation](#payments-transformation)
-      - [Others Transformation](#others-transformation)
-    - [Fetching Data via Polling](#fetching-data-via-polling)
-      - [Errors](#errors)
-      - [Polling](#polling)
-      - [Transformation](#transformation)
-    - [Fetching Data via Webhooks](#fetching-data-via-webhooks)
-      - [Webhooks Creation](#webhooks-creation)
-    - [Creating a Bank Account](#creating-a-bank-account)
-      - [Errors](#errors-1)
-      - [Bank Account Creation](#bank-account-creation)
-    - [Creating a Transfer/Payout](#creating-a-transferpayout)
-      - [Errors](#errors-2)
-      - [Transfer/Payout Creation](#transferpayout-creation)
-  - [Special Implementation details](#special-implementation-details)
-    - [Metadata](#metadata)
-      - [Use namespaces for metadata](#use-namespaces-for-metadata)
-      - [Extracting Metadata values from Metadata](#extracting-metadata-values-from-metadata)
-      - [Save extra data in Metadata](#save-extra-data-in-metadata)
-    - [Asset and Amount Handling](#asset-and-amount-handling)
-      - [Asset Format](#asset-format)
-      - [Amount Handling](#amount-handling)
-      - [Asset and Amount handling examples](#asset-and-amount-handling-examples)
-    - [Important Considerations](#important-considerations)
-    - [Setting up Pre-commit Checks](#setting-up-pre-commit-checks)
-    - [Troubleshooting](#troubleshooting)
-    - [Review Checklist](#review-checklist)
+	- [Table of Contents](#table-of-contents)
+	- [Understanding the Plugin interface](#understanding-the-plugin-interface)
+	- [Building a connector](#building-a-connector)
+		- [Set up the project](#set-up-the-project)
+		- [Define connector capabilities](#define-connector-capabilities)
+		- [Define connector configuration](#define-connector-configuration)
+		- [Define the Connector Struct](#define-the-connector-struct)
+		- [Implement Plugin interface methods](#implement-plugin-interface-methods)
+		- [Implement installation logic](#implement-installation-logic)
+		- [Implement uninstallation logic](#implement-uninstallation-logic)
+		- [Connect to the PSP and fetch data](#connect-to-the-psp-and-fetch-data)
+		- [Implement state management](#implement-state-management)
+		- [Set up state persistence](#set-up-state-persistence)
+		- [Handle child tasks](#handle-child-tasks)
+	- [Launching a new connector](#launching-a-new-connector)
+		- [Additional Connector Configuration](#additional-connector-configuration)
+	- [Special Implementation details](#special-implementation-details)
+		- [Metadata](#metadata)
+			- [Use namespaces for metadata](#use-namespaces-for-metadata)
+			- [Extracting Metadata values from Metadata](#extracting-metadata-values-from-metadata)
+			- [Save extra data in Metadata](#save-extra-data-in-metadata)
+		- [Asset and Amount Handling](#asset-and-amount-handling)
+			- [Asset Format](#asset-format)
+			- [Amount Handling](#amount-handling)
+			- [Asset and Amount handling examples](#asset-and-amount-handling-examples)
+		- [Important Considerations](#important-considerations)
+		- [Setting up Pre-commit Checks](#setting-up-pre-commit-checks)
+		- [Troubleshooting](#troubleshooting)
+		- [Review Checklist](#review-checklist)
 
 ## Understanding the Plugin interface
 
@@ -794,147 +774,6 @@ http://localhost:8080/v3/connectors/install/dummypay
 **pollingPeriod**: a parameter which controls how frequently the Connector will trigger Fetch\* operations in the background. The default is 2min and the smallest possible interval is 30s.
 
 **pageSize:** useful for controlling how many records a Connector client will fetch at once from the PSP.
-
-## Testing a connector
-
-### Installing
-
-Installing a connector:
-
-- [ ] Does not return an error
-- [ ] Launch the corresponding temporal schedules/workflows according to the workflow you defined
-- [ ] Defines the webhooks configuration
-
-### Uninstalling
-
-Uninstalling a connector:
-
-- [ ] Correctly deletes what you defined in the Uninstall method (correctly clean webhooks created on the PSP for example)
-
-### Data Transformation
-
-#### Account/External Account Transformation
-
-PSP accounts should be transformed into Formance Accounts object with:
-
-*Mandatory Fields*:
-
-- [ ] **Reference**: the account's unique ID
-- [ ] **CreatedAt**: the account's creation time
-- [ ] **Raw**: PSP account json marshalled
-
-*Optional Fields*:
-
-- [ ] Name: Account's name if provided
-- [ ] DefaultAsset: Account's default currency if provided
-- [ ] Metadata: You can add whatever you want from the account inside Formance metadata
-
-#### Balances Transformation
-
-PSP balances should be transformed into Formance Balances object with:
-
-*Mandatory Fields*:
-
-- [ ] **AccountReference**: Reference of the related account
-- [ ] **CreatedAt**: Creation time of the balance
-- [ ] **Amount**: Balance amount
-- [ ] **Asset** Currency
-
-#### Payments Transformation
-
-PSP payments should be transformed into Formance Payments object with:
-
-*Mandatory Fields*:
-
-- [ ] **Reference**: PSP payment/transcation unique id
-- [ ] **CreatedAt**: Creation date of the payment/transaction
-- [ ] **Type**: Payment/Transaction type (PAY-IN, PAYOUT, TRANSFER)
-- [ ] **Amount**: Payment/Transaction amount
-- [ ] **Asset**: Currency
-- [ ] **Scheme**: Should be *models.PAYMENT_SCHEME_OTHER* if you don't know
-- [ ] **Status**: Status of the payment/transaction
-- [ ] **Raw**: PSP payment/transaction json marshalled
-
-*Optional Fields*:
-
-- [ ] ParentReference: If you're fetching transactions, in case of refunds, dispute etc...
-      this reference should be the original payment reference.
-- [ ] SourceAccountReference: Reference of the source account
-- [ ] DestinationAccountReference: Reference of the destination account
-- [ ] Metadata: You can add whatever you want from the payment inside Formance metadata
-
-#### Others Transformation
-
-Other data should be transformed into Formance Other object with:
-
-*Mandatory Fields*:
-
-- [ ] **ID**: Unique id of the PSP object
-- [ ] **Other**: PSP Object json marshalled
-
-### Fetching Data via Polling
-
-#### Errors
-
-- [ ] Should return *plugins.ErrNotYetInstalled* if client is nil
-- [ ] Should return *plugins.ErrNotImplemented* if PSP does not have the related
-      data type
-
-#### Polling
-
-- [ ] Must fetch all history of PSP accounts
-- [ ] Installing with a different pageSize should still fetch all the history
-- [ ] Should have a state in order to only fetch new accounts and not the history
-      at every polling
-- [ ] Once the connector has caught up to the backlog of historical data, creating a new object on the PSP (account,
-      payment, etc...) should add it to Formance list of related objects
-      after the next polling
-
-#### Transformation
-
-### Fetching Data via Webhooks
-
-#### Webhooks Creation
-
-- [ ] Webhooks should be created on PSP side with the right event types
-- [ ] Creating a new object on PSP side should be added to Formance through
-      webhooks
-- [ ] Webhooks should have signatures if possible
-- [ ] Polling should stop after fetching all the history if you use webhooks
-      (you can do that by removing the *Periodically: true* when defining the
-      connector workflow)
-
-### Creating a Bank Account
-
-#### Errors
-
-- [ ] Should return *plugins.ErrNotYetInstalled* if client is nil
-- [ ] Should return *plugins.ErrNotImplemented* if PSP does not handle bank account creation
-- [ ] Should validate incoming bank account object and send *models.ErrInvalidRequest* error if needed
-
-#### Bank Account Creation
-
-- [ ] Should create the account on the PSP
-- [ ] Should create the related EXTERNAL account object on Formance payments service
-
-### Creating a Transfer/Payout
-
-#### Errors
-
-- [ ] Should return *plugins.ErrNotYetInstalled* if client is nil
-- [ ] Should return *plugins.ErrNotImplemented* if PSP does not handle transfer/payout creation
-- [ ] Should validate incoming transfer/payout object and send *models.ErrInvalidRequest* error
-      if needed
-
-#### Transfer/Payout Creation
-
-- [ ] Must create the transfer/payout on the PSP
-- [ ] If a payment is created, you must return it by using the *Payment* field of
-      the response
-- [ ] If it creates another entity than a payments, you must use the *PollingTransferID* field
-      of the response to poll the entity until a payments is created
-- [ ] Ensure that if the payment succeeds or fails later, the status of the
-      related payment initiation changes also
 
 ## Special Implementation details
 
