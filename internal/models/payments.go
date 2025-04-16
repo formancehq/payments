@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
+
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
