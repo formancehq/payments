@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -63,10 +64,18 @@ func (w Workflow) fetchBalances(
 			return errors.Wrap(err, "fetching next accounts")
 		}
 
-		balances := models.FromPSPBalances(
+		balances, err := models.FromPSPBalances(
 			balancesResponse.Balances,
 			fetchNextBalances.ConnectorID,
 		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate psp balances",
+				ErrValidation,
+				err,
+			)
+		}
+
 		if len(balancesResponse.Balances) > 0 {
 			err = activities.StorageBalancesStore(
 				infiniteRetryContext(ctx),

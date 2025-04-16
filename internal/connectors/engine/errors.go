@@ -2,6 +2,7 @@ package engine
 
 import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -18,7 +19,7 @@ func handleWorkflowError(err error) error {
 	var applicationErr *temporal.ApplicationError
 	if errors.As(err, &applicationErr) {
 		switch applicationErr.Type() {
-		case activities.ErrTypeInvalidArgument:
+		case activities.ErrTypeInvalidArgument, workflow.ErrValidation:
 			return errorsutils.NewWrappedError(
 				errorsutils.Cause(err),
 				ErrValidation,

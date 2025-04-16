@@ -39,7 +39,8 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 			Raw: []byte(`{}`),
 		}
 
-		actual := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		require.NoError(t, err)
 
 		pid := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -109,7 +110,8 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 			Raw: []byte(`{}`),
 		}
 
-		actual := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		require.NoError(t, err)
 
 		pid := models.PaymentID{
 			PaymentReference: models.PaymentReference{

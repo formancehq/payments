@@ -5,6 +5,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
@@ -65,7 +66,14 @@ func (w Workflow) pollPayout(
 		return "", nil
 
 	case pollPayoutStatusResponse.Payment != nil:
-		payment := models.FromPSPPaymentToPayment(*pollPayoutStatusResponse.Payment, pollPayout.ConnectorID)
+		payment, err := models.FromPSPPaymentToPayment(*pollPayoutStatusResponse.Payment, pollPayout.ConnectorID)
+		if err != nil {
+			return "", temporal.NewNonRetryableApplicationError(
+				"failed to translate psp payment",
+				ErrValidation,
+				err,
+			)
+		}
 
 		if err := w.storePIPaymentWithStatus(
 			ctx,
