@@ -118,13 +118,20 @@ func (w Workflow) runStoreWebhookTranslation(
 ) error {
 	var sendEvent *SendEvents
 	if storeWebhookTranslation.Account != nil {
-		accounts := models.FromPSPAccounts(
+		accounts, err := models.FromPSPAccounts(
 			[]models.PSPAccount{*storeWebhookTranslation.Account},
 			models.ACCOUNT_TYPE_INTERNAL,
 			storeWebhookTranslation.ConnectorID,
 		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate accounts",
+				ErrValidation,
+				err,
+			)
+		}
 
-		err := activities.StorageAccountsStore(
+		err = activities.StorageAccountsStore(
 			infiniteRetryContext(ctx),
 			accounts,
 		)
@@ -138,13 +145,20 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	if storeWebhookTranslation.ExternalAccount != nil {
-		accounts := models.FromPSPAccounts(
+		accounts, err := models.FromPSPAccounts(
 			[]models.PSPAccount{*storeWebhookTranslation.ExternalAccount},
 			models.ACCOUNT_TYPE_EXTERNAL,
 			storeWebhookTranslation.ConnectorID,
 		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate accounts",
+				ErrValidation,
+				err,
+			)
+		}
 
-		err := activities.StorageAccountsStore(
+		err = activities.StorageAccountsStore(
 			infiniteRetryContext(ctx),
 			accounts,
 		)
@@ -158,11 +172,19 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	if storeWebhookTranslation.Payment != nil {
-		payments := models.FromPSPPayments(
+		payments, err := models.FromPSPPayments(
 			[]models.PSPPayment{*storeWebhookTranslation.Payment},
 			storeWebhookTranslation.ConnectorID,
 		)
-		err := activities.StoragePaymentsStore(
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate psp payments",
+				ErrValidation,
+				err,
+			)
+		}
+
+		err = activities.StoragePaymentsStore(
 			infiniteRetryContext(ctx),
 			payments,
 		)

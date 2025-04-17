@@ -2,10 +2,12 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/payments/internal/utils/assets"
 )
 
 // Internal struct used by the plugins
@@ -48,6 +50,34 @@ type PSPPayment struct {
 
 	// PSP response in raw
 	Raw json.RawMessage
+}
+
+func (p *PSPPayment) Validate() error {
+	if p.Reference == "" {
+		return fmt.Errorf("missing payment reference: %w", ErrValidation)
+	}
+
+	if p.CreatedAt.IsZero() {
+		return fmt.Errorf("missing payment createdAt: %w", ErrValidation)
+	}
+
+	if p.Type == PAYMENT_TYPE_UNKNOWN {
+		return fmt.Errorf("missing payment type: %w", ErrValidation)
+	}
+
+	if p.Amount == nil {
+		return fmt.Errorf("missing payment amount: %w", ErrValidation)
+	}
+
+	if !assets.IsValid(p.Asset) {
+		return fmt.Errorf("invalid payment asset: %w", ErrValidation)
+	}
+
+	if p.Raw == nil {
+		return fmt.Errorf("missing payment raw: %w", ErrValidation)
+	}
+
+	return nil
 }
 
 func (p *PSPPayment) HasParent() bool {
@@ -211,7 +241,11 @@ func (c *Payment) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) Payment {
+func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment, error) {
+	if err := from.Validate(); err != nil {
+		return Payment{}, err
+	}
+
 	paymentReference := from.Reference
 	if from.HasParent() {
 		paymentReference = from.ParentReference
@@ -262,16 +296,19 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) Payment {
 
 	p.Adjustments = append(p.Adjustments, FromPSPPaymentToPaymentAdjustement(from, connectorID))
 
-	return p
+	return p, nil
 }
 
-func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) []Payment {
+func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) ([]Payment, error) {
 	payments := make([]Payment, 0, len(from))
 	for _, p := range from {
-		payment := FromPSPPaymentToPayment(p, connectorID)
+		payment, err := FromPSPPaymentToPayment(p, connectorID)
+		if err != nil {
+			return nil, err
+		}
 		payments = append(payments, payment)
 	}
-	return payments
+	return payments, nil
 }
 
 func FromPSPPaymentToPaymentAdjustement(from PSPPayment, connectorID ConnectorID) PaymentAdjustment {
