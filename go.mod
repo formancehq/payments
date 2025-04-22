@@ -48,7 +48,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	go.temporal.io/api v1.48.0
-	go.temporal.io/sdk v1.33.1
+	go.temporal.io/sdk v1.34.0
 	go.uber.org/fx v1.23.0
 	go.uber.org/mock v0.5.1
 	golang.org/x/oauth2 v0.29.0
@@ -180,7 +180,6 @@ require (
 	github.com/opencontainers/runc v1.1.14 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
 	github.com/ory/dockertest/v3 v3.11.0 // indirect
-	github.com/pborman/uuid v1.2.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
