@@ -50,6 +50,14 @@ var _ = Describe("API v3 Pools Balances At", func() {
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 		})
 
+		It("should return a validation request error when at param is in the future", func(ctx SpecContext) {
+			path := fmt.Sprintf("/?at=%s", now.UTC().Add(time.Minute).Format(time.RFC3339))
+			req := prepareQueryRequestWithPath(path, "poolID", poolID.String())
+			handlerFn(w, req)
+
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
+		})
+
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			path := fmt.Sprintf("/?at=%s", now.Format(time.RFC3339))
 			req := prepareQueryRequestWithPath(path, "poolID", poolID.String())
