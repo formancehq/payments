@@ -2,7 +2,6 @@ package models_test
 
 import (
 	"testing"
-	"time"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
