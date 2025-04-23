@@ -7,8 +7,129 @@ import (
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+func TestConnectorIdempotencyKey(t *testing.T) {
+	t.Parallel()
+
+	id := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}
+	
+	connector := models.Connector{
+		ID: id,
+	}
+
+	key := connector.IdempotencyKey()
+	assert.Equal(t, models.IdempotencyKey(id), key)
+}
+
+func TestConnectorMarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	id := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}
+
+	connector := models.Connector{
+		ID:                   id,
+		Name:                 "Test Connector",
+		CreatedAt:            now,
+		Provider:             "stripe",
+		Config:               json.RawMessage(`{"apiKey": "test_key"}`),
+		ScheduledForDeletion: false,
+	}
+
+	data, err := json.Marshal(connector)
+	require.NoError(t, err)
+
+	var jsonMap map[string]interface{}
+	err = json.Unmarshal(data, &jsonMap)
+	require.NoError(t, err)
+
+	assert.Equal(t, id.String(), jsonMap["id"])
+	assert.Equal(t, id.Reference.String(), jsonMap["reference"])
+	assert.Equal(t, "Test Connector", jsonMap["name"])
+	assert.Equal(t, "stripe", jsonMap["provider"])
+	assert.Equal(t, false, jsonMap["scheduledForDeletion"])
+	
+	configJson, ok := jsonMap["config"].(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, "test_key", configJson["apiKey"])
+}
+
+func TestConnectorUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	id := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}
+
+	t.Run("valid JSON", func(t *testing.T) {
+		t.Parallel()
+
+		jsonData := `{
+			"id": "test:00000000-0000-0000-0000-000000000001",
+			"reference": "00000000-0000-0000-0000-000000000001",
+			"name": "Test Connector",
+			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
+			"provider": "stripe",
+			"config": {"apiKey": "test_key"},
+			"scheduledForDeletion": false
+		}`
+
+		var connector models.Connector
+		err := json.Unmarshal([]byte(jsonData), &connector)
+		require.NoError(t, err)
+
+		assert.Equal(t, id.String(), connector.ID.String())
+		assert.Equal(t, "Test Connector", connector.Name)
+		assert.Equal(t, now.Format(time.RFC3339), connector.CreatedAt.Format(time.RFC3339))
+		assert.Equal(t, "stripe", connector.Provider)
+		assert.Equal(t, false, connector.ScheduledForDeletion)
+		
+		var configMap map[string]interface{}
+		err = json.Unmarshal(connector.Config, &configMap)
+		require.NoError(t, err)
+		assert.Equal(t, "test_key", configMap["apiKey"])
+	})
+
+	t.Run("invalid JSON", func(t *testing.T) {
+		t.Parallel()
+
+		jsonData := `{invalid json}`
+
+		var connector models.Connector
+		err := json.Unmarshal([]byte(jsonData), &connector)
+		require.Error(t, err)
+	})
+
+	t.Run("invalid ID", func(t *testing.T) {
+		t.Parallel()
+
+		jsonData := `{
+			"id": "invalid-id",
+			"reference": "00000000-0000-0000-0000-000000000001",
+			"name": "Test Connector",
+			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
+			"provider": "stripe",
+			"config": {"apiKey": "test_key"},
+			"scheduledForDeletion": false
+		}`
+
+		var connector models.Connector
+		err := json.Unmarshal([]byte(jsonData), &connector)
+		require.Error(t, err)
+	})
+}
 
 func TestToV3Provider(t *testing.T) {
 	t.Parallel()

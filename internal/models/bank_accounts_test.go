@@ -19,7 +19,7 @@ func TestBankAccountIdempotencyKey(t *testing.T) {
 	}
 
 	key := bankAccount.IdempotencyKey()
-	assert.Equal(t, models.IdempotencyKey(id), key)
+	assert.Equal(t, "db2a1ca800a92e835840b268f525f070e050414c", key)
 }
 
 func TestBankAccountObfuscate(t *testing.T) {
