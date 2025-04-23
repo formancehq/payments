@@ -110,8 +110,28 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
 
+		paymentID := models.PaymentID{
+			PaymentReference: models.PaymentReference{
+				Reference: "payment123",
+				Type:      models.PAYMENT_TYPE_PAYIN,
+			},
+			ConnectorID: models.ConnectorID{
+				Provider:  "test",
+				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			},
+		}
+		
+		adjustmentID := models.PaymentAdjustmentID{
+			PaymentID:  paymentID,
+			Reference:  "adj123",
+			CreatedAt:  now,
+			Status:     models.PAYMENT_STATUS_SUCCEEDED,
+		}
+		
+		encodedID := adjustmentID.String()
+		
 		jsonData := `{
-			"id": "test:00000000-0000-0000-0000-000000000001/PAYIN/payment123/adj123/` + now.Format(time.RFC3339Nano) + `/SUCCEEDED",
+			"id": "` + encodedID + `",
 			"reference": "adj123",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
 			"status": "SUCCEEDED",
