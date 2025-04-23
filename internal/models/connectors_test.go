@@ -82,7 +82,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 			"name": "Test Connector",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
 			"provider": "stripe",
-			"config": {"apiKey": "test_key"},
+			"config": "eyJhcGlLZXkiOiAidGVzdF9rZXkifQ==",
 			"scheduledForDeletion": false
 		}`
 
@@ -121,7 +121,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 			"name": "Test Connector",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
 			"provider": "stripe",
-			"config": {"apiKey": "test_key"},
+			"config": "eyJhcGlLZXkiOiAidGVzdF9rZXkifQ==",
 			"scheduledForDeletion": false
 		}`
 
