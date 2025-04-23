@@ -23,15 +23,12 @@ func TestPaymentInitiationReversalMarshalJSON(t *testing.T) {
 		Reference: uuid.New(),
 	}
 	paymentInitiationID := models.PaymentInitiationID{
-		PaymentInitiationReference: models.PaymentInitiationReference{
-			Reference: "pi123",
-			Type:      models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		},
+		Reference:   "pi123",
 		ConnectorID: connectorID,
 	}
 	reversalID := models.PaymentInitiationReversalID{
-		PaymentInitiationID: paymentInitiationID,
-		Reference:           "rev123",
+		Reference:   "rev123",
+		ConnectorID: connectorID,
 	}
 
 	reversal := models.PaymentInitiationReversal{
@@ -73,15 +70,12 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	}
 	paymentInitiationID := models.PaymentInitiationID{
-		PaymentInitiationReference: models.PaymentInitiationReference{
-			Reference: "pi123",
-			Type:      models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		},
+		Reference:   "pi123",
 		ConnectorID: connectorID,
 	}
 	reversalID := models.PaymentInitiationReversalID{
-		PaymentInitiationID: paymentInitiationID,
-		Reference:           "rev123",
+		Reference:   "rev123",
+		ConnectorID: connectorID,
 	}
 
 	jsonData := `{
@@ -149,15 +143,12 @@ func TestFromPaymentInitiationReversalToPSPPaymentInitiationReversal(t *testing.
 		Reference: uuid.New(),
 	}
 	paymentInitiationID := models.PaymentInitiationID{
-		PaymentInitiationReference: models.PaymentInitiationReference{
-			Reference: "pi123",
-			Type:      models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		},
+		Reference:   "pi123",
 		ConnectorID: connectorID,
 	}
 	reversalID := models.PaymentInitiationReversalID{
-		PaymentInitiationID: paymentInitiationID,
-		Reference:           "rev123",
+		Reference:   "rev123",
+		ConnectorID: connectorID,
 	}
 
 	reversal := models.PaymentInitiationReversal{
@@ -176,7 +167,6 @@ func TestFromPaymentInitiationReversalToPSPPaymentInitiationReversal(t *testing.
 
 	relatedPI := models.PSPPaymentInitiation{
 		Reference: "pi123",
-		Type:      models.PAYMENT_INITIATION_TYPE_TRANSFER,
 		CreatedAt: now,
 		Amount:    big.NewInt(1000),
 		Asset:     "USD/2",
@@ -202,15 +192,12 @@ func TestPaymentInitiationReversalExpandedMarshalJSON(t *testing.T) {
 		Reference: uuid.New(),
 	}
 	paymentInitiationID := models.PaymentInitiationID{
-		PaymentInitiationReference: models.PaymentInitiationReference{
-			Reference: "pi123",
-			Type:      models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		},
+		Reference:   "pi123",
 		ConnectorID: connectorID,
 	}
 	reversalID := models.PaymentInitiationReversalID{
-		PaymentInitiationID: paymentInitiationID,
-		Reference:           "rev123",
+		Reference:   "rev123",
+		ConnectorID: connectorID,
 	}
 
 	reversal := models.PaymentInitiationReversal{
