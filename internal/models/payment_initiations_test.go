@@ -26,7 +26,7 @@ func TestPaymentInitiationIdempotencyKey(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 		ConnectorID:  connectorID,
 		Reference:    "pi123",
@@ -49,7 +49,7 @@ func TestPaymentInitiationIdempotencyKey(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi456",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 	}
 	key3 := paymentInitiation2.IdempotencyKey()
@@ -77,7 +77,7 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 		ConnectorID:         connectorID,
 		Reference:           "pi123",
@@ -147,7 +147,7 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 		ConnectorID:         connectorID,
 		Reference:           "pi123",
@@ -250,7 +250,7 @@ func TestFromPaymentInitiationToPSPPaymentInitiation(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 		ConnectorID:         connectorID,
 		Reference:           "pi123",
@@ -302,7 +302,7 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-			Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+
 		},
 		ConnectorID:         connectorID,
 		Reference:           "pi123",

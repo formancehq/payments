@@ -26,7 +26,7 @@ func TestPaymentInitiationReversalAdjustmentMarshalJSON(t *testing.T) {
 	}
 	adjustmentID := models.PaymentInitiationReversalAdjustmentID{
 		PaymentInitiationReversalID: reversalID,
-		Reference:                   "adj123",
+
 		CreatedAt:                   now,
 		Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 	}
@@ -84,7 +84,7 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	}
 	adjustmentID := models.PaymentInitiationReversalAdjustmentID{
 		PaymentInitiationReversalID: reversalID,
-		Reference:                   "adj123",
+
 		CreatedAt:                   now,
 		Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 	}
