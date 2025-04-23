@@ -123,7 +123,6 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 			"pageSize": 0
 		}`
 
-		defaultConfig := models.DefaultConfig()
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
 		require.NoError(t, err)
