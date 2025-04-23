@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"encoding/json"
 	"math/big"
 	"testing"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -218,4 +220,230 @@ func compareAdjustments(t *testing.T, expected, actual []models.PaymentAdjustmen
 			require.Equal(t, v, actual[i].Metadata[k])
 		}
 	}
+}
+
+func TestFromPSPPayments(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "test",
+	}
+
+	pspPayments := []models.PSPPayment{
+		{
+			Reference:     "payment1",
+			CreatedAt:     now,
+			Type:          models.PAYMENT_TYPE_PAYIN,
+			Amount:        big.NewInt(100),
+			Asset:         "USD/2",
+			Scheme:        models.PAYMENT_SCHEME_OTHER,
+			Status:        models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:           []byte(`{}`),
+		},
+		{
+			Reference:     "payment2",
+			CreatedAt:     now,
+			Type:          models.PAYMENT_TYPE_PAYOUT,
+			Amount:        big.NewInt(200),
+			Asset:         "EUR/2",
+			Scheme:        models.PAYMENT_SCHEME_OTHER,
+			Status:        models.PAYMENT_STATUS_PENDING,
+			Raw:           []byte(`{}`),
+		},
+	}
+
+	payments, err := models.FromPSPPayments(pspPayments, connectorID)
+	require.NoError(t, err)
+	assert.Len(t, payments, 2)
+	assert.Equal(t, "payment1", payments[0].Reference)
+	assert.Equal(t, "payment2", payments[1].Reference)
+
+	invalidPayment := models.PSPPayment{
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	pspPayments = append(pspPayments, invalidPayment)
+	_, err = models.FromPSPPayments(pspPayments, connectorID)
+	assert.Error(t, err)
+}
+
+func TestPaymentMarshalUnmarshal(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "test",
+	}
+
+	payment := models.Payment{
+		ID: models.PaymentID{
+			PaymentReference: models.PaymentReference{
+				Reference: "payment123",
+				Type:      models.PAYMENT_TYPE_PAYIN,
+			},
+			ConnectorID: connectorID,
+		},
+		ConnectorID:   connectorID,
+		Reference:     "payment123",
+		CreatedAt:     now,
+		Type:          models.PAYMENT_TYPE_PAYIN,
+		InitialAmount: big.NewInt(100),
+		Amount:        big.NewInt(100),
+		Asset:         "USD/2",
+		Scheme:        models.PAYMENT_SCHEME_OTHER,
+		Status:        models.PAYMENT_STATUS_SUCCEEDED,
+		SourceAccountID: &models.AccountID{
+			Reference:   "source123",
+			ConnectorID: connectorID,
+		},
+		DestinationAccountID: &models.AccountID{
+			Reference:   "dest123",
+			ConnectorID: connectorID,
+		},
+		Metadata: map[string]string{
+			"key": "value",
+		},
+		Adjustments: []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: models.PaymentID{
+						PaymentReference: models.PaymentReference{
+							Reference: "payment123",
+							Type:      models.PAYMENT_TYPE_PAYIN,
+						},
+						ConnectorID: connectorID,
+					},
+					Reference: "adj123",
+					CreatedAt: now,
+					Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				},
+				Reference: "adj123",
+				CreatedAt: now,
+				Status:    models.PAYMENT_STATUS_SUCCEEDED,
+				Amount:    big.NewInt(100),
+				Asset:     pointer.For("USD/2"),
+				Metadata: map[string]string{
+					"key": "value",
+				},
+				Raw: []byte(`{}`),
+			},
+		},
+	}
+
+	data, err := json.Marshal(payment)
+	require.NoError(t, err)
+
+	var unmarshaledPayment models.Payment
+	err = json.Unmarshal(data, &unmarshaledPayment)
+	require.NoError(t, err)
+
+	comparePayment(t, payment, unmarshaledPayment)
+}
+
+func TestPSPPaymentValidate(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+
+	payment := models.PSPPayment{
+		Reference: "payment123",
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.NoError(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.Error(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.Error(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+		CreatedAt: now,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.Error(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.Error(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "invalid",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		Raw:       []byte(`{}`),
+	}
+	assert.Error(t, payment.Validate())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+		CreatedAt: now,
+		Type:      models.PAYMENT_TYPE_PAYIN,
+		Amount:    big.NewInt(100),
+		Asset:     "USD/2",
+		Scheme:    models.PAYMENT_SCHEME_OTHER,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
+	}
+	assert.Error(t, payment.Validate())
+}
+
+func TestPSPPaymentHasParent(t *testing.T) {
+	t.Parallel()
+
+	payment := models.PSPPayment{
+		ParentReference: "parent123",
+		Reference:       "payment123",
+	}
+	assert.True(t, payment.HasParent())
+
+	payment = models.PSPPayment{
+		Reference: "payment123",
+	}
+	assert.False(t, payment.HasParent())
 }
