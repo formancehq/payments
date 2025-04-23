@@ -17,16 +17,14 @@ sources:
     SAVE ARTIFACT /src
 
 compile-plugins:
+    ARG local_save=false
     FROM core+builder-image
     COPY (+sources/*) /src
-    WORKDIR /src/internal/connectors/plugins/public
-    RUN printf "package public\n\n" > list.go
-    RUN printf "import (\n" >> list.go
-    FOR c IN $(ls -d */ | sed 's#/##')
-        RUN printf "    _ \"github.com/formancehq/payments/internal/connectors/plugins/public/$c\"\n" >> list.go
-    END
-    RUN printf ")\n" >> list.go
+    RUN ./src/tools/compile-plugins/compile-plugin.sh list.go /src/internal/connectors/plugins/public
     SAVE ARTIFACT /src/internal/connectors/plugins/public/list.go /list.go
+    IF $local_save
+        SAVE ARTIFACT /src/internal/connectors/plugins/public/list.go AS LOCAL internal/connectors/plugins/public/list.go
+    END
 
 compile:
     FROM core+builder-image
