@@ -125,7 +125,7 @@ func TestCapabilityScan(t *testing.T) {
 
 		err = capability.Scan(123)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to convert capability")
+		assert.Contains(t, err.Error(), "failed to cast capability")
 
 		err = capability.Scan("UNKNOWN_CAPABILITY")
 		require.Error(t, err)
