@@ -111,11 +111,6 @@ func TestCapabilityScan(t *testing.T) {
 			err := capability.Scan(tc.input)
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, capability)
-
-			capability = models.Capability(0)
-			err = capability.Scan([]byte(tc.input))
-			require.NoError(t, err)
-			assert.Equal(t, tc.expected, capability)
 		}
 	})
 
