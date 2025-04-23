@@ -94,6 +94,9 @@ func TestPaymentScheme(t *testing.T) {
 		var scheme models.PaymentScheme
 		err := json.Unmarshal([]byte(`"INVALID"`), &scheme)
 		assert.Error(t, err)
+		
+		err = json.Unmarshal([]byte(`{invalid}`), &scheme)
+		assert.Error(t, err)
 	})
 
 	t.Run("Value", func(t *testing.T) {
