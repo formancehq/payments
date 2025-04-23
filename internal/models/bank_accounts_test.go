@@ -13,7 +13,7 @@ import (
 func TestBankAccountIdempotencyKey(t *testing.T) {
 	t.Parallel()
 
-	id := uuid.New()
+	id := uuid.MustParse("00000000-0000-0000-0000-000000000001")
 	bankAccount := models.BankAccount{
 		ID: id,
 	}
