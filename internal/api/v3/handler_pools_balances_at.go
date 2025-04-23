@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -28,8 +29,9 @@ func poolsBalancesAt(backend backend.Backend) http.HandlerFunc {
 		atTime := r.URL.Query().Get("at")
 		span.SetAttributes(attribute.String("atTime", atTime))
 		if atTime == "" {
-			otel.RecordError(span, errors.New("missing atTime"))
-			api.BadRequest(w, ErrValidation, errors.New("missing atTime"))
+			err := fmt.Errorf("query param 'at' is missing")
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
@@ -37,6 +39,12 @@ func poolsBalancesAt(backend backend.Backend) http.HandlerFunc {
 		if err != nil {
 			otel.RecordError(span, err)
 			api.BadRequest(w, ErrValidation, errors.Wrap(err, "invalid atTime"))
+			return
+		}
+		if time.Now().Before(at) {
+			err := fmt.Errorf("query param 'at' cannot be in the future")
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrValidation, err)
 			return
 		}
 
