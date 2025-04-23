@@ -38,7 +38,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		err := bankAccount.Obfuscate()
 		require.NoError(t, err)
 
-		assert.Equal(t, "DE89**********3000", *bankAccount.IBAN)
+		assert.Equal(t, "DE89**************3000", *bankAccount.IBAN)
 
 		assert.Equal(t, "12******901", *bankAccount.AccountNumber)
 	})

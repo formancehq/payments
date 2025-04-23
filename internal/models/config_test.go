@@ -129,7 +129,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
-		assert.Equal(t, defaultConfig.PollingPeriod, config.PollingPeriod) // Should use default
+		assert.Equal(t, 0*time.Second, config.PollingPeriod) // Zero is allowed
 		assert.Equal(t, 0, config.PageSize) // Zero is allowed
 	})
 
