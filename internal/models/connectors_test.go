@@ -84,7 +84,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 			"name": "Test Connector",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
 			"provider": "stripe",
-			"config": "eyJhcGlLZXkiOiJ0ZXN0X2tleSJ9",
+			"config": {"apiKey": "test_key"},
 			"scheduledForDeletion": false
 		}`
 
