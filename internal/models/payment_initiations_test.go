@@ -120,12 +120,12 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 	err = json.Unmarshal(data, &jsonMap)
 	require.NoError(t, err)
 
-	sourceAccountID, hasSourceAccountID := jsonMap["sourceAccountID"]
+	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)
-	assert.Nil(t, sourceAccountID)
-	destinationAccountID, hasDestinationAccountID := jsonMap["destinationAccountID"]
+	assert.Nil(t, sourceAccountIDValue)
+	destinationAccountIDValue, hasDestinationAccountID := jsonMap["destinationAccountID"]
 	assert.True(t, hasDestinationAccountID)
-	assert.Nil(t, destinationAccountID)
+	assert.Nil(t, destinationAccountIDValue)
 }
 
 func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
@@ -376,10 +376,10 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 	err = json.Unmarshal(data, &jsonMap)
 	require.NoError(t, err)
 
-	sourceAccountID, hasSourceAccountID := jsonMap["sourceAccountID"]
+	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)
-	assert.Nil(t, sourceAccountID)
-	destinationAccountID, hasDestinationAccountID := jsonMap["destinationAccountID"]
+	assert.Nil(t, sourceAccountIDValue)
+	destinationAccountIDValue, hasDestinationAccountID := jsonMap["destinationAccountID"]
 	assert.True(t, hasDestinationAccountID)
-	assert.Nil(t, destinationAccountID)
+	assert.Nil(t, destinationAccountIDValue)
 }
