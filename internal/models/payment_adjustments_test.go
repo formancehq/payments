@@ -118,7 +118,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 			"amount": 100,
 			"asset": "USD/2",
 			"metadata": {"key": "value"},
-			"raw": "eyJ0ZXN0IjogImRhdGEifQ=="
+			"raw": "eyJ0ZXN0IjoiZGF0YSJ9"
 		}`
 
 		var adjustment models.PaymentAdjustment
@@ -154,7 +154,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 			"amount": 100,
 			"asset": "USD/2",
 			"metadata": {"key": "value"},
-			"raw": {"test": "data"}
+			"raw": "eyJ0ZXN0IjogImRhdGEifQ=="
 		}`
 
 		var adjustment models.PaymentAdjustment
