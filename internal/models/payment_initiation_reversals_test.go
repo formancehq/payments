@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -78,33 +77,36 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 		ConnectorID: connectorID,
 	}
 
-	jsonData := `{
-		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123/rev123",
-		"connectorID": "test:00000000-0000-0000-0000-000000000001",
-		"paymentInitiationID": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
-		"reference": "rev123",
-		"createdAt": "` + now.Format(time.RFC3339Nano) + `",
-		"description": "Test reversal",
-		"amount": 100,
-		"asset": "USD/2",
-		"metadata": {
-			"key": "value"
-		}
-	}`
+	originalReversal := models.PaymentInitiationReversal{
+		ID:                  reversalID,
+		ConnectorID:         connectorID,
+		PaymentInitiationID: paymentInitiationID,
+		Reference:           "rev123",
+		CreatedAt:           now,
+		Description:         "Test reversal",
+		Amount:              big.NewInt(100),
+		Asset:               "USD/2",
+		Metadata: map[string]string{
+			"key": "value",
+		},
+	}
 
-	var reversal models.PaymentInitiationReversal
-	err := json.Unmarshal([]byte(jsonData), &reversal)
+	data, err := json.Marshal(originalReversal)
 	require.NoError(t, err)
 
-	assert.Equal(t, reversalID.String(), reversal.ID.String())
-	assert.Equal(t, connectorID.String(), reversal.ConnectorID.String())
-	assert.Equal(t, paymentInitiationID.String(), reversal.PaymentInitiationID.String())
-	assert.Equal(t, "rev123", reversal.Reference)
-	assert.Equal(t, now.Format(time.RFC3339Nano), reversal.CreatedAt.Format(time.RFC3339Nano))
-	assert.Equal(t, "Test reversal", reversal.Description)
-	assert.Equal(t, big.NewInt(100), reversal.Amount)
-	assert.Equal(t, "USD/2", reversal.Asset)
-	assert.Equal(t, "value", reversal.Metadata["key"])
+	var reversal models.PaymentInitiationReversal
+	err = json.Unmarshal(data, &reversal)
+	require.NoError(t, err)
+
+	assert.Equal(t, originalReversal.ID.String(), reversal.ID.String())
+	assert.Equal(t, originalReversal.ConnectorID.String(), reversal.ConnectorID.String())
+	assert.Equal(t, originalReversal.PaymentInitiationID.String(), reversal.PaymentInitiationID.String())
+	assert.Equal(t, originalReversal.Reference, reversal.Reference)
+	assert.Equal(t, originalReversal.CreatedAt.Format(time.RFC3339Nano), reversal.CreatedAt.Format(time.RFC3339Nano))
+	assert.Equal(t, originalReversal.Description, reversal.Description)
+	assert.Equal(t, originalReversal.Amount, reversal.Amount)
+	assert.Equal(t, originalReversal.Asset, reversal.Asset)
+	assert.Equal(t, originalReversal.Metadata["key"], reversal.Metadata["key"])
 
 	invalidJSON := `{
 		"id": "invalid-id",
@@ -116,17 +118,17 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 	assert.Error(t, err)
 
 	invalidJSON = `{
-		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123/rev123",
+		"id": "` + reversalID.String() + `",
 		"connectorID": "invalid-connector",
-		"paymentInitiationID": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
+		"paymentInitiationID": "` + paymentInitiationID.String() + `",
 		"reference": "rev123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &reversal)
 	assert.Error(t, err)
 
 	invalidJSON = `{
-		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123/rev123",
-		"connectorID": "test:00000000-0000-0000-0000-000000000001",
+		"id": "` + reversalID.String() + `",
+		"connectorID": "` + connectorID.String() + `",
 		"paymentInitiationID": "invalid-payment-initiation",
 		"reference": "rev123"
 	}`
@@ -216,7 +218,7 @@ func TestPaymentInitiationReversalExpandedMarshalJSON(t *testing.T) {
 
 	expanded := models.PaymentInitiationReversalExpanded{
 		PaymentInitiationReversal: reversal,
-		Status:                    models.PAYMENT_INITIATION_REVERSAL_STATUS_SUCCEEDED,
+		Status:                    models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 		Error:                     nil,
 	}
 
@@ -234,7 +236,7 @@ func TestPaymentInitiationReversalExpandedMarshalJSON(t *testing.T) {
 	assert.Equal(t, "Test reversal", jsonMap["description"])
 	assert.Equal(t, "USD/2", jsonMap["asset"])
 	assert.Equal(t, "value", jsonMap["metadata"].(map[string]interface{})["key"])
-	assert.Equal(t, "SUCCEEDED", jsonMap["status"])
+	assert.Equal(t, "PROCESSED", jsonMap["status"])
 	assert.Nil(t, jsonMap["error"])
 
 	expanded = models.PaymentInitiationReversalExpanded{

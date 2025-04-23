@@ -57,5 +57,6 @@ func TestErrorVariables(t *testing.T) {
 func TestNonRetryableError(t *testing.T) {
 	t.Parallel()
 	
-	assert.NotNil(t, models.NonRetryableError)
+	var err *models.ConnectorValidationError
+	assert.IsType(t, err, models.NonRetryableError)
 }
