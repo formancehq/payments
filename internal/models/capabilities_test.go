@@ -1,7 +1,6 @@
 package models_test
 
 import (
-	"database/sql/driver"
 	"testing"
 
 	"github.com/formancehq/payments/internal/models"
