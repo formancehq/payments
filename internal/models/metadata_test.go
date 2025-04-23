@@ -11,30 +11,26 @@ func TestExtractNamespacedMetadata(t *testing.T) {
 	t.Parallel()
 
 	metadata := map[string]string{
-		"namespace:key1": "value1",
-		"namespace:key2": "value2",
-		"other:key":      "value3",
-		"plain_key":      "value4",
+		"key1": "value1",
+		"key2": "value2",
+		"key3": "value3",
 	}
 
-	extracted := models.ExtractNamespacedMetadata(metadata, "namespace:key1")
+	extracted := models.ExtractNamespacedMetadata(metadata, "key1")
 	assert.Equal(t, "value1", extracted)
 
-	extracted = models.ExtractNamespacedMetadata(metadata, "namespace:key2")
+	extracted = models.ExtractNamespacedMetadata(metadata, "key2")
 	assert.Equal(t, "value2", extracted)
 
-	extracted = models.ExtractNamespacedMetadata(metadata, "other:key")
+	extracted = models.ExtractNamespacedMetadata(metadata, "key3")
 	assert.Equal(t, "value3", extracted)
 
-	extracted = models.ExtractNamespacedMetadata(metadata, "plain_key")
-	assert.Equal(t, "value4", extracted)
-
-	extracted = models.ExtractNamespacedMetadata(metadata, "nonexistent:key")
+	extracted = models.ExtractNamespacedMetadata(metadata, "nonexistent")
 	assert.Empty(t, extracted)
 
 	extracted = models.ExtractNamespacedMetadata(metadata, "")
 	assert.Empty(t, extracted)
 
-	extracted = models.ExtractNamespacedMetadata(nil, "namespace:key")
+	extracted = models.ExtractNamespacedMetadata(nil, "key1")
 	assert.Empty(t, extracted)
 }
