@@ -58,8 +58,10 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
 
+		encodedAccountID := accountID.String()
+		
 		jsonData := `{
-			"accountID": "test:00000000-0000-0000-0000-000000000001/acc123",
+			"accountID": "` + encodedAccountID + `",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `"
 		}`
 
