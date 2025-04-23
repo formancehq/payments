@@ -742,6 +742,7 @@ In a real-world scenario, you'd want to build a connector that fetches data from
 To make this process easier, we've dockerized the Connectivity Service which allows you to run it directly from your local environment. You can bring up the project by calling docker from within the project's home directory:
 
 ```sh
+$ earthly -P +compile-plugins --local_save=true
 $ docker compose up
 ```
 
