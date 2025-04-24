@@ -60,5 +60,20 @@ var _ = Describe("API v2 Accounts", func() {
 
 			assertExpectedResponse(w.Result(), http.StatusOK, "data")
 		})
+
+		It("should handle account with optional fields", func(ctx SpecContext) {
+			req := prepareQueryRequest(http.MethodGet, "accountID", accID.String())
+			defaultAsset := "USD"
+			accountName := "Test Account"
+			m.EXPECT().AccountsGet(gomock.Any(), accID).Return(
+				&models.Account{
+					DefaultAsset: &defaultAsset,
+					Name:         &accountName,
+				}, nil,
+			)
+			handlerFn(w, req)
+
+			assertExpectedResponse(w.Result(), http.StatusOK, "data")
+		})
 	})
 })

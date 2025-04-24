@@ -53,5 +53,17 @@ var _ = Describe("API v3 Payment Initiation Rejection", func() {
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusNoContent, "")
 		})
+
+		It("should handle specific error types from backend", func(ctx SpecContext) {
+			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(models.ErrNotFound)
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
+			assertExpectedResponse(w.Result(), http.StatusNotFound, "NOT_FOUND")
+
+			w = httptest.NewRecorder()
+			
+			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(models.ErrInvalidStatus)
+			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, "INVALID_STATUS")
+		})
 	})
 })
