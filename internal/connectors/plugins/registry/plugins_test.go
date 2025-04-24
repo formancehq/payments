@@ -135,31 +135,38 @@ var _ = Describe("Register Plugin", func() {
 
 var _ = Describe("Plugin Functions", func() {
 	var (
-		ctrl         *gomock.Controller
-		logger       logging.Logger
-		pluginName   = "test-plugin"
+		ctrl           *gomock.Controller
+		logger         logging.Logger
+		pluginName     = "test-plugin-functions"
 		dummyPluginMock *models.MockPlugin
+		originalRegistry map[string]PluginInformation
 	)
 
 	BeforeEach(func() {
 		ctrl = gomock.NewController(GinkgoT())
 		logger = logging.Testing()
 		dummyPluginMock = models.NewMockPlugin(ctrl)
-		dummyPluginMock.EXPECT().Name().Return("test-plugin").AnyTimes()
+		dummyPluginMock.EXPECT().Name().Return("test-plugin-functions").AnyTimes()
 		
-		// Clear the registry
-		pluginsRegistry = make(map[string]PluginInformation)
+		originalRegistry = make(map[string]PluginInformation)
+		for k, v := range pluginsRegistry {
+			originalRegistry[k] = v
+		}
 		
 		capabilities := []models.Capability{models.CAPABILITY_FETCH_PAYMENTS}
 		config := Config{}
 		
+		// Register our test plugins without clearing the registry
 		RegisterPlugin(pluginName, func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
 			return dummyPluginMock, nil
 		}, capabilities, config)
-		
-		RegisterPlugin(DummyPSPName, func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
-			return dummyPluginMock, nil
-		}, capabilities, config)
+	})
+
+	AfterEach(func() {
+		pluginsRegistry = make(map[string]PluginInformation)
+		for k, v := range originalRegistry {
+			pluginsRegistry[k] = v
+		}
 	})
 
 	Context("GetPlugin", func() {
@@ -170,18 +177,19 @@ var _ = Describe("Plugin Functions", func() {
 		})
 
 		It("returns error for unknown provider", func(ctx SpecContext) {
-			plugin, err := GetPlugin(logger, "unknown-plugin", "connector-name", nil)
+			plugin, err := GetPlugin(logger, "unknown-plugin-name", "connector-name", nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
 			Expect(plugin).To(BeNil())
 		})
 		
 		It("translates errors from plugin creation", func(ctx SpecContext) {
-			RegisterPlugin("error-plugin", func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+			errorPluginName := "error-plugin-test"
+			RegisterPlugin(errorPluginName, func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
 				return nil, models.ErrInvalidConfig
 			}, []models.Capability{}, Config{})
 			
-			plugin, err := GetPlugin(logger, "error-plugin", "connector-name", nil)
+			plugin, err := GetPlugin(logger, errorPluginName, "connector-name", nil)
 			Expect(err).To(HaveOccurred())
 			Expect(err).To(MatchError(ContainSubstring(models.ErrInvalidConfig.Error())))
 			Expect(plugin).To(BeNil())
@@ -197,7 +205,7 @@ var _ = Describe("Plugin Functions", func() {
 		})
 
 		It("returns error for unknown plugin", func(ctx SpecContext) {
-			capabilities, err := GetCapabilities("unknown-plugin")
+			capabilities, err := GetCapabilities("unknown-plugin-name")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
 			Expect(capabilities).To(BeNil())
@@ -212,7 +220,7 @@ var _ = Describe("Plugin Functions", func() {
 		})
 
 		It("returns error for unknown plugin", func(ctx SpecContext) {
-			config, err := GetConfig("unknown-plugin")
+			config, err := GetConfig("unknown-plugin-name")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
 			Expect(config).To(BeNil())
