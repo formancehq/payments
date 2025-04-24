@@ -48,12 +48,12 @@ func TestConnectorMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(connector)
 	// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 	assert.Equal(t, id.String(), jsonMap["id"])
 	assert.Equal(t, id.Reference.String(), jsonMap["reference"])
@@ -107,7 +107,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		var configMap map[string]interface{}
 		err = json.Unmarshal(connector.Config, &configMap)
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "test_key", configMap["apiKey"])
 	})
 
