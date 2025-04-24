@@ -60,11 +60,11 @@ func TestEventID(t *testing.T) {
 		
 		_, err = models.EventIDFromString("invalid-base64")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		_, err = models.EventIDFromString("aW52YWxpZC1qc29u")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 
 
@@ -118,14 +118,14 @@ func TestEventID(t *testing.T) {
 		
 		err = id.Scan(nil)
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		err = id.Scan(123)
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		err = id.Scan("invalid-base64")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 }
