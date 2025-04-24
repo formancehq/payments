@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
 func TestErrorHandling(t *testing.T) {
@@ -70,13 +71,14 @@ func TestErrorHandling(t *testing.T) {
 func TestRollbackOnTxError(t *testing.T) {
 	t.Parallel()
 	
-	store := newStore(t)
+	s := newStore(t)
 	ctx := context.Background()
 
 	t.Run("no error", func(t *testing.T) {
 		t.Parallel()
 		
-		tx, err := store.(*store).db.Begin()
+		db := s.(interface{ GetDB() *bun.DB }).GetDB()
+		tx, err := db.Begin()
 		require.NoError(t, err)
 		
 		rollbackOnTxError(ctx, tx, nil)

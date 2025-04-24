@@ -25,10 +25,11 @@ type testFilter struct {
 func TestPaginateWithOffset(t *testing.T) {
 	t.Parallel()
 
-	store := newStore(t)
+	s := newStore(t)
 	ctx := context.Background()
 	
-	_, err := store.(*store).db.NewCreateTable().Model((*testModel)(nil)).Exec(ctx)
+	db := s.(interface{ GetDB() *bun.DB }).GetDB()
+	_, err := db.NewCreateTable().Model((*testModel)(nil)).Exec(ctx)
 	require.NoError(t, err)
 	
 	testModels := []testModel{
@@ -37,16 +38,16 @@ func TestPaginateWithOffset(t *testing.T) {
 		{ID: "3", Name: "Test 3", CreatedAt: time.Now()},
 	}
 	
-	_, err = store.(*store).db.NewInsert().Model(&testModels).Exec(ctx)
+	_, err = db.NewInsert().Model(&testModels).Exec(ctx)
 	require.NoError(t, err)
 	
 	query := bunpaginate.OffsetPaginatedQuery[testFilter]{
 		PageSize: 2,
 		Order:    bunpaginate.OrderAsc,
-		OrderBy:  "id",
+		SortBy:   "id",
 	}
 	
-	result, err := paginateWithOffset[testFilter, testModel](store.(*store), ctx, &query, func(q *bun.SelectQuery) *bun.SelectQuery {
+	result, err := paginateWithOffset[testFilter, testModel](s.(interface{ GetDB() *bun.DB }), ctx, &query, func(q *bun.SelectQuery) *bun.SelectQuery {
 		return q.Model((*testModel)(nil))
 	})
 	

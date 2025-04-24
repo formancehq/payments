@@ -3,8 +3,8 @@ package storage
 import (
 	"context"
 	"testing"
+	"time"
 
-	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 )
@@ -15,43 +15,43 @@ func TestStorageErrorHandling(t *testing.T) {
 	store := newStore(t)
 	ctx := context.Background()
 
-	t.Run("GetAccount with non-existent ID", func(t *testing.T) {
+	t.Run("AccountsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		account, err := store.GetAccount(ctx, nonExistentID)
+		account, err := store.AccountsGet(ctx, nonExistentID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, models.ErrNotFound)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, account)
 	})
 
-	t.Run("GetPayment with non-existent ID", func(t *testing.T) {
+	t.Run("PaymentsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		payment, err := store.GetPayment(ctx, nonExistentID)
+		payment, err := store.PaymentsGet(ctx, nonExistentID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, models.ErrNotFound)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, payment)
 	})
 
-	t.Run("GetBankAccount with non-existent ID", func(t *testing.T) {
+	t.Run("BankAccountsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		bankAccount, err := store.GetBankAccount(ctx, nonExistentID)
+		bankAccount, err := store.BankAccountsGet(ctx, nonExistentID, false)
 		require.Error(t, err)
-		require.ErrorIs(t, err, models.ErrNotFound)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, bankAccount)
 	})
 
-	t.Run("GetBalance with non-existent ID", func(t *testing.T) {
+	t.Run("BalancesGetAt with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		balance, err := store.GetBalance(ctx, nonExistentID)
+		balances, err := store.BalancesGetAt(ctx, nonExistentID, time.Now())
 		require.Error(t, err)
-		require.ErrorIs(t, err, models.ErrNotFound)
-		require.Nil(t, balance)
+		require.ErrorIs(t, err, ErrNotFound)
+		require.Nil(t, balances)
 	})
 
-	t.Run("GetConnector with non-existent ID", func(t *testing.T) {
+	t.Run("ConnectorsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		connector, err := store.GetConnector(ctx, nonExistentID)
+		connector, err := store.ConnectorsGet(ctx, nonExistentID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, models.ErrNotFound)
+		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, connector)
 	})
 }
