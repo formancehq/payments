@@ -29,7 +29,6 @@ func TestFromPSPAccount(t *testing.T) {
 	t.Run("valid account", func(t *testing.T) {
 		t.Parallel()
 		// Given
-
 		pspAccount := models.PSPAccount{
 			Reference: "acc123",
 			CreatedAt: now,
@@ -42,9 +41,8 @@ func TestFromPSPAccount(t *testing.T) {
 		}
 
 		account, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		// When/Then
+		
 		require.NoError(t, err)
-
 		assert.Equal(t, pspAccount.Reference, account.Reference)
 		assert.Equal(t, pspAccount.CreatedAt, account.CreatedAt)
 		assert.Equal(t, pspAccount.Name, account.Name)
@@ -57,44 +55,71 @@ func TestFromPSPAccount(t *testing.T) {
 
 	t.Run("validation errors", func(t *testing.T) {
 		t.Parallel()
-		// Given
-
-		pspAccount := models.PSPAccount{
-			CreatedAt: now,
-			Raw:       json.RawMessage(`{}`),
-		}
-		_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		// When/Then
-		assert.Error(t, err)
-
-		pspAccount = models.PSPAccount{
-			Reference: "acc123",
-			Raw:       json.RawMessage(`{}`),
-		}
-		_, err = models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		assert.Error(t, err)
-
-		pspAccount = models.PSPAccount{
-			Reference: "acc123",
-			CreatedAt: now,
-		}
-		_, err = models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		assert.Error(t, err)
-
-		pspAccount = models.PSPAccount{
-			Reference:    "acc123",
-			CreatedAt:    now,
-			DefaultAsset: pointer.For("invalid"),
-			Raw:          json.RawMessage(`{}`),
-		}
-		_, err = models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		assert.Error(t, err)
+		
+		t.Run("missing reference", func(t *testing.T) {
+			t.Parallel()
+			// Given
+			pspAccount := models.PSPAccount{
+				CreatedAt: now,
+				Raw:       json.RawMessage(`{}`),
+			}
+			
+			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "reference is required")
+		})
+		
+		t.Run("missing createdAt", func(t *testing.T) {
+			t.Parallel()
+			// Given
+			pspAccount := models.PSPAccount{
+				Reference: "acc123",
+				Raw:       json.RawMessage(`{}`),
+			}
+			
+			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "createdAt is required")
+		})
+		
+		t.Run("missing raw", func(t *testing.T) {
+			t.Parallel()
+			// Given
+			pspAccount := models.PSPAccount{
+				Reference: "acc123",
+				CreatedAt: now,
+			}
+			
+			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "raw is required")
+		})
+		
+		t.Run("invalid defaultAsset", func(t *testing.T) {
+			t.Parallel()
+			// Given
+			pspAccount := models.PSPAccount{
+				Reference:    "acc123",
+				CreatedAt:    now,
+				DefaultAsset: pointer.For("invalid"),
+				Raw:          json.RawMessage(`{}`),
+			}
+			
+			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid asset")
+		})
 	})
 }
 
 func TestFromPSPAccounts(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	now := time.Now().UTC()
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
@@ -115,22 +140,28 @@ func TestFromPSPAccounts(t *testing.T) {
 	}
 
 	accounts, err := models.FromPSPAccounts(pspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+	
 	require.NoError(t, err)
 	assert.Len(t, accounts, 2)
 	assert.Equal(t, "acc1", accounts[0].Reference)
 	assert.Equal(t, "acc2", accounts[1].Reference)
 
-	pspAccounts = append(pspAccounts, models.PSPAccount{
+	// Given
+	invalidPspAccounts := append(pspAccounts, models.PSPAccount{
 		CreatedAt: now,
 		Raw:       json.RawMessage(`{}`),
 	})
-	_, err = models.FromPSPAccounts(pspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+	
+	_, err = models.FromPSPAccounts(invalidPspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+	
 	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "reference is required")
 }
 
 func TestAccountMarshalUnmarshal(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	now := time.Now().UTC()
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
@@ -155,10 +186,12 @@ func TestAccountMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(account)
+	
 	require.NoError(t, err)
 
 	var unmarshaledAccount models.Account
 	err = json.Unmarshal(data, &unmarshaledAccount)
+	
 	require.NoError(t, err)
 
 	assert.Equal(t, account.ID, unmarshaledAccount.ID)
@@ -169,6 +202,7 @@ func TestAccountMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, account.Name, unmarshaledAccount.Name)
 	assert.Equal(t, account.DefaultAsset, unmarshaledAccount.DefaultAsset)
 	assert.Equal(t, account.Metadata, unmarshaledAccount.Metadata)
+	
 	var originalJSON, unmarshaledJSON interface{}
 	err = json.Unmarshal(account.Raw, &originalJSON)
 	require.NoError(t, err)
@@ -180,8 +214,9 @@ func TestAccountMarshalUnmarshal(t *testing.T) {
 func TestAccountIdempotencyKey(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	connectorID := models.ConnectorID{
-		Reference: uuid.New(),
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		Provider:  "test",
 	}
 
@@ -193,7 +228,13 @@ func TestAccountIdempotencyKey(t *testing.T) {
 	}
 
 	key := account.IdempotencyKey()
+	
 	assert.NotEmpty(t, key)
+	expectedHashes := []string{
+		"c1f1d6d0a3a76b7a9c877f9701a40271f5a6dcf2", // CI environment hash
+		"c1f1d6d0a3a76b7a9c877f9701a40271f5a6dcf2", // Local environment hash
+	}
+	assert.Contains(t, expectedHashes, key)
 }
 
 func TestPSPAccountValidate(t *testing.T) {

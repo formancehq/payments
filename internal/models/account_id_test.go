@@ -14,94 +14,154 @@ func TestAccountID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		id := models.AccountID{
 			Reference:   "acc123",
 			ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, id.String())
+		result := id.String()
+		
+		assert.NotEmpty(t, result)
+		assert.Contains(t, result, "stripe:")
+		assert.Contains(t, result, "/acc123")
 	})
 
 	t.Run("AccountIDFromString", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
-		original := models.AccountID{
-			Reference:   "acc123",
-			ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
-		}
+		t.Run("valid ID", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			original := models.AccountID{
+				Reference:   "acc123",
+				ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
+			}
+			idStr := original.String()
+			
+			id, err := models.AccountIDFromString(idStr)
+			
+			require.NoError(t, err)
+			assert.Equal(t, original.Reference, id.Reference)
+			assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
+			assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
+		})
 		
-		idStr := original.String()
+		t.Run("invalid format", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			invalidStr := "invalid-format"
+			
+			_, err := models.AccountIDFromString(invalidStr)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid account ID format")
+		})
 		
-		id, err := models.AccountIDFromString(idStr)
-		// When/Then
-		require.NoError(t, err)
-		assert.Equal(t, original.Reference, id.Reference)
-		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
-		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
-		
-		_, err = models.AccountIDFromString("invalid-format")
-		assert.Error(t, err)
+		t.Run("empty string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			emptyStr := ""
+			
+			_, err := models.AccountIDFromString(emptyStr)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid account ID format")
+		})
 	})
 
 	t.Run("MustAccountIDFromString", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		original := models.AccountID{
 			Reference:   "acc123",
 			ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
 		}
-		
 		idStr := original.String()
 		
 		id := models.MustAccountIDFromString(idStr)
-		// When/Then
+		
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
-		
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		
 		// Given
 		id := models.AccountID{
 			Reference:   "acc123",
 			ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
 		}
+		
 		val, err := id.Value()
-		// When/Then
+		
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
-		original := models.AccountID{
-			Reference:   "acc123",
-			ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
-		}
+		t.Run("valid string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			original := models.AccountID{
+				Reference:   "acc123",
+				ConnectorID: models.ConnectorID{Provider: "stripe", Reference: uuid.New()},
+			}
+			idStr := original.String()
+			var accountID models.AccountID
+			
+			err := accountID.Scan(idStr)
+			
+			require.NoError(t, err)
+			assert.Equal(t, original.Reference, accountID.Reference)
+		})
 		
-		idStr := original.String()
+		t.Run("invalid type", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var accountID models.AccountID
+			invalidValue := 123
+			
+			err := accountID.Scan(invalidValue)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "cannot scan")
+		})
 		
-		var id models.AccountID
-		err := id.Scan(idStr)
-		// When/Then
-		require.NoError(t, err)
-		assert.Equal(t, original.Reference, id.Reference)
+		t.Run("invalid format", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var accountID models.AccountID
+			invalidStr := "invalid-format"
+			
+			err := accountID.Scan(invalidStr)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid account ID format")
+		})
 		
-		var id3 models.AccountID
-		err = id3.Scan(123)
-		assert.Error(t, err)
-		
-		var id4 models.AccountID
-		err = id4.Scan("invalid-format")
-		assert.Error(t, err)
+		t.Run("nil value", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var accountID models.AccountID
+			
+			err := accountID.Scan(nil)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "cannot scan")
+		})
 	})
 }
