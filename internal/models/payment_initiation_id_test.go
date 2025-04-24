@@ -42,18 +42,22 @@ func TestPaymentInitiationID(t *testing.T) {
 		
 		idStr := original.String()
 		
-		id, err := models.PaymentInitiationIDFromString(idStr)
+		// When
+			id, err := models.PaymentInitiationIDFromString(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
 		_, err = models.PaymentInitiationIDFromString("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		_, err = models.PaymentInitiationIDFromString("aW52YWxpZC1qc29u")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 
 	t.Run("MustPaymentInitiationIDFromString", func(t *testing.T) {
@@ -92,7 +96,8 @@ func TestPaymentInitiationID(t *testing.T) {
 		
 		val, err := id.Value()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
@@ -111,20 +116,25 @@ func TestPaymentInitiationID(t *testing.T) {
 		idStr := original.String()
 		
 		var id models.PaymentInitiationID
-		err := id.Scan(idStr)
+		// When
+			err := id.Scan(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
 		err = id.Scan(nil)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan(123)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 }

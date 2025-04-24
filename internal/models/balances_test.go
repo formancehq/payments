@@ -116,11 +116,13 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(balance)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var unmarshaledBalance models.Balance
 	err = json.Unmarshal(data, &unmarshaledBalance)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, balance.AccountID.String(), unmarshaledBalance.AccountID.String())
 	assert.Equal(t, balance.CreatedAt.Format(time.RFC3339Nano), unmarshaledBalance.CreatedAt.Format(time.RFC3339Nano))
@@ -136,7 +138,8 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 		"balance": 100
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &unmarshaledBalance)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }
 
 func TestFromPSPBalance(t *testing.T) {
@@ -156,7 +159,8 @@ func TestFromPSPBalance(t *testing.T) {
 	}
 
 	balance, err := models.FromPSPBalance(pspBalance, connectorID)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, "acc123", balance.AccountID.Reference)
 	assert.Equal(t, connectorID, balance.AccountID.ConnectorID)
@@ -172,7 +176,8 @@ func TestFromPSPBalance(t *testing.T) {
 	}
 
 	_, err = models.FromPSPBalance(invalidPSPBalance, connectorID)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }
 
 func TestFromPSPBalances(t *testing.T) {
@@ -200,7 +205,8 @@ func TestFromPSPBalances(t *testing.T) {
 	}
 
 	balances, err := models.FromPSPBalances(pspBalances, connectorID)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 	assert.Len(t, balances, 2)
 	assert.Equal(t, "acc1", balances[0].AccountID.Reference)
 	assert.Equal(t, "acc2", balances[1].AccountID.Reference)
@@ -213,5 +219,6 @@ func TestFromPSPBalances(t *testing.T) {
 		Asset:     "USD/2",
 	})
 	_, err = models.FromPSPBalances(invalidPSPBalances, connectorID)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }

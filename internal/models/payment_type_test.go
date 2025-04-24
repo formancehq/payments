@@ -29,6 +29,7 @@ func TestPaymentType(t *testing.T) {
 		for _, tc := range testCases {
 			result := tc.paymentType.String()
 			
+			// Then
 			assert.Equal(t, tc.expected, result)
 		}
 	})
@@ -53,9 +54,10 @@ func TestPaymentType(t *testing.T) {
 		for _, tc := range testCases {
 			paymentType, err := models.PaymentTypeFromString(tc.input)
 			
+			// Then
 			if tc.hasError {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid payment type")
+				assert.Contains(t, err.Error(), "unknown payment type")
 				assert.Equal(t, models.PAYMENT_TYPE_UNKNOWN, paymentType)
 			} else {
 				require.NoError(t, err)
@@ -80,6 +82,7 @@ func TestPaymentType(t *testing.T) {
 		for _, tc := range testCases {
 			result := models.MustPaymentTypeFromString(tc.input)
 			
+			// Then
 			assert.Equal(t, tc.expected, result)
 		}
 	})
@@ -101,6 +104,7 @@ func TestPaymentType(t *testing.T) {
 			var unmarshaled models.PaymentType
 			err = json.Unmarshal(data, &unmarshaled)
 			
+			// Then
 			require.NoError(t, err)
 			assert.Equal(t, paymentType, unmarshaled)
 		}
@@ -110,8 +114,9 @@ func TestPaymentType(t *testing.T) {
 		
 		err := json.Unmarshal([]byte(`"INVALID"`), &paymentType)
 		
+		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid payment type")
+		assert.Contains(t, err.Error(), "unknown payment type")
 	})
 
 	t.Run("Value", func(t *testing.T) {
@@ -122,6 +127,7 @@ func TestPaymentType(t *testing.T) {
 		
 		val, err := paymentType.Value()
 		
+		// Then
 		require.NoError(t, err)
 		assert.Equal(t, "PAY-IN", val)
 	})
@@ -133,60 +139,65 @@ func TestPaymentType(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var paymentType models.PaymentType
+			var paymentType1 models.PaymentType
 			
-			err := paymentType.Scan("PAY-IN")
+			err := paymentType1.Scan("PAY-IN")
 			
+			// Then
 			require.NoError(t, err)
-			assert.Equal(t, models.PAYMENT_TYPE_PAYIN, paymentType)
+			assert.Equal(t, models.PAYMENT_TYPE_PAYIN, paymentType1)
 		})
 		
 		t.Run("valid PAYOUT string", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var paymentType models.PaymentType
+			var paymentType2 models.PaymentType
 			
-			err := paymentType.Scan("PAYOUT")
+			err := paymentType2.Scan("PAYOUT")
 			
+			// Then
 			require.NoError(t, err)
-			assert.Equal(t, models.PAYMENT_TYPE_PAYOUT, paymentType)
+			assert.Equal(t, models.PAYMENT_TYPE_PAYOUT, paymentType2)
 		})
 		
 		t.Run("invalid type", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var paymentType models.PaymentType
+			var paymentType3 models.PaymentType
 			
-			err := paymentType.Scan(123)
+			err := paymentType3.Scan(123)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "unknown payment type")
 		})
 		
 		t.Run("invalid string", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var paymentType models.PaymentType
+			var paymentType4 models.PaymentType
 			
-			err := paymentType.Scan("INVALID")
+			err := paymentType4.Scan("INVALID")
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "invalid payment type")
+			assert.Contains(t, err.Error(), "unknown payment type")
 		})
 		
 		t.Run("nil value", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var paymentType models.PaymentType
+			var paymentType5 models.PaymentType
 			
-			err := paymentType.Scan(nil)
+			err := paymentType5.Scan(nil)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "payment type is nil")
 		})
 	})
 }

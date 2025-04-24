@@ -44,7 +44,8 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 
 		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		pid := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -117,7 +118,8 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 
 		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		pid := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -259,7 +261,8 @@ func TestFromPSPPayments(t *testing.T) {
 	}
 
 	payments, err := models.FromPSPPayments(pspPayments, connectorID)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 	assert.Len(t, payments, 2)
 	assert.Equal(t, "payment1", payments[0].Reference)
 	assert.Equal(t, "payment2", payments[1].Reference)
@@ -275,7 +278,8 @@ func TestFromPSPPayments(t *testing.T) {
 	}
 	pspPayments = append(pspPayments, invalidPayment)
 	_, err = models.FromPSPPayments(pspPayments, connectorID)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }
 
 func TestPaymentMarshalUnmarshal(t *testing.T) {
@@ -343,11 +347,13 @@ func TestPaymentMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(payment)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var unmarshaledPayment models.Payment
 	err = json.Unmarshal(data, &unmarshaledPayment)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	comparePayment(t, payment, unmarshaledPayment)
 }

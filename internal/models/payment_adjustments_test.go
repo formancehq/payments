@@ -80,11 +80,13 @@ func TestPaymentAdjustmentMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(adjustment)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, adjustmentID.String(), jsonMap["id"])
 	assert.Equal(t, "adj123", jsonMap["reference"])
@@ -145,7 +147,8 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, "adj123", adjustment.Reference)
 		assert.Equal(t, now.Format(time.RFC3339), adjustment.CreatedAt.Format(time.RFC3339))

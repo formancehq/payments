@@ -93,11 +93,13 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(paymentInitiation)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, paymentInitiation.ID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -115,10 +117,12 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 	paymentInitiation.DestinationAccountID = nil
 
 	data, err = json.Marshal(paymentInitiation)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)
@@ -167,11 +171,13 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(originalPI)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var pi models.PaymentInitiation
 	err = json.Unmarshal(data, &pi)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, originalPI.ID.String(), pi.ID.String())
 	assert.Equal(t, originalPI.ConnectorID.String(), pi.ConnectorID.String())
@@ -192,7 +198,8 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		"reference": "pi123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -200,7 +207,8 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		"reference": "pi123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -209,7 +217,8 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		"sourceAccountID": "invalid-account"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -218,7 +227,8 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		"destinationAccountID": "invalid-account"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }
 
 func TestFromPaymentInitiationToPSPPaymentInitiation(t *testing.T) {
@@ -328,11 +338,13 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(expanded)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, paymentInitiation.ID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -356,10 +368,12 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 	}
 
 	data, err = json.Marshal(expanded)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, "FAILED", jsonMap["status"])
 	assert.Equal(t, assert.AnError.Error(), jsonMap["error"])
@@ -373,10 +387,12 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 	}
 
 	data, err = json.Marshal(expanded)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)

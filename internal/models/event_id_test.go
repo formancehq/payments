@@ -46,18 +46,22 @@ func TestEventID(t *testing.T) {
 		
 		idStr := original.String()
 		
-		id, err := models.EventIDFromString(idStr)
+		// When
+			id, err := models.EventIDFromString(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
 		_, err = models.EventIDFromString("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		_, err = models.EventIDFromString("aW52YWxpZC1qc29u")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 
 
@@ -77,7 +81,8 @@ func TestEventID(t *testing.T) {
 		
 		val, err := id.Value()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
@@ -98,20 +103,25 @@ func TestEventID(t *testing.T) {
 		idStr := original.String()
 		
 		var id models.EventID
-		err := id.Scan(idStr)
+		// When
+			err := id.Scan(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
 		err = id.Scan(nil)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan(123)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 }

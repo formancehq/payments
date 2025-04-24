@@ -63,18 +63,22 @@ func TestPaymentAdjustmentID(t *testing.T) {
 		
 		idStr := original.String()
 		
-		id, err := models.PaymentAdjustmentIDFromString(idStr)
+		// When
+			id, err := models.PaymentAdjustmentIDFromString(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentID.PaymentReference.Reference, id.PaymentID.PaymentReference.Reference)
 		
 		_, err = models.PaymentAdjustmentIDFromString("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		_, err = models.PaymentAdjustmentIDFromString("aW52YWxpZC1qc29u")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 
 	t.Run("MustPaymentAdjustmentIDFromString", func(t *testing.T) {
@@ -133,7 +137,8 @@ func TestPaymentAdjustmentID(t *testing.T) {
 		
 		val, err := adjustmentID.Value()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, adjustmentID.String(), val)
 	})
 
@@ -162,20 +167,25 @@ func TestPaymentAdjustmentID(t *testing.T) {
 		idStr := original.String()
 		
 		var id models.PaymentAdjustmentID
-		err := id.Scan(idStr)
+		// When
+			err := id.Scan(idStr)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentID.PaymentReference.Reference, id.PaymentID.PaymentReference.Reference)
 		
 		err = id.Scan(nil)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan(123)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = id.Scan("invalid-base64")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 }

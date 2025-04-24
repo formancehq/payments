@@ -45,11 +45,13 @@ func TestPaymentInitiationReversalMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(reversal)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, reversalID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -92,11 +94,13 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(originalReversal)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var reversal models.PaymentInitiationReversal
 	err = json.Unmarshal(data, &reversal)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, originalReversal.ID.String(), reversal.ID.String())
 	assert.Equal(t, originalReversal.ConnectorID.String(), reversal.ConnectorID.String())
@@ -115,7 +119,8 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 		"reference": "rev123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &reversal)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "` + reversalID.String() + `",
@@ -124,7 +129,8 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 		"reference": "rev123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &reversal)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "` + reversalID.String() + `",
@@ -133,7 +139,8 @@ func TestPaymentInitiationReversalUnmarshalJSON(t *testing.T) {
 		"reference": "rev123"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &reversal)
-	assert.Error(t, err)
+	// Then
+			assert.Error(t, err)
 }
 
 func TestFromPaymentInitiationReversalToPSPPaymentInitiationReversal(t *testing.T) {
@@ -223,11 +230,13 @@ func TestPaymentInitiationReversalExpandedMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(expanded)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, reversalID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -246,10 +255,12 @@ func TestPaymentInitiationReversalExpandedMarshalJSON(t *testing.T) {
 	}
 
 	data, err = json.Marshal(expanded)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, "FAILED", jsonMap["status"])
 	assert.Equal(t, "test error", jsonMap["error"])

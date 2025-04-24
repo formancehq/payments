@@ -31,11 +31,13 @@ func TestBankAccountRelatedAccountMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(relatedAccount)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	require.NoError(t, err)
+	// Then
+			require.NoError(t, err)
 
 	assert.Equal(t, accountID.String(), jsonMap["accountID"])
 	assert.NotNil(t, jsonMap["createdAt"])
@@ -69,7 +71,8 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		var relatedAccount models.BankAccountRelatedAccount
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, accountID.String(), relatedAccount.AccountID.String())
 		assert.Equal(t, now.Format(time.RFC3339), relatedAccount.CreatedAt.Format(time.RFC3339))

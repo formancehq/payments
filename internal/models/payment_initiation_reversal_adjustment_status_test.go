@@ -53,9 +53,11 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 			status, err := models.PaymentInitiationReversalStatusFromString(tc.input)
 			if tc.hasError {
 		// When/Then
-				assert.Error(t, err)
+				// Then
+			assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				// Then
+			require.NoError(t, err)
 				assert.Equal(t, tc.expected, status)
 			}
 		}
@@ -75,10 +77,12 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		for _, status := range statuses {
 			data, err := json.Marshal(status)
 		// When/Then
+			// Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentInitiationReversalAdjustmentStatus
 			err = json.Unmarshal(data, &unmarshaled)
+			// Then
 			require.NoError(t, err)
 			
 			assert.Equal(t, status, unmarshaled)
@@ -86,7 +90,8 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		
 		var status models.PaymentInitiationReversalAdjustmentStatus
 		err := json.Unmarshal([]byte(`"INVALID"`), &status)
-		require.NoError(t, err) // Note: This doesn't return an error in the implementation
+		// Then
+			require.NoError(t, err) // Note: This doesn't return an error in the implementation
 		assert.Equal(t, models.PAYMENT_INITIATION_REVERSAL_STATUS_UNKNOWN, status)
 	})
 
@@ -96,7 +101,8 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		
 		val, err := models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING.Value()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, "PROCESSING", val)
 	})
 
@@ -106,13 +112,16 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		
 		var status models.PaymentInitiationReversalAdjustmentStatus
 		
-		err := status.Scan("PROCESSING")
+		// When
+			err := status.Scan("PROCESSING")
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING, status)
 		
 		err = status.Scan("PROCESSED")
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED, status)
 		
 		err = status.Scan(123)

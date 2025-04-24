@@ -65,9 +65,11 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 			status, err := models.PaymentInitiationAdjustmentStatusFromString(tc.input)
 			if tc.hasError {
 		// When/Then
-				assert.Error(t, err)
+				// Then
+			assert.Error(t, err)
 			} else {
-				require.NoError(t, err)
+				// Then
+			require.NoError(t, err)
 				assert.Equal(t, tc.expected, status)
 			}
 		}
@@ -88,10 +90,12 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		for _, status := range statuses {
 			data, err := json.Marshal(status)
 		// When/Then
+			// Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentInitiationAdjustmentStatus
 			err = json.Unmarshal(data, &unmarshaled)
+			// Then
 			require.NoError(t, err)
 			
 			assert.Equal(t, status, unmarshaled)
@@ -99,7 +103,8 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		
 		var status models.PaymentInitiationAdjustmentStatus
 		err := json.Unmarshal([]byte(`"INVALID"`), &status)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 
 	t.Run("Value", func(t *testing.T) {
@@ -108,7 +113,8 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		
 		val, err := models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.Value()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, "WAITING_FOR_VALIDATION", val)
 	})
 
@@ -118,19 +124,24 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		
 		var status models.PaymentInitiationAdjustmentStatus
 		
-		err := status.Scan("WAITING_FOR_VALIDATION")
+		// When
+			err := status.Scan("WAITING_FOR_VALIDATION")
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION, status)
 		
 		err = status.Scan("PROCESSING")
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, status)
 		
 		err = status.Scan(123)
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 		
 		err = status.Scan("INVALID")
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 }

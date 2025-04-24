@@ -42,7 +42,8 @@ func TestBankAccountObfuscate(t *testing.T) {
 
 		err := bankAccount.Obfuscate()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, "DE89**************3000", *bankAccount.IBAN)
 
@@ -87,7 +88,8 @@ func TestBankAccountObfuscate(t *testing.T) {
 
 		err := bankAccount.Obfuscate()
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 	})
 }
 

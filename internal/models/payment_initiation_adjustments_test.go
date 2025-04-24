@@ -76,11 +76,13 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 		data, err := json.Marshal(adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
 		err = json.Unmarshal(data, &jsonMap)
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), jsonMap["id"])
 		assert.Equal(t, "PROCESSED", jsonMap["status"])
@@ -110,11 +112,13 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 		data, err := json.Marshal(adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
 		err = json.Unmarshal(data, &jsonMap)
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), jsonMap["id"])
 		assert.Equal(t, "FAILED", jsonMap["status"])
@@ -142,11 +146,13 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 		data, err := json.Marshal(adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
 		err = json.Unmarshal(data, &jsonMap)
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), jsonMap["id"])
 		assert.Equal(t, "PROCESSED", jsonMap["status"])
@@ -193,7 +199,8 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), adjustment.ID.String())
 		assert.Equal(t, now.Format(time.RFC3339Nano), adjustment.CreatedAt.Format(time.RFC3339Nano))
@@ -223,7 +230,8 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
 		// When/Then
-		require.NoError(t, err)
+		// Then
+			require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), adjustment.ID.String())
 		assert.Equal(t, now.Format(time.RFC3339Nano), adjustment.CreatedAt.Format(time.RFC3339Nano))
@@ -249,7 +257,8 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
 		// When/Then
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
@@ -261,6 +270,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
 		// When/Then
-		assert.Error(t, err)
+		// Then
+			assert.Error(t, err)
 	})
 }

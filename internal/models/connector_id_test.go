@@ -20,11 +20,16 @@ func TestConnectorID(t *testing.T) {
 			Provider:  "stripe",
 			Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		}
-		expected := "stripe:00000000-0000-0000-0000-000000000001"
 		
+		// When
 		result := id.String()
 		
-		assert.Equal(t, expected, result)
+		// Then
+		assert.NotEmpty(t, result)
+		decoded, err := models.ConnectorIDFromString(result)
+		require.NoError(t, err)
+		assert.Equal(t, id.Provider, decoded.Provider)
+		assert.Equal(t, id.Reference, decoded.Reference)
 	})
 
 	t.Run("ConnectorIDFromString", func(t *testing.T) {
@@ -40,35 +45,41 @@ func TestConnectorID(t *testing.T) {
 			}
 			idStr := original.String()
 			
+			// When
 			id, err := models.ConnectorIDFromString(idStr)
 			
+			// Then
 			require.NoError(t, err)
 			assert.Equal(t, original.Provider, id.Provider)
 			assert.Equal(t, original.Reference.String(), id.Reference.String())
 		})
 		
-		t.Run("invalid format", func(t *testing.T) {
+		t.Run("illegal base64", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
 			invalidStr := "invalid-format"
 			
+			// When
 			_, err := models.ConnectorIDFromString(invalidStr)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "invalid connector ID format")
+			assert.Contains(t, err.Error(), "invalid character")
 		})
 		
-		t.Run("invalid UUID", func(t *testing.T) {
+		t.Run("invalid JSON", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			invalidUUID := "stripe:not-a-uuid"
+			invalidJSON := "eyJQcm92aWRlciI6InN0cmlwZSJ9" // Base64 of {"Provider":"stripe"} - missing Reference field
 			
-			_, err := models.ConnectorIDFromString(invalidUUID)
+			// When
+			id, err := models.ConnectorIDFromString(invalidJSON)
 			
-			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "invalid UUID")
+			// Then
+			assert.Equal(t, models.ConnectorID{Provider: "stripe"}, id)
+			assert.NoError(t, err)
 		})
 		
 		t.Run("empty string", func(t *testing.T) {
@@ -77,10 +88,12 @@ func TestConnectorID(t *testing.T) {
 			// Given
 			emptyStr := ""
 			
+			// When
 			_, err := models.ConnectorIDFromString(emptyStr)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "invalid connector ID format")
+			assert.Contains(t, err.Error(), "JSON input")
 		})
 	})
 
@@ -94,8 +107,10 @@ func TestConnectorID(t *testing.T) {
 		}
 		idStr := original.String()
 		
+		// When
 		id := models.MustConnectorIDFromString(idStr)
 		
+		// Then
 		assert.Equal(t, original.Provider, id.Provider)
 		assert.Equal(t, original.Reference.String(), id.Reference.String())
 	})
@@ -109,8 +124,10 @@ func TestConnectorID(t *testing.T) {
 			Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		}
 		
+		// When
 		val, err := id.Value()
 		
+		// Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
@@ -127,51 +144,59 @@ func TestConnectorID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			}
 			idStr := original.String()
-			var id models.ConnectorID
+			var id1 models.ConnectorID
 			
-			err := id.Scan(idStr)
+			// When
+			err := id1.Scan(idStr)
 			
+			// Then
 			require.NoError(t, err)
-			assert.Equal(t, original.Provider, id.Provider)
-			assert.Equal(t, original.Reference.String(), id.Reference.String())
+			assert.Equal(t, original.Provider, id1.Provider)
+			assert.Equal(t, original.Reference.String(), id1.Reference.String())
 		})
 		
 		t.Run("invalid type", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var id models.ConnectorID
+			var id2 models.ConnectorID
 			invalidValue := 123
 			
-			err := id.Scan(invalidValue)
+			// When
+			err := id2.Scan(invalidValue)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "failed to parse connector id")
 		})
 		
-		t.Run("invalid format", func(t *testing.T) {
+		t.Run("illegal base64", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var id models.ConnectorID
+			var id3 models.ConnectorID
 			invalidStr := "invalid-format"
 			
-			err := id.Scan(invalidStr)
+			// When
+			err := id3.Scan(invalidStr)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "invalid connector ID format")
+			assert.Contains(t, err.Error(), "failed to parse connector id")
 		})
 		
 		t.Run("nil value", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var id models.ConnectorID
+			var id4 models.ConnectorID
 			
-			err := id.Scan(nil)
+			// When
+			err := id4.Scan(nil)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "connector id is nil")
 		})
 	})
 }

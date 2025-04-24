@@ -40,8 +40,10 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+			// When
 			result := tc.status.String()
 			
+			// Then
 			assert.Equal(t, tc.expected, result)
 		}
 	})
@@ -76,11 +78,13 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+			// When
 			status, err := models.PaymentStatusFromString(tc.input)
 			
+			// Then
 			if tc.hasError {
 				assert.Error(t, err)
-				assert.Contains(t, err.Error(), "invalid payment status")
+				assert.Contains(t, err.Error(), "unknown payment status")
 				assert.Equal(t, models.PAYMENT_STATUS_UNKNOWN, status)
 			} else {
 				require.NoError(t, err)
@@ -103,8 +107,10 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+			// When
 			result := models.MustPaymentStatusFromString(tc.input)
 			
+			// Then
 			assert.Equal(t, tc.expected, result)
 		}
 	})
@@ -120,23 +126,31 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, status := range statuses {
+			// When
 			data, err := json.Marshal(status)
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentStatus
 			err = json.Unmarshal(data, &unmarshaled)
 			
+			// Then
 			require.NoError(t, err)
 			assert.Equal(t, status, unmarshaled)
 		}
 		
-		// Given
-		var status models.PaymentStatus
-		
-		err := json.Unmarshal([]byte(`"INVALID"`), &status)
-		
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid payment status")
+		t.Run("invalid string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var status1 models.PaymentStatus
+			
+			// When
+			err := json.Unmarshal([]byte(`"INVALID"`), &status1)
+			
+			// Then
+			assert.Error(t, err)
+				assert.Contains(t, err.Error(), "unknown payment status")
+		})
 	})
 
 	t.Run("Value", func(t *testing.T) {
@@ -145,8 +159,10 @@ func TestPaymentStatus(t *testing.T) {
 		// Given
 		status := models.PAYMENT_STATUS_SUCCEEDED
 		
+		// When
 		val, err := status.Value()
 		
+		// Then
 		require.NoError(t, err)
 		assert.Equal(t, "SUCCEEDED", val)
 	})
@@ -158,36 +174,42 @@ func TestPaymentStatus(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var status models.PaymentStatus
+			var status1 models.PaymentStatus
 			
-			err := status.Scan("SUCCEEDED")
+			// When
+			err := status1.Scan("SUCCEEDED")
 			
+			// Then
 			require.NoError(t, err)
-			assert.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, status)
+			assert.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, status1)
 		})
 		
 		t.Run("invalid type", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var status models.PaymentStatus
+			var status2 models.PaymentStatus
 			
-			err := status.Scan(123)
+			// When
+			err := status2.Scan(123)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "unknown payment status")
 		})
 		
 		t.Run("nil value", func(t *testing.T) {
 			t.Parallel()
 			
 			// Given
-			var status models.PaymentStatus
+			var status3 models.PaymentStatus
 			
-			err := status.Scan(nil)
+			// When
+			err := status3.Scan(nil)
 			
+			// Then
 			assert.Error(t, err)
-			assert.Contains(t, err.Error(), "cannot scan")
+			assert.Contains(t, err.Error(), "payment status is nil")
 		})
 	})
 }
