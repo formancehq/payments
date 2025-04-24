@@ -3,7 +3,7 @@ set dotenv-load
 default:
   @just --list
 
-pre-commit: tidy generate lint
+pre-commit: tidy generate lint openapi compile-plugins
 pc: pre-commit
 
 lint:
@@ -11,6 +11,9 @@ lint:
 
 tidy:
   @go mod tidy
+
+compile-plugins:
+  ./tools/compile-plugins/compile-plugin.sh list.go internal/connectors/plugins/public
 
 [group('openapi')]
 compile-connector-configs:
