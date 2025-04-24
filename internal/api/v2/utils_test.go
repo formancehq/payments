@@ -11,14 +11,15 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 func TestGetQueryBuilder(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
-	ctx, span := tracer.Start(ctx, "test")
+	tracer := noop.NewTracerProvider().Tracer("")
+	_, span := tracer.Start(ctx, "test")
 	defer span.End()
 
 	t.Run("with body", func(t *testing.T) {
@@ -72,8 +73,8 @@ func TestGetPagination(t *testing.T) {
 	t.Parallel()
 
 	ctx := context.Background()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
-	ctx, span := tracer.Start(ctx, "test")
+	tracer := noop.NewTracerProvider().Tracer("")
+	_, span := tracer.Start(ctx, "test")
 	defer span.End()
 
 	t.Run("with valid query", func(t *testing.T) {
