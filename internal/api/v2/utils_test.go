@@ -10,7 +10,6 @@ import (
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel/trace"
 	"go.opentelemetry.io/otel/trace/noop"
 )
 
