@@ -14,8 +14,8 @@ func TestPaymentType(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		testCases := []struct {
 			paymentType models.PaymentType
 			expected    string
@@ -27,15 +27,16 @@ func TestPaymentType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
-		// When/Then
-			assert.Equal(t, tc.expected, tc.paymentType.String())
+			result := tc.paymentType.String()
+			
+			assert.Equal(t, tc.expected, result)
 		}
 	})
 
 	t.Run("PaymentTypeFromString", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		testCases := []struct {
 			input    string
 			expected models.PaymentType
@@ -51,9 +52,11 @@ func TestPaymentType(t *testing.T) {
 		
 		for _, tc := range testCases {
 			paymentType, err := models.PaymentTypeFromString(tc.input)
+			
 			if tc.hasError {
-		// When/Then
 				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid payment type")
+				assert.Equal(t, models.PAYMENT_TYPE_UNKNOWN, paymentType)
 			} else {
 				require.NoError(t, err)
 				assert.Equal(t, tc.expected, paymentType)
@@ -63,8 +66,8 @@ func TestPaymentType(t *testing.T) {
 
 	t.Run("MustPaymentTypeFromString", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		testCases := []struct {
 			input    string
 			expected models.PaymentType
@@ -75,15 +78,16 @@ func TestPaymentType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
-		// When/Then
-			assert.Equal(t, tc.expected, models.MustPaymentTypeFromString(tc.input))
+			result := models.MustPaymentTypeFromString(tc.input)
+			
+			assert.Equal(t, tc.expected, result)
 		}
 	})
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
+		// Given
 		types := []models.PaymentType{
 			models.PAYMENT_TYPE_PAYIN,
 			models.PAYMENT_TYPE_PAYOUT,
@@ -92,50 +96,97 @@ func TestPaymentType(t *testing.T) {
 		
 		for _, paymentType := range types {
 			data, err := json.Marshal(paymentType)
-		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentType
 			err = json.Unmarshal(data, &unmarshaled)
-			require.NoError(t, err)
 			
+			require.NoError(t, err)
 			assert.Equal(t, paymentType, unmarshaled)
 		}
 		
+		// Given
 		var paymentType models.PaymentType
+		
 		err := json.Unmarshal([]byte(`"INVALID"`), &paymentType)
+		
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid payment type")
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
-		val, err := models.PAYMENT_TYPE_PAYIN.Value()
-		// When/Then
+		// Given
+		paymentType := models.PAYMENT_TYPE_PAYIN
+		
+		val, err := paymentType.Value()
+		
 		require.NoError(t, err)
 		assert.Equal(t, "PAY-IN", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
-		// Given
 		
-		var paymentType models.PaymentType
+		t.Run("valid PAY-IN string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var paymentType models.PaymentType
+			
+			err := paymentType.Scan("PAY-IN")
+			
+			require.NoError(t, err)
+			assert.Equal(t, models.PAYMENT_TYPE_PAYIN, paymentType)
+		})
 		
-		err := paymentType.Scan("PAY-IN")
-		// When/Then
-		require.NoError(t, err)
-		assert.Equal(t, models.PAYMENT_TYPE_PAYIN, paymentType)
+		t.Run("valid PAYOUT string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var paymentType models.PaymentType
+			
+			err := paymentType.Scan("PAYOUT")
+			
+			require.NoError(t, err)
+			assert.Equal(t, models.PAYMENT_TYPE_PAYOUT, paymentType)
+		})
 		
-		err = paymentType.Scan("PAYOUT")
-		require.NoError(t, err)
-		assert.Equal(t, models.PAYMENT_TYPE_PAYOUT, paymentType)
+		t.Run("invalid type", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var paymentType models.PaymentType
+			
+			err := paymentType.Scan(123)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "cannot scan")
+		})
 		
-		err = paymentType.Scan(123)
-		assert.Error(t, err)
+		t.Run("invalid string", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var paymentType models.PaymentType
+			
+			err := paymentType.Scan("INVALID")
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "invalid payment type")
+		})
 		
-		err = paymentType.Scan("INVALID")
-		assert.Error(t, err)
+		t.Run("nil value", func(t *testing.T) {
+			t.Parallel()
+			
+			// Given
+			var paymentType models.PaymentType
+			
+			err := paymentType.Scan(nil)
+			
+			assert.Error(t, err)
+			assert.Contains(t, err.Error(), "cannot scan")
+		})
 	})
 }
