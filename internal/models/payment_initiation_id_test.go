@@ -57,10 +57,12 @@ func TestPaymentInitiationID(t *testing.T) {
 		_, err = models.PaymentInitiationIDFromString("invalid-base64")
 		// Then
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "illegal base64")
 		
 		_, err = models.PaymentInitiationIDFromString("aW52YWxpZC1qc29u")
 		// Then
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unmarshal")
 	})
 
 	t.Run("MustPaymentInitiationIDFromString", func(t *testing.T) {
@@ -134,13 +136,16 @@ func TestPaymentInitiationID(t *testing.T) {
 		err = id.Scan(nil)
 		// Then
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot scan nil")
 		
 		err = id.Scan(123)
 		// Then
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "cannot scan")
 		
 		err = id.Scan("invalid-base64")
 		// Then
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "illegal base64")
 	})
 }
