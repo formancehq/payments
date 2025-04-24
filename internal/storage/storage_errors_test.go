@@ -19,7 +19,7 @@ func TestStorageErrorHandling(t *testing.T) {
 		nonExistentID := models.AccountID{
 			Reference: uuid.New().String(),
 			ConnectorID: models.ConnectorID{
-				Reference: uuid.New().String(),
+				Reference: uuid.New(),
 				Provider:  "test",
 			},
 		}
@@ -31,9 +31,12 @@ func TestStorageErrorHandling(t *testing.T) {
 
 	t.Run("PaymentsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := models.PaymentID{
-			ID: uuid.New().String(),
-			ConnectorID: models.ConnectorID{
+			PaymentReference: models.PaymentReference{
 				Reference: uuid.New().String(),
+				Type:      models.PAYMENT_TYPE_PAYIN,
+			},
+			ConnectorID: models.ConnectorID{
+				Reference: uuid.New(),
 				Provider:  "test",
 			},
 		}
@@ -61,7 +64,7 @@ func TestStorageErrorHandling(t *testing.T) {
 
 	t.Run("ConnectorsGet with non-existent ID", func(t *testing.T) {
 		nonExistentID := models.ConnectorID{
-			Reference: uuid.New().String(),
+			Reference: uuid.New(),
 			Provider:  "test",
 		}
 		connector, err := store.ConnectorsGet(ctx, nonExistentID)
