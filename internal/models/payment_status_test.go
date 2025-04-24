@@ -149,7 +149,7 @@ func TestPaymentStatus(t *testing.T) {
 			
 			// Then
 			assert.Error(t, err)
-				assert.Contains(t, err.Error(), "unknown payment status")
+			assert.Contains(t, err.Error(), "unknown payment status")
 		})
 	})
 
