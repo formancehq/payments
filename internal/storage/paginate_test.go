@@ -44,12 +44,11 @@ func TestPaginateWithOffset(t *testing.T) {
 	query := bunpaginate.OffsetPaginatedQuery[testFilter]{
 		PageSize: 2,
 		Order:    bunpaginate.OrderAsc,
-		OrderColumn: "id",
 	}
 	
 	storeImpl := s.(*store)
 	result, err := paginateWithOffset[testFilter, testModel](storeImpl, ctx, &query, func(q *bun.SelectQuery) *bun.SelectQuery {
-		return q.Model((*testModel)(nil))
+		return q.Model((*testModel)(nil)).Order("id ASC")
 	})
 	
 	require.NoError(t, err)
