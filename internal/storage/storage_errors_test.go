@@ -16,7 +16,13 @@ func TestStorageErrorHandling(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("AccountsGet with non-existent ID", func(t *testing.T) {
-		nonExistentID := models.AccountID(uuid.New())
+		nonExistentID := models.AccountID{
+			Reference: uuid.New().String(),
+			ConnectorID: models.ConnectorID{
+				Reference: uuid.New().String(),
+				Provider:  "test",
+			},
+		}
 		account, err := store.AccountsGet(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
@@ -24,7 +30,13 @@ func TestStorageErrorHandling(t *testing.T) {
 	})
 
 	t.Run("PaymentsGet with non-existent ID", func(t *testing.T) {
-		nonExistentID := models.PaymentID(uuid.New())
+		nonExistentID := models.PaymentID{
+			ID: uuid.New().String(),
+			ConnectorID: models.ConnectorID{
+				Reference: uuid.New().String(),
+				Provider:  "test",
+			},
+		}
 		payment, err := store.PaymentsGet(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)

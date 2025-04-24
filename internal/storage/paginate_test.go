@@ -44,7 +44,7 @@ func TestPaginateWithOffset(t *testing.T) {
 	query := bunpaginate.OffsetPaginatedQuery[testFilter]{
 		PageSize: 2,
 		Order:    bunpaginate.OrderAsc,
-		OrderColumn: "id",
+		OrderBy: "id",
 	}
 	
 	storeImpl := s.(*store)
