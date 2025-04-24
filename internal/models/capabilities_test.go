@@ -41,6 +41,7 @@ func TestCapabilityValue(t *testing.T) {
 
 	t.Run("valid capabilities", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		testCases := []struct {
 			capability models.Capability
@@ -62,6 +63,7 @@ func TestCapabilityValue(t *testing.T) {
 
 		for _, tc := range testCases {
 			val, err := tc.capability.Value()
+		// When/Then
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, val)
 		}
@@ -69,8 +71,10 @@ func TestCapabilityValue(t *testing.T) {
 
 	t.Run("invalid capability", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		val, err := models.CAPABILITY_FETCH_UNKNOWN.Value()
+		// When/Then
 		require.Error(t, err)
 		assert.Nil(t, val)
 		assert.Contains(t, err.Error(), "unknown capability")
@@ -87,6 +91,7 @@ func TestCapabilityScan(t *testing.T) {
 
 	t.Run("valid capabilities", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		testCases := []struct {
 			input    string
@@ -109,6 +114,7 @@ func TestCapabilityScan(t *testing.T) {
 		for _, tc := range testCases {
 			var capability models.Capability
 			err := capability.Scan(tc.input)
+		// When/Then
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, capability)
 		}
@@ -116,10 +122,12 @@ func TestCapabilityScan(t *testing.T) {
 
 	t.Run("invalid inputs", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		var capability models.Capability
 
 		err := capability.Scan(nil)
+		// When/Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "capability is nil")
 

@@ -128,6 +128,7 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 		tc := tc // Capture range variable
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
+		// Given
 
 			payment := &models.Payment{
 				Status:    tc.paymentStatus,
@@ -137,6 +138,7 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 			result := models.FromPaymentToPaymentInitiationAdjustment(payment, piID)
 
 			if tc.expectNil {
+		// When/Then
 				assert.Nil(t, result)
 				return
 			}

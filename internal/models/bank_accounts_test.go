@@ -31,6 +31,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 
 	t.Run("valid IBAN and account number", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		iban := "DE89370400440532013000"
 		accountNumber := "12345678901"
@@ -40,6 +41,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "DE89**************3000", *bankAccount.IBAN)
@@ -49,6 +51,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 
 	t.Run("invalid IBAN", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		iban := "DE89"
 		bankAccount := models.BankAccount{
@@ -56,12 +59,14 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
+		// When/Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "IBAN is not valid")
 	})
 
 	t.Run("invalid account number", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		accountNumber := "123"
 		bankAccount := models.BankAccount{
@@ -69,16 +74,19 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
+		// When/Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Account number is not valid")
 	})
 
 	t.Run("nil IBAN and account number", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		bankAccount := models.BankAccount{}
 
 		err := bankAccount.Obfuscate()
+		// When/Then
 		require.NoError(t, err)
 	})
 }
@@ -94,6 +102,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 	t.Run("with all bank account fields", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		iban := "DE89370400440532013000"
 		accountNumber := "12345678901"
@@ -126,6 +135,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
+		// When/Then
 		assert.Equal(t, "123 Main St", account.Metadata[models.BankAccountOwnerAddressLine1MetadataKey])
 		assert.Equal(t, "Apt 4B", account.Metadata[models.BankAccountOwnerAddressLine2MetadataKey])
 		assert.Equal(t, "Berlin", account.Metadata[models.BankAccountOwnerCityMetadataKey])
@@ -140,6 +150,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 	t.Run("with nil account metadata", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		bankAccount := &models.BankAccount{
 			ID:        uuid.New(),
@@ -158,12 +169,14 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
+		// When/Then
 		assert.NotNil(t, account.Metadata)
 		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
 	})
 
 	t.Run("with nil optional fields", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		bankAccount := &models.BankAccount{
 			ID:        uuid.New(),
@@ -182,6 +195,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
+		// When/Then
 		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
 		_, hasAccountNumber := account.Metadata[models.BankAccountAccountNumberMetadataKey]
 		assert.False(t, hasAccountNumber)

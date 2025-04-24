@@ -14,6 +14,7 @@ func TestPaymentInitiationType(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			initType models.PaymentInitiationType
@@ -25,12 +26,14 @@ func TestPaymentInitiationType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, tc.initType.String())
 		}
 	})
 
 	t.Run("PaymentInitiationTypeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -47,6 +50,7 @@ func TestPaymentInitiationType(t *testing.T) {
 		for _, tc := range testCases {
 			initType, err := models.PaymentInitiationTypeFromString(tc.input)
 			if tc.hasError {
+		// When/Then
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -57,6 +61,7 @@ func TestPaymentInitiationType(t *testing.T) {
 
 	t.Run("MustPaymentInitiationTypeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -68,6 +73,7 @@ func TestPaymentInitiationType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, models.MustPaymentInitiationTypeFromString(tc.input))
 		}
 		
@@ -75,6 +81,7 @@ func TestPaymentInitiationType(t *testing.T) {
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		types := []models.PaymentInitiationType{
 			models.PAYMENT_INITIATION_TYPE_UNKNOWN,
@@ -84,6 +91,7 @@ func TestPaymentInitiationType(t *testing.T) {
 		
 		for _, initType := range types {
 			data, err := json.Marshal(initType)
+		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentInitiationType
@@ -100,18 +108,22 @@ func TestPaymentInitiationType(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		val, err := models.PAYMENT_INITIATION_TYPE_TRANSFER.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, "TRANSFER", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		var initType models.PaymentInitiationType
 		
 		err := initType.Scan("TRANSFER")
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_TYPE_TRANSFER, initType)
 		

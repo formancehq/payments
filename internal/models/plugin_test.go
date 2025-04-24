@@ -20,15 +20,18 @@ func TestMockPlugin(t *testing.T) {
 
 	t.Run("Name", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		mockPlugin.EXPECT().Name().Return("test-plugin")
 		
 		name := mockPlugin.Name()
+		// When/Then
 		assert.Equal(t, "test-plugin", name)
 	})
 
 	t.Run("Install", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.InstallRequest{
@@ -42,6 +45,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().Install(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.Install(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Workflow, result.Workflow)
 		assert.Equal(t, resp.WebhooksConfigs, result.WebhooksConfigs)
@@ -49,6 +53,7 @@ func TestMockPlugin(t *testing.T) {
 
 	t.Run("Uninstall", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.UninstallRequest{
@@ -59,12 +64,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().Uninstall(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.Uninstall(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("CreateBankAccount", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.CreateBankAccountRequest{
@@ -77,12 +84,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateBankAccount(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateBankAccount(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("CreatePayout", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.CreatePayoutRequest{
@@ -96,12 +105,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreatePayout(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreatePayout(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("CreateTransfer", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.CreateTransferRequest{
@@ -115,12 +126,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateTransfer(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateTransfer(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("CreateWebhooks", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.CreateWebhooksRequest{
@@ -135,12 +148,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateWebhooks(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateWebhooks(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("FetchNextAccounts", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.FetchNextAccountsRequest{
@@ -157,12 +172,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextAccounts(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextAccounts(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("FetchNextBalances", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.FetchNextBalancesRequest{
@@ -179,12 +196,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextBalances(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextBalances(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("FetchNextExternalAccounts", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.FetchNextExternalAccountsRequest{
@@ -201,12 +220,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextExternalAccounts(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextExternalAccounts(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("FetchNextOthers", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.FetchNextOthersRequest{
@@ -224,12 +245,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextOthers(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextOthers(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("FetchNextPayments", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.FetchNextPaymentsRequest{
@@ -246,12 +269,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextPayments(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextPayments(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("PollPayoutStatus", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.PollPayoutStatusRequest{
@@ -265,12 +290,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().PollPayoutStatus(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.PollPayoutStatus(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("PollTransferStatus", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.PollTransferStatusRequest{
@@ -284,12 +311,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().PollTransferStatus(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.PollTransferStatus(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("ReversePayout", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.ReversePayoutRequest{
@@ -302,12 +331,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().ReversePayout(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.ReversePayout(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("ReverseTransfer", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.ReverseTransferRequest{
@@ -320,12 +351,14 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().ReverseTransfer(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.ReverseTransfer(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
 
 	t.Run("TranslateWebhook", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		ctx := context.Background()
 		req := models.TranslateWebhookRequest{
@@ -339,6 +372,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().TranslateWebhook(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.TranslateWebhook(ctx, req)
+		// When/Then
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})

@@ -60,6 +60,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 	t.Run("with no error", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		adjustment := models.PaymentInitiationAdjustment{
 			ID:        adjustmentID,
@@ -74,6 +75,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
@@ -91,6 +93,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 	t.Run("with error", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		testError := errors.New("test error")
 		adjustment := models.PaymentInitiationAdjustment{
@@ -106,6 +109,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
@@ -122,6 +126,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 
 	t.Run("with nil amount and asset", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		adjustment := models.PaymentInitiationAdjustment{
 			ID:        adjustmentID,
@@ -136,6 +141,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		var jsonMap map[string]interface{}
@@ -171,6 +177,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 	t.Run("valid adjustment with no error", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"id": "` + adjustmentID.String() + `",
@@ -185,6 +192,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), adjustment.ID.String())
@@ -198,6 +206,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 	t.Run("valid adjustment with error", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"id": "` + adjustmentID.String() + `",
@@ -213,6 +222,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, adjustmentID.String(), adjustment.ID.String())
@@ -227,6 +237,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid ID", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"id": "invalid-id",
@@ -237,16 +248,19 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		assert.Error(t, err)
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{invalid json}`
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		assert.Error(t, err)
 	})
 }

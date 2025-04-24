@@ -28,6 +28,7 @@ func TestFromPSPAccount(t *testing.T) {
 
 	t.Run("valid account", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		pspAccount := models.PSPAccount{
 			Reference: "acc123",
@@ -41,6 +42,7 @@ func TestFromPSPAccount(t *testing.T) {
 		}
 
 		account, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, pspAccount.Reference, account.Reference)
@@ -55,12 +57,14 @@ func TestFromPSPAccount(t *testing.T) {
 
 	t.Run("validation errors", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		pspAccount := models.PSPAccount{
 			CreatedAt: now,
 			Raw:       json.RawMessage(`{}`),
 		}
 		_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
+		// When/Then
 		assert.Error(t, err)
 
 		pspAccount = models.PSPAccount{

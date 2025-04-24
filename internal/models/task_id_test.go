@@ -14,6 +14,7 @@ func TestTaskID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.TaskID{
 			Reference: "task123",
@@ -23,11 +24,13 @@ func TestTaskID(t *testing.T) {
 			},
 		}
 		
+		// When/Then
 		assert.NotEmpty(t, id.String())
 	})
 
 	t.Run("TaskIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.TaskID{
 			Reference: "task123",
@@ -40,6 +43,7 @@ func TestTaskID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.TaskIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -54,6 +58,7 @@ func TestTaskID(t *testing.T) {
 
 	t.Run("MustTaskIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.TaskID{
 			Reference: "task123",
@@ -66,6 +71,7 @@ func TestTaskID(t *testing.T) {
 		idStr := original.String()
 		
 		id := models.MustTaskIDFromString(idStr)
+		// When/Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -73,6 +79,7 @@ func TestTaskID(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.TaskID{
 			Reference: "task123",
@@ -83,12 +90,14 @@ func TestTaskID(t *testing.T) {
 		}
 		
 		val, err := id.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.TaskID{
 			Reference: "task123",
@@ -102,6 +111,7 @@ func TestTaskID(t *testing.T) {
 		
 		var id models.TaskID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)

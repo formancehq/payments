@@ -24,6 +24,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 
 	t.Run("parent reference is empty", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		pspPayment := models.PSPPayment{
 			ParentReference:        "",
@@ -42,6 +43,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 		}
 
 		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		// When/Then
 		require.NoError(t, err)
 
 		pid := models.PaymentID{
@@ -95,6 +97,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 
 	t.Run("parent reference is not empty", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		pspPayment := models.PSPPayment{
 			ParentReference:             "parent_reference",
@@ -113,6 +116,7 @@ func TestFromPSPPaymentToPayment(t *testing.T) {
 		}
 
 		actual, err := models.FromPSPPaymentToPayment(pspPayment, connectorID)
+		// When/Then
 		require.NoError(t, err)
 
 		pid := models.PaymentID{

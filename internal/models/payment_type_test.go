@@ -14,6 +14,7 @@ func TestPaymentType(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			paymentType models.PaymentType
@@ -26,12 +27,14 @@ func TestPaymentType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, tc.paymentType.String())
 		}
 	})
 
 	t.Run("PaymentTypeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -49,6 +52,7 @@ func TestPaymentType(t *testing.T) {
 		for _, tc := range testCases {
 			paymentType, err := models.PaymentTypeFromString(tc.input)
 			if tc.hasError {
+		// When/Then
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -59,6 +63,7 @@ func TestPaymentType(t *testing.T) {
 
 	t.Run("MustPaymentTypeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -70,12 +75,14 @@ func TestPaymentType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, models.MustPaymentTypeFromString(tc.input))
 		}
 	})
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		types := []models.PaymentType{
 			models.PAYMENT_TYPE_PAYIN,
@@ -85,6 +92,7 @@ func TestPaymentType(t *testing.T) {
 		
 		for _, paymentType := range types {
 			data, err := json.Marshal(paymentType)
+		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentType
@@ -101,18 +109,22 @@ func TestPaymentType(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		val, err := models.PAYMENT_TYPE_PAYIN.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, "PAY-IN", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		var paymentType models.PaymentType
 		
 		err := paymentType.Scan("PAY-IN")
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_TYPE_PAYIN, paymentType)
 		

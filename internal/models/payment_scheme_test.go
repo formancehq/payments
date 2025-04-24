@@ -14,6 +14,7 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			scheme   models.PaymentScheme
@@ -47,12 +48,14 @@ func TestPaymentScheme(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, tc.scheme.String())
 		}
 	})
 
 	t.Run("PaymentSchemeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -90,6 +93,7 @@ func TestPaymentScheme(t *testing.T) {
 		for _, tc := range testCases {
 			scheme, err := models.PaymentSchemeFromString(tc.input)
 			if tc.hasError {
+		// When/Then
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -100,6 +104,7 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("MustPaymentSchemeFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -111,12 +116,14 @@ func TestPaymentScheme(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, models.MustPaymentSchemeFromString(tc.input))
 		}
 	})
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		schemes := []models.PaymentScheme{
 			models.PAYMENT_SCHEME_CARD_VISA,
@@ -126,6 +133,7 @@ func TestPaymentScheme(t *testing.T) {
 		
 		for _, scheme := range schemes {
 			data, err := json.Marshal(scheme)
+		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentScheme
@@ -145,18 +153,22 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		val, err := models.PAYMENT_SCHEME_CARD_VISA.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, "CARD_VISA", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		var scheme models.PaymentScheme
 		
 		err := scheme.Scan("CARD_VISA")
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_SCHEME_CARD_VISA, scheme)
 		

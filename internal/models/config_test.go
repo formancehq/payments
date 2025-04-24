@@ -67,6 +67,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 	t.Run("valid config", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"name": "test-config",
@@ -76,6 +77,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
@@ -85,6 +87,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 	t.Run("default polling period", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"name": "test-config",
@@ -93,6 +96,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
@@ -102,6 +106,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid polling period", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"name": "test-config",
@@ -111,11 +116,13 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
+		// When/Then
 		require.Error(t, err)
 	})
 
 	t.Run("zero values", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"name": "test-config",
@@ -125,6 +132,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
@@ -134,11 +142,13 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid json", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{invalid json}`
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
+		// When/Then
 		require.Error(t, err)
 	})
 }

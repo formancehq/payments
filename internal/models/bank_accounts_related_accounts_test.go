@@ -57,6 +57,7 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		encodedAccountID := accountID.String()
 		
@@ -67,6 +68,7 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 
 		var relatedAccount models.BankAccountRelatedAccount
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, accountID.String(), relatedAccount.AccountID.String())
@@ -75,16 +77,19 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{invalid json}`
 
 		var relatedAccount models.BankAccountRelatedAccount
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
+		// When/Then
 		require.Error(t, err)
 	})
 
 	t.Run("invalid accountID", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"accountID": "invalid-account-id",
@@ -93,6 +98,7 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 
 		var relatedAccount models.BankAccountRelatedAccount
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
+		// When/Then
 		require.Error(t, err)
 	})
 }

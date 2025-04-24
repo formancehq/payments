@@ -15,6 +15,7 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -30,11 +31,13 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 			Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 		}
 		
+		// When/Then
 		assert.NotEmpty(t, adjustmentID.String())
 	})
 
 	t.Run("PaymentInitiationReversalAdjustmentIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -53,6 +56,7 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.PaymentInitiationReversalAdjustmentIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)
@@ -66,6 +70,7 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 
 	t.Run("MustPaymentInitiationReversalAdjustmentIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -84,12 +89,14 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		idStr := original.String()
 		
 		id := models.MustPaymentInitiationReversalAdjustmentIDFromString(idStr)
+		// When/Then
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -106,12 +113,14 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		}
 		
 		val, err := adjustmentID.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, adjustmentID.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -131,6 +140,7 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		
 		var id models.PaymentInitiationReversalAdjustmentID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)

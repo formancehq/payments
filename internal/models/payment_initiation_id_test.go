@@ -14,6 +14,7 @@ func TestPaymentInitiationID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.PaymentInitiationID{
 			Reference: "init123",
@@ -23,11 +24,13 @@ func TestPaymentInitiationID(t *testing.T) {
 			},
 		}
 		
+		// When/Then
 		assert.NotEmpty(t, id.String())
 	})
 
 	t.Run("PaymentInitiationIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationID{
 			Reference: "init123",
@@ -40,6 +43,7 @@ func TestPaymentInitiationID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.PaymentInitiationIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -54,6 +58,7 @@ func TestPaymentInitiationID(t *testing.T) {
 
 	t.Run("MustPaymentInitiationIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationID{
 			Reference: "init123",
@@ -66,6 +71,7 @@ func TestPaymentInitiationID(t *testing.T) {
 		idStr := original.String()
 		
 		id := models.MustPaymentInitiationIDFromString(idStr)
+		// When/Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -74,6 +80,7 @@ func TestPaymentInitiationID(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.PaymentInitiationID{
 			Reference: "init123",
@@ -84,12 +91,14 @@ func TestPaymentInitiationID(t *testing.T) {
 		}
 		
 		val, err := id.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationID{
 			Reference: "init123",
@@ -103,6 +112,7 @@ func TestPaymentInitiationID(t *testing.T) {
 		
 		var id models.PaymentInitiationID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)

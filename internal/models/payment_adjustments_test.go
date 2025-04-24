@@ -109,6 +109,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 	
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		paymentID := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -143,6 +144,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "adj123", adjustment.Reference)
@@ -155,16 +157,19 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{invalid json}`
 
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		require.Error(t, err)
 	})
 
 	t.Run("invalid ID", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"id": "invalid-id",
@@ -179,6 +184,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
+		// When/Then
 		require.Error(t, err)
 	})
 }

@@ -14,6 +14,7 @@ func TestEventID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		connectorID := &models.ConnectorID{
 			Provider:  "stripe",
@@ -25,11 +26,13 @@ func TestEventID(t *testing.T) {
 			ConnectorID:         connectorID,
 		}
 		
+		// When/Then
 		assert.NotEmpty(t, id.String())
 	})
 
 	t.Run("EventIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		connectorID := &models.ConnectorID{
 			Provider:  "stripe",
@@ -44,6 +47,7 @@ func TestEventID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.EventIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -59,6 +63,7 @@ func TestEventID(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		connectorID := &models.ConnectorID{
 			Provider:  "stripe",
@@ -71,12 +76,14 @@ func TestEventID(t *testing.T) {
 		}
 		
 		val, err := id.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		connectorID := &models.ConnectorID{
 			Provider:  "stripe",
@@ -92,6 +99,7 @@ func TestEventID(t *testing.T) {
 		
 		var id models.EventID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)

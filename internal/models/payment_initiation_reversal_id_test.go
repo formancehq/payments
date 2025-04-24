@@ -14,6 +14,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -23,11 +24,13 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 			},
 		}
 		
+		// When/Then
 		assert.NotEmpty(t, reversalID.String())
 	})
 
 	t.Run("PaymentInitiationReversalIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -40,6 +43,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.PaymentInitiationReversalIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -53,6 +57,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 
 	t.Run("MustPaymentInitiationReversalIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -65,12 +70,14 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		idStr := original.String()
 		
 		id := models.MustPaymentInitiationReversalIDFromString(idStr)
+		// When/Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -81,12 +88,14 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		}
 		
 		val, err := reversalID.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, reversalID.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
@@ -100,6 +109,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		
 		var id models.PaymentInitiationReversalID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)

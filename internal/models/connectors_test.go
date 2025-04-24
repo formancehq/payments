@@ -75,6 +75,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		encodedID := id.String()
 		
@@ -90,6 +91,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 
 		var connector models.Connector
 		err := json.Unmarshal([]byte(jsonData), &connector)
+		// When/Then
 		require.NoError(t, err)
 
 		assert.Equal(t, id.String(), connector.ID.String())
@@ -106,16 +108,19 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 
 	t.Run("invalid JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{invalid json}`
 
 		var connector models.Connector
 		err := json.Unmarshal([]byte(jsonData), &connector)
+		// When/Then
 		require.Error(t, err)
 	})
 
 	t.Run("invalid ID", func(t *testing.T) {
 		t.Parallel()
+		// Given
 
 		jsonData := `{
 			"id": "invalid-id",
@@ -129,6 +134,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 
 		var connector models.Connector
 		err := json.Unmarshal([]byte(jsonData), &connector)
+		// When/Then
 		require.Error(t, err)
 	})
 }

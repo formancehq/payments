@@ -14,6 +14,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			status   models.PaymentStatus
@@ -39,12 +40,14 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, tc.status.String())
 		}
 	})
 
 	t.Run("PaymentStatusFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -74,6 +77,7 @@ func TestPaymentStatus(t *testing.T) {
 		for _, tc := range testCases {
 			status, err := models.PaymentStatusFromString(tc.input)
 			if tc.hasError {
+		// When/Then
 				assert.Error(t, err)
 				assert.Equal(t, models.PAYMENT_STATUS_UNKNOWN, status)
 			} else {
@@ -85,6 +89,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("MustPaymentStatusFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -96,12 +101,14 @@ func TestPaymentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, models.MustPaymentStatusFromString(tc.input))
 		}
 	})
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		statuses := []models.PaymentStatus{
 			models.PAYMENT_STATUS_PENDING,
@@ -111,6 +118,7 @@ func TestPaymentStatus(t *testing.T) {
 		
 		for _, status := range statuses {
 			data, err := json.Marshal(status)
+		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentStatus
@@ -127,18 +135,22 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		val, err := models.PAYMENT_STATUS_SUCCEEDED.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, "SUCCEEDED", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		var status models.PaymentStatus
 		
 		err := status.Scan("SUCCEEDED")
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, status)
 		

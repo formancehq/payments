@@ -14,6 +14,7 @@ func TestPaymentID(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -25,11 +26,13 @@ func TestPaymentID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
+		// When/Then
 		assert.NotEmpty(t, id.String())
 	})
 
 	t.Run("PaymentIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -45,6 +48,7 @@ func TestPaymentID(t *testing.T) {
 		idStr := original.String()
 		
 		id, err := models.PaymentIDFromString(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.PaymentReference.Reference, id.PaymentReference.Reference)
 		assert.Equal(t, original.PaymentReference.Type, id.PaymentReference.Type)
@@ -57,6 +61,7 @@ func TestPaymentID(t *testing.T) {
 
 	t.Run("MustPaymentIDFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -72,6 +77,7 @@ func TestPaymentID(t *testing.T) {
 		idStr := original.String()
 		
 		id := models.MustPaymentIDFromString(idStr)
+		// When/Then
 		assert.Equal(t, original.PaymentReference.Reference, id.PaymentReference.Reference)
 		assert.Equal(t, original.PaymentReference.Type, id.PaymentReference.Type)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -80,6 +86,7 @@ func TestPaymentID(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		id := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -92,12 +99,14 @@ func TestPaymentID(t *testing.T) {
 			},
 		}
 		val, err := id.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		original := models.PaymentID{
 			PaymentReference: models.PaymentReference{
@@ -114,6 +123,7 @@ func TestPaymentID(t *testing.T) {
 		
 		var id models.PaymentID
 		err := id.Scan(idStr)
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, original.PaymentReference.Reference, id.PaymentReference.Reference)
 		assert.Equal(t, original.PaymentReference.Type, id.PaymentReference.Type)

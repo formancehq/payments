@@ -14,6 +14,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			status   models.PaymentInitiationAdjustmentStatus
@@ -32,12 +33,14 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+		// When/Then
 			assert.Equal(t, tc.expected, tc.status.String())
 		}
 	})
 
 	t.Run("PaymentInitiationAdjustmentStatusFromString", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		testCases := []struct {
 			input    string
@@ -61,6 +64,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		for _, tc := range testCases {
 			status, err := models.PaymentInitiationAdjustmentStatusFromString(tc.input)
 			if tc.hasError {
+		// When/Then
 				assert.Error(t, err)
 			} else {
 				require.NoError(t, err)
@@ -72,6 +76,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		statuses := []models.PaymentInitiationAdjustmentStatus{
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
@@ -82,6 +87,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		
 		for _, status := range statuses {
 			data, err := json.Marshal(status)
+		// When/Then
 			require.NoError(t, err)
 			
 			var unmarshaled models.PaymentInitiationAdjustmentStatus
@@ -98,18 +104,22 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		val, err := models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.Value()
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, "WAITING_FOR_VALIDATION", val)
 	})
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
+		// Given
 		
 		var status models.PaymentInitiationAdjustmentStatus
 		
 		err := status.Scan("WAITING_FOR_VALIDATION")
+		// When/Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION, status)
 		
