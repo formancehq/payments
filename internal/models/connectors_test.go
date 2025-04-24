@@ -92,10 +92,11 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		}`
 
 		var connector models.Connector
+		
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, id.String(), connector.ID.String())
 		assert.Equal(t, "Test Connector", connector.Name)

@@ -22,8 +22,10 @@ func TestTaskIDReference(t *testing.T) {
 		
 		reference := models.TaskIDReference("prefix", connectorID, "")
 		expected := "prefix-test-00000000-0000-0000-0000-000000000001"
-		// When/Then
-		assert.Equal(t, expected, reference)
+		
+		result := reference
+		
+		assert.Equal(t, expected, result)
 	})
 
 	t.Run("non-empty objectID", func(t *testing.T) {

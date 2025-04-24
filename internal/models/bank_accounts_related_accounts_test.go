@@ -69,10 +69,11 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		}`
 
 		var relatedAccount models.BankAccountRelatedAccount
+		
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, accountID.String(), relatedAccount.AccountID.String())
 		assert.Equal(t, now.Format(time.RFC3339), relatedAccount.CreatedAt.Format(time.RFC3339))

@@ -26,8 +26,10 @@ func TestPaymentInitiationType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
-		// When/Then
-			assert.Equal(t, tc.expected, tc.initType.String())
+			result := tc.initType.String()
+			
+			// Then
+			assert.Equal(t, tc.expected, result)
 		}
 	})
 
@@ -50,9 +52,9 @@ func TestPaymentInitiationType(t *testing.T) {
 		for _, tc := range testCases {
 			initType, err := models.PaymentInitiationTypeFromString(tc.input)
 			if tc.hasError {
-		// When/Then
+				
 				// Then
-			assert.Error(t, err)
+				assert.Error(t, err)
 			} else {
 				// Then
 			require.NoError(t, err)
@@ -75,8 +77,10 @@ func TestPaymentInitiationType(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
-		// When/Then
-			assert.Equal(t, tc.expected, models.MustPaymentInitiationTypeFromString(tc.input))
+			result := models.MustPaymentInitiationTypeFromString(tc.input)
+			
+			// Then
+			assert.Equal(t, tc.expected, result)
 		}
 		
 	})
@@ -93,7 +97,7 @@ func TestPaymentInitiationType(t *testing.T) {
 		
 		for _, initType := range types {
 			data, err := json.Marshal(initType)
-		// When/Then
+			
 			// Then
 			require.NoError(t, err)
 			
@@ -116,9 +120,9 @@ func TestPaymentInitiationType(t *testing.T) {
 		// Given
 		
 		val, err := models.PAYMENT_INITIATION_TYPE_TRANSFER.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "TRANSFER", val)
 	})
 
@@ -129,9 +133,9 @@ func TestPaymentInitiationType(t *testing.T) {
 		var initType models.PaymentInitiationType
 		
 		err := initType.Scan("TRANSFER")
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_TYPE_TRANSFER, initType)
 		
 		err = initType.Scan(nil)

@@ -33,8 +33,11 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
-		// When/Then
-			assert.Equal(t, tc.expected, tc.status.String())
+			// When
+			result := tc.status.String()
+			
+			// Then
+			assert.Equal(t, tc.expected, result)
 		}
 	})
 

@@ -24,8 +24,11 @@ func TestStateID(t *testing.T) {
 			},
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, id.String())
+		// When
+		result := id.String()
+		
+		// Then
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("StateIDFromString", func(t *testing.T) {
@@ -43,10 +46,10 @@ func TestStateID(t *testing.T) {
 		idStr := original.String()
 		
 		// When
-			id, err := models.StateIDFromString(idStr)
-		// When/Then
+		id, err := models.StateIDFromString(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -74,8 +77,10 @@ func TestStateID(t *testing.T) {
 		
 		idStr := original.String()
 		
+		// When
 		id := models.MustStateIDFromString(idStr)
-		// When/Then
+		
+		// Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -94,10 +99,11 @@ func TestStateID(t *testing.T) {
 			},
 		}
 		
+		// When
 		val, err := id.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
@@ -117,10 +123,10 @@ func TestStateID(t *testing.T) {
 		
 		var id models.StateID
 		// When
-			err := id.Scan(idStr)
-		// When/Then
+		err := id.Scan(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())

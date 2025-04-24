@@ -24,8 +24,11 @@ func TestTaskID(t *testing.T) {
 			},
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, id.String())
+		// When
+		result := id.String()
+		
+		// Then
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("TaskIDFromString", func(t *testing.T) {
@@ -43,10 +46,10 @@ func TestTaskID(t *testing.T) {
 		idStr := original.String()
 		
 		// When
-			id, err := models.TaskIDFromString(idStr)
-		// When/Then
+		id, err := models.TaskIDFromString(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -74,8 +77,10 @@ func TestTaskID(t *testing.T) {
 		
 		idStr := original.String()
 		
+		// When
 		id := models.MustTaskIDFromString(idStr)
-		// When/Then
+		
+		// Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -93,10 +98,11 @@ func TestTaskID(t *testing.T) {
 			},
 		}
 		
+		// When
 		val, err := id.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
@@ -116,10 +122,10 @@ func TestTaskID(t *testing.T) {
 		
 		var id models.TaskID
 		// When
-			err := id.Scan(idStr)
-		// When/Then
+		err := id.Scan(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())

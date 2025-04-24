@@ -138,7 +138,7 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 			result := models.FromPaymentToPaymentInitiationAdjustment(payment, piID)
 
 			if tc.expectNil {
-		// When/Then
+				
 				assert.Nil(t, result)
 				return
 			}

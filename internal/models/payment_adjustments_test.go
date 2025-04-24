@@ -146,9 +146,9 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "adj123", adjustment.Reference)
 		assert.Equal(t, now.Format(time.RFC3339), adjustment.CreatedAt.Format(time.RFC3339))

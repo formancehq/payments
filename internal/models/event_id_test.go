@@ -26,8 +26,11 @@ func TestEventID(t *testing.T) {
 			ConnectorID:         connectorID,
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, id.String())
+		// When
+		result := id.String()
+		
+		// Then
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("EventIDFromString", func(t *testing.T) {
@@ -47,10 +50,10 @@ func TestEventID(t *testing.T) {
 		idStr := original.String()
 		
 		// When
-			id, err := models.EventIDFromString(idStr)
-		// When/Then
+		id, err := models.EventIDFromString(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
@@ -79,10 +82,11 @@ func TestEventID(t *testing.T) {
 			ConnectorID:         connectorID,
 		}
 		
+		// When
 		val, err := id.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
 	})
 
@@ -104,10 +108,10 @@ func TestEventID(t *testing.T) {
 		
 		var id models.EventID
 		// When
-			err := id.Scan(idStr)
-		// When/Then
+		err := id.Scan(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.EventIdempotencyKey, id.EventIdempotencyKey)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())

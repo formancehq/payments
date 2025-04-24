@@ -75,7 +75,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		// When/Then
+		
 		// Then
 			require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		// When/Then
+		
 		// Then
 			require.NoError(t, err)
 
@@ -145,7 +145,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		// When/Then
+		
 		// Then
 			require.NoError(t, err)
 

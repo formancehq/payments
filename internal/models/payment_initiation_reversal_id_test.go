@@ -24,8 +24,11 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 			},
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, reversalID.String())
+		// When
+		result := reversalID.String()
+		
+		// Then
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("PaymentInitiationReversalIDFromString", func(t *testing.T) {
@@ -43,10 +46,10 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		idStr := original.String()
 		
 		// When
-			id, err := models.PaymentInitiationReversalIDFromString(idStr)
-		// When/Then
+		id, err := models.PaymentInitiationReversalIDFromString(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		
@@ -73,8 +76,10 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		
 		idStr := original.String()
 		
+		// When
 		id := models.MustPaymentInitiationReversalIDFromString(idStr)
-		// When/Then
+		
+		// Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 	})
@@ -91,10 +96,11 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 			},
 		}
 		
+		// When
 		val, err := reversalID.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, reversalID.String(), val)
 	})
 
@@ -114,10 +120,10 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 		
 		var id models.PaymentInitiationReversalID
 		// When
-			err := id.Scan(idStr)
-		// When/Then
+		err := id.Scan(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		

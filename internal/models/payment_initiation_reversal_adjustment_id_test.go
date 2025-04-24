@@ -31,8 +31,11 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 			Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 		}
 		
-		// When/Then
-		assert.NotEmpty(t, adjustmentID.String())
+		// When
+		result := adjustmentID.String()
+		
+		// Then
+		assert.NotEmpty(t, result)
 	})
 
 	t.Run("PaymentInitiationReversalAdjustmentIDFromString", func(t *testing.T) {
@@ -56,10 +59,10 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		idStr := original.String()
 		
 		// When
-			id, err := models.PaymentInitiationReversalAdjustmentIDFromString(idStr)
-		// When/Then
+		id, err := models.PaymentInitiationReversalAdjustmentIDFromString(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)
 		
@@ -92,8 +95,10 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		
 		idStr := original.String()
 		
+		// When
 		id := models.MustPaymentInitiationReversalAdjustmentIDFromString(idStr)
-		// When/Then
+		
+		// Then
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)
 	})
@@ -116,10 +121,11 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 			Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 		}
 		
+		// When
 		val, err := adjustmentID.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, adjustmentID.String(), val)
 	})
 
@@ -145,10 +151,10 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		
 		var id models.PaymentInitiationReversalAdjustmentID
 		// When
-			err := id.Scan(idStr)
-		// When/Then
+		err := id.Scan(idStr)
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, original.Status, id.Status)
 		assert.Equal(t, original.PaymentInitiationReversalID.Reference, id.PaymentInitiationReversalID.Reference)
 		

@@ -25,7 +25,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().Name().Return("test-plugin")
 		
 		name := mockPlugin.Name()
-		// When/Then
+		
 		assert.Equal(t, "test-plugin", name)
 	})
 

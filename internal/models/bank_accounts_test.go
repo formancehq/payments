@@ -41,9 +41,9 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "DE89**************3000", *bankAccount.IBAN)
 
@@ -60,7 +60,8 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "IBAN is not valid")
 	})
@@ -75,7 +76,8 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Account number is not valid")
 	})
@@ -87,9 +89,9 @@ func TestBankAccountObfuscate(t *testing.T) {
 		bankAccount := models.BankAccount{}
 
 		err := bankAccount.Obfuscate()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -137,7 +139,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
-		// When/Then
+		// Then
 		assert.Equal(t, "123 Main St", account.Metadata[models.BankAccountOwnerAddressLine1MetadataKey])
 		assert.Equal(t, "Apt 4B", account.Metadata[models.BankAccountOwnerAddressLine2MetadataKey])
 		assert.Equal(t, "Berlin", account.Metadata[models.BankAccountOwnerCityMetadataKey])
@@ -171,7 +173,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
-		// When/Then
+		// Then
 		assert.NotNil(t, account.Metadata)
 		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
 	})
@@ -197,7 +199,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
-		// When/Then
+		// Then
 		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
 		_, hasAccountNumber := account.Metadata[models.BankAccountAccountNumberMetadataKey]
 		assert.False(t, hasAccountNumber)

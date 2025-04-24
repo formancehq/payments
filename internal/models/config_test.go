@@ -80,9 +80,9 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 5*time.Minute, config.PollingPeriod)
@@ -100,9 +100,9 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 2*time.Minute, config.PollingPeriod) // Default value
@@ -137,9 +137,9 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 0*time.Second, config.PollingPeriod) // Zero is allowed
