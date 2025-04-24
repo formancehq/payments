@@ -384,7 +384,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       []byte(`{}`),
 	}
-	assert.Error(t, payment.Validate())
+	err := payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "reference is required")
 
 	payment = models.PSPPayment{
 		Reference: "payment123",
@@ -395,7 +397,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       []byte(`{}`),
 	}
-	assert.Error(t, payment.Validate())
+	err = payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "createdAt is required")
 
 	payment = models.PSPPayment{
 		Reference: "payment123",
@@ -406,7 +410,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       []byte(`{}`),
 	}
-	assert.Error(t, payment.Validate())
+	err = payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "type is required")
 
 	payment = models.PSPPayment{
 		Reference: "payment123",
@@ -417,7 +423,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       []byte(`{}`),
 	}
-	assert.Error(t, payment.Validate())
+	err = payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "amount is required")
 
 	payment = models.PSPPayment{
 		Reference: "payment123",
@@ -429,7 +437,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       []byte(`{}`),
 	}
-	assert.Error(t, payment.Validate())
+	err = payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid asset")
 
 	payment = models.PSPPayment{
 		Reference: "payment123",
@@ -440,7 +450,9 @@ func TestPSPPaymentValidate(t *testing.T) {
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 	}
-	assert.Error(t, payment.Validate())
+	err = payment.Validate()
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "raw is required")
 }
 
 func TestPSPPaymentHasParent(t *testing.T) {
