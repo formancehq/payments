@@ -68,11 +68,11 @@ func TestPaymentInitiationAdjustmentID(t *testing.T) {
 		
 		_, err = models.PaymentInitiationAdjustmentIDFromString("invalid-base64")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		_, err = models.PaymentInitiationAdjustmentIDFromString("aW52YWxpZC1qc29u")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("MustPaymentInitiationAdjustmentIDFromString", func(t *testing.T) {
@@ -160,14 +160,14 @@ func TestPaymentInitiationAdjustmentID(t *testing.T) {
 		
 		err = id.Scan(nil)
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		err = id.Scan(123)
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 		
 		err = id.Scan("invalid-base64")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 }
