@@ -231,60 +231,76 @@ func compareAdjustments(t *testing.T, expected, actual []models.PaymentAdjustmen
 func TestFromPSPPayments(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	now := time.Now().UTC()
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
 		Provider:  "test",
 	}
 
-	pspPayments := []models.PSPPayment{
-		{
-			Reference:     "payment1",
-			CreatedAt:     now,
-			Type:          models.PAYMENT_TYPE_PAYIN,
-			Amount:        big.NewInt(100),
-			Asset:         "USD/2",
-			Scheme:        models.PAYMENT_SCHEME_OTHER,
-			Status:        models.PAYMENT_STATUS_SUCCEEDED,
-			Raw:           []byte(`{}`),
-		},
-		{
-			Reference:     "payment2",
-			CreatedAt:     now,
-			Type:          models.PAYMENT_TYPE_PAYOUT,
-			Amount:        big.NewInt(200),
-			Asset:         "EUR/2",
-			Scheme:        models.PAYMENT_SCHEME_OTHER,
-			Status:        models.PAYMENT_STATUS_PENDING,
-			Raw:           []byte(`{}`),
-		},
-	}
-
-	payments, err := models.FromPSPPayments(pspPayments, connectorID)
-	// Then
-			require.NoError(t, err)
-	assert.Len(t, payments, 2)
-	assert.Equal(t, "payment1", payments[0].Reference)
-	assert.Equal(t, "payment2", payments[1].Reference)
-
-	invalidPayment := models.PSPPayment{
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	pspPayments = append(pspPayments, invalidPayment)
-	_, err = models.FromPSPPayments(pspPayments, connectorID)
-	// Then
-			assert.Error(t, err)
+	t.Run("valid payments", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		pspPayments := []models.PSPPayment{
+			{
+				Reference:     "payment1",
+				CreatedAt:     now,
+				Type:          models.PAYMENT_TYPE_PAYIN,
+				Amount:        big.NewInt(100),
+				Asset:         "USD/2",
+				Scheme:        models.PAYMENT_SCHEME_OTHER,
+				Status:        models.PAYMENT_STATUS_SUCCEEDED,
+				Raw:           []byte(`{}`),
+			},
+			{
+				Reference:     "payment2",
+				CreatedAt:     now,
+				Type:          models.PAYMENT_TYPE_PAYOUT,
+				Amount:        big.NewInt(200),
+				Asset:         "EUR/2",
+				Scheme:        models.PAYMENT_SCHEME_OTHER,
+				Status:        models.PAYMENT_STATUS_PENDING,
+				Raw:           []byte(`{}`),
+			},
+		}
+		
+		payments, err := models.FromPSPPayments(pspPayments, connectorID)
+		
+		// Then
+		require.NoError(t, err)
+		assert.Len(t, payments, 2)
+		assert.Equal(t, "payment1", payments[0].Reference)
+		assert.Equal(t, "payment2", payments[1].Reference)
+	})
+	
+	t.Run("invalid payment", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		invalidPayment := models.PSPPayment{
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		pspPayments := []models.PSPPayment{invalidPayment}
+		
+		_, err := models.FromPSPPayments(pspPayments, connectorID)
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "reference is required")
+	})
 }
 
 func TestPaymentMarshalUnmarshal(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	now := time.Now().UTC()
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
@@ -347,125 +363,202 @@ func TestPaymentMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(payment)
+	
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var unmarshaledPayment models.Payment
 	err = json.Unmarshal(data, &unmarshaledPayment)
+	
 	// Then
-			require.NoError(t, err)
-
+	require.NoError(t, err)
 	comparePayment(t, payment, unmarshaledPayment)
 }
 
 func TestPSPPaymentValidate(t *testing.T) {
 	t.Parallel()
 
+	// Given
 	now := time.Now().UTC()
 
-	payment := models.PSPPayment{
-		Reference: "payment123",
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	assert.NoError(t, payment.Validate())
+	t.Run("valid payment", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.NoError(t, err)
+	})
 
-	payment = models.PSPPayment{
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	err := payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "reference is required")
+	t.Run("missing reference", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "reference is required")
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	err = payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "createdAt is required")
+	t.Run("missing createdAt", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "createdAt is required")
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-		CreatedAt: now,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	err = payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "type is required")
+	t.Run("missing type", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			CreatedAt: now,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "type is required")
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	err = payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "amount is required")
+	t.Run("missing amount", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "amount is required")
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "invalid",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-		Raw:       []byte(`{}`),
-	}
-	err = payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "invalid asset")
+	t.Run("invalid asset", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "invalid",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+			Raw:       []byte(`{}`),
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid asset")
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-		CreatedAt: now,
-		Type:      models.PAYMENT_TYPE_PAYIN,
-		Amount:    big.NewInt(100),
-		Asset:     "USD/2",
-		Scheme:    models.PAYMENT_SCHEME_OTHER,
-		Status:    models.PAYMENT_STATUS_SUCCEEDED,
-	}
-	err = payment.Validate()
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "raw is required")
+	t.Run("missing raw", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+			CreatedAt: now,
+			Type:      models.PAYMENT_TYPE_PAYIN,
+			Amount:    big.NewInt(100),
+			Asset:     "USD/2",
+			Scheme:    models.PAYMENT_SCHEME_OTHER,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
+		}
+		
+		err := payment.Validate()
+		
+		// Then
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "raw is required")
+	})
 }
 
 func TestPSPPaymentHasParent(t *testing.T) {
 	t.Parallel()
 
-	payment := models.PSPPayment{
-		ParentReference: "parent123",
-		Reference:       "payment123",
-	}
-	assert.True(t, payment.HasParent())
+	t.Run("with parent reference", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			ParentReference: "parent123",
+			Reference:       "payment123",
+		}
+		
+		hasParent := payment.HasParent()
+		
+		// Then
+		assert.True(t, hasParent)
+	})
 
-	payment = models.PSPPayment{
-		Reference: "payment123",
-	}
-	assert.False(t, payment.HasParent())
+	t.Run("without parent reference", func(t *testing.T) {
+		t.Parallel()
+		
+		// Given
+		payment := models.PSPPayment{
+			Reference: "payment123",
+		}
+		
+		hasParent := payment.HasParent()
+		
+		// Then
+		assert.False(t, hasParent)
+	})
 }
