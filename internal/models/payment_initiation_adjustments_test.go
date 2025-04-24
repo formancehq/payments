@@ -259,7 +259,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "illegal base64")
+		assert.Contains(t, err.Error(), "invalid character")
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {

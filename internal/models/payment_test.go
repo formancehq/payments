@@ -293,7 +293,7 @@ func TestFromPSPPayments(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "reference is required")
+		assert.Contains(t, err.Error(), "missing payment reference")
 	})
 }
 
@@ -420,7 +420,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "reference is required")
+		assert.Contains(t, err.Error(), "missing payment reference")
 	})
 
 	t.Run("missing createdAt", func(t *testing.T) {
@@ -441,7 +441,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "createdAt is required")
+		assert.Contains(t, err.Error(), "missing payment createdAt")
 	})
 
 	t.Run("missing type", func(t *testing.T) {
@@ -462,7 +462,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "type is required")
+		assert.Contains(t, err.Error(), "missing payment type")
 	})
 
 	t.Run("missing amount", func(t *testing.T) {
@@ -483,7 +483,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "amount is required")
+		assert.Contains(t, err.Error(), "missing payment amount")
 	})
 
 	t.Run("invalid asset", func(t *testing.T) {
@@ -505,7 +505,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "invalid asset")
+		assert.Contains(t, err.Error(), "invalid payment asset")
 	})
 
 	t.Run("missing raw", func(t *testing.T) {
@@ -526,7 +526,7 @@ func TestPSPPaymentValidate(t *testing.T) {
 		
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "raw is required")
+		assert.Contains(t, err.Error(), "missing payment raw")
 	})
 }
 

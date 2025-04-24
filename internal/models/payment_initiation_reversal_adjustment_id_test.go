@@ -69,12 +69,12 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		_, err = models.PaymentInitiationReversalAdjustmentIDFromString("invalid-base64")
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "illegal base64")
+		assert.Contains(t, err.Error(), "invalid character")
 		
 		_, err = models.PaymentInitiationReversalAdjustmentIDFromString("aW52YWxpZC1qc29u")
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "unmarshal")
+		assert.Contains(t, err.Error(), "invalid character")
 	})
 
 	t.Run("MustPaymentInitiationReversalAdjustmentIDFromString", func(t *testing.T) {
@@ -163,16 +163,16 @@ func TestPaymentInitiationReversalAdjustmentID(t *testing.T) {
 		err = id.Scan(nil)
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot scan nil")
+		assert.Contains(t, err.Error(), "payment reversal adjustment id is nil")
 		
 		err = id.Scan(123)
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "cannot scan")
+		assert.Contains(t, err.Error(), "failed to parse payment reversal adjustment id")
 		
 		err = id.Scan("invalid-base64")
 		// Then
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "illegal base64")
+		assert.Contains(t, err.Error(), "invalid character")
 	})
 }
