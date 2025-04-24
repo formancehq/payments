@@ -69,3 +69,37 @@ func TestErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestNewWrappedError(t *testing.T) {
+	t.Parallel()
+
+	cause := errors.New("cause error")
+	wrapped := NewWrappedError(cause, errors.New("wrapped error"))
+
+	require.NotNil(t, wrapped)
+	require.ErrorIs(t, wrapped, cause)
+	require.Equal(t, cause.Error(), Cause(wrapped).Error())
+}
+
+func TestCauseWithNilError(t *testing.T) {
+	t.Parallel()
+
+	require.Nil(t, Cause(nil))
+}
+
+func TestNestedWrapping(t *testing.T) {
+	t.Parallel()
+
+	err1 := errors.New("error 1")
+	err2 := errors.New("error 2")
+	err3 := errors.New("error 3")
+
+	wrapped1 := NewWrappedError(err1, err2)
+	wrapped2 := NewWrappedError(wrapped1, err3)
+
+	require.Equal(t, err1.Error(), Cause(wrapped2).Error())
+	
+	require.ErrorIs(t, wrapped2, err1)
+	require.ErrorIs(t, wrapped2, err2)
+	require.ErrorIs(t, wrapped2, err3)
+}

@@ -132,3 +132,90 @@ var _ = Describe("Register Plugin", func() {
 		})
 	})
 })
+
+var _ = Describe("Plugin Functions", func() {
+	var (
+		ctrl         *gomock.Controller
+		logger       logging.Logger
+		pluginName   = "test-plugin"
+		dummyPluginMock *models.MockPlugin
+	)
+
+	BeforeEach(func() {
+		ctrl = gomock.NewController(GinkgoT())
+		logger = logging.Testing()
+		dummyPluginMock = models.NewMockPlugin(ctrl)
+		dummyPluginMock.EXPECT().Name().Return("test-plugin").AnyTimes()
+		
+		// Clear the registry
+		pluginsRegistry = make(map[string]PluginInformation)
+		
+		capabilities := []models.Capability{models.CAPABILITY_FETCH_PAYMENTS}
+		config := Config{}
+		
+		RegisterPlugin(pluginName, func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+			return dummyPluginMock, nil
+		}, capabilities, config)
+		
+		RegisterPlugin(DummyPSPName, func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+			return dummyPluginMock, nil
+		}, capabilities, config)
+	})
+
+	Context("GetPlugin", func() {
+		It("returns the correct plugin for a registered provider", func(ctx SpecContext) {
+			plugin, err := GetPlugin(logger, pluginName, "connector-name", nil)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(plugin).NotTo(BeNil())
+		})
+
+		It("returns error for unknown provider", func(ctx SpecContext) {
+			plugin, err := GetPlugin(logger, "unknown-plugin", "connector-name", nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
+			Expect(plugin).To(BeNil())
+		})
+		
+		It("translates errors from plugin creation", func(ctx SpecContext) {
+			RegisterPlugin("error-plugin", func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+				return nil, models.ErrInvalidConfig
+			}, []models.Capability{}, Config{})
+			
+			plugin, err := GetPlugin(logger, "error-plugin", "connector-name", nil)
+			Expect(err).To(HaveOccurred())
+			Expect(err).To(MatchError(ContainSubstring(models.ErrInvalidConfig.Error())))
+			Expect(plugin).To(BeNil())
+		})
+	})
+
+	Context("GetCapabilities", func() {
+		It("returns capabilities for a registered plugin", func(ctx SpecContext) {
+			capabilities, err := GetCapabilities(pluginName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(capabilities).To(HaveLen(1))
+			Expect(capabilities[0]).To(Equal(models.CAPABILITY_FETCH_PAYMENTS))
+		})
+
+		It("returns error for unknown plugin", func(ctx SpecContext) {
+			capabilities, err := GetCapabilities("unknown-plugin")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
+			Expect(capabilities).To(BeNil())
+		})
+	})
+
+	Context("GetConfig", func() {
+		It("returns config for a registered plugin", func(ctx SpecContext) {
+			config, err := GetConfig(pluginName)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(config).NotTo(BeNil())
+		})
+
+		It("returns error for unknown plugin", func(ctx SpecContext) {
+			config, err := GetConfig("unknown-plugin")
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring(ErrPluginNotFound.Error()))
+			Expect(config).To(BeNil())
+		})
+	})
+})

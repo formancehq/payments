@@ -100,4 +100,49 @@ var _ = Describe("ClientWrapper", func() {
 			Expect(doErr).To(MatchError(ContainSubstring("failed to make request")))
 		})
 	})
+	
+	Context("handling different error scenarios", func() {
+		It("handles context cancellation", func(ctx SpecContext) {
+			cancelCtx, cancel := context.WithCancel(context.Background())
+			cancel() // Cancel the context immediately
+			
+			req, err := http.NewRequestWithContext(cancelCtx, http.MethodGet, server.URL+"?code=200", http.NoBody)
+			Expect(err).To(BeNil())
+			
+			res := &successRes{}
+			code, doErr := client.Do(cancelCtx, req, res, nil)
+			Expect(code).To(Equal(0))
+			Expect(doErr).To(MatchError(ContainSubstring("context canceled")))
+		})
+		
+		It("handles timeout errors", func(ctx SpecContext) {
+			timeoutConfig := &httpwrapper.Config{Timeout: 1 * time.Nanosecond}
+			timeoutClient := httpwrapper.NewClient(timeoutConfig)
+			
+			slowServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				time.Sleep(100 * time.Millisecond)
+				w.WriteHeader(http.StatusOK)
+			}))
+			defer slowServer.Close()
+			
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, slowServer.URL, http.NoBody)
+			Expect(err).To(BeNil())
+			
+			res := &successRes{}
+			code, doErr := timeoutClient.Do(context.Background(), req, res, nil)
+			Expect(code).To(Equal(0))
+			Expect(doErr).To(MatchError(ContainSubstring("timeout")))
+		})
+		
+		It("handles too many requests status code", func(ctx SpecContext) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL+"?code=429", http.NoBody)
+			Expect(err).To(BeNil())
+			
+			res := &errorRes{}
+			code, doErr := client.Do(context.Background(), req, &successRes{}, res)
+			Expect(code).To(Equal(http.StatusTooManyRequests))
+			Expect(doErr).To(MatchError(httpwrapper.ErrStatusCodeTooManyRequests))
+			Expect(res.Code).To(Equal("err123"))
+		})
+	})
 })

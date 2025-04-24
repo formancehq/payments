@@ -249,3 +249,75 @@ func TestGetStringAmountFromBigIntWithPrecision(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertToCurrency(t *testing.T) {
+	t.Parallel()
+
+	type testCase struct {
+		name            string
+		amount          *big.Int
+		sourcePrecision int
+		targetPrecision int
+		expected        *big.Int
+		expectedError   error
+	}
+
+	testCases := []testCase{
+		{
+			name:            "same precision",
+			amount:          big.NewInt(12345),
+			sourcePrecision: 2,
+			targetPrecision: 2,
+			expected:        big.NewInt(12345),
+			expectedError:   nil,
+		},
+		{
+			name:            "increase precision",
+			amount:          big.NewInt(12345),
+			sourcePrecision: 2,
+			targetPrecision: 4,
+			expected:        big.NewInt(1234500),
+			expectedError:   nil,
+		},
+		{
+			name:            "decrease precision",
+			amount:          big.NewInt(12345),
+			sourcePrecision: 2,
+			targetPrecision: 1,
+			expected:        big.NewInt(1234),
+			expectedError:   nil,
+		},
+		{
+			name:            "invalid source precision",
+			amount:          big.NewInt(12345),
+			sourcePrecision: -1,
+			targetPrecision: 2,
+			expected:        nil,
+			expectedError:   ErrInvalidPrecision,
+		},
+		{
+			name:            "invalid target precision",
+			amount:          big.NewInt(12345),
+			sourcePrecision: 2,
+			targetPrecision: -1,
+			expected:        nil,
+			expectedError:   ErrInvalidPrecision,
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			result, err := ConvertToCurrency(tc.amount, tc.sourcePrecision, tc.targetPrecision)
+			if tc.expectedError != nil {
+				require.True(t, errors.Is(err, tc.expectedError), "expected error %v, got %v", tc.expectedError, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.Equal(t, tc.expected.String(), result.String())
+		})
+	}
+}
