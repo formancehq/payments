@@ -15,41 +15,41 @@ func TestStorageErrorHandling(t *testing.T) {
 	store := newStore(t)
 	ctx := context.Background()
 
-	t.Run("AccountsGet with non-existent ID", func(t *testing.T) {
+	t.Run("GetAccount with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		account, err := store.AccountsGet(ctx, nonExistentID)
+		account, err := store.GetAccount(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, account)
 	})
 
-	t.Run("PaymentsGet with non-existent ID", func(t *testing.T) {
+	t.Run("GetPayment with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		payment, err := store.PaymentsGet(ctx, nonExistentID)
+		payment, err := store.GetPayment(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, payment)
 	})
 
-	t.Run("BankAccountsGet with non-existent ID", func(t *testing.T) {
+	t.Run("GetBankAccount with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		bankAccount, err := store.BankAccountsGet(ctx, nonExistentID, false)
+		bankAccount, err := store.GetBankAccount(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, bankAccount)
 	})
 
-	t.Run("BalancesGetAt with non-existent ID", func(t *testing.T) {
+	t.Run("GetBalance with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		balances, err := store.BalancesGetAt(ctx, nonExistentID, time.Now())
+		balance, err := store.GetBalance(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
-		require.Nil(t, balances)
+		require.Nil(t, balance)
 	})
 
-	t.Run("ConnectorsGet with non-existent ID", func(t *testing.T) {
+	t.Run("GetConnector with non-existent ID", func(t *testing.T) {
 		nonExistentID := uuid.New()
-		connector, err := store.ConnectorsGet(ctx, nonExistentID)
+		connector, err := store.GetConnector(ctx, nonExistentID)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrNotFound)
 		require.Nil(t, connector)

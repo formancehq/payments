@@ -7,8 +7,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/formancehq/payments/internal/models"
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
@@ -81,7 +79,7 @@ func TestRollbackOnTxError(t *testing.T) {
 		tx, err := db.Begin()
 		require.NoError(t, err)
 		
-		rollbackOnTxError(ctx, tx, nil)
+		rollbackOnTxError(ctx, &tx, nil)
 		
 		err = tx.Commit()
 		require.NoError(t, err)
