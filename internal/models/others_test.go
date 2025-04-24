@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPSPOther(t *testing.T) {
+func TestPSPOtherSerialization(t *testing.T) {
 	t.Parallel()
 
 	t.Run("create and marshal PSPOther", func(t *testing.T) {

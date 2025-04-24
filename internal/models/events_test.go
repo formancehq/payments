@@ -20,7 +20,7 @@ func TestEventSent(t *testing.T) {
 			Reference: uuid.New(),
 		}
 		eventID := models.EventID{
-			Reference: "evt123",
+			EventIdempotencyKey: "evt123",
 		}
 
 		event := models.EventSent{
@@ -38,7 +38,7 @@ func TestEventSent(t *testing.T) {
 		t.Parallel()
 		now := time.Now().UTC()
 		eventID := models.EventID{
-			Reference: "evt123",
+			EventIdempotencyKey: "evt123",
 		}
 
 		event := models.EventSent{
