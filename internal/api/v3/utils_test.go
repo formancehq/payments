@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -20,7 +19,7 @@ func TestOversizeRequestBody(t *testing.T) {
 	require.NotEmpty(t, data)
 	require.Greater(t, len(data), 1000)
 	
-	for i, item := range data {
+	for _, item := range data {
 		require.Contains(t, item.Val, "Rindfleischetikettierungsüberwachungsaufgabenübertragungsgesetz")
 	}
 }

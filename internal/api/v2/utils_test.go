@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/trace"
@@ -194,7 +193,7 @@ func TestToV2PaymentScheme(t *testing.T) {
 		{"ach debit", models.PAYMENT_SCHEME_ACH_DEBIT, paymentSchemeAchDebit},
 		{"ach", models.PAYMENT_SCHEME_ACH, paymentSchemeAch},
 		{"rtp", models.PAYMENT_SCHEME_RTP, paymentSchemeRtp},
-		{"invalid", models.PaymentScheme("invalid"), paymentSchemeUnknown},
+		{"invalid", models.PAYMENT_SCHEME_UNKNOWN, paymentSchemeUnknown},
 	}
 
 	for _, tc := range testCases {

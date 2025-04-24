@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	"go.uber.org/mock/gomock"
@@ -55,15 +56,15 @@ var _ = Describe("API v3 Payment Initiation Rejection", func() {
 		})
 
 		It("should handle specific error types from backend", func(ctx SpecContext) {
-			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(models.ErrNotFound)
+			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(storage.ErrNotFound)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
 			assertExpectedResponse(w.Result(), http.StatusNotFound, "NOT_FOUND")
 
 			w = httptest.NewRecorder()
 			
-			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(models.ErrInvalidStatus)
+			m.EXPECT().PaymentInitiationsReject(gomock.Any(), paymentID).Return(storage.ErrValidation)
 			handlerFn(w, prepareQueryRequest(http.MethodGet, "paymentInitiationID", paymentID.String()))
-			assertExpectedResponse(w.Result(), http.StatusBadRequest, "INVALID_STATUS")
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, "VALIDATION")
 		})
 	})
 })

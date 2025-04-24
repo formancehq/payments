@@ -118,3 +118,29 @@ func GetStringAmountFromBigIntWithPrecision(amount *big.Int, precision int) (str
 	// precision, we need to add a dot at the right place
 	return amountString[:amountStringLength-precision] + "." + decimalPart.String(), nil
 }
+
+func ConvertToCurrency(amount *big.Int, sourcePrecision, targetPrecision int) (*big.Int, error) {
+	if sourcePrecision < 0 {
+		return nil, errors.Wrap(ErrInvalidPrecision, fmt.Sprintf("source precision is negative: %d", sourcePrecision))
+	}
+	if targetPrecision < 0 {
+		return nil, errors.Wrap(ErrInvalidPrecision, fmt.Sprintf("target precision is negative: %d", targetPrecision))
+	}
+
+	result := new(big.Int).Set(amount)
+	
+	if sourcePrecision == targetPrecision {
+		// Nothing to do
+		return result, nil
+	}
+	
+	if targetPrecision > sourcePrecision {
+		multiplier := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(targetPrecision-sourcePrecision)), nil)
+		result.Mul(result, multiplier)
+	} else {
+		divisor := new(big.Int).Exp(big.NewInt(10), big.NewInt(int64(sourcePrecision-targetPrecision)), nil)
+		result.Div(result, divisor)
+	}
+	
+	return result, nil
+}

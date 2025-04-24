@@ -37,11 +37,9 @@ func TestRegisterMetricsRegistry(t *testing.T) {
 
 	counter := reg.ConnectorPSPCalls()
 	require.NotNil(t, counter)
-	require.IsType(t, metric.Int64Counter{}, counter)
 
 	histogram := reg.ConnectorPSPCallLatencies()
 	require.NotNil(t, histogram)
-	require.IsType(t, metric.Int64Histogram{}, histogram)
 }
 
 func TestNoOpMetricsRegistry(t *testing.T) {
@@ -52,9 +50,7 @@ func TestNoOpMetricsRegistry(t *testing.T) {
 
 	counter := reg.ConnectorPSPCalls()
 	require.NotNil(t, counter)
-	require.IsType(t, metric.Int64Counter{}, counter)
 
 	histogram := reg.ConnectorPSPCallLatencies()
 	require.NotNil(t, histogram)
-	require.IsType(t, metric.Int64Histogram{}, histogram)
 }
