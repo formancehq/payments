@@ -2182,6 +2182,332 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
+## Create a formance payment service user object
+
+<a id="opIdv3CreatePaymentServiceUser"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users`
+
+> Body parameter
+
+```json
+{
+  "name": "string",
+  "contactDetails": {
+    "email": "string",
+    "phoneNuber": "string"
+  },
+  "address": {
+    "streetNumber": "string",
+    "streetName": "string",
+    "city": "string",
+    "region": "string",
+    "postalCode": "string",
+    "country": "string"
+  },
+  "bankAccountIDs": [
+    "string"
+  ],
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  }
+}
+```
+
+<h3 id="create-a-formance-payment-service-user-object-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|body|body|[V3CreatePaymentServiceUserRequest](#schemav3createpaymentserviceuserrequest)|false|none|
+
+> Example responses
+
+> 201 Response
+
+```json
+{
+  "data": "string"
+}
+```
+
+<h3 id="create-a-formance-payment-service-user-object-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreatePaymentServiceUserResponse](#schemav3createpaymentserviceuserresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## List all payment service users
+
+<a id="opIdv3ListPaymentServiceUsers"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users`
+
+> Body parameter
+
+```json
+{}
+```
+
+<h3 id="list-all-payment-service-users-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "id": "string",
+        "name": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "contactDetails": {
+          "email": "string",
+          "phoneNumber": "string"
+        },
+        "address": {
+          "streetNumber": "string",
+          "streetName": "string",
+          "city": "string",
+          "region": "string",
+          "postalCode": "string",
+          "country": "string"
+        },
+        "bankAccountIDs": [
+          "string"
+        ],
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-payment-service-users-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUsersCursorResponse](#schemav3paymentserviceuserscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get a payment service user by ID
+
+<a id="opIdv3GetPaymentServiceUser"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users/{paymentServiceUserID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users/{paymentServiceUserID}`
+
+<h3 id="get-a-payment-service-user-by-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": {
+    "id": "string",
+    "name": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "contactDetails": {
+      "email": "string",
+      "phoneNumber": "string"
+    },
+    "address": {
+      "streetNumber": "string",
+      "streetName": "string",
+      "city": "string",
+      "region": "string",
+      "postalCode": "string",
+      "country": "string"
+    },
+    "bankAccountIDs": [
+      "string"
+    ],
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    }
+  }
+}
+```
+
+<h3 id="get-a-payment-service-user-by-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetPaymentServiceUserResponse](#schemav3getpaymentserviceuserresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Add a bank account to a payment service user
+
+<a id="opIdv3AddBankAccountToPaymentServiceUser"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}`
+
+<h3 id="add-a-bank-account-to-a-payment-service-user-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|bankAccountID|path|string|true|The bank account ID|
+
+> Example responses
+
+> default Response
+
+```json
+{
+  "errorCode": "VALIDATION",
+  "errorMessage": "[VALIDATION] missing required config field: pollingPeriod",
+  "details": "string"
+}
+```
+
+<h3 id="add-a-bank-account-to-a-payment-service-user-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## Forward a payment service user's bank account to a connector
+
+<a id="opIdv3ForwardPaymentServiceUserBankAccount"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward`
+
+> Body parameter
+
+```json
+{
+  "connectorID": "string"
+}
+```
+
+<h3 id="forward-a-payment-service-user's-bank-account-to-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|bankAccountID|path|string|true|The bank account ID|
+|body|body|[V3ForwardPaymentServiceUserBankAccountRequest](#schemav3forwardpaymentserviceuserbankaccountrequest)|false|none|
+
+> Example responses
+
+> 202 Response
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+```
+
+<h3 id="forward-a-payment-service-user's-bank-account-to-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ForwardPaymentServiceUserBankAccountResponse](#schemav3forwardpaymentserviceuserbankaccountresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
 ## Create a formance pool object
 
 <a id="opIdv3CreatePool"></a>
@@ -4570,6 +4896,362 @@ None ( Scopes: payments:read )
 |*anonymous*|UNKNOWN|
 |*anonymous*|TRANSFER|
 |*anonymous*|PAYOUT|
+
+<h2 id="tocS_V3CreatePaymentServiceUserRequest">V3CreatePaymentServiceUserRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3createpaymentserviceuserrequest"></a>
+<a id="schema_V3CreatePaymentServiceUserRequest"></a>
+<a id="tocSv3createpaymentserviceuserrequest"></a>
+<a id="tocsv3createpaymentserviceuserrequest"></a>
+
+```json
+{
+  "name": "string",
+  "contactDetails": {
+    "email": "string",
+    "phoneNuber": "string"
+  },
+  "address": {
+    "streetNumber": "string",
+    "streetName": "string",
+    "city": "string",
+    "region": "string",
+    "postalCode": "string",
+    "country": "string"
+  },
+  "bankAccountIDs": [
+    "string"
+  ],
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|name|string|true|none|none|
+|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)|false|none|none|
+|address|[V3AddressRequest](#schemav3addressrequest)|false|none|none|
+|bankAccountIDs|[string]¦null|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+
+<h2 id="tocS_V3AddressRequest">V3AddressRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3addressrequest"></a>
+<a id="schema_V3AddressRequest"></a>
+<a id="tocSv3addressrequest"></a>
+<a id="tocsv3addressrequest"></a>
+
+```json
+{
+  "streetNumber": "string",
+  "streetName": "string",
+  "city": "string",
+  "region": "string",
+  "postalCode": "string",
+  "country": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|streetNumber|string|false|none|none|
+|streetName|string|false|none|none|
+|city|string|false|none|none|
+|region|string|false|none|none|
+|postalCode|string|false|none|none|
+|country|string|false|none|none|
+
+<h2 id="tocS_V3ContactDetailsRequest">V3ContactDetailsRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3contactdetailsrequest"></a>
+<a id="schema_V3ContactDetailsRequest"></a>
+<a id="tocSv3contactdetailsrequest"></a>
+<a id="tocsv3contactdetailsrequest"></a>
+
+```json
+{
+  "email": "string",
+  "phoneNuber": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|email|string|false|none|none|
+|phoneNuber|string|false|none|none|
+
+<h2 id="tocS_V3CreatePaymentServiceUserResponse">V3CreatePaymentServiceUserResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3createpaymentserviceuserresponse"></a>
+<a id="schema_V3CreatePaymentServiceUserResponse"></a>
+<a id="tocSv3createpaymentserviceuserresponse"></a>
+<a id="tocsv3createpaymentserviceuserresponse"></a>
+
+```json
+{
+  "data": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|string|true|none|The ID of the created payment service user|
+
+<h2 id="tocS_V3PaymentServiceUsersCursorResponse">V3PaymentServiceUsersCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserscursorresponse"></a>
+<a id="schema_V3PaymentServiceUsersCursorResponse"></a>
+<a id="tocSv3paymentserviceuserscursorresponse"></a>
+<a id="tocsv3paymentserviceuserscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "id": "string",
+        "name": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "contactDetails": {
+          "email": "string",
+          "phoneNumber": "string"
+        },
+        "address": {
+          "streetNumber": "string",
+          "streetName": "string",
+          "city": "string",
+          "region": "string",
+          "postalCode": "string",
+          "country": "string"
+        },
+        "bankAccountIDs": [
+          "string"
+        ],
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3PaymentServiceUser](#schemav3paymentserviceuser)]|true|none|none|
+
+<h2 id="tocS_V3PaymentServiceUser">V3PaymentServiceUser</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuser"></a>
+<a id="schema_V3PaymentServiceUser"></a>
+<a id="tocSv3paymentserviceuser"></a>
+<a id="tocsv3paymentserviceuser"></a>
+
+```json
+{
+  "id": "string",
+  "name": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "contactDetails": {
+    "email": "string",
+    "phoneNumber": "string"
+  },
+  "address": {
+    "streetNumber": "string",
+    "streetName": "string",
+    "city": "string",
+    "region": "string",
+    "postalCode": "string",
+    "country": "string"
+  },
+  "bankAccountIDs": [
+    "string"
+  ],
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|none|
+|name|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|contactDetails|[V3ContactDetails](#schemav3contactdetails)|false|none|none|
+|address|[V3Address](#schemav3address)|false|none|none|
+|bankAccountIDs|[string]¦null|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+
+<h2 id="tocS_V3ContactDetails">V3ContactDetails</h2>
+<!-- backwards compatibility -->
+<a id="schemav3contactdetails"></a>
+<a id="schema_V3ContactDetails"></a>
+<a id="tocSv3contactdetails"></a>
+<a id="tocsv3contactdetails"></a>
+
+```json
+{
+  "email": "string",
+  "phoneNumber": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|email|string|false|none|none|
+|phoneNumber|string|false|none|none|
+
+<h2 id="tocS_V3Address">V3Address</h2>
+<!-- backwards compatibility -->
+<a id="schemav3address"></a>
+<a id="schema_V3Address"></a>
+<a id="tocSv3address"></a>
+<a id="tocsv3address"></a>
+
+```json
+{
+  "streetNumber": "string",
+  "streetName": "string",
+  "city": "string",
+  "region": "string",
+  "postalCode": "string",
+  "country": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|streetNumber|string|false|none|none|
+|streetName|string|false|none|none|
+|city|string|false|none|none|
+|region|string|false|none|none|
+|postalCode|string|false|none|none|
+|country|string|false|none|none|
+
+<h2 id="tocS_V3GetPaymentServiceUserResponse">V3GetPaymentServiceUserResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3getpaymentserviceuserresponse"></a>
+<a id="schema_V3GetPaymentServiceUserResponse"></a>
+<a id="tocSv3getpaymentserviceuserresponse"></a>
+<a id="tocsv3getpaymentserviceuserresponse"></a>
+
+```json
+{
+  "data": {
+    "id": "string",
+    "name": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "contactDetails": {
+      "email": "string",
+      "phoneNumber": "string"
+    },
+    "address": {
+      "streetNumber": "string",
+      "streetName": "string",
+      "city": "string",
+      "region": "string",
+      "postalCode": "string",
+      "country": "string"
+    },
+    "bankAccountIDs": [
+      "string"
+    ],
+    "metadata": {
+      "property1": "string",
+      "property2": "string"
+    }
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|[V3PaymentServiceUser](#schemav3paymentserviceuser)|true|none|none|
+
+<h2 id="tocS_V3ForwardPaymentServiceUserBankAccountRequest">V3ForwardPaymentServiceUserBankAccountRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3forwardpaymentserviceuserbankaccountrequest"></a>
+<a id="schema_V3ForwardPaymentServiceUserBankAccountRequest"></a>
+<a id="tocSv3forwardpaymentserviceuserbankaccountrequest"></a>
+<a id="tocsv3forwardpaymentserviceuserbankaccountrequest"></a>
+
+```json
+{
+  "connectorID": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|connectorID|string(byte)|true|none|none|
+
+<h2 id="tocS_V3ForwardPaymentServiceUserBankAccountResponse">V3ForwardPaymentServiceUserBankAccountResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3forwardpaymentserviceuserbankaccountresponse"></a>
+<a id="schema_V3ForwardPaymentServiceUserBankAccountResponse"></a>
+<a id="tocSv3forwardpaymentserviceuserbankaccountresponse"></a>
+<a id="tocsv3forwardpaymentserviceuserbankaccountresponse"></a>
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|object|true|none|none|
+|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
 
 <h2 id="tocS_V3CreatePoolRequest">V3CreatePoolRequest</h2>
 <!-- backwards compatibility -->

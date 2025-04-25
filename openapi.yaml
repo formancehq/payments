@@ -1699,6 +1699,142 @@ paths:
       security:
         - Authorization:
             - payments:read
+  /v3/payment-service-users:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a formance payment service user object
+      operationId: v3CreatePaymentServiceUser
+      x-speakeasy-name-override: CreatePaymentServiceUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3CreatePaymentServiceUserRequest'
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3CreatePaymentServiceUserResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment service users
+      operationId: v3ListPaymentServiceUsers
+      x-speakeasy-name-override: ListPaymentServiceUsers
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PaymentServiceUsersCursorResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payment-service-users/{paymentServiceUserID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment service user by ID
+      operationId: v3GetPaymentServiceUser
+      x-speakeasy-name-override: GetPaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3GetPaymentServiceUserResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}:
+    post:
+      tags:
+        - payments.v3
+      summary: Add a bank account to a payment service user
+      operationId: v3AddBankAccountToPaymentServiceUser
+      x-speakeasy-name-override: AddBankAccountToPaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3BankAccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
+  /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward:
+    post:
+      tags:
+        - payments.v3
+      summary: Forward a payment service user's bank account to a connector
+      operationId: v3ForwardPaymentServiceUserBankAccount
+      x-speakeasy-name-override: ForwardPaymentServiceUserBankAccount
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3ForwardPaymentServiceUserBankAccountRequest'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ForwardPaymentServiceUserBankAccountResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:write
   /v3/pools:
     post:
       tags:
@@ -4598,6 +4734,164 @@ components:
         - UNKNOWN
         - TRANSFER
         - PAYOUT
+    V3CreatePaymentServiceUserRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        contactDetails:
+          $ref: '#/components/schemas/V3ContactDetailsRequest'
+          nullable: true
+        address:
+          $ref: '#/components/schemas/V3AddressRequest'
+          nullable: true
+        bankAccountIDs:
+          type: array
+          items:
+            type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3AddressRequest:
+      type: object
+      properties:
+        streetNumber:
+          type: string
+        streetName:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+    V3ContactDetailsRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        phoneNuber:
+          type: string
+    V3CreatePaymentServiceUserResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created payment service user
+          type: string
+    V3PaymentServiceUsersCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentServiceUser'
+    V3PaymentServiceUser:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        contactDetails:
+          $ref: '#/components/schemas/V3ContactDetails'
+          nullable: true
+        address:
+          $ref: '#/components/schemas/V3Address'
+          nullable: true
+        bankAccountIDs:
+          type: array
+          items:
+            type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+    V3ContactDetails:
+      type: object
+      properties:
+        email:
+          type: string
+        phoneNumber:
+          type: string
+    V3Address:
+      type: object
+      properties:
+        streetNumber:
+          type: string
+        streetName:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+    V3GetPaymentServiceUserResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3PaymentServiceUser'
+    V3ForwardPaymentServiceUserBankAccountRequest:
+      type: object
+      required:
+        - connectorID
+      properties:
+        connectorID:
+          type: string
+          format: byte
+    V3ForwardPaymentServiceUserBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: |
+                Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.
+              type: string
     V3CreatePoolRequest:
       type: object
       required:
@@ -5204,6 +5498,13 @@ components:
       in: path
       required: true
       description: The bank account ID
+      schema:
+        type: string
+    V3PaymentServiceUserID:
+      name: paymentServiceUserID
+      in: path
+      required: true
+      description: The payment service user ID
       schema:
         type: string
     V3PaymentID:

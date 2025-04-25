@@ -930,6 +930,148 @@ paths:
         - Authorization:
             - payments:read
 
+  # PAYMENT SERVICE USERS
+  /v3/payment-service-users:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a formance payment service user object
+      operationId: v3CreatePaymentServiceUser
+      x-speakeasy-name-override: CreatePaymentServiceUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3CreatePaymentServiceUserRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3CreatePaymentServiceUserResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+    get:
+      tags:
+        - payments.v3
+      summary: List all payment service users
+      operationId: v3ListPaymentServiceUsers
+      x-speakeasy-name-override: ListPaymentServiceUsers
+      parameters:
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUsersCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a payment service user by ID
+      operationId: v3GetPaymentServiceUser
+      x-speakeasy-name-override: GetPaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3GetPaymentServiceUserResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}:
+    post:
+      tags:
+        - payments.v3
+      summary: Add a bank account to a payment service user
+      operationId: v3AddBankAccountToPaymentServiceUser
+      x-speakeasy-name-override: AddBankAccountToPaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3BankAccountID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}/forward:
+    post:
+      tags:
+        - payments.v3
+      summary: Forward a payment service user's bank account to a connector
+      operationId: v3ForwardPaymentServiceUserBankAccount
+      x-speakeasy-name-override: ForwardPaymentServiceUserBankAccount
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3BankAccountID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3ForwardPaymentServiceUserBankAccountRequest"
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ForwardPaymentServiceUserBankAccountResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+
   # POOLS
   /v3/pools:
     post:
