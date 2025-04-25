@@ -66,6 +66,13 @@ type Backend interface {
 	PaymentInitiationRelatedPaymentsList(ctx context.Context, id models.PaymentInitiationID, query storage.ListPaymentInitiationRelatedPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentInitiationRelatedPaymentsListAll(ctx context.Context, id models.PaymentInitiationID) ([]models.Payment, error)
 
+	// Payment Service Users
+	PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error
+	PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error)
+	PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
+	PaymentServiceUsersForwardBankAccountToConnector(ctx context.Context, psuID, bankAccountID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID uuid.UUID, bankAccountID uuid.UUID) error
+
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)

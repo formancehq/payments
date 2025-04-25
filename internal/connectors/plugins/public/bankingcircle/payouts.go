@@ -33,8 +33,8 @@ func (p *Plugin) validatePayoutRequest(pi models.PSPPaymentInitiation) error {
 		)
 	}
 
-	if pi.DestinationAccount.Metadata[models.BankAccountAccountNumberMetadataKey] == "" &&
-		pi.DestinationAccount.Metadata[models.BankAccountIBANMetadataKey] == "" {
+	if pi.DestinationAccount.Metadata[models.AccountAccountNumberMetadataKey] == "" &&
+		pi.DestinationAccount.Metadata[models.AccountIBANMetadataKey] == "" {
 		return errorsutils.NewWrappedError(
 			fmt.Errorf("destination account number or IBAN is required in payout request"),
 			models.ErrInvalidRequest,
@@ -80,9 +80,9 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		)
 	}
 
-	account := pi.DestinationAccount.Metadata[models.BankAccountAccountNumberMetadataKey]
+	account := pi.DestinationAccount.Metadata[models.AccountAccountNumberMetadataKey]
 	if account == "" {
-		account = pi.DestinationAccount.Metadata[models.BankAccountIBANMetadataKey]
+		account = pi.DestinationAccount.Metadata[models.AccountIBANMetadataKey]
 	}
 
 	resp, err := p.client.InitiateTransferOrPayouts(ctx, &client.PaymentRequest{
@@ -102,8 +102,8 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		ChargeBearer: "SHA",
 		CreditorAccount: &client.PaymentAccount{
 			Account:              account,
-			FinancialInstitution: pi.DestinationAccount.Metadata[models.BankAccountSwiftBicCodeMetadataKey],
-			Country:              pi.DestinationAccount.Metadata[models.BankAccountCountryMetadataKey],
+			FinancialInstitution: pi.DestinationAccount.Metadata[models.AccountSwiftBicCodeMetadataKey],
+			Country:              pi.DestinationAccount.Metadata[models.AccountBankAccountCountryMetadataKey],
 		},
 		CreditorName: *pi.DestinationAccount.Name,
 	})

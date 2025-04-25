@@ -299,19 +299,19 @@ var _ = Describe("Engine Tests", func() {
 
 	Context("forwarding a bank account to a connector", func() {
 		var (
-			bankID uuid.UUID
+			ba     models.BankAccount
 			connID models.ConnectorID
 		)
 		BeforeEach(func() {
 			connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
-			bankID = uuid.New()
+			ba = models.BankAccount{}
 		})
 
 		It("should return not found error when storage doesn't find connector", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
 				nil, fmt.Errorf("some not found err: %w", storage.ErrNotFound),
 			)
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			_, err := eng.ForwardBankAccount(ctx, ba, connID, false)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(engine.ErrNotFound))
 		})
@@ -319,40 +319,18 @@ var _ = Describe("Engine Tests", func() {
 		It("should return original error when storage returns misc error from connector fetch", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("original")
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, expectedErr)
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(expectedErr))
-		})
-
-		It("should return not found error when storage doesn't find bank account", func(ctx SpecContext) {
-			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
-			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(
-				nil, fmt.Errorf("some not found err: %w", storage.ErrNotFound),
-			)
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
-			Expect(err).NotTo(BeNil())
-			Expect(err).To(MatchError(engine.ErrNotFound))
-		})
-
-		It("should return original error when storage returns misc error from bank account fetch", func(ctx SpecContext) {
-			expectedErr := fmt.Errorf("original")
-			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
-			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(
-				nil, fmt.Errorf("some not found err: %w", expectedErr),
-			)
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			_, err := eng.ForwardBankAccount(ctx, ba, connID, false)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
 
 		It("should return storage error when task cannot be upserted", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(nil, nil)
-			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			expectedErr := fmt.Errorf("fffff")
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(
 				expectedErr,
 			)
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			_, err := eng.ForwardBankAccount(ctx, ba, connID, false)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
@@ -361,7 +339,6 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
 				&models.Connector{ID: connID}, nil,
 			)
-			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			expectedErr := fmt.Errorf("workflow failed")
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
@@ -369,7 +346,7 @@ var _ = Describe("Engine Tests", func() {
 				gomock.AssignableToTypeOf(workflow.CreateBankAccount{}),
 			).Return(nil, expectedErr)
 
-			_, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			_, err := eng.ForwardBankAccount(ctx, ba, connID, false)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
@@ -378,14 +355,13 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
 				&models.Connector{ID: connID}, nil,
 			)
-			store.EXPECT().BankAccountsGet(gomock.Any(), bankID, false).Return(nil, nil)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
 				workflow.RunCreateBankAccount,
 				gomock.AssignableToTypeOf(workflow.CreateBankAccount{}),
 			).Return(nil, nil)
 
-			task, err := eng.ForwardBankAccount(ctx, bankID, connID, false)
+			task, err := eng.ForwardBankAccount(ctx, ba, connID, false)
 			Expect(err).To(BeNil())
 			Expect(task.ID.Reference).To(ContainSubstring(engine.IDPrefixBankAccountCreate))
 			Expect(task.ID.Reference).To(ContainSubstring(stackName))

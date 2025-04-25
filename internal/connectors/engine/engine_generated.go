@@ -158,18 +158,18 @@ func (mr *MockEngineMockRecorder) DeletePool(ctx, poolID any) *gomock.Call {
 }
 
 // ForwardBankAccount mocks base method.
-func (m *MockEngine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+func (m *MockEngine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ForwardBankAccount", ctx, bankAccountID, connectorID, waitResult)
+	ret := m.ctrl.Call(m, "ForwardBankAccount", ctx, ba, connectorID, waitResult)
 	ret0, _ := ret[0].(models.Task)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // ForwardBankAccount indicates an expected call of ForwardBankAccount.
-func (mr *MockEngineMockRecorder) ForwardBankAccount(ctx, bankAccountID, connectorID, waitResult any) *gomock.Call {
+func (mr *MockEngineMockRecorder) ForwardBankAccount(ctx, ba, connectorID, waitResult any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardBankAccount", reflect.TypeOf((*MockEngine)(nil).ForwardBankAccount), ctx, bankAccountID, connectorID, waitResult)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardBankAccount", reflect.TypeOf((*MockEngine)(nil).ForwardBankAccount), ctx, ba, connectorID, waitResult)
 }
 
 // HandleWebhook mocks base method.

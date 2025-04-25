@@ -33,6 +33,7 @@ type UnitTestSuite struct {
 
 	connector                   models.Connector
 	bankAccount                 models.BankAccount
+	paymentServiceUser          models.PaymentServiceUser
 	paymentPayout               models.Payment
 	paymentWithAdjustmentAmount models.Payment
 	account                     models.Account
@@ -117,6 +118,30 @@ func (s *UnitTestSuite) addData() {
 		Name:      "test",
 		Metadata: map[string]string{
 			"key": "value",
+		},
+	}
+
+	s.paymentServiceUser = models.PaymentServiceUser{
+		ID:        uuid.New(),
+		Name:      "test",
+		CreatedAt: now,
+		ContactDetails: &models.ContactDetails{
+			Email:       pointer.For("test"),
+			PhoneNumber: pointer.For("test"),
+		},
+		Address: &models.Address{
+			StreetName:   pointer.For("test"),
+			StreetNumber: pointer.For("test"),
+			City:         pointer.For("test"),
+			Region:       pointer.For("test"),
+			PostalCode:   pointer.For("test"),
+			Country:      pointer.For("test"),
+		},
+		BankAccountIDs: []uuid.UUID{
+			s.bankAccount.ID,
+		},
+		Metadata: map[string]string{
+			"foo": "bar",
 		},
 	}
 
