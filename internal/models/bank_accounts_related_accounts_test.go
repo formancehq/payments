@@ -86,8 +86,10 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var relatedAccount models.BankAccountRelatedAccount
+		
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 
@@ -101,8 +103,10 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		}`
 
 		var relatedAccount models.BankAccountRelatedAccount
+		
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 }

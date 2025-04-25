@@ -120,8 +120,10 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		}`
 
 		var config models.Config
+		
 		err := json.Unmarshal([]byte(jsonData), &config)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 
@@ -153,8 +155,10 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var config models.Config
+		
 		err := json.Unmarshal([]byte(jsonData), &config)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 }

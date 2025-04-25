@@ -53,11 +53,11 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+			// When
 			status, err := models.PaymentInitiationReversalStatusFromString(tc.input)
 			if tc.hasError {
-		// When/Then
 				// Then
-			assert.Error(t, err)
+				assert.Error(t, err)
 			} else {
 				// Then
 			require.NoError(t, err)
@@ -78,8 +78,9 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, status := range statuses {
+			// When
 			data, err := json.Marshal(status)
-		// When/Then
+			
 			// Then
 			require.NoError(t, err)
 			
@@ -102,10 +103,11 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		t.Parallel()
 		// Given
 		
+		// When
 		val, err := models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "PROCESSING", val)
 	})
 
@@ -116,10 +118,10 @@ func TestPaymentInitiationReversalAdjustmentStatus(t *testing.T) {
 		var status models.PaymentInitiationReversalAdjustmentStatus
 		
 		// When
-			err := status.Scan("PROCESSING")
-		// When/Then
+		err := status.Scan("PROCESSING")
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSING, status)
 		
 		err = status.Scan("PROCESSED")

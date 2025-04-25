@@ -65,11 +65,11 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, tc := range testCases {
+			// When
 			status, err := models.PaymentInitiationAdjustmentStatusFromString(tc.input)
 			if tc.hasError {
-		// When/Then
 				// Then
-			assert.Error(t, err)
+				assert.Error(t, err)
 			} else {
 				// Then
 			require.NoError(t, err)
@@ -91,8 +91,9 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		}
 		
 		for _, status := range statuses {
+			// When
 			data, err := json.Marshal(status)
-		// When/Then
+			
 			// Then
 			require.NoError(t, err)
 			
@@ -114,10 +115,11 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		t.Parallel()
 		// Given
 		
+		// When
 		val, err := models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.Value()
-		// When/Then
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "WAITING_FOR_VALIDATION", val)
 	})
 
@@ -128,10 +130,10 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 		var status models.PaymentInitiationAdjustmentStatus
 		
 		// When
-			err := status.Scan("WAITING_FOR_VALIDATION")
-		// When/Then
+		err := status.Scan("WAITING_FOR_VALIDATION")
+		
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION, status)
 		
 		err = status.Scan("PROCESSING")

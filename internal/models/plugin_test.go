@@ -45,7 +45,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().Install(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.Install(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Workflow, result.Workflow)
 		assert.Equal(t, resp.WebhooksConfigs, result.WebhooksConfigs)
@@ -64,7 +64,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().Uninstall(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.Uninstall(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -84,7 +84,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateBankAccount(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateBankAccount(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -105,7 +105,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreatePayout(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreatePayout(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -126,7 +126,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateTransfer(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateTransfer(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -148,7 +148,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().CreateWebhooks(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.CreateWebhooks(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -172,7 +172,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextAccounts(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextAccounts(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -196,7 +196,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextBalances(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextBalances(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -220,7 +220,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextExternalAccounts(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextExternalAccounts(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -245,7 +245,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextOthers(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextOthers(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -269,7 +269,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().FetchNextPayments(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.FetchNextPayments(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -290,7 +290,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().PollPayoutStatus(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.PollPayoutStatus(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -311,7 +311,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().PollTransferStatus(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.PollTransferStatus(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -331,7 +331,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().ReversePayout(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.ReversePayout(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -351,7 +351,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().ReverseTransfer(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.ReverseTransfer(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -372,7 +372,7 @@ func TestMockPlugin(t *testing.T) {
 		mockPlugin.EXPECT().TranslateWebhook(ctx, req).Return(resp, nil)
 		
 		result, err := mockPlugin.TranslateWebhook(ctx, req)
-		// When/Then
+		
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})

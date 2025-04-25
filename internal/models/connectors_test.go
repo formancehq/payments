@@ -118,8 +118,10 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var connector models.Connector
+		
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 
@@ -138,8 +140,10 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		}`
 
 		var connector models.Connector
+		
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 }

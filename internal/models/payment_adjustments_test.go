@@ -165,8 +165,10 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var adjustment models.PaymentAdjustment
+		
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 
@@ -186,8 +188,10 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 		}`
 
 		var adjustment models.PaymentAdjustment
+		
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		// When/Then
+		
+		// Then
 		require.Error(t, err)
 	})
 }
