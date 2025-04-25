@@ -25,6 +25,9 @@ var migratePoolsFromV2 string
 //go:embed 13-connector-providers-lowercase.sql
 var connectorProvidersLower string
 
+//go:embed 14-create-psu-tables.sql
+var psuTableCreation string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -186,6 +189,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running connector providers lowercase migration...")
 					_, err := tx.ExecContext(ctx, connectorProvidersLower)
 					logger.WithField("error", err).Info("finished connector providers lowercase migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "create psu tables",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running psu table creations migration...")
+					_, err := tx.ExecContext(ctx, psuTableCreation)
+					logger.WithField("error", err).Info("finished running psu table creations migration")
 					return err
 				})
 			},
