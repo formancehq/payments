@@ -369,17 +369,15 @@ func compareCounterPartiesAddressed(t *testing.T, expected, actual *models.Addre
 	case expected == nil && actual == nil:
 		return
 	case expected != nil && actual != nil:
-		// Do the next tests
+		compareInterface(t, "StreetName", expected.StreetName, actual.StreetName)
+		compareInterface(t, "StreetNumber", expected.StreetNumber, actual.StreetNumber)
+		compareInterface(t, "City", expected.City, actual.City)
+		compareInterface(t, "Region", expected.Region, actual.Region)
+		compareInterface(t, "PostalCode", expected.PostalCode, actual.PostalCode)
+		compareInterface(t, "Country", expected.Country, actual.Country)
 	default:
 		require.Fail(t, "Address is different")
 	}
-
-	compareInterface(t, "StreetName", expected.StreetName, actual.StreetName)
-	compareInterface(t, "StreetNumber", expected.StreetNumber, actual.StreetNumber)
-	compareInterface(t, "City", expected.City, actual.City)
-	compareInterface(t, "Region", expected.Region, actual.Region)
-	compareInterface(t, "PostalCode", expected.PostalCode, actual.PostalCode)
-	compareInterface(t, "Country", expected.Country, actual.Country)
 }
 
 func compareCounterPartiesContactDetails(t *testing.T, expected, actual *models.ContactDetails) {
@@ -387,24 +385,22 @@ func compareCounterPartiesContactDetails(t *testing.T, expected, actual *models.
 	case expected == nil && actual == nil:
 		return
 	case expected != nil && actual != nil:
-		// Do the next tests
+		compareInterface(t, "Email", expected.Email, actual.Email)
+		compareInterface(t, "Phone", expected.PhoneNumber, actual.PhoneNumber)
 	default:
 		require.Fail(t, "ContactDetails is different")
 	}
 
-	compareInterface(t, "Email", expected.Email, actual.Email)
-	compareInterface(t, "Phone", expected.PhoneNumber, actual.PhoneNumber)
 }
 
-func compareInterface(t *testing.T, name string, expected, actual interface{}) {
+func compareInterface(t *testing.T, name string, expected, actual *string) {
 	switch {
 	case expected == nil && actual == nil:
 		return
 	case expected != nil && actual != nil:
-		// Do the next tests
+		require.Equal(t, expected, actual)
 	default:
 		require.Failf(t, "%s field is different", name)
 	}
 
-	require.Equal(t, expected, actual)
 }
