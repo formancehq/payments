@@ -15,7 +15,7 @@ func (s *Service) PaymentServiceUsersForwardBankAccountToConnector(ctx context.C
 	}
 
 	if ba == nil {
-		// Should not happened, but just in case
+		// Should not happen, but just in case
 		return models.Task{}, newStorageError(storage.ErrNotFound, "bank account not found")
 	}
 

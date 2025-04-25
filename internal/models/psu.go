@@ -77,7 +77,11 @@ func (psu *PaymentServiceUser) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	psu.ID, _ = uuid.Parse(aux.ID)
+	var err error
+	psu.ID, err = uuid.Parse(aux.ID)
+	if err != nil {
+		return err
+	}
 	psu.Name = aux.Name
 	psu.CreatedAt = aux.CreatedAt
 	psu.ContactDetails = aux.ContactDetails

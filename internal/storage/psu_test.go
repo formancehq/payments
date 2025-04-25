@@ -203,7 +203,7 @@ func TestPSUList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 	})
 
-	t.Run("lsit psu by metadata", func(t *testing.T) {
+	t.Run("list psu by metadata", func(t *testing.T) {
 		q := NewListPSUQuery(
 			bunpaginate.NewPaginatedQueryOptions(PSUQuery{}).
 				WithPageSize(15).
@@ -219,7 +219,7 @@ func TestPSUList(t *testing.T) {
 		comparePSUs(t, defaultPSU, cursor.Data[0])
 	})
 
-	t.Run("lsit psu by unknown metadata", func(t *testing.T) {
+	t.Run("list psu by unknown metadata", func(t *testing.T) {
 		q := NewListPSUQuery(
 			bunpaginate.NewPaginatedQueryOptions(PSUQuery{}).
 				WithPageSize(15).
@@ -234,7 +234,7 @@ func TestPSUList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 	})
 
-	t.Run("lsit psu by metadata", func(t *testing.T) {
+	t.Run("list psu by metadata", func(t *testing.T) {
 		q := NewListPSUQuery(
 			bunpaginate.NewPaginatedQueryOptions(PSUQuery{}).
 				WithPageSize(15).
