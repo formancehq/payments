@@ -15,13 +15,17 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhookConfig", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		config := models.PSPWebhookConfig{
 			Name:    "test-webhook",
 			URLPath: "/webhooks/test",
 		}
 
+		// When
 		data, err := json.Marshal(config)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.PSPWebhookConfig
 		err = json.Unmarshal(data, &unmarshaled)
@@ -32,6 +36,8 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("WebhookConfig", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		connectorID := models.ConnectorID{
 			Provider:  "test",
 			Reference: uuid.New(),
@@ -42,8 +48,10 @@ func TestWebhookStructs(t *testing.T) {
 			URLPath:     "/webhooks/test",
 		}
 
+		// When
 		data, err := json.Marshal(config)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.WebhookConfig
 		err = json.Unmarshal(data, &unmarshaled)
@@ -55,13 +63,17 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("BasicAuth", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		auth := models.BasicAuth{
 			Username: "user",
 			Password: "pass",
 		}
 
+		// When
 		data, err := json.Marshal(auth)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.BasicAuth
 		err = json.Unmarshal(data, &unmarshaled)
@@ -72,6 +84,8 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhook", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		auth := &models.BasicAuth{
 			Username: "user",
 			Password: "pass",
@@ -87,8 +101,10 @@ func TestWebhookStructs(t *testing.T) {
 			Body: []byte(`{"test": "data"}`),
 		}
 
+		// When
 		data, err := json.Marshal(webhook)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.PSPWebhook
 		err = json.Unmarshal(data, &unmarshaled)
@@ -102,6 +118,8 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("Webhook", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		connectorID := models.ConnectorID{
 			Provider:  "test",
 			Reference: uuid.New(),
@@ -123,8 +141,10 @@ func TestWebhookStructs(t *testing.T) {
 			Body: []byte(`{"test": "data"}`),
 		}
 
+		// When
 		data, err := json.Marshal(webhook)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.Webhook
 		err = json.Unmarshal(data, &unmarshaled)
@@ -140,6 +160,8 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhook without BasicAuth", func(t *testing.T) {
 		t.Parallel()
+		
+		// Given
 		webhook := models.PSPWebhook{
 			QueryValues: map[string][]string{
 				"key": {"value"},
@@ -150,8 +172,10 @@ func TestWebhookStructs(t *testing.T) {
 			Body: []byte(`{"test": "data"}`),
 		}
 
+		// When
 		data, err := json.Marshal(webhook)
 
+		// Then
 		require.NoError(t, err)
 		var unmarshaled models.PSPWebhook
 		err = json.Unmarshal(data, &unmarshaled)
