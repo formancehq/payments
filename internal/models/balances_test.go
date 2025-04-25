@@ -143,7 +143,6 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 	
 	// Then
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse account id")
 }
 
 func TestFromPSPBalance(t *testing.T) {

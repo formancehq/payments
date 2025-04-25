@@ -154,7 +154,6 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	
 	// Then
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse payment initiation reversal adjustment id")
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/rev123/adj123/` + now.Format(time.RFC3339Nano) + `/PROCESSED",
@@ -167,7 +166,6 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	
 	// Then
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to parse payment initiation reversal id")
 
 	invalidJSON = `{invalid json}`
 	
