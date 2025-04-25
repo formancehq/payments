@@ -234,6 +234,7 @@ var _ = Context("Payment API Payment Service Users", func() {
 						"com.formance.spec/owner/addressLine1": "1 test",
 						"com.formance.spec/owner/city":         "test",
 						"com.formance.spec/owner/email":        "test",
+						"com.formance.spec/owner/phoneNumber":  "test",
 						"com.formance.spec/owner/postalCode":   "test",
 						"com.formance.spec/owner/region":       "test",
 						"com.formance.spec/owner/streetName":   "test",
