@@ -54,12 +54,16 @@ func TestPaymentInitiationID(t *testing.T) {
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
+		// When
 		_, err = models.PaymentInitiationIDFromString("invalid-base64")
+		
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
 		
+		// When
 		_, err = models.PaymentInitiationIDFromString("aW52YWxpZC1qc29u")
+		
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
@@ -133,17 +137,23 @@ func TestPaymentInitiationID(t *testing.T) {
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
 		
+		// When
 		err = id.Scan(nil)
+		
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "payment initiation id is nil")
 		
+		// When
 		err = id.Scan(123)
+		
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to parse payment initiation id")
 		
+		// When
 		err = id.Scan("invalid-base64")
+		
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
