@@ -1192,7 +1192,7 @@ components:
       properties:
         email:
           type: string
-        phoneNuber:
+        phoneNumber:
           type: string
 
     V3CreatePaymentServiceUserResponse:

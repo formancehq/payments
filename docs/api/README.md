@@ -2205,7 +2205,7 @@ Accept: application/json
   "name": "string",
   "contactDetails": {
     "email": "string",
-    "phoneNuber": "string"
+    "phoneNumber": "string"
   },
   "address": {
     "streetNumber": "string",
@@ -4909,7 +4909,7 @@ None ( Scopes: payments:read )
   "name": "string",
   "contactDetails": {
     "email": "string",
-    "phoneNuber": "string"
+    "phoneNumber": "string"
   },
   "address": {
     "streetNumber": "string",
@@ -4980,7 +4980,7 @@ None ( Scopes: payments:read )
 ```json
 {
   "email": "string",
-  "phoneNuber": "string"
+  "phoneNumber": "string"
 }
 
 ```
@@ -4990,7 +4990,7 @@ None ( Scopes: payments:read )
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |email|string|false|none|none|
-|phoneNuber|string|false|none|none|
+|phoneNumber|string|false|none|none|
 
 <h2 id="tocS_V3CreatePaymentServiceUserResponse">V3CreatePaymentServiceUserResponse</h2>
 <!-- backwards compatibility -->

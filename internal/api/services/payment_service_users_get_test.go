@@ -50,9 +50,9 @@ func TestPSUGet(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), id).Return(&models.PaymentServiceUser{}, test.err)
-			bankAccount, err := s.PaymentServiceUsersGet(context.Background(), id)
+			psu, err := s.PaymentServiceUsersGet(context.Background(), id)
 			if test.expectedError == nil {
-				require.NotNil(t, bankAccount)
+				require.NotNil(t, psu)
 				require.NoError(t, err)
 			} else {
 				require.Equal(t, test.expectedError, err)

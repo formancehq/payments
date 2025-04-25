@@ -45,8 +45,8 @@ var _ = Context("Payment API Payment Service Users", func() {
 	v3CreateRequest = &components.V3CreatePaymentServiceUserRequest{
 		Name: "test",
 		ContactDetails: &components.V3ContactDetailsRequest{
-			Email:      pointer.For("test"),
-			PhoneNuber: pointer.For("test"),
+			Email:       pointer.For("test"),
+			PhoneNumber: pointer.For("test"),
 		},
 		Address: &components.V3AddressRequest{
 			StreetNumber: pointer.For("1"),

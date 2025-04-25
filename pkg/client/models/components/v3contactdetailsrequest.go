@@ -3,8 +3,8 @@
 package components
 
 type V3ContactDetailsRequest struct {
-	Email      *string `json:"email,omitempty"`
-	PhoneNuber *string `json:"phoneNuber,omitempty"`
+	Email       *string `json:"email,omitempty"`
+	PhoneNumber *string `json:"phoneNumber,omitempty"`
 }
 
 func (o *V3ContactDetailsRequest) GetEmail() *string {
@@ -14,9 +14,9 @@ func (o *V3ContactDetailsRequest) GetEmail() *string {
 	return o.Email
 }
 
-func (o *V3ContactDetailsRequest) GetPhoneNuber() *string {
+func (o *V3ContactDetailsRequest) GetPhoneNumber() *string {
 	if o == nil {
 		return nil
 	}
-	return o.PhoneNuber
+	return o.PhoneNumber
 }

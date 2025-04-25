@@ -101,7 +101,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 
 	if err := tx.Commit(); err != nil {
 		errTx = err
-		return e("commit transaction", tx.Commit())
+		return e("commit transaction", err)
 	}
 
 	return nil
