@@ -40,6 +40,10 @@ var _ = Describe("Validator custom type checks", func() {
 			PaymentInitiationTypeStr string                       `validate:"omitempty,paymentInitiationType"`
 			Asset                    string                       `validate:"omitempty,asset"`
 			AssetNullable            *string                      `validate:"omitempty,asset"`
+			PhoneNumber              string                       `validate:"omitempty,phoneNumber"`
+			PhoneNumberNullable      *string                      `validate:"omitempty,phoneNumber"`
+			Email                    string                       `validate:"omitempty,email"`
+			EmailNullable            *string                      `validate:"omitempty,email"`
 		}
 
 		DescribeTable("non conforming values",
@@ -170,6 +174,40 @@ var _ = Describe("Validator custom type checks", func() {
 			Entry("asset: unsupported type for this matcher", "asset", "FieldName", struct {
 				FieldName int `validate:"asset"`
 			}{FieldName: 34}),
+
+			// phoneNumber
+			Entry("phoneNumber: invalid value of string on required field", "phoneNumber", "StringFieldName", struct {
+				StringFieldName string `validate:"required,phoneNumber"`
+			}{StringFieldName: "invalid"}),
+			Entry("phoneNumber: invalid value of string", "phoneNumber", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,phoneNumber"`
+			}{StringFieldName: "invalid"}),
+			Entry("phoneNumber: invalid value of string on required field", "phoneNumber", "StringFieldName", struct {
+				StringFieldName *string `validate:"required,phoneNumber"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("phoneNumber: invalid value of string", "phoneNumber", "StringFieldName", struct {
+				StringFieldName *string `validate:"omitempty,phoneNumber"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("phoneNumber: unsupported type for this matcher", "phoneNumber", "FieldName", struct {
+				FieldName int `validate:"phoneNumber"`
+			}{FieldName: 34}),
+
+			// email
+			Entry("email: invalid value of string on required field", "email", "StringFieldName", struct {
+				StringFieldName string `validate:"required,email"`
+			}{StringFieldName: "invalid"}),
+			Entry("email: invalid value of string", "email", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,email"`
+			}{StringFieldName: "invalid"}),
+			Entry("email: invalid value of string on required field", "email", "StringFieldName", struct {
+				StringFieldName *string `validate:"required,email"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("email: invalid value of string", "email", "StringFieldName", struct {
+				StringFieldName *string `validate:"omitempty,email"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("email: unsupported type for this matcher", "email", "FieldName", struct {
+				FieldName int `validate:"email"`
+			}{FieldName: 34}),
 		)
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
@@ -220,6 +258,38 @@ var _ = Describe("Validator custom type checks", func() {
 			_, err := validate.Validate(CustomStruct{
 				Asset:         "JPY/0",
 				AssetNullable: pointer.For("cad/2"),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("phoneNumber supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				PhoneNumber:         "+330612131415",
+				PhoneNumberNullable: pointer.For("+330612131415"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				PhoneNumber:         "0612131415",
+				PhoneNumberNullable: pointer.For("0612131415"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				PhoneNumber:         "+1 (555) 555-1234",
+				PhoneNumberNullable: pointer.For("+1 (555) 555-1234"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				PhoneNumber:         "00 1 202 555 0123",
+				PhoneNumberNullable: pointer.For("00 1 202 555 0123"),
+			})
+			Expect(err).To(BeNil())
+		})
+		It("email supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				Email:         "dev@formance.com",
+				EmailNullable: pointer.For("dev@formance.com"),
 			})
 			Expect(err).To(BeNil())
 		})

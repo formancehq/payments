@@ -17,13 +17,13 @@ import (
 )
 
 type ContactDetailsRequest struct {
-	Email       *string `json:"email,omitempty"`
-	PhoneNumber *string `json:"phoneNumber,omitempty"`
+	Email       *string `json:"email,omitempty" validate:"omitempty,email"`
+	PhoneNumber *string `json:"phoneNumber,omitempty" validate:"omitempty,phoneNumber"`
 }
 
 type AddressRequest struct {
 	StreetName   *string `json:"streetName,omitempty"`
-	StreetNumber *string `json:"streetNumber,omitempty" validate:"omitempty,number"`
+	StreetNumber *string `json:"streetNumber,omitempty" validate:"omitempty,alphanum"`
 	City         *string `json:"city,omitempty"`
 	Region       *string `json:"region,omitempty"`
 	PostalCode   *string `json:"postalCode,omitempty"`

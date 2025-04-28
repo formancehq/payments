@@ -1,10 +1,17 @@
 package validation
 
 import (
+	"regexp"
+
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+)
+
+var (
+	phoneNumberRegexp = regexp.MustCompile(`^\+?\d{1,4}?[-.\s]?\(?\d{1,3}?\)?[-.\s]?\d{1,4}[-.\s]?\d{1,4}[-.\s]?\d{1,9}$`)
+	emailRegexp       = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 )
 
 //nolint:errcheck
@@ -137,4 +144,22 @@ func IsAsset(fl validator.FieldLevel) bool {
 		return false
 	}
 	return true
+}
+
+func IsPhoneNumber(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+
+	return phoneNumberRegexp.MatchString(str)
+}
+
+func IsEmail(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+
+	return emailRegexp.MatchString(str)
 }

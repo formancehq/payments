@@ -49,7 +49,9 @@ var _ = Describe("API v3 Payment Service Users Create", func() {
 			Entry("name missing", PaymentServiceUsersCreateRequest{}),
 			Entry("name too long", PaymentServiceUsersCreateRequest{Name: generateTextString(1001)}),
 			Entry("country invalid", PaymentServiceUsersCreateRequest{Name: "a", Address: &AddressRequest{Country: pointer.For("invalid")}}),
-			Entry("street number invalid", PaymentServiceUsersCreateRequest{Name: "a", Address: &AddressRequest{StreetNumber: pointer.For("invalid")}}),
+			Entry("phone number invalid", PaymentServiceUsersCreateRequest{Name: "a", ContactDetails: &ContactDetailsRequest{PhoneNumber: pointer.For("invalid")}}),
+			Entry("email invalid", PaymentServiceUsersCreateRequest{Name: "a", ContactDetails: &ContactDetailsRequest{Email: pointer.For("invalid")}}),
+			Entry("street number invalid", PaymentServiceUsersCreateRequest{Name: "a", Address: &AddressRequest{StreetNumber: pointer.For("invalid@")}}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
@@ -78,8 +80,8 @@ var _ = Describe("API v3 Payment Service Users Create", func() {
 			psuReq := PaymentServiceUsersCreateRequest{
 				Name: "reference",
 				ContactDetails: &ContactDetailsRequest{
-					Email:       pointer.For("test"),
-					PhoneNumber: pointer.For("test"),
+					Email:       pointer.For("test@formance.com"),
+					PhoneNumber: pointer.For("+3312131415"),
 				},
 				Address: &AddressRequest{
 					StreetName:   pointer.For("test"),
