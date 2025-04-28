@@ -1,0 +1,76 @@
+package qonto
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/utils/pagination"
+)
+
+type paymentsState struct {
+	// TODO: paymentsState will be used to know at what point we're at when
+	// fetching the PSP payments. We highly recommend to use this state to not
+	// poll data already polled.
+	// This struct will be stored as a raw json, you're free to put whatever
+	// you want.
+	// Example:
+	// LastPage int `json:"lastPage"`
+	// LastIDCreated int64 `json:"lastIDCreated"`
+}
+
+func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	var oldState paymentsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
+	}
+
+	// TODO: if needed, uncomment the following lines to get the related account in request
+	// var from models.PSPAccount
+	// if req.FromPayload == nil {
+	// 	return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
+	// }
+	// if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+	// 	return models.FetchNextPaymentsResponse{}, err
+	// }
+
+	newState := paymentsState{
+		// TODO: fill new state with old state values
+	}
+
+	payments := make([]models.PSPPayment, 0, req.PageSize)
+	needMore := false
+	hasMore := false
+	for /* TODO: range over pages or others */ page := 0; ; page++ {
+		pagedTransactions, err := p.client.GetTransactions(ctx, page, req.PageSize)
+		if err != nil {
+			return models.FetchNextPaymentsResponse{}, err
+		}
+
+		// TODO: transfer PSP object into formance object
+		payments = append(payments, models.PSPPayment{})
+
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
+		if !needMore || !hasMore {
+			break
+		}
+	}
+
+	if !needMore {
+		payments = payments[:req.PageSize]
+	}
+
+	// TODO: don't forget to update your state accordingly
+	payload, err := json.Marshal(newState)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	return models.FetchNextPaymentsResponse{
+		Payments: payments,
+		NewState: payload,
+		HasMore:  hasMore,
+	}, nil
+}

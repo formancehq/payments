@@ -182,6 +182,7 @@ generatedFiles:
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
   - /models/components/v3reversepaymentinitiationrequest.go
@@ -493,6 +494,7 @@ generatedFiles:
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md
   - docs/models/components/v3retrypaymentinitiationresponsedata.md

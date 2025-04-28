@@ -5115,6 +5115,7 @@ components:
           Mangopay: '#/components/schemas/V3MangopayConfig'
           Modulr: '#/components/schemas/V3ModulrConfig'
           Moneycorp: '#/components/schemas/V3MoneycorpConfig'
+          Qonto: '#/components/schemas/V3QontoConfig'
           Stripe: '#/components/schemas/V3StripeConfig'
           Wise: '#/components/schemas/V3WiseConfig'
       oneOf:
@@ -5128,6 +5129,7 @@ components:
         - $ref: '#/components/schemas/V3MangopayConfig'
         - $ref: '#/components/schemas/V3ModulrConfig'
         - $ref: '#/components/schemas/V3MoneycorpConfig'
+        - $ref: '#/components/schemas/V3QontoConfig'
         - $ref: '#/components/schemas/V3StripeConfig'
         - $ref: '#/components/schemas/V3WiseConfig'
     V3AdyenConfig:
@@ -5380,6 +5382,33 @@ components:
         provider:
           type: string
           default: Moneycorp
+    V3QontoConfig:
+      type: object
+      required:
+        - name
+        - clientID
+        - apiKey
+        - endpoint
+      properties:
+        apiKey:
+          type: string
+        clientID:
+          type: string
+        endpoint:
+          type: string
+        name:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+        provider:
+          type: string
+          default: Qonto
+        stagingToken:
+          type: string
     V3StripeConfig:
       type: object
       required:
