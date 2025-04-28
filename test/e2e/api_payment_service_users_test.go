@@ -45,8 +45,8 @@ var _ = Context("Payment API Payment Service Users", func() {
 	v3CreateRequest = &components.V3CreatePaymentServiceUserRequest{
 		Name: "test",
 		ContactDetails: &components.V3ContactDetailsRequest{
-			Email:       pointer.For("test"),
-			PhoneNumber: pointer.For("test"),
+			Email:       pointer.For("dev@formance.com"),
+			PhoneNumber: pointer.For("+33612131415"),
 		},
 		Address: &components.V3AddressRequest{
 			StreetNumber: pointer.For("1"),
@@ -147,7 +147,7 @@ var _ = Context("Payment API Payment Service Users", func() {
 		It("should fail if bank account does not exists", func() {
 			_, err := app.GetValue().SDK().Payments.V3.AddBankAccountToPaymentServiceUser(ctx, psuID, uuid.New().String())
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(ContainSubstring("failed to add bank account to payment service user: bank_account_id: value not found"))
+			Expect(err.Error()).To(ContainSubstring("failed to add bank account to payment service user: bank account: not found"))
 		})
 
 		It("should fail if payment service user does not exists", func() {
@@ -233,8 +233,8 @@ var _ = Context("Payment API Payment Service Users", func() {
 					Metadata: map[string]string{
 						"com.formance.spec/owner/addressLine1": "1 test",
 						"com.formance.spec/owner/city":         "test",
-						"com.formance.spec/owner/email":        "test",
-						"com.formance.spec/owner/phoneNumber":  "test",
+						"com.formance.spec/owner/email":        "dev@formance.com",
+						"com.formance.spec/owner/phoneNumber":  "+33612131415",
 						"com.formance.spec/owner/postalCode":   "test",
 						"com.formance.spec/owner/region":       "test",
 						"com.formance.spec/owner/streetName":   "test",

@@ -34,15 +34,7 @@ type paymentServiceUser struct {
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
 	// Relations
-	RelatedBankAccounts []psuBankAccounts `bun:"rel:has-many,join:id=psu_id"`
-}
-
-type psuBankAccounts struct {
-	bun.BaseModel `bun:"psu_bank_accounts"`
-
-	// Mandatory fields
-	PsuID         uuid.UUID `bun:"psu_id,pk,type:uuid,notnull"`
-	BankAccountID uuid.UUID `bun:"bank_account_id,pk,type:uuid,notnull"`
+	BankAccounts []bankAccount `bun:"rel:has-many,join:id=psu_id"`
 }
 
 func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error {
@@ -55,11 +47,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 
 	var errTx error
 	defer func() {
-		if errTx != nil {
-			if err := tx.Rollback(); err != nil {
-				s.logger.Errorf("failed to rollback transaction: %v", err)
-			}
-		}
+		rollbackOnTxError(ctx, &tx, errTx)
 	}()
 
 	_, err = tx.NewRaw(`
@@ -88,14 +76,28 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 	}
 
 	if len(relatedBankAccounts) > 0 {
-		// Insert or update the related accounts
-		_, err = tx.NewInsert().
-			Model(&relatedBankAccounts).
-			On("CONFLICT (psu_id, bank_account_id) DO NOTHING").
-			Exec(ctx)
-		if err != nil {
-			errTx = err
-			return e("insert related bank accounts", err)
+		// Update related bank accounts
+		for _, bankAccountID := range relatedBankAccounts {
+			res, err := tx.NewUpdate().
+				Model((*bankAccount)(nil)).
+				Set("psu_id = ?", paymentServiceUser.ID).
+				Where("id = ?", bankAccountID).
+				Exec(ctx)
+			if err != nil {
+				errTx = err
+				return e("update bank account to add psu id", err)
+			}
+
+			rowsAffected, err := res.RowsAffected()
+			if err != nil {
+				errTx = err
+				return e("update bank account to add psu id", err)
+			}
+
+			if rowsAffected == 0 {
+				errTx = ErrNotFound
+				return e("bank account", ErrNotFound)
+			}
 		}
 	}
 
@@ -113,7 +115,7 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 		Model(&psu).
 		Column("id", "created_at", "metadata").
 		Where("id = ?", id).
-		Relation("RelatedBankAccounts")
+		Relation("BankAccounts")
 
 	query = s.paymentServiceUsersSelectDecryptColumnExpr(query)
 
@@ -180,7 +182,7 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PSUQuery], paymentServiceUser](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
-			query = query.Relation("RelatedBankAccounts")
+			query = query.Relation("BankAccounts")
 			query = query.Column("id", "created_at", "metadata")
 			query = s.paymentServiceUsersSelectDecryptColumnExpr(query)
 
@@ -212,17 +214,22 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 }
 
 func (s *store) PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, bankAccountID uuid.UUID) error {
-	toInsert := psuBankAccounts{
-		PsuID:         psuID,
-		BankAccountID: bankAccountID,
-	}
-
-	_, err := s.db.NewInsert().
-		Model(&toInsert).
-		On("CONFLICT (psu_id, bank_account_id) DO NOTHING").
+	res, err := s.db.NewUpdate().
+		Model((*bankAccount)(nil)).
+		Set("psu_id = ?", psuID).
+		Where("id = ?", bankAccountID).
 		Exec(ctx)
 	if err != nil {
-		return e("insert related bank account: %w", err)
+		return e("update bank account to add psu id", err)
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return e("update bank account to add psu id", err)
+	}
+
+	if rowsAffected == 0 {
+		return e("bank account", ErrNotFound)
 	}
 
 	return nil
@@ -241,20 +248,12 @@ func (s *store) paymentServiceUsersSelectDecryptColumnExpr(query *bun.SelectQuer
 		ColumnExpr("pgp_sym_decrypt(phone_number, ?, ?) as decrypted_phone", s.configEncryptionKey, encryptionOptions)
 }
 
-func fromPaymentServiceUserModels(from models.PaymentServiceUser) (paymentServiceUser, []psuBankAccounts) {
+func fromPaymentServiceUserModels(from models.PaymentServiceUser) (paymentServiceUser, []uuid.UUID) {
 	psu := paymentServiceUser{
 		ID:        from.ID,
 		CreatedAt: time.New(from.CreatedAt),
 		Name:      from.Name,
 		Metadata:  from.Metadata,
-	}
-
-	bankAccounts := make([]psuBankAccounts, len(from.BankAccountIDs))
-	for i, id := range from.BankAccountIDs {
-		bankAccounts[i] = psuBankAccounts{
-			PsuID:         from.ID,
-			BankAccountID: id,
-		}
 	}
 
 	if from.Address != nil {
@@ -271,7 +270,7 @@ func fromPaymentServiceUserModels(from models.PaymentServiceUser) (paymentServic
 		psu.PhoneNumber = from.ContactDetails.PhoneNumber
 	}
 
-	return psu, bankAccounts
+	return psu, from.BankAccountIDs
 }
 
 func toPaymentServiceUserModels(from paymentServiceUser) models.PaymentServiceUser {
@@ -285,9 +284,9 @@ func toPaymentServiceUserModels(from paymentServiceUser) models.PaymentServiceUs
 	psu.Address = fillAddress(from)
 	psu.ContactDetails = fillContactDetails(from)
 
-	psu.BankAccountIDs = make([]uuid.UUID, len(from.RelatedBankAccounts))
-	for i, bankAccount := range from.RelatedBankAccounts {
-		psu.BankAccountIDs[i] = bankAccount.BankAccountID
+	psu.BankAccountIDs = make([]uuid.UUID, len(from.BankAccounts))
+	for i, bankAccount := range from.BankAccounts {
+		psu.BankAccountIDs[i] = bankAccount.ID
 	}
 
 	return psu

@@ -34,7 +34,10 @@ type bankAccount struct {
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
-	RelatedAccounts []*bankAccountRelatedAccount `bun:"rel:has-many,join:id=bank_account_id"`
+	PsuID *uuid.UUID `bun:"psu_id,type:uuid,nullzero"`
+
+	PSU             *paymentServiceUser          `bun:"rel:belongs-to,join:psu_id=id,scanonly"`
+	RelatedAccounts []*bankAccountRelatedAccount `bun:"rel:has-many,join:id=bank_account_id,scanonly"`
 }
 
 func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) error {
@@ -42,24 +45,28 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 	if err != nil {
 		return e("begin transaction", err)
 	}
+
+	var errTx error
 	defer func() {
-		rollbackOnTxError(ctx, &tx, err)
+		rollbackOnTxError(ctx, &tx, errTx)
 	}()
 
 	toInsert := fromBankAccountModels(ba)
 	// Insert or update the bank account
 	res, err := tx.NewInsert().
 		Model(&toInsert).
-		Column("id", "created_at", "name", "country", "metadata").
+		Column("id", "created_at", "name", "country", "metadata", "psu_id").
 		On("CONFLICT (id) DO NOTHING").
 		Returning("id").
 		Exec(ctx)
 	if err != nil {
+		errTx = err
 		return e("insert bank account", err)
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
+		errTx = err
 		return e("insert bank account", err)
 	}
 
@@ -72,6 +79,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			Where("id = ?", toInsert.ID).
 			Exec(ctx)
 		if err != nil {
+			errTx = err
 			return e("update bank account", err)
 		}
 	}
@@ -83,6 +91,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			On("CONFLICT (bank_account_id, account_id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
+			errTx = err
 			return e("insert related accounts", err)
 		}
 	}
@@ -133,7 +142,7 @@ func (s *store) BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) 
 	var account bankAccount
 	query := s.db.NewSelect().
 		Model(&account).
-		Column("id", "created_at", "name", "country", "metadata").
+		Column("id", "created_at", "name", "country", "metadata", "psu_id").
 		Relation("RelatedAccounts")
 	if expand {
 		query = query.ColumnExpr("pgp_sym_decrypt(account_number, ?, ?) AS decrypted_account_number", s.configEncryptionKey, encryptionOptions).
@@ -163,7 +172,7 @@ func NewListBankAccountsQuery(opts bunpaginate.PaginatedQueryOptions[BankAccount
 func (s *store) bankAccountsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
-		case key == "name", key == "country", key == "id":
+		case key == "name", key == "country", key == "id", key == "psu_id":
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
@@ -271,6 +280,7 @@ func fromBankAccountModels(from models.BankAccount) bankAccount {
 		Name:      from.Name,
 		Country:   from.Country,
 		Metadata:  from.Metadata,
+		PsuID:     nil,
 	}
 
 	if from.AccountNumber != nil {

@@ -55,7 +55,7 @@ var (
 			PostalCode: pointer.For("test"),
 			Country:    pointer.For("test"),
 		},
-		BankAccountIDs: []uuid.UUID{defaultBankAccount.ID},
+		BankAccountIDs: []uuid.UUID{defaultBankAccount2.ID},
 	}
 )
 
@@ -73,8 +73,6 @@ func TestPSUCreate(t *testing.T) {
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	createPSU(t, ctx, store, defaultPSU)
-	createPSU(t, ctx, store, defaultPSU2)
-	createPSU(t, ctx, store, defaultPSU3)
 
 	t.Run("upsert with same id", func(t *testing.T) {
 		psu := models.PaymentServiceUser{
@@ -103,7 +101,7 @@ func TestPSUCreate(t *testing.T) {
 		comparePSUs(t, defaultPSU, *actual)
 	})
 
-	t.Run("unknown psu id", func(t *testing.T) {
+	t.Run("unknown bank account id id", func(t *testing.T) {
 		cp := models.PaymentServiceUser{
 			ID:             uuid.New(),
 			Name:           "test",
@@ -124,6 +122,7 @@ func TestPSUGet(t *testing.T) {
 	store := newStore(t)
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
+	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	createPSU(t, ctx, store, defaultPSU)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -155,6 +154,7 @@ func TestPSUList(t *testing.T) {
 	store := newStore(t)
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
+	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	createPSU(t, ctx, store, defaultPSU)
 	createPSU(t, ctx, store, defaultPSU2)
@@ -316,8 +316,6 @@ func TestPSUAddBankAccount(t *testing.T) {
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	createPSU(t, ctx, store, defaultPSU)
-	createPSU(t, ctx, store, defaultPSU2)
-	createPSU(t, ctx, store, defaultPSU3)
 
 	t.Run("add bank account to psu", func(t *testing.T) {
 		err := store.PaymentServiceUsersAddBankAccount(ctx, defaultPSU.ID, defaultBankAccount2.ID)
