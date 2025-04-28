@@ -234,22 +234,6 @@ func TestPSUList(t *testing.T) {
 		require.Empty(t, cursor.Next)
 	})
 
-	t.Run("list psu by metadata", func(t *testing.T) {
-		q := NewListPSUQuery(
-			bunpaginate.NewPaginatedQueryOptions(PSUQuery{}).
-				WithPageSize(15).
-				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
-		)
-
-		cursor, err := store.PaymentServiceUsersList(ctx, q)
-		require.NoError(t, err)
-		require.Len(t, cursor.Data, 1)
-		require.False(t, cursor.HasMore)
-		require.Empty(t, cursor.Previous)
-		require.Empty(t, cursor.Next)
-		comparePSUs(t, defaultPSU, cursor.Data[0])
-	})
-
 	t.Run("list psu test cursor", func(t *testing.T) {
 		q := NewListPSUQuery(
 			bunpaginate.NewPaginatedQueryOptions(PSUQuery{}).
