@@ -28,7 +28,7 @@ create table if not exists payment_service_users (
 create index psu_created_at_sort_id on payment_service_users (created_at, sort_id);
 
 alter table bank_accounts 
-    add column if not exists psu_id uuid default null;
+    add column if not exists psu_id uuid;
 
 alter table bank_accounts
     add constraint fk_psu_id
