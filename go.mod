@@ -50,7 +50,7 @@ require (
 	go.temporal.io/api v1.48.0
 	go.temporal.io/sdk v1.34.0
 	go.uber.org/fx v1.23.0
-	go.uber.org/mock v0.5.1
+	go.uber.org/mock v0.5.2
 	golang.org/x/oauth2 v0.29.0
 	golang.org/x/sync v0.13.0
 	golang.org/x/text v0.24.0
