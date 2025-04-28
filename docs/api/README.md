@@ -5774,6 +5774,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3StripeConfig](#schemav3stripeconfig)|false|none|none|
 
 xor
@@ -6103,6 +6109,40 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+
+<h2 id="tocS_V3QontoConfig">V3QontoConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3qontoconfig"></a>
+<a id="schema_V3QontoConfig"></a>
+<a id="tocSv3qontoconfig"></a>
+<a id="tocsv3qontoconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "clientID": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Qonto",
+  "stagingToken": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|clientID|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+|stagingToken|string|false|none|none|
 
 <h2 id="tocS_V3StripeConfig">V3StripeConfig</h2>
 <!-- backwards compatibility -->
