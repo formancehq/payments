@@ -1,0 +1,14 @@
+# V3PaymentServiceUser
+
+
+## Fields
+
+| Field                                                                       | Type                                                                        | Required                                                                    | Description                                                                 |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `ID`                                                                        | *string*                                                                    | :heavy_check_mark:                                                          | N/A                                                                         |
+| `Name`                                                                      | *string*                                                                    | :heavy_check_mark:                                                          | N/A                                                                         |
+| `CreatedAt`                                                                 | [time.Time](https://pkg.go.dev/time#Time)                                   | :heavy_check_mark:                                                          | N/A                                                                         |
+| `ContactDetails`                                                            | [*components.V3ContactDetails](../../models/components/v3contactdetails.md) | :heavy_minus_sign:                                                          | N/A                                                                         |
+| `Address`                                                                   | [*components.V3Address](../../models/components/v3address.md)               | :heavy_minus_sign:                                                          | N/A                                                                         |
+| `BankAccountIDs`                                                            | []*string*                                                                  | :heavy_minus_sign:                                                          | N/A                                                                         |
+| `Metadata`                                                                  | map[string]*string*                                                         | :heavy_minus_sign:                                                          | N/A                                                                         |

@@ -121,7 +121,20 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 					r.Get("/adjustments", paymentInitiationAdjustmentsList(backend))
 					r.Get("/payments", paymentInitiationPaymentsList(backend))
 				})
+			})
 
+			r.Route("/payment-service-users", func(r chi.Router) {
+				r.Post("/", paymentServiceUsersCreate(backend, validator))
+				r.Get("/", paymentServiceUsersList(backend))
+
+				r.Route("/{paymentServiceUserID}", func(r chi.Router) {
+					r.Get("/", paymentServiceUsersGet(backend))
+
+					r.Route("/bank-accounts/{bankAccountID}", func(r chi.Router) {
+						r.Post("/", paymentServiceUsersAddBankAccount(backend))
+						r.Post("/forward", paymentServiceUsersForwardBankAccountToConnector(backend, validator))
+					})
+				})
 			})
 		})
 	})
@@ -151,6 +164,10 @@ func poolID(r *http.Request) string {
 
 func bankAccountID(r *http.Request) string {
 	return chi.URLParam(r, "bankAccountID")
+}
+
+func paymentServiceUserID(r *http.Request) string {
+	return chi.URLParam(r, "paymentServiceUserID")
 }
 
 func scheduleID(r *http.Request) string {

@@ -489,6 +489,79 @@ func (mr *MockBackendMockRecorder) PaymentInitiationsRetry(ctx, id, waitResult a
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentInitiationsRetry", reflect.TypeOf((*MockBackend)(nil).PaymentInitiationsRetry), ctx, id, waitResult)
 }
 
+// PaymentServiceUsersAddBankAccount mocks base method.
+func (m *MockBackend) PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, bankAccountID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersAddBankAccount", ctx, psuID, bankAccountID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentServiceUsersAddBankAccount indicates an expected call of PaymentServiceUsersAddBankAccount.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersAddBankAccount(ctx, psuID, bankAccountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersAddBankAccount", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersAddBankAccount), ctx, psuID, bankAccountID)
+}
+
+// PaymentServiceUsersCreate mocks base method.
+func (m *MockBackend) PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersCreate", ctx, psu)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentServiceUsersCreate indicates an expected call of PaymentServiceUsersCreate.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersCreate(ctx, psu any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersCreate", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersCreate), ctx, psu)
+}
+
+// PaymentServiceUsersForwardBankAccountToConnector mocks base method.
+func (m *MockBackend) PaymentServiceUsersForwardBankAccountToConnector(ctx context.Context, psuID, bankAccountID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersForwardBankAccountToConnector", ctx, psuID, bankAccountID, connectorID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentServiceUsersForwardBankAccountToConnector indicates an expected call of PaymentServiceUsersForwardBankAccountToConnector.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersForwardBankAccountToConnector(ctx, psuID, bankAccountID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersForwardBankAccountToConnector", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersForwardBankAccountToConnector), ctx, psuID, bankAccountID, connectorID)
+}
+
+// PaymentServiceUsersGet mocks base method.
+func (m *MockBackend) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersGet", ctx, id)
+	ret0, _ := ret[0].(*models.PaymentServiceUser)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentServiceUsersGet indicates an expected call of PaymentServiceUsersGet.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersGet", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersGet), ctx, id)
+}
+
+// PaymentServiceUsersList mocks base method.
+func (m *MockBackend) PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PaymentServiceUser])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentServiceUsersList indicates an expected call of PaymentServiceUsersList.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersList", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersList), ctx, query)
+}
+
 // PaymentsCreate mocks base method.
 func (m *MockBackend) PaymentsCreate(ctx context.Context, payment models.Payment) error {
 	m.ctrl.T.Helper()

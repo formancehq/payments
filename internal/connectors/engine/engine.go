@@ -46,7 +46,7 @@ type Engine interface {
 
 	// Forward a bank account to the given connector, which will create it
 	// in the external system (PSP).
-	ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
+	ForwardBankAccount(ctx context.Context, ba models.BankAccount, connectorID models.ConnectorID, waitResult bool) (models.Task, error)
 	// Create a transfer between two accounts on the given connector (PSP).
 	CreateTransfer(ctx context.Context, piID models.PaymentInitiationID, attempt int, waitResult bool) (models.Task, error)
 	// Reverse a transfer on the given connector (PSP).
@@ -489,7 +489,7 @@ func (e *engine) CreateFormancePaymentInitiation(ctx context.Context, pi models.
 	return nil
 }
 
-func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
+func (e *engine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardBankAccount")
 	defer span.End()
 
@@ -501,15 +501,7 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		return models.Task{}, err
 	}
 
-	if _, err := e.storage.BankAccountsGet(ctx, bankAccountID, false); err != nil {
-		otel.RecordError(span, err)
-		if errors.Is(err, storage.ErrNotFound) {
-			return models.Task{}, fmt.Errorf("bank account %w", ErrNotFound)
-		}
-		return models.Task{}, err
-	}
-
-	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, bankAccountID.String())
+	id := e.taskIDReferenceFor(IDPrefixBankAccountCreate, connectorID, ba.ID.String())
 	now := time.Now().UTC()
 	task := models.Task{
 		ID: models.TaskID{
@@ -540,9 +532,9 @@ func (e *engine) ForwardBankAccount(ctx context.Context, bankAccountID uuid.UUID
 		},
 		workflow.RunCreateBankAccount,
 		workflow.CreateBankAccount{
-			TaskID:        task.ID,
-			ConnectorID:   connectorID,
-			BankAccountID: bankAccountID,
+			TaskID:      task.ID,
+			ConnectorID: connectorID,
+			BankAccount: ba,
 		},
 	)
 	if err != nil {

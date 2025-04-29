@@ -41,6 +41,11 @@
 * [ReversePaymentInitiation](#reversepaymentinitiation) - Reverse a payment initiation
 * [ListPaymentInitiationAdjustments](#listpaymentinitiationadjustments) - List all payment initiation adjustments
 * [ListPaymentInitiationRelatedPayments](#listpaymentinitiationrelatedpayments) - List all payments related to a payment initiation
+* [CreatePaymentServiceUser](#createpaymentserviceuser) - Create a formance payment service user object
+* [ListPaymentServiceUsers](#listpaymentserviceusers) - List all payment service users
+* [GetPaymentServiceUser](#getpaymentserviceuser) - Get a payment service user by ID
+* [AddBankAccountToPaymentServiceUser](#addbankaccounttopaymentserviceuser) - Add a bank account to a payment service user
+* [ForwardPaymentServiceUserBankAccount](#forwardpaymentserviceuserbankaccount) - Forward a payment service user's bank account to a connector
 * [CreatePool](#createpool) - Create a formance pool object
 * [ListPools](#listpools) - List all pools
 * [GetPool](#getpool) - Get a pool by ID
@@ -1796,6 +1801,271 @@ func main() {
 ### Response
 
 **[*operations.V3ListPaymentInitiationRelatedPaymentsResponse](../../models/operations/v3listpaymentinitiationrelatedpaymentsresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## CreatePaymentServiceUser
+
+Create a formance payment service user object
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.CreatePaymentServiceUser(ctx, nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3CreatePaymentServiceUserResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                                                    | Type                                                                                                         | Required                                                                                                     | Description                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `ctx`                                                                                                        | [context.Context](https://pkg.go.dev/context#Context)                                                        | :heavy_check_mark:                                                                                           | The context to use for the request.                                                                          |
+| `request`                                                                                                    | [components.V3CreatePaymentServiceUserRequest](../../models/components/v3createpaymentserviceuserrequest.md) | :heavy_check_mark:                                                                                           | The request object to use for the request.                                                                   |
+| `opts`                                                                                                       | [][operations.Option](../../models/operations/option.md)                                                     | :heavy_minus_sign:                                                                                           | The options for this request.                                                                                |
+
+### Response
+
+**[*operations.V3CreatePaymentServiceUserResponse](../../models/operations/v3createpaymentserviceuserresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## ListPaymentServiceUsers
+
+List all payment service users
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.ListPaymentServiceUsers(ctx, client.Int64(100), client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3PaymentServiceUsersCursorResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                                                                                                                                                                | Type                                                                                                                                                                                                                     | Required                                                                                                                                                                                                                 | Description                                                                                                                                                                                                              | Example                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ctx`                                                                                                                                                                                                                    | [context.Context](https://pkg.go.dev/context#Context)                                                                                                                                                                    | :heavy_check_mark:                                                                                                                                                                                                       | The context to use for the request.                                                                                                                                                                                      |                                                                                                                                                                                                                          |
+| `pageSize`                                                                                                                                                                                                               | **int64*                                                                                                                                                                                                                 | :heavy_minus_sign:                                                                                                                                                                                                       | The number of items to return                                                                                                                                                                                            | 100                                                                                                                                                                                                                      |
+| `cursor`                                                                                                                                                                                                                 | **string*                                                                                                                                                                                                                | :heavy_minus_sign:                                                                                                                                                                                                       | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.<br/> | aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==                                                                                                                                                                             |
+| `requestBody`                                                                                                                                                                                                            | map[string]*any*                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                       | N/A                                                                                                                                                                                                                      |                                                                                                                                                                                                                          |
+| `opts`                                                                                                                                                                                                                   | [][operations.Option](../../models/operations/option.md)                                                                                                                                                                 | :heavy_minus_sign:                                                                                                                                                                                                       | The options for this request.                                                                                                                                                                                            |                                                                                                                                                                                                                          |
+
+### Response
+
+**[*operations.V3ListPaymentServiceUsersResponse](../../models/operations/v3listpaymentserviceusersresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## GetPaymentServiceUser
+
+Get a payment service user by ID
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.GetPaymentServiceUser(ctx, "<id>")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3GetPaymentServiceUserResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
+| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
+| `paymentServiceUserID`                                   | *string*                                                 | :heavy_check_mark:                                       | The payment service user ID                              |
+| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+
+### Response
+
+**[*operations.V3GetPaymentServiceUserResponse](../../models/operations/v3getpaymentserviceuserresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## AddBankAccountToPaymentServiceUser
+
+Add a bank account to a payment service user
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.AddBankAccountToPaymentServiceUser(ctx, "<id>", "<id>")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
+| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
+| `paymentServiceUserID`                                   | *string*                                                 | :heavy_check_mark:                                       | The payment service user ID                              |
+| `bankAccountID`                                          | *string*                                                 | :heavy_check_mark:                                       | The bank account ID                                      |
+| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+
+### Response
+
+**[*operations.V3AddBankAccountToPaymentServiceUserResponse](../../models/operations/v3addbankaccounttopaymentserviceuserresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## ForwardPaymentServiceUserBankAccount
+
+Forward a payment service user's bank account to a connector
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V3.ForwardPaymentServiceUserBankAccount(ctx, "<id>", "<id>", nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.V3ForwardPaymentServiceUserBankAccountResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                                                                                             | Type                                                                                                                                  | Required                                                                                                                              | Description                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `ctx`                                                                                                                                 | [context.Context](https://pkg.go.dev/context#Context)                                                                                 | :heavy_check_mark:                                                                                                                    | The context to use for the request.                                                                                                   |
+| `paymentServiceUserID`                                                                                                                | *string*                                                                                                                              | :heavy_check_mark:                                                                                                                    | The payment service user ID                                                                                                           |
+| `bankAccountID`                                                                                                                       | *string*                                                                                                                              | :heavy_check_mark:                                                                                                                    | The bank account ID                                                                                                                   |
+| `v3ForwardPaymentServiceUserBankAccountRequest`                                                                                       | [*components.V3ForwardPaymentServiceUserBankAccountRequest](../../models/components/v3forwardpaymentserviceuserbankaccountrequest.md) | :heavy_minus_sign:                                                                                                                    | N/A                                                                                                                                   |
+| `opts`                                                                                                                                | [][operations.Option](../../models/operations/option.md)                                                                              | :heavy_minus_sign:                                                                                                                    | The options for this request.                                                                                                         |
+
+### Response
+
+**[*operations.V3ForwardPaymentServiceUserBankAccountResponse](../../models/operations/v3forwardpaymentserviceuserbankaccountresponse.md), error**
 
 ### Errors
 

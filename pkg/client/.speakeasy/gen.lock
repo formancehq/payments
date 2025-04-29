@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: 2b89b94fa4d7fdc91e9e4b71b62b7378
+  docChecksum: ae0a09aa698536274b47d1d29a0c8ad2
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -107,6 +107,8 @@ generatedFiles:
   - /models/components/v3account.go
   - /models/components/v3accountscursorresponse.go
   - /models/components/v3accounttypeenum.go
+  - /models/components/v3address.go
+  - /models/components/v3addressrequest.go
   - /models/components/v3adyenconfig.go
   - /models/components/v3approvepaymentinitiationresponse.go
   - /models/components/v3atlarconfig.go
@@ -124,6 +126,8 @@ generatedFiles:
   - /models/components/v3connectorscheduleresponse.go
   - /models/components/v3connectorschedulescursorresponse.go
   - /models/components/v3connectorscursorresponse.go
+  - /models/components/v3contactdetails.go
+  - /models/components/v3contactdetailsrequest.go
   - /models/components/v3createaccountrequest.go
   - /models/components/v3createaccountresponse.go
   - /models/components/v3createbankaccountrequest.go
@@ -131,6 +135,8 @@ generatedFiles:
   - /models/components/v3createpaymentadjustmentrequest.go
   - /models/components/v3createpaymentrequest.go
   - /models/components/v3createpaymentresponse.go
+  - /models/components/v3createpaymentserviceuserrequest.go
+  - /models/components/v3createpaymentserviceuserresponse.go
   - /models/components/v3createpoolrequest.go
   - /models/components/v3createpoolresponse.go
   - /models/components/v3currencycloudconfig.go
@@ -139,12 +145,15 @@ generatedFiles:
   - /models/components/v3errorsenum.go
   - /models/components/v3forwardbankaccountrequest.go
   - /models/components/v3forwardbankaccountresponse.go
+  - /models/components/v3forwardpaymentserviceuserbankaccountrequest.go
+  - /models/components/v3forwardpaymentserviceuserbankaccountresponse.go
   - /models/components/v3genericconfig.go
   - /models/components/v3getaccountresponse.go
   - /models/components/v3getbankaccountresponse.go
   - /models/components/v3getconnectorconfigresponse.go
   - /models/components/v3getpaymentinitiationresponse.go
   - /models/components/v3getpaymentresponse.go
+  - /models/components/v3getpaymentserviceuserresponse.go
   - /models/components/v3getpoolresponse.go
   - /models/components/v3gettaskresponse.go
   - /models/components/v3initiatepaymentrequest.go
@@ -165,6 +174,8 @@ generatedFiles:
   - /models/components/v3paymentinitiationstatusenum.go
   - /models/components/v3paymentinitiationtypeenum.go
   - /models/components/v3paymentscursorresponse.go
+  - /models/components/v3paymentserviceuser.go
+  - /models/components/v3paymentserviceuserscursorresponse.go
   - /models/components/v3paymentstatusenum.go
   - /models/components/v3paymenttypeenum.go
   - /models/components/v3pool.go
@@ -229,14 +240,17 @@ generatedFiles:
   - /models/operations/updatemetadata.go
   - /models/operations/updatetransferinitiationstatus.go
   - /models/operations/v3addaccounttopool.go
+  - /models/operations/v3addbankaccounttopaymentserviceuser.go
   - /models/operations/v3approvepaymentinitiation.go
   - /models/operations/v3createaccount.go
   - /models/operations/v3createbankaccount.go
   - /models/operations/v3createpayment.go
+  - /models/operations/v3createpaymentserviceuser.go
   - /models/operations/v3createpool.go
   - /models/operations/v3deletepaymentinitiation.go
   - /models/operations/v3deletepool.go
   - /models/operations/v3forwardbankaccount.go
+  - /models/operations/v3forwardpaymentserviceuserbankaccount.go
   - /models/operations/v3getaccount.go
   - /models/operations/v3getaccountbalances.go
   - /models/operations/v3getbankaccount.go
@@ -244,6 +258,7 @@ generatedFiles:
   - /models/operations/v3getconnectorschedule.go
   - /models/operations/v3getpayment.go
   - /models/operations/v3getpaymentinitiation.go
+  - /models/operations/v3getpaymentserviceuser.go
   - /models/operations/v3getpool.go
   - /models/operations/v3getpoolbalances.go
   - /models/operations/v3gettask.go
@@ -259,6 +274,7 @@ generatedFiles:
   - /models/operations/v3listpaymentinitiationrelatedpayments.go
   - /models/operations/v3listpaymentinitiations.go
   - /models/operations/v3listpayments.go
+  - /models/operations/v3listpaymentserviceusers.go
   - /models/operations/v3listpools.go
   - /models/operations/v3rejectpaymentinitiation.go
   - /models/operations/v3removeaccountfrompool.go
@@ -383,6 +399,8 @@ generatedFiles:
   - docs/models/components/v3accountscursorresponse.md
   - docs/models/components/v3accountscursorresponsecursor.md
   - docs/models/components/v3accounttypeenum.md
+  - docs/models/components/v3address.md
+  - docs/models/components/v3addressrequest.md
   - docs/models/components/v3adyenconfig.md
   - docs/models/components/v3approvepaymentinitiationresponse.md
   - docs/models/components/v3approvepaymentinitiationresponsedata.md
@@ -407,6 +425,8 @@ generatedFiles:
   - docs/models/components/v3connectorschedulescursorresponsecursor.md
   - docs/models/components/v3connectorscursorresponse.md
   - docs/models/components/v3connectorscursorresponsecursor.md
+  - docs/models/components/v3contactdetails.md
+  - docs/models/components/v3contactdetailsrequest.md
   - docs/models/components/v3createaccountrequest.md
   - docs/models/components/v3createaccountresponse.md
   - docs/models/components/v3createbankaccountrequest.md
@@ -414,6 +434,8 @@ generatedFiles:
   - docs/models/components/v3createpaymentadjustmentrequest.md
   - docs/models/components/v3createpaymentrequest.md
   - docs/models/components/v3createpaymentresponse.md
+  - docs/models/components/v3createpaymentserviceuserrequest.md
+  - docs/models/components/v3createpaymentserviceuserresponse.md
   - docs/models/components/v3createpoolrequest.md
   - docs/models/components/v3createpoolresponse.md
   - docs/models/components/v3currencycloudconfig.md
@@ -423,12 +445,16 @@ generatedFiles:
   - docs/models/components/v3forwardbankaccountrequest.md
   - docs/models/components/v3forwardbankaccountresponse.md
   - docs/models/components/v3forwardbankaccountresponsedata.md
+  - docs/models/components/v3forwardpaymentserviceuserbankaccountrequest.md
+  - docs/models/components/v3forwardpaymentserviceuserbankaccountresponse.md
+  - docs/models/components/v3forwardpaymentserviceuserbankaccountresponsedata.md
   - docs/models/components/v3genericconfig.md
   - docs/models/components/v3getaccountresponse.md
   - docs/models/components/v3getbankaccountresponse.md
   - docs/models/components/v3getconnectorconfigresponse.md
   - docs/models/components/v3getpaymentinitiationresponse.md
   - docs/models/components/v3getpaymentresponse.md
+  - docs/models/components/v3getpaymentserviceuserresponse.md
   - docs/models/components/v3getpoolresponse.md
   - docs/models/components/v3gettaskresponse.md
   - docs/models/components/v3initiatepaymentrequest.md
@@ -455,6 +481,9 @@ generatedFiles:
   - docs/models/components/v3paymentinitiationtypeenum.md
   - docs/models/components/v3paymentscursorresponse.md
   - docs/models/components/v3paymentscursorresponsecursor.md
+  - docs/models/components/v3paymentserviceuser.md
+  - docs/models/components/v3paymentserviceuserscursorresponse.md
+  - docs/models/components/v3paymentserviceuserscursorresponsecursor.md
   - docs/models/components/v3paymentstatusenum.md
   - docs/models/components/v3paymenttypeenum.md
   - docs/models/components/v3pool.md
@@ -560,11 +589,14 @@ generatedFiles:
   - docs/models/operations/updatetransferinitiationstatusresponse.md
   - docs/models/operations/v3addaccounttopoolrequest.md
   - docs/models/operations/v3addaccounttopoolresponse.md
+  - docs/models/operations/v3addbankaccounttopaymentserviceuserrequest.md
+  - docs/models/operations/v3addbankaccounttopaymentserviceuserresponse.md
   - docs/models/operations/v3approvepaymentinitiationrequest.md
   - docs/models/operations/v3approvepaymentinitiationresponse.md
   - docs/models/operations/v3createaccountresponse.md
   - docs/models/operations/v3createbankaccountresponse.md
   - docs/models/operations/v3createpaymentresponse.md
+  - docs/models/operations/v3createpaymentserviceuserresponse.md
   - docs/models/operations/v3createpoolresponse.md
   - docs/models/operations/v3deletepaymentinitiationrequest.md
   - docs/models/operations/v3deletepaymentinitiationresponse.md
@@ -572,6 +604,8 @@ generatedFiles:
   - docs/models/operations/v3deletepoolresponse.md
   - docs/models/operations/v3forwardbankaccountrequest.md
   - docs/models/operations/v3forwardbankaccountresponse.md
+  - docs/models/operations/v3forwardpaymentserviceuserbankaccountrequest.md
+  - docs/models/operations/v3forwardpaymentserviceuserbankaccountresponse.md
   - docs/models/operations/v3getaccountbalancesrequest.md
   - docs/models/operations/v3getaccountbalancesresponse.md
   - docs/models/operations/v3getaccountrequest.md
@@ -586,6 +620,8 @@ generatedFiles:
   - docs/models/operations/v3getpaymentinitiationresponse.md
   - docs/models/operations/v3getpaymentrequest.md
   - docs/models/operations/v3getpaymentresponse.md
+  - docs/models/operations/v3getpaymentserviceuserrequest.md
+  - docs/models/operations/v3getpaymentserviceuserresponse.md
   - docs/models/operations/v3getpoolbalancesrequest.md
   - docs/models/operations/v3getpoolbalancesresponse.md
   - docs/models/operations/v3getpoolrequest.md
@@ -613,6 +649,8 @@ generatedFiles:
   - docs/models/operations/v3listpaymentinitiationrelatedpaymentsresponse.md
   - docs/models/operations/v3listpaymentinitiationsrequest.md
   - docs/models/operations/v3listpaymentinitiationsresponse.md
+  - docs/models/operations/v3listpaymentserviceusersrequest.md
+  - docs/models/operations/v3listpaymentserviceusersresponse.md
   - docs/models/operations/v3listpaymentsrequest.md
   - docs/models/operations/v3listpaymentsresponse.md
   - docs/models/operations/v3listpoolsrequest.md
@@ -1517,5 +1555,53 @@ examples:
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3CreatePaymentServiceUser:
+    speakeasy-default-v3-create-payment-service-user:
+      responses:
+        "201":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentServiceUsers:
+    "":
+      parameters:
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": []}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPaymentServiceUser:
+    speakeasy-default-v3-get-payment-service-user:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-06-15T05:02:42.695Z"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3AddBankAccountToPaymentServiceUser:
+    speakeasy-default-v3-add-bank-account-to-payment-service-user:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          bankAccountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ForwardPaymentServiceUserBankAccount:
+    speakeasy-default-v3-forward-payment-service-user-bank-account:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          bankAccountID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0
 generatedTests: {}

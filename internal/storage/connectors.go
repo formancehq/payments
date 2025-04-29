@@ -51,7 +51,7 @@ type connector struct {
 func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerConnectorsChanges) error {
 	conn, err := s.db.Conn(ctx)
 	if err != nil {
-		return errors.Wrap(err, "cannot get connection")
+		return fmt.Errorf("cannot get connection: %w", err)
 	}
 
 	s.rwMutex.Lock()
@@ -87,7 +87,7 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 		}()
 		return nil
 	}); err != nil {
-		return errors.Wrap(err, "cannot get driver connection")
+		return fmt.Errorf("cannot get driver connection: %w", err)
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func (s *store) ListenConnectorsChanges(ctx context.Context, handlers HandlerCon
 func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return errors.Wrap(err, "cannot begin transaction")
+		return fmt.Errorf("cannot begin transaction: %w", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -133,7 +133,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return errors.Wrap(err, "cannot begin transaction")
+		return fmt.Errorf("cannot begin transaction: %w", err)
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -219,7 +219,7 @@ func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) 
 		case key == "name", key == "id":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		default:
-			return "", nil, errors.Wrap(ErrValidation, fmt.Sprintf("unknown key '%s' when building query", key))
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
 		}
 	}))
 }

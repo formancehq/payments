@@ -2,25 +2,34 @@ package models
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/google/uuid"
 )
 
 const (
 	bankAccountOwnerNamespace = formanceMetadataSpecNamespace + "owner/"
 
+	// Bank Account metadata
 	BankAccountOwnerAddressLine1MetadataKey = bankAccountOwnerNamespace + "addressLine1"
 	BankAccountOwnerAddressLine2MetadataKey = bankAccountOwnerNamespace + "addressLine2"
+	BankAccountOwnerStreetNameMetadataKey   = bankAccountOwnerNamespace + "streetName"
+	BankAccountOwnerStreetNumberMetadataKey = bankAccountOwnerNamespace + "streetNumber"
 	BankAccountOwnerCityMetadataKey         = bankAccountOwnerNamespace + "city"
 	BankAccountOwnerRegionMetadataKey       = bankAccountOwnerNamespace + "region"
 	BankAccountOwnerPostalCodeMetadataKey   = bankAccountOwnerNamespace + "postalCode"
-	BankAccountAccountNumberMetadataKey     = bankAccountOwnerNamespace + "accountNumber"
-	BankAccountIBANMetadataKey              = bankAccountOwnerNamespace + "iban"
-	BankAccountSwiftBicCodeMetadataKey      = bankAccountOwnerNamespace + "swiftBicCode"
-	BankAccountCountryMetadataKey           = bankAccountOwnerNamespace + "country"
-	BankAccountNameMetadataKey              = bankAccountOwnerNamespace + "name"
+	BankAccountOwnerEmailMetadataKey        = bankAccountOwnerNamespace + "email"
+	BankAccountOwnerPhoneNumberMetadataKey  = bankAccountOwnerNamespace + "phoneNumber"
+
+	// Account metadata
+	AccountIBANMetadataKey               = bankAccountOwnerNamespace + "iban"
+	AccountAccountNumberMetadataKey      = bankAccountOwnerNamespace + "accountNumber"
+	AccountBankAccountNameMetadataKey    = bankAccountOwnerNamespace + "name"
+	AccountBankAccountCountryMetadataKey = bankAccountOwnerNamespace + "country"
+	AccountSwiftBicCodeMetadataKey       = bankAccountOwnerNamespace + "swiftBicCode"
 )
 
 type BankAccount struct {
@@ -89,20 +98,50 @@ func FillBankAccountDetailsToAccountMetadata(account *Account, bankAccount *Bank
 	account.Metadata[BankAccountOwnerPostalCodeMetadataKey] = bankAccount.Metadata[BankAccountOwnerPostalCodeMetadataKey]
 
 	if bankAccount.AccountNumber != nil {
-		account.Metadata[BankAccountAccountNumberMetadataKey] = *bankAccount.AccountNumber
+		account.Metadata[AccountAccountNumberMetadataKey] = *bankAccount.AccountNumber
 	}
 
 	if bankAccount.IBAN != nil {
-		account.Metadata[BankAccountIBANMetadataKey] = *bankAccount.IBAN
+		account.Metadata[AccountIBANMetadataKey] = *bankAccount.IBAN
 	}
 
 	if bankAccount.SwiftBicCode != nil {
-		account.Metadata[BankAccountSwiftBicCodeMetadataKey] = *bankAccount.SwiftBicCode
+		account.Metadata[AccountSwiftBicCodeMetadataKey] = *bankAccount.SwiftBicCode
 	}
 
 	if bankAccount.Country != nil {
-		account.Metadata[BankAccountCountryMetadataKey] = *bankAccount.Country
+		account.Metadata[AccountBankAccountCountryMetadataKey] = *bankAccount.Country
 	}
 
-	account.Metadata[BankAccountNameMetadataKey] = bankAccount.Name
+	account.Metadata[AccountBankAccountNameMetadataKey] = bankAccount.Name
+}
+
+func FillBankAccountMetadataWithPaymentServiceUserInfo(ba *BankAccount, psu *PaymentServiceUser) {
+	if psu.Address != nil {
+		var addressLine1 *string
+		switch {
+		case psu.Address.StreetNumber != nil && psu.Address.StreetName != nil:
+			addressLine1 = pointer.For(fmt.Sprintf("%s %s", *psu.Address.StreetNumber, *psu.Address.StreetName))
+		case psu.Address.StreetName != nil:
+			addressLine1 = psu.Address.StreetName
+		}
+
+		fillMetadata(ba.Metadata, BankAccountOwnerAddressLine1MetadataKey, addressLine1)
+		fillMetadata(ba.Metadata, BankAccountOwnerStreetNameMetadataKey, psu.Address.StreetName)
+		fillMetadata(ba.Metadata, BankAccountOwnerStreetNumberMetadataKey, psu.Address.StreetNumber)
+		fillMetadata(ba.Metadata, BankAccountOwnerCityMetadataKey, psu.Address.City)
+		fillMetadata(ba.Metadata, BankAccountOwnerRegionMetadataKey, psu.Address.Region)
+		fillMetadata(ba.Metadata, BankAccountOwnerPostalCodeMetadataKey, psu.Address.PostalCode)
+	}
+
+	if psu.ContactDetails != nil {
+		fillMetadata(ba.Metadata, BankAccountOwnerEmailMetadataKey, psu.ContactDetails.Email)
+		fillMetadata(ba.Metadata, BankAccountOwnerPhoneNumberMetadataKey, psu.ContactDetails.PhoneNumber)
+	}
+}
+
+func fillMetadata(metadata map[string]string, key string, value *string) {
+	if value != nil {
+		metadata[key] = *value
+	}
 }

@@ -3,16 +3,15 @@ package workflow
 import (
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/google/uuid"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/temporal"
 	"go.temporal.io/sdk/workflow"
 )
 
 type CreateBankAccount struct {
-	TaskID        models.TaskID
-	ConnectorID   models.ConnectorID
-	BankAccountID uuid.UUID
+	TaskID      models.TaskID
+	ConnectorID models.ConnectorID
+	BankAccount models.BankAccount
 }
 
 func (w Workflow) runCreateBankAccount(
@@ -45,20 +44,13 @@ func (w Workflow) createBankAccount(
 	ctx workflow.Context,
 	createBankAccount CreateBankAccount,
 ) (string, error) {
-	bankAccount, err := activities.StorageBankAccountsGet(
-		infiniteRetryContext(ctx),
-		createBankAccount.BankAccountID,
-		true,
-	)
-	if err != nil {
-		return "", err
-	}
+	bankAccount := createBankAccount.BankAccount
 
 	createBAResponse, err := activities.PluginCreateBankAccount(
 		infiniteRetryContext(ctx),
 		createBankAccount.ConnectorID,
 		models.CreateBankAccountRequest{
-			BankAccount: *bankAccount,
+			BankAccount: bankAccount,
 		},
 	)
 	if err != nil {
@@ -93,7 +85,7 @@ func (w Workflow) createBankAccount(
 
 	err = activities.StorageBankAccountsAddRelatedAccount(
 		infiniteRetryContext(ctx),
-		createBankAccount.BankAccountID,
+		createBankAccount.BankAccount.ID,
 		relatedAccount,
 	)
 	if err != nil {
@@ -115,7 +107,7 @@ func (w Workflow) createBankAccount(
 		),
 		RunSendEvents,
 		SendEvents{
-			BankAccount: bankAccount,
+			BankAccount: &bankAccount,
 		},
 	).Get(ctx, nil); err != nil {
 		return "", err

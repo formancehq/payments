@@ -94,6 +94,12 @@ type Storage interface {
 	PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id models.PaymentInitiationReversalAdjustmentID) (*models.PaymentInitiationReversalAdjustment, error)
 	PaymentInitiationReversalAdjustmentsList(ctx context.Context, piID models.PaymentInitiationReversalID, q ListPaymentInitiationReversalAdjustmentsQuery) (*bunpaginate.Cursor[models.PaymentInitiationReversalAdjustment], error)
 
+	// Payment Service Users
+	PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error
+	PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error)
+	PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
+	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, bankAccountID uuid.UUID) error
+
 	// Pools
 	PoolsUpsert(ctx context.Context, pool models.Pool) error
 	PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error)

@@ -1149,6 +1149,177 @@ components:
         - TRANSFER
         - PAYOUT
 
+    # PAYMENT SERVICE USERS
+    V3CreatePaymentServiceUserRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+        contactDetails:
+          $ref: '#/components/schemas/V3ContactDetailsRequest'
+          nullable: true
+        address:
+          $ref: '#/components/schemas/V3AddressRequest'
+          nullable: true
+        bankAccountIDs:
+          type: array
+          items:
+            type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3AddressRequest:
+      type: object
+      properties: 
+        streetNumber:
+          type: string
+        streetName:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+    
+    V3ContactDetailsRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        phoneNumber:
+          type: string
+
+    V3CreatePaymentServiceUserResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          description: The ID of the created payment service user
+          type: string
+
+    V3PaymentServiceUsersCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentServiceUser'
+
+    V3PaymentServiceUser:
+      type: object
+      required:
+        - id
+        - name
+        - createdAt
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        contactDetails:
+          $ref: '#/components/schemas/V3ContactDetails'
+          nullable: true
+        address:
+          $ref: '#/components/schemas/V3Address'
+          nullable: true
+        bankAccountIDs:
+          type: array
+          items:
+            type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3ContactDetails:
+      type: object
+      properties:
+        email:
+          type: string
+        phoneNumber:
+          type: string
+
+    V3Address:
+      type: object
+      properties: 
+        streetNumber:
+          type: string
+        streetName:
+          type: string
+        city:
+          type: string
+        region:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+
+    V3GetPaymentServiceUserResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/V3PaymentServiceUser'
+
+    V3ForwardPaymentServiceUserBankAccountRequest:
+      type: object
+      required:
+        - connectorID
+      properties:
+        connectorID:
+          type: string
+          format: byte
+
+    V3ForwardPaymentServiceUserBankAccountResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: >
+                Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of
+                the task and get the resulting bank account ID.
+              type: string
+
     # POOLS
     V3CreatePoolRequest:
       type: object

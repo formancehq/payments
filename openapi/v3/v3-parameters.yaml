@@ -21,6 +21,14 @@ components:
       schema:
         type: string
 
+    V3PaymentServiceUserID:
+      name: paymentServiceUserID
+      in: path
+      required: true
+      description: The payment service user ID
+      schema:
+        type: string
+
     V3PaymentID:
       name: paymentID
       in: path
