@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
@@ -223,14 +224,19 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 func generateTestSampleAccounts() (sampleAccounts []client.QontoBankAccount, sortedSampleAccounts []client.QontoBankAccount) {
 	sampleAccounts = make([]client.QontoBankAccount, 0)
 	for i := 0; i < 20; i++ {
+		main, isExternalAccount := i == 0, i == 1
+
 		sampleAccounts = append(sampleAccounts, client.QontoBankAccount{
-			Id:        fmt.Sprintf("%d", i),
-			Name:      fmt.Sprintf("Account %d", i),
-			Iban:      fmt.Sprintf("FR%02d0000000%02d", i, i),
-			Currency:  "EUR",
-			Balance:   float64(i) * 100.0,
-			Status:    "active",
-			UpdatedAt: fmt.Sprintf("2021-01-01T00:%02d:00.001Z", i),
+			Id:                fmt.Sprintf("%d", i),
+			Name:              fmt.Sprintf("Account %d", i),
+			Iban:              fmt.Sprintf("FR%02d0000000%02d", i, i),
+			Currency:          "EUR",
+			Balance:           float64(i),
+			BalanceCents:      int64(i) * 100,
+			Status:            "active",
+			UpdatedAt:         fmt.Sprintf("2021-01-01T00:%02d:00.001Z", i),
+			Main:              main,
+			IsExternalAccount: isExternalAccount,
 		})
 	}
 
@@ -249,5 +255,12 @@ func assertAccountMapping(sampleQontoAccount client.QontoBankAccount, resultingP
 	Expect(*resultingPSPAccount.Name).To(Equal(sampleQontoAccount.Name))
 	Expect(resultingPSPAccount.CreatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sampleQontoAccount.UpdatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal("EUR/2"))
-	Expect(resultingPSPAccount.Metadata).To(BeEmpty())
+	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
+		"iban":                sampleQontoAccount.Iban,
+		"bic":                 sampleQontoAccount.Bic,
+		"account_number":      sampleQontoAccount.AccountNumber,
+		"status":              sampleQontoAccount.Status,
+		"is_external_account": strconv.FormatBool(sampleQontoAccount.IsExternalAccount),
+		"main":                strconv.FormatBool(sampleQontoAccount.Main),
+	}))
 }
