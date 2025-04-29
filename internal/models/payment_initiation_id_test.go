@@ -15,7 +15,7 @@ func TestPaymentInitiationID(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		id := models.PaymentInitiationID{
 			Reference: "init123",
 			ConnectorID: models.ConnectorID{
@@ -23,10 +23,10 @@ func TestPaymentInitiationID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		// When
 		result := id.String()
-		
+
 		// Then
 		assert.NotEmpty(t, result)
 	})
@@ -34,7 +34,7 @@ func TestPaymentInitiationID(t *testing.T) {
 	t.Run("PaymentInitiationIDFromString", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationID{
 			Reference: "init123",
 			ConnectorID: models.ConnectorID{
@@ -42,28 +42,28 @@ func TestPaymentInitiationID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		// When
 		id, err := models.PaymentInitiationIDFromString(idStr)
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
-		
+
 		// When
 		_, err = models.PaymentInitiationIDFromString("invalid-base64")
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
-		
+
 		// When
 		_, err = models.PaymentInitiationIDFromString("aW52YWxpZC1qc29u")
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
@@ -72,7 +72,7 @@ func TestPaymentInitiationID(t *testing.T) {
 	t.Run("MustPaymentInitiationIDFromString", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationID{
 			Reference: "init123",
 			ConnectorID: models.ConnectorID{
@@ -80,23 +80,23 @@ func TestPaymentInitiationID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		// When
 		id := models.MustPaymentInitiationIDFromString(idStr)
-		
+
 		// Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
-		
+
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		id := models.PaymentInitiationID{
 			Reference: "init123",
 			ConnectorID: models.ConnectorID{
@@ -104,10 +104,10 @@ func TestPaymentInitiationID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		// When
 		val, err := id.Value()
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, id.String(), val)
@@ -116,7 +116,7 @@ func TestPaymentInitiationID(t *testing.T) {
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationID{
 			Reference: "init123",
 			ConnectorID: models.ConnectorID{
@@ -124,36 +124,36 @@ func TestPaymentInitiationID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		var id models.PaymentInitiationID
 		// When
 		err := id.Scan(idStr)
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
 		assert.Equal(t, original.ConnectorID.Reference.String(), id.ConnectorID.Reference.String())
-		
+
 		// When
 		err = id.Scan(nil)
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "payment initiation id is nil")
-		
+
 		// When
 		err = id.Scan(123)
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "failed to parse payment initiation id")
-		
+
 		// When
 		err = id.Scan("invalid-base64")
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")

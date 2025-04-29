@@ -15,12 +15,12 @@ func TestPaymentInitiationRelatedPaymentsIdempotencyKey(t *testing.T) {
 		Provider:  "test",
 		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	}
-	
+
 	paymentInitiationID := models.PaymentInitiationID{
 		Reference:   "pi123",
 		ConnectorID: connectorID,
 	}
-	
+
 	paymentID := models.PaymentID{
 		PaymentReference: models.PaymentReference{
 			Reference: "payment123",
@@ -28,7 +28,7 @@ func TestPaymentInitiationRelatedPaymentsIdempotencyKey(t *testing.T) {
 		},
 		ConnectorID: connectorID,
 	}
-	
+
 	relatedPayments := models.PaymentInitiationRelatedPayments{
 		PaymentInitiationID: paymentInitiationID,
 		PaymentID:           paymentID,

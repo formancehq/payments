@@ -15,7 +15,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
 			ConnectorID: models.ConnectorID{
@@ -23,10 +23,10 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		// When
 		result := reversalID.String()
-		
+
 		// Then
 		assert.NotEmpty(t, result)
 	})
@@ -34,7 +34,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 	t.Run("PaymentInitiationReversalIDFromString", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
 			ConnectorID: models.ConnectorID{
@@ -42,30 +42,30 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		// When
 		id, err := models.PaymentInitiationReversalIDFromString(idStr)
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
-		
+
 		_, err = models.PaymentInitiationReversalIDFromString("invalid-base64")
 		// Then
-			assert.Error(t, err)
-		
+		assert.Error(t, err)
+
 		_, err = models.PaymentInitiationReversalIDFromString("aW52YWxpZC1qc29u")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("MustPaymentInitiationReversalIDFromString", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
 			ConnectorID: models.ConnectorID{
@@ -73,12 +73,12 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		// When
 		id := models.MustPaymentInitiationReversalIDFromString(idStr)
-		
+
 		// Then
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
@@ -87,7 +87,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		reversalID := models.PaymentInitiationReversalID{
 			Reference: "rev123",
 			ConnectorID: models.ConnectorID{
@@ -95,10 +95,10 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		// When
 		val, err := reversalID.Value()
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, reversalID.String(), val)
@@ -107,7 +107,7 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		original := models.PaymentInitiationReversalID{
 			Reference: "rev123",
 			ConnectorID: models.ConnectorID{
@@ -115,28 +115,28 @@ func TestPaymentInitiationReversalID(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		idStr := original.String()
-		
+
 		var id models.PaymentInitiationReversalID
 		// When
 		err := id.Scan(idStr)
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, original.Reference, id.Reference)
 		assert.Equal(t, original.ConnectorID.Provider, id.ConnectorID.Provider)
-		
+
 		err = id.Scan(nil)
 		// Then
-			assert.Error(t, err)
-		
+		assert.Error(t, err)
+
 		err = id.Scan(123)
 		// Then
-			assert.Error(t, err)
-		
+		assert.Error(t, err)
+
 		err = id.Scan("invalid-base64")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 }

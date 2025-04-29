@@ -32,12 +32,12 @@ func TestBankAccountRelatedAccountMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(relatedAccount)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, accountID.String(), jsonMap["accountID"])
 	assert.NotNil(t, jsonMap["createdAt"])
@@ -62,16 +62,16 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		// Given
 
 		encodedAccountID := accountID.String()
-		
+
 		jsonData := `{
 			"accountID": "` + encodedAccountID + `",
 			"createdAt": "` + now.Format(time.RFC3339Nano) + `"
 		}`
 
 		var relatedAccount models.BankAccountRelatedAccount
-		
+
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -86,9 +86,9 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var relatedAccount models.BankAccountRelatedAccount
-		
+
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		
+
 		// Then
 		require.Error(t, err)
 	})
@@ -103,9 +103,9 @@ func TestBankAccountRelatedAccountUnmarshalJSON(t *testing.T) {
 		}`
 
 		var relatedAccount models.BankAccountRelatedAccount
-		
+
 		err := json.Unmarshal([]byte(jsonData), &relatedAccount)
-		
+
 		// Then
 		require.Error(t, err)
 	})

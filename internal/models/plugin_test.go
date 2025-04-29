@@ -21,18 +21,18 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("Name", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		mockPlugin.EXPECT().Name().Return("test-plugin")
-		
+
 		name := mockPlugin.Name()
-		
+
 		assert.Equal(t, "test-plugin", name)
 	})
 
 	t.Run("Install", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.InstallRequest{
 			ConnectorID: "test-connector",
@@ -41,11 +41,11 @@ func TestMockPlugin(t *testing.T) {
 			Workflow:        models.ConnectorTasksTree{},
 			WebhooksConfigs: []models.PSPWebhookConfig{},
 		}
-		
+
 		mockPlugin.EXPECT().Install(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.Install(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Workflow, result.Workflow)
 		assert.Equal(t, resp.WebhooksConfigs, result.WebhooksConfigs)
@@ -54,17 +54,17 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("Uninstall", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.UninstallRequest{
 			ConnectorID: "test-connector",
 		}
 		resp := models.UninstallResponse{}
-		
+
 		mockPlugin.EXPECT().Uninstall(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.Uninstall(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -72,7 +72,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("CreateBankAccount", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.CreateBankAccountRequest{
 			BankAccount: models.BankAccount{},
@@ -80,11 +80,11 @@ func TestMockPlugin(t *testing.T) {
 		resp := models.CreateBankAccountResponse{
 			RelatedAccount: models.PSPAccount{},
 		}
-		
+
 		mockPlugin.EXPECT().CreateBankAccount(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.CreateBankAccount(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -92,7 +92,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("CreatePayout", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.CreatePayoutRequest{
 			PaymentInitiation: models.PSPPaymentInitiation{},
@@ -101,11 +101,11 @@ func TestMockPlugin(t *testing.T) {
 			Payment:         nil,
 			PollingPayoutID: nil,
 		}
-		
+
 		mockPlugin.EXPECT().CreatePayout(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.CreatePayout(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -113,7 +113,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("CreateTransfer", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.CreateTransferRequest{
 			PaymentInitiation: models.PSPPaymentInitiation{},
@@ -122,11 +122,11 @@ func TestMockPlugin(t *testing.T) {
 			Payment:           nil,
 			PollingTransferID: nil,
 		}
-		
+
 		mockPlugin.EXPECT().CreateTransfer(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.CreateTransfer(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -134,7 +134,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("CreateWebhooks", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.CreateWebhooksRequest{
 			ConnectorID:    "test-connector",
@@ -144,11 +144,11 @@ func TestMockPlugin(t *testing.T) {
 		resp := models.CreateWebhooksResponse{
 			Others: []models.PSPOther{},
 		}
-		
+
 		mockPlugin.EXPECT().CreateWebhooks(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.CreateWebhooks(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -156,7 +156,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("FetchNextAccounts", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.FetchNextAccountsRequest{
 			FromPayload: json.RawMessage(`{}`),
@@ -168,11 +168,11 @@ func TestMockPlugin(t *testing.T) {
 			NewState: json.RawMessage(`{}`),
 			HasMore:  false,
 		}
-		
+
 		mockPlugin.EXPECT().FetchNextAccounts(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.FetchNextAccounts(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -180,7 +180,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("FetchNextBalances", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.FetchNextBalancesRequest{
 			FromPayload: json.RawMessage(`{}`),
@@ -192,11 +192,11 @@ func TestMockPlugin(t *testing.T) {
 			NewState: json.RawMessage(`{}`),
 			HasMore:  false,
 		}
-		
+
 		mockPlugin.EXPECT().FetchNextBalances(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.FetchNextBalances(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -204,7 +204,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("FetchNextExternalAccounts", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.FetchNextExternalAccountsRequest{
 			FromPayload: json.RawMessage(`{}`),
@@ -216,11 +216,11 @@ func TestMockPlugin(t *testing.T) {
 			NewState:         json.RawMessage(`{}`),
 			HasMore:          false,
 		}
-		
+
 		mockPlugin.EXPECT().FetchNextExternalAccounts(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.FetchNextExternalAccounts(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -228,7 +228,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("FetchNextOthers", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.FetchNextOthersRequest{
 			Name:        "test",
@@ -241,11 +241,11 @@ func TestMockPlugin(t *testing.T) {
 			NewState: json.RawMessage(`{}`),
 			HasMore:  false,
 		}
-		
+
 		mockPlugin.EXPECT().FetchNextOthers(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.FetchNextOthers(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -253,7 +253,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("FetchNextPayments", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.FetchNextPaymentsRequest{
 			FromPayload: json.RawMessage(`{}`),
@@ -265,11 +265,11 @@ func TestMockPlugin(t *testing.T) {
 			NewState: json.RawMessage(`{}`),
 			HasMore:  false,
 		}
-		
+
 		mockPlugin.EXPECT().FetchNextPayments(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.FetchNextPayments(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -277,7 +277,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("PollPayoutStatus", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.PollPayoutStatusRequest{
 			PayoutID: "test-payout",
@@ -286,11 +286,11 @@ func TestMockPlugin(t *testing.T) {
 			Payment: nil,
 			Error:   nil,
 		}
-		
+
 		mockPlugin.EXPECT().PollPayoutStatus(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.PollPayoutStatus(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -298,7 +298,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("PollTransferStatus", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.PollTransferStatusRequest{
 			TransferID: "test-transfer",
@@ -307,11 +307,11 @@ func TestMockPlugin(t *testing.T) {
 			Payment: nil,
 			Error:   nil,
 		}
-		
+
 		mockPlugin.EXPECT().PollTransferStatus(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.PollTransferStatus(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -319,7 +319,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("ReversePayout", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.ReversePayoutRequest{
 			PaymentInitiationReversal: models.PSPPaymentInitiationReversal{},
@@ -327,11 +327,11 @@ func TestMockPlugin(t *testing.T) {
 		resp := models.ReversePayoutResponse{
 			Payment: models.PSPPayment{},
 		}
-		
+
 		mockPlugin.EXPECT().ReversePayout(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.ReversePayout(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -339,7 +339,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("ReverseTransfer", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.ReverseTransferRequest{
 			PaymentInitiationReversal: models.PSPPaymentInitiationReversal{},
@@ -347,11 +347,11 @@ func TestMockPlugin(t *testing.T) {
 		resp := models.ReverseTransferResponse{
 			Payment: models.PSPPayment{},
 		}
-		
+
 		mockPlugin.EXPECT().ReverseTransfer(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.ReverseTransfer(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})
@@ -359,7 +359,7 @@ func TestMockPlugin(t *testing.T) {
 	t.Run("TranslateWebhook", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		ctx := context.Background()
 		req := models.TranslateWebhookRequest{
 			Name:    "test-webhook",
@@ -368,11 +368,11 @@ func TestMockPlugin(t *testing.T) {
 		resp := models.TranslateWebhookResponse{
 			Responses: []models.WebhookResponse{},
 		}
-		
+
 		mockPlugin.EXPECT().TranslateWebhook(ctx, req).Return(resp, nil)
-		
+
 		result, err := mockPlugin.TranslateWebhook(ctx, req)
-		
+
 		assert.NoError(t, err)
 		assert.Equal(t, resp, result)
 	})

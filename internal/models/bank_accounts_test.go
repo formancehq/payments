@@ -41,7 +41,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -60,7 +60,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		
+
 		// Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "IBAN is not valid")
@@ -76,7 +76,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		}
 
 		err := bankAccount.Obfuscate()
-		
+
 		// Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "Account number is not valid")
@@ -89,7 +89,7 @@ func TestBankAccountObfuscate(t *testing.T) {
 		bankAccount := models.BankAccount{}
 
 		err := bankAccount.Obfuscate()
-		
+
 		// Then
 		require.NoError(t, err)
 	})

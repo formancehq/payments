@@ -39,12 +39,12 @@ func TestTaskMarshalUnmarshal(t *testing.T) {
 
 	data, err := json.Marshal(task)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var unmarshaledTask models.Task
 	err = json.Unmarshal(data, &unmarshaledTask)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, task.ID.String(), unmarshaledTask.ID.String())
 	assert.Equal(t, task.ConnectorID.String(), unmarshaledTask.ConnectorID.String())
@@ -63,11 +63,11 @@ func TestTaskMarshalUnmarshal(t *testing.T) {
 
 	data, err = json.Marshal(task)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &unmarshaledTask)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, task.ID.String(), unmarshaledTask.ID.String())
 	assert.Nil(t, unmarshaledTask.ConnectorID)
@@ -78,12 +78,12 @@ func TestTaskMarshalUnmarshal(t *testing.T) {
 	invalidJSON := []byte(`{"id": "invalid-task-id", "status": "PROCESSING", "createdAt": "2023-01-01T00:00:00Z", "updatedAt": "2023-01-01T00:00:00Z"}`)
 	err = json.Unmarshal(invalidJSON, &unmarshaledTask)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 
 	invalidJSON = []byte(`{"id": "` + taskID.String() + `", "connectorID": "invalid-connector-id", "status": "PROCESSING", "createdAt": "2023-01-01T00:00:00Z", "updatedAt": "2023-01-01T00:00:00Z"}`)
 	err = json.Unmarshal(invalidJSON, &unmarshaledTask)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestTaskStatus(t *testing.T) {

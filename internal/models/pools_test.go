@@ -39,12 +39,12 @@ func TestPoolMarshalUnmarshal(t *testing.T) {
 
 	data, err := json.Marshal(pool)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var unmarshaledPool models.Pool
 	err = json.Unmarshal(data, &unmarshaledPool)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, pool.ID, unmarshaledPool.ID)
 	assert.Equal(t, pool.Name, unmarshaledPool.Name)
@@ -56,12 +56,12 @@ func TestPoolMarshalUnmarshal(t *testing.T) {
 	invalidJSON := []byte(`{"id": "not-a-uuid", "name": "Invalid Pool", "createdAt": "2023-01-01T00:00:00Z", "poolAccounts": []}`)
 	err = json.Unmarshal(invalidJSON, &unmarshaledPool)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 
 	invalidJSON = []byte(`{"id": "` + uuid.New().String() + `", "name": "Invalid Pool", "createdAt": "2023-01-01T00:00:00Z", "poolAccounts": ["invalid-account-id"]}`)
 	err = json.Unmarshal(invalidJSON, &unmarshaledPool)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestPoolIdempotencyKey(t *testing.T) {

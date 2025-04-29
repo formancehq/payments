@@ -38,7 +38,7 @@ func TestValidate(t *testing.T) {
 		}
 		err := config.Validate()
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 	})
 }
 
@@ -53,12 +53,12 @@ func TestConfigMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(config)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "test-config", jsonMap["name"])
 	assert.Equal(t, "5m0s", jsonMap["pollingPeriod"])
@@ -80,7 +80,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -100,7 +100,7 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -120,9 +120,9 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		}`
 
 		var config models.Config
-		
+
 		err := json.Unmarshal([]byte(jsonData), &config)
-		
+
 		// Then
 		require.Error(t, err)
 	})
@@ -139,13 +139,13 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 
 		var config models.Config
 		err := json.Unmarshal([]byte(jsonData), &config)
-		
+
 		// Then
 		require.NoError(t, err)
 
 		assert.Equal(t, "test-config", config.Name)
 		assert.Equal(t, 0*time.Second, config.PollingPeriod) // Zero is allowed
-		assert.Equal(t, 0, config.PageSize) // Zero is allowed
+		assert.Equal(t, 0, config.PageSize)                  // Zero is allowed
 	})
 
 	t.Run("invalid json", func(t *testing.T) {
@@ -155,9 +155,9 @@ func TestConfigUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var config models.Config
-		
+
 		err := json.Unmarshal([]byte(jsonData), &config)
-		
+
 		// Then
 		require.Error(t, err)
 	})

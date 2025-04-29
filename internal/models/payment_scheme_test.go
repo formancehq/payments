@@ -14,7 +14,7 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			scheme   models.PaymentScheme
@@ -46,11 +46,11 @@ func TestPaymentScheme(t *testing.T) {
 			{models.PAYMENT_SCHEME_OTHER, "OTHER"},
 			{models.PaymentScheme(999), "UNKNOWN"}, // Test default case
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			result := tc.scheme.String()
-			
+
 			// Then
 			assert.Equal(t, tc.expected, result)
 		}
@@ -58,7 +58,7 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("PaymentSchemeFromString", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			input    string
@@ -92,11 +92,11 @@ func TestPaymentScheme(t *testing.T) {
 			{"invalid", models.PAYMENT_SCHEME_UNKNOWN, true},
 			{"", models.PAYMENT_SCHEME_UNKNOWN, true},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			scheme, err := models.PaymentSchemeFromString(tc.input)
-			
+
 			// Then
 			if tc.hasError {
 				assert.Error(t, err)
@@ -111,7 +111,7 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("MustPaymentSchemeFromString", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			input    string
@@ -121,11 +121,11 @@ func TestPaymentScheme(t *testing.T) {
 			{"CARD_MASTERCARD", models.PAYMENT_SCHEME_CARD_MASTERCARD},
 			{"SEPA", models.PAYMENT_SCHEME_SEPA},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			result := models.MustPaymentSchemeFromString(tc.input)
-			
+
 			// Then
 			assert.Equal(t, tc.expected, result)
 		}
@@ -133,50 +133,50 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		schemes := []models.PaymentScheme{
 			models.PAYMENT_SCHEME_CARD_VISA,
 			models.PAYMENT_SCHEME_CARD_MASTERCARD,
 			models.PAYMENT_SCHEME_SEPA,
 		}
-		
+
 		for _, scheme := range schemes {
 			// When
 			data, err := json.Marshal(scheme)
 			require.NoError(t, err)
-			
+
 			var unmarshaled models.PaymentScheme
 			err = json.Unmarshal(data, &unmarshaled)
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, scheme, unmarshaled)
 		}
-		
+
 		t.Run("invalid string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme1 models.PaymentScheme
-			
+
 			// When
 			err := json.Unmarshal([]byte(`"INVALID"`), &scheme1)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment scheme")
 		})
-		
+
 		t.Run("invalid JSON", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme2 models.PaymentScheme
-			
+
 			// When
 			err := json.Unmarshal([]byte(`{invalid}`), &scheme2)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "invalid character")
@@ -185,13 +185,13 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		scheme := models.PAYMENT_SCHEME_CARD_VISA
-		
+
 		// When
 		val, err := scheme.Value()
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, "CARD_VISA", val)
@@ -199,72 +199,72 @@ func TestPaymentScheme(t *testing.T) {
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
-		
+
 		t.Run("valid string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme1 models.PaymentScheme
-			
+
 			// When
 			err := scheme1.Scan("CARD_VISA")
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, models.PAYMENT_SCHEME_CARD_VISA, scheme1)
 		})
-		
+
 		t.Run("invalid type", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme2 models.PaymentScheme
-			
+
 			// When
 			err := scheme2.Scan(123)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment scheme")
 		})
-		
+
 		t.Run("invalid string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme3 models.PaymentScheme
-			
+
 			// When
 			err := scheme3.Scan("INVALID")
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment scheme")
 		})
-		
+
 		t.Run("empty string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme4 models.PaymentScheme
-			
+
 			// When
 			err := scheme4.Scan("")
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment scheme")
 		})
-		
+
 		t.Run("nil value", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var scheme5 models.PaymentScheme
-			
+
 			// When
 			err := scheme5.Scan(nil)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "payment type is nil")

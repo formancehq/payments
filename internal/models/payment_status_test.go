@@ -14,7 +14,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			status   models.PaymentStatus
@@ -38,11 +38,11 @@ func TestPaymentStatus(t *testing.T) {
 			{models.PAYMENT_STATUS_DISPUTE_LOST, "DISPUTE_LOST"},
 			{models.PaymentStatus(999), "UNKNOWN"}, // Test default case
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			result := tc.status.String()
-			
+
 			// Then
 			assert.Equal(t, tc.expected, result)
 		}
@@ -50,7 +50,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("PaymentStatusFromString", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			input    string
@@ -76,11 +76,11 @@ func TestPaymentStatus(t *testing.T) {
 			{"invalid", models.PAYMENT_STATUS_UNKNOWN, true},
 			{"", models.PAYMENT_STATUS_UNKNOWN, true},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			status, err := models.PaymentStatusFromString(tc.input)
-			
+
 			// Then
 			if tc.hasError {
 				assert.Error(t, err)
@@ -95,7 +95,7 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("MustPaymentStatusFromString", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		testCases := []struct {
 			input    string
@@ -105,11 +105,11 @@ func TestPaymentStatus(t *testing.T) {
 			{"SUCCEEDED", models.PAYMENT_STATUS_SUCCEEDED},
 			{"FAILED", models.PAYMENT_STATUS_FAILED},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			result := models.MustPaymentStatusFromString(tc.input)
-			
+
 			// Then
 			assert.Equal(t, tc.expected, result)
 		}
@@ -117,36 +117,36 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		statuses := []models.PaymentStatus{
 			models.PAYMENT_STATUS_PENDING,
 			models.PAYMENT_STATUS_SUCCEEDED,
 			models.PAYMENT_STATUS_FAILED,
 		}
-		
+
 		for _, status := range statuses {
 			// When
 			data, err := json.Marshal(status)
 			require.NoError(t, err)
-			
+
 			var unmarshaled models.PaymentStatus
 			err = json.Unmarshal(data, &unmarshaled)
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, status, unmarshaled)
 		}
-		
+
 		t.Run("invalid string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var status1 models.PaymentStatus
-			
+
 			// When
 			err := json.Unmarshal([]byte(`"INVALID"`), &status1)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment status")
@@ -155,13 +155,13 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		status := models.PAYMENT_STATUS_SUCCEEDED
-		
+
 		// When
 		val, err := status.Value()
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, "SUCCEEDED", val)
@@ -169,44 +169,44 @@ func TestPaymentStatus(t *testing.T) {
 
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
-		
+
 		t.Run("valid string", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var status1 models.PaymentStatus
-			
+
 			// When
 			err := status1.Scan("SUCCEEDED")
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, models.PAYMENT_STATUS_SUCCEEDED, status1)
 		})
-		
+
 		t.Run("invalid type", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var status2 models.PaymentStatus
-			
+
 			// When
 			err := status2.Scan(123)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "unknown payment status")
 		})
-		
+
 		t.Run("nil value", func(t *testing.T) {
 			t.Parallel()
-			
+
 			// Given
 			var status3 models.PaymentStatus
-			
+
 			// When
 			err := status3.Scan(nil)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "payment status is nil")

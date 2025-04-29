@@ -15,7 +15,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhookConfig", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		config := models.PSPWebhookConfig{
 			Name:    "test-webhook",
@@ -36,7 +36,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("WebhookConfig", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		connectorID := models.ConnectorID{
 			Provider:  "test",
@@ -63,7 +63,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("BasicAuth", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		auth := models.BasicAuth{
 			Username: "user",
@@ -84,7 +84,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhook", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		auth := &models.BasicAuth{
 			Username: "user",
@@ -118,7 +118,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("Webhook", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		connectorID := models.ConnectorID{
 			Provider:  "test",
@@ -160,7 +160,7 @@ func TestWebhookStructs(t *testing.T) {
 
 	t.Run("PSPWebhook without BasicAuth", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		webhook := models.PSPWebhook{
 			QueryValues: map[string][]string{

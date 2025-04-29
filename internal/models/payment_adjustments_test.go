@@ -25,14 +25,14 @@ func TestPaymentAdjustmentIdempotencyKey(t *testing.T) {
 			Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		},
 	}
-	
+
 	adjustmentID := models.PaymentAdjustmentID{
-		PaymentID:  paymentID,
-		Reference:  "adj123",
-		CreatedAt:  time.Now().UTC(),
-		Status:     models.PAYMENT_STATUS_SUCCEEDED,
+		PaymentID: paymentID,
+		Reference: "adj123",
+		CreatedAt: time.Now().UTC(),
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 	}
-	
+
 	adjustment := models.PaymentAdjustment{
 		ID: adjustmentID,
 	}
@@ -55,17 +55,17 @@ func TestPaymentAdjustmentMarshalJSON(t *testing.T) {
 			Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 		},
 	}
-	
+
 	adjustmentID := models.PaymentAdjustmentID{
-		PaymentID:  paymentID,
-		Reference:  "adj123",
-		CreatedAt:  now,
-		Status:     models.PAYMENT_STATUS_SUCCEEDED,
+		PaymentID: paymentID,
+		Reference: "adj123",
+		CreatedAt: now,
+		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 	}
-	
+
 	amount := big.NewInt(100)
 	asset := "USD/2"
-	
+
 	adjustment := models.PaymentAdjustment{
 		ID:        adjustmentID,
 		Reference: "adj123",
@@ -81,12 +81,12 @@ func TestPaymentAdjustmentMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(adjustment)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, adjustmentID.String(), jsonMap["id"])
 	assert.Equal(t, "adj123", jsonMap["reference"])
@@ -94,11 +94,11 @@ func TestPaymentAdjustmentMarshalJSON(t *testing.T) {
 	assert.Equal(t, "SUCCEEDED", jsonMap["status"])
 	assert.Equal(t, float64(100), jsonMap["amount"])
 	assert.Equal(t, "USD/2", jsonMap["asset"])
-	
+
 	metadata, ok := jsonMap["metadata"].(map[string]interface{})
 	require.True(t, ok)
 	assert.Equal(t, "value", metadata["key"])
-	
+
 	raw, ok := jsonMap["raw"].(map[string]interface{})
 	require.True(t, ok)
 	assert.Equal(t, "data", raw["test"])
@@ -108,7 +108,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 	t.Parallel()
 
 	now := time.Now().UTC()
-	
+
 	t.Run("valid JSON", func(t *testing.T) {
 		t.Parallel()
 		// Given
@@ -123,16 +123,16 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 				Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 			},
 		}
-		
+
 		adjustmentID := models.PaymentAdjustmentID{
-			PaymentID:  paymentID,
-			Reference:  "adj123",
-			CreatedAt:  now,
-			Status:     models.PAYMENT_STATUS_SUCCEEDED,
+			PaymentID: paymentID,
+			Reference: "adj123",
+			CreatedAt: now,
+			Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		}
-		
+
 		encodedID := adjustmentID.String()
-		
+
 		jsonData := `{
 			"id": "` + encodedID + `",
 			"reference": "adj123",
@@ -146,7 +146,7 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -165,9 +165,9 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var adjustment models.PaymentAdjustment
-		
+
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		require.Error(t, err)
 	})
@@ -188,9 +188,9 @@ func TestPaymentAdjustmentUnmarshalJSON(t *testing.T) {
 		}`
 
 		var adjustment models.PaymentAdjustment
-		
+
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		require.Error(t, err)
 	})

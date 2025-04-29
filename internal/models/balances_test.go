@@ -116,13 +116,13 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(balance)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	var unmarshaledBalance models.Balance
 	err = json.Unmarshal(data, &unmarshaledBalance)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -140,7 +140,7 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 		"balance": 100
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &unmarshaledBalance)
-	
+
 	// Then
 	assert.Error(t, err)
 }
@@ -162,7 +162,7 @@ func TestFromPSPBalance(t *testing.T) {
 	}
 
 	balance, err := models.FromPSPBalance(pspBalance, connectorID)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -180,7 +180,7 @@ func TestFromPSPBalance(t *testing.T) {
 	}
 
 	_, err = models.FromPSPBalance(invalidPSPBalance, connectorID)
-	
+
 	// Then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing account reference: validation error")
@@ -211,7 +211,7 @@ func TestFromPSPBalances(t *testing.T) {
 	}
 
 	balances, err := models.FromPSPBalances(pspBalances, connectorID)
-	
+
 	// Then
 	require.NoError(t, err)
 	assert.Len(t, balances, 2)
@@ -226,7 +226,7 @@ func TestFromPSPBalances(t *testing.T) {
 		Asset:     "USD/2",
 	})
 	_, err = models.FromPSPBalances(invalidPSPBalances, connectorID)
-	
+
 	// Then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing account reference: validation error")

@@ -26,17 +26,16 @@ func TestPaymentInitiationIdempotencyKey(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-
 		},
-		ConnectorID:  connectorID,
-		Reference:    "pi123",
-		CreatedAt:    now,
-		ScheduledAt:  now.Add(time.Hour),
-		Description:  "Test payment initiation",
-		Type:         models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		Amount:       big.NewInt(100),
-		Asset:        "USD/2",
-		Metadata:     map[string]string{"key": "value"},
+		ConnectorID: connectorID,
+		Reference:   "pi123",
+		CreatedAt:   now,
+		ScheduledAt: now.Add(time.Hour),
+		Description: "Test payment initiation",
+		Type:        models.PAYMENT_INITIATION_TYPE_TRANSFER,
+		Amount:      big.NewInt(100),
+		Asset:       "USD/2",
+		Metadata:    map[string]string{"key": "value"},
 	}
 
 	key := paymentInitiation.IdempotencyKey()
@@ -49,7 +48,6 @@ func TestPaymentInitiationIdempotencyKey(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi456",
 			ConnectorID: connectorID,
-
 		},
 	}
 	key3 := paymentInitiation2.IdempotencyKey()
@@ -77,29 +75,28 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-
 		},
-		ConnectorID:         connectorID,
-		Reference:           "pi123",
-		CreatedAt:           now,
-		ScheduledAt:         now.Add(time.Hour),
-		Description:         "Test payment initiation",
-		Type:                models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		SourceAccountID:     &sourceAccountID,
+		ConnectorID:          connectorID,
+		Reference:            "pi123",
+		CreatedAt:            now,
+		ScheduledAt:          now.Add(time.Hour),
+		Description:          "Test payment initiation",
+		Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER,
+		SourceAccountID:      &sourceAccountID,
 		DestinationAccountID: &destinationAccountID,
-		Amount:              big.NewInt(100),
-		Asset:               "USD/2",
-		Metadata:            map[string]string{"key": "value"},
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Metadata:             map[string]string{"key": "value"},
 	}
 
 	data, err := json.Marshal(paymentInitiation)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, paymentInitiation.ID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -118,11 +115,11 @@ func TestPaymentInitiationMarshalJSON(t *testing.T) {
 
 	data, err = json.Marshal(paymentInitiation)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)
@@ -155,29 +152,28 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-
 		},
-		ConnectorID:         connectorID,
-		Reference:           "pi123",
-		CreatedAt:           now,
-		ScheduledAt:         now.Add(time.Hour),
-		Description:         "Test payment initiation",
-		Type:                models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		SourceAccountID:     &sourceAccountID,
+		ConnectorID:          connectorID,
+		Reference:            "pi123",
+		CreatedAt:            now,
+		ScheduledAt:          now.Add(time.Hour),
+		Description:          "Test payment initiation",
+		Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER,
+		SourceAccountID:      &sourceAccountID,
 		DestinationAccountID: &destinationAccountID,
-		Amount:              big.NewInt(100),
-		Asset:               "USD/2",
-		Metadata:            map[string]string{"key": "value"},
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Metadata:             map[string]string{"key": "value"},
 	}
 
 	data, err := json.Marshal(originalPI)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var pi models.PaymentInitiation
 	err = json.Unmarshal(data, &pi)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, originalPI.ID.String(), pi.ID.String())
 	assert.Equal(t, originalPI.ConnectorID.String(), pi.ConnectorID.String())
@@ -199,7 +195,7 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -208,7 +204,7 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -218,7 +214,7 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 
 	invalidJSON = `{
 		"id": "test:00000000-0000-0000-0000-000000000001/TRANSFER/pi123",
@@ -228,7 +224,7 @@ func TestPaymentInitiationUnmarshalJSON(t *testing.T) {
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &pi)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 }
 
 func TestFromPaymentInitiationToPSPPaymentInitiation(t *testing.T) {
@@ -264,19 +260,18 @@ func TestFromPaymentInitiationToPSPPaymentInitiation(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-
 		},
-		ConnectorID:         connectorID,
-		Reference:           "pi123",
-		CreatedAt:           now,
-		ScheduledAt:         now.Add(time.Hour),
-		Description:         "Test payment initiation",
-		Type:                models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		SourceAccountID:     &sourceAccountID,
+		ConnectorID:          connectorID,
+		Reference:            "pi123",
+		CreatedAt:            now,
+		ScheduledAt:          now.Add(time.Hour),
+		Description:          "Test payment initiation",
+		Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER,
+		SourceAccountID:      &sourceAccountID,
 		DestinationAccountID: &destinationAccountID,
-		Amount:              big.NewInt(100),
-		Asset:               "USD/2",
-		Metadata:            map[string]string{"key": "value"},
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Metadata:             map[string]string{"key": "value"},
 	}
 
 	pspPI := models.FromPaymentInitiationToPSPPaymentInitiation(&paymentInitiation, sourceAccount, destinationAccount)
@@ -316,19 +311,18 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 		ID: models.PaymentInitiationID{
 			Reference:   "pi123",
 			ConnectorID: connectorID,
-
 		},
-		ConnectorID:         connectorID,
-		Reference:           "pi123",
-		CreatedAt:           now,
-		ScheduledAt:         now.Add(time.Hour),
-		Description:         "Test payment initiation",
-		Type:                models.PAYMENT_INITIATION_TYPE_TRANSFER,
-		SourceAccountID:     &sourceAccountID,
+		ConnectorID:          connectorID,
+		Reference:            "pi123",
+		CreatedAt:            now,
+		ScheduledAt:          now.Add(time.Hour),
+		Description:          "Test payment initiation",
+		Type:                 models.PAYMENT_INITIATION_TYPE_TRANSFER,
+		SourceAccountID:      &sourceAccountID,
 		DestinationAccountID: &destinationAccountID,
-		Amount:              big.NewInt(100),
-		Asset:               "USD/2",
-		Metadata:            map[string]string{"key": "value"},
+		Amount:               big.NewInt(100),
+		Asset:                "USD/2",
+		Metadata:             map[string]string{"key": "value"},
 	}
 
 	expanded := models.PaymentInitiationExpanded{
@@ -339,12 +333,12 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(expanded)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, paymentInitiation.ID.String(), jsonMap["id"])
 	assert.Equal(t, connectorID.String(), jsonMap["connectorID"])
@@ -369,11 +363,11 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 
 	data, err = json.Marshal(expanded)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, "FAILED", jsonMap["status"])
 	assert.Equal(t, assert.AnError.Error(), jsonMap["error"])
@@ -388,11 +382,11 @@ func TestPaymentInitiationExpandedMarshalJSON(t *testing.T) {
 
 	data, err = json.Marshal(expanded)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	sourceAccountIDValue, hasSourceAccountID := jsonMap["sourceAccountID"]
 	assert.True(t, hasSourceAccountID)

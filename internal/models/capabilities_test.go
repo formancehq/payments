@@ -64,7 +64,7 @@ func TestCapabilityValue(t *testing.T) {
 		for _, tc := range testCases {
 			// When
 			val, err := tc.capability.Value()
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, val)
@@ -77,7 +77,7 @@ func TestCapabilityValue(t *testing.T) {
 
 		// When
 		val, err := models.CAPABILITY_FETCH_UNKNOWN.Value()
-		
+
 		// Then
 		require.Error(t, err)
 		assert.Nil(t, val)
@@ -117,10 +117,10 @@ func TestCapabilityScan(t *testing.T) {
 
 		for _, tc := range testCases {
 			var capability models.Capability
-			
+
 			// When
 			err := capability.Scan(tc.input)
-			
+
 			// Then
 			require.NoError(t, err)
 			assert.Equal(t, tc.expected, capability)
@@ -135,7 +135,7 @@ func TestCapabilityScan(t *testing.T) {
 
 		// When
 		err := capability.Scan(nil)
-		
+
 		// Then
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "capability is nil")

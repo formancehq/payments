@@ -76,10 +76,10 @@ func TestConnectorTaskTreeWithNextTasks(t *testing.T) {
 	assert.Equal(t, models.TASK_FETCH_ACCOUNTS, accountsTask.TaskType)
 	assert.Equal(t, "fetch-accounts", accountsTask.Name)
 	assert.Len(t, accountsTask.NextTasks, 2)
-	
+
 	assert.Equal(t, models.TASK_FETCH_BALANCES, accountsTask.NextTasks[0].TaskType)
 	assert.Equal(t, "fetch-balances", accountsTask.NextTasks[0].Name)
-	
+
 	assert.Equal(t, models.TASK_FETCH_PAYMENTS, accountsTask.NextTasks[1].TaskType)
 	assert.Equal(t, "fetch-payments", accountsTask.NextTasks[1].Name)
 }
@@ -94,20 +94,20 @@ func TestConnectorTasksTreeSlice(t *testing.T) {
 		TaskType: models.TASK_FETCH_ACCOUNTS,
 		Name:     "fetch-accounts",
 	}
-	
+
 	task2 := models.ConnectorTaskTree{
 		TaskType: models.TASK_FETCH_BALANCES,
 		Name:     "fetch-balances",
 	}
-	
+
 	tasksTree = append(tasksTree, task1)
 	assert.Len(t, tasksTree, 1)
 	assert.Equal(t, models.TASK_FETCH_ACCOUNTS, tasksTree[0].TaskType)
-	
+
 	tasksTree = append(tasksTree, task2)
 	assert.Len(t, tasksTree, 2)
 	assert.Equal(t, models.TASK_FETCH_BALANCES, tasksTree[1].TaskType)
-	
+
 	tasksTree2 := models.ConnectorTasksTree{task1, task2}
 	assert.Len(t, tasksTree2, 2)
 	assert.Equal(t, models.TASK_FETCH_ACCOUNTS, tasksTree2[0].TaskType)

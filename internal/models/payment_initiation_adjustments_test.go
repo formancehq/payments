@@ -75,7 +75,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -111,7 +111,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -145,7 +145,7 @@ func TestPaymentInitiationAdjustmentMarshalJSON(t *testing.T) {
 		}
 
 		data, err := json.Marshal(adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -198,7 +198,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -229,7 +229,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -256,7 +256,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid character")
@@ -270,7 +270,7 @@ func TestPaymentInitiationAdjustmentUnmarshalJSON(t *testing.T) {
 
 		var adjustment models.PaymentInitiationAdjustment
 		err := json.Unmarshal([]byte(jsonData), &adjustment)
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid")

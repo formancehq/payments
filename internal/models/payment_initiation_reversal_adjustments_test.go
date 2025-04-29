@@ -27,8 +27,8 @@ func TestPaymentInitiationReversalAdjustmentMarshalJSON(t *testing.T) {
 	adjustmentID := models.PaymentInitiationReversalAdjustmentID{
 		PaymentInitiationReversalID: reversalID,
 
-		CreatedAt:                   now,
-		Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
+		CreatedAt: now,
+		Status:    models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 	}
 
 	adjustment := models.PaymentInitiationReversalAdjustment{
@@ -43,13 +43,13 @@ func TestPaymentInitiationReversalAdjustmentMarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(adjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -65,12 +65,12 @@ func TestPaymentInitiationReversalAdjustmentMarshalJSON(t *testing.T) {
 	adjustment.Error = testError
 
 	data, err = json.Marshal(adjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &jsonMap)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -93,8 +93,8 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	adjustmentID := models.PaymentInitiationReversalAdjustmentID{
 		PaymentInitiationReversalID: reversalID,
 
-		CreatedAt:                   now,
-		Status:                      models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
+		CreatedAt: now,
+		Status:    models.PAYMENT_INITIATION_REVERSAL_STATUS_PROCESSED,
 	}
 
 	originalAdjustment := models.PaymentInitiationReversalAdjustment{
@@ -109,13 +109,13 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	}
 
 	data, err := json.Marshal(originalAdjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	var adjustment models.PaymentInitiationReversalAdjustment
 	err = json.Unmarshal(data, &adjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -131,12 +131,12 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 	originalAdjustment.Error = testError
 
 	data, err = json.Marshal(originalAdjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &adjustment)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -151,7 +151,7 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 		"status": "PROCESSED"
 	}`
 	err = json.Unmarshal([]byte(invalidJSON), &adjustment)
-	
+
 	// Then
 	assert.Error(t, err)
 
@@ -161,16 +161,16 @@ func TestPaymentInitiationReversalAdjustmentUnmarshalJSON(t *testing.T) {
 		"createdAt": "` + now.Format(time.RFC3339Nano) + `",
 		"status": "PROCESSED"
 	}`
-	
+
 	err = json.Unmarshal([]byte(invalidJSON), &adjustment)
-	
+
 	// Then
 	assert.Error(t, err)
 
 	invalidJSON = `{invalid json}`
-	
+
 	err = json.Unmarshal([]byte(invalidJSON), &adjustment)
-	
+
 	// Then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid character")

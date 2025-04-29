@@ -17,24 +17,24 @@ func TestToPSPAccount(t *testing.T) {
 
 	t.Run("nil account", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		var account *models.Account = nil
-		
+
 		result := models.ToPSPAccount(account)
-		
+
 		// Then
 		assert.Nil(t, result)
 	})
 
 	t.Run("non-nil account", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := &models.Account{}
-		
+
 		result := models.ToPSPAccount(account)
-		
+
 		// Then
 		assert.NotNil(t, result)
 	})
@@ -53,9 +53,9 @@ func TestFromPSPAccount(t *testing.T) {
 		t.Parallel()
 		// Given
 		pspAccount := models.PSPAccount{
-			Reference: "acc123",
-			CreatedAt: now,
-			Name:      pointer.For("Test Account"),
+			Reference:    "acc123",
+			CreatedAt:    now,
+			Name:         pointer.For("Test Account"),
 			DefaultAsset: pointer.For("USD/2"),
 			Metadata: map[string]string{
 				"key": "value",
@@ -64,7 +64,7 @@ func TestFromPSPAccount(t *testing.T) {
 		}
 
 		account, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, pspAccount.Reference, account.Reference)
@@ -79,7 +79,7 @@ func TestFromPSPAccount(t *testing.T) {
 
 	t.Run("validation errors", func(t *testing.T) {
 		t.Parallel()
-		
+
 		t.Run("missing reference", func(t *testing.T) {
 			t.Parallel()
 			// Given
@@ -87,14 +87,14 @@ func TestFromPSPAccount(t *testing.T) {
 				CreatedAt: now,
 				Raw:       json.RawMessage(`{}`),
 			}
-			
+
 			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "missing account reference: validation error")
 		})
-		
+
 		t.Run("missing createdAt", func(t *testing.T) {
 			t.Parallel()
 			// Given
@@ -102,14 +102,14 @@ func TestFromPSPAccount(t *testing.T) {
 				Reference: "acc123",
 				Raw:       json.RawMessage(`{}`),
 			}
-			
+
 			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "missing account createdAt: validation error")
 		})
-		
+
 		t.Run("missing raw", func(t *testing.T) {
 			t.Parallel()
 			// Given
@@ -117,14 +117,14 @@ func TestFromPSPAccount(t *testing.T) {
 				Reference: "acc123",
 				CreatedAt: now,
 			}
-			
+
 			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "missing account raw: validation error")
 		})
-		
+
 		t.Run("invalid defaultAsset", func(t *testing.T) {
 			t.Parallel()
 			// Given
@@ -134,9 +134,9 @@ func TestFromPSPAccount(t *testing.T) {
 				DefaultAsset: pointer.For("invalid"),
 				Raw:          json.RawMessage(`{}`),
 			}
-			
+
 			_, err := models.FromPSPAccount(pspAccount, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-			
+
 			// Then
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), "invalid default asset: validation error")
@@ -168,7 +168,7 @@ func TestFromPSPAccounts(t *testing.T) {
 	}
 
 	accounts, err := models.FromPSPAccounts(pspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-	
+
 	// Then
 	require.NoError(t, err)
 	assert.Len(t, accounts, 2)
@@ -180,9 +180,9 @@ func TestFromPSPAccounts(t *testing.T) {
 		CreatedAt: now,
 		Raw:       json.RawMessage(`{}`),
 	})
-	
+
 	_, err = models.FromPSPAccounts(invalidPspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
-	
+
 	// Then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing account reference: validation error")
@@ -216,13 +216,13 @@ func TestAccountMarshalUnmarshal(t *testing.T) {
 	}
 
 	data, err := json.Marshal(account)
-	
+
 	// Then
 	require.NoError(t, err)
 
 	var unmarshaledAccount models.Account
 	err = json.Unmarshal(data, &unmarshaledAccount)
-	
+
 	// Then
 	require.NoError(t, err)
 
@@ -234,15 +234,15 @@ func TestAccountMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, account.Name, unmarshaledAccount.Name)
 	assert.Equal(t, account.DefaultAsset, unmarshaledAccount.DefaultAsset)
 	assert.Equal(t, account.Metadata, unmarshaledAccount.Metadata)
-	
+
 	var originalJSON, unmarshaledJSON interface{}
 	err = json.Unmarshal(account.Raw, &originalJSON)
-	
+
 	// Then
 	require.NoError(t, err)
-	
+
 	err = json.Unmarshal(unmarshaledAccount.Raw, &unmarshaledJSON)
-	
+
 	// Then
 	require.NoError(t, err)
 	assert.Equal(t, originalJSON, unmarshaledJSON)
@@ -265,7 +265,7 @@ func TestAccountIdempotencyKey(t *testing.T) {
 	}
 
 	key := account.IdempotencyKey()
-	
+
 	// Then
 	assert.NotEmpty(t, key)
 	assert.Regexp(t, "^[0-9a-f]{40}$", key)
@@ -278,31 +278,31 @@ func TestPSPAccountValidate(t *testing.T) {
 
 	t.Run("valid account", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := models.PSPAccount{
 			Reference: "acc123",
 			CreatedAt: now,
 			Raw:       json.RawMessage(`{}`),
 		}
-		
+
 		err := account.Validate()
-		
+
 		// Then
 		assert.NoError(t, err)
 	})
 
 	t.Run("missing reference", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := models.PSPAccount{
 			CreatedAt: now,
 			Raw:       json.RawMessage(`{}`),
 		}
-		
+
 		err := account.Validate()
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing account reference: validation error")
@@ -310,15 +310,15 @@ func TestPSPAccountValidate(t *testing.T) {
 
 	t.Run("missing createdAt", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := models.PSPAccount{
 			Reference: "acc123",
 			Raw:       json.RawMessage(`{}`),
 		}
-		
+
 		err := account.Validate()
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing account createdAt: validation error")
@@ -326,15 +326,15 @@ func TestPSPAccountValidate(t *testing.T) {
 
 	t.Run("missing raw", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := models.PSPAccount{
 			Reference: "acc123",
 			CreatedAt: now,
 		}
-		
+
 		err := account.Validate()
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "missing account raw: validation error")
@@ -342,7 +342,7 @@ func TestPSPAccountValidate(t *testing.T) {
 
 	t.Run("invalid defaultAsset", func(t *testing.T) {
 		t.Parallel()
-		
+
 		// Given
 		account := models.PSPAccount{
 			Reference:    "acc123",
@@ -350,9 +350,9 @@ func TestPSPAccountValidate(t *testing.T) {
 			DefaultAsset: pointer.For("invalid"),
 			Raw:          json.RawMessage(`{}`),
 		}
-		
+
 		err := account.Validate()
-		
+
 		// Then
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "invalid default asset: validation error")

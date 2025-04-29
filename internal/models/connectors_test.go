@@ -19,7 +19,7 @@ func TestConnectorIdempotencyKey(t *testing.T) {
 		Provider:  "test",
 		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
 	}
-	
+
 	connector := models.Connector{
 		ID: id,
 	}
@@ -48,19 +48,19 @@ func TestConnectorMarshalJSON(t *testing.T) {
 
 	data, err := json.Marshal(connector)
 	// Then
-		require.NoError(t, err)
+	require.NoError(t, err)
 
 	var jsonMap map[string]interface{}
 	err = json.Unmarshal(data, &jsonMap)
 	// Then
-		require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, id.String(), jsonMap["id"])
 	assert.Equal(t, id.Reference.String(), jsonMap["reference"])
 	assert.Equal(t, "Test Connector", jsonMap["name"])
 	assert.Equal(t, "stripe", jsonMap["provider"])
 	assert.Equal(t, false, jsonMap["scheduledForDeletion"])
-	
+
 	configJson, ok := jsonMap["config"].(map[string]interface{})
 	require.True(t, ok)
 	assert.Equal(t, "test_key", configJson["apiKey"])
@@ -80,7 +80,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		// Given
 
 		encodedID := id.String()
-		
+
 		jsonData := `{
 			"id": "` + encodedID + `",
 			"reference": "00000000-0000-0000-0000-000000000001",
@@ -92,9 +92,9 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		}`
 
 		var connector models.Connector
-		
+
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		
+
 		// Then
 		require.NoError(t, err)
 
@@ -103,7 +103,7 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		assert.Equal(t, now.Format(time.RFC3339), connector.CreatedAt.Format(time.RFC3339))
 		assert.Equal(t, "stripe", connector.Provider)
 		assert.Equal(t, false, connector.ScheduledForDeletion)
-		
+
 		var configMap map[string]interface{}
 		err = json.Unmarshal(connector.Config, &configMap)
 		// Then
@@ -118,9 +118,9 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		jsonData := `{invalid json}`
 
 		var connector models.Connector
-		
+
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		
+
 		// Then
 		require.Error(t, err)
 	})
@@ -140,9 +140,9 @@ func TestConnectorUnmarshalJSON(t *testing.T) {
 		}`
 
 		var connector models.Connector
-		
+
 		err := json.Unmarshal([]byte(jsonData), &connector)
-		
+
 		// Then
 		require.Error(t, err)
 	})

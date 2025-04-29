@@ -15,7 +15,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		testCases := []struct {
 			status   models.PaymentInitiationAdjustmentStatus
 			expected string
@@ -31,11 +31,11 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 			{models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_SCHEDULED_FOR_PROCESSING, "SCHEDULED_FOR_PROCESSING"},
 			{models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN, "UNKNOWN"},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			result := tc.status.String()
-			
+
 			// Then
 			assert.Equal(t, tc.expected, result)
 		}
@@ -44,7 +44,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 	t.Run("PaymentInitiationAdjustmentStatusFromString", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		testCases := []struct {
 			input    string
 			expected models.PaymentInitiationAdjustmentStatus
@@ -63,7 +63,7 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 			{"invalid", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN, true},
 			{"", models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_UNKNOWN, true},
 		}
-		
+
 		for _, tc := range testCases {
 			// When
 			status, err := models.PaymentInitiationAdjustmentStatusFromString(tc.input)
@@ -72,52 +72,51 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 				assert.Error(t, err)
 			} else {
 				// Then
-			require.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tc.expected, status)
 			}
 		}
 	})
 
-
 	t.Run("JSON", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		statuses := []models.PaymentInitiationAdjustmentStatus{
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION,
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING,
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSED,
 			models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED,
 		}
-		
+
 		for _, status := range statuses {
 			// When
 			data, err := json.Marshal(status)
-			
+
 			// Then
 			require.NoError(t, err)
-			
+
 			var unmarshaled models.PaymentInitiationAdjustmentStatus
 			err = json.Unmarshal(data, &unmarshaled)
 			// Then
 			require.NoError(t, err)
-			
+
 			assert.Equal(t, status, unmarshaled)
 		}
-		
+
 		var status models.PaymentInitiationAdjustmentStatus
 		err := json.Unmarshal([]byte(`"INVALID"`), &status)
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 
 	t.Run("Value", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		// When
 		val, err := models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION.Value()
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, "WAITING_FOR_VALIDATION", val)
@@ -126,27 +125,27 @@ func TestPaymentInitiationAdjustmentStatus(t *testing.T) {
 	t.Run("Scan", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		var status models.PaymentInitiationAdjustmentStatus
-		
+
 		// When
 		err := status.Scan("WAITING_FOR_VALIDATION")
-		
+
 		// Then
 		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_WAITING_FOR_VALIDATION, status)
-		
+
 		err = status.Scan("PROCESSING")
 		// Then
-			require.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_PROCESSING, status)
-		
+
 		err = status.Scan(123)
 		// Then
-			assert.Error(t, err)
-		
+		assert.Error(t, err)
+
 		err = status.Scan("INVALID")
 		// Then
-			assert.Error(t, err)
+		assert.Error(t, err)
 	})
 }

@@ -10,7 +10,7 @@ import (
 
 func TestConnectorMetadataError(t *testing.T) {
 	t.Parallel()
-	
+
 	expectedField := "arbitrary-field-name"
 	err := models.NewConnectorValidationError(expectedField, models.ErrMissingConnectorMetadata)
 	assert.Regexp(t, expectedField, err.Error())
@@ -22,10 +22,10 @@ func TestConnectorValidationError(t *testing.T) {
 
 	originalErr := errors.New("test error")
 	validationErr := models.NewConnectorValidationError("test_field", originalErr)
-	
+
 	assert.Contains(t, validationErr.Error(), "test_field")
 	assert.Contains(t, validationErr.Error(), "test error")
-	
+
 	unwrappedErr := validationErr.Unwrap()
 	assert.NotNil(t, unwrappedErr)
 	assert.Contains(t, unwrappedErr.Error(), "test_field")
@@ -34,7 +34,7 @@ func TestConnectorValidationError(t *testing.T) {
 
 func TestErrorVariables(t *testing.T) {
 	t.Parallel()
-	
+
 	assert.NotNil(t, models.ErrInvalidConfig)
 	assert.NotNil(t, models.ErrFailedAccountCreation)
 	assert.NotNil(t, models.ErrMissingFromPayloadInRequest)
@@ -43,7 +43,7 @@ func TestErrorVariables(t *testing.T) {
 	assert.NotNil(t, models.ErrValidation)
 	assert.NotNil(t, models.ErrMissingConnectorMetadata)
 	assert.NotNil(t, models.ErrMissingConnectorField)
-	
+
 	assert.Equal(t, "invalid config", models.ErrInvalidConfig.Error())
 	assert.Equal(t, "failed to create account", models.ErrFailedAccountCreation.Error())
 	assert.Equal(t, "missing from payload in request", models.ErrMissingFromPayloadInRequest.Error())
@@ -56,7 +56,7 @@ func TestErrorVariables(t *testing.T) {
 
 func TestNonRetryableError(t *testing.T) {
 	t.Parallel()
-	
+
 	var err *models.ConnectorValidationError
 	assert.IsType(t, err, models.NonRetryableError)
 }

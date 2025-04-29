@@ -19,24 +19,24 @@ func TestTaskIDReference(t *testing.T) {
 	t.Run("empty objectID", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		reference := models.TaskIDReference("prefix", connectorID, "")
 		expected := "prefix-test-00000000-0000-0000-0000-000000000001"
-		
+
 		result := reference
-		
+
 		assert.Equal(t, expected, result)
 	})
 
 	t.Run("non-empty objectID", func(t *testing.T) {
 		t.Parallel()
 		// Given
-		
+
 		reference := models.TaskIDReference("prefix", connectorID, "object123")
 		expected := "prefix-test-00000000-0000-0000-0000-000000000001-object123"
-		
+
 		result := reference
-		
+
 		assert.Equal(t, expected, result)
 	})
 }

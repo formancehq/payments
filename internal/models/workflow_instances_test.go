@@ -35,12 +35,12 @@ func TestInstanceMarshalUnmarshal(t *testing.T) {
 
 	data, err := json.Marshal(instance)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	var unmarshaledInstance models.Instance
 	err = json.Unmarshal(data, &unmarshaledInstance)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, instance.ID, unmarshaledInstance.ID)
 	assert.Equal(t, instance.ScheduleID, unmarshaledInstance.ScheduleID)
@@ -62,11 +62,11 @@ func TestInstanceMarshalUnmarshal(t *testing.T) {
 
 	data, err = json.Marshal(instance)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	err = json.Unmarshal(data, &unmarshaledInstance)
 	// Then
-			require.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.Equal(t, instance.ID, unmarshaledInstance.ID)
 	assert.Equal(t, instance.ScheduleID, unmarshaledInstance.ScheduleID)
@@ -80,5 +80,5 @@ func TestInstanceMarshalUnmarshal(t *testing.T) {
 	invalidJSON := []byte(`{"id": "instance123", "scheduleID": "schedule123", "connectorID": "invalid-connector-id", "createdAt": "2023-01-01T00:00:00Z", "updatedAt": "2023-01-01T00:00:00Z", "terminated": false}`)
 	err = json.Unmarshal(invalidJSON, &unmarshaledInstance)
 	// Then
-			assert.Error(t, err)
+	assert.Error(t, err)
 }
