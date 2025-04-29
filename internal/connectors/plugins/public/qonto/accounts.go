@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	"github.com/formancehq/payments/internal/utils/pagination"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
@@ -101,11 +102,21 @@ func fillAccounts(
 			return nil, newestUpdatedAt, err
 		}
 
+		meta := map[string]string{
+			"iban":                bankAccount.Iban,
+			"bic":                 bankAccount.Bic,
+			"account_number":      bankAccount.AccountNumber,
+			"status":              bankAccount.Status,
+			"is_external_account": strconv.FormatBool(bankAccount.IsExternalAccount),
+			"main":                strconv.FormatBool(bankAccount.Main),
+		}
+
 		accounts = append(accounts, models.PSPAccount{
 			Reference:    bankAccount.Id,
 			CreatedAt:    updatedAt, // Qonto does not give us the createdAt info.
 			Name:         &bankAccount.Name,
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, bankAccount.Currency)),
+			Metadata:     meta,
 			Raw:          raw,
 		})
 	}
