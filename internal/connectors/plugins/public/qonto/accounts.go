@@ -6,6 +6,8 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
+	"github.com/formancehq/payments/internal/utils/pagination"
+	"sort"
 	"time"
 
 	"github.com/formancehq/payments/internal/models"
@@ -16,6 +18,10 @@ type accountsState struct {
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	if req.PageSize == 0 {
+		return models.FetchNextAccountsResponse{}, models.ErrMissingPageSize
+	}
+
 	var oldState accountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
@@ -29,12 +35,18 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
-	var accounts []models.PSPAccount
-
 	organization, err := p.client.GetOrganization(ctx)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
+
+	sortOrgBankAccountsByUpdatedAtAsc(organization)
+	accounts := make([]models.PSPAccount, 0, req.PageSize)
+	_, hasMore := pagination.ShouldFetchMore(accounts, organization.BankAccounts, req.PageSize)
+	if hasMore {
+		organization.BankAccounts = organization.BankAccounts[:req.PageSize]
+	}
+
 	accounts, newState.LastUpdatedAt, err = fillAccounts(organization.BankAccounts, accounts, oldState)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -45,19 +57,19 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	/*
-		TODO
-		Need to check the behaviour of the framework:
-		* We are always keeping the "lastUpdatedAt", I believe this gets stored to ensure we don't save/query multiple time
-		the same account -- is that true? Note that the API always return all accounts, so we can't use that for filtering
-		on the API side.
-		* The PSPAccount only has a notion of CreatedAt, and the API has only "updatedAt". It might not be a big deal
-		if the framework can support upsert by reference?
-	*/
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
+		HasMore:  hasMore,
 	}, nil
+}
+
+func sortOrgBankAccountsByUpdatedAtAsc(organization *client.Organization) {
+	sort.Slice(organization.BankAccounts, func(i, j int) bool {
+		updatedAtI, _ := time.ParseInLocation("2006-01-02T15:04:05.999Z", organization.BankAccounts[i].UpdatedAt, time.UTC)
+		updatedAtJ, _ := time.ParseInLocation("2006-01-02T15:04:05.999Z", organization.BankAccounts[j].UpdatedAt, time.UTC)
+		return updatedAtI.Before(updatedAtJ)
+	})
 }
 
 func fillAccounts(
@@ -67,9 +79,7 @@ func fillAccounts(
 ) ([]models.PSPAccount, time.Time, error) {
 	newestUpdatedAt := time.Time{}
 	for _, bankAccount := range bankAccounts {
-
-		// TODO check date format (particularly timezone -- the dates passed in are in UTC, we should save that info)
-		updatedAt, err := time.Parse("2006-01-02T15:04:05.999Z", bankAccount.UpdatedAt)
+		updatedAt, err := time.ParseInLocation("2006-01-02T15:04:05.999Z", bankAccount.UpdatedAt, time.UTC)
 		if err != nil {
 			return nil, newestUpdatedAt, err
 		}
