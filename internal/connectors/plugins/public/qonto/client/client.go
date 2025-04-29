@@ -52,7 +52,7 @@ func New(connectorName, clientID, apiKey, endpoint, stagingToken string) Client 
 		clientID:     clientID,
 		apiKey:       apiKey,
 		endpoint:     endpoint,
-		stagingToken: stagingToken,
+		stagingToken: stagingToken, // TODO make a manual test when we don't pass this
 	}
 
 	apiTransport := &apiTransport{

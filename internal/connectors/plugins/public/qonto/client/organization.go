@@ -52,8 +52,6 @@ func (c *client) GetOrganization(ctx context.Context) (*Organization, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Add("Accept", "application/json")
-
 	errorResponse := qontoErrors{}
 	type qontoResponse struct {
 		Organization Organization `json:"organization"`
