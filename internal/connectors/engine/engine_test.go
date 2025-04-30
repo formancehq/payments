@@ -369,4 +369,132 @@ var _ = Describe("Engine Tests", func() {
 			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
 		})
 	})
+
+	Context("create pool", func() {
+		var (
+			poolID uuid.UUID
+			acc1   models.AccountID
+			acc2   models.AccountID
+		)
+		BeforeEach(func() {
+			poolID = uuid.New()
+			acc1 = models.AccountID{
+				Reference:   "test",
+				ConnectorID: models.ConnectorID{},
+			}
+			acc2 = models.AccountID{
+				Reference:   "test",
+				ConnectorID: models.ConnectorID{},
+			}
+		})
+
+		It("should return error when pool creation fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("pool creation failed")
+			store.EXPECT().PoolsUpsert(gomock.Any(), gomock.Any()).Return(expectedErr)
+			err := eng.CreatePool(ctx, models.Pool{
+				ID: poolID,
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return a validation error when one of the accounts is not an INTERNAL one", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), acc1).Return(&models.Account{
+				ID:   acc1,
+				Type: models.ACCOUNT_TYPE_INTERNAL,
+			}, nil)
+			store.EXPECT().AccountsGet(gomock.Any(), acc2).Return(&models.Account{
+				ID:   acc2,
+				Type: models.ACCOUNT_TYPE_EXTERNAL,
+			}, nil)
+			err := eng.CreatePool(ctx, models.Pool{
+				ID:           poolID,
+				PoolAccounts: []models.AccountID{acc1, acc2},
+			})
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should work if the pool is created successfully", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), acc1).Return(&models.Account{
+				ID:   acc1,
+				Type: models.ACCOUNT_TYPE_INTERNAL,
+			}, nil)
+			store.EXPECT().AccountsGet(gomock.Any(), acc2).Return(&models.Account{
+				ID:   acc2,
+				Type: models.ACCOUNT_TYPE_INTERNAL,
+			}, nil)
+			store.EXPECT().PoolsUpsert(gomock.Any(), gomock.Any()).Return(nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-creation", defaultTaskQueue),
+				workflow.RunSendEvents,
+				gomock.AssignableToTypeOf(workflow.SendEvents{}),
+			).Return(nil, nil)
+			err := eng.CreatePool(ctx, models.Pool{
+				ID:           poolID,
+				PoolAccounts: []models.AccountID{acc1, acc2},
+			})
+			Expect(err).To(BeNil())
+		})
+	})
+
+	Context("add account to pool", func() {
+		var (
+			poolID    uuid.UUID
+			accountID models.AccountID
+		)
+
+		BeforeEach(func() {
+			poolID = uuid.New()
+			accountID = models.AccountID{
+				Reference: "test",
+				ConnectorID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test",
+				},
+			}
+		})
+
+		It("should return a storage error if account is not found", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), accountID).Return(nil, storage.ErrNotFound)
+			err := eng.AddAccountToPool(ctx, poolID, accountID)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(storage.ErrNotFound))
+		})
+
+		It("should return a validation error if account is not an internal account", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), accountID).Return(&models.Account{
+				ID:   accountID,
+				Type: models.ACCOUNT_TYPE_EXTERNAL,
+			}, nil)
+			err := eng.AddAccountToPool(ctx, poolID, accountID)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("should return an error if the account is failing to be added to the pool", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), accountID).Return(&models.Account{
+				ID:   accountID,
+				Type: models.ACCOUNT_TYPE_INTERNAL,
+			}, nil)
+			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(fmt.Errorf("failed to add account to pool"))
+			err := eng.AddAccountToPool(ctx, poolID, accountID)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("failed to add account to pool"))
+		})
+
+		It("should work if the account is successfully added to the pool", func(ctx SpecContext) {
+			store.EXPECT().AccountsGet(gomock.Any(), accountID).Return(&models.Account{
+				ID:   accountID,
+				Type: models.ACCOUNT_TYPE_INTERNAL,
+			}, nil)
+			store.EXPECT().PoolsAddAccount(gomock.Any(), poolID, accountID).Return(nil)
+			store.EXPECT().PoolsGet(gomock.Any(), poolID).Return(&models.Pool{}, nil)
+			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("pools-add-account", defaultTaskQueue),
+				workflow.RunSendEvents,
+				gomock.AssignableToTypeOf(workflow.SendEvents{}),
+			).Return(nil, nil)
+			err := eng.AddAccountToPool(ctx, poolID, accountID)
+			Expect(err).To(BeNil())
+		})
+	})
 })
