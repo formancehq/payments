@@ -21,6 +21,7 @@ import (
 	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/client"
+	"golang.org/x/sync/errgroup"
 )
 
 //go:generate mockgen -source engine.go -destination engine_generated.go -package engine . Engine
@@ -831,6 +832,26 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreatePool")
 	defer span.End()
 
+	eg, groupCtx := errgroup.WithContext(ctx)
+	for _, accountID := range pool.PoolAccounts {
+		aID := accountID
+		eg.Go(func() error {
+			acc, err := e.storage.AccountsGet(groupCtx, aID)
+			if err != nil {
+				return err
+			}
+			if acc.Type != models.ACCOUNT_TYPE_INTERNAL {
+				return fmt.Errorf("account %s is not an internal account: %w", aID, ErrValidation)
+			}
+			return nil
+		})
+	}
+
+	if err := eg.Wait(); err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
 	if err := e.storage.PoolsUpsert(ctx, pool); err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -864,6 +885,17 @@ func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
 func (e *engine) AddAccountToPool(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.AddAccountToPool")
 	defer span.End()
+
+	// Check if the account exists and if it's an INTERNAL account
+	account, err := e.storage.AccountsGet(ctx, accountID)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	if account.Type != models.ACCOUNT_TYPE_INTERNAL {
+		return fmt.Errorf("account %s is not an internal account: %w", accountID, ErrValidation)
+	}
 
 	if err := e.storage.PoolsAddAccount(ctx, id, accountID); err != nil {
 		otel.RecordError(span, err)
