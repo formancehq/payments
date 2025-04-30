@@ -13,11 +13,6 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
-	GetAccountBalances(ctx context.Context) ([]*Balance, error)
-	GetExternalAccounts(ctx context.Context, page int, pageSize int) ([]*ExternalAccount, error)
-	GetTransactions(ctx context.Context, page, pageSize int) ([]*Transaction, error)
-	InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error)
-	InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error)
 }
 
 type client struct {
