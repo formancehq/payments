@@ -26,6 +26,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 
 	Context("create webhooks", func() {
 		var (
+			webhookID                 string
 			expectedObjectedID        string
 			expectedWebhookResponseID string
 			webhookBaseURL            string
@@ -42,6 +43,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				verifier: verifierMock,
 			}
 			plg.client.SetHttpClient(httpMock)
+			webhookID = "webhook135"
 			expectedObjectedID = "44"
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseURL = "https://example.com"
@@ -343,7 +345,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{
-						"id":"1", 
+						"id":"%s", 
 						"data": {
 							"id": "%s",
 							"type":"book.transfer.completed",
@@ -356,7 +358,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"receiver_account_number_id": "sample-receiver-account-number-id",
 							"currency_code": "USD"
 						}
-					}`, expectedObjectedID)),
+					}`, webhookID, expectedObjectedID)),
 				},
 			}
 
@@ -377,7 +379,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - realtime.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -388,7 +391,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{
-						"id":"1", 
+						"id":"%s", 
 						"data": {
 							"id": "%s",
 							"accepted_at": "2023-12-29T19:45:11Z",
@@ -403,7 +406,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"currency_code": "USD",
 							"description": "Example realtime transfer"
 						}
-					}`, expectedObjectedID)),
+					}`, webhookID, expectedObjectedID)),
 				},
 			}
 
@@ -424,7 +427,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.settled", func(ctx SpecContext) {
@@ -434,8 +438,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "rule456",
 							"type":"CREDIT",
@@ -445,7 +449,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"description": "Test description",
 							"currency_code": "USD"
 						}
-					}`),
+					}`, webhookID)),
 				},
 			}
 
@@ -466,7 +470,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("rule456"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("rule456"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -476,8 +481,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "eodl",
 							"type": "swift.outgoing_transfer.completed",
@@ -496,7 +501,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 								"unstructured": "sample-unstructured"
 							}
 						}
-					}`),
+					}`, webhookID)),
 				},
 			}
 
@@ -517,7 +522,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("eodl"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("eodl"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -548,7 +554,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.returned", func(ctx SpecContext) {
@@ -558,8 +564,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "return123",
 							"type":"RETURN",
@@ -569,7 +575,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"description": "Returned ACH transfer",
 							"currency_code": "USD"
 						}
-					}`),
+					}`, webhookID)),
 				},
 			}
 
@@ -590,7 +596,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("return123"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("return123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_requested", func(ctx SpecContext) {
@@ -600,8 +607,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "cancel123",
 							"type": "swift.outgoing_transfer.cancellation_requested",
@@ -614,7 +621,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"currency_code": "USD",
 							"reason": "Customer request"
 						}
-					}`),
+					}`, webhookID)),
 				},
 			}
 
@@ -635,7 +642,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancel123"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancel123"))
 		})
 
 		It("translate webhooks - realtime.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -679,7 +687,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("review123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("review123"))
 		})
 		It("translate webhooks - wire.outgoing_transfer.initiated", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
@@ -719,7 +727,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("init123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("init123"))
 		})
 
 		It("translate webhooks - wire.incoming_transfer.completed", func(ctx SpecContext) {
@@ -760,7 +768,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("incoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("incoming123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -801,7 +809,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submitted123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submitted123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.rejected", func(ctx SpecContext) {
@@ -842,7 +850,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("rejected123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("rejected123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -884,7 +892,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReview123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReview123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.initiated", func(ctx SpecContext) {
@@ -925,7 +933,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("initiatedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("initiatedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -966,7 +974,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submittedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submittedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -1007,7 +1015,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("completedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("completedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -1049,7 +1057,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReviewACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReviewACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.canceled", func(ctx SpecContext) {
@@ -1090,7 +1098,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancelledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancelledACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.return_dishonored", func(ctx SpecContext) {
@@ -1131,7 +1139,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("dishonoredACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("dishonoredACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.return_contested", func(ctx SpecContext) {
@@ -1172,7 +1180,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("contestedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("contestedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.noc", func(ctx SpecContext) {
@@ -1213,7 +1221,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("nocACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("nocACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.scheduled", func(ctx SpecContext) {
@@ -1254,7 +1262,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("scheduledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("scheduledACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.settled", func(ctx SpecContext) {
@@ -1295,7 +1303,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("settledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("settledACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.nsf", func(ctx SpecContext) {
@@ -1336,7 +1344,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("nsfACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("nsfACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.completed", func(ctx SpecContext) {
@@ -1377,7 +1385,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("completedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("completedACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.returned", func(ctx SpecContext) {
@@ -1418,7 +1426,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("returnedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("returnedACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.return_dishonored", func(ctx SpecContext) {
@@ -1459,7 +1467,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("dishonoredACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("dishonoredACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.return_contested", func(ctx SpecContext) {
@@ -1500,7 +1508,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("contestedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("contestedACHIncoming123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.initiated", func(ctx SpecContext) {
@@ -1541,7 +1549,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("initiatedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("initiatedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -1583,7 +1591,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReviewSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReviewSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -1624,7 +1632,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submittedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submittedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.pending_return", func(ctx SpecContext) {
@@ -1665,7 +1673,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("pendingReturnSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("pendingReturnSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.returned", func(ctx SpecContext) {
@@ -1706,7 +1714,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("returnedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("returnedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_accepted", func(ctx SpecContext) {
@@ -1747,7 +1755,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancellationAcceptedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancellationAcceptedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_rejected", func(ctx SpecContext) {
@@ -1788,7 +1796,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancellationRejectedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancellationRejectedSWIFT123"))
 		})
 	})
 })

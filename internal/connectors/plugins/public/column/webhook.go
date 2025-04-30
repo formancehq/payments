@@ -333,7 +333,7 @@ func (p *Plugin) translateBookTransfer(ctx context.Context, webhook client.Webho
 		return models.WebhookResponse{}, err
 	}
 
-	pspPayment, err := p.transferToPayment(&transfer)
+	pspPayment, err := p.transferToPayment(webhook.ID, &transfer)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map webhook book transfer payment: %w", err)
 	}
@@ -358,7 +358,7 @@ func (p *Plugin) translateAchTransfer(ctx context.Context, webhook client.Webhoo
 		return models.WebhookResponse{}, fmt.Errorf("failed to map ach transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map ach payout to payment: %w", err)
 	}
@@ -383,7 +383,7 @@ func (p *Plugin) translateRealtimeTransfer(ctx context.Context, webhook client.W
 		return models.WebhookResponse{}, fmt.Errorf("failed to map realtime transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map realtime payout to payment: %w", err)
 	}
@@ -408,7 +408,7 @@ func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.Webho
 		return models.WebhookResponse{}, fmt.Errorf("failed to map wire transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map wire payout to payment: %w", err)
 	}
@@ -433,7 +433,7 @@ func (p *Plugin) translateInternationalWireTransfer(ctx context.Context, webhook
 		return models.WebhookResponse{}, fmt.Errorf("failed to map international wire webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map international wire payout to payment: %w", err)
 	}
