@@ -40,6 +40,7 @@ func (p *PaymentAdjustment) IdempotencyKey() string {
 func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID        string            `json:"id"`
+		Reference string            `json:"reference"`
 		CreatedAt time.Time         `json:"createdAt"`
 		Status    PaymentStatus     `json:"status"`
 		Amount    *big.Int          `json:"amount"`
@@ -48,6 +49,7 @@ func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 		Raw       json.RawMessage   `json:"raw"`
 	}{
 		ID:        c.ID.String(),
+		Reference: c.Reference,
 		CreatedAt: c.CreatedAt,
 		Status:    c.Status,
 		Amount:    c.Amount,
@@ -60,6 +62,7 @@ func (c PaymentAdjustment) MarshalJSON() ([]byte, error) {
 func (c *PaymentAdjustment) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID        string            `json:"id"`
+		Reference string            `json:"reference"`
 		CreatedAt time.Time         `json:"createdAt"`
 		Status    PaymentStatus     `json:"status"`
 		Amount    *big.Int          `json:"amount"`
@@ -78,6 +81,7 @@ func (c *PaymentAdjustment) UnmarshalJSON(data []byte) error {
 	}
 
 	c.ID = *adjustmentID
+	c.Reference = aux.Reference
 	c.CreatedAt = aux.CreatedAt
 	c.Status = aux.Status
 	c.Amount = aux.Amount
