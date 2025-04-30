@@ -27,7 +27,7 @@ var _ = Describe("Moneycorp *Plugin", func() {
 
 	BeforeEach(func() {
 		plg = &moneycorp.Plugin{
-			Plugin: plugins.NewDefaultPlugin(),
+			Plugin: plugins.NewBasePlugin(),
 		}
 		config = json.RawMessage(`{"clientID":"1234","apiKey":"abc123","endpoint":"example.com"}`)
 	})

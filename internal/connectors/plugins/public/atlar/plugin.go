@@ -41,7 +41,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}
 
 	return &Plugin{
-		Plugin: plugins.NewDefaultPlugin(),
+		Plugin: plugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,

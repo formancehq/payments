@@ -40,7 +40,7 @@ var _ = Describe("Wise Plugin", func() {
 
 	BeforeEach(func() {
 		plg = &Plugin{
-			Plugin: plugins.NewDefaultPlugin(),
+			Plugin: plugins.NewBasePlugin(),
 		}
 
 		plg.webhookConfigs = map[string]webhookConfig{

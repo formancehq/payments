@@ -24,7 +24,7 @@ var _ = Describe("CurrencyCloud Plugin", func() {
 
 	BeforeEach(func() {
 		plg = &Plugin{
-			Plugin: plugins.NewDefaultPlugin(),
+			Plugin: plugins.NewBasePlugin(),
 		}
 	})
 

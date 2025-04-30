@@ -27,7 +27,7 @@ var _ = Describe("Adyen Plugin", func() {
 
 	BeforeEach(func() {
 		plg = &Plugin{
-			Plugin: plugins.NewDefaultPlugin(),
+			Plugin: plugins.NewBasePlugin(),
 		}
 		ctrl := gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
