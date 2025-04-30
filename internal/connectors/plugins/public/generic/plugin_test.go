@@ -23,7 +23,9 @@ var _ = Describe("Generic Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		plg = &Plugin{
+			Plugin: plugins.NewDefaultPlugin(),
+		}
 	})
 
 	Context("install", func() {

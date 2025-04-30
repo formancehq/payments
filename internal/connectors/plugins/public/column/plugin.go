@@ -68,6 +68,8 @@ var (
 )
 
 type Plugin struct {
+	models.Plugin
+
 	name   string
 	logger logging.Logger
 
@@ -84,6 +86,8 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 
 	client := client.New(ProviderName, config.APIKey, config.Endpoint)
 	p := &Plugin{
+		Plugin: plugins.NewDefaultPlugin(),
+
 		name:     name,
 		logger:   logger,
 		client:   client,
@@ -169,13 +173,6 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
-func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	if p.client == nil {
-		return models.FetchNextOthersResponse{}, plugins.ErrNotYetInstalled
-	}
-	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
 	if p.client == nil {
 		return models.CreateBankAccountResponse{}, plugins.ErrNotYetInstalled
@@ -198,20 +195,6 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	}, nil
 }
 
-func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	if p.client == nil {
-		return models.ReverseTransferResponse{}, plugins.ErrNotYetInstalled
-	}
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	if p.client == nil {
-		return models.PollTransferStatusResponse{}, plugins.ErrNotYetInstalled
-	}
-	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
 		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
@@ -228,13 +211,6 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 
 	return p.createReversePayout(ctx, req.PaymentInitiationReversal)
 
-}
-
-func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	if p.client == nil {
-		return models.PollPayoutStatusResponse{}, plugins.ErrNotYetInstalled
-	}
-	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {

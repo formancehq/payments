@@ -19,6 +19,8 @@ func init() {
 }
 
 type Plugin struct {
+	models.Plugin
+
 	name   string
 	logger logging.Logger
 	client client.Client
@@ -31,6 +33,8 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	}
 
 	return &Plugin{
+		Plugin: plugins.NewDefaultPlugin(),
+
 		name:   name,
 		logger: logger,
 		client: client.New(conf.Directory),
@@ -106,20 +110,12 @@ func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}, nil
 }
 
-func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
-	return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	return models.FetchNextPaymentsResponse{
 		Payments: []models.PSPPayment{},
 		NewState: json.RawMessage(`{}`),
 		HasMore:  false,
 	}, nil
-}
-
-func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
@@ -151,10 +147,6 @@ func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransfer
 	return models.ReverseTransferResponse{Payment: pspPayment}, nil
 }
 
-func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	pspPayment, err := p.client.CreatePayment(ctx, models.PAYMENT_TYPE_PAYOUT, req.PaymentInitiation)
 	if err != nil {
@@ -169,18 +161,6 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse payout using client: %w", err)
 	}
 	return models.ReversePayoutResponse{Payment: pspPayment}, nil
-}
-
-func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
 }
 
 var _ models.Plugin = &Plugin{}

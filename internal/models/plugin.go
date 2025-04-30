@@ -12,11 +12,15 @@ type PluginConstructorFn func() Plugin
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {
-	Name() string
+	PSPPlugin
+	PSPBankingBridge
 
+	Name() string
 	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
+}
 
+type PSPPlugin interface {
 	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
 	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
 	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
@@ -35,7 +39,12 @@ type Plugin interface {
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 
-type InstallRequest struct{
+type PSPBankingBridge interface {
+	// This interface is intended for future banking bridge functionality.
+	// Methods will be added as the banking bridge capabilities are implemented.
+}
+
+type InstallRequest struct {
 	ConnectorID string
 }
 

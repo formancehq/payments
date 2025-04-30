@@ -23,7 +23,9 @@ var _ = Describe("Atlar Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		plg = &Plugin{
+			Plugin: plugins.NewDefaultPlugin(),
+		}
 	})
 
 	Context("install", func() {

@@ -25,7 +25,9 @@ var _ = Describe("Column Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		plg = &Plugin{
+			Plugin: plugins.NewDefaultPlugin(),
+		}
 	})
 
 	Context("install", func() {
@@ -120,10 +122,10 @@ var _ = Describe("Column Plugin", func() {
 	})
 
 	Context("fetch next others", func() {
-		It("should fail because not installed", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.FetchNextOthersRequest{State: json.RawMessage(`{}`)}
 			_, err := plg.FetchNextOthers(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 
 	})
@@ -146,18 +148,18 @@ var _ = Describe("Column Plugin", func() {
 	})
 
 	Context("reverse transfer", func() {
-		It("should fail because not installed", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.ReverseTransferRequest{}
 			_, err := plg.ReverseTransfer(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
 	Context("poll transfer status", func() {
-		It("should fail because not installed", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.PollTransferStatusRequest{}
 			_, err := plg.PollTransferStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
@@ -180,10 +182,10 @@ var _ = Describe("Column Plugin", func() {
 	})
 
 	Context("poll payout status", func() {
-		It("should fail because not installed", func(ctx SpecContext) {
+		It("should fail because not implemented", func(ctx SpecContext) {
 			req := models.PollPayoutStatusRequest{}
 			_, err := plg.PollPayoutStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 
