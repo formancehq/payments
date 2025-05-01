@@ -74,7 +74,7 @@ func sortOrgBankAccountsByUpdatedAtAsc(organization *client.Organization) {
 }
 
 func fillAccounts(
-	bankAccounts []client.QontoBankAccount,
+	bankAccounts []client.OrganizationBankAccount,
 	accounts []models.PSPAccount,
 	oldState accountsState,
 ) ([]models.PSPAccount, time.Time, error) {
