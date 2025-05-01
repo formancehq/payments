@@ -19,7 +19,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	var qontoBankAccount client.QontoBankAccount
+	var qontoBankAccount client.OrganizationBankAccount
 
 	if err := json.Unmarshal(from.Raw, &qontoBankAccount); err != nil {
 		return models.FetchNextBalancesResponse{}, err

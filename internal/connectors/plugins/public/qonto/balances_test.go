@@ -79,7 +79,7 @@ var _ = Describe("Qonto *Plugin Balances", func() {
 })
 
 func getFixturePSPAccount() models.PSPAccount {
-	sampleQontoAccount := client.QontoBankAccount{
+	sampleQontoAccount := client.OrganizationBankAccount{
 		Id:                     "1",
 		Slug:                   "slug",
 		Iban:                   "FR7630006000011234567890189",

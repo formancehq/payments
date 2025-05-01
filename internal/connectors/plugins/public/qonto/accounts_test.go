@@ -21,8 +21,8 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			plg                  *Plugin
 			m                    *client.MockClient
 			pageSize             int
-			sampleAccounts       []client.QontoBankAccount
-			sortedSampleAccounts []client.QontoBankAccount
+			sampleAccounts       []client.OrganizationBankAccount
+			sortedSampleAccounts []client.OrganizationBankAccount
 		)
 
 		BeforeEach(func() {
@@ -221,12 +221,12 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 /**
  * Generate shuffled tests data, and keep a sorted copy for assertion (the call under test is modifying the data in place)
  */
-func generateTestSampleAccounts() (sampleAccounts []client.QontoBankAccount, sortedSampleAccounts []client.QontoBankAccount) {
-	sampleAccounts = make([]client.QontoBankAccount, 0)
+func generateTestSampleAccounts() (sampleAccounts []client.OrganizationBankAccount, sortedSampleAccounts []client.OrganizationBankAccount) {
+	sampleAccounts = make([]client.OrganizationBankAccount, 0)
 	for i := 0; i < 20; i++ {
 		main, isExternalAccount := i == 0, i == 1
 
-		sampleAccounts = append(sampleAccounts, client.QontoBankAccount{
+		sampleAccounts = append(sampleAccounts, client.OrganizationBankAccount{
 			Id:                fmt.Sprintf("%d", i),
 			Name:              fmt.Sprintf("Account %d", i),
 			Iban:              fmt.Sprintf("FR%02d0000000%02d", i, i),
@@ -240,7 +240,7 @@ func generateTestSampleAccounts() (sampleAccounts []client.QontoBankAccount, sor
 		})
 	}
 
-	sortedSampleAccounts = make([]client.QontoBankAccount, len(sampleAccounts))
+	sortedSampleAccounts = make([]client.OrganizationBankAccount, len(sampleAccounts))
 	copy(sortedSampleAccounts, sampleAccounts)
 
 	// Shuffle the array to be like the api response.
@@ -250,7 +250,7 @@ func generateTestSampleAccounts() (sampleAccounts []client.QontoBankAccount, sor
 	return
 }
 
-func assertAccountMapping(sampleQontoAccount client.QontoBankAccount, resultingPSPAccount models.PSPAccount) {
+func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, resultingPSPAccount models.PSPAccount) {
 	Expect(resultingPSPAccount.Reference).To(Equal(sampleQontoAccount.Id))
 	Expect(*resultingPSPAccount.Name).To(Equal(sampleQontoAccount.Name))
 	Expect(resultingPSPAccount.CreatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sampleQontoAccount.UpdatedAt))

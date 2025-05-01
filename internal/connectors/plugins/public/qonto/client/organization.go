@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
-type QontoBankAccount struct {
+type OrganizationBankAccount struct {
 	Id                     string  `json:"id"`
 	Slug                   string  `json:"slug"`
 	Iban                   string  `json:"iban"`
@@ -28,20 +28,20 @@ type QontoBankAccount struct {
 }
 
 type Organization struct {
-	Id                    string             `json:"id"`
-	Name                  string             `json:"name"`
-	Slug                  string             `json:"slug"`
-	LegalName             string             `json:"legal_name,omitempty"`
-	Locale                string             `json:"locale"`
-	LegalShareCapital     float64            `json:"legal_share_capital"`
-	LegalCountry          string             `json:"legal_country"`
-	LegalRegistrationDate string             `json:"legal_registration_date,omitempty"`
-	LegalForm             string             `json:"legal_form"`
-	LegalAddress          string             `json:"legal_address"`
-	LegalSector           string             `json:"legal_sector,omitempty"`
-	ContractSignedAt      string             `json:"contract_signed_at"`
-	LegalNumber           string             `json:"legal_number"`
-	BankAccounts          []QontoBankAccount `json:"bank_accounts"`
+	Id                    string                    `json:"id"`
+	Name                  string                    `json:"name"`
+	Slug                  string                    `json:"slug"`
+	LegalName             string                    `json:"legal_name,omitempty"`
+	Locale                string                    `json:"locale"`
+	LegalShareCapital     float64                   `json:"legal_share_capital"`
+	LegalCountry          string                    `json:"legal_country"`
+	LegalRegistrationDate string                    `json:"legal_registration_date,omitempty"`
+	LegalForm             string                    `json:"legal_form"`
+	LegalAddress          string                    `json:"legal_address"`
+	LegalSector           string                    `json:"legal_sector,omitempty"`
+	ContractSignedAt      string                    `json:"contract_signed_at"`
+	LegalNumber           string                    `json:"legal_number"`
+	BankAccounts          []OrganizationBankAccount `json:"bank_accounts"`
 }
 
 func (c *client) GetOrganization(ctx context.Context) (*Organization, error) {
