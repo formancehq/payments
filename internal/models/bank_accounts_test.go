@@ -145,11 +145,11 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 		assert.Equal(t, "Berlin", account.Metadata[models.BankAccountOwnerCityMetadataKey])
 		assert.Equal(t, "Berlin", account.Metadata[models.BankAccountOwnerRegionMetadataKey])
 		assert.Equal(t, "10115", account.Metadata[models.BankAccountOwnerPostalCodeMetadataKey])
-		assert.Equal(t, accountNumber, account.Metadata[models.BankAccountAccountNumberMetadataKey])
-		assert.Equal(t, iban, account.Metadata[models.BankAccountIBANMetadataKey])
-		assert.Equal(t, swiftBicCode, account.Metadata[models.BankAccountSwiftBicCodeMetadataKey])
-		assert.Equal(t, country, account.Metadata[models.BankAccountCountryMetadataKey])
-		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
+		assert.Equal(t, accountNumber, account.Metadata[models.AccountAccountNumberMetadataKey])
+		assert.Equal(t, iban, account.Metadata[models.AccountIBANMetadataKey])
+		assert.Equal(t, swiftBicCode, account.Metadata[models.AccountSwiftBicCodeMetadataKey])
+		assert.Equal(t, country, account.Metadata[models.AccountBankAccountCountryMetadataKey])
+		assert.Equal(t, "Test Bank Account", account.Metadata[models.AccountBankAccountNameMetadataKey])
 	})
 
 	t.Run("with nil account metadata", func(t *testing.T) {
@@ -175,7 +175,7 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 
 		// Then
 		assert.NotNil(t, account.Metadata)
-		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
+		assert.Equal(t, "Test Bank Account", account.Metadata[models.AccountBankAccountNameMetadataKey])
 	})
 
 	t.Run("with nil optional fields", func(t *testing.T) {
@@ -200,14 +200,14 @@ func TestFillBankAccountDetailsToAccountMetadata(t *testing.T) {
 		models.FillBankAccountDetailsToAccountMetadata(account, bankAccount)
 
 		// Then
-		assert.Equal(t, "Test Bank Account", account.Metadata[models.BankAccountNameMetadataKey])
-		_, hasAccountNumber := account.Metadata[models.BankAccountAccountNumberMetadataKey]
+		assert.Equal(t, "Test Bank Account", account.Metadata[models.AccountBankAccountNameMetadataKey])
+		_, hasAccountNumber := account.Metadata[models.AccountAccountNumberMetadataKey]
 		assert.False(t, hasAccountNumber)
-		_, hasIBAN := account.Metadata[models.BankAccountIBANMetadataKey]
+		_, hasIBAN := account.Metadata[models.AccountIBANMetadataKey]
 		assert.False(t, hasIBAN)
-		_, hasSwiftBicCode := account.Metadata[models.BankAccountSwiftBicCodeMetadataKey]
+		_, hasSwiftBicCode := account.Metadata[models.AccountSwiftBicCodeMetadataKey]
 		assert.False(t, hasSwiftBicCode)
-		_, hasCountry := account.Metadata[models.BankAccountCountryMetadataKey]
+		_, hasCountry := account.Metadata[models.AccountBankAccountCountryMetadataKey]
 		assert.False(t, hasCountry)
 	})
 }
