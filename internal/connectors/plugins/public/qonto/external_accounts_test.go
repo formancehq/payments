@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/logging"
 	"strconv"
 	"time"
 
@@ -26,7 +27,10 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
-			plg = &Plugin{client: m}
+			plg = &Plugin{
+				client: m,
+				logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
+			}
 			pageSize = 50
 
 			sampleBeneficiaries = generateTestSampleBeneficiaries()
@@ -189,6 +193,26 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 
 			// Then
 			assertSuccessResponse(resp, err, beneficiariesReturnedByClient[5:], 3, true)
+		})
+
+		It("should fetch next accounts - ignores beneficiaries with invalid bank account", func(ctx SpecContext) {
+			// given a beneficiary with an invalid bank account
+			req := models.FetchNextExternalAccountsRequest{
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastPage": 1}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+				PageSize: pageSize,
+			}
+			beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
+			beneficiariesReturnedByClient[0].BankAccount.Iban = ""
+			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, pageSize).Times(1).Return(
+				beneficiariesReturnedByClient,
+				nil,
+			)
+
+			// When
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+			// Then
+			assertSuccessResponse(resp, err, make([]client.Beneficiary, 0), 1, false)
 		})
 	})
 })
