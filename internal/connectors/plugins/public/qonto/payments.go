@@ -27,6 +27,10 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
+	// TODO Parent refernece => ID of the payout/payin etc (what's related to the transaction)
+	// Reference: id of the transaction
+	// Test if transaction ID is a reference to a payout / payin
+
 	// TODO: if needed, uncomment the following lines to get the related account in request
 	// var from models.PSPAccount
 	// if req.FromPayload == nil {

@@ -152,7 +152,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sortedSampleAccounts[19].UpdatedAt))
+			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 		})
 
 		It("should fetch next accounts - state set", func(ctx SpecContext) {
@@ -181,7 +181,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sortedSampleAccounts[19].UpdatedAt))
+			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 			Expect(resp.HasMore).To(BeFalse())
 		})
 
@@ -211,7 +211,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sortedSampleAccounts[4].UpdatedAt))
+			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[4].UpdatedAt))
 			Expect(resp.HasMore).To(BeTrue())
 		})
 
@@ -253,7 +253,7 @@ func generateTestSampleAccounts() (sampleAccounts []client.OrganizationBankAccou
 func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, resultingPSPAccount models.PSPAccount) {
 	Expect(resultingPSPAccount.Reference).To(Equal(sampleQontoAccount.Id))
 	Expect(*resultingPSPAccount.Name).To(Equal(sampleQontoAccount.Name))
-	Expect(resultingPSPAccount.CreatedAt.Format("2006-01-02T15:04:05.999Z")).To(Equal(sampleQontoAccount.UpdatedAt))
+	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sampleQontoAccount.UpdatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal("EUR/2"))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"iban":                sampleQontoAccount.Iban,

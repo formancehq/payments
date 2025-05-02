@@ -3,56 +3,56 @@ package qonto
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type externalAccountsState struct {
-	// TODO: externalAccountsState will be used to know at what point we're at
-	// when fetching the PSP external accounts. We highly recommend to use this
-	// state to not poll data already polled.
-	// This struct will be stored as a raw json, you're free to put whatever
-	// you want.
-	// Example:
-	// LastPage int `json:"lastPage"`
-	// LastIDCreated int64 `json:"lastIDCreated"`
+	LastPage      int       `json:"lastPage"`
+	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
+	if req.PageSize == 0 {
+		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingPageSize
+	}
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
-
-	// TODO: if needed, uncomment the following lines to get the related account in request
-	// var from models.PSPAccount
-	// if req.FromPayload == nil {
-	// 	return models.FetchNextExternalAccountsResponse{}, models.ErrMissingFromPayloadInRequest
-	// }
-	// if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-	// 	return models.FetchNextExternalAccountsResponse{}, err
-	// }
+	if oldState.LastPage == 0 {
+		oldState.LastPage = 1
+	}
 
 	newState := externalAccountsState{
-		// TODO: fill new state with old state values
+		LastPage:      oldState.LastPage,
+		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
 	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	for /* TODO: range over pages or others */ page := 0; ; page++ {
-		pagedRecipients, err := p.client.GetExternalAccounts(ctx, page, req.PageSize)
+	for page := oldState.LastPage; ; page++ {
+		newState.LastPage = page
+		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		// TODO: transfer PSP object into formance object
-		accounts = append(accounts, models.PSPAccount{})
+		accounts, err = beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, pagedBeneficiaries)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
 
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedRecipients, req.PageSize)
+		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedBeneficiaries, req.PageSize)
 		if !needMore || !hasMore {
 			break
 		}
@@ -62,7 +62,14 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		accounts = accounts[:req.PageSize]
 	}
 
-	// TODO: don't forget to update your state accordingly
+	if len(accounts) > 0 {
+		var err error
+		newState.LastUpdatedAt, err = time.ParseInLocation(client.QONTO_TIMEFORMAT, accounts[len(accounts)-1].Metadata["updated_at"], time.UTC)
+		if err != nil {
+			return models.FetchNextExternalAccountsResponse{}, err
+		}
+	}
+
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err
@@ -73,4 +80,78 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		NewState:         payload,
 		HasMore:          hasMore,
 	}, nil
+}
+
+func beneficiaryToPSPAccounts(
+	oldUpdatedAt time.Time,
+	accounts []models.PSPAccount,
+	pagedBeneficiaries []client.Beneficiary,
+) ([]models.PSPAccount, error) {
+	for _, beneficiary := range pagedBeneficiaries {
+		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.UpdatedAt, time.UTC)
+		if err != nil {
+			return accounts, err
+		}
+		createdAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.CreatedAt, time.UTC)
+		if err != nil {
+			return accounts, err
+		}
+		raw, err := json.Marshal(beneficiary)
+		if err != nil {
+			return accounts, err
+		}
+		if updatedAt.After(oldUpdatedAt) {
+			accountReference, err := generateAccountReference(
+				beneficiary.BankAccount.AccountNUmber,
+				beneficiary.BankAccount.Iban,
+				beneficiary.BankAccount.Bic,
+				beneficiary.BankAccount.SwiftSortCode,
+				beneficiary.BankAccount.RoutingNumber,
+				beneficiary.BankAccount.IntermediaryBankBic,
+			)
+			if err != nil {
+				return accounts, err
+			}
+			accounts = append(accounts, models.PSPAccount{
+				Reference:    accountReference,
+				CreatedAt:    createdAt,
+				Name:         &beneficiary.Name,
+				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, beneficiary.BankAccount.Currency)),
+				Metadata: map[string]string{
+					"beneficiary_id":                     beneficiary.ID,
+					"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
+					"bank_account_iban":                  beneficiary.BankAccount.Iban,
+					"bank_account_bic":                   beneficiary.BankAccount.Bic,
+					"bank_account_swift_sort_code":       beneficiary.BankAccount.SwiftSortCode,
+					"bank_account_routing_number":        beneficiary.BankAccount.RoutingNumber,
+					"bank_account_intermediary_bank_bic": beneficiary.BankAccount.IntermediaryBankBic,
+					"updated_at":                         beneficiary.UpdatedAt,
+				},
+				Raw: raw,
+			})
+		}
+	}
+	return accounts, nil
+}
+
+/*
+*
+There's no unique ID for the beneficiary's bank account, but depending on the type of bank account different fields are
+populated. (see https://api-doc.qonto.com/docs/business-api/d34477c258c06-list-beneficiaries)
+
+	Swift BIC or SEPA: iban, currency and bic will be present.
+	Swift code: account_number, swift_sort_code, intermediary_bank_bic and currency will be present.
+	Swift routing number: account_number, routing_number, intermediary_bank_bic and currency will be present.
+*/
+func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNumber, intermediaryBankBic string) (string, error) {
+	switch {
+	case iban != "":
+		return iban + "-" + bic, nil
+	case swiftSortCode != "":
+		return accountNumber + "-" + swiftSortCode + "-" + intermediaryBankBic, nil
+	case routingNumber != "":
+		return accountNumber + "-" + routingNumber + "-" + intermediaryBankBic, nil
+	default:
+		return "", errors.New("invalid account, unable to generate reference")
+	}
 }

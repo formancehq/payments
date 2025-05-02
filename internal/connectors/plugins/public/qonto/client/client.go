@@ -13,6 +13,8 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
+	GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error)
+	GetTransactions(ctx context.Context, page, pageSize int) ([]Transactions, error)
 }
 
 type client struct {
@@ -28,6 +30,17 @@ type apiTransport struct {
 	client     *client
 	underlying http.RoundTripper
 }
+
+type MetaPagination struct {
+	CurrentPage int `json:"current_page"`
+	PrevPage    any `json:"prev_page"`
+	NextPage    any `json:"next_page"`
+	TotalPages  int `json:"total_pages"`
+	PerPage     int `json:"per_page"`
+	TotalCount  int `json:"total_count"`
+}
+
+const QONTO_TIMEFORMAT = "2006-01-02T15:04:05.999Z"
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	auth := fmt.Sprintf("%s:%s", t.client.clientID, t.client.apiKey)
@@ -47,7 +60,7 @@ func New(connectorName, clientID, apiKey, endpoint, stagingToken string) Client 
 		clientID:     clientID,
 		apiKey:       apiKey,
 		endpoint:     endpoint,
-		stagingToken: stagingToken, // TODO make a manual test when we don't pass this
+		stagingToken: stagingToken,
 	}
 
 	apiTransport := &apiTransport{
