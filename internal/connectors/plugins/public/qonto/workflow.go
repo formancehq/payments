@@ -23,13 +23,13 @@ func workflow() models.ConnectorTasksTree {
 			//		Periodically: true,
 			//		NextTasks:    []models.ConnectorTaskTree{},
 			//	},
-			//	{
-			//		TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
-			//		Name:         "fetch_recipients",
-			//		Periodically: true,
-			//		NextTasks:    []models.ConnectorTaskTree{},
-			//	},
 			//},
+		},
+		{
+			TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
+			Name:         "fetch_beneficiaries",
+			Periodically: true,
+			NextTasks:    []models.ConnectorTaskTree{},
 		},
 	}
 }
