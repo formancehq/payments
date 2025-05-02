@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
@@ -74,6 +75,7 @@ var _ = Describe("Column Plugin Payments", func() {
 				PageSize: 60,
 			}
 
+			expectedErr := errors.New("test error")
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
 				gomock.Any(),
@@ -81,12 +83,12 @@ var _ = Describe("Column Plugin Payments", func() {
 				gomock.Any(),
 			).Return(
 				500,
-				errors.New("test error"),
+				expectedErr,
 			)
 
 			resp, err := plg.FetchNextPayments(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("failed to get transactions: test error : "))
+			Expect(err).To(MatchError(expectedErr))
 			Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 		})
 
@@ -122,13 +124,13 @@ var _ = Describe("Column Plugin Payments", func() {
 
 		It("should fetch next payments - no state pageSize > total payments", func(ctx SpecContext) {
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(`{}`),
+				State:    []byte(`{"timeline":{"backlog_cursor":"123"}}`),
 				PageSize: 60,
 			}
 
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=60&starting_after=123"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -136,6 +138,17 @@ var _ = Describe("Column Plugin Payments", func() {
 				nil,
 			).SetArg(2, client.TransactionResponseWrapper[[]*client.Transaction]{
 				Transfers: sampleTransactions[:20],
+			})
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("ending_before=19&limit=60"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.TransactionResponseWrapper[[]*client.Transaction]{
+				Transfers: sampleTransactions[:19],
 			})
 
 			resp, err := plg.FetchNextPayments(ctx, req)
@@ -147,7 +160,7 @@ var _ = Describe("Column Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
-			Expect(state.LastIDCreated).To(Equal("19"))
+			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
 		})
 
 		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {
@@ -158,7 +171,7 @@ var _ = Describe("Column Plugin Payments", func() {
 
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=40"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -166,6 +179,18 @@ var _ = Describe("Column Plugin Payments", func() {
 				nil,
 			).SetArg(2, client.TransactionResponseWrapper[[]*client.Transaction]{
 				Transfers: sampleTransactions[:13],
+				HasMore:   false,
+			})
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("ending_before=12&limit=40"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.TransactionResponseWrapper[[]*client.Transaction]{
+				Transfers: sampleTransactions[:12],
 				HasMore:   true,
 			})
 
@@ -177,13 +202,13 @@ var _ = Describe("Column Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastIDCreated).To(Equal("12"))
+			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
 		})
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			lastIDCreated := sampleTransactions[38].ID
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastIDCreated": "%s"}`, lastIDCreated)),
+				State:    []byte(fmt.Sprintf(`{"timeline":{"latest_id":"%s"}}`, lastIDCreated)),
 				PageSize: 40,
 			}
 
@@ -209,7 +234,37 @@ var _ = Describe("Column Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
-			Expect(state.LastIDCreated).To(Equal("12"))
+			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
 		})
 	})
 })
+
+type HTTPRequestMatcher struct {
+	got           *http.Request
+	ExpectedQuery string
+}
+
+func NewRequestMatcher(query string) gomock.Matcher {
+	return &HTTPRequestMatcher{ExpectedQuery: query}
+}
+
+func (m *HTTPRequestMatcher) Matches(x interface{}) bool {
+	actual, ok := x.(*http.Request)
+	if !ok {
+		return false
+	}
+	m.got = actual
+
+	//nolint:gosimple
+	if actual.URL.RawQuery == m.ExpectedQuery {
+		return true
+	}
+	return false
+}
+
+func (m *HTTPRequestMatcher) String() string {
+	if m.got == nil {
+		return "not a valid *http.Reqeust"
+	}
+	return fmt.Sprintf("%s did not match expected %s", m.got.URL.RawQuery, m.ExpectedQuery)
+}

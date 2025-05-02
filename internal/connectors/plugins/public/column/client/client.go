@@ -17,7 +17,7 @@ type Client interface {
 	GetAccounts(ctx context.Context, cursor string, pageSize int) ([]*Account, bool, error)
 	GetAccountBalances(ctx context.Context, accountID string) (*Balance, error)
 	GetCounterparties(ctx context.Context, cursor string, pageSize int) ([]*Counterparties, bool, error)
-	GetTransactions(ctx context.Context, cursor string, pageSize int) ([]*Transaction, bool, error)
+	GetTransactions(ctx context.Context, timeline Timeline, pageSize int) ([]*Transaction, Timeline, bool, error)
 	InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error)
 	InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error)
 	CreateCounterPartyBankAccount(ctx context.Context, data CounterPartyBankAccountRequest) (CounterPartyBankAccountResponse, error)

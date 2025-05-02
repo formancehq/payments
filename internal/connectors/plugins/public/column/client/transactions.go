@@ -44,18 +44,34 @@ type TransactionResponseWrapper[t any] struct {
 	HasMore   bool `json:"has_more"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize int) ([]*Transaction, bool, error) {
+func (c *client) GetTransactions(ctx context.Context, t Timeline, pageSize int) (results []*Transaction, timeline Timeline, hasMore bool, err error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
+	var endpoint = "transfers"
 
-	req, err := c.newRequest(ctx, http.MethodGet, "transfers", http.NoBody)
+	timeline = t
+	results = make([]*Transaction, 0, pageSize)
+	if !timeline.IsCaughtUp() {
+		var oldest *Transaction
+		oldest, timeline, hasMore, err = c.scanForOldest(ctx, timeline, endpoint, pageSize)
+		if err != nil {
+			return results, timeline, false, err
+		}
+		// either there are no records or we haven't found the start yet
+		if !timeline.IsCaughtUp() {
+			return results, timeline, hasMore, nil
+		}
+		results = append(results, oldest)
+	}
+
+	req, err := c.newRequest(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to create transactions request: %w", err)
+		return nil, timeline, false, fmt.Errorf("failed to create transactions request: %w", err)
 	}
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if cursor != "" {
-		q.Add("starting_after", cursor)
+	if timeline.LatestID != "" {
+		q.Add("ending_before", timeline.LatestID)
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -63,8 +79,22 @@ func (c *client) GetTransactions(ctx context.Context, cursor string, pageSize in
 	var errRes columnError
 	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
 	if err != nil {
-		return nil, false, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
+		return nil, timeline, false, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}
 
-	return res.Transfers, res.HasMore, nil
+	transactions := reverseTransactions(res.Transfers)
+	results = append(results, transactions...)
+	if len(results) > 0 {
+		timeline.LatestID = results[len(results)-1].ID
+	}
+	return results, timeline, res.HasMore, nil
+}
+
+func reverseTransactions(in []*Transaction) []*Transaction {
+	out := make([]*Transaction, len(in))
+	copy(out, in)
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out
 }
