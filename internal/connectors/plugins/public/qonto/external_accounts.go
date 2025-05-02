@@ -3,7 +3,7 @@ package qonto
 import (
 	"context"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
@@ -47,7 +47,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 
-		accounts, err = beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, pagedBeneficiaries)
+		accounts, err = p.beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, pagedBeneficiaries)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -82,7 +82,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	}, nil
 }
 
-func beneficiaryToPSPAccounts(
+func (p *Plugin) beneficiaryToPSPAccounts(
 	oldUpdatedAt time.Time,
 	accounts []models.PSPAccount,
 	pagedBeneficiaries []client.Beneficiary,
@@ -108,15 +108,17 @@ func beneficiaryToPSPAccounts(
 				beneficiary.BankAccount.SwiftSortCode,
 				beneficiary.BankAccount.RoutingNumber,
 				beneficiary.BankAccount.IntermediaryBankBic,
+				beneficiary.ID,
 			)
 			if err != nil {
-				return accounts, err
+				p.logger.Info("mapping beneficiary to external account error: ", err)
+				continue
 			}
 			accounts = append(accounts, models.PSPAccount{
 				Reference:    accountReference,
 				CreatedAt:    createdAt,
 				Name:         &beneficiary.Name,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, beneficiary.BankAccount.Currency)),
+				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, beneficiary.BankAccount.Currency)), // TODO needs updating, Qonto supports some accounts in differnet currencies (only external accounts, maybe?)
 				Metadata: map[string]string{
 					"beneficiary_id":                     beneficiary.ID,
 					"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
@@ -143,7 +145,7 @@ populated. (see https://api-doc.qonto.com/docs/business-api/d34477c258c06-list-b
 	Swift code: account_number, swift_sort_code, intermediary_bank_bic and currency will be present.
 	Swift routing number: account_number, routing_number, intermediary_bank_bic and currency will be present.
 */
-func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNumber, intermediaryBankBic string) (string, error) {
+func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNumber, intermediaryBankBic, beneficiaryId string) (string, error) {
 	switch {
 	case iban != "":
 		return iban + "-" + bic, nil
@@ -152,6 +154,6 @@ func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNu
 	case routingNumber != "":
 		return accountNumber + "-" + routingNumber + "-" + intermediaryBankBic, nil
 	default:
-		return "", errors.New("invalid account, unable to generate reference")
+		return "", fmt.Errorf("invalid account, unable to generate reference for beneficiary %v", beneficiaryId)
 	}
 }
