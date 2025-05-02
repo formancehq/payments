@@ -40,34 +40,19 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// GetAccountBalances mocks base method.
-func (m *MockClient) GetAccountBalances(ctx context.Context) ([]*Balance, error) {
+// GetBeneficiaries mocks base method.
+func (m *MockClient) GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountBalances", ctx)
-	ret0, _ := ret[0].([]*Balance)
+	ret := m.ctrl.Call(m, "GetBeneficiaries", ctx, page, pageSize)
+	ret0, _ := ret[0].([]Beneficiary)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAccountBalances indicates an expected call of GetAccountBalances.
-func (mr *MockClientMockRecorder) GetAccountBalances(ctx any) *gomock.Call {
+// GetBeneficiaries indicates an expected call of GetBeneficiaries.
+func (mr *MockClientMockRecorder) GetBeneficiaries(ctx, page, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountBalances", reflect.TypeOf((*MockClient)(nil).GetAccountBalances), ctx)
-}
-
-// GetExternalAccounts mocks base method.
-func (m *MockClient) GetExternalAccounts(ctx context.Context, page, pageSize int) ([]*ExternalAccount, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetExternalAccounts", ctx, page, pageSize)
-	ret0, _ := ret[0].([]*ExternalAccount)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetExternalAccounts indicates an expected call of GetExternalAccounts.
-func (mr *MockClientMockRecorder) GetExternalAccounts(ctx, page, pageSize any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExternalAccounts", reflect.TypeOf((*MockClient)(nil).GetExternalAccounts), ctx, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBeneficiaries", reflect.TypeOf((*MockClient)(nil).GetBeneficiaries), ctx, page, pageSize)
 }
 
 // GetOrganization mocks base method.
@@ -86,10 +71,10 @@ func (mr *MockClientMockRecorder) GetOrganization(ctx any) *gomock.Call {
 }
 
 // GetTransactions mocks base method.
-func (m *MockClient) GetTransactions(ctx context.Context, page, pageSize int) ([]*Transaction, error) {
+func (m *MockClient) GetTransactions(ctx context.Context, page, pageSize int) ([]Transactions, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetTransactions", ctx, page, pageSize)
-	ret0, _ := ret[0].([]*Transaction)
+	ret0, _ := ret[0].([]Transactions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -98,34 +83,4 @@ func (m *MockClient) GetTransactions(ctx context.Context, page, pageSize int) ([
 func (mr *MockClientMockRecorder) GetTransactions(ctx, page, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, page, pageSize)
-}
-
-// InitiatePayout mocks base method.
-func (m *MockClient) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*PayoutResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitiatePayout", ctx, pr)
-	ret0, _ := ret[0].(*PayoutResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InitiatePayout indicates an expected call of InitiatePayout.
-func (mr *MockClientMockRecorder) InitiatePayout(ctx, pr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiatePayout", reflect.TypeOf((*MockClient)(nil).InitiatePayout), ctx, pr)
-}
-
-// InitiateTransfer mocks base method.
-func (m *MockClient) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "InitiateTransfer", ctx, tr)
-	ret0, _ := ret[0].(*TransferResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// InitiateTransfer indicates an expected call of InitiateTransfer.
-func (mr *MockClientMockRecorder) InitiateTransfer(ctx, tr any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "InitiateTransfer", reflect.TypeOf((*MockClient)(nil).InitiateTransfer), ctx, tr)
 }

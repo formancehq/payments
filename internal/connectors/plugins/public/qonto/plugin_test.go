@@ -75,15 +75,15 @@ var _ = Describe("Qonto *Plugin", func() {
 			_, err := plg.FetchNextExternalAccounts(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-		It("fails when creating transfer is called before install", func(ctx SpecContext) {
+		It("fails when creating transfer as it's unimplemented", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(context.Background(), req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
-		It("fails when creating payout is called before install", func(ctx SpecContext) {
+		It("fails when creating payout as it's unimplemented", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(context.Background(), req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
 })
