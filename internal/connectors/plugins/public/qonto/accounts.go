@@ -67,8 +67,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 func sortOrgBankAccountsByUpdatedAtAsc(organization *client.Organization) {
 	sort.Slice(organization.BankAccounts, func(i, j int) bool {
-		updatedAtI, _ := time.ParseInLocation("2006-01-02T15:04:05.999Z", organization.BankAccounts[i].UpdatedAt, time.UTC)
-		updatedAtJ, _ := time.ParseInLocation("2006-01-02T15:04:05.999Z", organization.BankAccounts[j].UpdatedAt, time.UTC)
+		updatedAtI, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[i].UpdatedAt, time.UTC)
+		updatedAtJ, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[j].UpdatedAt, time.UTC)
 		return updatedAtI.Before(updatedAtJ)
 	})
 }
@@ -80,7 +80,7 @@ func fillAccounts(
 ) ([]models.PSPAccount, time.Time, error) {
 	newestUpdatedAt := time.Time{}
 	for _, bankAccount := range bankAccounts {
-		updatedAt, err := time.ParseInLocation("2006-01-02T15:04:05.999Z", bankAccount.UpdatedAt, time.UTC)
+		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, bankAccount.UpdatedAt, time.UTC)
 		if err != nil {
 			return nil, newestUpdatedAt, err
 		}
