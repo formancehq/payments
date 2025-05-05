@@ -15,6 +15,9 @@ import (
 
 const DummyPSPName = "dummypay"
 
+// Import the moov connector to register it
+import _ "github.com/formancehq/payments/internal/connectors/plugins/public/moov"
+
 type PluginCreateFunction func(string, logging.Logger, json.RawMessage) (models.Plugin, error)
 
 type PluginInformation struct {
