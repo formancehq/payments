@@ -264,23 +264,27 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 	sampleBeneficiaries = make([]client.Beneficiary, 0)
 	for i := 0; i < 20; i++ {
 		var beneficiaryBankAccount client.BeneficiaryBankAccount
+		var currency string
 		switch i % 3 {
 		case 0:
+			currency = "EUR"
 			beneficiaryBankAccount = client.BeneficiaryBankAccount{
-				Currency: "EUR",
+				Currency: currency,
 				Iban:     fmt.Sprintf("FR76300060000112345678901%02d", i),
 				Bic:      fmt.Sprintf("BNPAFRPP%02d", i),
 			}
 		case 1:
+			currency = "GBP"
 			beneficiaryBankAccount = client.BeneficiaryBankAccount{
-				Currency:            "EUR",
+				Currency:            currency,
 				AccountNUmber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
 				IntermediaryBankBic: fmt.Sprintf("BNPAFRPP%02d", i),
 				SwiftSortCode:       fmt.Sprintf("SORTCODE%02d", i),
 			}
 		case 2:
+			currency = "USD"
 			beneficiaryBankAccount = client.BeneficiaryBankAccount{
-				Currency:            "EUR",
+				Currency:            currency,
 				AccountNUmber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
 				IntermediaryBankBic: fmt.Sprintf("BNPAFRPP%02d", i),
 				RoutingNumber:       fmt.Sprintf("ROUTINGNUMBER%02d", i),
@@ -305,19 +309,23 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 	counter, err := strconv.Atoi(beneficiary.ID)
 	Expect(err).To(BeNil())
 
-	reference := ""
+	expectedReference := ""
+	expectedCurrency := ""
 	switch counter % 3 {
 	case 0:
-		reference = beneficiary.BankAccount.Iban + "-" + beneficiary.BankAccount.Bic
+		expectedCurrency = "EUR/2"
+		expectedReference = beneficiary.BankAccount.Iban + "-" + beneficiary.BankAccount.Bic
 	case 1:
-		reference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.SwiftSortCode + "-" + beneficiary.BankAccount.IntermediaryBankBic
+		expectedCurrency = "GBP/2"
+		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.SwiftSortCode + "-" + beneficiary.BankAccount.IntermediaryBankBic
 	case 2:
-		reference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.RoutingNumber + "-" + beneficiary.BankAccount.IntermediaryBankBic
+		expectedCurrency = "USD/2"
+		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.RoutingNumber + "-" + beneficiary.BankAccount.IntermediaryBankBic
 	}
-	Expect(resultingPSPAccount.Reference).To(Equal(reference))
+	Expect(resultingPSPAccount.Reference).To(Equal(expectedReference))
 	Expect(*resultingPSPAccount.Name).To(Equal(beneficiary.Name))
 	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(beneficiary.CreatedAt))
-	Expect(*resultingPSPAccount.DefaultAsset).To(Equal("EUR/2"))
+	Expect(*resultingPSPAccount.DefaultAsset).To(Equal(expectedCurrency))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"beneficiary_id":                     beneficiary.ID,
 		"bank_account_number":                beneficiary.BankAccount.AccountNUmber,

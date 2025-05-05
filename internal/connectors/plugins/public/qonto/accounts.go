@@ -115,7 +115,7 @@ func fillAccounts(
 			Reference:    bankAccount.Id,
 			CreatedAt:    updatedAt, // Qonto does not give us the createdAt info.
 			Name:         &bankAccount.Name,
-			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, bankAccount.Currency)),
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForInternalAccounts, bankAccount.Currency)),
 			Metadata:     meta,
 			Raw:          raw,
 		})
