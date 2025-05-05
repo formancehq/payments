@@ -118,7 +118,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 				Reference:    accountReference,
 				CreatedAt:    createdAt,
 				Name:         &beneficiary.Name,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, beneficiary.BankAccount.Currency)), // TODO needs updating, Qonto supports some accounts in differnet currencies (only external accounts, maybe?)
+				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForExternalAccounts, beneficiary.BankAccount.Currency)),
 				Metadata: map[string]string{
 					"beneficiary_id":                     beneficiary.ID,
 					"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
