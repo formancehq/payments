@@ -20,6 +20,8 @@ func init() {
 }
 
 type Plugin struct {
+	models.Plugin
+
 	name   string
 	logger logging.Logger
 
@@ -36,6 +38,8 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	client := client.New()
 
 	return &Plugin{
+		Plugin: plugins.NewDefaultPlugin(),
+
 		name:   name,
 		logger: logger,
 		client: client,

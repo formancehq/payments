@@ -23,6 +23,8 @@ func init() {
 }
 
 type Plugin struct {
+	models.Plugin
+
 	name   string
 	logger logging.Logger
 
@@ -39,6 +41,8 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	client := client.New(ProviderName, config.ClientID, config.APIKey, config.Endpoint)
 
 	p := &Plugin{
+		Plugin: plugins.NewBasePlugin(),
+
 		name:   name,
 		logger: logger,
 		client: client,
@@ -134,14 +138,6 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	}, nil
 }
 
-func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
 		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
@@ -155,14 +151,6 @@ func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutReques
 	return models.CreatePayoutResponse{
 		Payment: &payment,
 	}, nil
-}
-
-func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {

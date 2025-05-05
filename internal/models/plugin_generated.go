@@ -293,3 +293,261 @@ func (mr *MockPluginMockRecorder) Uninstall(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Uninstall", reflect.TypeOf((*MockPlugin)(nil).Uninstall), arg0, arg1)
 }
+
+// MockPSPPlugin is a mock of PSPPlugin interface.
+type MockPSPPlugin struct {
+	ctrl     *gomock.Controller
+	recorder *MockPSPPluginMockRecorder
+	isgomock struct{}
+}
+
+// MockPSPPluginMockRecorder is the mock recorder for MockPSPPlugin.
+type MockPSPPluginMockRecorder struct {
+	mock *MockPSPPlugin
+}
+
+// NewMockPSPPlugin creates a new mock instance.
+func NewMockPSPPlugin(ctrl *gomock.Controller) *MockPSPPlugin {
+	mock := &MockPSPPlugin{ctrl: ctrl}
+	mock.recorder = &MockPSPPluginMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPSPPlugin) EXPECT() *MockPSPPluginMockRecorder {
+	return m.recorder
+}
+
+// CreateBankAccount mocks base method.
+func (m *MockPSPPlugin) CreateBankAccount(arg0 context.Context, arg1 CreateBankAccountRequest) (CreateBankAccountResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateBankAccount", arg0, arg1)
+	ret0, _ := ret[0].(CreateBankAccountResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateBankAccount indicates an expected call of CreateBankAccount.
+func (mr *MockPSPPluginMockRecorder) CreateBankAccount(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockPSPPlugin)(nil).CreateBankAccount), arg0, arg1)
+}
+
+// CreatePayout mocks base method.
+func (m *MockPSPPlugin) CreatePayout(arg0 context.Context, arg1 CreatePayoutRequest) (CreatePayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePayout", arg0, arg1)
+	ret0, _ := ret[0].(CreatePayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreatePayout indicates an expected call of CreatePayout.
+func (mr *MockPSPPluginMockRecorder) CreatePayout(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockPSPPlugin)(nil).CreatePayout), arg0, arg1)
+}
+
+// CreateTransfer mocks base method.
+func (m *MockPSPPlugin) CreateTransfer(arg0 context.Context, arg1 CreateTransferRequest) (CreateTransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateTransfer", arg0, arg1)
+	ret0, _ := ret[0].(CreateTransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateTransfer indicates an expected call of CreateTransfer.
+func (mr *MockPSPPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPSPPlugin)(nil).CreateTransfer), arg0, arg1)
+}
+
+// CreateWebhooks mocks base method.
+func (m *MockPSPPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksRequest) (CreateWebhooksResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWebhooks", arg0, arg1)
+	ret0, _ := ret[0].(CreateWebhooksResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWebhooks indicates an expected call of CreateWebhooks.
+func (mr *MockPSPPluginMockRecorder) CreateWebhooks(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhooks", reflect.TypeOf((*MockPSPPlugin)(nil).CreateWebhooks), arg0, arg1)
+}
+
+// FetchNextAccounts mocks base method.
+func (m *MockPSPPlugin) FetchNextAccounts(arg0 context.Context, arg1 FetchNextAccountsRequest) (FetchNextAccountsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextAccounts", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextAccountsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextAccounts indicates an expected call of FetchNextAccounts.
+func (mr *MockPSPPluginMockRecorder) FetchNextAccounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextAccounts", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextAccounts), arg0, arg1)
+}
+
+// FetchNextBalances mocks base method.
+func (m *MockPSPPlugin) FetchNextBalances(arg0 context.Context, arg1 FetchNextBalancesRequest) (FetchNextBalancesResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextBalances", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextBalancesResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextBalances indicates an expected call of FetchNextBalances.
+func (mr *MockPSPPluginMockRecorder) FetchNextBalances(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextBalances", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextBalances), arg0, arg1)
+}
+
+// FetchNextExternalAccounts mocks base method.
+func (m *MockPSPPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextExternalAccounts", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextExternalAccountsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextExternalAccounts indicates an expected call of FetchNextExternalAccounts.
+func (mr *MockPSPPluginMockRecorder) FetchNextExternalAccounts(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextExternalAccounts", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextExternalAccounts), arg0, arg1)
+}
+
+// FetchNextOthers mocks base method.
+func (m *MockPSPPlugin) FetchNextOthers(arg0 context.Context, arg1 FetchNextOthersRequest) (FetchNextOthersResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextOthers", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextOthersResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextOthers indicates an expected call of FetchNextOthers.
+func (mr *MockPSPPluginMockRecorder) FetchNextOthers(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOthers", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextOthers), arg0, arg1)
+}
+
+// FetchNextPayments mocks base method.
+func (m *MockPSPPlugin) FetchNextPayments(arg0 context.Context, arg1 FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNextPayments", arg0, arg1)
+	ret0, _ := ret[0].(FetchNextPaymentsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNextPayments indicates an expected call of FetchNextPayments.
+func (mr *MockPSPPluginMockRecorder) FetchNextPayments(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextPayments", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextPayments), arg0, arg1)
+}
+
+// PollPayoutStatus mocks base method.
+func (m *MockPSPPlugin) PollPayoutStatus(arg0 context.Context, arg1 PollPayoutStatusRequest) (PollPayoutStatusResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PollPayoutStatus", arg0, arg1)
+	ret0, _ := ret[0].(PollPayoutStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PollPayoutStatus indicates an expected call of PollPayoutStatus.
+func (mr *MockPSPPluginMockRecorder) PollPayoutStatus(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollPayoutStatus", reflect.TypeOf((*MockPSPPlugin)(nil).PollPayoutStatus), arg0, arg1)
+}
+
+// PollTransferStatus mocks base method.
+func (m *MockPSPPlugin) PollTransferStatus(arg0 context.Context, arg1 PollTransferStatusRequest) (PollTransferStatusResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PollTransferStatus", arg0, arg1)
+	ret0, _ := ret[0].(PollTransferStatusResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PollTransferStatus indicates an expected call of PollTransferStatus.
+func (mr *MockPSPPluginMockRecorder) PollTransferStatus(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollTransferStatus", reflect.TypeOf((*MockPSPPlugin)(nil).PollTransferStatus), arg0, arg1)
+}
+
+// ReversePayout mocks base method.
+func (m *MockPSPPlugin) ReversePayout(arg0 context.Context, arg1 ReversePayoutRequest) (ReversePayoutResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReversePayout", arg0, arg1)
+	ret0, _ := ret[0].(ReversePayoutResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReversePayout indicates an expected call of ReversePayout.
+func (mr *MockPSPPluginMockRecorder) ReversePayout(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReversePayout", reflect.TypeOf((*MockPSPPlugin)(nil).ReversePayout), arg0, arg1)
+}
+
+// ReverseTransfer mocks base method.
+func (m *MockPSPPlugin) ReverseTransfer(arg0 context.Context, arg1 ReverseTransferRequest) (ReverseTransferResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReverseTransfer", arg0, arg1)
+	ret0, _ := ret[0].(ReverseTransferResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReverseTransfer indicates an expected call of ReverseTransfer.
+func (mr *MockPSPPluginMockRecorder) ReverseTransfer(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReverseTransfer", reflect.TypeOf((*MockPSPPlugin)(nil).ReverseTransfer), arg0, arg1)
+}
+
+// TranslateWebhook mocks base method.
+func (m *MockPSPPlugin) TranslateWebhook(arg0 context.Context, arg1 TranslateWebhookRequest) (TranslateWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TranslateWebhook", arg0, arg1)
+	ret0, _ := ret[0].(TranslateWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TranslateWebhook indicates an expected call of TranslateWebhook.
+func (mr *MockPSPPluginMockRecorder) TranslateWebhook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateWebhook", reflect.TypeOf((*MockPSPPlugin)(nil).TranslateWebhook), arg0, arg1)
+}
+
+// MockPSPBankingBridge is a mock of PSPBankingBridge interface.
+type MockPSPBankingBridge struct {
+	ctrl     *gomock.Controller
+	recorder *MockPSPBankingBridgeMockRecorder
+	isgomock struct{}
+}
+
+// MockPSPBankingBridgeMockRecorder is the mock recorder for MockPSPBankingBridge.
+type MockPSPBankingBridgeMockRecorder struct {
+	mock *MockPSPBankingBridge
+}
+
+// NewMockPSPBankingBridge creates a new mock instance.
+func NewMockPSPBankingBridge(ctrl *gomock.Controller) *MockPSPBankingBridge {
+	mock := &MockPSPBankingBridge{ctrl: ctrl}
+	mock.recorder = &MockPSPBankingBridgeMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockPSPBankingBridge) EXPECT() *MockPSPBankingBridgeMockRecorder {
+	return m.recorder
+}

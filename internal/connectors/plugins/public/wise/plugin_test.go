@@ -39,7 +39,9 @@ var _ = Describe("Wise Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		plg = &Plugin{
+			Plugin: plugins.NewBasePlugin(),
+		}
 
 		plg.webhookConfigs = map[string]webhookConfig{
 			"transfer_state_changed": {
