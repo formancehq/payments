@@ -960,6 +960,7 @@ func (p *Plugin) fetchBalances(balance *psp.Balance) (*models.PSPBalance, error)
 3. Use the provided currency package functions to handle conversions consistently.
 4. Validate asset formats and currency support early in your implementation.
 5. Handle precision loss carefully when converting between formats.
+6. Use the custom HTTP client in the codebase when adding a connector that has a Go SDK. This allows the system to send metrics and traces. See the Stripe example [here.]( ./internal/connectors/plugins/public/stripe/client/client.go#L43)
 
 
 ### Setting up Pre-commit Checks
