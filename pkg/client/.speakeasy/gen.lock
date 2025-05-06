@@ -156,6 +156,7 @@ generatedFiles:
   - /models/components/v3getpaymentserviceuserresponse.go
   - /models/components/v3getpoolresponse.go
   - /models/components/v3gettaskresponse.go
+  - /models/components/v3increaseconfig.go
   - /models/components/v3initiatepaymentrequest.go
   - /models/components/v3initiatepaymentresponse.go
   - /models/components/v3installconnectorrequest.go
@@ -457,6 +458,7 @@ generatedFiles:
   - docs/models/components/v3getpaymentserviceuserresponse.md
   - docs/models/components/v3getpoolresponse.md
   - docs/models/components/v3gettaskresponse.md
+  - docs/models/components/v3increaseconfig.md
   - docs/models/components/v3initiatepaymentrequest.md
   - docs/models/components/v3initiatepaymentresponse.md
   - docs/models/components/v3initiatepaymentresponsedata.md
