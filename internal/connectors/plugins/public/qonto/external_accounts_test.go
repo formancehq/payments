@@ -316,10 +316,10 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 		expectedReference = beneficiary.BankAccount.Iban + "-" + beneficiary.BankAccount.Bic
 	case 1:
 		expectedCurrency = "GBP/2"
-		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.SwiftSortCode + "-" + beneficiary.BankAccount.IntermediaryBankBic
+		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.SwiftSortCode
 	case 2:
 		expectedCurrency = "USD/2"
-		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.RoutingNumber + "-" + beneficiary.BankAccount.IntermediaryBankBic
+		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.RoutingNumber
 	}
 	Expect(resultingPSPAccount.Reference).To(Equal(expectedReference))
 	Expect(*resultingPSPAccount.Name).To(Equal(beneficiary.Name))
