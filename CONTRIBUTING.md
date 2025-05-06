@@ -961,7 +961,9 @@ func (p *Plugin) fetchBalances(balance *psp.Balance) (*models.PSPBalance, error)
 4. Validate asset formats and currency support early in your implementation.
 5. Handle precision loss carefully when converting between formats.
 6. Use the custom HTTP client in the codebase when adding a connector that has a Go SDK. This allows the system to send metrics and traces. See the Stripe example [here.]( ./internal/connectors/plugins/public/stripe/client/client.go#L43)
-
+7. Ensure that for payments without source or destination account reference, those fields are omitted.
+8. Ensure that `reference` values are unique across the `payment` table. Only `payment_adjustment` records that are part of the same transfer may share the same `payment_id`.
+9. If the PSP supports recording a transfer as two opposing transactions (e.g., debit and credit), only one transfer should be recorded in the payment table. These transactions must have distinct types and must not be recorded as the same type.
 
 ### Setting up Pre-commit Checks
 Pre-commit checks for the repository is done using Just.
