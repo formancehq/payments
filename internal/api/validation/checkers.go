@@ -3,6 +3,7 @@ package validation
 import (
 	"regexp"
 
+	iso6391 "github.com/emvi/iso-639-1"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
@@ -162,4 +163,13 @@ func IsEmail(fl validator.FieldLevel) bool {
 	}
 
 	return emailRegexp.MatchString(str)
+}
+
+func IsISO6391LanguageCode(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+
+	return iso6391.ValidCode(str)
 }
