@@ -44,6 +44,8 @@ var _ = Describe("Validator custom type checks", func() {
 			PhoneNumberNullable      *string                      `validate:"omitempty,phoneNumber"`
 			Email                    string                       `validate:"omitempty,email"`
 			EmailNullable            *string                      `validate:"omitempty,email"`
+			Language                 string                       `validate:"omitempty,iso6391LanguageCode"`
+			LanguageNullable         *string                      `validate:"omitempty,iso6391LanguageCode"`
 		}
 
 		DescribeTable("non conforming values",
@@ -208,6 +210,23 @@ var _ = Describe("Validator custom type checks", func() {
 			Entry("email: unsupported type for this matcher", "email", "FieldName", struct {
 				FieldName int `validate:"email"`
 			}{FieldName: 34}),
+
+			// email
+			Entry("language: invalid value of string on required field", "iso6391LanguageCode", "StringFieldName", struct {
+				StringFieldName string `validate:"required,iso6391LanguageCode"`
+			}{StringFieldName: "invalid"}),
+			Entry("language: invalid value of string", "iso6391LanguageCode", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,iso6391LanguageCode"`
+			}{StringFieldName: "invalid"}),
+			Entry("language: invalid value of string on required field", "iso6391LanguageCode", "StringFieldName", struct {
+				StringFieldName *string `validate:"required,iso6391LanguageCode"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("language: invalid value of string", "iso6391LanguageCode", "StringFieldName", struct {
+				StringFieldName *string `validate:"omitempty,iso6391LanguageCode"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("language: unsupported type for this matcher", "iso6391LanguageCode", "FieldName", struct {
+				FieldName int `validate:"iso6391LanguageCode"`
+			}{FieldName: 34}),
 		)
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
@@ -292,6 +311,20 @@ var _ = Describe("Validator custom type checks", func() {
 				EmailNullable: pointer.For("dev@formance.com"),
 			})
 			Expect(err).To(BeNil())
+		})
+		It("language supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				Language:         "en",
+				LanguageNullable: pointer.For("en"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				Language:         "iv",
+				LanguageNullable: pointer.For("iv"),
+			})
+			Expect(err).ToNot(BeNil())
+
 		})
 	})
 })

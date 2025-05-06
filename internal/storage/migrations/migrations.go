@@ -28,6 +28,9 @@ var connectorProvidersLower string
 //go:embed 14-create-psu-tables.sql
 var psuTableCreation string
 
+//go:embed 15-add-language-psu.sql
+var psuLanguageColumn string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -200,6 +203,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running psu table creations migration...")
 					_, err := tx.ExecContext(ctx, psuTableCreation)
 					logger.WithField("error", err).Info("finished running psu table creations migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "create psu tables",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running psu language column addition migration...")
+					_, err := tx.ExecContext(ctx, psuLanguageColumn)
+					logger.WithField("error", err).Info("finished running psu language column addition migration")
 					return err
 				})
 			},
