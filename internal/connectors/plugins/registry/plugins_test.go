@@ -37,7 +37,7 @@ var _ = Describe("Register Plugin", func() {
 		name         = "plugin-name"
 		capabilities = []models.Capability{}
 		conf         = Config{}
-		fn           = func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+		fn           = func(_ context.Context, _ models.ConnectorID, _ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
 			plg := models.NewMockPlugin(ctrl)
 			return plg, nil
 		}
@@ -48,10 +48,8 @@ var _ = Describe("Register Plugin", func() {
 	})
 
 	Context("population of plugin configuration", func() {
-		ctx := context.Background()
-		connectorID := models.ConnectorID{}
-		RegisterPlugin(ctx, connectorID, name, fn, capabilities, conf)
-		RegisterPlugin(ctx, onnectorID, DummyPSPName, fn, capabilities, conf)
+		RegisterPlugin(name, fn, capabilities, conf)
+		RegisterPlugin(DummyPSPName, fn, capabilities, conf)
 		It("can parse a required string", func(ctx SpecContext) {
 			configs := GetConfigs(false)
 			c, ok := configs[name]
