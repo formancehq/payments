@@ -37,43 +37,65 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 			sampleTransactions = generateTestSampleTransactions()
 		})
 
-		It("should return an error - get transactions error", func(ctx SpecContext) {
-			// Given a valid request but the client fails
-			req := models.FetchNextPaymentsRequest{
-				State:       []byte(`{}`),
-				PageSize:    pageSize,
-				FromPayload: from,
-			}
+		Describe("Error cases", func() {
+			It("should return an error - get transactions error", func(ctx SpecContext) {
+				// Given a valid request but the client fails
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					PageSize:    pageSize,
+					FromPayload: from,
+				}
 
-			m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				nil,
-				errors.New("test error"),
-			)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					nil,
+					errors.New("test error"),
+				)
 
-			// When
-			resp, err := plg.FetchNextPayments(ctx, req)
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
 
-			// Then
-			assertTransactionsErrorResponse(resp, err, errors.New("test error"))
-		})
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("test error"))
+			})
 
-		It("should return an error - missing pageSize in request", func(ctx SpecContext) {
-			// Given a request with missing pageSize
-			req := models.FetchNextPaymentsRequest{
-				State:       []byte(`{}`),
-				FromPayload: from,
-			}
+			It("should return an error - missing pageSize in request", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					FromPayload: from,
+				}
 
-			m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-				sampleTransactions,
-				nil,
-			)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleTransactions,
+					nil,
+				)
 
-			// When
-			resp, err := plg.FetchNextPayments(ctx, req)
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
 
-			// Then
-			assertTransactionsErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
+			})
+
+			It("should return an error - missing FromPayload in request", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextPaymentsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
+
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleTransactions,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("missing from payload in request"))
+			})
+
 		})
 
 		It("should fetch transactions - no state no results from client", func(ctx SpecContext) {
@@ -98,7 +120,6 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 		})
 
 	})
-	// add test for missing payload
 })
 
 func assertTransactionsErrorResponse(resp models.FetchNextPaymentsResponse, err error, expectedError error) {
