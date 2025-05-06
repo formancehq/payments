@@ -3,8 +3,6 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/logging"
-
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -37,8 +35,6 @@ func (w Workflow) fetchNextPayments(
 	fetchNextPayments FetchNextPayments,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
-	logging.Info("toto")
-
 	stateReference := models.CAPABILITY_FETCH_PAYMENTS.String()
 	if fetchNextPayments.FromPayload != nil {
 		stateReference = fmt.Sprintf("%s-%s", models.CAPABILITY_FETCH_PAYMENTS.String(), fetchNextPayments.FromPayload.ID)
@@ -67,12 +63,10 @@ func (w Workflow) fetchNextPayments(
 			return errors.Wrap(err, "fetching next payments")
 		}
 
-		logging.Infof("toto count PSP payments %d", len(paymentsResponse.Payments))
 		payments, err := models.FromPSPPayments(
 			paymentsResponse.Payments,
 			fetchNextPayments.ConnectorID,
 		)
-		logging.Infof("toto count actual payments %d", len(payments))
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
 				"failed to translate psp payments",
@@ -91,7 +85,6 @@ func (w Workflow) fetchNextPayments(
 			}
 		}
 
-		logging.Infof("toto pre wait group")
 		wg := workflow.NewWaitGroup(ctx)
 		errChan := make(chan error, len(paymentsResponse.Payments)*3)
 		for _, payment := range payments {
