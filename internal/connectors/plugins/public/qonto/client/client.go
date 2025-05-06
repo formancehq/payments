@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -14,7 +15,7 @@ import (
 type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
 	GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error)
-	GetTransactions(ctx context.Context, page, pageSize int) ([]Transactions, error)
+	GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, page, pageSize int) ([]Transactions, error)
 }
 
 type client struct {

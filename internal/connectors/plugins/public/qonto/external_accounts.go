@@ -100,38 +100,41 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 		if err != nil {
 			return accounts, err
 		}
-		if updatedAt.After(oldUpdatedAt) {
-			accountReference, err := generateAccountReference(
-				beneficiary.BankAccount.AccountNUmber,
-				beneficiary.BankAccount.Iban,
-				beneficiary.BankAccount.Bic,
-				beneficiary.BankAccount.SwiftSortCode,
-				beneficiary.BankAccount.RoutingNumber,
-				beneficiary.BankAccount.IntermediaryBankBic,
-				beneficiary.ID,
-			)
-			if err != nil {
-				p.logger.Info("mapping beneficiary to external account error: ", err)
-				continue
-			}
-			accounts = append(accounts, models.PSPAccount{
-				Reference:    accountReference,
-				CreatedAt:    createdAt,
-				Name:         &beneficiary.Name,
-				DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForExternalAccounts, beneficiary.BankAccount.Currency)),
-				Metadata: map[string]string{
-					"beneficiary_id":                     beneficiary.ID,
-					"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
-					"bank_account_iban":                  beneficiary.BankAccount.Iban,
-					"bank_account_bic":                   beneficiary.BankAccount.Bic,
-					"bank_account_swift_sort_code":       beneficiary.BankAccount.SwiftSortCode,
-					"bank_account_routing_number":        beneficiary.BankAccount.RoutingNumber,
-					"bank_account_intermediary_bank_bic": beneficiary.BankAccount.IntermediaryBankBic,
-					"updated_at":                         beneficiary.UpdatedAt,
-				},
-				Raw: raw,
-			})
+		if updatedAt.Before(oldUpdatedAt) || updatedAt.Equal(oldUpdatedAt) {
+			continue
 		}
+
+		accountReference, err := generateAccountReference(
+			beneficiary.BankAccount.AccountNUmber,
+			beneficiary.BankAccount.Iban,
+			beneficiary.BankAccount.Bic,
+			beneficiary.BankAccount.SwiftSortCode,
+			beneficiary.BankAccount.RoutingNumber,
+			beneficiary.BankAccount.IntermediaryBankBic,
+			beneficiary.ID,
+		)
+		if err != nil {
+			p.logger.Info("mapping beneficiary to external account error: ", err)
+			continue
+		}
+		accounts = append(accounts, models.PSPAccount{
+			Reference:    accountReference,
+			CreatedAt:    createdAt,
+			Name:         &beneficiary.Name,
+			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForExternalAccounts, beneficiary.BankAccount.Currency)),
+			Metadata: map[string]string{
+				"beneficiary_id":                     beneficiary.ID,
+				"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
+				"bank_account_iban":                  beneficiary.BankAccount.Iban,
+				"bank_account_bic":                   beneficiary.BankAccount.Bic,
+				"bank_account_swift_sort_code":       beneficiary.BankAccount.SwiftSortCode,
+				"bank_account_routing_number":        beneficiary.BankAccount.RoutingNumber,
+				"bank_account_intermediary_bank_bic": beneficiary.BankAccount.IntermediaryBankBic,
+				"updated_at":                         beneficiary.UpdatedAt,
+			},
+			Raw: raw,
+		})
+
 	}
 	return accounts, nil
 }

@@ -298,7 +298,6 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 			BankAccount: beneficiaryBankAccount,
 			CreatedAt:   fmt.Sprintf("2020-01-01T00:%02d:00.001Z", i),
 			UpdatedAt:   fmt.Sprintf("2021-01-01T00:%02d:00.001Z", i),
-			Meta:        client.MetaPagination{},
 		})
 	}
 

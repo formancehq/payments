@@ -15,7 +15,7 @@ type OrganizationBankAccount struct {
 	Iban                   string  `json:"iban"`
 	Bic                    string  `json:"bic"`
 	Currency               string  `json:"currency"`
-	Balance                float64 `json:"balance"`
+	Balance                float64 `json:"balance"` // TODO change to JSON.Number and use currency function
 	BalanceCents           int64   `json:"balance_cents"`
 	AuthorizedBalance      float64 `json:"authorized_balance"`
 	AuthorizedBalanceCents int64   `json:"authorized_balance_cents"`
