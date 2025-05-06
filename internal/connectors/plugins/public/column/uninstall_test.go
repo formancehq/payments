@@ -2,6 +2,8 @@ package column
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
@@ -16,14 +18,19 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		plg            *Plugin
 		mockHTTPClient *client.MockHTTPClient
 		now            time.Time
+		ts             *httptest.Server
 	)
 
 	BeforeEach(func() {
 		now = time.Now().UTC()
 		ctrl := gomock.NewController(GinkgoT())
+		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte(`{"webhook_urls": []}`))
+		}))
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		plg = &Plugin{
-			client: client.New("test", "aseplye", "https://test.com"),
+			client: client.New("test", "aseplye", ts.URL),
 		}
 		plg.client.SetHttpClient(mockHTTPClient)
 	})
@@ -84,7 +91,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 					WebhookEndpoints: []*client.EventSubscription{
 						{
 							ID:            "webhook-2",
-							URL:           "https://example.com/test-connector/webhook",
+							URL:           ts.URL + "/test-connector/webhook",
 							CreatedAt:     now.Add(-time.Duration(5) * time.Minute).UTC().Format(time.RFC3339),
 							UpdatedAt:     now.Add(-time.Duration(5) * time.Minute).UTC().Format(time.RFC3339),
 							Description:   "description",

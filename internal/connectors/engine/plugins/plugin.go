@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -26,7 +27,7 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
+	RegisterPlugin(context.Context, models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
 	UnregisterPlugin(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -62,6 +63,7 @@ func New(
 }
 
 func (p *plugins) RegisterPlugin(
+	ctx context.Context,
 	connectorID models.ConnectorID,
 	provider string,
 	connectorName string,
@@ -78,7 +80,7 @@ func (p *plugins) RegisterPlugin(
 		return nil
 	}
 
-	plugin, err := registry.GetPlugin(p.logger, provider, connectorName, rawConfig)
+	plugin, err := registry.GetPlugin(ctx, connectorID, p.logger, provider, connectorName, rawConfig)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
 		errors.Is(err, pluginserrors.ErrInvalidClientRequest):

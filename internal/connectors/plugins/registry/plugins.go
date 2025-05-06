@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -15,7 +16,13 @@ import (
 
 const DummyPSPName = "dummypay"
 
-type PluginCreateFunction func(string, logging.Logger, json.RawMessage) (models.Plugin, error)
+type PluginCreateFunction func(
+	context.Context,
+	models.ConnectorID,
+	string,
+	logging.Logger,
+	json.RawMessage,
+) (models.Plugin, error)
 
 type PluginInformation struct {
 	capabilities []models.Capability
@@ -99,14 +106,14 @@ func setupConfig(conf any) Config {
 	return config
 }
 
-func GetPlugin(logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
+func GetPlugin(ctx context.Context, connectorID models.ConnectorID, logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
 	provider = strings.ToLower(provider)
 	info, ok := pluginsRegistry[provider]
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
-	p, err := info.createFunc(connectorName, logger, rawConfig)
+	p, err := info.createFunc(ctx, connectorID, connectorName, logger, rawConfig)
 	if err != nil {
 		return nil, translateError(err)
 	}

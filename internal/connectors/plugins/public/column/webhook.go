@@ -31,7 +31,7 @@ type WebhookVerifier interface {
 	verifyWebhookSignature(payload []byte, header, secret string) error
 }
 
-func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
+func (p *Plugin) initWebhookConfig(ctx context.Context) error {
 	p.webhookConfigs = map[client.EventCategory]webhookConfig{
 		client.EventCategoryBookTransferCompleted: {
 			urlPath: "/book/transfer/completed",
@@ -242,7 +242,22 @@ func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
 			fn:      p.translateRealtimeTransfer,
 		},
 	}
-	return p.webhookConfigs
+
+	// if the plugin was installed on a different pod there may already be webhooks configured
+	webhooks, err := p.client.ListEventSubscriptions(ctx)
+	if err != nil {
+		return err
+	}
+	for _, webhook := range webhooks {
+		if !strings.Contains(webhook.URL, p.connectorID.String()) {
+			continue
+		}
+		eventCategory := client.EventCategory(webhook.EnabledEvents[0])
+		config := p.webhookConfigs[eventCategory]
+		config.secret = webhook.Secret
+		p.webhookConfigs[eventCategory] = config
+	}
+	return nil
 }
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
