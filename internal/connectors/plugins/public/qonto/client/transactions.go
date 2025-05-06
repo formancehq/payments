@@ -6,13 +6,89 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"net/http"
+	"time"
 )
 
-type Transactions struct {
+type CounterpartyDetails struct {
+	CounterpartyAccountNumber        string `json:"counterparty_account_number"`
+	CounterpartyAccountNumberFormat  string `json:"counterparty_account_number_format"`
+	CounterpartyBankIdentifier       string `json:"counterparty_bank_identifier"`
+	CounterpartyBankIdentifierFormat string `json:"counterparty_bank_identifier_format"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, page, pageSize int) ([]Transactions, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_external_accounts")
+type CheckDetails struct {
+	CheckNumber string `json:"check_number"`
+	CheckKey    string `json:"check_key"`
+}
+
+type PagodaPaymentDetails struct {
+	NoticeNumber       string `json:"notice_number"`
+	CreditorFiscalCode string `json:"creditor_fiscal_code"`
+	Iuv                string `json:"iuv"`
+}
+
+type DirectDebitHoldDetails struct {
+	GuardingRate string `json:"guarding_rate"`
+}
+
+type FinancingInstallmentDetails struct {
+	TotalInstallmentNumber   int64 `json:"total_installment_number"`
+	CurrentInstallmentNumber int64 `json:"current_installment_number"`
+}
+
+type LogoDetails struct {
+	Small  string `json:"small"`
+	Medium string `json:"medium"`
+}
+
+type Transactions struct {
+	Id                    string                      `json:"id"`
+	TransactionId         string                      `json:"transaction_id"`
+	Amount                float64                     `json:"amount"`
+	AmountCents           int64                       `json:"amount_cents"`
+	SettledBalance        float64                     `json:"settled_balance"`
+	SettledBalanceCents   int64                       `json:"settled_balance_cents"`
+	AttachmentsIds        []string                    `json:"attachments_ids,omitempty"`
+	Logo                  LogoDetails                 `json:"logo,omitempty"`
+	LocalAmount           float64                     `json:"local_amount,omitempty"`
+	LocalAmountCents      int64                       `json:"local_amount_cents,omitempty"`
+	Side                  string                      `json:"side"`
+	OperationType         string                      `json:"operation_type"`
+	Currency              string                      `json:"currency"`
+	LocalCurrency         string                      `json:"local_currency"`
+	Label                 string                      `json:"label"`
+	CleanCounterpartyName string                      `json:"clean_counterparty_name"`
+	SettledAt             string                      `json:"settled_at,omitempty"`
+	EmittedAt             string                      `json:"emitted_at"`
+	UpdatedAt             string                      `json:"updated_at"`
+	Status                string                      `json:"status"`
+	Note                  string                      `json:"note,omitempty"`
+	Reference             string                      `json:"reference,omitempty"`
+	VatAmount             float64                     `json:"vat_amount,omitempty"`
+	VatAmountCents        int64                       `json:"vat_amount_cents,omitempty"`
+	VatRate               float64                     `json:"vat_rate,omitempty"`
+	InitiatorId           string                      `json:"initiator_id"`
+	LabelIds              []string                    `json:"label_ids,omitempty"`
+	AttachmentLost        bool                        `json:"attachment_lost"`
+	AttachmentRequired    bool                        `json:"attachment_required"`
+	CardLastDigits        string                      `json:"card_last_digits,omitempty"`
+	Category              string                      `json:"category"`
+	SubjectType           string                      `json:"subject_type"`
+	BankAccountId         string                      `json:"bank_account_id"`
+	IsExternalTransaction bool                        `json:"is_external_transaction"`
+	Transfer              CounterpartyDetails         `json:"transfer,omitempty"`
+	Income                CounterpartyDetails         `json:"income,omitempty"`
+	SwiftIncome           CounterpartyDetails         `json:"swift_income,omitempty"`
+	DirectDebit           CounterpartyDetails         `json:"direct_debit,omitempty"`
+	Check                 CheckDetails                `json:"check,omitempty"`
+	FinancingInstallment  FinancingInstallmentDetails `json:"financing_installment,omitempty"`
+	PagodaPayment         PagodaPaymentDetails        `json:"pagoda_payment,omitempty"`
+	DirectDebitCollection CounterpartyDetails         `json:"direct_debit_collection,omitempty"`
+	DirectDebitHold       DirectDebitHoldDetails      `json:"direct_debit_hold,omitempty"`
+}
+
+func (c *client) GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, page, pageSize int) ([]Transactions, error) {
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("v2/transactions"), http.NoBody)
 	if err != nil {
@@ -23,11 +99,14 @@ func (c *client) GetTransactions(ctx context.Context, page, pageSize int) ([]Tra
 	q.Add("page", fmt.Sprint(page))
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("sort_by", "updated_at:asc")
+	q.Add("bank_account_id", bankAccountId)
+	//q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
 	req.URL.RawQuery = q.Encode()
 
 	errorResponse := qontoErrors{}
 	type qontoResponse struct {
-		Beneficiaries []Transactions `json:"transactions"`
+		Transactions []Transactions `json:"transactions"`
+		Meta         MetaPagination `json:"meta"`
 	}
 	successResponse := qontoResponse{}
 
@@ -39,5 +118,5 @@ func (c *client) GetTransactions(ctx context.Context, page, pageSize int) ([]Tra
 			err,
 		)
 	}
-	return successResponse.Beneficiaries, nil
+	return successResponse.Transactions, nil
 }

@@ -26,7 +26,6 @@ type Beneficiary struct {
 	BankAccount BeneficiaryBankAccount `json:"bank_account"`
 	CreatedAt   string                 `json:"created_at"`
 	UpdatedAt   string                 `json:"updated_at"`
-	Meta        MetaPagination         `json:"meta"`
 }
 
 func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error) {
@@ -41,11 +40,13 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Be
 	q.Add("page", fmt.Sprint(page))
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("sort_by", "updated_at:asc")
+	// TODO the API supports a "updated_at_from" that we could make use of (we'd probably have to change the way we handle pages though)
 	req.URL.RawQuery = q.Encode()
 
 	errorResponse := qontoErrors{}
 	type qontoResponse struct {
-		Beneficiaries []Beneficiary `json:"beneficiaries"`
+		Beneficiaries []Beneficiary  `json:"beneficiaries"`
+		Meta          MetaPagination `json:"meta"`
 	}
 	successResponse := qontoResponse{}
 

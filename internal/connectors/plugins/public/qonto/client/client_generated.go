@@ -12,6 +12,7 @@ package client
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -71,16 +72,16 @@ func (mr *MockClientMockRecorder) GetOrganization(ctx any) *gomock.Call {
 }
 
 // GetTransactions mocks base method.
-func (m *MockClient) GetTransactions(ctx context.Context, page, pageSize int) ([]Transactions, error) {
+func (m *MockClient) GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, page, pageSize int) ([]Transactions, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetTransactions", ctx, page, pageSize)
+	ret := m.ctrl.Call(m, "GetTransactions", ctx, bankAccountId, updatedAtFrom, page, pageSize)
 	ret0, _ := ret[0].([]Transactions)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // GetTransactions indicates an expected call of GetTransactions.
-func (mr *MockClientMockRecorder) GetTransactions(ctx, page, pageSize any) *gomock.Call {
+func (mr *MockClientMockRecorder) GetTransactions(ctx, bankAccountId, updatedAtFrom, page, pageSize any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, page, pageSize)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransactions", reflect.TypeOf((*MockClient)(nil).GetTransactions), ctx, bankAccountId, updatedAtFrom, page, pageSize)
 }
