@@ -110,7 +110,6 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			beneficiary.BankAccount.Bic,
 			beneficiary.BankAccount.SwiftSortCode,
 			beneficiary.BankAccount.RoutingNumber,
-			beneficiary.BankAccount.IntermediaryBankBic,
 			beneficiary.ID,
 		)
 		if err != nil {
@@ -147,15 +146,18 @@ populated. (see https://api-doc.qonto.com/docs/business-api/d34477c258c06-list-b
 	Swift BIC or SEPA: iban, currency and bic will be present.
 	Swift code: account_number, swift_sort_code, intermediary_bank_bic and currency will be present.
 	Swift routing number: account_number, routing_number, intermediary_bank_bic and currency will be present.
+
+We are not using the intermediary bank bic as part of the reference, as it's not part of the identity of the account
+(it's just an attribute for routing transfers)
 */
-func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNumber, intermediaryBankBic, beneficiaryId string) (string, error) {
+func generateAccountReference(accountNumber, iban, bic, swiftSortCode, routingNumber, beneficiaryId string) (string, error) {
 	switch {
 	case iban != "":
 		return iban + "-" + bic, nil
 	case swiftSortCode != "":
-		return accountNumber + "-" + swiftSortCode + "-" + intermediaryBankBic, nil
+		return accountNumber + "-" + swiftSortCode, nil
 	case routingNumber != "":
-		return accountNumber + "-" + routingNumber + "-" + intermediaryBankBic, nil
+		return accountNumber + "-" + routingNumber, nil
 	default:
 		return "", fmt.Errorf("invalid account, unable to generate reference for beneficiary %v", beneficiaryId)
 	}

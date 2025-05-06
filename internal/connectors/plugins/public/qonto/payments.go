@@ -3,6 +3,7 @@ package qonto
 import (
 	"context"
 	"encoding/json"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	"math/big"
@@ -136,12 +137,32 @@ func (p *Plugin) transactionsToPSPPayments(
 			Scheme:                      mapQontoTransactionScheme(transaction.SubjectType),
 			Status:                      mapQontoPaymentStatus(transaction.Status),
 			SourceAccountReference:      &transaction.BankAccountId,
-			DestinationAccountReference: &transaction.Transfer.CounterpartyAccountNumber, // TODO, it's not always a transfer
+			DestinationAccountReference: nil, //&transaction.Transfer.CounterpartyAccountNumber, // TODO, it's not always a transfer
 			Raw:                         raw,
 			Metadata: map[string]string{
 				"updated_at": transaction.UpdatedAt,
 			},
 		}
+
+		// Set DestinationAccountReference, which needs to match the externalAccount's format (see generateAccountReference in external_accounts.go)
+		// Worth noting that we don't have the intermediaryBankBic information here, but it's not necessary for account uniqueness
+		var destinationAccountDetails *client.CounterpartyDetails
+		switch transaction.SubjectType {
+		case "DirectDebit":
+			destinationAccountDetails = transaction.DirectDebit
+		case "DirectDebitCollection":
+			destinationAccountDetails = transaction.DirectDebitCollection
+		case "Income":
+			destinationAccountDetails = transaction.Income
+		case "SwiftIncome":
+			destinationAccountDetails = transaction.SwiftIncome
+		}
+		if destinationAccountDetails != nil {
+			payment.DestinationAccountReference = pointer.For(
+				destinationAccountDetails.CounterpartyAccountNumber + "-" + destinationAccountDetails.CounterpartyBankIdentifier,
+			)
+		}
+
 		payments = append(payments, payment)
 	}
 	return payments, nil
