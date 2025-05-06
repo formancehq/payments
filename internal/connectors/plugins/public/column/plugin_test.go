@@ -34,7 +34,8 @@ var _ = Describe("Column Plugin", func() {
 
 		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"webhook_urls": []}`))
+			_, err := w.Write([]byte(`{"webhook_urls": []}`))
+			Expect(err).To(BeNil())
 		}))
 	})
 

@@ -26,7 +26,8 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		ctrl := gomock.NewController(GinkgoT())
 		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{"webhook_urls": []}`))
+			_, err := w.Write([]byte(`{"webhook_urls": []}`))
+			Expect(err).To(BeNil())
 		}))
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		plg = &Plugin{
@@ -79,7 +80,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		It("should handle webhook deletion error", func(ctx SpecContext) {
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=100"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -100,6 +101,20 @@ var _ = Describe("Column Plugin Uninstall", func() {
 							IsDisabled:    false,
 						},
 					},
+				},
+			)
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("limit=100&starting_after=webhook-2"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(
+				2,
+				client.ListWebhookResponseWrapper[[]*client.EventSubscription]{
+					WebhookEndpoints: []*client.EventSubscription{},
 				},
 			)
 
@@ -123,7 +138,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		It("should successfully uninstall and delete webhooks", func(ctx SpecContext) {
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=100"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -152,6 +167,17 @@ var _ = Describe("Column Plugin Uninstall", func() {
 						IsDisabled:    false,
 					},
 				},
+			})
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("limit=100&starting_after=webhook-2"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ListWebhookResponseWrapper[[]*client.EventSubscription]{
+				WebhookEndpoints: []*client.EventSubscription{},
 			})
 
 			mockHTTPClient.EXPECT().Do(
