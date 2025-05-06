@@ -107,9 +107,9 @@ func New(serverURL string, opts ...SDKOption) *Formance {
 		sdkConfiguration: sdkConfiguration{
 			Language:          "go",
 			OpenAPIDocVersion: "v1",
-			SDKVersion:        "0.0.2",
+			SDKVersion:        "0.0.5",
 			GenVersion:        "2.562.2",
-			UserAgent:         "speakeasy-sdk/go 0.0.2 2.562.2 v1 github.com/formancehq/payments/pkg/client",
+			UserAgent:         "speakeasy-sdk/go 0.0.5 2.562.2 v1 github.com/formancehq/payments/pkg/client",
 			ServerURL:         serverURL,
 			Hooks:             hooks.New(),
 		},
