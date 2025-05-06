@@ -56,6 +56,7 @@ func (s *V1) GetServerInfo(ctx context.Context, opts ...operations.Option) (*ope
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getServerInfo",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -272,6 +273,7 @@ func (s *V1) CreatePayment(ctx context.Context, request components.PaymentReques
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "createPayment",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "Request", "json", `request:"mediaType=application/json"`)
@@ -501,6 +503,7 @@ func (s *V1) ListPayments(ctx context.Context, pageSize *int64, cursor *string, 
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listPayments",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -724,6 +727,7 @@ func (s *V1) GetPayment(ctx context.Context, paymentID string, opts ...operation
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getPayment",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -944,6 +948,7 @@ func (s *V1) UpdateMetadata(ctx context.Context, paymentID string, requestBody m
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "updateMetadata",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, true, false, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -1153,6 +1158,7 @@ func (s *V1) ListTransferInitiations(ctx context.Context, pageSize *int64, curso
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listTransferInitiations",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -1373,6 +1379,7 @@ func (s *V1) CreateTransferInitiation(ctx context.Context, request components.Tr
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "createTransferInitiation",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "Request", "json", `request:"mediaType=application/json"`)
@@ -1599,6 +1606,7 @@ func (s *V1) GetTransferInitiation(ctx context.Context, transferID string, opts 
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getTransferInitiation",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -1819,6 +1827,7 @@ func (s *V1) DeleteTransferInitiation(ctx context.Context, transferID string, op
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "deleteTransferInitiation",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -2020,6 +2029,7 @@ func (s *V1) UpdateTransferInitiationStatus(ctx context.Context, transferID stri
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "updateTransferInitiationStatus",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "UpdateTransferInitiationStatusRequest", "json", `request:"mediaType=application/json"`)
@@ -2228,6 +2238,7 @@ func (s *V1) ReverseTransferInitiation(ctx context.Context, transferID string, r
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "reverseTransferInitiation",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "ReverseTransferInitiationRequest", "json", `request:"mediaType=application/json"`)
@@ -2435,6 +2446,7 @@ func (s *V1) RetryTransferInitiation(ctx context.Context, transferID string, opt
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "retryTransferInitiation",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -2637,6 +2649,7 @@ func (s *V1) ListPools(ctx context.Context, pageSize *int64, cursor *string, sor
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listPools",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -2857,6 +2870,7 @@ func (s *V1) CreatePool(ctx context.Context, request components.PoolRequest, opt
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "createPool",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "Request", "json", `request:"mediaType=application/json"`)
@@ -3083,6 +3097,7 @@ func (s *V1) GetPool(ctx context.Context, poolID string, opts ...operations.Opti
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getPool",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3303,6 +3318,7 @@ func (s *V1) DeletePool(ctx context.Context, poolID string, opts ...operations.O
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "deletePool",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3504,6 +3520,7 @@ func (s *V1) AddAccountToPool(ctx context.Context, poolID string, addAccountToPo
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "addAccountToPool",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "AddAccountToPoolRequest", "json", `request:"mediaType=application/json"`)
@@ -3712,6 +3729,7 @@ func (s *V1) RemoveAccountFromPool(ctx context.Context, poolID string, accountID
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "removeAccountFromPool",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -3912,6 +3930,7 @@ func (s *V1) GetPoolBalances(ctx context.Context, poolID string, at time.Time, o
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getPoolBalances",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -4132,6 +4151,7 @@ func (s *V1) CreateAccount(ctx context.Context, request components.AccountReques
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "createAccount",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "Request", "json", `request:"mediaType=application/json"`)
@@ -4354,6 +4374,7 @@ func (s *V1) ListAccounts(ctx context.Context, request operations.ListAccountsRe
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listAccounts",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
@@ -4584,6 +4605,7 @@ func (s *V1) GetAccount(ctx context.Context, accountID string, opts ...operation
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getAccount",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -4799,6 +4821,7 @@ func (s *V1) GetAccountBalances(ctx context.Context, request operations.GetAccou
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getAccountBalances",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -5019,6 +5042,7 @@ func (s *V1) CreateBankAccount(ctx context.Context, request components.BankAccou
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "createBankAccount",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "Request", "json", `request:"mediaType=application/json"`)
@@ -5248,6 +5272,7 @@ func (s *V1) ListBankAccounts(ctx context.Context, pageSize *int64, cursor *stri
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listBankAccounts",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -5471,6 +5496,7 @@ func (s *V1) GetBankAccount(ctx context.Context, bankAccountID string, opts ...o
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getBankAccount",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -5691,6 +5717,7 @@ func (s *V1) ForwardBankAccount(ctx context.Context, bankAccountID string, forwa
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "forwardBankAccount",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "ForwardBankAccountRequest", "json", `request:"mediaType=application/json"`)
@@ -5918,6 +5945,7 @@ func (s *V1) UpdateBankAccountMetadata(ctx context.Context, bankAccountID string
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "updateBankAccountMetadata",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "UpdateBankAccountMetadataRequest", "json", `request:"mediaType=application/json"`)
@@ -6121,6 +6149,7 @@ func (s *V1) ListAllConnectors(ctx context.Context, opts ...operations.Option) (
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listAllConnectors",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6337,6 +6366,7 @@ func (s *V1) ListConfigsAvailableConnectors(ctx context.Context, opts ...operati
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listConfigsAvailableConnectors",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6558,6 +6588,7 @@ func (s *V1) InstallConnector(ctx context.Context, connector components.Connecto
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "installConnector",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "ConnectorConfig", "json", `request:"mediaType=application/json"`)
@@ -6787,6 +6818,7 @@ func (s *V1) UninstallConnector(ctx context.Context, connector components.Connec
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "uninstallConnector",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -6988,6 +7020,7 @@ func (s *V1) UninstallConnectorV1(ctx context.Context, connector components.Conn
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "uninstallConnectorV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -7190,6 +7223,7 @@ func (s *V1) ReadConnectorConfig(ctx context.Context, connector components.Conne
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "readConnectorConfig",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -7412,6 +7446,7 @@ func (s *V1) UpdateConnectorConfigV1(ctx context.Context, connector components.C
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "updateConnectorConfigV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "ConnectorConfig", "json", `request:"mediaType=application/json"`)
@@ -7620,6 +7655,7 @@ func (s *V1) ReadConnectorConfigV1(ctx context.Context, connector components.Con
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "readConnectorConfigV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -7843,6 +7879,7 @@ func (s *V1) ResetConnector(ctx context.Context, connector components.Connector,
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "resetConnector",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8045,6 +8082,7 @@ func (s *V1) ResetConnectorV1(ctx context.Context, connector components.Connecto
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "resetConnectorV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8249,6 +8287,7 @@ func (s *V1) ListConnectorTasks(ctx context.Context, connector components.Connec
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listConnectorTasks",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8476,6 +8515,7 @@ func (s *V1) ListConnectorTasksV1(ctx context.Context, connector components.Conn
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "listConnectorTasksV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8703,6 +8743,7 @@ func (s *V1) GetConnectorTask(ctx context.Context, connector components.Connecto
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getConnectorTask",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -8925,6 +8966,7 @@ func (s *V1) GetConnectorTaskV1(ctx context.Context, connector components.Connec
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "getConnectorTaskV1",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 
@@ -9146,6 +9188,7 @@ func (s *V1) ConnectorsTransfer(ctx context.Context, connector components.Connec
 		BaseURL:        baseURL,
 		Context:        ctx,
 		OperationID:    "connectorsTransfer",
+		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
 	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, false, "TransferRequest", "json", `request:"mediaType=application/json"`)
