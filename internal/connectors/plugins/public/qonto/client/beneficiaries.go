@@ -19,7 +19,7 @@ type BeneficiaryBankAccount struct {
 }
 
 type Beneficiary struct {
-	ID          string                 `json:"id"`
+	Id          string                 `json:"id"`
 	Name        string                 `json:"name"`
 	Status      string                 `json:"status"`
 	Trusted     bool                   `json:"trusted"`
