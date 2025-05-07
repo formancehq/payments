@@ -148,6 +148,8 @@ func (p *Plugin) transactionsToPSPPayments(
 		// Worth noting that we don't have the intermediaryBankBic information here, but it's not necessary for account uniqueness
 		var destinationAccountDetails *client.CounterpartyDetails
 		switch transaction.SubjectType {
+		case "Transfer":
+			destinationAccountDetails = transaction.Transfer
 		case "DirectDebit":
 			destinationAccountDetails = transaction.DirectDebit
 		case "DirectDebitCollection":
