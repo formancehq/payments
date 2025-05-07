@@ -10,12 +10,12 @@ import (
 // Timeline allows the client to navigate the backlog and decide whether to fetch
 // historical or recently added data
 type Timeline struct {
-	LatestID      string `json:"latest_id"`
+	LastSeenID    string `json:"last_seen_id"`
 	BacklogCursor string `json:"backlog_cursor"`
 }
 
 func (t Timeline) IsCaughtUp() bool {
-	return t.LatestID != ""
+	return t.LastSeenID != ""
 }
 
 func (c *client) scanForOldest(
@@ -49,9 +49,11 @@ func (c *client) scanForOldest(
 
 	oldest := res.Transfers[len(res.Transfers)-1]
 	if !res.HasMore {
-		timeline.LatestID = oldest.ID
+		// we've reached the beginning of time: we can return the oldest entry as the starting point for subsequent searches
+		timeline.LastSeenID = oldest.ID
 		return oldest, timeline, res.HasMore, nil
 	}
+	// we still haven't found the beginning of time: set the cursor and keep going
 	timeline.BacklogCursor = oldest.ID
 	return oldest, timeline, res.HasMore, nil
 }

@@ -29,7 +29,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	// backwards compatibility for pre PMNT-97
 	if oldState.LastIDCreated != "" {
-		oldState.Timeline.LatestID = oldState.LastIDCreated
+		oldState.Timeline.LastSeenID = oldState.LastIDCreated
 	}
 
 	newState := paymentsState{

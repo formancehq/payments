@@ -49,7 +49,9 @@ func (c *client) GetTransactions(ctx context.Context, t Timeline, pageSize int) 
 	var endpoint = "transfers"
 
 	timeline = t
-	results = make([]*Transaction, 0, pageSize)
+	results = make([]*Transaction, 0, pageSize+1)
+
+	// scroll back in time to find the oldest record so that we can fetch data in chronological order
 	if !timeline.IsCaughtUp() {
 		var oldest *Transaction
 		oldest, timeline, hasMore, err = c.scanForOldest(ctx, timeline, endpoint, pageSize)
@@ -63,6 +65,7 @@ func (c *client) GetTransactions(ctx context.Context, t Timeline, pageSize int) 
 		results = append(results, oldest)
 	}
 
+	// start fetching data chronologically
 	req, err := c.newRequest(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
 		return nil, timeline, false, fmt.Errorf("failed to create transactions request: %w", err)
@@ -70,8 +73,8 @@ func (c *client) GetTransactions(ctx context.Context, t Timeline, pageSize int) 
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if timeline.LatestID != "" {
-		q.Add("ending_before", timeline.LatestID)
+	if timeline.LastSeenID != "" {
+		q.Add("ending_before", timeline.LastSeenID)
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -82,10 +85,11 @@ func (c *client) GetTransactions(ctx context.Context, t Timeline, pageSize int) 
 		return nil, timeline, false, fmt.Errorf("failed to get transactions: %w %w", err, errRes.Error())
 	}
 
+	// Column returns data in reverse chronological order so we need to reverse the slice
 	transactions := reverseTransactions(res.Transfers)
 	results = append(results, transactions...)
 	if len(results) > 0 {
-		timeline.LatestID = results[len(results)-1].ID
+		timeline.LastSeenID = results[len(results)-1].ID
 	}
 	return results, timeline, res.HasMore, nil
 }

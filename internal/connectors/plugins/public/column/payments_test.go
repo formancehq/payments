@@ -160,7 +160,7 @@ var _ = Describe("Column Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
-			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
+			Expect(state.Timeline.LastSeenID).To(Equal(sampleTransactions[0].ID))
 		})
 
 		It("should fetch next payments - no state pageSize < total payments", func(ctx SpecContext) {
@@ -202,13 +202,13 @@ var _ = Describe("Column Plugin Payments", func() {
 			var state paymentsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
+			Expect(state.Timeline.LastSeenID).To(Equal(sampleTransactions[0].ID))
 		})
 
 		It("should fetch next payments - with state pageSize < total payments", func(ctx SpecContext) {
 			lastIDCreated := sampleTransactions[38].ID
 			req := models.FetchNextPaymentsRequest{
-				State:    []byte(fmt.Sprintf(`{"timeline":{"latest_id":"%s"}}`, lastIDCreated)),
+				State:    []byte(fmt.Sprintf(`{"timeline":{"last_seen_id":"%s"}}`, lastIDCreated)),
 				PageSize: 40,
 			}
 
@@ -234,7 +234,7 @@ var _ = Describe("Column Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 			// We fetched everything, state should be reset
-			Expect(state.Timeline.LatestID).To(Equal(sampleTransactions[0].ID))
+			Expect(state.Timeline.LastSeenID).To(Equal(sampleTransactions[0].ID))
 		})
 	})
 })
