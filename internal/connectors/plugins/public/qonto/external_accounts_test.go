@@ -291,7 +291,7 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 			}
 		}
 		sampleBeneficiaries = append(sampleBeneficiaries, client.Beneficiary{
-			ID:          strconv.Itoa(i),
+			Id:          strconv.Itoa(i),
 			Name:        fmt.Sprintf("Account %d", i),
 			Status:      "active",
 			Trusted:     false,
@@ -305,8 +305,10 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 }
 
 func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccount models.PSPAccount) {
-	counter, err := strconv.Atoi(beneficiary.ID)
+	counter, err := strconv.Atoi(beneficiary.Id)
 	Expect(err).To(BeNil())
+	var expectedRaw json.RawMessage
+	expectedRaw, _ = json.Marshal(beneficiary)
 
 	expectedReference := ""
 	expectedCurrency := ""
@@ -326,7 +328,7 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(beneficiary.CreatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal(expectedCurrency))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
-		"beneficiary_id":                     beneficiary.ID,
+		"beneficiary_id":                     beneficiary.Id,
 		"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
 		"bank_account_iban":                  beneficiary.BankAccount.Iban,
 		"bank_account_bic":                   beneficiary.BankAccount.Bic,
@@ -335,4 +337,5 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 		"bank_account_intermediary_bank_bic": beneficiary.BankAccount.IntermediaryBankBic,
 		"updated_at":                         beneficiary.UpdatedAt,
 	}))
+	Expect(resultingPSPAccount.Raw).To(Equal(expectedRaw))
 }

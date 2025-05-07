@@ -110,7 +110,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			beneficiary.BankAccount.Bic,
 			beneficiary.BankAccount.SwiftSortCode,
 			beneficiary.BankAccount.RoutingNumber,
-			beneficiary.ID,
+			beneficiary.Id,
 		)
 		if err != nil {
 			p.logger.Info("mapping beneficiary to external account error: ", err)
@@ -122,7 +122,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			Name:         &beneficiary.Name,
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForExternalAccounts, beneficiary.BankAccount.Currency)),
 			Metadata: map[string]string{
-				"beneficiary_id":                     beneficiary.ID,
+				"beneficiary_id":                     beneficiary.Id,
 				"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
 				"bank_account_iban":                  beneficiary.BankAccount.Iban,
 				"bank_account_bic":                   beneficiary.BankAccount.Bic,

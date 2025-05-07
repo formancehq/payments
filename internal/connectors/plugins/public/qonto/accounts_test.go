@@ -251,6 +251,8 @@ func generateTestSampleAccounts() (sampleAccounts []client.OrganizationBankAccou
 }
 
 func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, resultingPSPAccount models.PSPAccount) {
+	var expectedRaw json.RawMessage
+	expectedRaw, _ = json.Marshal(sampleQontoAccount)
 	Expect(resultingPSPAccount.Reference).To(Equal(sampleQontoAccount.Id))
 	Expect(*resultingPSPAccount.Name).To(Equal(sampleQontoAccount.Name))
 	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sampleQontoAccount.UpdatedAt))
@@ -263,4 +265,5 @@ func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, res
 		"is_external_account": strconv.FormatBool(sampleQontoAccount.IsExternalAccount),
 		"main":                strconv.FormatBool(sampleQontoAccount.Main),
 	}))
+	Expect(resultingPSPAccount.Raw).To(Equal(expectedRaw))
 }
