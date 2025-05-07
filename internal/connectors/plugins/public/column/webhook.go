@@ -253,7 +253,11 @@ func (p *Plugin) initWebhookConfig(ctx context.Context) error {
 			continue
 		}
 		eventCategory := client.EventCategory(webhook.EnabledEvents[0])
-		config := p.webhookConfigs[eventCategory]
+		config, found := p.webhookConfigs[eventCategory]
+		if !found {
+			p.logger.WithField("url", webhook.URL).WithField("webhook_description", webhook.Description).Errorf("failed to find config for webhook %q", webhook.ID)
+			continue
+		}
 		config.secret = webhook.Secret
 		p.webhookConfigs[eventCategory] = config
 	}
