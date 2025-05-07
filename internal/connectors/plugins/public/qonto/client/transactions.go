@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
@@ -44,13 +45,13 @@ type LogoDetails struct {
 type Transactions struct {
 	Id                    string                       `json:"id"`
 	TransactionId         string                       `json:"transaction_id"`
-	Amount                float64                      `json:"amount"`
+	Amount                json.Number                  `json:"amount"`
 	AmountCents           int64                        `json:"amount_cents"`
-	SettledBalance        float64                      `json:"settled_balance"`
+	SettledBalance        json.Number                  `json:"settled_balance"`
 	SettledBalanceCents   int64                        `json:"settled_balance_cents"`
 	AttachmentsIds        *[]string                    `json:"attachments_ids,omitempty"`
 	Logo                  *LogoDetails                 `json:"logo,omitempty"`
-	LocalAmount           float64                      `json:"local_amount,omitempty"`
+	LocalAmount           json.Number                  `json:"local_amount,omitempty"`
 	LocalAmountCents      int64                        `json:"local_amount_cents,omitempty"`
 	Side                  string                       `json:"side"`
 	OperationType         string                       `json:"operation_type"`
@@ -64,9 +65,9 @@ type Transactions struct {
 	Status                string                       `json:"status"`
 	Note                  string                       `json:"note,omitempty"`
 	Reference             string                       `json:"reference,omitempty"`
-	VatAmount             float64                      `json:"vat_amount,omitempty"`
+	VatAmount             json.Number                  `json:"vat_amount,omitempty"`
 	VatAmountCents        int64                        `json:"vat_amount_cents,omitempty"`
-	VatRate               float64                      `json:"vat_rate,omitempty"`
+	VatRate               json.Number                  `json:"vat_rate,omitempty"`
 	InitiatorId           string                       `json:"initiator_id"`
 	LabelIds              *[]string                    `json:"label_ids,omitempty"`
 	AttachmentLost        bool                         `json:"attachment_lost"`

@@ -137,7 +137,7 @@ func (p *Plugin) transactionsToPSPPayments(
 			Scheme:                      mapQontoTransactionScheme(transaction.SubjectType),
 			Status:                      mapQontoPaymentStatus(transaction.Status),
 			SourceAccountReference:      &transaction.BankAccountId,
-			DestinationAccountReference: nil, //&transaction.Transfer.CounterpartyAccountNumber, // TODO, it's not always a transfer
+			DestinationAccountReference: nil,
 			Raw:                         raw,
 			Metadata: map[string]string{
 				"updated_at": transaction.UpdatedAt,
