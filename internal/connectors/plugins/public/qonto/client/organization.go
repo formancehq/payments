@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"net/http"
@@ -10,21 +11,21 @@ import (
 )
 
 type OrganizationBankAccount struct {
-	Id                     string  `json:"id"`
-	Slug                   string  `json:"slug"`
-	Iban                   string  `json:"iban"`
-	Bic                    string  `json:"bic"`
-	Currency               string  `json:"currency"`
-	Balance                float64 `json:"balance"` // TODO change to JSON.Number and use currency function
-	BalanceCents           int64   `json:"balance_cents"`
-	AuthorizedBalance      float64 `json:"authorized_balance"`
-	AuthorizedBalanceCents int64   `json:"authorized_balance_cents"`
-	Name                   string  `json:"name"`
-	UpdatedAt              string  `json:"updated_at"`
-	Status                 string  `json:"status"`
-	Main                   bool    `json:"main"`
-	IsExternalAccount      bool    `json:"is_external_account"`
-	AccountNumber          string  `json:"account_number,omitempty"`
+	Id                     string      `json:"id"`
+	Slug                   string      `json:"slug"`
+	Iban                   string      `json:"iban"`
+	Bic                    string      `json:"bic"`
+	Currency               string      `json:"currency"`
+	Balance                json.Number `json:"balance"`
+	BalanceCents           int64       `json:"balance_cents"`
+	AuthorizedBalance      json.Number `json:"authorized_balance"`
+	AuthorizedBalanceCents int64       `json:"authorized_balance_cents"`
+	Name                   string      `json:"name"`
+	UpdatedAt              string      `json:"updated_at"`
+	Status                 string      `json:"status"`
+	Main                   bool        `json:"main"`
+	IsExternalAccount      bool        `json:"is_external_account"`
+	AccountNumber          string      `json:"account_number,omitempty"`
 }
 
 type Organization struct {
@@ -33,7 +34,7 @@ type Organization struct {
 	Slug                  string                    `json:"slug"`
 	LegalName             string                    `json:"legal_name,omitempty"`
 	Locale                string                    `json:"locale"`
-	LegalShareCapital     float64                   `json:"legal_share_capital"`
+	LegalShareCapital     json.Number               `json:"legal_share_capital"`
 	LegalCountry          string                    `json:"legal_country"`
 	LegalRegistrationDate string                    `json:"legal_registration_date,omitempty"`
 	LegalForm             string                    `json:"legal_form"`
