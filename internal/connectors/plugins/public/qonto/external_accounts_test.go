@@ -90,7 +90,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, 1, false)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
 		})
 
 		It("should fetch next accounts - nil state, no results from client", func(ctx SpecContext) {
@@ -110,7 +110,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, 1, false)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
 		})
 
 		It("should fetch next accounts - no state, with results", func(ctx SpecContext) {
@@ -130,13 +130,13 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, 1, false)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
 		})
 
 		It("should fetch next accounts - state set, filters out already processed response", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastPage": 1}`, sampleBeneficiaries[9].UpdatedAt)),
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
 				PageSize: pageSize,
 			}
 			beneficiariesReturnedByClient := sampleBeneficiaries
@@ -149,7 +149,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient[10:20], 1, false)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient[10:20], false)
 		})
 
 		It("should fetch next accounts - no state and pageSize < total", func(ctx SpecContext) {
@@ -169,41 +169,18 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, 1, true)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
 		})
 
-		It("should fetch next accounts - set state with lastPage and pageSize < total", func(ctx SpecContext) {
+		It("should fetch next accounts - set state with lastUpdateAt and pageSize < total", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastPage": 2}`, sampleBeneficiaries[9].UpdatedAt)),
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
 				PageSize: 5,
 			}
-			beneficiariesReturnedByClient := sampleBeneficiaries[5:15]
-			// We have to recall previous page to ensure they're all processed in that page.
-			m.EXPECT().GetBeneficiaries(gomock.Any(), 2, 5).Times(1).Return(
-				beneficiariesReturnedByClient[0:5],
-				nil,
-			)
-			m.EXPECT().GetBeneficiaries(gomock.Any(), 3, 5).Times(1).Return(
-				beneficiariesReturnedByClient[5:],
-				nil,
-			)
+			beneficiariesReturnedByClient := sampleBeneficiaries[10:15]
+			updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[9].UpdatedAt, time.UTC)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient[5:], 3, true)
-		})
-
-		It("should fetch next accounts - ignores beneficiaries with invalid bank account", func(ctx SpecContext) {
-			// given a beneficiary with an invalid bank account
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastPage": 1}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
-				PageSize: pageSize,
-			}
-			beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
-			beneficiariesReturnedByClient[0].BankAccount.Iban = ""
-			m.EXPECT().GetBeneficiaries(gomock.Any(), 1, pageSize).Times(1).Return(
+			m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, 5).Times(1).Return(
 				beneficiariesReturnedByClient,
 				nil,
 			)
@@ -212,7 +189,27 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 			// Then
-			assertSuccessResponse(resp, err, make([]client.Beneficiary, 0), 1, false)
+			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
+		})
+
+		It("should fetch next accounts - ignores beneficiaries with invalid bank account", func(ctx SpecContext) {
+			// given a beneficiary with an invalid bank account
+			req := models.FetchNextExternalAccountsRequest{
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+				PageSize: pageSize,
+			}
+			beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
+			beneficiariesReturnedByClient[0].BankAccount.Iban = ""
+			m.EXPECT().GetBeneficiaries(gomock.Any(), time.Time{}, pageSize).Times(1).Return(
+				beneficiariesReturnedByClient,
+				nil,
+			)
+
+			// When
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+			// Then
+			assertSuccessResponse(resp, err, make([]client.Beneficiary, 0), false)
 		})
 	})
 })
@@ -227,7 +224,6 @@ func assertSuccessResponse(
 	resp models.FetchNextExternalAccountsResponse,
 	err error,
 	beneficiariesUsed []client.Beneficiary,
-	lastPage int,
 	hasMore bool,
 ) {
 	Expect(err).To(BeNil())
@@ -249,14 +245,12 @@ func assertSuccessResponse(
 
 	expectedState := externalAccountsState{
 		LastUpdatedAt: expectedLastUpdatedAt,
-		LastPage:      lastPage,
 	}
 
 	var actualState externalAccountsState
 	err = json.Unmarshal(resp.NewState, &actualState)
 	Expect(err).To(BeNil())
 	Expect(actualState.LastUpdatedAt).To(Equal(expectedState.LastUpdatedAt))
-	Expect(actualState.LastPage).To(Equal(expectedState.LastPage))
 	Expect(resp.HasMore).To(Equal(hasMore))
 }
 

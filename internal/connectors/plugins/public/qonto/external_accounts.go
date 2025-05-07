@@ -14,7 +14,6 @@ import (
 )
 
 type externalAccountsState struct {
-	LastPage      int       `json:"lastPage"`
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 }
 
@@ -28,35 +27,25 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
-	if oldState.LastPage == 0 {
-		oldState.LastPage = 1
-	}
-
 	newState := externalAccountsState{
-		LastPage:      oldState.LastPage,
 		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
 	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	for page := oldState.LastPage; ; page++ {
-		newState.LastPage = page
-		pagedBeneficiaries, err := p.client.GetBeneficiaries(ctx, page, req.PageSize)
-		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
-		}
 
-		accounts, err = p.beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, pagedBeneficiaries)
-		if err != nil {
-			return models.FetchNextExternalAccountsResponse{}, err
-		}
-
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedBeneficiaries, req.PageSize)
-		if !needMore || !hasMore {
-			break
-		}
+	beneficiaries, err := p.client.GetBeneficiaries(ctx, oldState.LastUpdatedAt, req.PageSize)
+	if err != nil {
+		return models.FetchNextExternalAccountsResponse{}, err
 	}
+
+	accounts, err = p.beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, beneficiaries)
+	if err != nil {
+		return models.FetchNextExternalAccountsResponse{}, err
+	}
+
+	needMore, hasMore = pagination.ShouldFetchMore(accounts, beneficiaries, req.PageSize)
 
 	if !needMore {
 		accounts = accounts[:req.PageSize]
