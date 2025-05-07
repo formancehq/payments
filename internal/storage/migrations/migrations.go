@@ -204,6 +204,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "add webhooks_configs metadata column",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running webhooks_configs metadata addition migration...")
+				err := AddWebhooksConfigsMetadata(ctx, db)
+				logger.WithField("error", err).Info("finished running webhooks_configs metadata addition migration")
+				return err
+			},
+		},
 	)
 }
 
