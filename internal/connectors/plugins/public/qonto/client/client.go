@@ -14,8 +14,8 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
-	GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error)
-	GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, page, pageSize int) ([]Transactions, error)
+	GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, pageSize int) ([]Beneficiary, error)
+	GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, pageSize int) ([]Transactions, error)
 }
 
 type client struct {

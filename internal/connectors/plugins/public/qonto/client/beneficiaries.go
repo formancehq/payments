@@ -6,6 +6,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"net/http"
+	"time"
 )
 
 type BeneficiaryBankAccount struct {
@@ -28,7 +29,7 @@ type Beneficiary struct {
 	UpdatedAt   string                 `json:"updated_at"`
 }
 
-func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Beneficiary, error) {
+func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, pageSize int) ([]Beneficiary, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_external_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("v2/beneficiaries"), http.NoBody)
@@ -37,10 +38,9 @@ func (c *client) GetBeneficiaries(ctx context.Context, page, pageSize int) ([]Be
 	}
 
 	q := req.URL.Query()
-	q.Add("page", fmt.Sprint(page))
+	q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("sort_by", "updated_at:asc")
-	// TODO the API supports a "updated_at_from" that we could make use of (we'd probably have to change the way we handle pages though)
 	req.URL.RawQuery = q.Encode()
 
 	errorResponse := qontoErrors{}
