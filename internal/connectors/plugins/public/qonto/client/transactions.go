@@ -88,7 +88,7 @@ type Transactions struct {
 	DirectDebitHold       *DirectDebitHoldDetails      `json:"direct_debit_hold,omitempty"`
 }
 
-func (c *client) GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, page, pageSize int) ([]Transactions, error) {
+func (c *client) GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, pageSize int) ([]Transactions, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("v2/transactions"), http.NoBody)
@@ -97,11 +97,10 @@ func (c *client) GetTransactions(ctx context.Context, bankAccountId string, upda
 	}
 
 	q := req.URL.Query()
-	q.Add("page", fmt.Sprint(page))
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("sort_by", "updated_at:asc")
 	q.Add("bank_account_id", bankAccountId)
-	//q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
+	q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
 	req.URL.RawQuery = q.Encode()
 
 	errorResponse := qontoErrors{}

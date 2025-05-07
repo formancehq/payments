@@ -14,7 +14,6 @@ import (
 )
 
 type paymentsState struct {
-	LastPage      int       `json:"lastPage"`
 	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 }
 
@@ -32,9 +31,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 	}
-	if oldState.LastPage == 0 {
-		oldState.LastPage = 1
-	}
+
 	if oldState.LastUpdatedAt.IsZero() {
 		oldState.LastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC) // Qonto returns an error for date < 2017
 	}
@@ -48,42 +45,34 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastPage:      oldState.LastPage,
 		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	needMore := false
 	hasMore := false
-	for page := oldState.LastPage; ; page++ {
-		newState.LastPage = page
-		pagedTransactions, err := p.client.GetTransactions(
-			ctx,
-			from.Reference,
-			oldState.LastUpdatedAt,
-			page,
-			req.PageSize,
-		)
-		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
-		}
 
-		payments, err = p.transactionsToPSPPayments(oldState.LastUpdatedAt, payments, pagedTransactions)
-		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
-		}
-
-		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
-		if !needMore || !hasMore {
-			break
-		}
+	transactions, err := p.client.GetTransactions(
+		ctx,
+		from.Reference,
+		oldState.LastUpdatedAt,
+		req.PageSize,
+	)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
+
+	payments, err = p.transactionsToPSPPayments(oldState.LastUpdatedAt, payments, transactions)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	needMore, hasMore = pagination.ShouldFetchMore(payments, transactions, req.PageSize)
 
 	if !needMore {
 		payments = payments[:req.PageSize]
 	}
 
-	// TODO updating both updatedAt & page will probably not work
 	if len(payments) > 0 {
 		var err error
 		newState.LastUpdatedAt, err = time.ParseInLocation(client.QONTO_TIMEFORMAT, payments[len(payments)-1].Metadata["updated_at"], time.UTC)
