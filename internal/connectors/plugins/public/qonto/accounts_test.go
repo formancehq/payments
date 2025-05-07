@@ -231,7 +231,7 @@ func generateTestSampleAccounts() (sampleAccounts []client.OrganizationBankAccou
 			Name:              fmt.Sprintf("Account %d", i),
 			Iban:              fmt.Sprintf("FR%02d0000000%02d", i, i),
 			Currency:          "EUR",
-			Balance:           float64(i),
+			Balance:           json.Number(strconv.Itoa(i)),
 			BalanceCents:      int64(i) * 100,
 			Status:            "active",
 			UpdatedAt:         fmt.Sprintf("2021-01-01T00:%02d:00.001Z", i),
