@@ -240,7 +240,6 @@ func isPayin(transactionType string) bool {
 		transactionType == "inbound_real_time_payments_transfer_confirmation" ||
 		transactionType == "inbound_real_time_payments_transfer_decline" ||
 		transactionType == "inbound_wire_transfer" ||
-		transactionType == "inbound_wire_reversal" ||
 		transactionType == "inbound_wire_transfer_reversal" ||
 		transactionType == "card_refund" ||
 		transactionType == "interest_payment" ||
@@ -260,6 +259,7 @@ func isPayout(transactionType string) bool {
 		transactionType == "ach_transfer_intention" ||
 		transactionType == "ach_transfer_return" ||
 		transactionType == "fee_payment" ||
+		transactionType == "inbound_wire_reversal" ||
 		transactionType == "ach_transfer_instruction" ||
 		transactionType == "check_transfer_instruction" ||
 		transactionType == "wire_transfer_instruction" ||
