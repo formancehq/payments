@@ -14,6 +14,10 @@ type webhookConfig struct {
 	Name        string             `bun:"name,pk,type:text,notnull"`
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 	URLPath     string             `bun:"url_path,type:text,notnull"`
+
+	// Optional fields with default
+	// c.f. https://bun.uptrace.dev/guide/models.html#default
+	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 }
 
 func (s *store) WebhooksConfigsUpsert(ctx context.Context, webhooksConfigs []models.WebhookConfig) error {
@@ -78,6 +82,7 @@ func fromWebhookConfigModels(from models.WebhookConfig) webhookConfig {
 		Name:        from.Name,
 		ConnectorID: from.ConnectorID,
 		URLPath:     from.URLPath,
+		Metadata:    from.Metadata,
 	}
 }
 
@@ -95,5 +100,6 @@ func toWebhookConfigModel(from webhookConfig) *models.WebhookConfig {
 		Name:        from.Name,
 		ConnectorID: from.ConnectorID,
 		URLPath:     from.URLPath,
+		Metadata:    from.Metadata,
 	}
 }

@@ -2,6 +2,8 @@ package column
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
@@ -16,14 +18,20 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		plg            *Plugin
 		mockHTTPClient *client.MockHTTPClient
 		now            time.Time
+		ts             *httptest.Server
 	)
 
 	BeforeEach(func() {
 		now = time.Now().UTC()
 		ctrl := gomock.NewController(GinkgoT())
+		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte(`{"webhook_urls": []}`))
+			Expect(err).To(BeNil())
+		}))
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		plg = &Plugin{
-			client: client.New("test", "aseplye", "https://test.com"),
+			client: client.New("test", "aseplye", ts.URL),
 		}
 		plg.client.SetHttpClient(mockHTTPClient)
 	})
@@ -72,7 +80,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		It("should handle webhook deletion error", func(ctx SpecContext) {
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=100"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -84,7 +92,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 					WebhookEndpoints: []*client.EventSubscription{
 						{
 							ID:            "webhook-2",
-							URL:           "https://example.com/test-connector/webhook",
+							URL:           ts.URL + "/test-connector/webhook",
 							CreatedAt:     now.Add(-time.Duration(5) * time.Minute).UTC().Format(time.RFC3339),
 							UpdatedAt:     now.Add(-time.Duration(5) * time.Minute).UTC().Format(time.RFC3339),
 							Description:   "description",
@@ -93,6 +101,20 @@ var _ = Describe("Column Plugin Uninstall", func() {
 							IsDisabled:    false,
 						},
 					},
+				},
+			)
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("limit=100&starting_after=webhook-2"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(
+				2,
+				client.ListWebhookResponseWrapper[[]*client.EventSubscription]{
+					WebhookEndpoints: []*client.EventSubscription{},
 				},
 			)
 
@@ -116,7 +138,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 		It("should successfully uninstall and delete webhooks", func(ctx SpecContext) {
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
-				gomock.Any(),
+				NewRequestMatcher("limit=100"),
 				gomock.Any(),
 				gomock.Any(),
 			).Return(
@@ -145,6 +167,17 @@ var _ = Describe("Column Plugin Uninstall", func() {
 						IsDisabled:    false,
 					},
 				},
+			})
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				NewRequestMatcher("limit=100&starting_after=webhook-2"),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ListWebhookResponseWrapper[[]*client.EventSubscription]{
+				WebhookEndpoints: []*client.EventSubscription{},
 			})
 
 			mockHTTPClient.EXPECT().Do(

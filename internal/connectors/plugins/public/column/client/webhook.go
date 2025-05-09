@@ -117,25 +117,37 @@ func (c *client) CreateEventSubscription(ctx context.Context, es *CreateEventSub
 	return &res, nil
 }
 
-func (c *client) ListEventSubscriptions(ctx context.Context) ([]*EventSubscription, error) {
+func (c *client) ListEventSubscriptions(ctx context.Context) (endpoints []*EventSubscription, err error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_event_subscription")
+	endpoints = make([]*EventSubscription, 0)
 
-	req, err := c.newRequest(ctx, http.MethodGet, "webhook-endpoints", http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrWebhookRequestFailed, err)
+	for {
+		req, err := c.newRequest(ctx, http.MethodGet, "webhook-endpoints", http.NoBody)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrWebhookRequestFailed, err)
+		}
+
+		q := req.URL.Query()
+		q.Add("limit", "100")
+		if len(endpoints) > 0 {
+			q.Add("starting_after", endpoints[len(endpoints)-1].ID)
+		}
+		req.URL.RawQuery = q.Encode()
+
+		var res ListWebhookResponseWrapper[[]*EventSubscription]
+		var errRes columnError
+		_, err = c.httpClient.Do(ctx, req, &res, &errRes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list web hooks: %w %w", err, errRes.Error())
+		}
+
+		if len(res.WebhookEndpoints) == 0 {
+			break
+		}
+		endpoints = append(endpoints, res.WebhookEndpoints...)
 	}
 
-	q := req.URL.Query()
-	q.Add("limit", "100")
-	req.URL.RawQuery = q.Encode()
-
-	var res ListWebhookResponseWrapper[[]*EventSubscription]
-	var errRes columnError
-	_, err = c.httpClient.Do(ctx, req, &res, &errRes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to list web hooks: %w %w", err, errRes.Error())
-	}
-	return res.WebhookEndpoints, nil
+	return endpoints, nil
 }
 
 func (c *client) DeleteEventSubscription(ctx context.Context, eventID string) (*EventSubscription, error) {

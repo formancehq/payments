@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ var _ = Describe("Register Plugin", func() {
 		name         = "plugin-name"
 		capabilities = []models.Capability{}
 		conf         = Config{}
-		fn           = func(_ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
+		fn           = func(_ context.Context, _ models.ConnectorID, _ string, _ logging.Logger, _ json.RawMessage) (models.Plugin, error) {
 			plg := models.NewMockPlugin(ctrl)
 			return plg, nil
 		}

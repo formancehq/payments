@@ -205,14 +205,14 @@ var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 			}
 
 			m.EXPECT().ListAllHooks(gomock.Any()).Return(nil, nil)
-			for range plg.webhookConfigs {
+			for range plg.supportedWebhooks {
 				m.EXPECT().CreateHook(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
 			}
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(models.CreateWebhooksResponse{}))
+			Expect(resp.Configs).To(HaveLen(len(plg.supportedWebhooks)))
 		})
 	})
 })

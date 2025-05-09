@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,16 +17,19 @@ var (
 			Name:        "test1",
 			ConnectorID: defaultConnector.ID,
 			URLPath:     "/test1",
+			Metadata:    map[string]string{"test1_key": "test1_val"},
 		},
 		{
 			Name:        "test2",
 			ConnectorID: defaultConnector.ID,
 			URLPath:     "/test2",
+			Metadata:    map[string]string{"test2_key": "test2_val"},
 		},
 		{
 			Name:        "test3",
 			ConnectorID: defaultConnector.ID,
 			URLPath:     "/test3",
+			Metadata:    map[string]string{"test3_key": "test3_val"},
 		},
 	}
 )
@@ -117,6 +121,7 @@ func TestWebhooksConfigsGetFromConnectorID(t *testing.T) {
 		webhooksConfigs, err := store.WebhooksConfigsGetFromConnectorID(ctx, defaultConnector.ID)
 		require.NoError(t, err)
 		require.ElementsMatch(t, defaultWebhooksConfigs, webhooksConfigs)
+		assert.Equal(t, 1, len(webhooksConfigs[0].Metadata))
 	})
 }
 

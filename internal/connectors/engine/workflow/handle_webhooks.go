@@ -61,6 +61,7 @@ func (w Workflow) runHandleWebhooks(
 				Headers:     handleWebhooks.Webhook.Headers,
 				Body:        handleWebhooks.Webhook.Body,
 			},
+			Config: config,
 		},
 	)
 	if err != nil {

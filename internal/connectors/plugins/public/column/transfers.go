@@ -56,10 +56,10 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return &models.PSPPayment{}, err
 	}
 
-	return p.transferToPayment(resp)
+	return p.transferToPayment(resp.ID, resp)
 }
 
-func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.PSPPayment, error) {
+func (p *Plugin) transferToPayment(id string, transfer *client.TransferResponse) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(transfer)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,8 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 	}
 
 	return &models.PSPPayment{
-		Reference:                   transfer.ID,
+		Reference:                   id,
+		ParentReference:             transfer.ID,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
 		Amount:                      big.NewInt(transfer.Amount),

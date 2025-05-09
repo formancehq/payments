@@ -15,7 +15,8 @@ import (
 )
 
 type paymentsState struct {
-	LastIDCreated string `json:"lastIDCreated"`
+	LastIDCreated string          `json:"lastIDCreated"` // deprecated
+	Timeline      client.Timeline `json:"timeline"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -26,24 +27,26 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
+	// backwards compatibility for pre PMNT-97
+	if oldState.LastIDCreated != "" {
+		oldState.Timeline.LastSeenID = oldState.LastIDCreated
+	}
+
 	newState := paymentsState{
-		LastIDCreated: oldState.LastIDCreated,
+		Timeline: oldState.Timeline,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	hasMore := false
-	pagedTransactions, hasMore, err := p.client.GetTransactions(ctx, oldState.LastIDCreated, req.PageSize)
+	pagedTransactions, timeline, hasMore, err := p.client.GetTransactions(ctx, oldState.Timeline, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
+	newState.Timeline = timeline
 
 	payments, err = p.fillPayments(pagedTransactions, payments, req.PageSize)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
-	}
-
-	if len(payments) > 0 {
-		newState.LastIDCreated = payments[len(payments)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)

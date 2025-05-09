@@ -43,7 +43,7 @@ var _ = Describe("Wise Plugin", func() {
 			Plugin: plugins.NewBasePlugin(),
 		}
 
-		plg.webhookConfigs = map[string]webhookConfig{
+		plg.supportedWebhooks = map[string]supportedWebhook{
 			"transfer_state_changed": {
 				triggerOn: "transfers#state-change",
 				urlPath:   "/transferstatechanged",

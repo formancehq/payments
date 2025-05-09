@@ -22,7 +22,16 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 					Other: []byte(`{}`),
 				},
 			},
+			Configs: []models.PSPWebhookConfig{
+				{
+					Name:    "test",
+					URLPath: "/test",
+				},
+			},
 		}, nil
+	})
+	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
+		return nil
 	})
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
@@ -42,6 +51,36 @@ func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error()
 		nil,
 		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test")),
 	)
+
+	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
+		ConnectorID: s.connectorID,
+		Config:      models.DefaultConfig(),
+		FromPayload: nil,
+	}, []models.ConnectorTaskTree{})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+}
+
+func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_Error() {
+	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateWebhooksResponse{
+		Others: []models.PSPOther{
+			{
+				ID:    "test",
+				Other: []byte(`{}`),
+			},
+		},
+		Configs: []models.PSPWebhookConfig{
+			{
+				Name:    "test",
+				URLPath: "/test",
+			},
+		},
+	}, nil)
+	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
+		return errors.New("something")
+	})
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
 		ConnectorID: s.connectorID,
