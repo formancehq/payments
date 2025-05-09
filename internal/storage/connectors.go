@@ -262,7 +262,7 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 			ID:                   c.ID,
 			Name:                 c.Name,
 			CreatedAt:            c.CreatedAt.Time,
-			Provider:             c.Provider,
+			Provider:             models.ToV3Provider(c.Provider),
 			Config:               c.DecryptedConfig,
 			ScheduledForDeletion: c.ScheduledForDeletion,
 		})
