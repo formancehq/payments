@@ -19,13 +19,13 @@ type webhookTranslateRequest struct {
 	webhook *client.Webhook
 }
 
-type webhookConfig struct {
+type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, webhookTranslateRequest) (models.WebhookResponse, error)
 }
 
 func (p *Plugin) initWebhookConfig() {
-	p.webhookConfigs = map[client.EventType]webhookConfig{
+	p.supportedWebhooks = map[client.EventType]supportedWebhook{
 		client.EventTypeTransferNormalCreated: {
 			urlPath: "/transfer/created",
 			fn:      p.translateTransfer,
@@ -100,9 +100,9 @@ func (p *Plugin) initWebhookConfig() {
 	}
 }
 
-func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
 	if req.WebhookBaseUrl == "" {
-		return errorsutils.NewWrappedError(
+		return nil, errorsutils.NewWrappedError(
 			fmt.Errorf("webhook base URL is required"),
 			models.ErrInvalidRequest,
 		)
@@ -110,13 +110,20 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 
 	activeHooks, err := p.getActiveHooks(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	for eventType, config := range p.webhookConfigs {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
+	for eventType, config := range p.supportedWebhooks {
+		name := string(eventType)
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:    name,
+			URLPath: config.urlPath,
+		})
+
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if v, ok := activeHooks[eventType]; ok {
@@ -126,7 +133,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 				// If the URL is different, update it
 				err := p.client.UpdateHook(ctx, v.ID, url)
 				if err != nil {
-					return err
+					return nil, err
 				}
 			}
 
@@ -136,11 +143,11 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		// Otherwise, create it
 		err = p.client.CreateHook(ctx, eventType, url)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	return configs, nil
 }
 
 func (p *Plugin) getActiveHooks(ctx context.Context) (map[client.EventType]*client.Hook, error) {

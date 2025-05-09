@@ -49,8 +49,7 @@ type InstallRequest struct {
 }
 
 type InstallResponse struct {
-	Workflow        ConnectorTasksTree
-	WebhooksConfigs []PSPWebhookConfig
+	Workflow ConnectorTasksTree
 }
 
 type UninstallRequest struct {
@@ -135,7 +134,7 @@ type CreateWebhooksRequest struct {
 }
 
 type CreateWebhooksResponse struct {
-	Configs []WebhookConfig
+	Configs []PSPWebhookConfig
 	Others  []PSPOther // used by plugin workflow
 }
 

@@ -37,7 +37,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				ConnectorID: "test",
 			}
 
-			err := plg.createWebhooks(ctx, req)
+			_, err := plg.createWebhooks(ctx, req)
 			Expect(err).To(MatchError("STACK_PUBLIC_URL is not set"))
 		})
 
@@ -47,7 +47,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				WebhookBaseUrl: "&grjete%",
 			}
 
-			err := plg.createWebhooks(ctx, req)
+			_, err := plg.createWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
 		})
 
@@ -60,8 +60,9 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			expectedURL := "http://localhost:8080/test/standard"
 			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(nil)
 
-			err := plg.createWebhooks(ctx, req)
+			configs, err := plg.createWebhooks(ctx, req)
 			Expect(err).To(BeNil())
+			Expect(configs).To(HaveLen(1))
 		})
 	})
 

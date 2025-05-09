@@ -37,9 +37,9 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	config         Config
-	client         client.Client
-	webhookConfigs map[string]webhookConfig
+	config            Config
+	client            client.Client
+	supportedWebhooks map[string]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -59,7 +59,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		config: config,
 	}
 
-	p.webhookConfigs = map[string]webhookConfig{
+	p.supportedWebhooks = map[string]supportedWebhook{
 		"transfer_state_changed": {
 			triggerOn: "transfers#state-change",
 			urlPath:   "/transferstatechanged",
@@ -82,17 +82,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    name,
-			URLPath: config.urlPath,
-		})
-	}
-
 	return models.InstallResponse{
-		Workflow:        workflow(),
-		WebhooksConfigs: configs,
+		Workflow: workflow(),
 	}, nil
 }
 
@@ -208,7 +199,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, err
 	}
 
-	config, ok := p.webhookConfigs[req.Name]
+	config, ok := p.supportedWebhooks[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, ErrWebhookNameUnknown
 	}

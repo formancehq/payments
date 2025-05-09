@@ -48,9 +48,18 @@ func (w Workflow) createWebhooks(
 	}
 
 	if len(resp.Configs) > 0 {
+		configs := make([]models.WebhookConfig, 0, len(resp.Configs))
+		for _, c := range resp.Configs {
+			configs = append(configs, models.WebhookConfig{
+				Name:        c.Name,
+				ConnectorID: createWebhooks.ConnectorID,
+				URLPath:     c.URLPath,
+				Metadata:    c.Metadata,
+			})
+		}
 		err = activities.StorageWebhooksConfigsStore(
 			infiniteRetryContext(ctx),
-			resp.Configs,
+			configs,
 		)
 		if err != nil {
 			return fmt.Errorf("storing webhooks: %w", err)

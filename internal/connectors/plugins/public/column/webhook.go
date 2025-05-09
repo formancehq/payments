@@ -259,7 +259,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, fmt.Errorf("webhook URL must use HTTPS protocol")
 	}
 
-	configs := make([]models.WebhookConfig, 0, len(p.supportedWebhooks))
+	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
 	for eventType, config := range p.supportedWebhooks {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
@@ -275,11 +275,10 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 			return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
 		}
 
-		configs = append(configs, models.WebhookConfig{
-			Name:        string(eventType),
-			ConnectorID: p.connectorID,
-			URLPath:     config.urlPath,
-			Metadata:    map[string]string{"secret": resp.Secret},
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:     string(eventType),
+			URLPath:  config.urlPath,
+			Metadata: map[string]string{"secret": resp.Secret},
 		})
 
 		raw, err := json.Marshal(resp)
