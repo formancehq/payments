@@ -22,6 +22,7 @@ const (
 	V3UpdateConnectorRequestTypeMangopay      V3UpdateConnectorRequestType = "Mangopay"
 	V3UpdateConnectorRequestTypeModulr        V3UpdateConnectorRequestType = "Modulr"
 	V3UpdateConnectorRequestTypeMoneycorp     V3UpdateConnectorRequestType = "Moneycorp"
+	V3UpdateConnectorRequestTypeQonto         V3UpdateConnectorRequestType = "Qonto"
 	V3UpdateConnectorRequestTypeStripe        V3UpdateConnectorRequestType = "Stripe"
 	V3UpdateConnectorRequestTypeWise          V3UpdateConnectorRequestType = "Wise"
 )
@@ -37,6 +38,7 @@ type V3UpdateConnectorRequest struct {
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
@@ -160,6 +162,18 @@ func CreateV3UpdateConnectorRequestMoneycorp(moneycorp V3MoneycorpConfig) V3Upda
 	return V3UpdateConnectorRequest{
 		V3MoneycorpConfig: &moneycorp,
 		Type:              typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestQonto(qonto V3QontoConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeQonto
+
+	typStr := string(typ)
+	qonto.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3QontoConfig: &qonto,
+		Type:          typ,
 	}
 }
 
@@ -289,6 +303,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3UpdateConnectorRequestTypeMoneycorp
 		return nil
+	case "Qonto":
+		v3QontoConfig := new(V3QontoConfig)
+		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Qonto) type V3QontoConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3QontoConfig = v3QontoConfig
+		u.Type = V3UpdateConnectorRequestTypeQonto
+		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
 		if err := utils.UnmarshalJSON(data, &v3StripeConfig, "", true, false); err != nil {
@@ -351,6 +374,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3MoneycorpConfig != nil {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
+	}
+
+	if u.V3QontoConfig != nil {
+		return utils.MarshalJSON(u.V3QontoConfig, "", true)
 	}
 
 	if u.V3StripeConfig != nil {

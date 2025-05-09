@@ -3,7 +3,6 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -76,13 +75,13 @@ func (w Workflow) fetchNextPayments(
 			)
 		}
 
-		if len(paymentsResponse.Payments) > 0 {
+		if len(payments) > 0 {
 			err = activities.StoragePaymentsStore(
 				infiniteRetryContext(ctx),
 				payments,
 			)
 			if err != nil {
-				return errors.Wrap(err, "storing next accounts")
+				return errors.Wrap(err, "storing next payments")
 			}
 		}
 

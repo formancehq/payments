@@ -12,6 +12,7 @@ var (
 	ErrMissingAccountInRequest     = errors.New("missing account number in request")
 	ErrInvalidRequest              = errors.New("invalid request")
 	ErrValidation                  = errors.New("validation error")
+	ErrMissingPageSize             = errors.New("invalid request, missing page size in request")
 
 	ErrMissingConnectorMetadata = errors.New("missing required metadata in request")
 	ErrMissingConnectorField    = errors.New("missing required field in request")
