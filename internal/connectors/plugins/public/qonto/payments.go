@@ -19,8 +19,6 @@ type paymentsState struct {
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	// TODO set parentReference to transactionID (even for pending)
-
 	// Validation / Initialization
 	if req.PageSize == 0 {
 		return models.FetchNextPaymentsResponse{}, models.ErrMissingPageSize
@@ -146,7 +144,7 @@ func (p *Plugin) transactionsToPSPPayments(
 		}
 
 		payment := models.PSPPayment{
-			ParentReference:             "",
+			ParentReference:             transaction.Id,
 			Reference:                   transaction.Id,
 			CreatedAt:                   emittedAt,
 			Type:                        mapQontoTransactionType(transaction.SubjectType),
