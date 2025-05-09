@@ -39,7 +39,7 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 		Reference:            c.ID.Reference.String(),
 		Name:                 c.Name,
 		CreatedAt:            c.CreatedAt,
-		Provider:             c.Provider,
+		Provider:             ToV3Provider(c.Provider),
 		Config:               c.Config,
 		ScheduledForDeletion: c.ScheduledForDeletion,
 	})
