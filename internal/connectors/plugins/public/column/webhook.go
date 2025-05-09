@@ -30,7 +30,7 @@ type WebhookVerifier interface {
 	verifyWebhookSignature(payload []byte, header, secret string) error
 }
 
-func (p *Plugin) initWebhookConfig(ctx context.Context) error {
+func (p *Plugin) initWebhookConfig() error {
 	p.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 		client.EventCategoryBookTransferCompleted: {
 			urlPath: "/book/transfer/completed",

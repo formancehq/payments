@@ -95,7 +95,7 @@ func New(ctx context.Context, connectorID models.ConnectorID, name string, logge
 		verifier:    &defaultVerifier{},
 	}
 
-	if err := p.initWebhookConfig(ctx); err != nil {
+	if err := p.initWebhookConfig(); err != nil {
 		return p, fmt.Errorf("failed to init webhooks for %s: %w", name, err)
 	}
 	return p, nil
