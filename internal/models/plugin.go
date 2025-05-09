@@ -135,12 +135,14 @@ type CreateWebhooksRequest struct {
 }
 
 type CreateWebhooksResponse struct {
-	Others []PSPOther
+	Configs []WebhookConfig
+	Others  []PSPOther // used by plugin workflow
 }
 
 type TranslateWebhookRequest struct {
 	Name    string
 	Webhook PSPWebhook
+	Config  *WebhookConfig
 }
 
 type WebhookResponse struct {

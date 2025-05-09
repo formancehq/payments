@@ -19,10 +19,9 @@ const (
 	HeadersSignature = "Column-Signature"
 )
 
-type webhookConfig struct {
+type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error)
-	secret  string
 }
 
 type defaultVerifier struct{}
@@ -32,7 +31,7 @@ type WebhookVerifier interface {
 }
 
 func (p *Plugin) initWebhookConfig(ctx context.Context) error {
-	p.webhookConfigs = map[client.EventCategory]webhookConfig{
+	p.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 		client.EventCategoryBookTransferCompleted: {
 			urlPath: "/book/transfer/completed",
 			fn:      p.translateBookTransfer,
@@ -242,25 +241,6 @@ func (p *Plugin) initWebhookConfig(ctx context.Context) error {
 			fn:      p.translateRealtimeTransfer,
 		},
 	}
-
-	// if the plugin was installed on a different pod there may already be webhooks configured
-	webhooks, err := p.client.ListEventSubscriptions(ctx)
-	if err != nil {
-		return err
-	}
-	for _, webhook := range webhooks {
-		if !strings.Contains(webhook.URL, p.connectorID.String()) {
-			continue
-		}
-		eventCategory := client.EventCategory(webhook.EnabledEvents[0])
-		config, found := p.webhookConfigs[eventCategory]
-		if !found {
-			p.logger.WithField("url", webhook.URL).WithField("webhook_description", webhook.Description).Errorf("failed to find config for webhook %q", webhook.ID)
-			continue
-		}
-		config.secret = webhook.Secret
-		p.webhookConfigs[eventCategory] = config
-	}
 	return nil
 }
 
@@ -279,7 +259,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, fmt.Errorf("webhook URL must use HTTPS protocol")
 	}
 
-	for eventType, config := range p.webhookConfigs {
+	configs := make([]models.WebhookConfig, 0, len(p.supportedWebhooks))
+	for eventType, config := range p.supportedWebhooks {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
@@ -293,8 +274,13 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		if err != nil {
 			return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
 		}
-		config.secret = resp.Secret
-		p.webhookConfigs[eventType] = config
+
+		configs = append(configs, models.WebhookConfig{
+			Name:        string(eventType),
+			ConnectorID: p.connectorID,
+			URLPath:     config.urlPath,
+			Metadata:    map[string]string{"secret": resp.Secret},
+		})
 
 		raw, err := json.Marshal(resp)
 		if err != nil {
@@ -307,7 +293,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}
 
 	return models.CreateWebhooksResponse{
-		Others: others,
+		Others:  others,
+		Configs: configs,
 	}, nil
 }
 
@@ -317,12 +304,27 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, client.ErrWebhookHeaderXSignatureMissing
 	}
 
-	config, ok := p.webhookConfigs[client.EventCategory(req.Name)]
-	if !ok {
-		return models.TranslateWebhookResponse{}, client.ErrWebhookNameUnknown
+	config := req.Config
+	if config == nil || config.Metadata == nil {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigInvalid
 	}
 
-	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], config.secret); err != nil {
+	eventType := client.EventCategory(config.Name)
+	if eventType == "" {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("could not parse webhook name %q: %w", config.Name, client.ErrWebhookTypeUnknown)
+	}
+
+	webhookTranslator, ok := p.supportedWebhooks[eventType]
+	if !ok {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookTypeUnknown
+	}
+
+	secret, ok := config.Metadata["secret"]
+	if !ok {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigSecretMissing
+	}
+
+	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], secret); err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
 
@@ -331,7 +333,7 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, fmt.Errorf("failed to unmarshal webhook: %w", err)
 	}
 
-	res, err := config.fn(ctx, webhook)
+	res, err := webhookTranslator.fn(ctx, webhook)
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}

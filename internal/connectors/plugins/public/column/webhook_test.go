@@ -48,7 +48,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseURL = "https://example.com"
 			secret = "test-secret"
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSettled: {
 					urlPath: "/ach/outgoing_transfer/settled",
 					fn:      plg.translateAchTransfer,
@@ -140,13 +140,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "ach.outgoing_transfer.settled"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSettled: {
 					urlPath: "/ach/outgoing_transfer/settled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -171,8 +171,9 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: "ac.created", Metadata: map[string]string{}},
 			}
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSettled: {
 					urlPath: "/ach/outgoing_transfer/settled",
 					fn:      plg.translateAchTransfer,
@@ -180,7 +181,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unknown webhook name"))
+			Expect(err).To(MatchError(client.ErrWebhookTypeUnknown.Error()))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -193,12 +194,12 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSettled: {
 					urlPath: "/ach/outgoing_transfer/settled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -223,13 +224,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "book.transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryBookTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryBookTransferCompleted: {
 					urlPath: "/book/transfer/completed",
 					fn:      plg.translateBookTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -254,13 +255,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "realtime.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryRealtimeTransferCompleted: {
 					urlPath: "/realtime/outgoing_transfer/completed",
 					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -285,13 +286,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type":"swift.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryInternationalWireCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryInternationalWireCompleted: {
 					urlPath: "/swift/outgoing_transfer/completed",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 			verifierMock.EXPECT().verifyWebhookSignature(
@@ -315,13 +316,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "wire.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferOutgoingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferOutgoingCompleted: {
 					urlPath: "/wire/outgoing_transfer/completed",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -360,13 +361,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryBookTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryBookTransferCompleted: {
 					urlPath: "/book/transfer/completed",
 					fn:      plg.translateBookTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -408,13 +409,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryRealtimeTransferCompleted: {
 					urlPath: "/realtime/outgoing_transfer/completed",
 					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -451,13 +452,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSettled: {
 					urlPath: "/ach/outgoing_transfer/settled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -503,13 +504,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryInternationalWireCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryInternationalWireCompleted: {
 					urlPath: "/swift/outgoing_transfer/completed",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -535,13 +536,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "wire.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferOutgoingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferOutgoingCompleted: {
 					urlPath: "/wire/outgoing_transfer/completed",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -577,13 +578,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturned), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferReturned: {
 					urlPath: "/ach/outgoing_transfer/returned",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -623,13 +624,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRequested), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingCancellationRequested: {
 					urlPath: "/swift/outgoing_transfer/cancellation_requested",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -668,13 +669,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryRealtimeTransferManualReview: {
 					urlPath: "/realtime/outgoing_transfer/manual_review",
 					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -708,13 +709,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferInitiated: {
 					urlPath: "/wire/outgoing_transfer/initiated",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -749,13 +750,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferIncomingCompleted: {
 					urlPath: "/wire/incoming_transfer/completed",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -790,13 +791,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferSubmitted: {
 					urlPath: "/wire/outgoing_transfer/submitted",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -831,13 +832,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferRejected), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferRejected: {
 					urlPath: "/wire/outgoing_transfer/rejected",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -873,13 +874,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryWireTransferManualReview: {
 					urlPath: "/wire/outgoing_transfer/manual_review",
 					fn:      plg.translateWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -914,13 +915,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferInitiated: {
 					urlPath: "/ach/outgoing_transfer/initiated",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -955,13 +956,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferSubmitted: {
 					urlPath: "/ach/outgoing_transfer/submitted",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -996,13 +997,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferCompleted: {
 					urlPath: "/ach/outgoing_transfer/completed",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1038,13 +1039,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferManualReview: {
 					urlPath: "/ach/outgoing_transfer/manual_review",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1079,13 +1080,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCanceled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferCanceled: {
 					urlPath: "/ach/outgoing_transfer/canceled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1120,13 +1121,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferReturnDishonored: {
 					urlPath: "/ach/outgoing_transfer/return_dishonored",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1161,13 +1162,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferReturnContested: {
 					urlPath: "/ach/outgoing_transfer/return_contested",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1202,13 +1203,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferNOC), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHTransferNOC: {
 					urlPath: "/ach/outgoing_transfer/noc",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1243,13 +1244,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingScheduled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingScheduled: {
 					urlPath: "/ach/incoming_transfer/scheduled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1284,13 +1285,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingSettled: {
 					urlPath: "/ach/incoming_transfer/settled",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1325,13 +1326,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingNSF), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingNSF: {
 					urlPath: "/ach/incoming_transfer/nsf",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1366,13 +1367,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingCompleted: {
 					urlPath: "/ach/incoming_transfer/completed",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1407,13 +1408,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturned), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingReturned: {
 					urlPath: "/ach/incoming_transfer/returned",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1448,13 +1449,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingReturnDishonored: {
 					urlPath: "/ach/incoming_transfer/return_dishonored",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1489,13 +1490,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategoryACHIncomingReturnContested: {
 					urlPath: "/ach/incoming_transfer/return_contested",
 					fn:      plg.translateAchTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1530,13 +1531,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingInitiated), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingInitiated: {
 					urlPath: "/swift/outgoing_transfer/initiated",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1572,13 +1573,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingManualReview: {
 					urlPath: "/swift/outgoing_transfer/manual_review",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1613,13 +1614,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingSubmitted: {
 					urlPath: "/swift/outgoing_transfer/submitted",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1654,13 +1655,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingPendingReturn), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingPendingReturn: {
 					urlPath: "/swift/outgoing_transfer/pending_return",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1695,13 +1696,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingReturned), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingReturned: {
 					urlPath: "/swift/outgoing_transfer/returned",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1736,13 +1737,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationAccepted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingCancellationAccepted: {
 					urlPath: "/swift/outgoing_transfer/cancellation_accepted",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 
@@ -1777,13 +1778,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRejected), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
+			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 				client.EventCategorySwiftOutgoingCancellationRejected: {
 					urlPath: "/swift/outgoing_transfer/cancellation_rejected",
 					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
 				},
 			}
 

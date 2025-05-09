@@ -73,9 +73,9 @@ type Plugin struct {
 	connectorID models.ConnectorID
 	logger      logging.Logger
 
-	client         client.Client
-	webhookConfigs map[client.EventCategory]webhookConfig
-	verifier       WebhookVerifier
+	client            client.Client
+	supportedWebhooks map[client.EventCategory]supportedWebhook
+	verifier          WebhookVerifier
 }
 
 func New(ctx context.Context, connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -106,17 +106,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    string(name),
-			URLPath: config.urlPath,
-		})
-	}
-
 	return models.InstallResponse{
-		Workflow:        workflow(),
-		WebhooksConfigs: configs,
+		Workflow: workflow(),
 	}, nil
 }
 

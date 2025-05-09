@@ -70,7 +70,6 @@ var _ = Describe("Column Plugin", func() {
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(len(res.WebhooksConfigs) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 		})
