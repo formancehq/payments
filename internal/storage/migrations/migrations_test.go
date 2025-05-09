@@ -91,23 +91,32 @@ func testConnectorsMigration() testmigrations.Hook {
 			// since the dummy pay one should have been skipped
 			require.Equal(t, 10, count)
 
-			for _, connectorID := range []string{
-				"eyJQcm92aWRlciI6Im1vbmV5Y29ycCIsIlJlZmVyZW5jZSI6IjdkNGU1MjM3LTNjMDktNDUwZS04ODY5LTI2YzA2MGFmMjM3NyJ9",
-				"eyJQcm92aWRlciI6ImFkeWVuIiwiUmVmZXJlbmNlIjoiNGEwNzUyYWUtYWIxYS00NWI4LTgyNzItMjI2ODA3OTE2NTQ0In0",
-				"eyJQcm92aWRlciI6ImF0bGFyIiwiUmVmZXJlbmNlIjoiN2JkZTk4NGUtYzY1OC00MzNiLWE1OGEtZTUxMGMwMTYwMDYwIn0",
-				"eyJQcm92aWRlciI6ImJhbmtpbmdjaXJjbGUiLCJSZWZlcmVuY2UiOiIwODQ4OWFlNC0zOGUxLTQwMTEtYjViMS1mZjkxMTliYWEzNDkifQ",
-				"eyJQcm92aWRlciI6ImN1cnJlbmN5Y2xvdWQiLCJSZWZlcmVuY2UiOiJlNmI4OGFlZS05OTI0LTQ4ZmYtYTZkMS1mYmIwZjJjMjRkYWYifQ",
-				"eyJQcm92aWRlciI6ImdlbmVyaWMiLCJSZWZlcmVuY2UiOiIwYmE0MDNiYi0zYzlmLTQ2OTUtYmQxZC0yYmQ5ZDdiMjgwOTQifQ",
-				"eyJQcm92aWRlciI6Im1hbmdvcGF5IiwiUmVmZXJlbmNlIjoiZTQ0MGIyMzgtM2RkNi00YzhlLTk5MDktZTJjOTgzODA2MTgyIn0",
-				"eyJQcm92aWRlciI6Im1vZHVsciIsIlJlZmVyZW5jZSI6IjYzZTZlNDIyLWQ5MWMtNDQ3YS1hODU0LTE5ODJkYTU1YzljYyJ9",
-				"eyJQcm92aWRlciI6InN0cmlwZSIsIlJlZmVyZW5jZSI6ImIwYzZjNTdhLTM3MDYtNDRmMi1iMDdmLTE3YjNiYTdhZDhkYyJ9",
-				"eyJQcm92aWRlciI6Indpc2UiLCJSZWZlcmVuY2UiOiI4OWJlZDg1MS1kMjIyLTQ2NzItYjEwYy00ZDczZWE2ZGY0NGEifQ",
+			type connector struct {
+				connectorID string
+				provider    string
+			}
+
+			for _, c := range []connector{
+				{"eyJQcm92aWRlciI6Im1vbmV5Y29ycCIsIlJlZmVyZW5jZSI6IjdkNGU1MjM3LTNjMDktNDUwZS04ODY5LTI2YzA2MGFmMjM3NyJ9", "moneycorp"},
+				{"eyJQcm92aWRlciI6ImFkeWVuIiwiUmVmZXJlbmNlIjoiNGEwNzUyYWUtYWIxYS00NWI4LTgyNzItMjI2ODA3OTE2NTQ0In0", "adyen"},
+				{"eyJQcm92aWRlciI6ImF0bGFyIiwiUmVmZXJlbmNlIjoiN2JkZTk4NGUtYzY1OC00MzNiLWE1OGEtZTUxMGMwMTYwMDYwIn0", "atlar"},
+				{"eyJQcm92aWRlciI6ImJhbmtpbmdjaXJjbGUiLCJSZWZlcmVuY2UiOiIwODQ4OWFlNC0zOGUxLTQwMTEtYjViMS1mZjkxMTliYWEzNDkifQ", "bankingcircle"},
+				{"eyJQcm92aWRlciI6ImN1cnJlbmN5Y2xvdWQiLCJSZWZlcmVuY2UiOiJlNmI4OGFlZS05OTI0LTQ4ZmYtYTZkMS1mYmIwZjJjMjRkYWYifQ", "currencycloud"},
+				{"eyJQcm92aWRlciI6ImdlbmVyaWMiLCJSZWZlcmVuY2UiOiIwYmE0MDNiYi0zYzlmLTQ2OTUtYmQxZC0yYmQ5ZDdiMjgwOTQifQ", "generic"},
+				{"eyJQcm92aWRlciI6Im1hbmdvcGF5IiwiUmVmZXJlbmNlIjoiZTQ0MGIyMzgtM2RkNi00YzhlLTk5MDktZTJjOTgzODA2MTgyIn0", "mangopay"},
+				{"eyJQcm92aWRlciI6Im1vZHVsciIsIlJlZmVyZW5jZSI6IjYzZTZlNDIyLWQ5MWMtNDQ3YS1hODU0LTE5ODJkYTU1YzljYyJ9", "modulr"},
+				{"eyJQcm92aWRlciI6InN0cmlwZSIsIlJlZmVyZW5jZSI6ImIwYzZjNTdhLTM3MDYtNDRmMi1iMDdmLTE3YjNiYTdhZDhkYyJ9", "stripe"},
+				{"eyJQcm92aWRlciI6Indpc2UiLCJSZWZlcmVuY2UiOiI4OWJlZDg1MS1kMjIyLTQ2NzItYjEwYy00ZDczZWE2ZGY0NGEifQ", "wise"},
 			} {
-				exists, err := db.NewSelect().TableExpr("connectors").
-					Where("id = ?", connectorID).
-					Exists(ctx)
+				var connectorID, provider string
+				err := db.NewSelect().
+					TableExpr("connectors").
+					Column("id", "provider").
+					Where("id = ?", c.connectorID).
+					Scan(ctx, &connectorID, &provider)
 				require.NoError(t, err)
-				require.True(t, exists)
+				require.Equal(t, c.connectorID, connectorID)
+				require.Equal(t, c.provider, provider)
 			}
 		},
 	}

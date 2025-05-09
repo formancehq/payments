@@ -87,7 +87,7 @@ func MigrateConnectorsFromV2(ctx context.Context, logger logging.Logger, db bun.
 				ID:                   connector.ID,
 				Name:                 connector.Name,
 				CreatedAt:            connector.CreatedAt.UTC(),
-				Provider:             connector.Provider,
+				Provider:             models.ToV3Provider(connector.Provider),
 				ScheduledForDeletion: false,
 			}
 
