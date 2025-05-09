@@ -634,6 +634,7 @@ func assertSimpleTransactionsMapping(transaction client.Transactions, resultingP
 	var expectedRaw json.RawMessage
 	expectedRaw, _ = json.Marshal(transaction)
 
+	Expect(resultingPSPAPayment.ParentReference).To(Equal(transaction.Id))
 	Expect(resultingPSPAPayment.Reference).To(Equal(transaction.Id))
 	Expect(resultingPSPAPayment.Amount).To(Equal(big.NewInt(transaction.AmountCents)))
 	Expect(resultingPSPAPayment.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(transaction.EmittedAt))
