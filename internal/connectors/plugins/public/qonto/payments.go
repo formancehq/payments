@@ -14,14 +14,14 @@ import (
 )
 
 type paymentsState struct {
-	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+	LastUpdatedAt            map[string]time.Time `json:"lastUpdatedAt"`
+	TransactionStatusToFetch string               `json:"transactionStatusToFetch"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
-	// TODO Parent refernece => ID of the payout/payin etc (what's related to the transaction)
-	// Reference: id of the transaction
-	// Test if transaction ID is a reference to a payout / payin
+	// TODO set parentReference to transactionID (even for pending)
 
+	// Validation / Initialization
 	if req.PageSize == 0 {
 		return models.FetchNextPaymentsResponse{}, models.ErrMissingPageSize
 	}
@@ -32,8 +32,16 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	if oldState.LastUpdatedAt.IsZero() {
-		oldState.LastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC) // Qonto returns an error for date < 2017
+	if oldState.TransactionStatusToFetch == "" {
+		oldState.TransactionStatusToFetch = "pending"
+	}
+	if oldState.LastUpdatedAt == nil {
+		oldState.LastUpdatedAt = make(map[string]time.Time)
+	}
+	lastUpdatedAt := oldState.LastUpdatedAt[oldState.TransactionStatusToFetch]
+
+	if lastUpdatedAt.IsZero() {
+		lastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC) // Qonto returns an error for date < 2017
 	}
 
 	var from models.PSPAccount
@@ -45,9 +53,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastUpdatedAt: oldState.LastUpdatedAt,
+		LastUpdatedAt:            oldState.LastUpdatedAt,
+		TransactionStatusToFetch: oldState.TransactionStatusToFetch,
 	}
 
+	// Run
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	needMore := false
 	hasMore := false
@@ -55,14 +65,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	transactions, err := p.client.GetTransactions(
 		ctx,
 		from.Reference,
-		oldState.LastUpdatedAt,
+		lastUpdatedAt,
+		oldState.TransactionStatusToFetch,
 		req.PageSize,
 	)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	payments, err = p.transactionsToPSPPayments(oldState.LastUpdatedAt, payments, transactions)
+	payments, err = p.transactionsToPSPPayments(lastUpdatedAt, payments, transactions)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -73,11 +84,29 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		payments = payments[:req.PageSize]
 	}
 
+	// State update
 	if len(payments) > 0 {
 		var err error
-		newState.LastUpdatedAt, err = time.ParseInLocation(client.QONTO_TIMEFORMAT, payments[len(payments)-1].Metadata["updated_at"], time.UTC)
+		newState.LastUpdatedAt[oldState.TransactionStatusToFetch], err = time.ParseInLocation(
+			client.QONTO_TIMEFORMAT,
+			payments[len(payments)-1].Metadata["updated_at"],
+			time.UTC,
+		)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
+		}
+	}
+
+	if !hasMore {
+		switch oldState.TransactionStatusToFetch {
+		case "pending":
+			newState.TransactionStatusToFetch = "declined"
+			hasMore = true
+		case "declined":
+			newState.TransactionStatusToFetch = "completed"
+			hasMore = true
+		case "completed":
+			newState.TransactionStatusToFetch = "pending"
 		}
 	}
 
