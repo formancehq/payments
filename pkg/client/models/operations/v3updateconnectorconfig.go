@@ -96,9 +96,30 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMoneycorp() 
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPlaid() *components.V3PlaidConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3PlaidConfig
+	}
+	return nil
+}
+
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPowens() *components.V3PowensConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3PowensConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestStripe() *components.V3StripeConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3StripeConfig
+	}
+	return nil
+}
+
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestTink() *components.V3TinkConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3TinkConfig
 	}
 	return nil
 }

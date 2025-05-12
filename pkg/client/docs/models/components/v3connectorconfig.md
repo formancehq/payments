@@ -63,10 +63,28 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigModulr(components.V3Modul
 v3ConnectorConfig := components.CreateV3ConnectorConfigMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3PlaidConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigPlaid(components.V3PlaidConfig{/* values here */})
+```
+
+### V3PowensConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigPowens(components.V3PowensConfig{/* values here */})
+```
+
 ### V3StripeConfig
 
 ```go
 v3ConnectorConfig := components.CreateV3ConnectorConfigStripe(components.V3StripeConfig{/* values here */})
+```
+
+### V3TinkConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigTink(components.V3TinkConfig{/* values here */})
 ```
 
 ### V3WiseConfig
