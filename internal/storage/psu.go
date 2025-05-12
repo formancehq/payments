@@ -31,7 +31,7 @@ type paymentServiceUser struct {
 	PhoneNumber  *string `bun:"decrypted_phone,scanonly"`
 
 	// Optional
-	Language *string `bun:"language,nullzero"`
+	Locale *string `bun:"locale,nullzero"`
 
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
@@ -54,7 +54,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 	}()
 
 	_, err = tx.NewRaw(`
-		INSERT INTO payment_service_users (id, created_at, metadata, language, name, street_name, street_number, city, region, postal_code, country, email, phone_number)
+		INSERT INTO payment_service_users (id, created_at, metadata, locale, name, street_name, street_number, city, region, postal_code, country, email, phone_number)
 		VALUES (?0, ?1, ?2, ?3,
 			pgp_sym_encrypt(?4::TEXT, ?13, ?14),
 			pgp_sym_encrypt(?5::TEXT, ?13, ?14),
@@ -69,7 +69,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 		ON CONFLICT (id) DO NOTHING
 		RETURNING id
 	`, paymentServiceUser.ID, paymentServiceUser.CreatedAt, paymentServiceUser.Metadata,
-		paymentServiceUser.Name, paymentServiceUser.Language, paymentServiceUser.StreetName, paymentServiceUser.StreetNumber, paymentServiceUser.City,
+		paymentServiceUser.Locale, paymentServiceUser.Name, paymentServiceUser.StreetName, paymentServiceUser.StreetNumber, paymentServiceUser.City,
 		paymentServiceUser.Region, paymentServiceUser.PostalCode, paymentServiceUser.Country, paymentServiceUser.Email,
 		paymentServiceUser.PhoneNumber, s.configEncryptionKey, encryptionOptions,
 	).Exec(ctx)
@@ -116,7 +116,7 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 	var psu paymentServiceUser
 	query := s.db.NewSelect().
 		Model(&psu).
-		Column("id", "created_at", "metadata", "language").
+		Column("id", "created_at", "metadata", "locale").
 		Where("id = ?", id).
 		Relation("BankAccounts")
 
@@ -186,7 +186,7 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.Relation("BankAccounts")
-			query = query.Column("id", "created_at", "metadata", "language")
+			query = query.Column("id", "created_at", "metadata", "locale")
 			query = s.paymentServiceUsersSelectDecryptColumnExpr(query)
 
 			if where != "" {
@@ -271,7 +271,7 @@ func fromPaymentServiceUserModels(from models.PaymentServiceUser) (paymentServic
 	if from.ContactDetails != nil {
 		psu.Email = from.ContactDetails.Email
 		psu.PhoneNumber = from.ContactDetails.PhoneNumber
-		psu.Language = from.ContactDetails.Language
+		psu.Locale = from.ContactDetails.Locale
 	}
 
 	return psu, from.BankAccountIDs
@@ -319,6 +319,6 @@ func fillContactDetails(from paymentServiceUser) *models.ContactDetails {
 	return &models.ContactDetails{
 		Email:       from.Email,
 		PhoneNumber: from.PhoneNumber,
-		Language:    from.Language,
+		Locale:      from.Locale,
 	}
 }

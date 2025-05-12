@@ -44,8 +44,8 @@ var _ = Describe("Validator custom type checks", func() {
 			PhoneNumberNullable      *string                      `validate:"omitempty,phoneNumber"`
 			Email                    string                       `validate:"omitempty,email"`
 			EmailNullable            *string                      `validate:"omitempty,email"`
-			Language                 string                       `validate:"omitempty,iso6391LanguageCode"`
-			LanguageNullable         *string                      `validate:"omitempty,iso6391LanguageCode"`
+			Locale                   string                       `validate:"omitempty,locale"`
+			LocaleNullable           *string                      `validate:"omitempty,locale"`
 		}
 
 		DescribeTable("non conforming values",
@@ -212,20 +212,20 @@ var _ = Describe("Validator custom type checks", func() {
 			}{FieldName: 34}),
 
 			// email
-			Entry("language: invalid value of string on required field", "iso6391LanguageCode", "StringFieldName", struct {
-				StringFieldName string `validate:"required,iso6391LanguageCode"`
+			Entry("locale: invalid value of string on required field", "locale", "StringFieldName", struct {
+				StringFieldName string `validate:"required,locale"`
 			}{StringFieldName: "invalid"}),
-			Entry("language: invalid value of string", "iso6391LanguageCode", "StringFieldName", struct {
-				StringFieldName string `validate:"omitempty,iso6391LanguageCode"`
+			Entry("locale: invalid value of string", "locale", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,locale"`
 			}{StringFieldName: "invalid"}),
-			Entry("language: invalid value of string on required field", "iso6391LanguageCode", "StringFieldName", struct {
-				StringFieldName *string `validate:"required,iso6391LanguageCode"`
+			Entry("locale: invalid value of string on required field", "locale", "StringFieldName", struct {
+				StringFieldName *string `validate:"required,locale"`
 			}{StringFieldName: pointer.For("invalid")}),
-			Entry("language: invalid value of string", "iso6391LanguageCode", "StringFieldName", struct {
-				StringFieldName *string `validate:"omitempty,iso6391LanguageCode"`
+			Entry("locale: invalid value of string", "locale", "StringFieldName", struct {
+				StringFieldName *string `validate:"omitempty,locale"`
 			}{StringFieldName: pointer.For("invalid")}),
-			Entry("language: unsupported type for this matcher", "iso6391LanguageCode", "FieldName", struct {
-				FieldName int `validate:"iso6391LanguageCode"`
+			Entry("locale: unsupported type for this matcher", "locale", "FieldName", struct {
+				FieldName int `validate:"locale"`
 			}{FieldName: 34}),
 		)
 
@@ -314,14 +314,20 @@ var _ = Describe("Validator custom type checks", func() {
 		})
 		It("language supports expected values", func(ctx SpecContext) {
 			_, err := validate.Validate(CustomStruct{
-				Language:         "en",
-				LanguageNullable: pointer.For("en"),
+				Locale:         "en",
+				LocaleNullable: pointer.For("en"),
 			})
 			Expect(err).To(BeNil())
 
 			_, err = validate.Validate(CustomStruct{
-				Language:         "iv",
-				LanguageNullable: pointer.For("iv"),
+				Locale:         "fr_FR",
+				LocaleNullable: pointer.For("fr_FR"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				Locale:         "iv-u",
+				LocaleNullable: pointer.For("iv"),
 			})
 			Expect(err).ToNot(BeNil())
 
