@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"context"
 	"encoding/json"
 	"math/big"
 	"testing"
@@ -87,7 +86,7 @@ func (s *UnitTestSuite) addData() {
 	registry.RegisterPlugin("test", func(models.ConnectorID, string, logging.Logger, json.RawMessage) (models.Plugin, error) {
 		return nil, nil
 	}, []models.Capability{}, struct{}{})
-	err := s.w.plugins.RegisterPlugin(context.Background(), s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
+	err := s.w.plugins.RegisterPlugin(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{

@@ -10,7 +10,6 @@
 package plugins
 
 import (
-	context "context"
 	json "encoding/json"
 	reflect "reflect"
 
@@ -73,17 +72,17 @@ func (mr *MockPluginsMockRecorder) GetConfig(arg0 any) *gomock.Call {
 }
 
 // RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(arg0 context.Context, arg1 models.ConnectorID, arg2, arg3 string, arg4 models.Config, arg5 json.RawMessage, arg6 bool) error {
+func (m *MockPlugins) RegisterPlugin(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3, arg4, arg5, arg6 any) *gomock.Call {
+func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3, arg4, arg5, arg6)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // UnregisterPlugin mocks base method.

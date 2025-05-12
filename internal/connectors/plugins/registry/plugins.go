@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -105,7 +104,7 @@ func setupConfig(conf any) Config {
 	return config
 }
 
-func GetPlugin(ctx context.Context, connectorID models.ConnectorID, logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
+func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider string, connectorName string, rawConfig json.RawMessage) (models.Plugin, error) {
 	provider = strings.ToLower(provider)
 	info, ok := pluginsRegistry[provider]
 	if !ok {

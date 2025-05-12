@@ -71,8 +71,8 @@ var _ = Describe("Worker Tests", func() {
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
 				Data: connectors,
 			}, nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), connectors[0].ID, connectors[0].Provider, connectors[0].Name, gomock.Any(), connectors[0].Config, false).Return(nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), connectors[1].ID, connectors[1].Provider, connectors[1].Name, gomock.Any(), connectors[1].Config, false).Return(nil)
+			plgs.EXPECT().RegisterPlugin(connectors[0].ID, connectors[0].Provider, connectors[0].Name, gomock.Any(), connectors[0].Config, false).Return(nil)
+			plgs.EXPECT().RegisterPlugin(connectors[1].ID, connectors[1].Provider, connectors[1].Name, gomock.Any(), connectors[1].Config, false).Return(nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})

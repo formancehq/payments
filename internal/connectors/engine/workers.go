@@ -89,7 +89,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 
 		shouldCreateDefaultWorker = shouldCreateDefaultWorker || len(connectors.Data) > 0
 		for _, connector := range connectors.Data {
-			if err := w.onStartPlugin(ctx, connector); err != nil {
+			if err := w.onStartPlugin(connector); err != nil {
 				return err
 			}
 		}
@@ -115,7 +115,7 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 	return nil
 }
 
-func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connector) error {
+func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 	// Even if the connector is scheduled for deletion, we still need to register
 	// the plugin to be able to handle the uninstallation.
 	// It will be unregistered when the uninstallation is done in the workflow
@@ -125,7 +125,7 @@ func (w *WorkerPool) onStartPlugin(ctx context.Context, connector models.Connect
 		return err
 	}
 
-	err := w.plugins.RegisterPlugin(ctx, connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	err := w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %w", err)
 		// We don't want to crash the pod if the plugin registration fails,
@@ -156,7 +156,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if err := w.plugins.RegisterPlugin(ctx, connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
+	if err := w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	err = w.plugins.RegisterPlugin(ctx, connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	err = w.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
 		return err
