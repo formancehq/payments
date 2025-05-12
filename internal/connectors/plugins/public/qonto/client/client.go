@@ -16,6 +16,7 @@ type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
 	GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, pageSize int) ([]Beneficiary, error)
 	GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, transactionStatusToFetch string, pageSize int) ([]Transactions, error)
+	CreateInternalTransfer(ctx context.Context, idempotencyKey string, request TransferRequest) (*TransferResponse, error)
 }
 
 type client struct {

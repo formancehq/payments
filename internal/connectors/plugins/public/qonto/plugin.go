@@ -92,7 +92,18 @@ func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAcc
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	return models.CreateTransferResponse{}, plugins.ErrNotImplemented
+	if p.client == nil {
+		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreateTransferResponse{}, err
+	}
+
+	return models.CreateTransferResponse{
+		Payment: payment,
+	}, nil
 }
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
