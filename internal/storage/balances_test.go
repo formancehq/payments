@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -648,5 +649,47 @@ func TestBalancesGetAt(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, balances)
 		require.Len(t, balances, 2)
+	})
+}
+
+func TestBalancesGetLatest(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertBalances(t, ctx, store, defaultBalances())
+
+	t.Run("get latest balances returns 1 balance per currency", func(t *testing.T) {
+		accounts := defaultAccounts()
+		balances, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 2)
+		assert.Equal(t, balances[0].Asset, "EUR/2")
+		assert.Equal(t, balances[1].Asset, "USD/2")
+	})
+
+	t.Run("get balances after inserting a new balance", func(t *testing.T) {
+		accounts := defaultAccounts()
+		b := models.Balance{
+			AccountID:     accounts[0].ID,
+			CreatedAt:     now.Add(-20 * time.Minute).UTC().Time,
+			LastUpdatedAt: now.Add(-20 * time.Minute).UTC().Time,
+			Asset:         "USD/2",
+			Balance:       big.NewInt(999),
+		}
+
+		upsertBalances(t, ctx, store, []models.Balance{b})
+
+		balances, err := store.BalancesGetLatest(ctx, accounts[0].ID)
+		require.NoError(t, err)
+		require.NotNil(t, balances)
+		require.Len(t, balances, 2)
+		assert.Equal(t, balances[1].Asset, "USD/2")
+		assert.Equal(t, balances[1].Balance, b.Balance)
 	})
 }

@@ -256,6 +256,23 @@ func (s *store) balancesGetAtByAsset(ctx context.Context, accountID models.Accou
 	return pointer.For(toBalanceModels(balance)), nil
 }
 
+func (s *store) balancesGetLatestByAsset(ctx context.Context, accountID models.AccountID, asset string) (*models.Balance, error) {
+	var balance balance
+
+	err := s.db.NewSelect().
+		Model(&balance).
+		Where("account_id = ?", accountID).
+		Where("asset = ?", asset).
+		Order("created_at DESC", "sort_id DESC").
+		Limit(1).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get latest balance", err)
+	}
+
+	return pointer.For(toBalanceModels(balance)), nil
+}
+
 func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error) {
 	assets, err := s.balancesListAssets(ctx, accountID)
 	if err != nil {
@@ -270,6 +287,28 @@ func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, a
 				continue
 			}
 			return nil, fmt.Errorf("failed to get balance: %w", err)
+		}
+
+		balances = append(balances, balance)
+	}
+
+	return balances, nil
+}
+
+func (s *store) BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error) {
+	assets, err := s.balancesListAssets(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list balance assets: %w", err)
+	}
+
+	var balances []*models.Balance
+	for _, currency := range assets {
+		balance, err := s.balancesGetLatestByAsset(ctx, accountID, currency)
+		if err != nil {
+			if errors.Is(err, ErrNotFound) {
+				continue
+			}
+			return nil, fmt.Errorf("failed to get latest balance for asset %q: %w", currency, err)
 		}
 
 		balances = append(balances, balance)
