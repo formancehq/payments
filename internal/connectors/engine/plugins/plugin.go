@@ -78,7 +78,7 @@ func (p *plugins) RegisterPlugin(
 		return nil
 	}
 
-	plugin, err := registry.GetPlugin(p.logger, provider, connectorName, rawConfig)
+	plugin, err := registry.GetPlugin(connectorID, p.logger, provider, connectorName, rawConfig)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
 		errors.Is(err, pluginserrors.ErrInvalidClientRequest):

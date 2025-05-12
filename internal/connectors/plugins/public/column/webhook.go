@@ -19,10 +19,9 @@ const (
 	HeadersSignature = "Column-Signature"
 )
 
-type webhookConfig struct {
+type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, client.WebhookEvent[json.RawMessage]) (models.WebhookResponse, error)
-	secret  string
 }
 
 type defaultVerifier struct{}
@@ -31,8 +30,8 @@ type WebhookVerifier interface {
 	verifyWebhookSignature(payload []byte, header, secret string) error
 }
 
-func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
-	p.webhookConfigs = map[client.EventCategory]webhookConfig{
+func (p *Plugin) initWebhookConfig() error {
+	p.supportedWebhooks = map[client.EventCategory]supportedWebhook{
 		client.EventCategoryBookTransferCompleted: {
 			urlPath: "/book/transfer/completed",
 			fn:      p.translateBookTransfer,
@@ -242,7 +241,7 @@ func (p *Plugin) initWebhookConfig() map[client.EventCategory]webhookConfig {
 			fn:      p.translateRealtimeTransfer,
 		},
 	}
-	return p.webhookConfigs
+	return nil
 }
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
@@ -260,7 +259,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, fmt.Errorf("webhook URL must use HTTPS protocol")
 	}
 
-	for eventType, config := range p.webhookConfigs {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
+	for eventType, config := range p.supportedWebhooks {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
@@ -274,8 +274,12 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		if err != nil {
 			return models.CreateWebhooksResponse{}, fmt.Errorf("failed to create webhook subscription: %w", err)
 		}
-		config.secret = resp.Secret
-		p.webhookConfigs[eventType] = config
+
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:     string(eventType),
+			URLPath:  config.urlPath,
+			Metadata: map[string]string{"secret": resp.Secret},
+		})
 
 		raw, err := json.Marshal(resp)
 		if err != nil {
@@ -288,7 +292,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}
 
 	return models.CreateWebhooksResponse{
-		Others: others,
+		Others:  others,
+		Configs: configs,
 	}, nil
 }
 
@@ -298,12 +303,27 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, client.ErrWebhookHeaderXSignatureMissing
 	}
 
-	config, ok := p.webhookConfigs[client.EventCategory(req.Name)]
-	if !ok {
-		return models.TranslateWebhookResponse{}, client.ErrWebhookNameUnknown
+	config := req.Config
+	if config == nil || config.Metadata == nil {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigInvalid
 	}
 
-	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], config.secret); err != nil {
+	eventType := client.EventCategory(config.Name)
+	if eventType == "" {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("could not parse webhook name %q: %w", config.Name, client.ErrWebhookTypeUnknown)
+	}
+
+	webhookTranslator, ok := p.supportedWebhooks[eventType]
+	if !ok {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookTypeUnknown
+	}
+
+	secret, ok := config.Metadata["secret"]
+	if !ok {
+		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigSecretMissing
+	}
+
+	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], secret); err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
 
@@ -312,7 +332,7 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, fmt.Errorf("failed to unmarshal webhook: %w", err)
 	}
 
-	res, err := config.fn(ctx, webhook)
+	res, err := webhookTranslator.fn(ctx, webhook)
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
@@ -333,7 +353,7 @@ func (p *Plugin) translateBookTransfer(ctx context.Context, webhook client.Webho
 		return models.WebhookResponse{}, err
 	}
 
-	pspPayment, err := p.transferToPayment(&transfer)
+	pspPayment, err := p.transferToPayment(webhook.ID, &transfer)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map webhook book transfer payment: %w", err)
 	}
@@ -358,7 +378,7 @@ func (p *Plugin) translateAchTransfer(ctx context.Context, webhook client.Webhoo
 		return models.WebhookResponse{}, fmt.Errorf("failed to map ach transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map ach payout to payment: %w", err)
 	}
@@ -383,7 +403,7 @@ func (p *Plugin) translateRealtimeTransfer(ctx context.Context, webhook client.W
 		return models.WebhookResponse{}, fmt.Errorf("failed to map realtime transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map realtime payout to payment: %w", err)
 	}
@@ -408,7 +428,7 @@ func (p *Plugin) translateWireTransfer(ctx context.Context, webhook client.Webho
 		return models.WebhookResponse{}, fmt.Errorf("failed to map wire transfer webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map wire payout to payment: %w", err)
 	}
@@ -433,7 +453,7 @@ func (p *Plugin) translateInternationalWireTransfer(ctx context.Context, webhook
 		return models.WebhookResponse{}, fmt.Errorf("failed to map international wire webhook response: %w", err)
 	}
 
-	pspPayment, err := p.payoutToPayment(paymentResponse)
+	pspPayment, err := p.payoutToPayment(webhook.ID, paymentResponse)
 	if err != nil {
 		return models.WebhookResponse{}, fmt.Errorf("failed to map international wire payout to payment: %w", err)
 	}

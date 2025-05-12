@@ -3,12 +3,18 @@ package models
 type PSPWebhookConfig struct {
 	Name    string `json:"name"`
 	URLPath string `json:"urlPath"`
+
+	// Additional metadata
+	Metadata map[string]string `json:"metadata"`
 }
 
 type WebhookConfig struct {
 	Name        string      `json:"name"`
 	ConnectorID ConnectorID `json:"connectorID"`
 	URLPath     string      `json:"urlPath"`
+
+	// Additional metadata
+	Metadata map[string]string `json:"metadata"`
 }
 
 type BasicAuth struct {

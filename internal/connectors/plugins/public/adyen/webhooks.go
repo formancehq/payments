@@ -15,13 +15,13 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type webhookConfig struct {
+type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error)
 }
 
 func (p *Plugin) initWebhookConfig() {
-	p.webhookConfigs = map[string]webhookConfig{
+	p.supportedWebhooks = map[string]supportedWebhook{
 		"standard": {
 			urlPath: "/standard",
 			fn:      p.translateStandardWebhook,
@@ -29,19 +29,27 @@ func (p *Plugin) initWebhookConfig() {
 	}
 }
 
-func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
+	configs := make([]models.PSPWebhookConfig, 0, 1)
 	if req.WebhookBaseUrl == "" {
-		return errors.New("STACK_PUBLIC_URL is not set")
+		return configs, fmt.Errorf("STACK_PUBLIC_URL is not set")
 	}
 
-	standardConfig := p.webhookConfigs["standard"]
+	name := "standard"
+	standardConfig := p.supportedWebhooks[name]
 
 	url, err := url.JoinPath(req.WebhookBaseUrl, standardConfig.urlPath)
 	if err != nil {
-		return err
+		return configs, err
 	}
 
-	return p.client.CreateWebhook(ctx, url, req.ConnectorID)
+	configs = append(configs, models.PSPWebhookConfig{
+		Name:    name,
+		URLPath: standardConfig.urlPath,
+	})
+
+	err = p.client.CreateWebhook(ctx, url, req.ConnectorID)
+	return configs, err
 }
 
 func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {

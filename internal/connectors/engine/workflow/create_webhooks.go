@@ -1,11 +1,11 @@
 package workflow
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -31,7 +31,7 @@ func (w Workflow) createWebhooks(
 ) error {
 	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/webhooks", createWebhooks.ConnectorID.String())
 	if err != nil {
-		return errors.Wrap(err, "joining webhook base URL")
+		return fmt.Errorf("joining webhook base URL: %w", err)
 	}
 
 	resp, err := activities.PluginCreateWebhooks(
@@ -44,7 +44,26 @@ func (w Workflow) createWebhooks(
 		},
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to create webhooks")
+		return fmt.Errorf("failed to create webhooks: %w", err)
+	}
+
+	if len(resp.Configs) > 0 {
+		configs := make([]models.WebhookConfig, 0, len(resp.Configs))
+		for _, c := range resp.Configs {
+			configs = append(configs, models.WebhookConfig{
+				Name:        c.Name,
+				ConnectorID: createWebhooks.ConnectorID,
+				URLPath:     c.URLPath,
+				Metadata:    c.Metadata,
+			})
+		}
+		err = activities.StorageWebhooksConfigsStore(
+			infiniteRetryContext(ctx),
+			configs,
+		)
+		if err != nil {
+			return fmt.Errorf("storing webhooks: %w", err)
+		}
 	}
 
 	for _, other := range resp.Others {
@@ -68,7 +87,7 @@ func (w Workflow) createWebhooks(
 			},
 			nextTasks,
 		).Get(ctx, nil); err != nil {
-			return errors.Wrap(err, "running next workflow")
+			return fmt.Errorf("running next workflow: %w", err)
 		}
 	}
 

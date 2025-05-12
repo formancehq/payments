@@ -15,7 +15,7 @@ import (
 const ProviderName = "atlar"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
