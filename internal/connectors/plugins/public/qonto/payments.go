@@ -20,34 +20,20 @@ type paymentsState struct {
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	// Validation / Initialization
-	if req.PageSize == 0 {
-		return models.FetchNextPaymentsResponse{}, models.ErrMissingPageSize
-	}
-	var oldState paymentsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextPaymentsResponse{}, err
-		}
+	from, err := validateAndGetAccount(req)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	if oldState.TransactionStatusToFetch == "" {
-		oldState.TransactionStatusToFetch = "pending"
+	oldState, err := initializeOldState(req)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
 	}
-	if oldState.LastUpdatedAt == nil {
-		oldState.LastUpdatedAt = make(map[string]time.Time)
-	}
+
 	lastUpdatedAt := oldState.LastUpdatedAt[oldState.TransactionStatusToFetch]
 
 	if lastUpdatedAt.IsZero() {
 		lastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC) // Qonto returns an error for date < 2017
-	}
-
-	var from models.PSPAccount
-	if req.FromPayload == nil {
-		return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
-	}
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextPaymentsResponse{}, err
 	}
 
 	newState := paymentsState{
@@ -118,6 +104,23 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		NewState: payload,
 		HasMore:  hasMore,
 	}, nil
+}
+
+func initializeOldState(req models.FetchNextPaymentsRequest) (paymentsState, error) {
+	var oldState paymentsState
+	if req.State != nil {
+		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			return paymentsState{}, err
+		}
+	}
+
+	if oldState.TransactionStatusToFetch == "" {
+		oldState.TransactionStatusToFetch = client.TransactionStatusPending
+	}
+	if oldState.LastUpdatedAt == nil {
+		oldState.LastUpdatedAt = make(map[string]time.Time)
+	}
+	return oldState, nil
 }
 
 func (p *Plugin) transactionsToPSPPayments(
@@ -226,4 +229,19 @@ func mapQontoTransactionScheme(transactionType string) models.PaymentScheme {
 	}
 
 	return models.PAYMENT_SCHEME_UNKNOWN
+}
+
+func validateAndGetAccount(req models.FetchNextPaymentsRequest) (models.PSPAccount, error) {
+	if req.PageSize == 0 {
+		return models.PSPAccount{}, models.ErrMissingPageSize
+	}
+
+	var from models.PSPAccount
+	if req.FromPayload == nil {
+		return models.PSPAccount{}, models.ErrMissingFromPayloadInRequest
+	}
+	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		return models.PSPAccount{}, err
+	}
+	return from, nil
 }
