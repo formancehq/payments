@@ -17,7 +17,6 @@ import (
 const DummyPSPName = "dummypay"
 
 type PluginCreateFunction func(
-	context.Context,
 	models.ConnectorID,
 	string,
 	logging.Logger,
@@ -113,7 +112,7 @@ func GetPlugin(ctx context.Context, connectorID models.ConnectorID, logger loggi
 		return nil, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
 	}
 
-	p, err := info.createFunc(ctx, connectorID, connectorName, logger, rawConfig)
+	p, err := info.createFunc(connectorID, connectorName, logger, rawConfig)
 	if err != nil {
 		return nil, translateError(err)
 	}

@@ -16,8 +16,8 @@ import (
 const ProviderName = "column"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(ctx context.Context, connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(ctx, connectorID, name, logger, rm)
+	registry.RegisterPlugin(ProviderName, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(connectorID, name, logger, rm)
 	}, capabilities, Config{})
 }
 
@@ -78,7 +78,7 @@ type Plugin struct {
 	verifier          WebhookVerifier
 }
 
-func New(ctx context.Context, connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err

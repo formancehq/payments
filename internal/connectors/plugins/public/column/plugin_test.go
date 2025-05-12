@@ -46,25 +46,25 @@ var _ = Describe("Column Plugin", func() {
 	Context("install", func() {
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := New(ctx, connID, ProviderName, logger, config)
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
 			config := json.RawMessage(fmt.Sprintf(`{"endpoint": "%s"}`, ts.URL))
-			_, err := New(ctx, connID, ProviderName, logger, config)
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test"}`)
-			_, err := New(ctx, connID, ProviderName, logger, config)
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(fmt.Sprintf(`{"apiKey": "test","endpoint": "%s"}`, ts.URL))
-			plg, err := New(ctx, connID, ProviderName, logger, config)
+			plg, err := New(connID, ProviderName, logger, config)
 
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
@@ -209,7 +209,7 @@ var _ = Describe("Column Plugin", func() {
 		BeforeEach(func(ctx SpecContext) {
 			config := json.RawMessage(fmt.Sprintf(`{"apiKey":"test","endpoint": "%s"}`, ts.URL))
 			var err error
-			plg, err = New(ctx, connID, ProviderName, logger, config)
+			plg, err = New(connID, ProviderName, logger, config)
 			Expect(err).To(BeNil())
 			Expect(plg.client).NotTo(BeNil())
 		})

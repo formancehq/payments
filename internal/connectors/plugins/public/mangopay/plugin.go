@@ -17,7 +17,7 @@ import (
 const ProviderName = "mangopay"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(_ context.Context, _ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
