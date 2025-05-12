@@ -26,7 +26,7 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
+	LoadPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
 	UnregisterPlugin(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -61,7 +61,7 @@ func New(
 	}
 }
 
-func (p *plugins) RegisterPlugin(
+func (p *plugins) LoadPlugin(
 	connectorID models.ConnectorID,
 	provider string,
 	connectorName string,
@@ -101,7 +101,7 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
 
 	_, ok := p.plugins[connectorID.String()]
 	if !ok {
-		// Nothing to do``
+		// Nothing to do
 		return
 	}
 

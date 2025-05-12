@@ -19,7 +19,7 @@ import (
 type ContactDetailsRequest struct {
 	Email       *string `json:"email,omitempty" validate:"omitempty,email"`
 	PhoneNumber *string `json:"phoneNumber,omitempty" validate:"omitempty,phoneNumber"`
-	Language    *string `json:"language,omitempty" validate:"omitempty,iso6391LanguageCode"`
+	Locale      *string `json:"locale,omitempty" validate:"omitempty,locale"`
 }
 
 type AddressRequest struct {
@@ -83,7 +83,7 @@ func paymentServiceUsersCreate(backend backend.Backend, validator *validation.Va
 				return &models.ContactDetails{
 					Email:       req.ContactDetails.Email,
 					PhoneNumber: req.ContactDetails.PhoneNumber,
-					Language:    req.ContactDetails.Language,
+					Locale:      req.ContactDetails.Locale,
 				}
 			}(),
 			Address: func() *models.Address {
