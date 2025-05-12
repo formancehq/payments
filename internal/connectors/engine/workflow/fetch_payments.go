@@ -82,7 +82,7 @@ func (w Workflow) fetchNextPayments(
 				payments,
 			)
 			if err != nil {
-				return errors.Wrap(err, "storing next accounts")
+				return errors.Wrap(err, "storing next payments")
 			}
 		}
 

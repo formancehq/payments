@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: ae0a09aa698536274b47d1d29a0c8ad2
+  docChecksum: bf58543edf2c9e1983aeb053dd381255
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -178,10 +178,12 @@ generatedFiles:
   - /models/components/v3paymentserviceuserscursorresponse.go
   - /models/components/v3paymentstatusenum.go
   - /models/components/v3paymenttypeenum.go
+  - /models/components/v3plaidconfig.go
   - /models/components/v3pool.go
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3powensconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
   - /models/components/v3reversepaymentinitiationrequest.go
@@ -190,6 +192,7 @@ generatedFiles:
   - /models/components/v3stripeconfig.go
   - /models/components/v3task.go
   - /models/components/v3taskstatusenum.go
+  - /models/components/v3tinkconfig.go
   - /models/components/v3uninstallconnectorresponse.go
   - /models/components/v3updatebankaccountmetadatarequest.go
   - /models/components/v3updateconnectorrequest.go
@@ -486,11 +489,13 @@ generatedFiles:
   - docs/models/components/v3paymentserviceuserscursorresponsecursor.md
   - docs/models/components/v3paymentstatusenum.md
   - docs/models/components/v3paymenttypeenum.md
+  - docs/models/components/v3plaidconfig.md
   - docs/models/components/v3pool.md
   - docs/models/components/v3poolbalance.md
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3powensconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md
   - docs/models/components/v3retrypaymentinitiationresponsedata.md
@@ -501,6 +506,7 @@ generatedFiles:
   - docs/models/components/v3stripeconfig.md
   - docs/models/components/v3task.md
   - docs/models/components/v3taskstatusenum.md
+  - docs/models/components/v3tinkconfig.md
   - docs/models/components/v3uninstallconnectorresponse.md
   - docs/models/components/v3uninstallconnectorresponsedata.md
   - docs/models/components/v3updatebankaccountmetadatarequest.md

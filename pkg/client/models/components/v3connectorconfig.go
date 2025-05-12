@@ -22,7 +22,10 @@ const (
 	V3ConnectorConfigTypeMangopay      V3ConnectorConfigType = "Mangopay"
 	V3ConnectorConfigTypeModulr        V3ConnectorConfigType = "Modulr"
 	V3ConnectorConfigTypeMoneycorp     V3ConnectorConfigType = "Moneycorp"
+	V3ConnectorConfigTypePlaid         V3ConnectorConfigType = "Plaid"
+	V3ConnectorConfigTypePowens        V3ConnectorConfigType = "Powens"
 	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
+	V3ConnectorConfigTypeTink          V3ConnectorConfigType = "Tink"
 	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
 )
 
@@ -37,7 +40,10 @@ type V3ConnectorConfig struct {
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3PlaidConfig         *V3PlaidConfig         `queryParam:"inline"`
+	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
@@ -163,6 +169,30 @@ func CreateV3ConnectorConfigMoneycorp(moneycorp V3MoneycorpConfig) V3ConnectorCo
 	}
 }
 
+func CreateV3ConnectorConfigPlaid(plaid V3PlaidConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypePlaid
+
+	typStr := string(typ)
+	plaid.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3PlaidConfig: &plaid,
+		Type:          typ,
+	}
+}
+
+func CreateV3ConnectorConfigPowens(powens V3PowensConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypePowens
+
+	typStr := string(typ)
+	powens.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3PowensConfig: &powens,
+		Type:           typ,
+	}
+}
+
 func CreateV3ConnectorConfigStripe(stripe V3StripeConfig) V3ConnectorConfig {
 	typ := V3ConnectorConfigTypeStripe
 
@@ -172,6 +202,18 @@ func CreateV3ConnectorConfigStripe(stripe V3StripeConfig) V3ConnectorConfig {
 	return V3ConnectorConfig{
 		V3StripeConfig: &stripe,
 		Type:           typ,
+	}
+}
+
+func CreateV3ConnectorConfigTink(tink V3TinkConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeTink
+
+	typStr := string(typ)
+	tink.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3TinkConfig: &tink,
+		Type:         typ,
 	}
 }
 
@@ -289,6 +331,24 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3ConnectorConfigTypeMoneycorp
 		return nil
+	case "Plaid":
+		v3PlaidConfig := new(V3PlaidConfig)
+		if err := utils.UnmarshalJSON(data, &v3PlaidConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Plaid) type V3PlaidConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3PlaidConfig = v3PlaidConfig
+		u.Type = V3ConnectorConfigTypePlaid
+		return nil
+	case "Powens":
+		v3PowensConfig := new(V3PowensConfig)
+		if err := utils.UnmarshalJSON(data, &v3PowensConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Powens) type V3PowensConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3PowensConfig = v3PowensConfig
+		u.Type = V3ConnectorConfigTypePowens
+		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
 		if err := utils.UnmarshalJSON(data, &v3StripeConfig, "", true, false); err != nil {
@@ -297,6 +357,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 
 		u.V3StripeConfig = v3StripeConfig
 		u.Type = V3ConnectorConfigTypeStripe
+		return nil
+	case "Tink":
+		v3TinkConfig := new(V3TinkConfig)
+		if err := utils.UnmarshalJSON(data, &v3TinkConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Tink) type V3TinkConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3TinkConfig = v3TinkConfig
+		u.Type = V3ConnectorConfigTypeTink
 		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
@@ -353,8 +422,20 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
 	}
 
+	if u.V3PlaidConfig != nil {
+		return utils.MarshalJSON(u.V3PlaidConfig, "", true)
+	}
+
+	if u.V3PowensConfig != nil {
+		return utils.MarshalJSON(u.V3PowensConfig, "", true)
+	}
+
 	if u.V3StripeConfig != nil {
 		return utils.MarshalJSON(u.V3StripeConfig, "", true)
+	}
+
+	if u.V3TinkConfig != nil {
+		return utils.MarshalJSON(u.V3TinkConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {
