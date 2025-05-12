@@ -83,14 +83,14 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	if !hasMore {
 		switch oldState.TransactionStatusToFetch {
-		case "pending":
-			newState.TransactionStatusToFetch = "declined"
+		case client.TransactionStatusPending:
+			newState.TransactionStatusToFetch = client.TransactionStatusDeclined
 			hasMore = true
-		case "declined":
-			newState.TransactionStatusToFetch = "completed"
+		case client.TransactionStatusDeclined:
+			newState.TransactionStatusToFetch = client.TransactionStatusCompleted
 			hasMore = true
-		case "completed":
-			newState.TransactionStatusToFetch = "pending"
+		case client.TransactionStatusCompleted:
+			newState.TransactionStatusToFetch = client.TransactionStatusPending
 		}
 	}
 
@@ -191,11 +191,11 @@ func (p *Plugin) transactionsToPSPPayments(
 
 func mapQontoPaymentStatus(status string) models.PaymentStatus {
 	switch status {
-	case "completed":
+	case client.TransactionStatusCompleted:
 		return models.PAYMENT_STATUS_SUCCEEDED
-	case "declined":
+	case client.TransactionStatusDeclined:
 		return models.PAYMENT_STATUS_FAILED
-	case "pending":
+	case client.TransactionStatusPending:
 		return models.PAYMENT_STATUS_PENDING
 	}
 	return models.PAYMENT_STATUS_UNKNOWN

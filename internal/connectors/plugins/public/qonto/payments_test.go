@@ -116,7 +116,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 			resp, err := plg.FetchNextPayments(ctx, req)
 
 			// Then
-			assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+			assertTransactionsSuccessResponse(
+				resp,
+				err,
+				client.TransactionStatusPending,
+				client.TransactionStatusDeclined,
+				transactionsReturnedByClient,
+				true,
+			)
 		})
 
 		Describe("transaction to payment mapping", func() {
@@ -142,7 +149,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
 				Expect(resp.Payments[0].DestinationAccountReference).To(BeNil())
@@ -173,7 +187,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
 				Expect(resp.Payments[0].DestinationAccountReference).To(Equal(pointer.For("IBAN-BIC")))
@@ -203,7 +224,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_SEPA_DEBIT))
 				Expect(resp.Payments[0].DestinationAccountReference).To(Equal(pointer.For("IBAN-BIC")))
@@ -234,7 +262,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_SEPA_CREDIT))
 				Expect(resp.Payments[0].DestinationAccountReference).To(Equal(pointer.For("IBAN-BIC")))
@@ -265,7 +300,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
 				Expect(resp.Payments[0].DestinationAccountReference).To(Equal(pointer.For("IBAN-BIC")))
@@ -296,7 +338,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
 				Expect(resp.Payments[0].DestinationAccountReference).To(Equal(pointer.For("ACCOUNT-NUMBER-SORT-CODE")))
@@ -309,7 +358,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					FromPayload: from,
 				}
 
-				sampleTransaction.Status = "pending"
+				sampleTransaction.Status = client.TransactionStatusPending
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
 				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
@@ -320,7 +369,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
 			})
 			It("should map a declined transaction to the right status", func(ctx SpecContext) {
@@ -342,7 +398,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_FAILED))
 			})
 			It("should map a completed transaction to the right status", func(ctx SpecContext) {
@@ -364,7 +427,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 			})
 			It("should map an unknown status transaction to the right status", func(ctx SpecContext) {
@@ -386,7 +456,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					true,
+				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_UNKNOWN))
 			})
 		})
@@ -419,7 +496,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "pending", transactionsReturnedByClient[:5], true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusPending,
+					transactionsReturnedByClient[:5],
+					true,
+				)
 			})
 			It("should ignore already processed transactions", func(ctx SpecContext) {
 				// Given a valid request
@@ -442,7 +526,15 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "declined", transactionsReturnedByClient[10:20], true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient[10:20],
+					true,
+				)
+
 			})
 			It("should return hasMore=true when some more txns are present in the same status", func(ctx SpecContext) {
 				// Given a valid request
@@ -465,7 +557,15 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "pending", "pending", transactionsReturnedByClient[10:15], true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient[10:15],
+					true,
+				)
+
 			})
 			// Note -- transition from Pending to Declined already tested as part of the mapping tests
 			It("transition from Declined to Completed status", func(ctx SpecContext) {
@@ -490,7 +590,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "declined", "completed", transactionsReturnedByClient, true)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusDeclined,
+					client.TransactionStatusCompleted,
+					transactionsReturnedByClient,
+					true,
+				)
 			})
 			It("transition from Completed back to Pending status", func(ctx SpecContext) {
 				// Given a valid request
@@ -515,7 +622,14 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				resp, err := plg.FetchNextPayments(ctx, req)
 
 				// Then
-				assertTransactionsSuccessResponse(resp, err, "completed", "pending", transactionsReturnedByClient, false)
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusCompleted,
+					client.TransactionStatusPending,
+					transactionsReturnedByClient,
+					false,
+				)
 			})
 		})
 	})

@@ -42,6 +42,10 @@ type LogoDetails struct {
 	Medium string `json:"medium,omitempty"`
 }
 
+const TransactionStatusDeclined = "declined"
+const TransactionStatusPending = "pending"
+const TransactionStatusCompleted = "completed"
+
 type Transactions struct {
 	Id                    string                       `json:"id"`
 	TransactionId         string                       `json:"transaction_id"`
