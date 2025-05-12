@@ -19,7 +19,7 @@ type Address struct {
 type ContactDetails struct {
 	Email       *string `json:"email"`
 	PhoneNumber *string `json:"phoneNumber"`
-	Language    *string `json:"language"`
+	Locale      *string `json:"locale"`
 }
 
 type PaymentServiceUser struct {

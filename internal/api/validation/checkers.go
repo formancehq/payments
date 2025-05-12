@@ -3,11 +3,11 @@ package validation
 import (
 	"regexp"
 
-	iso6391 "github.com/emvi/iso-639-1"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -165,11 +165,11 @@ func IsEmail(fl validator.FieldLevel) bool {
 	return emailRegexp.MatchString(str)
 }
 
-func IsISO6391LanguageCode(fl validator.FieldLevel) bool {
+func IsLocale(fl validator.FieldLevel) bool {
 	str, err := fieldLevelToString(fl)
 	if err != nil {
 		return false
 	}
-
-	return iso6391.ValidCode(str)
+	_, err = language.Parse(str)
+	return err == nil
 }

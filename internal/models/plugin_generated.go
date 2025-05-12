@@ -85,6 +85,21 @@ func (mr *MockPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPlugin)(nil).CreateTransfer), arg0, arg1)
 }
 
+// CreateUserLink mocks base method.
+func (m *MockPlugin) CreateUserLink(arg0 context.Context, arg1 CreateUserLinkRequest) (CreateUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUserLink", arg0, arg1)
+	ret0, _ := ret[0].(CreateUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUserLink indicates an expected call of CreateUserLink.
+func (mr *MockPluginMockRecorder) CreateUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserLink", reflect.TypeOf((*MockPlugin)(nil).CreateUserLink), arg0, arg1)
+}
+
 // CreateWebhooks mocks base method.
 func (m *MockPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksRequest) (CreateWebhooksResponse, error) {
 	m.ctrl.T.Helper()
@@ -293,6 +308,7 @@ func (mr *MockPluginMockRecorder) Uninstall(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Uninstall", reflect.TypeOf((*MockPlugin)(nil).Uninstall), arg0, arg1)
 }
+<<<<<<< HEAD
 
 // VerifyWebhook mocks base method.
 func (m *MockPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookRequest) (VerifyWebhookResponse, error) {
@@ -581,3 +597,5 @@ func NewMockPSPBankingBridge(ctrl *gomock.Controller) *MockPSPBankingBridge {
 func (m *MockPSPBankingBridge) EXPECT() *MockPSPBankingBridgeMockRecorder {
 	return m.recorder
 }
+=======
+>>>>>>> bcbea859 (wip banking bridges)

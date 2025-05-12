@@ -84,4 +84,8 @@ func (dp *basePlugin) TranslateWebhook(ctx context.Context, req models.Translate
 	return models.TranslateWebhookResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	return models.CreateUserLinkResponse{}, ErrNotImplemented
+}
+
 var _ models.Plugin = &basePlugin{}

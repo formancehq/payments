@@ -331,4 +331,22 @@ func (i *impl) TranslateWebhook(ctx context.Context, req models.TranslateWebhook
 	return resp, nil
 }
 
+func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating user...")
+
+	resp, err := i.plugin.CreateUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating user failed: %v", err)
+		otel.RecordError(span, err)
+		return models.CreateUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created user succeeded!")
+
+	return resp, nil
+}
+
 var _ models.Plugin = &impl{}
