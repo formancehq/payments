@@ -2,14 +2,17 @@ package test_suite
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/testing/deferred"
+	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/pkg/client/models/components"
+	"github.com/formancehq/payments/pkg/client/models/operations"
 	evts "github.com/formancehq/payments/pkg/events"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
@@ -314,6 +317,68 @@ var _ = Context("Payments API Pools", func() {
 				AccountID: accountIDs[0],
 			})
 			Expect(err).To(BeNil())
+		})
+	})
+
+	When("fetching balances for a pool with v3", func() {
+		var (
+			connectorID string
+			accountIDs  []string
+			balance     components.AccountBalance
+			poolID      string
+			e           chan *nats.Msg
+			err         error
+
+			eventPayload GenericEventPayload
+		)
+
+		BeforeEach(func() {
+			e = Subscribe(GinkgoT(), app.GetValue())
+			id := uuid.New()
+			connectorConf := newV3ConnectorConfigFn()(id)
+			connectorID, err = installV3Connector(ctx, app.GetValue(), connectorConf, uuid.New())
+			Expect(err).To(BeNil())
+
+			_, err = GeneratePSPData(connectorConf.Directory)
+			Expect(err).To(BeNil())
+			var msg events.BalanceMessagePayload
+			Eventually(e).WithTimeout(3 * time.Second).WithPolling(3 * time.Millisecond).Should(Receive(Event(evts.EventTypeSavedBalances, WithCallback(
+				msg,
+				func(b []byte) error {
+					return json.Unmarshal(b, &msg)
+				},
+			))))
+
+			balanceResponse, err := app.GetValue().SDK().Payments.V1.GetAccountBalances(ctx, operations.GetAccountBalancesRequest{
+				AccountID: msg.AccountID,
+			})
+			Expect(err).To(BeNil())
+			res := balanceResponse.GetBalancesCursor()
+			Expect(res.Cursor.Data).To(HaveLen(1))
+
+			balance = res.Cursor.Data[0]
+			accountIDs = []string{balance.AccountID}
+
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePool(ctx, &components.V3CreatePoolRequest{
+				Name:       "some-pool",
+				AccountIDs: accountIDs,
+			})
+			Expect(err).To(BeNil())
+			poolID = createResponse.GetV3CreatePoolResponse().Data
+			eventPayload = GenericEventPayload{ID: poolID}
+			Eventually(e).Should(Receive(Event(evts.EventTypeSavedPool, WithPayloadSubset(eventPayload))))
+		})
+
+		AfterEach(func() {
+			uninstallConnector(ctx, app.GetValue(), connectorID)
+		})
+
+		It("should fetch balances for accounts in pool", func() {
+			res, err := app.GetValue().SDK().Payments.V3.GetPoolBalancesLatest(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(res.GetV3PoolBalancesResponse().Data).To(HaveLen(1))
+			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAsset()).To(Equal(balance.GetAsset()))
+			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
 		})
 	})
 })
