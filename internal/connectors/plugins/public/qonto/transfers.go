@@ -10,7 +10,6 @@ import (
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/pkg/errors"
 	"math/big"
-	"strconv"
 	"time"
 )
 
@@ -58,6 +57,18 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 }
 
 func validateTransferPayoutRequests(pi models.PSPPaymentInitiation) error {
+	if pi.Amount == nil {
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("amount is required in transfer/payout request"),
+			models.ErrInvalidRequest,
+		)
+	}
+	if pi.Asset == "" {
+		return errorsutils.NewWrappedError(
+			fmt.Errorf("asset is required in transfer/payout request"),
+			models.ErrInvalidRequest,
+		)
+	}
 	if err := validateAccount(pi.SourceAccount, "source"); err != nil {
 		return err
 	}
@@ -95,12 +106,12 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		return models.PSPPayment{}, fmt.Errorf("invalid time format for transfer: %w", err)
 	}
 
-	amount, err := strconv.ParseInt(transfer.AmountCents.String(), 10, 64)
+	amount, err := transfer.AmountCents.Int64()
 	if err != nil {
 		return models.PSPPayment{}, fmt.Errorf("invalid amount cent for transfer: %w", err)
 	}
 
-	if transfer.Status != "processing" && transfer.Status != "pending" {
+	if transfer.Status != "processing" && transfer.Status != "pending" && transfer.Status != "completed" {
 		return models.PSPPayment{}, errors.Errorf("Unexpected status on newly created transfer: %s", transfer.Status)
 	}
 

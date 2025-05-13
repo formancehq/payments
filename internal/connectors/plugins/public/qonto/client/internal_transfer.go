@@ -63,8 +63,8 @@ func (c *client) CreateInternalTransfer(
 
 	if err != nil {
 		return nil, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to create transfer: %v", errorResponse.Error()),
 			err,
+			fmt.Errorf("failed to create transfer: %w", errorResponse.Error()),
 		)
 	}
 	return &successResponse.InternalTransfer, nil

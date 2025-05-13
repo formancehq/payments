@@ -93,6 +93,38 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 		})
 
 		Describe("Invalid requests cases", func() {
+			It("Missing amount", func(ctx SpecContext) {
+				// given
+				paymentInitiation.Amount = nil
+				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).Times(0)
+
+				// when
+				resp, err := plg.createTransfer(ctx, paymentInitiation)
+
+				// Then
+				assertTransferErrorResponse(
+					resp,
+					err,
+					fmt.Sprintf("amount is required in transfer/payout request"),
+				)
+			})
+
+			It("Missing asset", func(ctx SpecContext) {
+				// given
+				paymentInitiation.Asset = ""
+				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).Times(0)
+
+				// when
+				resp, err := plg.createTransfer(ctx, paymentInitiation)
+
+				// Then
+				assertTransferErrorResponse(
+					resp,
+					err,
+					fmt.Sprintf("asset is required in transfer/payout request"),
+				)
+			})
+
 			DescribeTable("Missing account",
 				func(ctx SpecContext, accountType string) {
 					// Given a good request, but wiht missing account
@@ -218,7 +250,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 
 			It("invalid status returned", func(ctx SpecContext) {
 				// Given a return with an invalid date
-				transferResponse.Status = "completed"
+				transferResponse.Status = "toto"
 
 				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).
 					Times(1).

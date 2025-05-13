@@ -62,7 +62,7 @@ func (c *client) GetOrganization(ctx context.Context) (*Organization, error) {
 	_, err = c.httpClient.Do(ctx, req, &successResponse, &errorResponse)
 	if err != nil {
 		return nil, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to get organization: %v", errorResponse.Error()),
+			fmt.Errorf("failed to get organization: %w", errorResponse.Error()),
 			err,
 		)
 	}
