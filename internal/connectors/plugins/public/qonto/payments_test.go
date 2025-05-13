@@ -96,6 +96,26 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				// Then
 				assertTransactionsErrorResponse(resp, err, errors.New("missing from payload in request"))
 			})
+
+			It("should return an error - invalid state", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{toto: "tata"}`),
+					PageSize:    pageSize,
+					FromPayload: from,
+				}
+
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleTransactions,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("failed to unmarshall state"))
+			})
 		})
 
 		It("should fetch transactions - no state no results from client", func(ctx SpecContext) {
@@ -637,7 +657,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 func assertTransactionsErrorResponse(resp models.FetchNextPaymentsResponse, err error, expectedError error) {
 	Expect(err).ToNot(BeNil())
-	Expect(err).To(MatchError(expectedError))
+	Expect(err).To(MatchError(ContainSubstring(expectedError.Error())))
 	Expect(resp).To(Equal(models.FetchNextPaymentsResponse{}))
 }
 
