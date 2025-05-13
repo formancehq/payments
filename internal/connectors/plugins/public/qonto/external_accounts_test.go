@@ -36,179 +36,225 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			sampleBeneficiaries = generateTestSampleBeneficiaries()
 		})
 
-		It("should return an error - get beneficiaries error", func(ctx SpecContext) {
-			// Given a valid request but the client fails
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
-			}
+		Describe("Error cases", func() {
+			It("get beneficiaries error", func(ctx SpecContext) {
+				// Given a valid request but the client fails
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
 
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				nil,
-				errors.New("test error"),
-			)
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					nil,
+					errors.New("test error"),
+				)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
-			// Then
-			assertErrorResponse(resp, err, errors.New("test error"))
+				// Then
+				assertErrorResponse(resp, err, errors.New("test error"))
+			})
+
+			It("missing pageSize in request", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextExternalAccountsRequest{
+					State: []byte(`{}`),
+				}
+
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleBeneficiaries,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
+			})
+
+			It("invalid state", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(`{toto: "tata"}`),
+					PageSize: pageSize,
+				}
+
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleBeneficiaries,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertErrorResponse(resp, err, errors.New("failed to unmarshall state"))
+			})
+
+			It("invalid time format in beneficiary's updatedAt", func(ctx SpecContext) {
+				// given a beneficiary with an invalid bank account
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+					PageSize: pageSize,
+				}
+				beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
+				beneficiariesReturnedByClient[0].UpdatedAt = "202-01-01T00:00:00.001Z"
+				m.EXPECT().GetBeneficiaries(gomock.Any(), time.Time{}, pageSize).Times(1).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertErrorResponse(resp, err, errors.New("invalid time format for updatedAt beneficiary"))
+			})
+
+			It("invalid time format in beneficiary's createdAt", func(ctx SpecContext) {
+				// given a beneficiary with an invalid bank account
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+					PageSize: pageSize,
+				}
+				beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
+				beneficiariesReturnedByClient[0].CreatedAt = "202-01-01T00:00:00.001Z"
+				m.EXPECT().GetBeneficiaries(gomock.Any(), time.Time{}, pageSize).Times(1).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertErrorResponse(resp, err, errors.New("invalid time format for createdAt beneficiary"))
+			})
 		})
 
-		It("should return an error - missing pageSize in request", func(ctx SpecContext) {
-			// Given a request with missing pageSize
-			req := models.FetchNextExternalAccountsRequest{
-				State: []byte(`{}`),
-			}
+		Describe("State", func() {
+			It("should fetch next accounts - no state no results from client", func(ctx SpecContext) {
+				// Given a valid request but the client doesn't have results
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
 
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-				sampleBeneficiaries,
-				nil,
-			)
+				beneficiariesReturnedByClient := make([]client.Beneficiary, 0)
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
-			// Then
-			assertErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
+			})
+
+			It("should fetch next accounts - nil state, no results from client", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextExternalAccountsRequest{
+					State:    nil,
+					PageSize: pageSize,
+				}
+
+				beneficiariesReturnedByClient := make([]client.Beneficiary, 0)
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
+			})
+
+			It("should fetch next accounts - no state, with results", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
+
+				beneficiariesReturnedByClient := sampleBeneficiaries
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
+			})
 		})
 
-		It("should return an error - invalid state", func(ctx SpecContext) {
-			// Given a request with missing pageSize
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(`{toto: "tata"}`),
-				PageSize: pageSize,
-			}
+		Describe("Pagination", func() {
+			It("should fetch next accounts - state set, filters out already processed response", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
+					PageSize: pageSize,
+				}
+				beneficiariesReturnedByClient := sampleBeneficiaries
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
 
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-				sampleBeneficiaries,
-				nil,
-			)
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient[10:20], false)
+			})
 
-			// Then
-			assertErrorResponse(resp, err, errors.New("failed to unmarshall state"))
-		})
+			It("should fetch next accounts - no state and pageSize < total", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte("{}"),
+					PageSize: 5,
+				}
 
-		It("should fetch next accounts - no state no results from client", func(ctx SpecContext) {
-			// Given a valid request but the client doesn't have results
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
-			}
+				beneficiariesReturnedByClient := sampleBeneficiaries[0:5]
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
 
-			beneficiariesReturnedByClient := make([]client.Beneficiary, 0)
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
+			})
 
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
-		})
+			It("should fetch next accounts - set state with lastUpdateAt and pageSize < total", func(ctx SpecContext) {
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
+					PageSize: 5,
+				}
+				beneficiariesReturnedByClient := sampleBeneficiaries[10:15]
+				updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[9].UpdatedAt, time.UTC)
 
-		It("should fetch next accounts - nil state, no results from client", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextExternalAccountsRequest{
-				State:    nil,
-				PageSize: pageSize,
-			}
+				m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, 5).Times(1).Return(
+					beneficiariesReturnedByClient,
+					nil,
+				)
 
-			beneficiariesReturnedByClient := make([]client.Beneficiary, 0)
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
-		})
-
-		It("should fetch next accounts - no state, with results", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
-			}
-
-			beneficiariesReturnedByClient := sampleBeneficiaries
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
-
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, false)
-		})
-
-		It("should fetch next accounts - state set, filters out already processed response", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
-				PageSize: pageSize,
-			}
-			beneficiariesReturnedByClient := sampleBeneficiaries
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
-
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient[10:20], false)
-		})
-
-		It("should fetch next accounts - no state and pageSize < total", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte("{}"),
-				PageSize: 5,
-			}
-
-			beneficiariesReturnedByClient := sampleBeneficiaries[0:5]
-			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(1).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
-
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
-		})
-
-		It("should fetch next accounts - set state with lastUpdateAt and pageSize < total", func(ctx SpecContext) {
-			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sampleBeneficiaries[9].UpdatedAt)),
-				PageSize: 5,
-			}
-			beneficiariesReturnedByClient := sampleBeneficiaries[10:15]
-			updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[9].UpdatedAt, time.UTC)
-
-			m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, 5).Times(1).Return(
-				beneficiariesReturnedByClient,
-				nil,
-			)
-
-			// When
-			resp, err := plg.FetchNextExternalAccounts(ctx, req)
-
-			// Then
-			assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
+				// Then
+				assertSuccessResponse(resp, err, beneficiariesReturnedByClient, true)
+			})
 		})
 
 		It("should fetch next accounts - ignores beneficiaries with invalid bank account", func(ctx SpecContext) {
