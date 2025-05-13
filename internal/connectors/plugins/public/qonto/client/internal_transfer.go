@@ -19,14 +19,14 @@ type TransferRequest struct {
 }
 
 type TransferResponse struct {
-	Id          string `json:"id"`
-	Slug        string `json:"slug"`
-	Status      string `json:"status"`
-	Amount      string `json:"amount"`
-	AmountCents string `json:"amount_cents"`
-	Currency    string `json:"currency"`
-	Reference   string `json:"reference"`
-	CreatedDate string `json:"created_at"`
+	Id          string      `json:"id"`
+	Slug        string      `json:"slug"`
+	Status      string      `json:"status"`
+	Amount      json.Number `json:"amount"`
+	AmountCents json.Number `json:"amount_cents"`
+	Currency    string      `json:"currency"`
+	Reference   string      `json:"reference"`
+	CreatedDate string      `json:"created_at"`
 }
 
 func (c *client) CreateInternalTransfer(

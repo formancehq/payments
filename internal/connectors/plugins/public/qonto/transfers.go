@@ -95,12 +95,12 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		return models.PSPPayment{}, fmt.Errorf("invalid time format for transfer: %w", err)
 	}
 
-	amount, err := strconv.ParseInt(transfer.AmountCents, 10, 64)
+	amount, err := strconv.ParseInt(transfer.AmountCents.String(), 10, 64)
 	if err != nil {
 		return models.PSPPayment{}, fmt.Errorf("invalid amount cent for transfer: %w", err)
 	}
 
-	if transfer.Status != client.TransactionStatusPending {
+	if transfer.Status != "processing" && transfer.Status != "pending" {
 		return models.PSPPayment{}, errors.Errorf("Unexpected status on newly created transfer: %s", transfer.Status)
 	}
 

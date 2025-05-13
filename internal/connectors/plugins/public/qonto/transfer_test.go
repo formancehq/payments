@@ -51,7 +51,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			transferResponse = client.TransferResponse{
 				Id:          "123456789",
 				Slug:        "slug",
-				Status:      "pending",
+				Status:      "processing",
 				Amount:      "1",
 				AmountCents: "100",
 				Currency:    "EUR",
@@ -212,7 +212,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					"invalid amount cent for transfer",
+					"failed to marshal transfer: json",
 				)
 			})
 
