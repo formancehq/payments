@@ -1182,12 +1182,38 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: Get pool balances
+      summary: Get historical pool balances from a particular point in time
       operationId: v3GetPoolBalances
       x-speakeasy-name-override: GetPoolBalances
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3At'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PoolBalancesResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/pools/{poolID}/balances/latest:
+    get:
+      tags:
+        - payments.v3
+      summary: Get latest pool balances
+      operationId: v3GetPoolBalancesLatest
+      x-speakeasy-name-override: GetPoolBalancesLatest
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
       responses:
         "200":
           description: OK

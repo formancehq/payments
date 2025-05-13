@@ -314,7 +314,7 @@ paths:
             - payments:write
   /pools/{poolId}/balances:
     get:
-      summary: Get pool balances
+      summary: Get historical pool balances at a particular point in time
       operationId: getPoolBalances
       tags:
         - payments.v1
@@ -328,6 +328,22 @@ paths:
           schema:
             type: string
             format: date-time
+      responses:
+        "200":
+          $ref: '#/components/responses/PoolBalances'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /pools/{poolId}/balances/latest:
+    get:
+      summary: Get latest pool balances
+      operationId: getPoolBalancesLatest
+      tags:
+        - payments.v1
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
       responses:
         "200":
           $ref: '#/components/responses/PoolBalances'
@@ -1942,12 +1958,37 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: Get pool balances
+      summary: Get historical pool balances from a particular point in time
       operationId: v3GetPoolBalances
       x-speakeasy-name-override: GetPoolBalances
       parameters:
         - $ref: '#/components/parameters/V3PoolID'
         - $ref: '#/components/parameters/V3At'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3PoolBalancesResponse'
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V3ErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /v3/pools/{poolID}/balances/latest:
+    get:
+      tags:
+        - payments.v3
+      summary: Get latest pool balances
+      operationId: v3GetPoolBalancesLatest
+      x-speakeasy-name-override: GetPoolBalancesLatest
+      parameters:
+        - $ref: '#/components/parameters/V3PoolID'
       responses:
         "200":
           description: OK
