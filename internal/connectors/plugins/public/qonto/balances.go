@@ -3,7 +3,9 @@ package qonto
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
 
@@ -16,12 +18,20 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		err := errorsutils.NewWrappedError(
+			fmt.Errorf("failed to unmarshall FromPayload"),
+			err,
+		)
 		return models.FetchNextBalancesResponse{}, err
 	}
 
 	var qontoBankAccount client.OrganizationBankAccount
 
 	if err := json.Unmarshal(from.Raw, &qontoBankAccount); err != nil {
+		err := errorsutils.NewWrappedError(
+			fmt.Errorf("failed to unmarshall FromPayload.raw"),
+			err,
+		)
 		return models.FetchNextBalancesResponse{}, err
 	}
 

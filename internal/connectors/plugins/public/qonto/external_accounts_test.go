@@ -73,6 +73,25 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			assertErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
 		})
 
+		It("should return an error - invalid state", func(ctx SpecContext) {
+			// Given a request with missing pageSize
+			req := models.FetchNextExternalAccountsRequest{
+				State:    []byte(`{toto: "tata"}`),
+				PageSize: pageSize,
+			}
+
+			m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+				sampleBeneficiaries,
+				nil,
+			)
+
+			// When
+			resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+			// Then
+			assertErrorResponse(resp, err, errors.New("failed to unmarshall state"))
+		})
+
 		It("should fetch next accounts - no state no results from client", func(ctx SpecContext) {
 			// Given a valid request but the client doesn't have results
 			req := models.FetchNextExternalAccountsRequest{
@@ -216,7 +235,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 
 func assertErrorResponse(resp models.FetchNextExternalAccountsResponse, err error, expectedError error) {
 	Expect(err).ToNot(BeNil())
-	Expect(err).To(MatchError(expectedError))
+	Expect(err).To(MatchError(ContainSubstring(expectedError.Error())))
 	Expect(resp).To(Equal(models.FetchNextExternalAccountsResponse{}))
 }
 

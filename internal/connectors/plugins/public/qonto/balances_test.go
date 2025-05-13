@@ -64,6 +64,21 @@ var _ = Describe("Qonto *Plugin Balances", func() {
 		It("should return an error - invalid fromPayload in request", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextBalancesRequest{
+				FromPayload: []byte(`{invalid: "PSPAccount"}`),
+			}
+
+			// When
+			resp, err := plg.FetchNextBalances(ctx, req)
+
+			// Then
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall FromPayload")))
+			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+		})
+
+		It("should return an error - missing fromPayload.raw in request", func(ctx SpecContext) {
+			// Given
+			req := models.FetchNextBalancesRequest{
 				FromPayload: []byte(`{"invalid": "PSPAccount"}`),
 			}
 
@@ -72,9 +87,10 @@ var _ = Describe("Qonto *Plugin Balances", func() {
 
 			// Then
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unexpected end of JSON input"))
+			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall FromPayload")))
 			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
 		})
+
 	})
 })
 

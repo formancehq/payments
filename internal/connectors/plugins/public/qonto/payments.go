@@ -3,9 +3,11 @@ package qonto
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
 
@@ -110,6 +112,10 @@ func initializeOldState(req models.FetchNextPaymentsRequest) (paymentsState, err
 	var oldState paymentsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("failed to unmarshall state"),
+				err,
+			)
 			return paymentsState{}, err
 		}
 	}

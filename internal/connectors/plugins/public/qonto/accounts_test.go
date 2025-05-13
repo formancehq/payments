@@ -75,6 +75,27 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 
+		It("should return an error - failing to unmarshall state", func(ctx SpecContext) {
+			// Given
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{toto: "tata"}`),
+				PageSize: pageSize,
+			}
+
+			m.EXPECT().GetOrganization(gomock.Any()).AnyTimes().Return(
+				&client.Organization{},
+				nil,
+			)
+
+			// When
+			resp, err := plg.FetchNextAccounts(ctx, req)
+
+			// Then
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall state")))
+			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+		})
+
 		It("should fetch next accounts - no state no results", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
