@@ -38,7 +38,10 @@ func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, 
 	}
 
 	q := req.URL.Query()
-	q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
+	if !updatedAtFrom.IsZero() {
+		// Qonto doesn't accept udpated_at_from too much in the past
+		q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
+	}
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("sort_by", "updated_at:asc")
 	req.URL.RawQuery = q.Encode()
