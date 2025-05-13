@@ -26,7 +26,9 @@ var _ = Describe("Qonto *Plugin", func() {
 	)
 
 	BeforeEach(func() {
-		plg = &qonto.Plugin{}
+		plg = &qonto.Plugin{
+			Plugin: plugins.NewBasePlugin(),
+		}
 		config = json.RawMessage(`{"clientID":"1234","apiKey":"abc123","endpoint":"example.com"}`)
 	})
 
@@ -75,7 +77,7 @@ var _ = Describe("Qonto *Plugin", func() {
 			_, err := plg.FetchNextExternalAccounts(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
-		It("fails when creating transfer as it's unimplemented", func(ctx SpecContext) {
+		It("fails when creating transfer as it's not installed yet", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
