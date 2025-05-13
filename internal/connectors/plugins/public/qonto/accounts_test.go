@@ -258,9 +258,9 @@ func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, res
 	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sampleQontoAccount.UpdatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal("EUR/2"))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
-		"iban":                sampleQontoAccount.Iban,
-		"bic":                 sampleQontoAccount.Bic,
-		"account_number":      sampleQontoAccount.AccountNumber,
+		"bank_account_iban":   sampleQontoAccount.Iban,
+		"bank_account_bic":    sampleQontoAccount.Bic,
+		"bank_account_number": sampleQontoAccount.AccountNumber,
 		"status":              sampleQontoAccount.Status,
 		"is_external_account": strconv.FormatBool(sampleQontoAccount.IsExternalAccount),
 		"main":                strconv.FormatBool(sampleQontoAccount.Main),

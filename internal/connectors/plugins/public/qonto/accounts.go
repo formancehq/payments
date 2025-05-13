@@ -103,9 +103,9 @@ func fillAccounts(
 		}
 
 		meta := map[string]string{
-			"iban":                bankAccount.Iban, // TODO change this to match external accounts
-			"bic":                 bankAccount.Bic,
-			"account_number":      bankAccount.AccountNumber,
+			"bank_account_iban":   bankAccount.Iban,
+			"bank_account_bic":    bankAccount.Bic,
+			"bank_account_number": bankAccount.AccountNumber,
 			"status":              bankAccount.Status,
 			"is_external_account": strconv.FormatBool(bankAccount.IsExternalAccount),
 			"main":                strconv.FormatBool(bankAccount.Main),
