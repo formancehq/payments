@@ -84,10 +84,18 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 	for _, beneficiary := range pagedBeneficiaries {
 		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.UpdatedAt, time.UTC)
 		if err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("invalid time format for updatedAt beneficiary"),
+				err,
+			)
 			return accounts, err
 		}
 		createdAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.CreatedAt, time.UTC)
 		if err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("invalid time format for createdAt beneficiary"),
+				err,
+			)
 			return accounts, err
 		}
 		raw, err := json.Marshal(beneficiary)
