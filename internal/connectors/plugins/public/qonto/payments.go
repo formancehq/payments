@@ -137,6 +137,10 @@ func (p *Plugin) transactionsToPSPPayments(
 	for _, transaction := range transactions {
 		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, transaction.UpdatedAt, time.UTC)
 		if err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("invalid time format for updatedAt transaction"),
+				err,
+			)
 			return payments, err
 		}
 		if updatedAt.Before(oldUpdatedAt) || updatedAt.Equal(oldUpdatedAt) {
@@ -145,6 +149,10 @@ func (p *Plugin) transactionsToPSPPayments(
 
 		emittedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, transaction.EmittedAt, time.UTC)
 		if err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("invalid time format for emittedAt transaction"),
+				err,
+			)
 			return payments, err
 		}
 		raw, err := json.Marshal(transaction)
@@ -247,6 +255,10 @@ func validateAndGetAccount(req models.FetchNextPaymentsRequest) (models.PSPAccou
 		return models.PSPAccount{}, models.ErrMissingFromPayloadInRequest
 	}
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		err := errorsutils.NewWrappedError(
+			fmt.Errorf("failed to unmarshall FromPayload"),
+			err,
+		)
 		return models.PSPAccount{}, err
 	}
 	return from, nil

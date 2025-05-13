@@ -39,7 +39,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 		})
 
 		Describe("Error cases", func() {
-			It("should return an error - get transactions error", func(ctx SpecContext) {
+			It("get transactions error", func(ctx SpecContext) {
 				// Given a valid request but the client fails
 				req := models.FetchNextPaymentsRequest{
 					State:       []byte(`{}`),
@@ -59,7 +59,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				assertTransactionsErrorResponse(resp, err, errors.New("test error"))
 			})
 
-			It("should return an error - missing pageSize in request", func(ctx SpecContext) {
+			It("missing pageSize in request", func(ctx SpecContext) {
 				// Given a request with missing pageSize
 				req := models.FetchNextPaymentsRequest{
 					State:       []byte(`{}`),
@@ -78,7 +78,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				assertTransactionsErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
 			})
 
-			It("should return an error - missing FromPayload in request", func(ctx SpecContext) {
+			It("missing FromPayload in request", func(ctx SpecContext) {
 				// Given a request with missing pageSize
 				req := models.FetchNextPaymentsRequest{
 					State:    []byte(`{}`),
@@ -97,7 +97,27 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				assertTransactionsErrorResponse(resp, err, errors.New("missing from payload in request"))
 			})
 
-			It("should return an error - invalid state", func(ctx SpecContext) {
+			It("invalid FromPayload in request", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					PageSize:    pageSize,
+					FromPayload: []byte(`{toto: "tata"}`),
+				}
+
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
+					sampleTransactions,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("failed to unmarshall FromPayload"))
+			})
+
+			It("invalid state", func(ctx SpecContext) {
 				// Given a request with missing pageSize
 				req := models.FetchNextPaymentsRequest{
 					State:       []byte(`{toto: "tata"}`),
@@ -115,6 +135,54 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				// Then
 				assertTransactionsErrorResponse(resp, err, errors.New("failed to unmarshall state"))
+			})
+
+			It("invalid transaction emittedAt", func(ctx SpecContext) {
+				// Given a valid request that returns a transaction with invalid createdAt
+				sampleTransaction = generateSampleTransaction(0)
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					PageSize:    pageSize,
+					FromPayload: from,
+				}
+
+				sampleTransaction.SubjectType = "Card"
+				sampleTransaction.EmittedAt = "invalid"
+				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					transactionsReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("invalid time format for emittedAt transaction"))
+			})
+
+			It("invalid transaction updatedAt", func(ctx SpecContext) {
+				// Given a valid request that returns a transaction with invalid createdAt
+				sampleTransaction = generateSampleTransaction(0)
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					PageSize:    pageSize,
+					FromPayload: from,
+				}
+
+				sampleTransaction.SubjectType = "Card"
+				sampleTransaction.UpdatedAt = "invalid"
+				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					transactionsReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsErrorResponse(resp, err, errors.New("invalid time format for updatedAt transaction"))
 			})
 		})
 
@@ -497,6 +565,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				transactionsToGenerate = 20
 				sampleTransactions = generateTestSampleTransactions(transactionsToGenerate)
 			})
+
 			It("should not return more than pageSize", func(ctx SpecContext) {
 
 				// Given a valid request
@@ -596,12 +665,12 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 						sampleTransactions[9].UpdatedAt,
 						sampleTransactions[9].UpdatedAt,
 					)),
-					PageSize:    5,
+					PageSize:    pageSize,
 					FromPayload: from,
 				}
 
 				transactionsReturnedByClient := sampleTransactions[15:20]
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Times(1).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Times(1).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
