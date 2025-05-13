@@ -88,18 +88,20 @@ func fillAccounts(
 	for _, bankAccount := range bankAccounts {
 		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, bankAccount.UpdatedAt, time.UTC)
 		if err != nil {
+			err := errorsutils.NewWrappedError(
+				fmt.Errorf("invalid time format for bank account"),
+				err,
+			)
 			return nil, newestUpdatedAt, err
 		}
 
 		// Ignore accounts that have already been processed
-		switch updatedAt.Compare(oldState.LastUpdatedAt) {
-		case -1, 0:
-			// Account already ingested, skip
+		if updatedAt.Before(oldState.LastUpdatedAt) || updatedAt.Equal(oldState.LastUpdatedAt) {
 			continue
-		default:
 		}
+
 		// and update future runs with the newest processed account
-		if updatedAt.Compare(newestUpdatedAt) == 1 {
+		if updatedAt.After(newestUpdatedAt) {
 			newestUpdatedAt = updatedAt
 		}
 

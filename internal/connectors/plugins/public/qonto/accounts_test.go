@@ -34,66 +34,86 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			sampleAccounts, sortedSampleAccounts = generateTestSampleAccounts()
 		})
 
-		It("should return an error - get organization error", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
-			}
+		Describe("Error cases", func() {
+			It("get organization error", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
 
-			m.EXPECT().GetOrganization(gomock.Any()).Return(
-				nil,
-				errors.New("test error"),
-			)
+				m.EXPECT().GetOrganization(gomock.Any()).Return(
+					nil,
+					errors.New("test error"),
+				)
 
-			// When
-			resp, err := plg.FetchNextAccounts(ctx, req)
+				// When
+				resp, err := plg.FetchNextAccounts(ctx, req)
 
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
-		})
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("test error"))
+				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			})
 
-		It("should return an error - missing pageSize in request", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextAccountsRequest{
-				State: []byte(`{}`),
-			}
+			It("missing pageSize in request", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextAccountsRequest{
+					State: []byte(`{}`),
+				}
 
-			m.EXPECT().GetOrganization(gomock.Any()).AnyTimes().Return(
-				&client.Organization{},
-				nil,
-			)
+				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
 
-			// When
-			resp, err := plg.FetchNextAccounts(ctx, req)
+				// When
+				resp, err := plg.FetchNextAccounts(ctx, req)
 
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid request, missing page size in request"))
-			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
-		})
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("invalid request, missing page size in request"))
+				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			})
 
-		It("should return an error - failing to unmarshall state", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextAccountsRequest{
-				State:    []byte(`{toto: "tata"}`),
-				PageSize: pageSize,
-			}
+			It("failing to unmarshall state", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextAccountsRequest{
+					State:    []byte(`{toto: "tata"}`),
+					PageSize: pageSize,
+				}
 
-			m.EXPECT().GetOrganization(gomock.Any()).AnyTimes().Return(
-				&client.Organization{},
-				nil,
-			)
+				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
 
-			// When
-			resp, err := plg.FetchNextAccounts(ctx, req)
+				// When
+				resp, err := plg.FetchNextAccounts(ctx, req)
 
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall state")))
-			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("failed to unmarshall state")))
+				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			})
+
+			It("invalid time format from Qonto's accounts", func(ctx SpecContext) {
+				// Given an account with invalid timestamp
+				req := models.FetchNextAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: pageSize,
+				}
+				sampleAccounts[0].UpdatedAt = "202-01-01T00:00:00.001Z"
+
+				m.EXPECT().GetOrganization(gomock.Any()).Return(
+					&client.Organization{
+						BankAccounts: sampleAccounts,
+					},
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextAccounts(ctx, req)
+
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("invalid time format for bank account")))
+				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			})
 		})
 
 		It("should fetch next accounts - no state no results", func(ctx SpecContext) {
@@ -121,7 +141,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			Expect(state.LastUpdatedAt).To(Equal(time.Time{}))
 		})
 
-		It("should fetch next accounts - nil state", func(ctx SpecContext) {
+		It("should fetch next accounts - nil state no results", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
 				State:    nil,
