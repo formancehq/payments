@@ -156,7 +156,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					fmt.Sprintf("failed to get currency and precision from asset: invalid asset: EUR"),
+					"failed to get currency and precision from asset: invalid asset: EUR",
 				)
 			})
 		})
@@ -193,7 +193,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					fmt.Sprintf("invalid time format for transfer"),
+					"invalid time format for transfer",
 				)
 			})
 
@@ -212,7 +212,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					fmt.Sprintf("invalid amount cent for transfer"),
+					"invalid amount cent for transfer",
 				)
 			})
 

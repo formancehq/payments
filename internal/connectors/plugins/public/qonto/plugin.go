@@ -20,6 +20,7 @@ func init() {
 }
 
 type Plugin struct {
+	models.Plugin
 	name   string
 	logger logging.Logger
 
@@ -35,6 +36,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	clientInstance := client.New(ProviderName, config.ClientID, config.APIKey, config.Endpoint, config.StagingToken)
 
 	return &Plugin{
+		Plugin: plugins.NewBasePlugin(),
 		name:   name,
 		logger: logger,
 		client: clientInstance,
@@ -83,14 +85,6 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
-func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
-	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
-	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
-}
-
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
 		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
@@ -104,28 +98,6 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	return models.CreateTransferResponse{
 		Payment: payment,
 	}, nil
-}
-
-func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
-	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
-}
-
-// Note: Fill only if we cannot have the related payment in the CreateTransfer method
-func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
-	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
-	return models.CreatePayoutResponse{}, plugins.ErrNotImplemented
-}
-
-func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
-	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
-}
-
-// Note: Fill only if we cannot have the related payment in the CreatePayout method
-func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
-	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
 }
 
 // Note: if the connector has webhooks, use this method to create the related
