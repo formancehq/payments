@@ -129,5 +129,8 @@ func (c *client) GetTransactions(
 			err,
 		)
 	}
+	if len(errorResponse.Errors) != 0 {
+		return nil, fmt.Errorf("failed to get transactions: %w", errorResponse.Error())
+	}
 	return successResponse.Transactions, nil
 }

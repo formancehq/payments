@@ -13,7 +13,7 @@ type BeneficiaryBankAccount struct {
 	Iban                string `json:"iban"`
 	Bic                 string `json:"bic"`
 	Currency            string `json:"currency"`
-	AccountNUmber       string `json:"account_number"`
+	AccountNumber       string `json:"account_number"`
 	RoutingNumber       string `json:"routing_number"`
 	IntermediaryBankBic string `json:"intermediary_bank_bic"`
 	SwiftSortCode       string `json:"swift_sort_code"`
@@ -60,6 +60,9 @@ func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, 
 			fmt.Errorf("failed to get beneficiaries: %w", errorResponse.Error()),
 			err,
 		)
+	}
+	if len(errorResponse.Errors) != 0 {
+		return nil, fmt.Errorf("failed to get beneficiaries: %w", errorResponse.Error())
 	}
 	return successResponse.Beneficiaries, nil
 }

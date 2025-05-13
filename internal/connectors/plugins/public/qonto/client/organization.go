@@ -66,5 +66,8 @@ func (c *client) GetOrganization(ctx context.Context) (*Organization, error) {
 			err,
 		)
 	}
+	if len(errorResponse.Errors) != 0 {
+		return nil, fmt.Errorf("failed to get organization: %w", errorResponse.Error())
+	}
 	return &successResponse.Organization, nil
 }
