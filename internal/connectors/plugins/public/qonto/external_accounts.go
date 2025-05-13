@@ -94,7 +94,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 		}
 
 		accountReference, err := generateAccountReference(
-			beneficiary.BankAccount.AccountNUmber,
+			beneficiary.BankAccount.AccountNumber,
 			beneficiary.BankAccount.Iban,
 			beneficiary.BankAccount.Bic,
 			beneficiary.BankAccount.SwiftSortCode,
@@ -112,7 +112,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesForExternalAccounts, beneficiary.BankAccount.Currency)),
 			Metadata: map[string]string{
 				"beneficiary_id":                     beneficiary.Id,
-				"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
+				"bank_account_number":                beneficiary.BankAccount.AccountNumber,
 				"bank_account_iban":                  beneficiary.BankAccount.Iban,
 				"bank_account_bic":                   beneficiary.BankAccount.Bic,
 				"bank_account_swift_sort_code":       beneficiary.BankAccount.SwiftSortCode,

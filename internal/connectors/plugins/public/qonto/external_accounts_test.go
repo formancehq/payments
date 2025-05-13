@@ -271,7 +271,7 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 			currency = "GBP"
 			beneficiaryBankAccount = client.BeneficiaryBankAccount{
 				Currency:            currency,
-				AccountNUmber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
+				AccountNumber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
 				IntermediaryBankBic: fmt.Sprintf("BNPAFRPP%02d", i),
 				SwiftSortCode:       fmt.Sprintf("SORTCODE%02d", i),
 			}
@@ -279,7 +279,7 @@ func generateTestSampleBeneficiaries() (sampleBeneficiaries []client.Beneficiary
 			currency = "USD"
 			beneficiaryBankAccount = client.BeneficiaryBankAccount{
 				Currency:            currency,
-				AccountNUmber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
+				AccountNumber:       fmt.Sprintf("ACCOUNTNUMBER%02d", i),
 				IntermediaryBankBic: fmt.Sprintf("BNPAFRPP%02d", i),
 				RoutingNumber:       fmt.Sprintf("ROUTINGNUMBER%02d", i),
 			}
@@ -312,10 +312,10 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 		expectedReference = beneficiary.BankAccount.Iban + "-" + beneficiary.BankAccount.Bic
 	case 1:
 		expectedCurrency = "GBP/2"
-		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.SwiftSortCode
+		expectedReference = beneficiary.BankAccount.AccountNumber + "-" + beneficiary.BankAccount.SwiftSortCode
 	case 2:
 		expectedCurrency = "USD/2"
-		expectedReference = beneficiary.BankAccount.AccountNUmber + "-" + beneficiary.BankAccount.RoutingNumber
+		expectedReference = beneficiary.BankAccount.AccountNumber + "-" + beneficiary.BankAccount.RoutingNumber
 	}
 	Expect(resultingPSPAccount.Reference).To(Equal(expectedReference))
 	Expect(*resultingPSPAccount.Name).To(Equal(beneficiary.Name))
@@ -323,7 +323,7 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal(expectedCurrency))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"beneficiary_id":                     beneficiary.Id,
-		"bank_account_number":                beneficiary.BankAccount.AccountNUmber,
+		"bank_account_number":                beneficiary.BankAccount.AccountNumber,
 		"bank_account_iban":                  beneficiary.BankAccount.Iban,
 		"bank_account_bic":                   beneficiary.BankAccount.Bic,
 		"bank_account_swift_sort_code":       beneficiary.BankAccount.SwiftSortCode,
