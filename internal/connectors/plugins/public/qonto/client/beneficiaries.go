@@ -57,7 +57,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, 
 
 	if err != nil {
 		return nil, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to get beneficiaries: %v", errorResponse.Error()),
+			fmt.Errorf("failed to get beneficiaries: %w", errorResponse.Error()),
 			err,
 		)
 	}
