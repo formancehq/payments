@@ -22,6 +22,7 @@ type Backend interface {
 	// Balances
 	BalancesList(ctx context.Context, query storage.ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
 	PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time.Time) ([]models.AggregatedBalance, error)
+	PoolsBalances(ctx context.Context, poolID uuid.UUID) ([]models.AggregatedBalance, error)
 
 	// Bank Accounts
 	BankAccountsCreate(ctx context.Context, bankAccount models.BankAccount) error

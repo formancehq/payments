@@ -15,7 +15,7 @@ import (
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestPoolsBalancesAt(t *testing.T) {
+func TestPoolsBalancesLatest(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -41,13 +41,12 @@ func TestPoolsBalancesAt(t *testing.T) {
 			Balance: big.NewInt(300),
 		},
 	}
-	at := time.Now().Add(-time.Hour)
 
 	tests := []struct {
-		name                  string
-		poolsGetStorageErr    error
-		accountsBalancesAtErr error
-		expectedError         error
+		name                string
+		poolsGetStorageErr  error
+		accountsBalancesErr error
+		expectedError       error
 	}{
 		{
 			name:               "success",
@@ -65,14 +64,14 @@ func TestPoolsBalancesAt(t *testing.T) {
 			expectedError:      newStorageError(fmt.Errorf("error"), "cannot get pool"),
 		},
 		{
-			name:                  "storage error not found",
-			accountsBalancesAtErr: storage.ErrNotFound,
-			expectedError:         newStorageError(storage.ErrNotFound, "cannot get balances"),
+			name:                "storage error not found",
+			accountsBalancesErr: storage.ErrNotFound,
+			expectedError:       newStorageError(storage.ErrNotFound, "cannot get latest balances"),
 		},
 		{
-			name:                  "other error",
-			accountsBalancesAtErr: fmt.Errorf("error"),
-			expectedError:         newStorageError(fmt.Errorf("error"), "cannot get balances"),
+			name:                "other error",
+			accountsBalancesErr: fmt.Errorf("error"),
+			expectedError:       newStorageError(fmt.Errorf("error"), "cannot get latest balances"),
 		},
 	}
 
@@ -81,14 +80,14 @@ func TestPoolsBalancesAt(t *testing.T) {
 			store.EXPECT().PoolsGet(gomock.Any(), id).Return(&models.Pool{
 				ID:           id,
 				Name:         "test",
-				CreatedAt:    at,
+				CreatedAt:    time.Now().Add(-time.Hour),
 				PoolAccounts: poolsAccount,
 			}, test.poolsGetStorageErr)
 			if test.poolsGetStorageErr == nil {
-				store.EXPECT().BalancesGetAt(gomock.Any(), models.AccountID{}, at).Return(balancesResponse, test.accountsBalancesAtErr)
+				store.EXPECT().BalancesGetLatest(gomock.Any(), models.AccountID{}).Return(balancesResponse, test.accountsBalancesErr)
 			}
 
-			balances, err := s.PoolsBalancesAt(context.Background(), id, at)
+			balances, err := s.PoolsBalances(context.Background(), id)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 				require.NotNil(t, balances)
