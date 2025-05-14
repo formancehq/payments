@@ -19,24 +19,23 @@ import (
 
 var _ = Describe("CurrencyCloud Plugin Payments", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next payments", func() {
 		var (
-			m                  *client.MockClient
 			sampleTransactions []client.Transaction
 			now                time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleTransactions = make([]client.Transaction, 0)
