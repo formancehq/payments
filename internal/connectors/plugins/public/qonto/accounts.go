@@ -17,7 +17,8 @@ import (
 )
 
 type accountsState struct {
-	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+	LastUpdatedAt   time.Time `json:"lastUpdatedAt"`
+	LastProcessedId string    `json:"lastProcessedId"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -42,7 +43,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	newState := accountsState{
-		LastUpdatedAt: oldState.LastUpdatedAt,
+		LastUpdatedAt:   oldState.LastUpdatedAt,
+		LastProcessedId: oldState.LastProcessedId,
 	}
 
 	organization, err := p.client.GetOrganization(ctx)
@@ -65,6 +67,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	if len(accounts) > 0 {
 		newState.LastUpdatedAt = accounts[len(accounts)-1].CreatedAt
+		newState.LastProcessedId = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -81,13 +84,10 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 func sortOrgBankAccountsByUpdatedAndIdAtAsc(organization *client.Organization) {
 	sort.Slice(organization.BankAccounts, func(i, j int) bool {
-		updatedAtI, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[i].UpdatedAt, time.UTC)
-		updatedAtJ, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[j].UpdatedAt, time.UTC)
+		sortKeyI := fmt.Sprintf("%s-%s", organization.BankAccounts[i].UpdatedAt, organization.BankAccounts[i].Id)
+		sortKeyJ := fmt.Sprintf("%s-%s", organization.BankAccounts[j].UpdatedAt, organization.BankAccounts[j].Id)
 
-		if updatedAtI == updatedAtJ {
-			return organization.BankAccounts[i].BalanceCents < organization.BankAccounts[j].BalanceCents
-		}
-		return updatedAtI.Before(updatedAtJ)
+		return sortKeyI < sortKeyJ
 	})
 }
 
@@ -108,6 +108,9 @@ func fillAccounts(
 
 		// Ignore accounts that have already been processed
 		if updatedAt.Before(oldState.LastUpdatedAt) {
+			continue
+		}
+		if updatedAt.Equal(oldState.LastUpdatedAt) && bankAccount.Id <= oldState.LastProcessedId {
 			continue
 		}
 
