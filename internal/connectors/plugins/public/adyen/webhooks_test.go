@@ -65,11 +65,12 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			}
 
 			expectedURL := "http://localhost:8080/test/standard"
-			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(nil)
+			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(client.CreateWebhookResponse{HMACKey: "test"}, nil)
 
 			configs, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(configs.Configs).To(HaveLen(1))
+			Expect(configs.Configs[0].Metadata[webhookHMACMetadataKey]).To(Equal("test"))
 		})
 	})
 
@@ -105,6 +106,9 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			req := models.VerifyWebhookRequest{
 				Config: &models.WebhookConfig{
 					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
 				},
 				Webhook: models.PSPWebhook{
 					BasicAuth: &models.BasicAuth{
@@ -132,6 +136,9 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			req := models.VerifyWebhookRequest{
 				Config: &models.WebhookConfig{
 					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
 				},
 				Webhook: models.PSPWebhook{
 					QueryValues: map[string][]string{},
@@ -142,7 +149,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(true)
 			m.EXPECT().TranslateWebhook(string(req.Webhook.Body)).Return(&w, nil)
-			m.EXPECT().VerifyWebhookHMAC(gomock.Any()).Return(false)
+			m.EXPECT().VerifyWebhookHMAC(gomock.Any(), "test").Return(false)
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
@@ -157,6 +164,9 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			req := models.VerifyWebhookRequest{
 				Config: &models.WebhookConfig{
 					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
 				},
 				Webhook: models.PSPWebhook{
 					QueryValues: map[string][]string{},
@@ -167,7 +177,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(true)
 			m.EXPECT().TranslateWebhook(string(req.Webhook.Body)).Return(&w, nil)
-			m.EXPECT().VerifyWebhookHMAC(gomock.Any()).Return(true)
+			m.EXPECT().VerifyWebhookHMAC(gomock.Any(), "test").Return(true)
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())

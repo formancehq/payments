@@ -51,17 +51,21 @@ func (c *client) searchWebhook(ctx context.Context, connectorID string) error {
 	return nil
 }
 
-func (c *client) CreateWebhook(ctx context.Context, url string, connectorID string) error {
+type CreateWebhookResponse struct {
+	HMACKey string
+}
+
+func (c *client) CreateWebhook(ctx context.Context, url string, connectorID string) (CreateWebhookResponse, error) {
 	if c.standardWebhook != nil {
-		return nil
+		return CreateWebhookResponse{}, nil
 	}
 
 	if err := c.searchWebhook(ctx, connectorID); err != nil {
-		return err
+		return CreateWebhookResponse{}, err
 	}
 
 	if c.standardWebhook != nil {
-		return nil
+		return CreateWebhookResponse{}, nil
 	}
 
 	req := management.CreateCompanyWebhookRequest{
@@ -88,7 +92,7 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 			CreateCompanyWebhookRequest(req),
 	)
 	if err != nil {
-		return c.wrapSDKError(err, raw.StatusCode)
+		return CreateWebhookResponse{}, c.wrapSDKError(err, raw.StatusCode)
 	}
 
 	hmac, raw, err := c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKey(
@@ -96,13 +100,14 @@ func (c *client) CreateWebhook(ctx context.Context, url string, connectorID stri
 		c.client.Management().WebhooksCompanyLevelApi.GenerateHmacKeyInput(c.companyID, *webhook.Id),
 	)
 	if err != nil {
-		return c.wrapSDKError(err, raw.StatusCode)
+		return CreateWebhookResponse{}, c.wrapSDKError(err, raw.StatusCode)
 	}
 
 	c.standardWebhook = &webhook
-	c.hmacKey = hmac.HmacKey
 
-	return nil
+	return CreateWebhookResponse{
+		HMACKey: hmac.HmacKey,
+	}, nil
 }
 
 func (c *client) VerifyWebhookBasicAuth(basicAuth *models.BasicAuth) bool {
@@ -118,8 +123,8 @@ func (c *client) VerifyWebhookBasicAuth(basicAuth *models.BasicAuth) bool {
 	return false
 }
 
-func (c *client) VerifyWebhookHMAC(item webhook.NotificationItem) bool {
-	return hmacvalidator.ValidateHmac(item.NotificationRequestItem, c.hmacKey)
+func (c *client) VerifyWebhookHMAC(item webhook.NotificationItem, hmacKey string) bool {
+	return hmacvalidator.ValidateHmac(item.NotificationRequestItem, hmacKey)
 }
 
 func (c *client) DeleteWebhook(ctx context.Context, connectorID string) error {
