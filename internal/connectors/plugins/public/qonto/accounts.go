@@ -50,16 +50,21 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	sortOrgBankAccountsByUpdatedAtAsc(organization)
+	sortOrgBankAccountsByUpdatedAndIdAtAsc(organization)
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	_, hasMore := pagination.ShouldFetchMore(accounts, organization.BankAccounts, req.PageSize)
-	if hasMore {
-		organization.BankAccounts = organization.BankAccounts[:req.PageSize]
-	}
 
-	accounts, newState.LastUpdatedAt, err = fillAccounts(organization.BankAccounts, accounts, oldState)
+	accounts, err = fillAccounts(organization.BankAccounts, accounts, oldState)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
+	}
+
+	_, hasMore := pagination.ShouldFetchMore(accounts, organization.BankAccounts, req.PageSize)
+	if hasMore && len(accounts) > 0 {
+		accounts = accounts[:req.PageSize]
+	}
+
+	if len(accounts) > 0 {
+		newState.LastUpdatedAt = accounts[len(accounts)-1].CreatedAt
 	}
 
 	payload, err := json.Marshal(newState)
@@ -74,10 +79,14 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}, nil
 }
 
-func sortOrgBankAccountsByUpdatedAtAsc(organization *client.Organization) {
+func sortOrgBankAccountsByUpdatedAndIdAtAsc(organization *client.Organization) {
 	sort.Slice(organization.BankAccounts, func(i, j int) bool {
 		updatedAtI, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[i].UpdatedAt, time.UTC)
 		updatedAtJ, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, organization.BankAccounts[j].UpdatedAt, time.UTC)
+
+		if updatedAtI == updatedAtJ {
+			return organization.BankAccounts[i].BalanceCents < organization.BankAccounts[j].BalanceCents
+		}
 		return updatedAtI.Before(updatedAtJ)
 	})
 }
@@ -86,8 +95,7 @@ func fillAccounts(
 	bankAccounts []client.OrganizationBankAccount,
 	accounts []models.PSPAccount,
 	oldState accountsState,
-) ([]models.PSPAccount, time.Time, error) {
-	newestUpdatedAt := time.Time{}
+) ([]models.PSPAccount, error) {
 	for _, bankAccount := range bankAccounts {
 		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, bankAccount.UpdatedAt, time.UTC)
 		if err != nil {
@@ -95,22 +103,17 @@ func fillAccounts(
 				fmt.Errorf("invalid time format for bank account"),
 				err,
 			)
-			return nil, newestUpdatedAt, err
+			return nil, err
 		}
 
 		// Ignore accounts that have already been processed
-		if updatedAt.Before(oldState.LastUpdatedAt) || updatedAt.Equal(oldState.LastUpdatedAt) {
+		if updatedAt.Before(oldState.LastUpdatedAt) {
 			continue
-		}
-
-		// and update future runs with the newest processed account
-		if updatedAt.After(newestUpdatedAt) {
-			newestUpdatedAt = updatedAt
 		}
 
 		raw, err := json.Marshal(bankAccount)
 		if err != nil {
-			return nil, newestUpdatedAt, err
+			return nil, err
 		}
 
 		meta := map[string]string{
@@ -132,5 +135,5 @@ func fillAccounts(
 		})
 	}
 
-	return accounts, newestUpdatedAt, nil
+	return accounts, nil
 }
