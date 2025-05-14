@@ -105,7 +105,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					fmt.Sprintf("amount is required in transfer/payout request"),
+					"amount is required in transfer/payout request",
 				)
 			})
 
@@ -121,7 +121,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				assertTransferErrorResponse(
 					resp,
 					err,
-					fmt.Sprintf("asset is required in transfer/payout request"),
+					"asset is required in transfer/payout request",
 				)
 			})
 
