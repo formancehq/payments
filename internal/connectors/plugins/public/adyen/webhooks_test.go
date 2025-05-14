@@ -123,7 +123,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			_, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid basic auth"))
+			Expect(err).To(MatchError("invalid basic auth: webhook verification error"))
 		})
 
 		It("should not process - invalid hmac", func(ctx SpecContext) {

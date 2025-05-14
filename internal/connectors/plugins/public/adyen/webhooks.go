@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/url"
@@ -54,9 +53,9 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return configs, err
 }
 
-func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if !p.client.VerifyWebhookBasicAuth(req.Webhook.BasicAuth) {
-		return models.VerifyWebhookResponse{}, errors.New("invalid basic auth")
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid basic auth: %w", models.ErrWebhookVerification)
 	}
 
 	webhooks, err := p.client.TranslateWebhook(string(req.Webhook.Body))
@@ -66,7 +65,7 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 	for _, item := range *webhooks.NotificationItems {
 		if !p.client.VerifyWebhookHMAC(item) {
-			return models.VerifyWebhookResponse{}, errors.New("invalid HMAC")
+			return models.VerifyWebhookResponse{}, fmt.Errorf("invalid HMAC: %w", models.ErrWebhookVerification)
 		}
 	}
 

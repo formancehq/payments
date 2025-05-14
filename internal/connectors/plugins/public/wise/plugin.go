@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -186,17 +187,17 @@ func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 	v, ok := req.Webhook.Headers[HeadersDeliveryID]
 	if !ok || len(v) == 0 {
-		return models.VerifyWebhookResponse{}, ErrWebhookHeaderXDeliveryIDMissing
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", ErrWebhookHeaderXDeliveryIDMissing, models.ErrWebhookVerification)
 	}
 
 	signatures, ok := req.Webhook.Headers[HeadersSignature]
 	if !ok || len(signatures) == 0 {
-		return models.VerifyWebhookResponse{}, ErrWebhookHeaderXSignatureMissing
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", ErrWebhookHeaderXSignatureMissing, models.ErrWebhookVerification)
 	}
 
 	err := p.verifySignature(req.Webhook.Body, signatures[0])
 	if err != nil {
-		return models.VerifyWebhookResponse{}, err
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", err, models.ErrWebhookVerification)
 	}
 
 	return models.VerifyWebhookResponse{

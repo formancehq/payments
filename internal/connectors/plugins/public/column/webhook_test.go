@@ -133,7 +133,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing Column-Signature header"))
+			Expect(err).To(MatchError("missing Column-Signature header: webhook verification error"))
 			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
 		})
 
@@ -156,7 +156,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 
 			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError("test error: webhook verification error"))
 			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
 		})
 

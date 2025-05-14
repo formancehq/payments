@@ -300,21 +300,21 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	signatures, ok := req.Webhook.Headers[HeadersSignature]
 	if !ok || len(signatures) == 0 {
-		return models.VerifyWebhookResponse{}, client.ErrColumSignatureMissing
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrColumSignatureMissing, models.ErrWebhookVerification)
 	}
 
 	config := req.Config
 	if config == nil || config.Metadata == nil {
-		return models.VerifyWebhookResponse{}, client.ErrWebhookConfigInvalid
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrWebhookConfigInvalid, models.ErrWebhookVerification)
 	}
 
 	secret, ok := config.Metadata["secret"]
 	if !ok {
-		return models.VerifyWebhookResponse{}, client.ErrWebhookConfigSecretMissing
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrWebhookConfigSecretMissing, models.ErrWebhookVerification)
 	}
 
 	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], secret); err != nil {
-		return models.VerifyWebhookResponse{}, err
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", err, models.ErrWebhookVerification)
 	}
 
 	var webhook client.WebhookEvent[json.RawMessage]
