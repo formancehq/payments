@@ -101,7 +101,7 @@ var _ = Describe("Wise Plugin", func() {
 		})
 	})
 
-	Context("translate webhook", func() {
+	Context("verifying webhook", func() {
 		var (
 			body      []byte
 			signature []byte
@@ -132,21 +132,69 @@ var _ = Describe("Wise Plugin", func() {
 		})
 
 		It("it fails when X-Delivery-ID header missing", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{}
-			_, err := plg.TranslateWebhook(context.Background(), req)
+			req := models.VerifyWebhookRequest{}
+			_, err := plg.VerifyWebhook(context.Background(), req)
 			Expect(err).To(MatchError(ErrWebhookHeaderXDeliveryIDMissing))
 		})
 
 		It("it fails when X-Signature-Sha256 header missing", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
+			req := models.VerifyWebhookRequest{
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						HeadersDeliveryID: {"delivery-id"},
 					},
 				},
 			}
-			_, err := plg.TranslateWebhook(context.Background(), req)
+			_, err := plg.VerifyWebhook(context.Background(), req)
 			Expect(err).To(MatchError(ErrWebhookHeaderXSignatureMissing))
+		})
+
+		It("it can create the balance_update webhook", func(ctx SpecContext) {
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{Name: "balance_update"},
+				Webhook: models.PSPWebhook{
+					Body: body,
+					Headers: map[string][]string{
+						HeadersDeliveryID: {"delivery-id"},
+						HeadersSignature:  {base64.StdEncoding.EncodeToString(signature)},
+					},
+				},
+			}
+
+			res, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res.WebhookIdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
+		})
+	})
+
+	Context("translate webhook", func() {
+		var (
+			body      []byte
+			signature []byte
+			m         *client.MockClient
+		)
+
+		BeforeEach(func() {
+			config := &Config{
+				APIKey:           "key",
+				WebhookPublicKey: pemKey.String(),
+			}
+			configJson, err := json.Marshal(config)
+			Expect(err).To(BeNil())
+			plg, err = New("wise", logger, configJson)
+			Expect(err).To(BeNil())
+
+			ctrl := gomock.NewController(GinkgoT())
+			m = client.NewMockClient(ctrl)
+			plg.SetClient(m)
+
+			body = bytes.NewBufferString("body content").Bytes()
+			hash := sha256.New()
+			hash.Write(body)
+			digest := hash.Sum(nil)
+
+			signature, err = rsa.SignPKCS1v15(rand.Reader, privatekey, crypto.SHA256, digest)
+			Expect(err).To(BeNil())
 		})
 
 		It("it fails when unknown webhook name in request", func(ctx SpecContext) {
@@ -182,7 +230,6 @@ var _ = Describe("Wise Plugin", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].IdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
 			Expect(res.Responses[0].Payment).NotTo(BeNil())
 			Expect(res.Responses[0].Payment.Reference).To(Equal(fmt.Sprint(transfer.ID)))
 		})
@@ -211,7 +258,6 @@ var _ = Describe("Wise Plugin", func() {
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].IdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
 			Expect(res.Responses[0].Payment).NotTo(BeNil())
 			Expect(res.Responses[0].Payment.Reference).To(Equal(balance.Data.TransferReference))
 		})

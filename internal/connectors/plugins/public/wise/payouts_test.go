@@ -17,24 +17,23 @@ import (
 
 var _ = Describe("Wise Plugin Payouts Creation", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("create payout", func() {
 		var (
-			m                          *client.MockClient
 			samplePSPPaymentInitiation models.PSPPaymentInitiation
 			now                        time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			samplePSPPaymentInitiation = models.PSPPaymentInitiation{

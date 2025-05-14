@@ -15,16 +15,14 @@ import (
 
 var _ = Describe("Wise Plugin Profiles", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 		m   *client.MockClient
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
-
 		ctrl := gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg.SetClient(m)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetch next profiles", func() {

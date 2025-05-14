@@ -172,6 +172,38 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return p.createWebhooks(ctx, req)
 }
 
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]
+	if ok && len(testNotif) > 0 {
+		if testNotif[0] == "true" {
+			return models.VerifyWebhookResponse{}, nil
+		}
+	}
+
+	v, ok := req.Webhook.Headers[HeadersDeliveryID]
+	if !ok || len(v) == 0 {
+		return models.VerifyWebhookResponse{}, ErrWebhookHeaderXDeliveryIDMissing
+	}
+
+	signatures, ok := req.Webhook.Headers[HeadersSignature]
+	if !ok || len(signatures) == 0 {
+		return models.VerifyWebhookResponse{}, ErrWebhookHeaderXSignatureMissing
+	}
+
+	err := p.verifySignature(req.Webhook.Body, signatures[0])
+	if err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+
+	return models.VerifyWebhookResponse{
+		WebhookIdempotencyKey: v[0],
+	}, nil
+}
+
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
@@ -184,21 +216,6 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		}
 	}
 
-	v, ok := req.Webhook.Headers[HeadersDeliveryID]
-	if !ok || len(v) == 0 {
-		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXDeliveryIDMissing
-	}
-
-	signatures, ok := req.Webhook.Headers[HeadersSignature]
-	if !ok || len(signatures) == 0 {
-		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXSignatureMissing
-	}
-
-	err := p.verifySignature(req.Webhook.Body, signatures[0])
-	if err != nil {
-		return models.TranslateWebhookResponse{}, err
-	}
-
 	config, ok := p.supportedWebhooks[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, ErrWebhookNameUnknown
@@ -208,8 +225,6 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
-
-	res.IdempotencyKey = v[0]
 
 	return models.TranslateWebhookResponse{
 		Responses: []models.WebhookResponse{res},

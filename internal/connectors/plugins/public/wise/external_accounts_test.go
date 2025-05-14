@@ -15,24 +15,22 @@ import (
 
 var _ = Describe("Wise Plugin External Accounts", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next external accounts", func() {
 		var (
-			m                       *client.MockClient
 			sampleRecipientAccounts []*client.RecipientAccount
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-
 			sampleRecipientAccounts = make([]*client.RecipientAccount, 0)
 			for i := 0; i < 50; i++ {
 				sampleRecipientAccounts = append(sampleRecipientAccounts, &client.RecipientAccount{
