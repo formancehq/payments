@@ -12,25 +12,23 @@ import (
 
 var _ = Describe("BankingCircle Plugin Balances", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next balances", func() {
 		var (
-			m              *client.MockClient
 			sampleBalances []client.Balance
 			sampleAccount  *client.Account
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-
 			sampleBalances = []client.Balance{
 				{
 					Currency:         "EUR",
