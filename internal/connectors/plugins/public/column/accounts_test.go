@@ -15,25 +15,25 @@ import (
 
 var _ = Describe("Column Plugin Accounts", func() {
 	var (
-		plg *Plugin
+		mockHTTPClient *client.MockHTTPClient
+		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
 	})
 
 	Context("fetching next accounts", func() {
 		var (
-			mockHTTPClient *client.MockHTTPClient
 			sampleAccounts []*client.Account
 			now            time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 			sampleAccounts = make([]*client.Account, 0)
 			for i := range 50 {
@@ -44,20 +44,6 @@ var _ = Describe("Column Plugin Accounts", func() {
 					CreatedAt:    now.Add(-time.Duration(50-i) * time.Minute).UTC().Format(time.RFC3339),
 				})
 			}
-		})
-
-		It("should return an error - invalid created_at", func() {
-			accounts := []*client.Account{{
-				ID:           "acc_123",
-				Description:  "Test Account",
-				CurrencyCode: "USD",
-				CreatedAt:    "invalid-timestamp",
-				Type:         "wire",
-			}}
-			resp, err := plg.fillAccounts(accounts, make([]models.PSPAccount, 0), 10)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(`parsing time "invalid-timestamp" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid-timestamp" as "2006"`))
-			Expect(resp).To(BeNil())
 		})
 
 		It("should return an error - get accounts error", func(ctx SpecContext) {
@@ -77,6 +63,37 @@ var _ = Describe("Column Plugin Accounts", func() {
 			resp, err := plg.FetchNextAccounts(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("failed to get accounts: test error : "))
+			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+		})
+
+		It("should return an error - invalid created_at", func(ctx SpecContext) {
+			accounts := []*client.Account{{
+				ID:           "acc_123",
+				Description:  "Test Account",
+				CurrencyCode: "USD",
+				CreatedAt:    "invalid-timestamp",
+				Type:         "wire",
+			}}
+
+			req := models.FetchNextAccountsRequest{
+				State:    []byte(`{}`),
+				PageSize: 60,
+			}
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.AccountResponseWrapper[[]*client.Account]{
+				BankAccounts: accounts,
+			})
+
+			resp, err := plg.FetchNextAccounts(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError(`parsing time "invalid-timestamp" as "2006-01-02T15:04:05Z07:00": cannot parse "invalid-timestamp" as "2006"`))
 			Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 		})
 

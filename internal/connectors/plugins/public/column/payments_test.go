@@ -16,25 +16,25 @@ import (
 
 var _ = Describe("Column Plugin Payments", func() {
 	var (
-		plg *Plugin
+		mockHTTPClient *client.MockHTTPClient
+		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
 	})
 
 	Context("fetching next payments", func() {
 		var (
-			mockHTTPClient     *client.MockHTTPClient
 			sampleTransactions []*client.Transaction
 			now                time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(mockHTTPClient)
 			now = time.Now().UTC()
 			sampleTransactions = make([]*client.Transaction, 0)
 			statuses := []string{

@@ -15,46 +15,40 @@ import (
 
 var _ = Describe("Column Plugin Webhooks", func() {
 	var (
-		plg      *Plugin
-		httpMock *client.MockHTTPClient
-		ctrl     *gomock.Controller
+		plg          models.Plugin
+		httpMock     *client.MockHTTPClient
+		ctrl         *gomock.Controller
+		verifierMock *MockWebhookVerifier
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		httpMock = client.NewMockHTTPClient(ctrl)
+		verifierMock = NewMockWebhookVerifier(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(httpMock)
+		p := &Plugin{
+			client:   c,
+			verifier: verifierMock,
+		}
+		p.initWebhookConfig()
+		plg = p
 	})
 
-	Context("create webhooks", func() {
+	Context("webhooks", func() {
 		var (
 			webhookID                 string
 			expectedObjectedID        string
 			expectedWebhookResponseID string
 			webhookBaseURL            string
-			err                       error
-			verifierMock              *MockWebhookVerifier
 			secret                    string
 		)
 		BeforeEach(func() {
-			ctrl = gomock.NewController(GinkgoT())
-			httpMock = client.NewMockHTTPClient(ctrl)
-			verifierMock = NewMockWebhookVerifier(ctrl)
-			plg = &Plugin{
-				client:   client.New("test", "aseplye", "https://test.com"),
-				verifier: verifierMock,
-			}
-			plg.client.SetHttpClient(httpMock)
 			webhookID = "webhook135"
 			expectedObjectedID = "44"
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseURL = "https://example.com"
 			secret = "test-secret"
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-			Expect(err).To(BeNil())
 		})
 
 		It("skips making calls when webhook url missing", func(ctx SpecContext) {
@@ -76,24 +70,30 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				FromPayload:    json.RawMessage(`{"id":"1"}`),
 				WebhookBaseUrl: webhookBaseURL,
 			}
-			url, _ := url.JoinPath(req.WebhookBaseUrl, "ach/outgoing_transfer/settled")
-			httpMock.EXPECT().Do(
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).Return(
-				200,
-				nil,
-			).SetArg(2, client.EventSubscription{
-				ID:            expectedWebhookResponseID,
-				URL:           url,
-				Secret:        "test-secret",
-				EnabledEvents: []string{"ach.outgoing_transfer.settled"},
-			})
+
+			p := Plugin{}
+			p.initWebhookConfig()
+			for name, w := range p.supportedWebhooks {
+				url, _ := url.JoinPath(req.WebhookBaseUrl, w.urlPath)
+				httpMock.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.EventSubscription{
+					ID:            expectedWebhookResponseID,
+					URL:           url,
+					Secret:        "test-secret",
+					EnabledEvents: []string{string(name)},
+				})
+			}
+
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Others).To(HaveLen(1))
+			Expect(res.Others).To(HaveLen(len(p.supportedWebhooks)))
 			Expect(res.Others[0].ID).To(Equal(expectedWebhookResponseID))
 		})
 
@@ -118,22 +118,23 @@ var _ = Describe("Column Plugin Webhooks", func() {
 		})
 
 		It("should return an error - validation error - no header signature", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "test",
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: "test",
+				},
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{},
 					Body:    json.RawMessage(`{"id":"1"}`),
 				},
 			}
-			res, err := plg.TranslateWebhook(ctx, req)
+			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("missing X-Signature-Sha256 header"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
+			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
 		})
 
 		It("should return an error - verify signature error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "ach.outgoing_transfer.settled",
+			req := models.VerifyWebhookRequest{
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
@@ -143,23 +144,40 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
 			verifierMock.EXPECT().verifyWebhookSignature(
 				req.Webhook.Body,
 				req.Webhook.Headers["Column-Signature"][0],
 				secret,
 			).Return(errors.New("test error"))
 
-			res, err := plg.TranslateWebhook(ctx, req)
+			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
+			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
+		})
+
+		It("should be ok when verifying", func(ctx SpecContext) {
+			req := models.VerifyWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Headers: map[string][]string{
+						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+					},
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "ach.outgoing_transfer.settled"}}`, expectedObjectedID)),
+				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
+			}
+
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Column-Signature"][0],
+				secret,
+			).Return(nil)
+
+			res, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(models.VerifyWebhookResponse{
+				WebhookIdempotencyKey: "1",
+			}))
 		})
 
 		It("should return an error - unknown webhook name error", func(ctx SpecContext) {
@@ -173,168 +191,9 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: "ac.created", Metadata: map[string]string{}},
 			}
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError(client.ErrWebhookTypeUnknown.Error()))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - ach.outgoing_transfer.settled error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "ach.outgoing_transfer.settled",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s"}}`, expectedObjectedID)),
-				},
-				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
-			}
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error book.transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "book.transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "book.transfer.completed"}}`, expectedObjectedID)),
-				},
-				Config: &models.WebhookConfig{Name: string(client.EventCategoryBookTransferCompleted), Metadata: map[string]string{"secret": secret}},
-			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryBookTransferCompleted: {
-					urlPath: "/book/transfer/completed",
-					fn:      plg.translateBookTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error realtime.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "realtime.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "realtime.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferCompleted), Metadata: map[string]string{"secret": secret}},
-			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryRealtimeTransferCompleted: {
-					urlPath: "/realtime/outgoing_transfer/completed",
-					fn:      plg.translateRealtimeTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - swift.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "swift.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type":"swift.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-				Config: &models.WebhookConfig{Name: string(client.EventCategoryInternationalWireCompleted), Metadata: map[string]string{"secret": secret}},
-			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryInternationalWireCompleted: {
-					urlPath: "/swift/outgoing_transfer/completed",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - wire.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "wire.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "wire.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferOutgoingCompleted), Metadata: map[string]string{"secret": secret}},
-			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferOutgoingCompleted: {
-					urlPath: "/wire/outgoing_transfer/completed",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -363,19 +222,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryBookTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryBookTransferCompleted: {
-					urlPath: "/book/transfer/completed",
-					fn:      plg.translateBookTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -412,19 +258,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryRealtimeTransferCompleted: {
-					urlPath: "/realtime/outgoing_transfer/completed",
-					fn:      plg.translateRealtimeTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -454,19 +287,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -507,19 +327,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryInternationalWireCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryInternationalWireCompleted: {
-					urlPath: "/swift/outgoing_transfer/completed",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -538,19 +345,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferOutgoingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferOutgoingCompleted: {
-					urlPath: "/wire/outgoing_transfer/completed",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -580,19 +374,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferReturned: {
-					urlPath: "/ach/outgoing_transfer/returned",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -627,19 +408,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRequested), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingCancellationRequested: {
-					urlPath: "/swift/outgoing_transfer/cancellation_requested",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -672,19 +440,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryRealtimeTransferManualReview: {
-					urlPath: "/realtime/outgoing_transfer/manual_review",
-					fn:      plg.translateRealtimeTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -711,19 +466,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferInitiated: {
-					urlPath: "/wire/outgoing_transfer/initiated",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -753,19 +495,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferIncomingCompleted: {
-					urlPath: "/wire/incoming_transfer/completed",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -794,19 +523,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferSubmitted: {
-					urlPath: "/wire/outgoing_transfer/submitted",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -834,19 +550,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferRejected), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferRejected: {
-					urlPath: "/wire/outgoing_transfer/rejected",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -877,19 +580,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryWireTransferManualReview: {
-					urlPath: "/wire/outgoing_transfer/manual_review",
-					fn:      plg.translateWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -917,19 +607,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferInitiated: {
-					urlPath: "/ach/outgoing_transfer/initiated",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -959,19 +636,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferSubmitted: {
-					urlPath: "/ach/outgoing_transfer/submitted",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -999,19 +663,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferCompleted: {
-					urlPath: "/ach/outgoing_transfer/completed",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1042,19 +693,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferManualReview: {
-					urlPath: "/ach/outgoing_transfer/manual_review",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1082,19 +720,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCanceled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferCanceled: {
-					urlPath: "/ach/outgoing_transfer/canceled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1124,19 +749,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferReturnDishonored: {
-					urlPath: "/ach/outgoing_transfer/return_dishonored",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1164,19 +776,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferReturnContested: {
-					urlPath: "/ach/outgoing_transfer/return_contested",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1206,19 +805,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferNOC), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHTransferNOC: {
-					urlPath: "/ach/outgoing_transfer/noc",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1246,19 +832,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingScheduled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingScheduled: {
-					urlPath: "/ach/incoming_transfer/scheduled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1288,19 +861,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingSettled: {
-					urlPath: "/ach/incoming_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1328,19 +888,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingNSF), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingNSF: {
-					urlPath: "/ach/incoming_transfer/nsf",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1370,19 +917,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingCompleted: {
-					urlPath: "/ach/incoming_transfer/completed",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1410,19 +944,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingReturned: {
-					urlPath: "/ach/incoming_transfer/returned",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1452,19 +973,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingReturnDishonored: {
-					urlPath: "/ach/incoming_transfer/return_dishonored",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1493,19 +1001,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategoryACHIncomingReturnContested: {
-					urlPath: "/ach/incoming_transfer/return_contested",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1533,19 +1028,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingInitiated: {
-					urlPath: "/swift/outgoing_transfer/initiated",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1576,19 +1058,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingManualReview), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingManualReview: {
-					urlPath: "/swift/outgoing_transfer/manual_review",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1616,19 +1085,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingSubmitted: {
-					urlPath: "/swift/outgoing_transfer/submitted",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1658,19 +1114,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingPendingReturn), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingPendingReturn: {
-					urlPath: "/swift/outgoing_transfer/pending_return",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1698,19 +1141,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingReturned: {
-					urlPath: "/swift/outgoing_transfer/returned",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
@@ -1740,19 +1170,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationAccepted), Metadata: map[string]string{"secret": secret}},
 			}
 
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingCancellationAccepted: {
-					urlPath: "/swift/outgoing_transfer/cancellation_accepted",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
-
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
@@ -1780,19 +1197,6 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				},
 				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRejected), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.supportedWebhooks = map[client.EventCategory]supportedWebhook{
-				client.EventCategorySwiftOutgoingCancellationRejected: {
-					urlPath: "/swift/outgoing_transfer/cancellation_rejected",
-					fn:      plg.translateInternationalWireTransfer,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())

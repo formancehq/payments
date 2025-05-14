@@ -21,7 +21,7 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Column Plugin", func() {
 	var (
-		plg    *Plugin
+		plg    models.Plugin
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 		connID = models.ConnectorID{}
 		ts     *httptest.Server
@@ -204,14 +204,15 @@ var _ = Describe("Column Plugin", func() {
 	})
 
 	Context("When client is installed", func() {
-		var plg *Plugin
+		var plg models.Plugin
 
 		BeforeEach(func(ctx SpecContext) {
 			config := json.RawMessage(fmt.Sprintf(`{"apiKey":"test","endpoint": "%s"}`, ts.URL))
 			var err error
-			plg, err = New(connID, ProviderName, logger, config)
+			p, err := New(connID, ProviderName, logger, config)
 			Expect(err).To(BeNil())
-			Expect(plg.client).NotTo(BeNil())
+			Expect(p.client).NotTo(BeNil())
+			plg = p
 		})
 
 		It("should fail when fetching next others", func(ctx SpecContext) {

@@ -13,146 +13,157 @@ import (
 
 var _ = Describe("Column Plugin Bank Accounts", func() {
 	var (
-		plg *Plugin
+		mockHTTPClient *client.MockHTTPClient
+		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
 	})
 
 	Context("Create counterparty Bank Accounts", func() {
-		var (
-			mockHTTPClient *client.MockHTTPClient
-		)
+		It("should return an error - required account number", func(ctx SpecContext) {
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{},
+			}
 
-		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(mockHTTPClient)
-		})
-
-		It("should return an error - required account number", func() {
-			ba := models.BankAccount{}
-
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrAccountNumberRequired.Error()))
 
 		})
 
 		It("should return an error - required routing number", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingRoutingNumber.Error()))
 
 		})
 
 		It("should return an error - required city when address is provided", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey: "test_routing_number",
-					client.ColumnAddressLine1MetadataKey:  "123 Main St",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+						client.ColumnAddressLine1MetadataKey:  "123 Main St",
+					},
 				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingMetadataAddressCity.Error()))
 
 		})
 
 		It("should return an error - required country when address is provided", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey: "test_routing_number",
-					client.ColumnAddressLine1MetadataKey:  "123 Main St",
-					client.ColumnAddressCityMetadataKey:   "New York",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+						client.ColumnAddressLine1MetadataKey:  "123 Main St",
+						client.ColumnAddressCityMetadataKey:   "New York",
+					},
 				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingCountry.Error()))
 
 		})
 
 		It("should return error when city is provided without address line 1", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey: "test_routing_number",
-					client.ColumnAddressCityMetadataKey:   "New York",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+						client.ColumnAddressCityMetadataKey:   "New York",
+					},
 				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMetadataAddressCityNotRequired.Error()))
 		})
 
 		It("should return error when addressLine2 is provided without address line 1", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey: "test_routing_number",
-					client.ColumnAddressLine2MetadataKey:  "address line 2",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+						client.ColumnAddressLine2MetadataKey:  "address line 2",
+					},
 				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMetadataAddressLine2NotRequired.Error()))
 
 		})
 
 		It("should return error when state is provided without address line 1", func(ctx SpecContext) {
-			ba :=
-				models.BankAccount{
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
 					AccountNumber: pointer.For("test_account_number"),
 					Metadata: map[string]string{
 						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
 						client.ColumnAddressStateMetadataKey:  "NY",
 					},
-				}
+				},
+			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMetadataAddressStateNotRequired.Error()))
 
 		})
 
 		It("should return error when postal code is provided without address line 1", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey:     "test_routing_number",
-					client.ColumnAddressPostalCodeMetadataKey: "10001",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey:     "test_routing_number",
+						client.ColumnAddressPostalCodeMetadataKey: "10001",
+					},
 				},
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMetadataPostalCodeNotRequired.Error()))
 
 		})
 
 		It("should return error when country is provided without address line 1", func(ctx SpecContext) {
-			ba := models.BankAccount{
-				AccountNumber: pointer.For("test_account_number"),
-				Metadata: map[string]string{
-					client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+			req := models.CreateBankAccountRequest{
+				BankAccount: models.BankAccount{
+					AccountNumber: pointer.For("test_account_number"),
+					Metadata: map[string]string{
+						client.ColumnRoutingNumberMetadataKey: "test_routing_number",
+					},
+					Country: pointer.For("US"),
 				},
-				Country: pointer.For("US"),
 			}
 
-			err := plg.validateExternalBankAccount(ba)
+			_, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrCountryNotRequired.Error()))
 
@@ -186,29 +197,6 @@ var _ = Describe("Column Plugin Bank Accounts", func() {
 			Expect(err).ToNot(BeNil())
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 			Expect(err.Error()).To(ContainSubstring("test error"))
-		})
-
-		It("should return an error when creating request fails", func(ctx SpecContext) {
-			req := models.CreateBankAccountRequest{
-				BankAccount: models.BankAccount{
-					AccountNumber: pointer.For("test_account_number"),
-					Country:       pointer.For("US"),
-					Metadata: map[string]string{
-						client.ColumnRoutingNumberMetadataKey:      "test_routing_number",
-						client.ColumnAddressLine1MetadataKey:       "123 Main St",
-						client.ColumnAddressCityMetadataKey:        "New York",
-						client.ColumnAddressCountryCodeMetadataKey: "US",
-					},
-				},
-			}
-
-			plg.client = client.New("test", "aseplye", "http://invalid:port")
-			plg.client.SetHttpClient(mockHTTPClient)
-
-			res, err := plg.CreateBankAccount(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
-			Expect(err.Error()).To(ContainSubstring("failed to create counter party bank account"))
 		})
 
 		It("should return an error when parsing creation timestamp fails", func(ctx SpecContext) {
