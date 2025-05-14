@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
@@ -28,7 +29,7 @@ var _ = Describe("Plugin Verify Webhooks", func() {
 
 	BeforeEach(func() {
 		evts = &events.Events{}
-		sampleResponse = models.VerifyWebhookResponse{WebhookIdempotencyKey: "test"}
+		sampleResponse = models.VerifyWebhookResponse{WebhookIdempotencyKey: pointer.For("test")}
 	})
 
 	Context("plugin verify webhook", func() {

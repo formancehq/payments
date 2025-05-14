@@ -200,7 +200,7 @@ func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 	}
 
 	return models.VerifyWebhookResponse{
-		WebhookIdempotencyKey: v[0],
+		WebhookIdempotencyKey: &v[0],
 	}, nil
 }
 

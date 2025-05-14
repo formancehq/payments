@@ -161,7 +161,7 @@ type VerifyWebhookRequest struct {
 }
 
 type VerifyWebhookResponse struct {
-	WebhookIdempotencyKey string
+	WebhookIdempotencyKey *string
 }
 
 type CreateTransferRequest struct {

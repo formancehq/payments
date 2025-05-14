@@ -140,7 +140,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(resp.WebhookIdempotencyKey).To(BeEmpty())
+			Expect(resp.WebhookIdempotencyKey).To(BeNil())
 		})
 
 		It("should be ok", func(ctx SpecContext) {
@@ -164,7 +164,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.WebhookIdempotencyKey).To(Equal(string(ik[:])))
+			Expect(resp.WebhookIdempotencyKey).To(Equal(pointer.For(string(ik[:]))))
 		})
 	})
 

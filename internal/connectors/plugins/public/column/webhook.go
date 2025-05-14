@@ -323,7 +323,7 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 	}
 
 	return models.VerifyWebhookResponse{
-		WebhookIdempotencyKey: webhook.ID,
+		WebhookIdempotencyKey: &webhook.ID,
 	}, nil
 }
 

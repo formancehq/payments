@@ -163,7 +163,7 @@ var _ = Describe("Wise Plugin", func() {
 
 			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.WebhookIdempotencyKey).To(Equal(req.Webhook.Headers[HeadersDeliveryID][0]))
+			Expect(res.WebhookIdempotencyKey).To(Equal(&req.Webhook.Headers[HeadersDeliveryID][0]))
 		})
 	})
 

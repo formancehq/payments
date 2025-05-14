@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -178,7 +179,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res).To(Equal(models.VerifyWebhookResponse{
-				WebhookIdempotencyKey: "1",
+				WebhookIdempotencyKey: pointer.For("1"),
 			}))
 		})
 

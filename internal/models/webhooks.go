@@ -33,7 +33,7 @@ type PSPWebhook struct {
 type Webhook struct {
 	ID             string              `json:"id"`
 	ConnectorID    ConnectorID         `json:"connectorID"`
-	IdempotencyKey string              `json:"idempotencyKey"`
+	IdempotencyKey *string             `json:"idempotencyKey"`
 	BasicAuth      *BasicAuth          `json:"basicAuth"`
 	QueryValues    map[string][]string `json:"queryValues"`
 	Headers        map[string][]string `json:"headers"`

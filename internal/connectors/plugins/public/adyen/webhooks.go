@@ -71,7 +71,7 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 	ik := sha256.Sum256(req.Webhook.Body)
 	return models.VerifyWebhookResponse{
-		WebhookIdempotencyKey: string(ik[:]),
+		WebhookIdempotencyKey: pointer.For(string(ik[:])),
 	}, nil
 }
 

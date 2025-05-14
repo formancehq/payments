@@ -15,7 +15,7 @@ type webhook struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 
 	// Optional fields
-	IdempotencyKey string              `bun:"idempotency_key,type:text"`
+	IdempotencyKey *string             `bun:"idempotency_key,type:text"`
 	Headers        map[string][]string `bun:"headers,type:json"`
 	QueryValues    map[string][]string `bun:"query_values,type:json"`
 	Body           []byte              `bun:"body,type:bytea,nullzero"`

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
@@ -22,7 +23,15 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Success() {
 		},
 		nil,
 	)
-	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.VerifyWebhookRequest) (*models.VerifyWebhookResponse, error) {
+		return &models.VerifyWebhookResponse{
+			WebhookIdempotencyKey: pointer.For("test"),
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, webhook models.Webhook) error {
+		s.Equal(pointer.For("test"), webhook.IdempotencyKey)
+		return nil
+	})
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
 		return &models.TranslateWebhookResponse{
 			Responses: []models.WebhookResponse{
@@ -77,7 +86,15 @@ func (s *UnitTestSuite) Test_HandleWebhooks_NoResponses_Success() {
 		},
 		nil,
 	)
-	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.VerifyWebhookRequest) (*models.VerifyWebhookResponse, error) {
+		return &models.VerifyWebhookResponse{
+			WebhookIdempotencyKey: pointer.For("test"),
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, webhook models.Webhook) error {
+		s.Equal(pointer.For("test"), webhook.IdempotencyKey)
+		return nil
+	})
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
 		return &models.TranslateWebhookResponse{
 			Responses: []models.WebhookResponse{},
@@ -160,6 +177,43 @@ func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksConfigsGet_Error() {
 	s.Error(err)
 }
 
+func (s *UnitTestSuite) Test_HandleWebhooks_PluginVerifyWebhook_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return(
+		[]models.WebhookConfig{
+			{
+				Name:        "test",
+				ConnectorID: s.connectorID,
+				URLPath:     "/test",
+			},
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(
+		nil,
+		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+	)
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+}
+
 func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksStore_Error() {
 	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return(
 		[]models.WebhookConfig{
@@ -171,6 +225,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksStore_Error() {
 		},
 		nil,
 	)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(&models.VerifyWebhookResponse{}, nil)
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
 	)
@@ -207,6 +262,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_PluginTranslateWebhook_Error() {
 		},
 		nil,
 	)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(&models.VerifyWebhookResponse{}, nil)
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(nil,
 		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
@@ -244,6 +300,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_RunStoreWebhookTranslation_Error() {
 		},
 		nil,
 	)
+	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(&models.VerifyWebhookResponse{}, nil)
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
 		return &models.TranslateWebhookResponse{
