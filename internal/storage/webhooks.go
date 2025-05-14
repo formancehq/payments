@@ -15,9 +15,10 @@ type webhook struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 
 	// Optional fields
-	Headers     map[string][]string `bun:"headers,type:json"`
-	QueryValues map[string][]string `bun:"query_values,type:json"`
-	Body        []byte              `bun:"body,type:bytea,nullzero"`
+	IdempotencyKey string              `bun:"idempotency_key,type:text"`
+	Headers        map[string][]string `bun:"headers,type:json"`
+	QueryValues    map[string][]string `bun:"query_values,type:json"`
+	Body           []byte              `bun:"body,type:bytea,nullzero"`
 }
 
 func (s *store) WebhooksInsert(ctx context.Context, webhook models.Webhook) error {
@@ -61,20 +62,22 @@ func (s *store) WebhooksDeleteFromConnectorID(ctx context.Context, connectorID m
 
 func fromWebhookModels(from models.Webhook) webhook {
 	return webhook{
-		ID:          from.ID,
-		ConnectorID: from.ConnectorID,
-		Headers:     from.Headers,
-		QueryValues: from.QueryValues,
-		Body:        from.Body,
+		ID:             from.ID,
+		ConnectorID:    from.ConnectorID,
+		IdempotencyKey: from.IdempotencyKey,
+		Headers:        from.Headers,
+		QueryValues:    from.QueryValues,
+		Body:           from.Body,
 	}
 }
 
 func toWebhookModels(from webhook) models.Webhook {
 	return models.Webhook{
-		ID:          from.ID,
-		ConnectorID: from.ConnectorID,
-		Headers:     from.Headers,
-		QueryValues: from.QueryValues,
-		Body:        from.Body,
+		ID:             from.ID,
+		ConnectorID:    from.ConnectorID,
+		IdempotencyKey: from.IdempotencyKey,
+		Headers:        from.Headers,
+		QueryValues:    from.QueryValues,
+		Body:           from.Body,
 	}
 }

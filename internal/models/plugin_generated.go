@@ -20,7 +20,6 @@ import (
 type MockPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginMockRecorder is the mock recorder for MockPlugin.
@@ -294,11 +293,25 @@ func (mr *MockPluginMockRecorder) Uninstall(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Uninstall", reflect.TypeOf((*MockPlugin)(nil).Uninstall), arg0, arg1)
 }
 
+// VerifyWebhook mocks base method.
+func (m *MockPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookRequest) (VerifyWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyWebhook", arg0, arg1)
+	ret0, _ := ret[0].(VerifyWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyWebhook indicates an expected call of VerifyWebhook.
+func (mr *MockPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhook", reflect.TypeOf((*MockPlugin)(nil).VerifyWebhook), arg0, arg1)
+}
+
 // MockPSPPlugin is a mock of PSPPlugin interface.
 type MockPSPPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPSPPluginMockRecorder
-	isgomock struct{}
 }
 
 // MockPSPPluginMockRecorder is the mock recorder for MockPSPPlugin.
@@ -528,11 +541,25 @@ func (mr *MockPSPPluginMockRecorder) TranslateWebhook(arg0, arg1 any) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateWebhook", reflect.TypeOf((*MockPSPPlugin)(nil).TranslateWebhook), arg0, arg1)
 }
 
+// VerifyWebhook mocks base method.
+func (m *MockPSPPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookRequest) (VerifyWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "VerifyWebhook", arg0, arg1)
+	ret0, _ := ret[0].(VerifyWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// VerifyWebhook indicates an expected call of VerifyWebhook.
+func (mr *MockPSPPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhook", reflect.TypeOf((*MockPSPPlugin)(nil).VerifyWebhook), arg0, arg1)
+}
+
 // MockPSPBankingBridge is a mock of PSPBankingBridge interface.
 type MockPSPBankingBridge struct {
 	ctrl     *gomock.Controller
 	recorder *MockPSPBankingBridgeMockRecorder
-	isgomock struct{}
 }
 
 // MockPSPBankingBridgeMockRecorder is the mock recorder for MockPSPBankingBridge.

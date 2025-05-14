@@ -24,8 +24,9 @@ var (
 			Body: []byte(`{}`),
 		},
 		{
-			ID:          "test2",
-			ConnectorID: defaultConnector.ID,
+			ID:             "test2",
+			ConnectorID:    defaultConnector.ID,
+			IdempotencyKey: "test",
 			QueryValues: map[string][]string{
 				"foo3": {"bar3"},
 			},

@@ -27,7 +27,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Success() {
 		return &models.TranslateWebhookResponse{
 			Responses: []models.WebhookResponse{
 				{
-					IdempotencyKey:  "test",
 					Account:         &s.pspAccount,
 					ExternalAccount: &s.pspAccount,
 					Payment:         &s.pspPayment,
@@ -250,7 +249,6 @@ func (s *UnitTestSuite) Test_HandleWebhooks_RunStoreWebhookTranslation_Error() {
 		return &models.TranslateWebhookResponse{
 			Responses: []models.WebhookResponse{
 				{
-					IdempotencyKey:  "test",
 					Account:         &s.pspAccount,
 					ExternalAccount: &s.pspAccount,
 					Payment:         &s.pspPayment,
