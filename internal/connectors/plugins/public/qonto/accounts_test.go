@@ -73,6 +73,24 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 			})
 
+			It("exeeds max pageSize in request", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: 1000000000,
+				}
+
+				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
+
+				// When
+				resp, err := plg.FetchNextAccounts(ctx, req)
+
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("invalid request, requested page size too high"))
+				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
+			})
+
 			It("failing to unmarshall state", func(ctx SpecContext) {
 				// Given
 				req := models.FetchNextAccountsRequest{

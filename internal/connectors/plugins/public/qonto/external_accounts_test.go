@@ -62,16 +62,29 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 					State: []byte(`{}`),
 				}
 
-				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-					sampleBeneficiaries,
-					nil,
-				)
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 				// When
 				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 				// Then
 				assertErrorResponse(resp, err, errors.New("invalid request, missing page size in request"))
+			})
+
+			It("exceeding max pageSize in request", func(ctx SpecContext) {
+				// Given a request with missing pageSize
+				req := models.FetchNextExternalAccountsRequest{
+					State:    []byte(`{}`),
+					PageSize: 1000000000,
+				}
+
+				m.EXPECT().GetBeneficiaries(gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
+
+				// When
+				resp, err := plg.FetchNextExternalAccounts(ctx, req)
+
+				// Then
+				assertErrorResponse(resp, err, errors.New("invalid request, requested page size too high"))
 			})
 
 			It("invalid state", func(ctx SpecContext) {

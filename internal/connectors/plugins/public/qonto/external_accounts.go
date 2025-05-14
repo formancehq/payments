@@ -22,6 +22,9 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	if req.PageSize == 0 {
 		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingPageSize
 	}
+	if req.PageSize > client.QONTO_MAX_PAGE_SIZE {
+		return models.FetchNextExternalAccountsResponse{}, models.ErrExceededMaxPageSize
+	}
 	var oldState externalAccountsState
 	if req.State != nil {
 		if err := json.Unmarshal(req.State, &oldState); err != nil {
