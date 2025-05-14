@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -35,6 +36,6 @@ func (errorResponse qontoErrors) Error() error {
 	for _, e := range errorResponse.Errors {
 		errMsg += fmt.Sprintf(" [errorCode=\"%s\", errorMessage=\"%s\"]", e.Code, e.Detail)
 	}
-	err = fmt.Errorf(errMsg)
+	err = errors.New(errMsg)
 	return err
 }
