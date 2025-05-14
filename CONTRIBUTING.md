@@ -794,7 +794,7 @@ Example: The Stripe connector payment endpoint is returning additional propertie
 package client
 
 const (
-	stripeMetadataSpecNamespace = "com.string.spec/"
+	stripeMetadataSpecNamespace = "com.stripe.spec/"
 	StripePaymentReasonMetadataKey = stripeMetadataSpecNamespace + "payment_reason"
 	StripePaymentArrivalTimeMetadataKey = stripeMetadataSpecNamespace + "payment_arrival_time"
 )
@@ -961,9 +961,15 @@ func (p *Plugin) fetchBalances(balance *psp.Balance) (*models.PSPBalance, error)
 4. Validate asset formats and currency support early in your implementation.
 5. Handle precision loss carefully when converting between formats.
 6. Use the custom HTTP client in the codebase when adding a connector that has a Go SDK. This allows the system to send metrics and traces. See the Stripe example [here.]( ./internal/connectors/plugins/public/stripe/client/client.go#L43)
-7. Ensure that for payments without source or destination account reference, those fields are omitted.
-8. Ensure that `reference` values are unique across the `payment` table. Only `payment_adjustment` records that are part of the same transfer may share the same `payment_id`.
+7. Omit source or destination account reference fields in `models.PSPPayment` if they don't exist.
+8. Ensure that `reference` values are unique across the `payment` table. In the `payment_adjustment` table, only records that are part of the same transfer may share the same `payment_id`.
 9. If the PSP supports recording a transfer as two opposing transactions (e.g., debit and credit), only one transfer should be recorded in the payment table. These transactions must have distinct types and must not be recorded as the same type.
+10. For payments with multiple linked sub-transactions (adjustments), the `ParentReference` should hold the reference common to all of them while the `reference` field should be unique per adjustment. This ensures all adjustment are linked to the original payment.
+11. Always return transactions in chronological order ( from oldest to newest). For PSP APIs that don't support this, create a function to rearrange it. See [timeline.go](./internal/connectors/plugins/public/column/client/timeline.go) in the Column and Stripe connectors as an examples.
+12. If an idempotency keys,  include the connectorID in the hash to ensure uniqueness across different deployments. This is particularly important for PSPs like Increase where idempotency keys must be both repeatable and unique.
+13. For internal transfers that appear as two transactions on the PSP side (debit and credit), create two separate payments in our system with one adjustment each, rather than one payment with two adjustments.
+14. Ensure that creditor and debtor transactions have unique payment_id values, even if they share a `transfer_id` on the PSP side. If there is no way of differentiating, you can add a suffix to the payment reference to distinguish between debtor and creditor transactions. If you change this ID, ensure you store the original `transfer_id` from the PSP in the payment metadata.
+15. When processing returns or refunds, update the parent payment amount to reflect the returned funds. For example, if there is a transfer of _$1000_, a return of _$600_ should update the original payment to _$400_.
 
 ### Setting up Pre-commit Checks
 Pre-commit checks for the repository is done using Just.
