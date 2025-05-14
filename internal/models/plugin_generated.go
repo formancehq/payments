@@ -20,6 +20,7 @@ import (
 type MockPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginMockRecorder
+	isgomock struct{}
 }
 
 // MockPluginMockRecorder is the mock recorder for MockPlugin.
@@ -312,6 +313,7 @@ func (mr *MockPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call {
 type MockPSPPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPSPPluginMockRecorder
+	isgomock struct{}
 }
 
 // MockPSPPluginMockRecorder is the mock recorder for MockPSPPlugin.
@@ -560,6 +562,7 @@ func (mr *MockPSPPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call 
 type MockPSPBankingBridge struct {
 	ctrl     *gomock.Controller
 	recorder *MockPSPBankingBridgeMockRecorder
+	isgomock struct{}
 }
 
 // MockPSPBankingBridgeMockRecorder is the mock recorder for MockPSPBankingBridge.

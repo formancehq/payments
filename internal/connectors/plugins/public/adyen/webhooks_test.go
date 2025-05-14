@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -165,7 +164,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.WebhookIdempotencyKey).To(Equal(fmt.Sprintf("%s", string(ik[:]))))
+			Expect(resp.WebhookIdempotencyKey).To(Equal(string(ik[:])))
 		})
 	})
 

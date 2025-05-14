@@ -31,7 +31,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			client:   c,
 			verifier: verifierMock,
 		}
-		p.initWebhookConfig()
+		err := p.initWebhookConfig()
+		Expect(err).To(BeNil())
 		plg = p
 	})
 
@@ -72,7 +73,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 
 			p := Plugin{}
-			p.initWebhookConfig()
+			err := p.initWebhookConfig()
+			Expect(err).To(BeNil())
 			for name, w := range p.supportedWebhooks {
 				url, _ := url.JoinPath(req.WebhookBaseUrl, w.urlPath)
 				httpMock.EXPECT().Do(
