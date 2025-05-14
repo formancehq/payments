@@ -13,24 +13,22 @@ import (
 
 var _ = Describe("Modulr Plugin Balances", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next balances", func() {
 		var (
-			m             *client.MockClient
 			sampleBalance client.Account
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-
 			sampleBalance = client.Account{
 				Balance:  "150.01",
 				Currency: "USD",
