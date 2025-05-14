@@ -566,7 +566,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				sampleTransactions = generateTestSampleTransactions(transactionsToGenerate)
 			})
 
-			It("should not return more than pageSize", func(ctx SpecContext) {
+			It("pageSize is ignored if the API returns more than the expected count", func(ctx SpecContext) {
 
 				// Given a valid request
 				req := models.FetchNextPaymentsRequest{
@@ -590,7 +590,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					err,
 					client.TransactionStatusPending,
 					client.TransactionStatusPending,
-					transactionsReturnedByClient[:5],
+					transactionsReturnedByClient,
 					true,
 				)
 			})

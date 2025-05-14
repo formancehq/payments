@@ -36,7 +36,6 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
-	needMore := false
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 
@@ -50,11 +49,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
-	needMore, hasMore = pagination.ShouldFetchMore(accounts, beneficiaries, req.PageSize)
-
-	if !needMore {
-		accounts = accounts[:req.PageSize]
-	}
+	_, hasMore = pagination.ShouldFetchMore(accounts, beneficiaries, req.PageSize)
 
 	if len(accounts) > 0 {
 		var err error

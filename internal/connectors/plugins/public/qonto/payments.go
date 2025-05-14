@@ -45,7 +45,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	// Run
 	payments := make([]models.PSPPayment, 0, req.PageSize)
-	needMore := false
 	hasMore := false
 
 	transactions, err := p.client.GetTransactions(
@@ -64,11 +63,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	needMore, hasMore = pagination.ShouldFetchMore(payments, transactions, req.PageSize)
-
-	if !needMore {
-		payments = payments[:req.PageSize]
-	}
+	_, hasMore = pagination.ShouldFetchMore(payments, transactions, req.PageSize)
 
 	// State update
 	if len(payments) > 0 {
