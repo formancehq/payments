@@ -14,81 +14,73 @@ import (
 
 var _ = Describe("Column Plugin Payments", func() {
 	var (
-		plg *Plugin
+		ctrl           *gomock.Controller
+		mockHTTPClient *client.MockHTTPClient
+		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next payments", func() {
-		var (
-			mockHTTPClient *client.MockHTTPClient
-		)
-
-		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(mockHTTPClient)
-		})
-
 		Context("validateReversePayout", func() {
-			It("should validate a valid reverse payout request", func() {
-				pr := models.PSPPaymentInitiationReversal{
-					Metadata: map[string]string{
-						client.ColumnReasonMetadataKey: "incorrect_amount",
-					},
-					RelatedPaymentInitiation: models.PSPPaymentInitiation{
-						Reference: "test-reference",
+			It("should return error when metadata is nil", func(ctx SpecContext) {
+				req := models.ReversePayoutRequest{
+					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
+						Metadata: nil,
 					},
 				}
 
-				err := plg.validateReversePayout(pr)
-				Expect(err).To(BeNil())
-			})
-
-			It("should return error when metadata is nil", func() {
-				pr := models.PSPPaymentInitiationReversal{
-					Metadata: nil,
-				}
-
-				err := plg.validateReversePayout(pr)
+				_, err := plg.ReversePayout(ctx, req)
 				Expect(err).To(MatchError("validation error occurred for field metadata: required field metadata must be provided"))
 			})
 
-			It("should return error when relatedPaymentInitiation.reference is missing", func() {
-				pr := models.PSPPaymentInitiationReversal{
-					Metadata: map[string]string{
-						client.ColumnReasonMetadataKey: "incorrect_amount",
+			It("should return error when relatedPaymentInitiation.reference is missing", func(ctx SpecContext) {
+				req := models.ReversePayoutRequest{
+					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
+						Metadata: map[string]string{
+							client.ColumnReasonMetadataKey: "incorrect_amount",
+						},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{},
 					},
-					RelatedPaymentInitiation: models.PSPPaymentInitiation{},
 				}
-
-				err := plg.validateReversePayout(pr)
+				_, err := plg.ReversePayout(ctx, req)
 				Expect(err).To(MatchError("validation error occurred for field relatedPaymentInitiation.reference: required field relatedPaymentInitiation.reference must be provided"))
 			})
 
-			It("should return error when reason is missing", func() {
-				pr := models.PSPPaymentInitiationReversal{
-					Metadata: map[string]string{},
-					RelatedPaymentInitiation: models.PSPPaymentInitiation{
-						Reference: "test-reference",
+			It("should return error when reason is missing", func(ctx SpecContext) {
+				req := models.ReversePayoutRequest{
+					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
+						Metadata: map[string]string{},
+						RelatedPaymentInitiation: models.PSPPaymentInitiation{
+							Reference: "test-reference",
+						},
 					},
 				}
 
-				err := plg.validateReversePayout(pr)
+				_, err := plg.ReversePayout(ctx, req)
 				Expect(err).To(MatchError("validation error occurred for field com.column.spec/reason: required metadata field com.column.spec/reason must be provided"))
 			})
 
-			It("should return error when reason is invalid", func() {
-				pr := models.PSPPaymentInitiationReversal{
-					Metadata: map[string]string{
-						client.ColumnReasonMetadataKey: "invalid-reason",
+			It("should return error when reason is invalid", func(ctx SpecContext) {
+				req := models.ReversePayoutRequest{
+					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{
+						Metadata: map[string]string{
+							client.ColumnReasonMetadataKey: "invalid-reason",
+						},
 					},
 				}
 
-				err := plg.validateReversePayout(pr)
+				_, err := plg.ReversePayout(ctx, req)
 				Expect(err).To(MatchError("validation error occurred for field com.column.spec/reason: required metadata field com.column.spec/reason must be a valid reason"))
 			})
 		})
@@ -124,11 +116,20 @@ var _ = Describe("Column Plugin Payments", func() {
 		})
 
 		Context("HTTP Request Creation Errors", func() {
+			var (
+				ctrl *gomock.Controller
+				plg  models.Plugin
+			)
 			BeforeEach(func() {
-				ctrl := gomock.NewController(GinkgoT())
+				ctrl = gomock.NewController(GinkgoT())
 				mockHTTPClient = client.NewMockHTTPClient(ctrl)
-				plg.client = client.New("test", "aseplye", "http://invalid:port")
-				plg.client.SetHttpClient(mockHTTPClient)
+				c := client.New("test", "aseplye", "http://invalid:port")
+				c.SetHttpClient(mockHTTPClient)
+				plg = &Plugin{client: c}
+			})
+
+			AfterEach(func() {
+				ctrl.Finish()
 			})
 
 			It("should return an error when reverse payout request URL is invalid", func(ctx SpecContext) {
@@ -151,13 +152,6 @@ var _ = Describe("Column Plugin Payments", func() {
 		})
 
 		Context("CreatedAt Timestamp Parsing", func() {
-			BeforeEach(func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockHTTPClient = client.NewMockHTTPClient(ctrl)
-				plg.client = client.New("test", "aseplye", "https://test.com")
-				plg.client.SetHttpClient(mockHTTPClient)
-			})
-
 			It("should successfully parse a valid timestamp", func(ctx SpecContext) {
 				req := models.ReversePayoutRequest{
 					PaymentInitiationReversal: models.PSPPaymentInitiationReversal{

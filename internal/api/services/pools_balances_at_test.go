@@ -41,7 +41,7 @@ func TestPoolsBalancesAt(t *testing.T) {
 			Balance: big.NewInt(300),
 		},
 	}
-	at := time.Now()
+	at := time.Now().Add(-time.Hour)
 
 	tests := []struct {
 		name                  string

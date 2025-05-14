@@ -300,7 +300,7 @@ paths:
             - payments:write
   /pools/{poolId}/balances:
     get:
-      summary: Get pool balances
+      summary: Get historical pool balances at a particular point in time
       operationId: getPoolBalances
       tags:
         - payments.v1
@@ -314,6 +314,22 @@ paths:
           schema:
             type: string
             format: date-time
+      responses:
+        '200':
+          $ref: '#/components/responses/PoolBalances'
+        default:
+          $ref: '#/components/responses/PaymentsErrorResponse'
+      security:
+        - Authorization:
+            - payments:read
+  /pools/{poolId}/balances/latest:
+    get:
+      summary: Get latest pool balances
+      operationId: getPoolBalancesLatest
+      tags:
+        - payments.v1
+      parameters:
+        - $ref: '#/components/parameters/PoolId'
       responses:
         '200':
           $ref: '#/components/responses/PoolBalances'

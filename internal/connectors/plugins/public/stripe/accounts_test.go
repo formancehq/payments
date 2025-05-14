@@ -14,25 +14,28 @@ import (
 
 var _ = Describe("Stripe Plugin Accounts", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetch next accounts", func() {
 		var (
-			m *client.MockClient
-
 			pageSize       int
 			sampleAccounts []*stripesdk.Account
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			pageSize = 20
 
 			sampleAccounts = make([]*stripesdk.Account, 0)

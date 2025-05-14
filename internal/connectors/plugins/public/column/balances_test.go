@@ -13,24 +13,29 @@ import (
 
 var _ = Describe("Column Plugin Balances", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockHTTPClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(m)
+		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next balances", func() {
 		var (
-			m             *client.MockHTTPClient
 			sampleBalance *client.Balance
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(m)
 			sampleBalance = &client.Balance{
 				AvailableAmount: "1000",
 				HoldingAmount:   "1000",

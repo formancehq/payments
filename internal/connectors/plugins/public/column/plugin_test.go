@@ -2,15 +2,16 @@ package column
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"go.uber.org/mock/gomock"
 )
 
 func TestPlugin(t *testing.T) {
@@ -20,58 +21,55 @@ func TestPlugin(t *testing.T) {
 
 var _ = Describe("Column Plugin", func() {
 	var (
-		plg    *Plugin
+		plg    models.Plugin
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
+		connID = models.ConnectorID{}
+		ts     *httptest.Server
 	)
 
 	BeforeEach(func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 		}
+
+		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			_, err := w.Write([]byte(`{"webhook_urls": []}`))
+			Expect(err).To(BeNil())
+		}))
+	})
+
+	AfterEach(func() {
+		ts.Close()
 	})
 
 	Context("install", func() {
-
 		It("reports validation errors in the config", func(ctx SpecContext) {
 			config := json.RawMessage(`{}`)
-			_, err := New(ProviderName, logger, config)
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("validation"))
 		})
 
 		It("should report errors in config - apiKey", func(ctx SpecContext) {
-			config := json.RawMessage(`{"endpoint": "test"}`)
-			_, err := New(ProviderName, logger, config)
+			config := json.RawMessage(fmt.Sprintf(`{"endpoint": "%s"}`, ts.URL))
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("APIKey"))
 		})
 
 		It("should report errors in config - endpoint", func(ctx SpecContext) {
 			config := json.RawMessage(`{"apiKey": "test"}`)
-			_, err := New(ProviderName, logger, config)
+			_, err := New(connID, ProviderName, logger, config)
 			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
 		It("should return valid install response", func(ctx SpecContext) {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient := client.NewMockHTTPClient(ctrl)
-
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
-			plg, err := New(ProviderName, logger, config)
-			plg.client.SetHttpClient(mockHTTPClient)
-			mockHTTPClient.EXPECT().Do(
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).Return(
-				200,
-				nil,
-			)
+			config := json.RawMessage(fmt.Sprintf(`{"apiKey": "test","endpoint": "%s"}`, ts.URL))
+			plg, err := New(connID, ProviderName, logger, config)
 
 			Expect(err).To(BeNil())
 			req := models.InstallRequest{}
 			res, err := plg.Install(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(len(res.WebhooksConfigs) > 0).To(BeTrue())
 			Expect(len(res.Workflow) > 0).To(BeTrue())
 			Expect(res.Workflow).To(Equal(workflow()))
 		})
@@ -206,14 +204,15 @@ var _ = Describe("Column Plugin", func() {
 	})
 
 	Context("When client is installed", func() {
-		var plg *Plugin
+		var plg models.Plugin
 
-		BeforeEach(func() {
-			config := json.RawMessage(`{"apiKey": "test", "endpoint": "test"}`)
+		BeforeEach(func(ctx SpecContext) {
+			config := json.RawMessage(fmt.Sprintf(`{"apiKey":"test","endpoint": "%s"}`, ts.URL))
 			var err error
-			plg, err = New(ProviderName, logger, config)
+			p, err := New(connID, ProviderName, logger, config)
 			Expect(err).To(BeNil())
-			Expect(plg.client).NotTo(BeNil())
+			Expect(p.client).NotTo(BeNil())
+			plg = p
 		})
 
 		It("should fail when fetching next others", func(ctx SpecContext) {

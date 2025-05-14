@@ -38,8 +38,7 @@ func TestMockPlugin(t *testing.T) {
 			ConnectorID: "test-connector",
 		}
 		resp := models.InstallResponse{
-			Workflow:        models.ConnectorTasksTree{},
-			WebhooksConfigs: []models.PSPWebhookConfig{},
+			Workflow: models.ConnectorTasksTree{},
 		}
 
 		mockPlugin.EXPECT().Install(ctx, req).Return(resp, nil)
@@ -48,7 +47,6 @@ func TestMockPlugin(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.Equal(t, resp.Workflow, result.Workflow)
-		assert.Equal(t, resp.WebhooksConfigs, result.WebhooksConfigs)
 	})
 
 	t.Run("Uninstall", func(t *testing.T) {

@@ -42,7 +42,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return models.CreatePayoutResponse{}, err
 	}
 
-	payment, err := p.payoutToPayment(resp)
+	payment, err := p.payoutToPayment(resp.ID, resp)
 	if err != nil {
 		return models.CreatePayoutResponse{}, err
 	}
@@ -52,7 +52,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 	}, nil
 }
 
-func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
+func (p *Plugin) payoutToPayment(id string, from *client.PayoutResponse) (*models.PSPPayment, error) {
 	raw, err := json.Marshal(from)
 	if err != nil {
 		return &models.PSPPayment{}, err
@@ -72,11 +72,12 @@ func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPaymen
 	}
 
 	return &models.PSPPayment{
+		Reference:                   id,
+		ParentReference:             from.ID,
 		Amount:                      big.NewInt(from.Amount),
 		Asset:                       curr,
 		Status:                      p.mapTransactionStatus(from.Status),
 		Raw:                         raw,
-		Reference:                   from.ID,
 		Type:                        mapPayoutType(from),
 		SourceAccountReference:      pointer.For(from.BankAccountID),
 		DestinationAccountReference: pointer.For(from.CounterpartyId),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -15,7 +16,7 @@ import (
 const ProviderName = "wise"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
@@ -37,9 +38,9 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	config         Config
-	client         client.Client
-	webhookConfigs map[string]webhookConfig
+	config            Config
+	client            client.Client
+	supportedWebhooks map[string]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -59,7 +60,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		config: config,
 	}
 
-	p.webhookConfigs = map[string]webhookConfig{
+	p.supportedWebhooks = map[string]supportedWebhook{
 		"transfer_state_changed": {
 			triggerOn: "transfers#state-change",
 			urlPath:   "/transferstatechanged",
@@ -82,17 +83,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    name,
-			URLPath: config.urlPath,
-		})
-	}
-
 	return models.InstallResponse{
-		Workflow:        workflow(),
-		WebhooksConfigs: configs,
+		Workflow: workflow(),
 	}, nil
 }
 
@@ -181,6 +173,38 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return p.createWebhooks(ctx, req)
 }
 
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	testNotif, ok := req.Webhook.Headers[HeadersTestNotification]
+	if ok && len(testNotif) > 0 {
+		if testNotif[0] == "true" {
+			return models.VerifyWebhookResponse{}, nil
+		}
+	}
+
+	v, ok := req.Webhook.Headers[HeadersDeliveryID]
+	if !ok || len(v) == 0 {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", ErrWebhookHeaderXDeliveryIDMissing, models.ErrWebhookVerification)
+	}
+
+	signatures, ok := req.Webhook.Headers[HeadersSignature]
+	if !ok || len(signatures) == 0 {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", ErrWebhookHeaderXSignatureMissing, models.ErrWebhookVerification)
+	}
+
+	err := p.verifySignature(req.Webhook.Body, signatures[0])
+	if err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", err, models.ErrWebhookVerification)
+	}
+
+	return models.VerifyWebhookResponse{
+		WebhookIdempotencyKey: &v[0],
+	}, nil
+}
+
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
@@ -193,22 +217,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		}
 	}
 
-	v, ok := req.Webhook.Headers[HeadersDeliveryID]
-	if !ok || len(v) == 0 {
-		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXDeliveryIDMissing
-	}
-
-	signatures, ok := req.Webhook.Headers[HeadersSignature]
-	if !ok || len(signatures) == 0 {
-		return models.TranslateWebhookResponse{}, ErrWebhookHeaderXSignatureMissing
-	}
-
-	err := p.verifySignature(req.Webhook.Body, signatures[0])
-	if err != nil {
-		return models.TranslateWebhookResponse{}, err
-	}
-
-	config, ok := p.webhookConfigs[req.Name]
+	config, ok := p.supportedWebhooks[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, ErrWebhookNameUnknown
 	}
@@ -217,8 +226,6 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}
-
-	res.IdempotencyKey = v[0]
 
 	return models.TranslateWebhookResponse{
 		Responses: []models.WebhookResponse{res},

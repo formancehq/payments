@@ -15,7 +15,7 @@ import (
 const ProviderName = "adyen"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
@@ -26,8 +26,8 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	client         client.Client
-	webhookConfigs map[string]webhookConfig
+	client            client.Client
+	supportedWebhooks map[string]supportedWebhook
 
 	connectorID string
 }
@@ -65,17 +65,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	configs := []models.PSPWebhookConfig{}
-	for name, c := range p.webhookConfigs {
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    name,
-			URLPath: c.urlPath,
-		})
-	}
-
 	return models.InstallResponse{
-		Workflow:        workflow(),
-		WebhooksConfigs: configs,
+		Workflow: workflow(),
 	}, nil
 }
 
@@ -100,8 +91,35 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
 	}
 	p.connectorID = req.ConnectorID
-	err := p.createWebhooks(ctx, req)
-	return models.CreateWebhooksResponse{}, err
+	configs, err := p.createWebhooks(ctx, req)
+	if err != nil {
+		return models.CreateWebhooksResponse{}, err
+	}
+
+	others := make([]models.PSPOther, 0, len(configs))
+	for _, config := range configs {
+		raw, err := json.Marshal(&config)
+		if err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
+		others = append(others, models.PSPOther{
+			ID:    config.Name,
+			Other: raw,
+		})
+	}
+
+	return models.CreateWebhooksResponse{
+		Others:  others,
+		Configs: configs,
+	}, nil
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.verifyWebhook(ctx, req)
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
@@ -109,7 +127,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	config, ok := p.webhookConfigs[req.Name]
+	config, ok := p.supportedWebhooks[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, errors.New("unknown webhook")
 	}

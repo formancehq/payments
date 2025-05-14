@@ -36,6 +36,7 @@ type PSPPlugin interface {
 	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
+	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 
@@ -49,8 +50,7 @@ type InstallRequest struct {
 }
 
 type InstallResponse struct {
-	Workflow        ConnectorTasksTree
-	WebhooksConfigs []PSPWebhookConfig
+	Workflow ConnectorTasksTree
 }
 
 type UninstallRequest struct {
@@ -135,16 +135,17 @@ type CreateWebhooksRequest struct {
 }
 
 type CreateWebhooksResponse struct {
-	Others []PSPOther
+	Configs []PSPWebhookConfig
+	Others  []PSPOther // used by plugin workflow
 }
 
 type TranslateWebhookRequest struct {
 	Name    string
 	Webhook PSPWebhook
+	Config  *WebhookConfig
 }
 
 type WebhookResponse struct {
-	IdempotencyKey  string
 	Account         *PSPAccount
 	ExternalAccount *PSPAccount
 	Payment         *PSPPayment
@@ -152,6 +153,15 @@ type WebhookResponse struct {
 
 type TranslateWebhookResponse struct {
 	Responses []WebhookResponse
+}
+
+type VerifyWebhookRequest struct {
+	Webhook PSPWebhook
+	Config  *WebhookConfig
+}
+
+type VerifyWebhookResponse struct {
+	WebhookIdempotencyKey *string
 }
 
 type CreateTransferRequest struct {

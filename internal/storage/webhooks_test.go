@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
@@ -24,8 +25,9 @@ var (
 			Body: []byte(`{}`),
 		},
 		{
-			ID:          "test2",
-			ConnectorID: defaultConnector.ID,
+			ID:             "test2",
+			ConnectorID:    defaultConnector.ID,
+			IdempotencyKey: pointer.For("test"),
 			QueryValues: map[string][]string{
 				"foo3": {"bar3"},
 			},
@@ -76,6 +78,42 @@ func TestWebhooksInsert(t *testing.T) {
 		}
 
 		require.Error(t, store.WebhooksInsert(ctx, webhook))
+	})
+
+	t.Run("same null idempotency key", func(t *testing.T) {
+		w := models.Webhook{
+			ID:          "new",
+			ConnectorID: defaultConnector.ID,
+			QueryValues: map[string][]string{
+				"foo3": {"bar3"},
+			},
+			Headers: map[string][]string{
+				"foo4": {"bar4"},
+			},
+			Body: []byte(`{}`),
+		}
+
+		err := store.WebhooksInsert(ctx, w)
+		require.NoError(t, err)
+	})
+
+	t.Run("same idempotency key", func(t *testing.T) {
+		w := models.Webhook{
+			ID:             "new2",
+			ConnectorID:    defaultConnector.ID,
+			IdempotencyKey: pointer.For("test"),
+			QueryValues: map[string][]string{
+				"foo3": {"bar3"},
+			},
+			Headers: map[string][]string{
+				"foo4": {"bar4"},
+			},
+			Body: []byte(`{}`),
+		}
+
+		err := store.WebhooksInsert(ctx, w)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrDuplicateKeyValue)
 	})
 }
 

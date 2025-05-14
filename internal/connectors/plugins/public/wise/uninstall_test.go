@@ -12,16 +12,19 @@ import (
 
 var _ = Describe("Wise Plugin Uninstall", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
+		ctrl *gomock.Controller
+		plg  models.Plugin
+		m    *client.MockClient
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
-
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg.SetClient(m)
+		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("uninstall", func() {

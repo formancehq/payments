@@ -17,7 +17,7 @@ import (
 const ProviderName = "mangopay"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
@@ -28,8 +28,8 @@ type Plugin struct {
 	name   string
 	logger logging.Logger
 
-	client         client.Client
-	webhookConfigs map[client.EventType]webhookConfig
+	client            client.Client
+	supportedWebhooks map[client.EventType]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -58,17 +58,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    string(name),
-			URLPath: config.urlPath,
-		})
-	}
-
 	return models.InstallResponse{
-		WebhooksConfigs: configs,
-		Workflow:        workflow(),
+		Workflow: workflow(),
 	}, nil
 }
 
@@ -157,8 +148,32 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
 	}
-	err := p.createWebhooks(ctx, req)
-	return models.CreateWebhooksResponse{}, err
+	configs, err := p.createWebhooks(ctx, req)
+	if err != nil {
+		return models.CreateWebhooksResponse{}, err
+	}
+
+	others := make([]models.PSPOther, 0, len(configs))
+	for _, config := range configs {
+		raw, err := json.Marshal(&config)
+		if err != nil {
+			return models.CreateWebhooksResponse{}, err
+		}
+		others = append(others, models.PSPOther{
+			ID:    config.Name,
+			Other: raw,
+		})
+	}
+	return models.CreateWebhooksResponse{
+		Others:  others,
+		Configs: configs,
+	}, nil
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	// Nothing to do here, we don't need to verify the webhook and we don't want
+	// to generate an idempotency key from the query values
+	return models.VerifyWebhookResponse{}, nil
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
@@ -203,7 +218,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		EventType:  client.EventType(eventType[0]),
 	}
 
-	config, ok := p.webhookConfigs[webhook.EventType]
+	config, ok := p.supportedWebhooks[webhook.EventType]
 	if !ok {
 		return models.TranslateWebhookResponse{}, errorsutils.NewWrappedError(
 			fmt.Errorf("unsupported webhook event type: %s", webhook.EventType),

@@ -2,8 +2,9 @@ package adyen
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"time"
 
@@ -18,17 +19,23 @@ import (
 
 var _ = Describe("Adyen Plugin Accounts", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
-		now time.Time
+		plg  models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		now  time.Time
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg = &Plugin{client: m}
-		plg.initWebhookConfig()
+		p := &Plugin{client: m}
+		p.initWebhookConfig()
+		plg = p
 		now = time.Now().UTC()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("creating webhooks", func() {
@@ -37,7 +44,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				ConnectorID: "test",
 			}
 
-			err := plg.createWebhooks(ctx, req)
+			_, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(MatchError("STACK_PUBLIC_URL is not set"))
 		})
 
@@ -47,7 +54,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 				WebhookBaseUrl: "&grjete%",
 			}
 
-			err := plg.createWebhooks(ctx, req)
+			_, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).ToNot(BeNil())
 		})
 
@@ -58,39 +65,22 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			}
 
 			expectedURL := "http://localhost:8080/test/standard"
-			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(nil)
+			m.EXPECT().CreateWebhook(gomock.Any(), expectedURL, req.ConnectorID).Return(client.CreateWebhookResponse{HMACKey: "test"}, nil)
 
-			err := plg.createWebhooks(ctx, req)
+			configs, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
+			Expect(configs.Configs).To(HaveLen(1))
+			Expect(configs.Configs[0].Metadata[webhookHMACMetadataKey]).To(Equal("test"))
 		})
 	})
 
-	Context("translating webhooks", func() {
-		It("should fail - wrong basic auth", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "standard",
-				Webhook: models.PSPWebhook{
-					BasicAuth: &models.BasicAuth{
-						Username: "test",
-						Password: "test",
-					},
-					QueryValues: map[string][]string{},
-					Headers:     map[string][]string{},
-					Body:        []byte{},
-				},
-			}
+	Context("verifying webhooks", func() {
+		var (
+			w webhook.Webhook
+		)
 
-			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(
-				false,
-			)
-
-			_, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("invalid basic auth"))
-		})
-
-		It("should not process - invalid hmac", func(ctx SpecContext) {
-			w := webhook.Webhook{
+		BeforeEach(func() {
+			w = webhook.Webhook{
 				Live: "false",
 				NotificationItems: &[]webhook.NotificationItem{
 					{
@@ -110,11 +100,46 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 					},
 				},
 			}
+		})
 
+		It("should fail - wrong basic auth", func(ctx SpecContext) {
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
+				},
+				Webhook: models.PSPWebhook{
+					BasicAuth: &models.BasicAuth{
+						Username: "test",
+						Password: "test",
+					},
+					QueryValues: map[string][]string{},
+					Headers:     map[string][]string{},
+					Body:        []byte{},
+				},
+			}
+
+			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(
+				false,
+			)
+
+			_, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err).To(MatchError("invalid basic auth: webhook verification error"))
+		})
+
+		It("should not process - invalid hmac", func(ctx SpecContext) {
 			b, _ := json.Marshal(&w)
 
-			req := models.TranslateWebhookRequest{
-				Name: "standard",
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
+				},
 				Webhook: models.PSPWebhook{
 					QueryValues: map[string][]string{},
 					Headers:     map[string][]string{},
@@ -124,12 +149,43 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(true)
 			m.EXPECT().TranslateWebhook(string(req.Webhook.Body)).Return(&w, nil)
-			m.EXPECT().VerifyWebhookHMAC(gomock.Any()).Return(false)
+			m.EXPECT().VerifyWebhookHMAC(gomock.Any(), "test").Return(false)
 
-			resp, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp.Responses).To(BeEmpty())
+			resp, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(resp.WebhookIdempotencyKey).To(BeNil())
 		})
+
+		It("should be ok", func(ctx SpecContext) {
+			b, _ := json.Marshal(&w)
+			sha := sha256.Sum256(b)
+			ik := base64.StdEncoding.EncodeToString(sha[:])
+
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: "standard",
+					Metadata: map[string]string{
+						webhookHMACMetadataKey: "test",
+					},
+				},
+				Webhook: models.PSPWebhook{
+					QueryValues: map[string][]string{},
+					Headers:     map[string][]string{},
+					Body:        b,
+				},
+			}
+
+			m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(true)
+			m.EXPECT().TranslateWebhook(string(req.Webhook.Body)).Return(&w, nil)
+			m.EXPECT().VerifyWebhookHMAC(gomock.Any(), "test").Return(true)
+
+			resp, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.WebhookIdempotencyKey).To(Equal(pointer.For(ik)))
+		})
+	})
+
+	Context("translating webhooks", func() {
 
 		It("should handle authorization", func(ctx SpecContext) {
 			expectedPSPPayment := models.PSPPayment{
@@ -421,7 +477,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 func doTranslateCall(
 	ctx context.Context,
-	plg *Plugin,
+	plg models.Plugin,
 	m *client.MockClient,
 	eventCode string,
 	amount int64,
@@ -461,16 +517,11 @@ func doTranslateCall(
 		},
 	}
 
-	m.EXPECT().VerifyWebhookBasicAuth(req.Webhook.BasicAuth).Return(true)
 	m.EXPECT().TranslateWebhook(string(req.Webhook.Body)).Return(&w, nil)
-	m.EXPECT().VerifyWebhookHMAC(gomock.Any()).Return(true)
-
-	expectedIK := fmt.Sprintf("test-%s-%d", eventCode, now.UnixNano())
 
 	resp, err := plg.TranslateWebhook(ctx, req)
 	Expect(err).To(BeNil())
 	Expect(len(resp.Responses)).To(Equal(1))
-	Expect(resp.Responses[0].IdempotencyKey).To(Equal(expectedIK))
 	comparePayments(*resp.Responses[0].Payment, expectedPSPPayment)
 }
 

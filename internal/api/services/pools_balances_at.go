@@ -9,7 +9,11 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time.Time) ([]models.AggregatedBalance, error) {
+func (s *Service) PoolsBalancesAt(
+	ctx context.Context,
+	poolID uuid.UUID,
+	at time.Time,
+) ([]models.AggregatedBalance, error) {
 	pool, err := s.storage.PoolsGet(ctx, poolID)
 	if err != nil {
 		return nil, newStorageError(err, "cannot get pool")

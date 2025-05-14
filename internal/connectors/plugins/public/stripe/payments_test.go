@@ -25,7 +25,8 @@ var _ = Describe("Stripe Plugin Payments", func() {
 
 	Context("fetch next Payments", func() {
 		var (
-			m *client.MockClient
+			ctrl *gomock.Controller
+			m    *client.MockClient
 
 			samplePayments []*stripesdk.BalanceTransaction
 			accRef         string
@@ -33,7 +34,7 @@ var _ = Describe("Stripe Plugin Payments", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.client = m
 
@@ -186,7 +187,10 @@ var _ = Describe("Stripe Plugin Payments", func() {
 					},
 				},
 			}
+		})
 
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("fails when payments contain unsupported currencies", func(ctx SpecContext) {

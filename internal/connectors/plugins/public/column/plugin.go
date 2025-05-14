@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -17,8 +16,8 @@ import (
 const ProviderName = "column"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, rm)
+	registry.RegisterPlugin(ProviderName, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(connectorID, name, logger, rm)
 	}, capabilities, Config{})
 }
 
@@ -70,15 +69,16 @@ var (
 type Plugin struct {
 	models.Plugin
 
-	name   string
-	logger logging.Logger
+	name        string
+	connectorID models.ConnectorID
+	logger      logging.Logger
 
-	client         client.Client
-	webhookConfigs map[client.EventCategory]webhookConfig
-	verifier       WebhookVerifier
+	client            client.Client
+	supportedWebhooks map[client.EventCategory]supportedWebhook
+	verifier          WebhookVerifier
 }
 
-func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(connectorID models.ConnectorID, name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
@@ -88,14 +88,16 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
 
-		name:     name,
-		logger:   logger,
-		client:   client,
-		verifier: &defaultVerifier{},
+		name:        name,
+		connectorID: connectorID,
+		logger:      logger,
+		client:      client,
+		verifier:    &defaultVerifier{},
 	}
 
-	p.initWebhookConfig()
-
+	if err := p.initWebhookConfig(); err != nil {
+		return p, fmt.Errorf("failed to init webhooks for %s: %w", name, err)
+	}
 	return p, nil
 }
 
@@ -104,37 +106,8 @@ func (p *Plugin) Name() string {
 }
 
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
-	var isSecretMissing bool
-
-	configs := make([]models.PSPWebhookConfig, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
-		if config.secret == "" {
-			isSecretMissing = true
-		}
-		configs = append(configs, models.PSPWebhookConfig{
-			Name:    string(name),
-			URLPath: config.urlPath,
-		})
-	}
-
-	if isSecretMissing {
-		webhooks, err := p.client.ListEventSubscriptions(ctx)
-		if err != nil {
-			return models.InstallResponse{}, err
-		}
-		for _, webhook := range webhooks {
-			if !strings.Contains(webhook.URL, req.ConnectorID) {
-				continue
-			}
-			eventCategory := client.EventCategory(webhook.EnabledEvents[0])
-			config := p.webhookConfigs[eventCategory]
-			config.secret = webhook.Secret
-			p.webhookConfigs[eventCategory] = config
-		}
-	}
 	return models.InstallResponse{
-		Workflow:        workflow(),
-		WebhooksConfigs: configs,
+		Workflow: workflow(),
 	}, nil
 }
 
@@ -218,6 +191,13 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.createWebhooks(ctx, req)
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.verifyWebhook(ctx, req)
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {

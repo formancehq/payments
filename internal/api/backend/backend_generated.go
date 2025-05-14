@@ -634,6 +634,21 @@ func (mr *MockBackendMockRecorder) PoolsAddAccount(ctx, id, accountID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsAddAccount", reflect.TypeOf((*MockBackend)(nil).PoolsAddAccount), ctx, id, accountID)
 }
 
+// PoolsBalances mocks base method.
+func (m *MockBackend) PoolsBalances(ctx context.Context, poolID uuid.UUID) ([]models.AggregatedBalance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PoolsBalances", ctx, poolID)
+	ret0, _ := ret[0].([]models.AggregatedBalance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PoolsBalances indicates an expected call of PoolsBalances.
+func (mr *MockBackendMockRecorder) PoolsBalances(ctx, poolID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PoolsBalances", reflect.TypeOf((*MockBackend)(nil).PoolsBalances), ctx, poolID)
+}
+
 // PoolsBalancesAt mocks base method.
 func (m *MockBackend) PoolsBalancesAt(ctx context.Context, poolID uuid.UUID, at time.Time) ([]models.AggregatedBalance, error) {
 	m.ctrl.T.Helper()

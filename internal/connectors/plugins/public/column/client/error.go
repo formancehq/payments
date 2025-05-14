@@ -6,10 +6,12 @@ import (
 )
 
 var (
-	ErrWebhookUrlMissing              = errors.New("webhook url is not set")
-	ErrWebhookHeaderXSignatureMissing = errors.New("missing X-Signature-Sha256 header")
-	ErrWebhookNameUnknown             = errors.New("unknown webhook name")
-	ErrWebhookRequestFailed           = errors.New("failed to create webhooks request")
+	ErrWebhookUrlMissing          = errors.New("webhook url is not set")
+	ErrColumSignatureMissing      = errors.New("missing Column-Signature header")
+	ErrWebhookConfigInvalid       = errors.New("webhook config is invalid")
+	ErrWebhookTypeUnknown         = errors.New("webhook type is not supported")
+	ErrWebhookConfigSecretMissing = errors.New("webhook config secret missing")
+	ErrWebhookRequestFailed       = errors.New("failed to create webhooks request")
 )
 
 type columnError struct {

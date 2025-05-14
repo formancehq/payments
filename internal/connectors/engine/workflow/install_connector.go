@@ -60,22 +60,6 @@ func (w Workflow) installConnector(
 		return errors.Wrap(err, "failed to store tasks tree")
 	}
 
-	if len(installResponse.WebhooksConfigs) > 0 {
-		configs := make([]models.WebhookConfig, 0, len(installResponse.WebhooksConfigs))
-		for _, webhookConfig := range installResponse.WebhooksConfigs {
-			configs = append(configs, models.WebhookConfig{
-				Name:        webhookConfig.Name,
-				ConnectorID: installConnector.ConnectorID,
-				URLPath:     webhookConfig.URLPath,
-			})
-		}
-
-		err = activities.StorageWebhooksConfigsStore(infiniteRetryContext(ctx), configs)
-		if err != nil {
-			return errors.Wrap(err, "failed to store webhooks configs")
-		}
-	}
-
 	// Fifth step: launch the workflow tree, do not wait for the result
 	// by using the GetChildWorkflowExecution function that returns a future
 	// which will be ready when the child workflow has successfully started.

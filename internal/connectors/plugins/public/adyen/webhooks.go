@@ -2,8 +2,9 @@ package adyen
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"math/big"
 	"net/url"
@@ -15,13 +16,17 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type webhookConfig struct {
+const (
+	webhookHMACMetadataKey = "hmac_key"
+)
+
+type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error)
 }
 
 func (p *Plugin) initWebhookConfig() {
-	p.webhookConfigs = map[string]webhookConfig{
+	p.supportedWebhooks = map[string]supportedWebhook{
 		"standard": {
 			urlPath: "/standard",
 			fn:      p.translateStandardWebhook,
@@ -29,26 +34,60 @@ func (p *Plugin) initWebhookConfig() {
 	}
 }
 
-func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) error {
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) ([]models.PSPWebhookConfig, error) {
+	configs := make([]models.PSPWebhookConfig, 0, 1)
 	if req.WebhookBaseUrl == "" {
-		return errors.New("STACK_PUBLIC_URL is not set")
+		return configs, fmt.Errorf("STACK_PUBLIC_URL is not set")
 	}
 
-	standardConfig := p.webhookConfigs["standard"]
+	name := "standard"
+	standardConfig := p.supportedWebhooks[name]
 
 	url, err := url.JoinPath(req.WebhookBaseUrl, standardConfig.urlPath)
 	if err != nil {
-		return err
+		return configs, err
 	}
 
-	return p.client.CreateWebhook(ctx, url, req.ConnectorID)
+	resp, err := p.client.CreateWebhook(ctx, url, req.ConnectorID)
+	if err != nil {
+		return configs, err
+	}
+
+	configs = append(configs, models.PSPWebhookConfig{
+		Name:    name,
+		URLPath: standardConfig.urlPath,
+		Metadata: map[string]string{
+			webhookHMACMetadataKey: resp.HMACKey,
+		},
+	})
+
+	return configs, err
+}
+
+func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if !p.client.VerifyWebhookBasicAuth(req.Webhook.BasicAuth) {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid basic auth: %w", models.ErrWebhookVerification)
+	}
+
+	webhooks, err := p.client.TranslateWebhook(string(req.Webhook.Body))
+	if err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+
+	for _, item := range *webhooks.NotificationItems {
+		if !p.client.VerifyWebhookHMAC(item, req.Config.Metadata[webhookHMACMetadataKey]) {
+			return models.VerifyWebhookResponse{}, fmt.Errorf("invalid HMAC: %w", models.ErrWebhookVerification)
+		}
+	}
+
+	sha := sha256.Sum256(req.Webhook.Body)
+	ik := base64.StdEncoding.EncodeToString(sha[:])
+	return models.VerifyWebhookResponse{
+		WebhookIdempotencyKey: pointer.For(ik),
+	}, nil
 }
 
 func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	if !p.client.VerifyWebhookBasicAuth(req.Webhook.BasicAuth) {
-		return models.TranslateWebhookResponse{}, errors.New("invalid basic auth")
-	}
-
 	webhooks, err := p.client.TranslateWebhook(string(req.Webhook.Body))
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
@@ -56,10 +95,6 @@ func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.Transl
 
 	responses := make([]models.WebhookResponse, 0, len(*webhooks.NotificationItems))
 	for _, item := range *webhooks.NotificationItems {
-		if !p.client.VerifyWebhookHMAC(item) {
-			continue
-		}
-
 		var payment *models.PSPPayment
 		var err error
 		switch item.NotificationRequestItem.EventCode {
@@ -94,8 +129,7 @@ func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.Transl
 
 		if payment != nil {
 			responses = append(responses, models.WebhookResponse{
-				IdempotencyKey: fmt.Sprintf("%s-%s-%d", item.NotificationRequestItem.MerchantReference, item.NotificationRequestItem.EventCode, item.NotificationRequestItem.EventDate.UnixNano()),
-				Payment:        payment,
+				Payment: payment,
 			})
 		}
 	}

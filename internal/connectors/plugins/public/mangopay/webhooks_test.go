@@ -3,7 +3,6 @@ package mangopay
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"math/big"
 	"strconv"
 	"time"
@@ -18,25 +17,29 @@ import (
 
 var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		p := &Plugin{client: m}
+		p.initWebhookConfig()
+		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {
 		var (
-			m                         *client.MockClient
 			listAllValidHooksResponse []*client.Hook
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-			plg.initWebhookConfig()
-
 			listAllValidHooksResponse = []*client.Hook{
 				{
 					ID:        "1",
@@ -205,45 +208,49 @@ var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 			}
 
 			m.EXPECT().ListAllHooks(gomock.Any()).Return(nil, nil)
-			for range plg.webhookConfigs {
+
+			for range plg.(*Plugin).supportedWebhooks {
 				m.EXPECT().CreateHook(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
 			}
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp).To(Equal(models.CreateWebhooksResponse{}))
+			Expect(resp.Configs).To(HaveLen(len(plg.(*Plugin).supportedWebhooks)))
 		})
 	})
 })
 
 var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		p := &Plugin{client: m}
+		p.initWebhookConfig()
+		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {
 		var (
-			m                      *client.MockClient
 			sampleTransferResponse client.TransferResponse
 			samplePayoutResponse   client.PayoutResponse
 			samplePayinResponse    client.PayinResponse
 			sampleRefundResponse   client.Refund
 			now                    time.Time
-			date                   string
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
-			date = strconv.FormatInt(now.UTC().Unix(), 10)
-			plg.initWebhookConfig()
 
 			sampleTransferResponse = client.TransferResponse{
 				ID:           "1",
@@ -453,7 +460,6 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 				Expect(resp).To(Equal(models.TranslateWebhookResponse{
 					Responses: []models.WebhookResponse{
 						{
-							IdempotencyKey: fmt.Sprintf("1-%s-%s", eventType, date),
 							Payment: &models.PSPPayment{
 								Reference:                   "1",
 								CreatedAt:                   time.Unix(sampleTransferResponse.CreationDate, 0),
@@ -535,7 +541,6 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 				Expect(resp).To(Equal(models.TranslateWebhookResponse{
 					Responses: []models.WebhookResponse{
 						{
-							IdempotencyKey: fmt.Sprintf("1-%s-%s", eventType, date),
 							Payment: &models.PSPPayment{
 								Reference:                   "1",
 								CreatedAt:                   time.Unix(samplePayoutResponse.CreationDate, 0),
@@ -615,7 +620,6 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 				Expect(resp).To(Equal(models.TranslateWebhookResponse{
 					Responses: []models.WebhookResponse{
 						{
-							IdempotencyKey: fmt.Sprintf("1-%s-%s", eventType, date),
 							Payment: &models.PSPPayment{
 								Reference:                   "1",
 								CreatedAt:                   time.Unix(samplePayinResponse.CreationDate, 0),
@@ -719,7 +723,6 @@ var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 				Expect(resp).To(Equal(models.TranslateWebhookResponse{
 					Responses: []models.WebhookResponse{
 						{
-							IdempotencyKey: fmt.Sprintf("1-%s-%s", eventType, date),
 							Payment: &models.PSPPayment{
 								ParentReference: "123",
 								Reference:       "1",

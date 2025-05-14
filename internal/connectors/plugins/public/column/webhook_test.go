@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/column/client"
 	"github.com/formancehq/payments/internal/models"
 	. "github.com/onsi/ginkgo/v2"
@@ -15,44 +16,45 @@ import (
 
 var _ = Describe("Column Plugin Webhooks", func() {
 	var (
-		plg      *Plugin
-		httpMock *client.MockHTTPClient
-		ctrl     *gomock.Controller
+		plg          models.Plugin
+		httpMock     *client.MockHTTPClient
+		ctrl         *gomock.Controller
+		verifierMock *MockWebhookVerifier
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		httpMock = client.NewMockHTTPClient(ctrl)
+		verifierMock = NewMockWebhookVerifier(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(httpMock)
+		p := &Plugin{
+			client:   c,
+			verifier: verifierMock,
+		}
+		err := p.initWebhookConfig()
+		Expect(err).To(BeNil())
+		plg = p
 	})
 
-	Context("create webhooks", func() {
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
+	Context("webhooks", func() {
 		var (
+			webhookID                 string
 			expectedObjectedID        string
 			expectedWebhookResponseID string
 			webhookBaseURL            string
-			err                       error
-			verifierMock              *MockWebhookVerifier
 			secret                    string
 		)
 		BeforeEach(func() {
-			ctrl = gomock.NewController(GinkgoT())
-			httpMock = client.NewMockHTTPClient(ctrl)
-			verifierMock = NewMockWebhookVerifier(ctrl)
-			plg = &Plugin{
-				client:   client.New("test", "aseplye", "https://test.com"),
-				verifier: verifierMock,
-			}
-			plg.client.SetHttpClient(httpMock)
+			webhookID = "webhook135"
 			expectedObjectedID = "44"
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseURL = "https://example.com"
 			secret = "test-secret"
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
-			}
-			Expect(err).To(BeNil())
 		})
 
 		It("skips making calls when webhook url missing", func(ctx SpecContext) {
@@ -74,24 +76,28 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				FromPayload:    json.RawMessage(`{"id":"1"}`),
 				WebhookBaseUrl: webhookBaseURL,
 			}
-			url, _ := url.JoinPath(req.WebhookBaseUrl, "ach/outgoing_transfer/settled")
-			httpMock.EXPECT().Do(
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-				gomock.Any(),
-			).Return(
-				200,
-				nil,
-			).SetArg(2, client.EventSubscription{
-				ID:            expectedWebhookResponseID,
-				URL:           url,
-				Secret:        "test-secret",
-				EnabledEvents: []string{"ach.outgoing_transfer.settled"},
-			})
+
+			for name, w := range plg.(*Plugin).supportedWebhooks {
+				url, _ := url.JoinPath(req.WebhookBaseUrl, w.urlPath)
+				httpMock.EXPECT().Do(
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+					gomock.Any(),
+				).Return(
+					200,
+					nil,
+				).SetArg(2, client.EventSubscription{
+					ID:            expectedWebhookResponseID,
+					URL:           url,
+					Secret:        "test-secret",
+					EnabledEvents: []string{string(name)},
+				})
+			}
+
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Others).To(HaveLen(1))
+			Expect(res.Others).To(HaveLen(len(plg.(*Plugin).supportedWebhooks)))
 			Expect(res.Others[0].ID).To(Equal(expectedWebhookResponseID))
 		})
 
@@ -116,36 +122,30 @@ var _ = Describe("Column Plugin Webhooks", func() {
 		})
 
 		It("should return an error - validation error - no header signature", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "test",
+			req := models.VerifyWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: "test",
+				},
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{},
 					Body:    json.RawMessage(`{"id":"1"}`),
 				},
 			}
-			res, err := plg.TranslateWebhook(ctx, req)
+			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing X-Signature-Sha256 header"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
+			Expect(err).To(MatchError("missing Column-Signature header: webhook verification error"))
+			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
 		})
 
 		It("should return an error - verify signature error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "ach.outgoing_transfer.settled",
+			req := models.VerifyWebhookRequest{
 				Webhook: models.PSPWebhook{
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "ach.outgoing_transfer.settled"}}`, expectedObjectedID)),
 				},
-			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
 
 			verifierMock.EXPECT().verifyWebhookSignature(
@@ -154,10 +154,34 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				secret,
 			).Return(errors.New("test error"))
 
-			res, err := plg.TranslateWebhook(ctx, req)
+			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
+			Expect(err).To(MatchError("test error: webhook verification error"))
+			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
+		})
+
+		It("should be ok when verifying", func(ctx SpecContext) {
+			req := models.VerifyWebhookRequest{
+				Webhook: models.PSPWebhook{
+					Headers: map[string][]string{
+						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
+					},
+					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "ach.outgoing_transfer.settled"}}`, expectedObjectedID)),
+				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
+			}
+
+			verifierMock.EXPECT().verifyWebhookSignature(
+				req.Webhook.Body,
+				req.Webhook.Headers["Column-Signature"][0],
+				secret,
+			).Return(nil)
+
+			res, err := plg.VerifyWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(res).To(Equal(models.VerifyWebhookResponse{
+				WebhookIdempotencyKey: pointer.For("1"),
+			}))
 		})
 
 		It("should return an error - unknown webhook name error", func(ctx SpecContext) {
@@ -169,169 +193,11 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s"}}`, expectedObjectedID)),
 				},
-			}
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-				},
+				Config: &models.WebhookConfig{Name: "ac.created", Metadata: map[string]string{}},
 			}
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("unknown webhook name"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - ach.outgoing_transfer.settled error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "ach.outgoing_transfer.settled",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s"}}`, expectedObjectedID)),
-				},
-			}
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error book.transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "book.transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "book.transfer.completed"}}`, expectedObjectedID)),
-				},
-			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryBookTransferCompleted: {
-					urlPath: "/book/transfer/completed",
-					fn:      plg.translateBookTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error realtime.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "realtime.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "realtime.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryRealtimeTransferCompleted: {
-					urlPath: "/realtime/outgoing_transfer/completed",
-					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - swift.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "swift.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type":"swift.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryInternationalWireCompleted: {
-					urlPath: "/swift/outgoing_transfer/completed",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
-			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
-		})
-
-		It("should return an error - wire.outgoing_transfer.completed error", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: "wire.outgoing_transfer.completed",
-				Webhook: models.PSPWebhook{
-					Headers: map[string][]string{
-						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
-					},
-					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "wire.outgoing_transfer.completed"}}`, expectedObjectedID)),
-				},
-			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferOutgoingCompleted: {
-					urlPath: "/wire/outgoing_transfer/completed",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(errors.New("test error"))
-
-			res, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test error"))
+			Expect(err).To(MatchError(client.ErrWebhookTypeUnknown.Error()))
 			Expect(res).To(Equal(models.TranslateWebhookResponse{}))
 		})
 
@@ -343,7 +209,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{
-						"id":"1", 
+						"id":"%s", 
 						"data": {
 							"id": "%s",
 							"type":"book.transfer.completed",
@@ -356,28 +222,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"receiver_account_number_id": "sample-receiver-account-number-id",
 							"currency_code": "USD"
 						}
-					}`, expectedObjectedID)),
+					}`, webhookID, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryBookTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryBookTransferCompleted: {
-					urlPath: "/book/transfer/completed",
-					fn:      plg.translateBookTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - realtime.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -388,7 +242,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{
-						"id":"1", 
+						"id":"%s", 
 						"data": {
 							"id": "%s",
 							"accepted_at": "2023-12-29T19:45:11Z",
@@ -403,28 +257,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"currency_code": "USD",
 							"description": "Example realtime transfer"
 						}
-					}`, expectedObjectedID)),
+					}`, webhookID, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryRealtimeTransferCompleted: {
-					urlPath: "/realtime/outgoing_transfer/completed",
-					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.settled", func(ctx SpecContext) {
@@ -434,8 +276,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "rule456",
 							"type":"CREDIT",
@@ -445,28 +287,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"description": "Test description",
 							"currency_code": "USD"
 						}
-					}`),
+					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSettled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSettled: {
-					urlPath: "/ach/outgoing_transfer/settled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("rule456"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("rule456"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -476,8 +306,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "eodl",
 							"type": "swift.outgoing_transfer.completed",
@@ -496,28 +326,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 								"unstructured": "sample-unstructured"
 							}
 						}
-					}`),
+					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryInternationalWireCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryInternationalWireCompleted: {
-					urlPath: "/swift/outgoing_transfer/completed",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("eodl"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("eodl"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -529,26 +347,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					},
 					Body: json.RawMessage(fmt.Sprintf(`{"id":"1", "data": {"id": "%s", "type": "wire.outgoing_transfer.completed"}}`, expectedObjectedID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferOutgoingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferOutgoingCompleted: {
-					urlPath: "/wire/outgoing_transfer/completed",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal(expectedObjectedID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal(expectedObjectedID))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.returned", func(ctx SpecContext) {
@@ -558,8 +363,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "return123",
 							"type":"RETURN",
@@ -569,28 +374,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"description": "Returned ACH transfer",
 							"currency_code": "USD"
 						}
-					}`),
+					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferReturned: {
-					urlPath: "/ach/outgoing_transfer/returned",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("return123"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("return123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_requested", func(ctx SpecContext) {
@@ -600,8 +393,8 @@ var _ = Describe("Column Plugin Webhooks", func() {
 					Headers: map[string][]string{
 						"Column-Signature": {"7ebfbadaa1856b9f1374f3e08453de3d760838344862344a103c28129d9173d1"},
 					},
-					Body: json.RawMessage(`{
-						"id":"1", 
+					Body: json.RawMessage(fmt.Sprintf(`{
+						"id":"%s", 
 						"data": {
 							"id": "cancel123",
 							"type": "swift.outgoing_transfer.cancellation_requested",
@@ -614,28 +407,16 @@ var _ = Describe("Column Plugin Webhooks", func() {
 							"currency_code": "USD",
 							"reason": "Customer request"
 						}
-					}`),
+					}`, webhookID)),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRequested), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingCancellationRequested: {
-					urlPath: "/swift/outgoing_transfer/cancellation_requested",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancel123"))
+			Expect(res.Responses[0].Payment.Reference).To(Equal(webhookID))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancel123"))
 		})
 
 		It("translate webhooks - realtime.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -660,26 +441,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryRealtimeTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryRealtimeTransferManualReview: {
-					urlPath: "/realtime/outgoing_transfer/manual_review",
-					fn:      plg.translateRealtimeTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("review123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("review123"))
 		})
 		It("translate webhooks - wire.outgoing_transfer.initiated", func(ctx SpecContext) {
 			req := models.TranslateWebhookRequest{
@@ -700,26 +468,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferInitiated: {
-					urlPath: "/wire/outgoing_transfer/initiated",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("init123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("init123"))
 		})
 
 		It("translate webhooks - wire.incoming_transfer.completed", func(ctx SpecContext) {
@@ -741,26 +496,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferIncomingCompleted: {
-					urlPath: "/wire/incoming_transfer/completed",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("incoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("incoming123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -782,26 +524,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferSubmitted: {
-					urlPath: "/wire/outgoing_transfer/submitted",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submitted123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submitted123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.rejected", func(ctx SpecContext) {
@@ -823,26 +552,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferRejected), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferRejected: {
-					urlPath: "/wire/outgoing_transfer/rejected",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("rejected123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("rejected123"))
 		})
 
 		It("translate webhooks - wire.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -865,26 +581,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryWireTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryWireTransferManualReview: {
-					urlPath: "/wire/outgoing_transfer/manual_review",
-					fn:      plg.translateWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReview123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReview123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.initiated", func(ctx SpecContext) {
@@ -906,26 +609,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferInitiated: {
-					urlPath: "/ach/outgoing_transfer/initiated",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("initiatedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("initiatedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -947,26 +637,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferSubmitted: {
-					urlPath: "/ach/outgoing_transfer/submitted",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submittedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submittedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.completed", func(ctx SpecContext) {
@@ -988,26 +665,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferCompleted: {
-					urlPath: "/ach/outgoing_transfer/completed",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("completedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("completedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -1030,26 +694,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferManualReview), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferManualReview: {
-					urlPath: "/ach/outgoing_transfer/manual_review",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReviewACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReviewACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.canceled", func(ctx SpecContext) {
@@ -1071,26 +722,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferCanceled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferCanceled: {
-					urlPath: "/ach/outgoing_transfer/canceled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancelledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancelledACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.return_dishonored", func(ctx SpecContext) {
@@ -1112,26 +750,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferReturnDishonored: {
-					urlPath: "/ach/outgoing_transfer/return_dishonored",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("dishonoredACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("dishonoredACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.return_contested", func(ctx SpecContext) {
@@ -1153,26 +778,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferReturnContested: {
-					urlPath: "/ach/outgoing_transfer/return_contested",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("contestedACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("contestedACH123"))
 		})
 
 		It("translate webhooks - ach.outgoing_transfer.noc", func(ctx SpecContext) {
@@ -1194,26 +806,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHTransferNOC), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHTransferNOC: {
-					urlPath: "/ach/outgoing_transfer/noc",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("nocACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("nocACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.scheduled", func(ctx SpecContext) {
@@ -1235,26 +834,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingScheduled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingScheduled: {
-					urlPath: "/ach/incoming_transfer/scheduled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("scheduledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("scheduledACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.settled", func(ctx SpecContext) {
@@ -1276,26 +862,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingSettled), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingSettled: {
-					urlPath: "/ach/incoming_transfer/settled",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("settledACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("settledACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.nsf", func(ctx SpecContext) {
@@ -1317,26 +890,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingNSF), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingNSF: {
-					urlPath: "/ach/incoming_transfer/nsf",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("nsfACH123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("nsfACH123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.completed", func(ctx SpecContext) {
@@ -1358,26 +918,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingCompleted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingCompleted: {
-					urlPath: "/ach/incoming_transfer/completed",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("completedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("completedACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.returned", func(ctx SpecContext) {
@@ -1399,26 +946,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingReturned: {
-					urlPath: "/ach/incoming_transfer/returned",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("returnedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("returnedACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.return_dishonored", func(ctx SpecContext) {
@@ -1440,26 +974,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnDishonored), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingReturnDishonored: {
-					urlPath: "/ach/incoming_transfer/return_dishonored",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("dishonoredACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("dishonoredACHIncoming123"))
 		})
 
 		It("translate webhooks - ach.incoming_transfer.return_contested", func(ctx SpecContext) {
@@ -1481,26 +1002,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategoryACHIncomingReturnContested), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategoryACHIncomingReturnContested: {
-					urlPath: "/ach/incoming_transfer/return_contested",
-					fn:      plg.translateAchTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("contestedACHIncoming123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("contestedACHIncoming123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.initiated", func(ctx SpecContext) {
@@ -1522,26 +1030,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingInitiated), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingInitiated: {
-					urlPath: "/swift/outgoing_transfer/initiated",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("initiatedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("initiatedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.manual_review", func(ctx SpecContext) {
@@ -1564,26 +1059,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingManualReview), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingManualReview: {
-					urlPath: "/swift/outgoing_transfer/manual_review",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("manualReviewSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("manualReviewSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.submitted", func(ctx SpecContext) {
@@ -1605,26 +1087,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingSubmitted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingSubmitted: {
-					urlPath: "/swift/outgoing_transfer/submitted",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("submittedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("submittedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.pending_return", func(ctx SpecContext) {
@@ -1646,26 +1115,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingPendingReturn), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingPendingReturn: {
-					urlPath: "/swift/outgoing_transfer/pending_return",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("pendingReturnSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("pendingReturnSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.returned", func(ctx SpecContext) {
@@ -1687,26 +1143,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingReturned), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingReturned: {
-					urlPath: "/swift/outgoing_transfer/returned",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("returnedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("returnedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_accepted", func(ctx SpecContext) {
@@ -1728,26 +1171,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationAccepted), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingCancellationAccepted: {
-					urlPath: "/swift/outgoing_transfer/cancellation_accepted",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancellationAcceptedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancellationAcceptedSWIFT123"))
 		})
 
 		It("translate webhooks - swift.outgoing_transfer.cancellation_rejected", func(ctx SpecContext) {
@@ -1769,26 +1199,13 @@ var _ = Describe("Column Plugin Webhooks", func() {
 						}
 					}`),
 				},
+				Config: &models.WebhookConfig{Name: string(client.EventCategorySwiftOutgoingCancellationRejected), Metadata: map[string]string{"secret": secret}},
 			}
-
-			plg.webhookConfigs = map[client.EventCategory]webhookConfig{
-				client.EventCategorySwiftOutgoingCancellationRejected: {
-					urlPath: "/swift/outgoing_transfer/cancellation_rejected",
-					fn:      plg.translateInternationalWireTransfer,
-					secret:  secret,
-				},
-			}
-
-			verifierMock.EXPECT().verifyWebhookSignature(
-				req.Webhook.Body,
-				req.Webhook.Headers["Column-Signature"][0],
-				secret,
-			).Return(nil)
 
 			res, err := plg.TranslateWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(res.Responses).To(HaveLen(1))
-			Expect(res.Responses[0].Payment.Reference).To(Equal("cancellationRejectedSWIFT123"))
+			Expect(res.Responses[0].Payment.ParentReference).To(Equal("cancellationRejectedSWIFT123"))
 		})
 	})
 })

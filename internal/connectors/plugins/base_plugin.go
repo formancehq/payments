@@ -76,6 +76,10 @@ func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebho
 	return models.CreateWebhooksResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	return models.VerifyWebhookResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	return models.TranslateWebhookResponse{}, ErrNotImplemented
 }

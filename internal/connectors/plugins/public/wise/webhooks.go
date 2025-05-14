@@ -17,7 +17,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type webhookConfig struct {
+type supportedWebhook struct {
 	triggerOn string
 	urlPath   string
 	fn        func(context.Context, models.TranslateWebhookRequest) (models.WebhookResponse, error)
@@ -37,8 +37,9 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return models.CreateWebhooksResponse{}, ErrStackPublicUrlMissing
 	}
 
-	others := make([]models.PSPOther, 0, len(p.webhookConfigs))
-	for name, config := range p.webhookConfigs {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
+	others := make([]models.PSPOther, 0, len(p.supportedWebhooks))
+	for name, config := range p.supportedWebhooks {
 		url, err := url.JoinPath(req.WebhookBaseUrl, config.urlPath)
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
@@ -48,6 +49,10 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		if err != nil {
 			return models.CreateWebhooksResponse{}, err
 		}
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:    name,
+			URLPath: config.urlPath,
+		})
 
 		raw, err := json.Marshal(resp)
 		if err != nil {
@@ -61,7 +66,8 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}
 
 	return models.CreateWebhooksResponse{
-		Others: others,
+		Configs: configs,
+		Others:  others,
 	}, nil
 }
 
