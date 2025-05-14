@@ -15,7 +15,7 @@ import (
 
 var _ = Describe("Moneycorp *Plugin Balances", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next balances", func() {

@@ -15,7 +15,7 @@ import (
 var _ = Describe("Moneycorp *Plugin Accounts", func() {
 	Context("fetch next accounts", func() {
 		var (
-			plg *Plugin
+			plg models.Plugin
 			m   *client.MockClient
 
 			sampleAccounts []*client.Account

@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next ExternalAccounts", func() {

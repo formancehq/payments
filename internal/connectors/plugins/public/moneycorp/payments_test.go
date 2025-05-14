@@ -18,7 +18,7 @@ import (
 
 var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next Payments", func() {
@@ -219,7 +219,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 
 var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next Payments", func() {
