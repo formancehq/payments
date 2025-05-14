@@ -206,8 +206,7 @@ func (p *Plugin) translateTransfer(ctx context.Context, req webhookTranslateRequ
 	}
 
 	return models.WebhookResponse{
-		IdempotencyKey: fmt.Sprintf("%s-%s-%d", req.webhook.ResourceID, string(req.webhook.EventType), req.webhook.Date),
-		Payment:        &payment,
+		Payment: &payment,
 	}, nil
 }
 
@@ -250,8 +249,7 @@ func (p *Plugin) translatePayout(ctx context.Context, req webhookTranslateReques
 	}
 
 	return models.WebhookResponse{
-		IdempotencyKey: fmt.Sprintf("%s-%s-%d", req.webhook.ResourceID, string(req.webhook.EventType), req.webhook.Date),
-		Payment:        &payment,
+		Payment: &payment,
 	}, nil
 }
 
@@ -290,8 +288,7 @@ func (p *Plugin) translatePayin(ctx context.Context, req webhookTranslateRequest
 	}
 
 	return models.WebhookResponse{
-		IdempotencyKey: fmt.Sprintf("%s-%s-%d", req.webhook.ResourceID, string(req.webhook.EventType), req.webhook.Date),
-		Payment:        &payment,
+		Payment: &payment,
 	}, nil
 }
 
@@ -335,7 +332,6 @@ func (p *Plugin) translateRefund(ctx context.Context, req webhookTranslateReques
 	}
 
 	return models.WebhookResponse{
-		IdempotencyKey: fmt.Sprintf("%s-%s-%d", req.webhook.ResourceID, string(req.webhook.EventType), req.webhook.Date),
-		Payment:        &payment,
+		Payment: &payment,
 	}, nil
 }

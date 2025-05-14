@@ -15,24 +15,23 @@ import (
 
 var _ = Describe("Mangopay Plugin External Accounts", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next external accounts", func() {
 		var (
-			m                  *client.MockClient
 			sampleBankAccounts []client.BankAccount
 			now                time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleBankAccounts = make([]client.BankAccount, 0)
