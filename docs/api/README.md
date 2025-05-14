@@ -2729,7 +2729,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
-## Get pool balances
+## Get historical pool balances from a particular point in time
 
 <a id="opIdv3GetPoolBalances"></a>
 
@@ -2744,7 +2744,7 @@ Accept: application/json
 
 `GET /v3/pools/{poolID}/balances`
 
-<h3 id="get-pool-balances-parameters">Parameters</h3>
+<h3 id="get-historical-pool-balances-from-a-particular-point-in-time-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2766,7 +2766,55 @@ Accept: application/json
 }
 ```
 
-<h3 id="get-pool-balances-responses">Responses</h3>
+<h3 id="get-historical-pool-balances-from-a-particular-point-in-time-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PoolBalancesResponse](#schemav3poolbalancesresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get latest pool balances
+
+<a id="opIdv3GetPoolBalancesLatest"></a>
+
+> Code samples
+
+```http
+GET /v3/pools/{poolID}/balances/latest HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/pools/{poolID}/balances/latest`
+
+<h3 id="get-latest-pool-balances-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|poolID|path|string|true|The pool ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "data": [
+    {
+      "asset": "string",
+      "amount": 0
+    }
+  ]
+}
+```
+
+<h3 id="get-latest-pool-balances-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|

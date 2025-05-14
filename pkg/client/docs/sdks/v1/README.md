@@ -23,7 +23,8 @@
 * [DeletePool](#deletepool) - Delete a Pool
 * [AddAccountToPool](#addaccounttopool) - Add an account to a pool
 * [RemoveAccountFromPool](#removeaccountfrompool) - Remove an account from a pool
-* [GetPoolBalances](#getpoolbalances) - Get pool balances
+* [GetPoolBalances](#getpoolbalances) - Get historical pool balances at a particular point in time
+* [GetPoolBalancesLatest](#getpoolbalanceslatest) - Get latest pool balances
 * [CreateAccount](#createaccount) - Create an account
 * [ListAccounts](#listaccounts) - List accounts
 * [GetAccount](#getaccount) - Get an account
@@ -1061,7 +1062,7 @@ func main() {
 
 ## GetPoolBalances
 
-Get pool balances
+Get historical pool balances at a particular point in time
 
 ### Example Usage
 
@@ -1106,6 +1107,58 @@ func main() {
 ### Response
 
 **[*operations.GetPoolBalancesResponse](../../models/operations/getpoolbalancesresponse.md), error**
+
+### Errors
+
+| Error Type         | Status Code        | Content Type       |
+| ------------------ | ------------------ | ------------------ |
+| sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
+
+## GetPoolBalancesLatest
+
+Get latest pool balances
+
+### Example Usage
+
+```go
+package main
+
+import(
+	"context"
+	"github.com/formancehq/payments/pkg/client"
+	"os"
+	"log"
+)
+
+func main() {
+    ctx := context.Background()
+
+    s := client.New(
+        "https://api.example.com",
+        client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
+    )
+
+    res, err := s.Payments.V1.GetPoolBalancesLatest(ctx, "XXX")
+    if err != nil {
+        log.Fatal(err)
+    }
+    if res.PoolBalancesResponse != nil {
+        // handle response
+    }
+}
+```
+
+### Parameters
+
+| Parameter                                                | Type                                                     | Required                                                 | Description                                              | Example                                                  |
+| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
+| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |                                                          |
+| `poolID`                                                 | *string*                                                 | :heavy_check_mark:                                       | The pool ID.                                             | XXX                                                      |
+| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |                                                          |
+
+### Response
+
+**[*operations.GetPoolBalancesLatestResponse](../../models/operations/getpoolbalanceslatestresponse.md), error**
 
 ### Errors
 

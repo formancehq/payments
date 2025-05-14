@@ -28,6 +28,7 @@ type Storage interface {
 	BalancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error)
 	BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error)
+	BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error)
 
 	// Bank Accounts
 	BankAccountsUpsert(ctx context.Context, bankAccount models.BankAccount) error

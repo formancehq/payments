@@ -3,16 +3,14 @@ package services
 import (
 	"context"
 	"math/big"
-	"time"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 )
 
-func (s *Service) PoolsBalancesAt(
+func (s *Service) PoolsBalances(
 	ctx context.Context,
 	poolID uuid.UUID,
-	at time.Time,
 ) ([]models.AggregatedBalance, error) {
 	pool, err := s.storage.PoolsGet(ctx, poolID)
 	if err != nil {
@@ -20,9 +18,9 @@ func (s *Service) PoolsBalancesAt(
 	}
 	res := make(map[string]*big.Int)
 	for i := range pool.PoolAccounts {
-		balances, err := s.storage.BalancesGetAt(ctx, pool.PoolAccounts[i], at)
+		balances, err := s.storage.BalancesGetLatest(ctx, pool.PoolAccounts[i])
 		if err != nil {
-			return nil, newStorageError(err, "cannot get balances")
+			return nil, newStorageError(err, "cannot get latest balances")
 		}
 
 		for _, balance := range balances {

@@ -131,6 +131,21 @@ func (mr *MockStorageMockRecorder) BalancesGetAt(ctx, accountID, at any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesGetAt", reflect.TypeOf((*MockStorage)(nil).BalancesGetAt), ctx, accountID, at)
 }
 
+// BalancesGetLatest mocks base method.
+func (m *MockStorage) BalancesGetLatest(ctx context.Context, accountID models.AccountID) ([]*models.Balance, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BalancesGetLatest", ctx, accountID)
+	ret0, _ := ret[0].([]*models.Balance)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// BalancesGetLatest indicates an expected call of BalancesGetLatest.
+func (mr *MockStorageMockRecorder) BalancesGetLatest(ctx, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesGetLatest", reflect.TypeOf((*MockStorage)(nil).BalancesGetLatest), ctx, accountID)
+}
+
 // BalancesList mocks base method.
 func (m *MockStorage) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpaginate.Cursor[models.Balance], error) {
 	m.ctrl.T.Helper()

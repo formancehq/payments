@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: ae0a09aa698536274b47d1d29a0c8ad2
+  docChecksum: bb13729df5ecc0978c8816eeb2105b1e
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -214,6 +214,7 @@ generatedFiles:
   - /models/operations/getpayment.go
   - /models/operations/getpool.go
   - /models/operations/getpoolbalances.go
+  - /models/operations/getpoolbalanceslatest.go
   - /models/operations/getserverinfo.go
   - /models/operations/gettransferinitiation.go
   - /models/operations/installconnector.go
@@ -261,6 +262,7 @@ generatedFiles:
   - /models/operations/v3getpaymentserviceuser.go
   - /models/operations/v3getpool.go
   - /models/operations/v3getpoolbalances.go
+  - /models/operations/v3getpoolbalanceslatest.go
   - /models/operations/v3gettask.go
   - /models/operations/v3initiatepayment.go
   - /models/operations/v3installconnector.go
@@ -535,6 +537,8 @@ generatedFiles:
   - docs/models/operations/getconnectortaskv1response.md
   - docs/models/operations/getpaymentrequest.md
   - docs/models/operations/getpaymentresponse.md
+  - docs/models/operations/getpoolbalanceslatestrequest.md
+  - docs/models/operations/getpoolbalanceslatestresponse.md
   - docs/models/operations/getpoolbalancesrequest.md
   - docs/models/operations/getpoolbalancesresponse.md
   - docs/models/operations/getpoolrequest.md
@@ -622,6 +626,8 @@ generatedFiles:
   - docs/models/operations/v3getpaymentresponse.md
   - docs/models/operations/v3getpaymentserviceuserrequest.md
   - docs/models/operations/v3getpaymentserviceuserresponse.md
+  - docs/models/operations/v3getpoolbalanceslatestrequest.md
+  - docs/models/operations/v3getpoolbalanceslatestresponse.md
   - docs/models/operations/v3getpoolbalancesrequest.md
   - docs/models/operations/v3getpoolbalancesresponse.md
   - docs/models/operations/v3getpoolrequest.md
@@ -1601,6 +1607,36 @@ examples:
       responses:
         "202":
           application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  getPoolBalancesLatest:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": {"balances": [{"amount": 100, "asset": "USD"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  v3GetPoolBalances1:
+    speakeasy-default-v3-get-pool-balances1:
+      parameters:
+        path:
+          poolID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": [{"asset": "<value>", "amount": 960936}, {"asset": "<value>", "amount": 138696}, {"asset": "<value>", "amount": 544404}]}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPoolBalancesLatest:
+    speakeasy-default-v3-get-pool-balances-latest:
+      parameters:
+        path:
+          poolID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": [{"asset": "<value>", "amount": 960936}, {"asset": "<value>", "amount": 138696}, {"asset": "<value>", "amount": 544404}]}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0
