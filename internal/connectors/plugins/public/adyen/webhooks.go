@@ -2,6 +2,7 @@ package adyen
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -52,11 +53,29 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return configs, err
 }
 
-func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if !p.client.VerifyWebhookBasicAuth(req.Webhook.BasicAuth) {
-		return models.TranslateWebhookResponse{}, errors.New("invalid basic auth")
+		return models.VerifyWebhookResponse{}, errors.New("invalid basic auth")
 	}
 
+	webhooks, err := p.client.TranslateWebhook(string(req.Webhook.Body))
+	if err != nil {
+		return models.VerifyWebhookResponse{}, err
+	}
+
+	for _, item := range *webhooks.NotificationItems {
+		if !p.client.VerifyWebhookHMAC(item) {
+			return models.VerifyWebhookResponse{}, errors.New("invalid HMAC")
+		}
+	}
+
+	ik := sha256.Sum256(req.Webhook.Body)
+	return models.VerifyWebhookResponse{
+		WebhookIdempotencyKey: string(ik[:]),
+	}, nil
+}
+
+func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	webhooks, err := p.client.TranslateWebhook(string(req.Webhook.Body))
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
@@ -64,10 +83,6 @@ func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.Transl
 
 	responses := make([]models.WebhookResponse, 0, len(*webhooks.NotificationItems))
 	for _, item := range *webhooks.NotificationItems {
-		if !p.client.VerifyWebhookHMAC(item) {
-			continue
-		}
-
 		var payment *models.PSPPayment
 		var err error
 		switch item.NotificationRequestItem.EventCode {
@@ -102,8 +117,7 @@ func (p *Plugin) translateStandardWebhook(ctx context.Context, req models.Transl
 
 		if payment != nil {
 			responses = append(responses, models.WebhookResponse{
-				IdempotencyKey: fmt.Sprintf("%s-%s-%d", item.NotificationRequestItem.MerchantReference, item.NotificationRequestItem.EventCode, item.NotificationRequestItem.EventDate.UnixNano()),
-				Payment:        payment,
+				Payment: payment,
 			})
 		}
 	}

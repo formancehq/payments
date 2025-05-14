@@ -15,23 +15,23 @@ import (
 
 var _ = Describe("Adyen Plugin Accounts", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next accounts", func() {
 		var (
-			m              *client.MockClient
 			sampleAccounts []management.Merchant
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 
 			for i := 10; i < 60; i++ {
 				sampleAccounts = append(sampleAccounts, management.Merchant{
