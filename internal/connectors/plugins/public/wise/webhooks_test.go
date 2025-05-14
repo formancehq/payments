@@ -15,16 +15,28 @@ import (
 
 var _ = Describe("Wise Plugin Webhooks", func() {
 	var (
-		plg *Plugin
-		m   *client.MockClient
+		ctrl *gomock.Controller
+		plg  models.Plugin
+		m    *client.MockClient
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
-
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
-		plg.SetClient(m)
+		p := &Plugin{client: m}
+		p.supportedWebhooks = map[string]supportedWebhook{
+			"test": {
+				triggerOn: "transfers#state-change",
+				urlPath:   "/transferstatechanged",
+				fn:        p.translateTransferStateChangedWebhook,
+				version:   "1.0.0",
+			},
+		}
+		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {
@@ -38,17 +50,9 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 
 		BeforeEach(func() {
 			expectedProfileID = 44
-			plg.supportedWebhooks = map[string]supportedWebhook{
-				"test": {
-					triggerOn: "transfers#state-change",
-					urlPath:   "/transferstatechanged",
-					fn:        plg.translateTransferStateChangedWebhook,
-					version:   "1.0.0",
-				},
-			}
 			expectedWebhookResponseID = "sampleResID"
 			webhookBaseUrl = "http://example.com"
-			expectedWebhookPath, err = url.JoinPath(webhookBaseUrl, plg.supportedWebhooks["test"].urlPath)
+			expectedWebhookPath, err = url.JoinPath(webhookBaseUrl, "/transferstatechanged")
 			Expect(err).To(BeNil())
 		})
 
@@ -70,9 +74,9 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 				gomock.Any(),
 				expectedProfileID,
 				"test",
-				plg.supportedWebhooks["test"].triggerOn,
+				"transfers#state-change",
 				expectedWebhookPath,
-				plg.supportedWebhooks["test"].version,
+				"1.0.0",
 			).Return(
 				&client.WebhookSubscriptionResponse{ID: expectedWebhookResponseID},
 				nil,
@@ -80,7 +84,7 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Others).To(HaveLen(len(plg.supportedWebhooks)))
+			Expect(res.Others).To(HaveLen(1))
 			Expect(res.Others[0].ID).To(Equal(expectedWebhookResponseID))
 		})
 	})

@@ -170,6 +170,12 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	// Nothing to do here, we don't need to verify the webhook and we don't want
+	// to generate an idempotency key from the query values
+	return models.VerifyWebhookResponse{}, nil
+}
+
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	if p.client == nil {
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled

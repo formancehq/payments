@@ -15,7 +15,8 @@ import (
 
 var _ = Describe("Column Plugin Uninstall", func() {
 	var (
-		plg            *Plugin
+		plg            models.Plugin
+		ctrl           *gomock.Controller
 		mockHTTPClient *client.MockHTTPClient
 		now            time.Time
 		ts             *httptest.Server
@@ -23,17 +24,22 @@ var _ = Describe("Column Plugin Uninstall", func() {
 
 	BeforeEach(func() {
 		now = time.Now().UTC()
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		ts = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusOK)
 			_, err := w.Write([]byte(`{"webhook_urls": []}`))
 			Expect(err).To(BeNil())
 		}))
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", ts.URL)
+		c.SetHttpClient(mockHTTPClient)
 		plg = &Plugin{
-			client: client.New("test", "aseplye", ts.URL),
+			client: c,
 		}
-		plg.client.SetHttpClient(mockHTTPClient)
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("uninstalling connector", func() {
@@ -53,7 +59,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 				},
 			)
 
-			resp, err := plg.uninstall(ctx, models.UninstallRequest{
+			resp, err := plg.Uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
 			Expect(err).To(BeNil())
@@ -70,7 +76,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 				500,
 				errors.New("list failed"),
 			)
-			resp, err := plg.uninstall(ctx, models.UninstallRequest{
+			resp, err := plg.Uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
 			Expect(err).To(MatchError("failed to list web hooks: list failed : "))
@@ -128,7 +134,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 				errors.New("deletion failed"),
 			)
 
-			resp, err := plg.uninstall(ctx, models.UninstallRequest{
+			resp, err := plg.Uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
 			Expect(err).To(MatchError("failed to delete web hooks: deletion failed : "))
@@ -190,7 +196,7 @@ var _ = Describe("Column Plugin Uninstall", func() {
 				nil,
 			)
 
-			resp, err := plg.uninstall(ctx, models.UninstallRequest{
+			resp, err := plg.Uninstall(ctx, models.UninstallRequest{
 				ConnectorID: "test-connector",
 			})
 			Expect(err).To(BeNil())

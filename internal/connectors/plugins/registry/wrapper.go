@@ -295,6 +295,24 @@ func (i *impl) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequ
 	return resp, nil
 }
 
+func (i *impl) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.VerifyWebhook", attribute.String("psp", i.plugin.Name()), attribute.String("verifyWebhookRequest.name", req.Config.Name))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("verifying webhook...")
+
+	resp, err := i.plugin.VerifyWebhook(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("verifying webhook failed: %v", err)
+		otel.RecordError(span, err)
+		return models.VerifyWebhookResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("verified webhook succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.TranslateWebhook", attribute.String("psp", i.plugin.Name()), attribute.String("translateWebhookRequest.name", req.Name))
 	defer span.End()

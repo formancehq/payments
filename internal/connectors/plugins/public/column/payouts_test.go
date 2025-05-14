@@ -13,129 +13,123 @@ import (
 
 var _ = Describe("Column Plugin Payouts", func() {
 	var (
-		plg *Plugin
+		ctrl           *gomock.Controller
+		mockHTTPClient *client.MockHTTPClient
+		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		mockHTTPClient = client.NewMockHTTPClient(ctrl)
+		c := client.New("test", "aseplye", "https://test.com")
+		c.SetHttpClient(mockHTTPClient)
+		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("Perform Payout Requests", func() {
-		var (
-			mockHTTPClient *client.MockHTTPClient
-		)
-
-		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			mockHTTPClient = client.NewMockHTTPClient(ctrl)
-			plg.client = client.New("test", "aseplye", "https://test.com")
-			plg.client.SetHttpClient(mockHTTPClient)
-		})
-
 		It("should return an error when amount is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{}
-			err := plg.validatePayoutRequests(req)
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{},
+			}
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingAmount.Error()))
 		})
 
 		It("should return an error when sourceAccount is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+				},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingSourceAccount.Error()))
 		})
 
 		It("should return an error when sourceAccount reference is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount:        big.NewInt(100),
-				SourceAccount: &models.PSPAccount{},
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount:        big.NewInt(100),
+					SourceAccount: &models.PSPAccount{},
+				},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrSourceAccountReferenceRequired.Error()))
 		})
 
 		It("should return an error when destinationAccount is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
-				SourceAccount: &models.PSPAccount{
-					Reference: "test-ref",
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
 				},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingDestinationAccount.Error()))
 		})
 
 		It("should return an error when destinationAccount reference is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
-				SourceAccount: &models.PSPAccount{
-					Reference: "test-ref",
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &models.PSPAccount{},
 				},
-				DestinationAccount: &models.PSPAccount{},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingDestinationAccountReference.Error()))
 		})
 
 		It("should return an error when metadata is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
-				SourceAccount: &models.PSPAccount{
-					Reference: "test-ref",
-				},
-				DestinationAccount: &models.PSPAccount{
-					Reference: "test-ref",
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
 				},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err.Error()).To(ContainSubstring(ErrMissingMetadata.Error()))
 		})
 
 		It("should return an error when payout type is missing", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
-				SourceAccount: &models.PSPAccount{
-					Reference: "test-ref",
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
+					Amount: big.NewInt(100),
+					SourceAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
+					DestinationAccount: &models.PSPAccount{
+						Reference: "test-ref",
+					},
+					Metadata: map[string]string{},
 				},
-				DestinationAccount: &models.PSPAccount{
-					Reference: "test-ref",
-				},
-				Metadata: map[string]string{},
 			}
-			err := plg.validatePayoutRequests(req)
+			_, err := plg.CreatePayout(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(err).To(MatchError("validation error occurred for field metadata: required field metadata must be provided"))
 		})
 
 		It("should return an error when payout type is invalid", func(ctx SpecContext) {
-			req := models.PSPPaymentInitiation{
-				Amount: big.NewInt(100),
-				SourceAccount: &models.PSPAccount{
-					Reference: "test-ref",
-				},
-				DestinationAccount: &models.PSPAccount{
-					Reference: "test-ref",
-				},
-				Metadata: map[string]string{
-					client.ColumnPayoutTypeMetadataKey: "invalid-type",
-				},
-			}
-			err := plg.validatePayoutRequests(req)
-			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring(ErrInvalidMetadataPayoutType.Error()))
-		})
-
-		Context("Wire/Realtime/International-Wire Payout Validation", func() {
-
-			It("should return an error when asset is missing", func(ctx SpecContext) {
-				req := models.PSPPaymentInitiation{
+			req := models.CreatePayoutRequest{
+				PaymentInitiation: models.PSPPaymentInitiation{
 					Amount: big.NewInt(100),
 					SourceAccount: &models.PSPAccount{
 						Reference: "test-ref",
@@ -144,10 +138,33 @@ var _ = Describe("Column Plugin Payouts", func() {
 						Reference: "test-ref",
 					},
 					Metadata: map[string]string{
-						client.ColumnPayoutTypeMetadataKey: "wire",
+						client.ColumnPayoutTypeMetadataKey: "invalid-type",
+					},
+				},
+			}
+			_, err := plg.CreatePayout(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring(ErrInvalidMetadataPayoutType.Error()))
+		})
+
+		Context("Wire/Realtime/International-Wire Payout Validation", func() {
+
+			It("should return an error when asset is missing", func(ctx SpecContext) {
+				req := models.CreatePayoutRequest{
+					PaymentInitiation: models.PSPPaymentInitiation{
+						Amount: big.NewInt(100),
+						SourceAccount: &models.PSPAccount{
+							Reference: "test-ref",
+						},
+						DestinationAccount: &models.PSPAccount{
+							Reference: "test-ref",
+						},
+						Metadata: map[string]string{
+							client.ColumnPayoutTypeMetadataKey: "wire",
+						},
 					},
 				}
-				err := plg.validatePayoutRequests(req)
+				_, err := plg.CreatePayout(ctx, req)
 				Expect(err).ToNot(BeNil())
 				Expect(err.Error()).To(ContainSubstring(ErrMissingAsset.Error()))
 			})
@@ -197,11 +214,13 @@ var _ = Describe("Column Plugin Payouts", func() {
 		})
 
 		Context("HTTP Request Creation Errors", func() {
+			var (
+				plg models.Plugin
+			)
 			BeforeEach(func() {
-				ctrl := gomock.NewController(GinkgoT())
-				mockHTTPClient = client.NewMockHTTPClient(ctrl)
-				plg.client = client.New("test", "aseplye", "https://test.com")
-				plg.client.SetHttpClient(mockHTTPClient)
+				c := client.New("test", "aseplye", "https://test.com")
+				c.SetHttpClient(mockHTTPClient)
+				plg = &Plugin{client: c}
 			})
 
 			It("should return an error when creating ACH payout request fails", func(ctx SpecContext) {
@@ -340,9 +359,14 @@ var _ = Describe("Column Plugin Payouts", func() {
 			})
 
 			Context("Invalid URL Errors", func() {
+				var (
+					plg models.Plugin
+				)
+
 				BeforeEach(func() {
-					plg.client = client.New("test", "aseplye", "http://invalid:port")
-					plg.client.SetHttpClient(mockHTTPClient)
+					c := client.New("test", "aseplye", "http://invalid:port")
+					c.SetHttpClient(mockHTTPClient)
+					plg = &Plugin{client: c}
 				})
 
 				It("should return an error when ACH payout URL is invalid", func(ctx SpecContext) {
@@ -645,6 +669,10 @@ var _ = Describe("Column Plugin Payouts", func() {
 	})
 
 	Context("mapTransactionStatus", func() {
+		var (
+			p Plugin
+		)
+
 		It("should map status values correctly", func() {
 			testCases := []struct {
 				status         string
@@ -687,7 +715,7 @@ var _ = Describe("Column Plugin Payouts", func() {
 			}
 
 			for _, tc := range testCases {
-				result := plg.mapTransactionStatus(tc.status)
+				result := p.mapTransactionStatus(tc.status)
 				Expect(result).To(Equal(tc.expectedStatus), "Status %s should map to %s", tc.status, tc.expectedStatus)
 			}
 		})

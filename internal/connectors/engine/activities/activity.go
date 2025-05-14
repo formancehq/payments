@@ -88,6 +88,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginCreateWebhooks,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginVerifyWebhook",
+			Func: a.PluginVerifyWebhook,
+		}).
+		Append(temporalworker.Definition{
 			Name: "PluginTranslateWebhook",
 			Func: a.PluginTranslateWebhook,
 		}).

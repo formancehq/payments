@@ -15,14 +15,15 @@ import (
 var _ = Describe("Moneycorp *Plugin Accounts", func() {
 	Context("fetch next accounts", func() {
 		var (
-			plg *Plugin
-			m   *client.MockClient
+			ctrl *gomock.Controller
+			plg  models.Plugin
+			m    *client.MockClient
 
 			sampleAccounts []*client.Account
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 
@@ -33,6 +34,10 @@ var _ = Describe("Moneycorp *Plugin Accounts", func() {
 				})
 			}
 
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("should return an error - get accounts error", func(ctx SpecContext) {

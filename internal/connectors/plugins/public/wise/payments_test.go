@@ -16,24 +16,28 @@ import (
 
 var _ = Describe("Wise Plugin Payments", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next accounts", func() {
 		var (
-			m               *client.MockClient
 			sampleTransfers []client.Transfer
 			now             time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleTransfers = make([]client.Transfer, 0)

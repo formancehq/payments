@@ -297,12 +297,37 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
-func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	signatures, ok := req.Webhook.Headers[HeadersSignature]
 	if !ok || len(signatures) == 0 {
-		return models.TranslateWebhookResponse{}, client.ErrWebhookHeaderXSignatureMissing
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrColumSignatureMissing, models.ErrWebhookVerification)
 	}
 
+	config := req.Config
+	if config == nil || config.Metadata == nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrWebhookConfigInvalid, models.ErrWebhookVerification)
+	}
+
+	secret, ok := config.Metadata["secret"]
+	if !ok {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", client.ErrWebhookConfigSecretMissing, models.ErrWebhookVerification)
+	}
+
+	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], secret); err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("%w: %w", err, models.ErrWebhookVerification)
+	}
+
+	var webhook client.WebhookEvent[json.RawMessage]
+	if err := json.Unmarshal(req.Webhook.Body, &webhook); err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("failed to unmarshal webhook: %w", err)
+	}
+
+	return models.VerifyWebhookResponse{
+		WebhookIdempotencyKey: &webhook.ID,
+	}, nil
+}
+
+func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	config := req.Config
 	if config == nil || config.Metadata == nil {
 		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigInvalid
@@ -318,15 +343,6 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, client.ErrWebhookTypeUnknown
 	}
 
-	secret, ok := config.Metadata["secret"]
-	if !ok {
-		return models.TranslateWebhookResponse{}, client.ErrWebhookConfigSecretMissing
-	}
-
-	if err := p.verifier.verifyWebhookSignature(req.Webhook.Body, signatures[0], secret); err != nil {
-		return models.TranslateWebhookResponse{}, err
-	}
-
 	var webhook client.WebhookEvent[json.RawMessage]
 	if err := json.Unmarshal(req.Webhook.Body, &webhook); err != nil {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("failed to unmarshal webhook: %w", err)
@@ -337,7 +353,6 @@ func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, err
 	}
 
-	res.IdempotencyKey = webhook.ID
 	return models.TranslateWebhookResponse{
 		Responses: []models.WebhookResponse{res},
 	}, nil

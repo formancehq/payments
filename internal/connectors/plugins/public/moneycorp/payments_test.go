@@ -18,12 +18,13 @@ import (
 
 var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next Payments", func() {
 		var (
-			m *client.MockClient
+			ctrl *gomock.Controller
+			m    *client.MockClient
 
 			samplePayments []*client.Transaction
 			sampleTransfer *client.TransferResponse
@@ -32,7 +33,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 
@@ -129,7 +130,10 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 					},
 				},
 			}
+		})
 
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("fails when payments contain unsupported currencies", func(ctx SpecContext) {
@@ -219,12 +223,13 @@ var _ = Describe("Moneycorp *Plugin Payments - check types and minor conversion"
 
 var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 	var (
-		plg *Plugin
+		plg models.Plugin
 	)
 
 	Context("fetch next Payments", func() {
 		var (
-			m *client.MockClient
+			ctrl *gomock.Controller
+			m    *client.MockClient
 
 			samplePayments []*client.Transaction
 			accRef         int32
@@ -232,7 +237,7 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 			accRef = 3796
@@ -257,6 +262,10 @@ var _ = Describe("Moneycorp *Plugin Payments - check pagination", func() {
 					},
 				})
 			}
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("should return an error - missing from payload", func(ctx SpecContext) {

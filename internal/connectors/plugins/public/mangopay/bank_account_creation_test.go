@@ -16,25 +16,29 @@ import (
 
 var _ = Describe("Mangopay Plugin Bank Account Creation", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create bank account", func() {
 		var (
-			m                   *client.MockClient
 			sampleBankAccount   models.BankAccount
 			sampleClientAddress client.OwnerAddress
 			now                 time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleBankAccount = models.BankAccount{

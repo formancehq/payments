@@ -16,24 +16,28 @@ import (
 
 var _ = Describe("Generic Plugin External Accounts", func() {
 	var (
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl = gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next external accounts", func() {
 		var (
-			m              *client.MockClient
 			sampleAccounts []genericclient.Beneficiary
 			now            time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleAccounts = make([]genericclient.Beneficiary, 0)
