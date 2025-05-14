@@ -17,24 +17,23 @@ import (
 
 var _ = Describe("Atlar Plugin Balances", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetching next balances", func() {
 		var (
-			m             *client.MockClient
 			sampleAccount atlar_models.Account
 			now           time.Time
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
 			now = time.Now().UTC()
 
 			sampleAccount = atlar_models.Account{
