@@ -14,6 +14,7 @@ var (
 	ErrValidation                  = errors.New("validation error")
 	ErrWebhookVerification         = errors.New("webhook verification error")
 	ErrMissingPageSize             = errors.New("invalid request, missing page size in request")
+	ErrExceededMaxPageSize         = errors.New("invalid request, requested page size too high")
 
 	ErrMissingConnectorMetadata = errors.New("missing required metadata in request")
 	ErrMissingConnectorField    = errors.New("missing required field in request")

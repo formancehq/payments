@@ -24,6 +24,9 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	if req.PageSize == 0 {
 		return models.FetchNextAccountsResponse{}, models.ErrMissingPageSize
 	}
+	if req.PageSize > client.QONTO_MAX_PAGE_SIZE {
+		return models.FetchNextAccountsResponse{}, models.ErrExceededMaxPageSize
+	}
 
 	var oldState accountsState
 	if req.State != nil {
