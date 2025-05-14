@@ -14,17 +14,18 @@ import (
 
 var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetch next ExternalAccounts", func() {
 		var (
-			m *client.MockClient
-
 			pageSize               int
 			sampleExternalAccounts []*stripesdk.BankAccount
 			accRef                 string
@@ -32,10 +33,6 @@ var _ = Describe("Stripe Plugin ExternalAccounts", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-
 			pageSize = 10
 			accRef = "baseAcc"
 			created = 1483565364

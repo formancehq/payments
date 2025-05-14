@@ -16,26 +16,23 @@ import (
 
 var _ = Describe("Stripe Plugin Balances", func() {
 	var (
-		plg *Plugin
+		m   *client.MockClient
+		plg models.Plugin
 	)
 
 	BeforeEach(func() {
-		plg = &Plugin{}
+		ctrl := gomock.NewController(GinkgoT())
+		m = client.NewMockClient(ctrl)
+		plg = &Plugin{client: m}
 	})
 
 	Context("fetch next balances", func() {
 		var (
-			m *client.MockClient
-
 			accRef        string
 			sampleBalance *stripesdk.Balance
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
-			m = client.NewMockClient(ctrl)
-			plg.client = m
-
 			accRef = "abc"
 			sampleBalance = &stripesdk.Balance{
 				Available: []*stripesdk.Amount{
