@@ -16,6 +16,10 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+const (
+	webhookHMACMetadataKey = "hmac_key"
+)
+
 type supportedWebhook struct {
 	urlPath string
 	fn      func(context.Context, models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error)
@@ -44,12 +48,19 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 		return configs, err
 	}
 
+	resp, err := p.client.CreateWebhook(ctx, url, req.ConnectorID)
+	if err != nil {
+		return configs, err
+	}
+
 	configs = append(configs, models.PSPWebhookConfig{
 		Name:    name,
 		URLPath: standardConfig.urlPath,
+		Metadata: map[string]string{
+			webhookHMACMetadataKey: resp.HMACKey,
+		},
 	})
 
-	err = p.client.CreateWebhook(ctx, url, req.ConnectorID)
 	return configs, err
 }
 
@@ -64,7 +75,7 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 	}
 
 	for _, item := range *webhooks.NotificationItems {
-		if !p.client.VerifyWebhookHMAC(item) {
+		if !p.client.VerifyWebhookHMAC(item, req.Config.Metadata[webhookHMACMetadataKey]) {
 			return models.VerifyWebhookResponse{}, fmt.Errorf("invalid HMAC: %w", models.ErrWebhookVerification)
 		}
 	}

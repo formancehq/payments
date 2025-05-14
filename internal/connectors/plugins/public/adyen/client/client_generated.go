@@ -44,11 +44,12 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 }
 
 // CreateWebhook mocks base method.
-func (m *MockClient) CreateWebhook(ctx context.Context, url, connectorID string) error {
+func (m *MockClient) CreateWebhook(ctx context.Context, url, connectorID string) (CreateWebhookResponse, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateWebhook", ctx, url, connectorID)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(CreateWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // CreateWebhook indicates an expected call of CreateWebhook.
@@ -116,15 +117,15 @@ func (mr *MockClientMockRecorder) VerifyWebhookBasicAuth(basicAuth any) *gomock.
 }
 
 // VerifyWebhookHMAC mocks base method.
-func (m *MockClient) VerifyWebhookHMAC(item webhook.NotificationItem) bool {
+func (m *MockClient) VerifyWebhookHMAC(item webhook.NotificationItem, hmacKey string) bool {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyWebhookHMAC", item)
+	ret := m.ctrl.Call(m, "VerifyWebhookHMAC", item, hmacKey)
 	ret0, _ := ret[0].(bool)
 	return ret0
 }
 
 // VerifyWebhookHMAC indicates an expected call of VerifyWebhookHMAC.
-func (mr *MockClientMockRecorder) VerifyWebhookHMAC(item any) *gomock.Call {
+func (mr *MockClientMockRecorder) VerifyWebhookHMAC(item, hmacKey any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhookHMAC", reflect.TypeOf((*MockClient)(nil).VerifyWebhookHMAC), item)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhookHMAC", reflect.TypeOf((*MockClient)(nil).VerifyWebhookHMAC), item, hmacKey)
 }

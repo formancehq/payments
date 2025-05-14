@@ -18,9 +18,9 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	GetMerchantAccounts(ctx context.Context, pageNumber, pageSize int32) ([]management.Merchant, error)
-	CreateWebhook(ctx context.Context, url string, connectorID string) error
+	CreateWebhook(ctx context.Context, url string, connectorID string) (CreateWebhookResponse, error)
 	VerifyWebhookBasicAuth(basicAuth *models.BasicAuth) bool
-	VerifyWebhookHMAC(item webhook.NotificationItem) bool
+	VerifyWebhookHMAC(item webhook.NotificationItem, hmacKey string) bool
 	DeleteWebhook(ctx context.Context, connectorID string) error
 	TranslateWebhook(req string) (*webhook.Webhook, error)
 }
@@ -34,7 +34,6 @@ type client struct {
 	companyID string
 
 	standardWebhook *management.Webhook
-	hmacKey         string
 }
 
 func New(
