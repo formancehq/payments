@@ -15,12 +15,13 @@ import (
 
 var _ = Describe("Wise Plugin Webhooks", func() {
 	var (
-		plg models.Plugin
-		m   *client.MockClient
+		ctrl *gomock.Controller
+		plg  models.Plugin
+		m    *client.MockClient
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		p := &Plugin{client: m}
 		p.supportedWebhooks = map[string]supportedWebhook{
@@ -32,6 +33,10 @@ var _ = Describe("Wise Plugin Webhooks", func() {
 			},
 		}
 		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {

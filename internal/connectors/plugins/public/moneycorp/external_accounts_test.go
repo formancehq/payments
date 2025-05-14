@@ -21,7 +21,8 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 
 	Context("fetch next ExternalAccounts", func() {
 		var (
-			m *client.MockClient
+			ctrl *gomock.Controller
+			m    *client.MockClient
 
 			sampleExternalAccounts []*client.Recipient
 			accRef                 string
@@ -29,7 +30,7 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 			accRef = "baseAcc"
@@ -45,7 +46,10 @@ var _ = Describe("Moneycorp *Plugin ExternalAccounts", func() {
 					},
 				})
 			}
+		})
 
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("should return an error - missing from payload", func(ctx SpecContext) {

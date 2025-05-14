@@ -300,7 +300,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	signatures, ok := req.Webhook.Headers[HeadersSignature]
 	if !ok || len(signatures) == 0 {
-		return models.VerifyWebhookResponse{}, client.ErrWebhookHeaderXSignatureMissing
+		return models.VerifyWebhookResponse{}, client.ErrColumSignatureMissing
 	}
 
 	config := req.Config

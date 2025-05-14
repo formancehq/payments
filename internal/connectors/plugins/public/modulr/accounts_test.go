@@ -15,14 +15,19 @@ import (
 
 var _ = Describe("Modulr Plugin Accounts", func() {
 	var (
-		m   *client.MockClient
-		plg models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next accounts", func() {

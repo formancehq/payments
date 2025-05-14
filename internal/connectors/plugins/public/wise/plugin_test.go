@@ -105,6 +105,7 @@ var _ = Describe("Wise Plugin", func() {
 		var (
 			body      []byte
 			signature []byte
+			ctrl      *gomock.Controller
 			m         *client.MockClient
 		)
 
@@ -118,7 +119,7 @@ var _ = Describe("Wise Plugin", func() {
 			plg, err = New("wise", logger, configJson)
 			Expect(err).To(BeNil())
 
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.SetClient(m)
 
@@ -129,6 +130,10 @@ var _ = Describe("Wise Plugin", func() {
 
 			signature, err = rsa.SignPKCS1v15(rand.Reader, privatekey, crypto.SHA256, digest)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("it fails when X-Delivery-ID header missing", func(ctx SpecContext) {
@@ -171,6 +176,7 @@ var _ = Describe("Wise Plugin", func() {
 		var (
 			body      []byte
 			signature []byte
+			ctrl      *gomock.Controller
 			m         *client.MockClient
 		)
 
@@ -184,7 +190,7 @@ var _ = Describe("Wise Plugin", func() {
 			plg, err = New("wise", logger, configJson)
 			Expect(err).To(BeNil())
 
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg.SetClient(m)
 
@@ -195,6 +201,10 @@ var _ = Describe("Wise Plugin", func() {
 
 			signature, err = rsa.SignPKCS1v15(rand.Reader, privatekey, crypto.SHA256, digest)
 			Expect(err).To(BeNil())
+		})
+
+		AfterEach(func() {
+			ctrl.Finish()
 		})
 
 		It("it fails when unknown webhook name in request", func(ctx SpecContext) {

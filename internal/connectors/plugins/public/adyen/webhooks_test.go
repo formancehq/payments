@@ -3,6 +3,7 @@ package adyen
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"math/big"
 	"time"
@@ -18,18 +19,23 @@ import (
 
 var _ = Describe("Adyen Plugin Accounts", func() {
 	var (
-		plg models.Plugin
-		m   *client.MockClient
-		now time.Time
+		plg  models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		now  time.Time
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		p := &Plugin{client: m}
 		p.initWebhookConfig()
 		plg = p
 		now = time.Now().UTC()
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("creating webhooks", func() {
@@ -145,7 +151,8 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 		It("should be ok", func(ctx SpecContext) {
 			b, _ := json.Marshal(&w)
-			ik := sha256.Sum256(b)
+			sha := sha256.Sum256(b)
+			ik := base64.StdEncoding.EncodeToString(sha[:])
 
 			req := models.VerifyWebhookRequest{
 				Config: &models.WebhookConfig{
@@ -164,7 +171,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 
 			resp, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.WebhookIdempotencyKey).To(Equal(pointer.For(string(ik[:]))))
+			Expect(resp.WebhookIdempotencyKey).To(Equal(pointer.For(ik)))
 		})
 	})
 

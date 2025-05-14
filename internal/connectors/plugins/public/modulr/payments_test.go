@@ -17,14 +17,19 @@ import (
 
 var _ = Describe("Modulr Plugin Payments", func() {
 	var (
-		m   *client.MockClient
-		plg models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{client: m}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next accounts", func() {
@@ -196,15 +201,20 @@ var _ = Describe("Modulr Plugin Payments", func() {
 
 var _ = Describe("Modulr Plugin Transaction to Payments", func() {
 	var (
-		m   *client.MockClient
-		plg *Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  *Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		plg = &Plugin{}
 		plg.client = m
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("transaction to payments", func() {

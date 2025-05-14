@@ -20,7 +20,8 @@ var _ = Describe("Moneycorp *Plugin Balances", func() {
 
 	Context("fetch next balances", func() {
 		var (
-			m *client.MockClient
+			ctrl *gomock.Controller
+			m    *client.MockClient
 
 			accRef         string
 			sampleBalance  *client.Balance
@@ -28,7 +29,7 @@ var _ = Describe("Moneycorp *Plugin Balances", func() {
 		)
 
 		BeforeEach(func() {
-			ctrl := gomock.NewController(GinkgoT())
+			ctrl = gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
 
@@ -41,6 +42,11 @@ var _ = Describe("Moneycorp *Plugin Balances", func() {
 				},
 			}
 		})
+
+		AfterEach(func() {
+			ctrl.Finish()
+		})
+
 		It("fetches next balances", func(ctx SpecContext) {
 			req := models.FetchNextBalancesRequest{
 				FromPayload: json.RawMessage(fmt.Sprintf(`{"reference": "%s"}`, accRef)),

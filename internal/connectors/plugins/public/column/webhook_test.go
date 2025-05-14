@@ -37,6 +37,10 @@ var _ = Describe("Column Plugin Webhooks", func() {
 		plg = p
 	})
 
+	AfterEach(func() {
+		ctrl.Finish()
+	})
+
 	Context("webhooks", func() {
 		var (
 			webhookID                 string
@@ -73,10 +77,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 				WebhookBaseUrl: webhookBaseURL,
 			}
 
-			p := Plugin{}
-			err := p.initWebhookConfig()
-			Expect(err).To(BeNil())
-			for name, w := range p.supportedWebhooks {
+			for name, w := range plg.(*Plugin).supportedWebhooks {
 				url, _ := url.JoinPath(req.WebhookBaseUrl, w.urlPath)
 				httpMock.EXPECT().Do(
 					gomock.Any(),
@@ -96,7 +97,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 
 			res, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(res.Others).To(HaveLen(len(p.supportedWebhooks)))
+			Expect(res.Others).To(HaveLen(len(plg.(*Plugin).supportedWebhooks)))
 			Expect(res.Others[0].ID).To(Equal(expectedWebhookResponseID))
 		})
 
@@ -132,7 +133,7 @@ var _ = Describe("Column Plugin Webhooks", func() {
 			}
 			res, err := plg.VerifyWebhook(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing X-Signature-Sha256 header"))
+			Expect(err).To(MatchError("missing Column-Signature header"))
 			Expect(res).To(Equal(models.VerifyWebhookResponse{}))
 		})
 

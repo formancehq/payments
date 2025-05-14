@@ -17,16 +17,21 @@ import (
 
 var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 	var (
-		m   *client.MockClient
-		plg models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		p := &Plugin{client: m}
 		p.initWebhookConfig()
 		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {
@@ -203,32 +208,36 @@ var _ = Describe("Mangopay Plugin Create Webhooks", func() {
 			}
 
 			m.EXPECT().ListAllHooks(gomock.Any()).Return(nil, nil)
-			p := Plugin{}
-			p.initWebhookConfig()
-			for range p.supportedWebhooks {
+
+			for range plg.(*Plugin).supportedWebhooks {
 				m.EXPECT().CreateHook(gomock.Any(), gomock.Any(), gomock.Any()).
 					Return(nil)
 			}
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Configs).To(HaveLen(len(p.supportedWebhooks)))
+			Expect(resp.Configs).To(HaveLen(len(plg.(*Plugin).supportedWebhooks)))
 		})
 	})
 })
 
 var _ = Describe("Mangopay Plugin Translate Webhook", func() {
 	var (
-		m   *client.MockClient
-		plg models.Plugin
+		ctrl *gomock.Controller
+		m    *client.MockClient
+		plg  models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
 		p := &Plugin{client: m}
 		p.initWebhookConfig()
 		plg = p
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("create webhooks", func() {

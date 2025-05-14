@@ -3,6 +3,7 @@ package adyen
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -69,9 +70,10 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 		}
 	}
 
-	ik := sha256.Sum256(req.Webhook.Body)
+	sha := sha256.Sum256(req.Webhook.Body)
+	ik := base64.StdEncoding.EncodeToString(sha[:])
 	return models.VerifyWebhookResponse{
-		WebhookIdempotencyKey: pointer.For(string(ik[:])),
+		WebhookIdempotencyKey: pointer.For(ik),
 	}, nil
 }
 

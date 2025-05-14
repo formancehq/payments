@@ -21,6 +21,7 @@ func TestPlugin(t *testing.T) {
 var _ = Describe("Adyen Plugin", func() {
 	var (
 		plg    *Plugin
+		ctrl   *gomock.Controller
 		m      *client.MockClient
 		logger = logging.NewDefaultLogger(GinkgoWriter, true, false, false)
 	)
@@ -29,8 +30,12 @@ var _ = Describe("Adyen Plugin", func() {
 		plg = &Plugin{
 			Plugin: plugins.NewBasePlugin(),
 		}
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		m = client.NewMockClient(ctrl)
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("install", func() {

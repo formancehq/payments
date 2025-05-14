@@ -14,16 +14,21 @@ import (
 
 var _ = Describe("Column Plugin Payments", func() {
 	var (
+		ctrl           *gomock.Controller
 		mockHTTPClient *client.MockHTTPClient
 		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		c := client.New("test", "aseplye", "https://test.com")
 		c.SetHttpClient(mockHTTPClient)
 		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next payments", func() {
@@ -112,14 +117,19 @@ var _ = Describe("Column Plugin Payments", func() {
 
 		Context("HTTP Request Creation Errors", func() {
 			var (
-				plg models.Plugin
+				ctrl *gomock.Controller
+				plg  models.Plugin
 			)
 			BeforeEach(func() {
-				ctrl := gomock.NewController(GinkgoT())
+				ctrl = gomock.NewController(GinkgoT())
 				mockHTTPClient = client.NewMockHTTPClient(ctrl)
 				c := client.New("test", "aseplye", "http://invalid:port")
 				c.SetHttpClient(mockHTTPClient)
 				plg = &Plugin{client: c}
+			})
+
+			AfterEach(func() {
+				ctrl.Finish()
 			})
 
 			It("should return an error when reverse payout request URL is invalid", func(ctx SpecContext) {

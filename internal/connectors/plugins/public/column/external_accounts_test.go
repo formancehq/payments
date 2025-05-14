@@ -15,16 +15,21 @@ import (
 
 var _ = Describe("Column Plugin External Accounts", func() {
 	var (
+		ctrl           *gomock.Controller
 		mockHTTPClient *client.MockHTTPClient
 		plg            models.Plugin
 	)
 
 	BeforeEach(func() {
-		ctrl := gomock.NewController(GinkgoT())
+		ctrl = gomock.NewController(GinkgoT())
 		mockHTTPClient = client.NewMockHTTPClient(ctrl)
 		c := client.New("test", "aseplye", "https://test.com")
 		c.SetHttpClient(mockHTTPClient)
 		plg = &Plugin{client: c}
+	})
+
+	AfterEach(func() {
+		ctrl.Finish()
 	})
 
 	Context("fetching next external accounts", func() {
