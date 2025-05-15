@@ -19,12 +19,11 @@ import (
 var _ = Describe("Qonto *Plugin Payments", func() {
 	Context("fetch next payments", func() {
 		var (
-			plg                *Plugin
-			m                  *client.MockClient
-			pageSize           int
-			from               []byte
-			sampleTransactions []client.Transactions
-			sampleTransaction  client.Transactions
+			plg               *Plugin
+			m                 *client.MockClient
+			pageSize          int
+			from              []byte
+			sampleTransaction client.Transactions
 		)
 
 		BeforeEach(func() {
@@ -47,7 +46,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					FromPayload: from,
 				}
 
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					nil,
 					errors.New("test error"),
 				)
@@ -66,10 +65,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					FromPayload: from,
 				}
 
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-					sampleTransactions,
-					nil,
-				)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 				// When
 				resp, err := plg.FetchNextPayments(ctx, req)
@@ -85,10 +81,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					PageSize: pageSize,
 				}
 
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-					sampleTransactions,
-					nil,
-				)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 				// When
 				resp, err := plg.FetchNextPayments(ctx, req)
@@ -105,10 +98,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					FromPayload: []byte(`{toto: "tata"}`),
 				}
 
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-					sampleTransactions,
-					nil,
-				)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 				// When
 				resp, err := plg.FetchNextPayments(ctx, req)
@@ -125,10 +115,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					FromPayload: from,
 				}
 
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0).Return(
-					sampleTransactions,
-					nil,
-				)
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Times(0)
 
 				// When
 				resp, err := plg.FetchNextPayments(ctx, req)
@@ -149,7 +136,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				sampleTransaction.SubjectType = "Card"
 				sampleTransaction.EmittedAt = "invalid"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -173,7 +160,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				sampleTransaction.SubjectType = "Card"
 				sampleTransaction.UpdatedAt = "invalid"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -195,7 +182,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 			}
 
 			transactionsReturnedByClient := make([]client.Transactions, 0)
-			m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 				transactionsReturnedByClient,
 				nil,
 			)
@@ -210,6 +197,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				client.TransactionStatusPending,
 				client.TransactionStatusDeclined,
 				transactionsReturnedByClient,
+				1,
 				true,
 			)
 		})
@@ -228,7 +216,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				sampleTransaction.SubjectType = "Card"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -243,6 +231,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
@@ -266,7 +255,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					CounterpartyBankIdentifierFormat: "bic",
 				}
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -281,6 +270,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
@@ -303,7 +293,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					CounterpartyBankIdentifierFormat: "bic",
 				}
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -318,6 +308,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
@@ -341,7 +332,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					CounterpartyBankIdentifierFormat: "bic",
 				}
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -356,6 +347,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
@@ -379,7 +371,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					CounterpartyBankIdentifierFormat: "bic",
 				}
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -394,6 +386,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
@@ -417,7 +410,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					CounterpartyBankIdentifierFormat: "sort_code",
 				}
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -432,6 +425,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
@@ -448,7 +442,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				sampleTransaction.Status = client.TransactionStatusPending
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -463,6 +457,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_PENDING))
@@ -477,7 +472,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				sampleTransaction.Status = "declined"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -492,6 +487,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_FAILED))
@@ -506,7 +502,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				sampleTransaction.Status = "completed"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -521,6 +517,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
@@ -535,7 +532,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 				sampleTransaction.Status = "toto"
 				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -550,6 +547,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_UNKNOWN))
@@ -558,12 +556,10 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 
 		Describe("pagination", func() {
 			var (
-				sampleTransactions     []client.Transactions
-				transactionsToGenerate int
+				sampleTransactions []client.Transactions
 			)
 			BeforeEach(func() {
-				transactionsToGenerate = 20
-				sampleTransactions = generateTestSampleTransactions(transactionsToGenerate)
+				sampleTransactions = generateTestSampleTransactions(20)
 			})
 
 			It("pageSize is ignored if the API returns more than the expected count", func(ctx SpecContext) {
@@ -576,7 +572,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				}
 
 				transactionsReturnedByClient := sampleTransactions
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -591,6 +587,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusPending,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 			})
@@ -598,15 +595,16 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				// Given a valid request
 				req := models.FetchNextPaymentsRequest{
 					State: []byte(fmt.Sprintf(
-						`{"lastUpdatedAt": {"pending": "%v"}, "transactionStatusToFetch": "pending"}`,
+						`{"lastUpdatedAt": {"pending": "%v"}, "transactionStatusToFetch": "pending", "lastProcessedId": {"pending": "%v"}, "page": {"pending": 1}}`,
 						sampleTransactions[9].UpdatedAt,
+						sampleTransactions[9].Id,
 					)),
 					PageSize:    pageSize,
 					FromPayload: from,
 				}
 
 				transactionsReturnedByClient := sampleTransactions
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -621,10 +619,11 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient[10:20],
+					1,
 					true,
 				)
-
 			})
+
 			It("should return hasMore=true when some more txns are present in the same status", func(ctx SpecContext) {
 				// Given a valid request
 				req := models.FetchNextPaymentsRequest{
@@ -637,7 +636,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				}
 
 				transactionsReturnedByClient := sampleTransactions
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Times(1).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Times(1).Return(
 					transactionsReturnedByClient[10:15],
 					nil,
 				)
@@ -652,6 +651,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusPending,
 					client.TransactionStatusDeclined,
 					transactionsReturnedByClient[10:15],
+					1,
 					true,
 				)
 
@@ -670,7 +670,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				}
 
 				transactionsReturnedByClient := sampleTransactions[15:20]
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Times(1).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Times(1).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -685,6 +685,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusDeclined,
 					client.TransactionStatusCompleted,
 					transactionsReturnedByClient,
+					1,
 					true,
 				)
 			})
@@ -702,7 +703,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				}
 
 				transactionsReturnedByClient := sampleTransactions[15:20]
-				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Times(1).Return(
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), pageSize).Times(1).Return(
 					transactionsReturnedByClient,
 					nil,
 				)
@@ -717,7 +718,48 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					client.TransactionStatusCompleted,
 					client.TransactionStatusPending,
 					transactionsReturnedByClient,
+					1,
 					false,
+				)
+			})
+
+			It("when multiple payments have the same updatedAt, it should use lastProcessedId to skip already processed payments", func(ctx SpecContext) {
+				// Given a valid request with lastProcessedId set
+				req := models.FetchNextPaymentsRequest{
+					State: []byte(fmt.Sprintf(
+						`{"lastUpdatedAt": {"pending": "%v"}, "transactionStatusToFetch": "pending", "lastProcessedId": {"pending": "%v"}, "page": {"pending": 1}}`,
+						sampleTransactions[4].UpdatedAt,
+						sampleTransactions[4].Id,
+					)),
+					PageSize:    5,
+					FromPayload: from,
+				}
+
+				// Set all transactions to have the same updatedAt
+				for i := range sampleTransactions {
+					sampleTransactions[i].UpdatedAt = sampleTransactions[4].UpdatedAt
+				}
+
+				transactionsReturnedByClient := sampleTransactions[5:10]
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), 5).Times(1).Return(
+					transactionsReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				// We expect transactions [5:10] to be returned
+				// The page should be incremented to 2
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					2,
+					true,
 				)
 			})
 		})
@@ -736,6 +778,7 @@ func assertTransactionsSuccessResponse(
 	fetchedTransactionStatus string,
 	nextStateTransactionStatus string,
 	transactionsUsed []client.Transactions,
+	nextStateExpectedPage int,
 	hasMore bool,
 ) {
 	Expect(err).To(BeNil())
@@ -759,15 +802,35 @@ func assertTransactionsSuccessResponse(
 		}
 	}
 
+	var expectedLastProcessedId map[string]string
+	var expectedPage map[string]int
+	if len(transactionsUsed) == 0 {
+		expectedLastProcessedId = map[string]string{}
+		expectedPage = map[string]int{
+			fetchedTransactionStatus: nextStateExpectedPage,
+		}
+	} else {
+		expectedLastProcessedId = map[string]string{
+			fetchedTransactionStatus: transactionsUsed[len(transactionsUsed)-1].Id,
+		}
+		expectedPage = map[string]int{
+			fetchedTransactionStatus: nextStateExpectedPage,
+		}
+	}
+
 	expectedState := paymentsState{
 		LastUpdatedAt:            expectedLastUpdatedAt,
 		TransactionStatusToFetch: nextStateTransactionStatus,
+		LastProcessedId:          expectedLastProcessedId,
+		Page:                     expectedPage,
 	}
 
 	var actualState paymentsState
 	err = json.Unmarshal(resp.NewState, &actualState)
 	Expect(err).To(BeNil())
 	Expect(actualState.LastUpdatedAt[fetchedTransactionStatus]).To(Equal(expectedState.LastUpdatedAt[fetchedTransactionStatus]))
+	Expect(actualState.LastProcessedId[fetchedTransactionStatus]).To(Equal(expectedState.LastProcessedId[fetchedTransactionStatus]))
+	Expect(actualState.Page[fetchedTransactionStatus]).To(Equal(expectedState.Page[fetchedTransactionStatus]))
 	Expect(resp.HasMore).To(Equal(hasMore))
 }
 

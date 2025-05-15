@@ -29,7 +29,7 @@ type Beneficiary struct {
 	UpdatedAt   string                 `json:"updated_at"`
 }
 
-func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, pageSize int) ([]Beneficiary, error) {
+func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, page, pageSize int) ([]Beneficiary, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_external_accounts")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.buildEndpoint("v2/beneficiaries"), http.NoBody)
@@ -43,6 +43,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, 
 		q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
 	}
 	q.Add("per_page", fmt.Sprint(pageSize))
+	q.Add("page", fmt.Sprint(page))
 	q.Add("sort_by", "updated_at:asc")
 	req.URL.RawQuery = q.Encode()
 

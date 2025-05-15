@@ -15,7 +15,9 @@ import (
 )
 
 type externalAccountsState struct {
-	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
+	LastUpdatedAt   time.Time `json:"lastUpdatedAt"`
+	Page            int       `json:"page"`
+	LastProcessedId string    `json:"lastProcessedId"`
 }
 
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
@@ -35,19 +37,24 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
 	}
+	if oldState.Page == 0 {
+		oldState.Page = 1
+	}
 	newState := externalAccountsState{
-		LastUpdatedAt: oldState.LastUpdatedAt,
+		LastUpdatedAt:   oldState.LastUpdatedAt,
+		Page:            oldState.Page,
+		LastProcessedId: oldState.LastProcessedId,
 	}
 
 	hasMore := false
 	accounts := make([]models.PSPAccount, 0, req.PageSize)
 
-	beneficiaries, err := p.client.GetBeneficiaries(ctx, oldState.LastUpdatedAt, req.PageSize)
+	beneficiaries, err := p.client.GetBeneficiaries(ctx, oldState.LastUpdatedAt, oldState.Page, req.PageSize)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
 
-	accounts, err = p.beneficiaryToPSPAccounts(oldState.LastUpdatedAt, accounts, beneficiaries)
+	accounts, err = p.beneficiaryToPSPAccounts(oldState.LastUpdatedAt, oldState.LastProcessedId, accounts, beneficiaries)
 	if err != nil {
 		return models.FetchNextExternalAccountsResponse{}, err
 	}
@@ -60,6 +67,12 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
+		newState.LastProcessedId = accounts[len(accounts)-1].Reference
+	}
+	if newState.LastUpdatedAt.Equal(oldState.LastUpdatedAt) {
+		newState.Page++
+	} else {
+		newState.Page = 1
 	}
 
 	payload, err := json.Marshal(newState)
@@ -76,6 +89,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 func (p *Plugin) beneficiaryToPSPAccounts(
 	oldUpdatedAt time.Time,
+	lastProcessedId string,
 	accounts []models.PSPAccount,
 	pagedBeneficiaries []client.Beneficiary,
 ) ([]models.PSPAccount, error) {
@@ -100,10 +114,6 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 		if err != nil {
 			return accounts, err
 		}
-		if updatedAt.Before(oldUpdatedAt) || updatedAt.Equal(oldUpdatedAt) {
-			continue
-		}
-
 		accountReference, err := generateAccountReference(
 			beneficiary.BankAccount.AccountNumber,
 			beneficiary.BankAccount.Iban,
@@ -112,6 +122,9 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			beneficiary.BankAccount.RoutingNumber,
 			beneficiary.Id,
 		)
+		if updatedAt.Before(oldUpdatedAt) || updatedAt.Equal(oldUpdatedAt) && accountReference == lastProcessedId {
+			continue
+		}
 		if err != nil {
 			p.logger.Info("mapping beneficiary to external account error: ", err)
 			continue
