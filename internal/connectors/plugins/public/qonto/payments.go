@@ -23,6 +23,15 @@ type paymentsState struct {
 	Page                     map[string]int       `json:"page"`
 }
 
+/*
+*
+A fair bit of complexity here on the pagination.
+Qonto doesn't let us get the list of all transactions, regardless of their status. For that reason, we need to fetch
+transaction by status -- first all the pending ones, then declined, then completed.
+In addition to that, we are using the lastUpdatedAt for state management. However, as in the ExternalAccount fetcher, there
+is a possible edge case when a lot of transactions are changed at the same time (more than a page full), so we also
+keep track of the current page in addition. 99% of the cases, the page in the state will be 1.
+*/
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	// Validation / Initialization
 	from, err := validateAndGetAccount(req)

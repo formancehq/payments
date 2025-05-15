@@ -12,6 +12,11 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+/*
+*
+Qonto does not have a balance API. We get the balances at the same time as we fetch the accounts, so here we just
+read the data that's present in the request and format it as necessary.
+*/
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	var from models.PSPAccount
 	if req.FromPayload == nil {

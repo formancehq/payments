@@ -21,6 +21,15 @@ type accountsState struct {
 	LastProcessedId string    `json:"lastProcessedId"`
 }
 
+/*
+*
+Few things to be aware of on this method specifically for Qonto:
+* There's no way to fetch only the internal accounts, so we fetch the Organization. This returns all accounts,
+without pagination.
+* Since the caller can set a pageLimit, we have some level of pagination regardless (and we will call the underlying
+API to match). This added a bit of complexity (having to order the whole list by updatedAt, filtering already processed ones,
+etc)
+*/
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if req.PageSize == 0 {
 		return models.FetchNextAccountsResponse{}, models.ErrMissingPageSize
