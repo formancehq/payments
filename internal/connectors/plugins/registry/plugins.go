@@ -116,7 +116,7 @@ func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider s
 		return nil, translateError(err)
 	}
 
-	return New(logger, p), nil
+	return New(connectorID, logger, p), nil
 }
 
 func GetCapabilities(provider string) ([]models.Capability, error) {
