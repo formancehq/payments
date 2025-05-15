@@ -319,7 +319,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 					PageSize: pageSize,
 				}
 
-				for i, _ := range sortedSampleAccounts {
+				for i := range sortedSampleAccounts {
 					sortedSampleAccounts[i].UpdatedAt = sortedSampleAccounts[0].UpdatedAt
 				}
 				copy(sampleAccounts, sortedSampleAccounts)

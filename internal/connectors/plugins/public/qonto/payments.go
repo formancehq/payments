@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"maps"
 	"math/big"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 type paymentsState struct {
 	LastUpdatedAt            map[string]time.Time `json:"lastUpdatedAt"`
 	TransactionStatusToFetch string               `json:"transactionStatusToFetch"`
+	LastProcessedId          map[string]string    `json:"lastProcessedId"`
+	Page                     map[string]int       `json:"page"`
 }
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -39,10 +42,11 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	newState := paymentsState{
-		LastUpdatedAt:            oldState.LastUpdatedAt,
+		LastUpdatedAt:            maps.Clone(oldState.LastUpdatedAt),
 		TransactionStatusToFetch: oldState.TransactionStatusToFetch,
+		LastProcessedId:          maps.Clone(oldState.LastProcessedId),
+		Page:                     maps.Clone(oldState.Page),
 	}
-
 	// Run
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	hasMore := false
@@ -52,13 +56,15 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		from.Reference,
 		lastUpdatedAt,
 		oldState.TransactionStatusToFetch,
+		oldState.Page[oldState.TransactionStatusToFetch],
 		req.PageSize,
 	)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	payments, err = p.transactionsToPSPPayments(lastUpdatedAt, payments, transactions)
+	lastProcessedId := oldState.LastProcessedId[oldState.TransactionStatusToFetch]
+	payments, err = p.transactionsToPSPPayments(lastUpdatedAt, lastProcessedId, payments, transactions)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -76,6 +82,14 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
+		newState.LastProcessedId[oldState.TransactionStatusToFetch] = payments[len(payments)-1].Reference
+	}
+
+	// If the lastUpdatedAt is the same, increment the page number
+	if len(payments) > 0 && newState.LastUpdatedAt[oldState.TransactionStatusToFetch].Equal(oldState.LastUpdatedAt[oldState.TransactionStatusToFetch]) {
+		newState.Page[oldState.TransactionStatusToFetch]++
+	} else {
+		newState.Page[oldState.TransactionStatusToFetch] = 1
 	}
 
 	if !hasMore {
@@ -121,11 +135,21 @@ func initializeOldState(req models.FetchNextPaymentsRequest) (paymentsState, err
 	if oldState.LastUpdatedAt == nil {
 		oldState.LastUpdatedAt = make(map[string]time.Time)
 	}
+	if oldState.LastProcessedId == nil {
+		oldState.LastProcessedId = make(map[string]string)
+	}
+	if oldState.Page == nil {
+		oldState.Page = make(map[string]int)
+	}
+	if oldState.Page[oldState.TransactionStatusToFetch] == 0 {
+		oldState.Page[oldState.TransactionStatusToFetch] = 1
+	}
 	return oldState, nil
 }
 
 func (p *Plugin) transactionsToPSPPayments(
 	oldUpdatedAt time.Time,
+	lastProcessedId string,
 	payments []models.PSPPayment,
 	transactions []client.Transactions,
 ) ([]models.PSPPayment, error) {
@@ -138,7 +162,7 @@ func (p *Plugin) transactionsToPSPPayments(
 			)
 			return payments, err
 		}
-		if updatedAt.Before(oldUpdatedAt) || updatedAt.Equal(oldUpdatedAt) {
+		if updatedAt.Before(oldUpdatedAt) || (updatedAt.Equal(oldUpdatedAt) && transaction.Id == lastProcessedId) {
 			continue
 		}
 

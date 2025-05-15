@@ -97,6 +97,7 @@ func (c *client) GetTransactions(
 	bankAccountId string,
 	updatedAtFrom time.Time,
 	transactionStatusToFetch string,
+	page int,
 	pageSize int,
 ) ([]Transactions, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_transactions")
@@ -108,6 +109,7 @@ func (c *client) GetTransactions(
 
 	q := req.URL.Query()
 	q.Add("per_page", fmt.Sprint(pageSize))
+	q.Add("page", fmt.Sprint(page))
 	q.Add("sort_by", "updated_at:asc")
 	q.Add("bank_account_id", bankAccountId)
 	q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
