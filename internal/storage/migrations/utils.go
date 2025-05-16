@@ -36,7 +36,7 @@ type v2Duration struct {
 	time.Duration `json:"duration"`
 }
 
-func (d *v2Duration) MarshalJSON() ([]byte, error) {
+func (d v2Duration) MarshalJSON() ([]byte, error) {
 	return json.Marshal(d.Duration.String())
 }
 
