@@ -46,10 +46,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	lastUpdatedAt := oldState.LastUpdatedAt[oldState.TransactionStatusToFetch]
 
-	if lastUpdatedAt.IsZero() {
-		lastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC) // Qonto returns an error for date < 2017
-	}
-
 	newState := paymentsState{
 		LastUpdatedAt:            maps.Clone(oldState.LastUpdatedAt),
 		TransactionStatusToFetch: oldState.TransactionStatusToFetch,
