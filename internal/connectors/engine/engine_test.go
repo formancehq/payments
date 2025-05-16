@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
@@ -17,6 +18,7 @@ import (
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	"github.com/pkg/errors"
 	"go.temporal.io/sdk/client"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -138,6 +140,18 @@ var _ = Describe("Engine Tests", func() {
 			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{}`))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("prefills config with default values when empty", func(ctx SpecContext) {
+			connectorName := "non-default-val"
+			expectedConfig := models.DefaultConfig()
+			expectedConfig.Name = connectorName
+
+			registerErr := errors.New("stop here")
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
+			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(registerErr))
 		})
 
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
@@ -367,6 +381,93 @@ var _ = Describe("Engine Tests", func() {
 			Expect(task.ID.Reference).To(ContainSubstring(stackName))
 			Expect(task.ConnectorID.String()).To(Equal(connID.String()))
 			Expect(task.Status).To(Equal(models.TASK_STATUS_PROCESSING))
+		})
+	})
+
+	Context("updating a connector", func() {
+		var (
+			config      json.RawMessage
+			connectorID models.ConnectorID
+		)
+		BeforeEach(func() {
+			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
+			connectorID = models.ConnectorID{Provider: "dummypay", Reference: uuid.New()}
+		})
+
+		It("should return error when config has validation issues", func(ctx SpecContext) {
+			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(`{}`))
+
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
+		It("prefills config with default values when empty", func(ctx SpecContext) {
+			connectorName := "new-name"
+			expectedConfig := models.DefaultConfig()
+			expectedConfig.Name = connectorName
+
+			connector := &models.Connector{
+				ID:     connectorID,
+				Config: json.RawMessage(`{"name":"original-name"}`),
+			}
+
+			registerErr := errors.New("stop here")
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
+			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(registerErr))
+		})
+
+		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("hi")
+			connector := &models.Connector{
+				ID: connectorID,
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
+				expectedErr,
+			)
+			err := eng.UpdateConnector(ctx, connectorID, config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return error when storage fails", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("storage err")
+			connector := &models.Connector{
+				ID: connectorID,
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(expectedErr)
+			err := eng.UpdateConnector(ctx, connectorID, config)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should store the updated config", func(ctx SpecContext) {
+			newName := "new-name"
+			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"2m","pageSize":25}`, newName))
+			connector := &models.Connector{
+				ID:        connectorID,
+				CreatedAt: time.Now().UTC(),
+				Provider:  connectorID.Provider,
+				Config:    json.RawMessage(`{"name":"original-name"}`),
+			}
+			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
+			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+
+			expectedConnector := models.Connector{
+				ID:        connectorID,
+				Name:      newName,
+				CreatedAt: connector.CreatedAt,
+				Provider:  connector.Provider,
+				Config:    inputJson,
+			}
+			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), expectedConnector).Return(nil)
+			err := eng.UpdateConnector(ctx, connectorID, inputJson)
+			Expect(err).To(BeNil())
 		})
 	})
 

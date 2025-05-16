@@ -142,6 +142,7 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 		config := json.RawMessage(`{"val":"new"}`)
 		c := models.Connector{
 			ID:     defaultConnector.ID,
+			Name:   "new name",
 			Config: config,
 		}
 
@@ -150,7 +151,7 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 		connector, err := store.ConnectorsGet(ctx, c.ID)
 		require.NoError(t, err)
 		require.NotNil(t, connector)
-		assert.Equal(t, defaultConnector.Name, connector.Name)
+		assert.Equal(t, c.Name, connector.Name)
 		assert.Equal(t, defaultConnector.CreatedAt, connector.CreatedAt)
 		assert.Equal(t, defaultConnector.Provider, connector.Provider)
 		assert.Equal(t, defaultConnector.ScheduledForDeletion, connector.ScheduledForDeletion)
