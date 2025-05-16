@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
@@ -42,7 +41,7 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	}
 
 	if from.DefaultAsset == nil {
-		from.DefaultAsset = pointer.For("")
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("missing default asset")
 	}
 
 	accountBalance := models.PSPBalance{
