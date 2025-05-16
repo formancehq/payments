@@ -48,49 +48,53 @@ var _ = Describe("Qonto *Plugin Balances", func() {
 			Expect(balance.AccountReference).To(Equal(fixturePSPAccount.Reference))
 		})
 
-		It("should return an error - missing fromPayload in request", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextBalancesRequest{}
+		Describe("Error cases", func() {
+			It("missing fromPayload in request", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextBalancesRequest{}
 
-			// When
-			resp, err := plg.FetchNextBalances(ctx, req)
+				// When
+				resp, err := plg.FetchNextBalances(ctx, req)
 
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("missing from payload in request"))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError("missing from payload in request"))
+				Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			})
+
+			It("invalid fromPayload in request", func(ctx SpecContext) {
+				// Given
+				req := models.FetchNextBalancesRequest{
+					FromPayload: []byte(`{invalid: "PSPAccount"}`),
+				}
+
+				// When
+				resp, err := plg.FetchNextBalances(ctx, req)
+
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("failed to unmarshall FromPayload")))
+				Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			})
+
+			It("missing fromPayload.DefaultAsset in request", func(ctx SpecContext) {
+				// Given
+				fixturePSPAccount := getFixturePSPAccount()
+				fixturePSPAccount.DefaultAsset = nil
+				marshalledPSPAccount, _ := json.Marshal(fixturePSPAccount)
+				req := models.FetchNextBalancesRequest{
+					FromPayload: marshalledPSPAccount,
+				}
+
+				// When
+				resp, err := plg.FetchNextBalances(ctx, req)
+
+				// Then
+				Expect(err).ToNot(BeNil())
+				Expect(err).To(MatchError(ContainSubstring("missing default asset")))
+				Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
+			})
 		})
-
-		It("should return an error - invalid fromPayload in request", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextBalancesRequest{
-				FromPayload: []byte(`{invalid: "PSPAccount"}`),
-			}
-
-			// When
-			resp, err := plg.FetchNextBalances(ctx, req)
-
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall FromPayload")))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
-		It("should return an error - missing fromPayload.raw in request", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextBalancesRequest{
-				FromPayload: []byte(`{"invalid": "PSPAccount"}`),
-			}
-
-			// When
-			resp, err := plg.FetchNextBalances(ctx, req)
-
-			// Then
-			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError(ContainSubstring("failed to unmarshall FromPayload")))
-			Expect(resp).To(Equal(models.FetchNextBalancesResponse{}))
-		})
-
 	})
 })
 
