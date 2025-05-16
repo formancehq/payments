@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"sort"
 	"strconv"
 	"time"
 
@@ -21,7 +20,6 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 		var (
 			plg                  *Plugin
 			m                    *client.MockClient
-			pageSize             int
 			sampleAccounts       []client.OrganizationBankAccount
 			sortedSampleAccounts []client.OrganizationBankAccount
 		)
@@ -30,7 +28,6 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			ctrl := gomock.NewController(GinkgoT())
 			m = client.NewMockClient(ctrl)
 			plg = &Plugin{client: m}
-			pageSize = 50
 
 			sampleAccounts, sortedSampleAccounts = generateTestSampleAccounts()
 		})
@@ -39,8 +36,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			It("get organization error", func(ctx SpecContext) {
 				// Given
 				req := models.FetchNextAccountsRequest{
-					State:    []byte(`{}`),
-					PageSize: pageSize,
+					State: []byte(`{}`),
 				}
 
 				m.EXPECT().GetOrganization(gomock.Any()).Return(
@@ -57,46 +53,10 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
 			})
 
-			It("missing pageSize in request", func(ctx SpecContext) {
-				// Given
-				req := models.FetchNextAccountsRequest{
-					State: []byte(`{}`),
-				}
-
-				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
-
-				// When
-				resp, err := plg.FetchNextAccounts(ctx, req)
-
-				// Then
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("invalid request, missing page size in request"))
-				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
-			})
-
-			It("exeeds max pageSize in request", func(ctx SpecContext) {
-				// Given
-				req := models.FetchNextAccountsRequest{
-					State:    []byte(`{}`),
-					PageSize: 1000000000,
-				}
-
-				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
-
-				// When
-				resp, err := plg.FetchNextAccounts(ctx, req)
-
-				// Then
-				Expect(err).ToNot(BeNil())
-				Expect(err).To(MatchError("invalid request, requested page size too high"))
-				Expect(resp).To(Equal(models.FetchNextAccountsResponse{}))
-			})
-
 			It("failing to unmarshall state", func(ctx SpecContext) {
 				// Given
 				req := models.FetchNextAccountsRequest{
-					State:    []byte(`{toto: "tata"}`),
-					PageSize: pageSize,
+					State: []byte(`{toto: "tata"}`),
 				}
 
 				m.EXPECT().GetOrganization(gomock.Any()).Times(0)
@@ -113,8 +73,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			It("invalid time format from Qonto's accounts", func(ctx SpecContext) {
 				// Given an account with invalid timestamp
 				req := models.FetchNextAccountsRequest{
-					State:    []byte(`{}`),
-					PageSize: pageSize,
+					State: []byte(`{}`),
 				}
 				sampleAccounts[0].UpdatedAt = "202-01-01T00:00:00.001Z"
 
@@ -138,8 +97,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 		It("should fetch next accounts - no state no results", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
+				State: []byte(`{}`),
 			}
 
 			m.EXPECT().GetOrganization(gomock.Any()).Return(
@@ -163,8 +121,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 		It("should fetch next accounts - nil state no results", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
-				State:    nil,
-				PageSize: pageSize,
+				State: nil,
 			}
 
 			m.EXPECT().GetOrganization(gomock.Any()).Return(
@@ -188,8 +145,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 		It("should fetch next accounts - no state", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(`{}`),
-				PageSize: pageSize,
+				State: []byte(`{}`),
 			}
 
 			m.EXPECT().GetOrganization(gomock.Any()).Return(
@@ -215,11 +171,10 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 		})
 
-		It("should fetch next accounts - state set", func(ctx SpecContext) {
+		It("filters out already processed accounts based on lastUpdatedAt", func(ctx SpecContext) {
 			// Given
 			req := models.FetchNextAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sortedSampleAccounts[10].UpdatedAt)),
-				PageSize: pageSize,
+				State: []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v"}`, sortedSampleAccounts[10].UpdatedAt)),
 			}
 			m.EXPECT().GetOrganization(gomock.Any()).Return(
 				&client.Organization{
@@ -243,116 +198,6 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			Expect(err).To(BeNil())
 			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 			Expect(resp.HasMore).To(BeFalse())
-		})
-
-		It("should fetch next accounts - no state and pageSize < total", func(ctx SpecContext) {
-			// Given
-			req := models.FetchNextAccountsRequest{
-				State:    []byte("{}"),
-				PageSize: 5,
-			}
-			m.EXPECT().GetOrganization(gomock.Any()).Return(
-				&client.Organization{
-					BankAccounts: sampleAccounts,
-				},
-				nil,
-			)
-
-			// When
-			resp, err := plg.FetchNextAccounts(ctx, req)
-
-			// Then
-			Expect(err).To(BeNil())
-			Expect(resp.Accounts).To(HaveLen(5))
-			for i, account := range resp.Accounts {
-				assertAccountMapping(sortedSampleAccounts[i], account)
-			}
-
-			var state accountsState
-			err = json.Unmarshal(resp.NewState, &state)
-			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[4].UpdatedAt))
-			Expect(resp.HasMore).To(BeTrue())
-		})
-
-		Describe("Pagination", func() {
-			It("If first account in new page has the same updatedAt as previous' account, it gets processed", func(ctx SpecContext) {
-				// Given the last account on previous page updateAt equals the 1st account on next page updatedAt
-				req := models.FetchNextAccountsRequest{
-					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": "j"}`, sortedSampleAccounts[9].UpdatedAt)),
-					PageSize: pageSize,
-				}
-
-				sortedSampleAccounts[10].UpdatedAt = sortedSampleAccounts[9].UpdatedAt
-				copy(sampleAccounts, sortedSampleAccounts)
-				rand.Shuffle(len(sampleAccounts), func(i, j int) {
-					sampleAccounts[i], sampleAccounts[j] = sampleAccounts[j], sampleAccounts[i]
-				})
-
-				m.EXPECT().GetOrganization(gomock.Any()).Return(
-					&client.Organization{
-						BankAccounts: sampleAccounts,
-					},
-					nil,
-				)
-
-				// When
-				resp, err := plg.FetchNextAccounts(ctx, req)
-
-				// Then
-				Expect(err).To(BeNil())
-				Expect(resp.Accounts).To(HaveLen(10))
-				for i, account := range resp.Accounts {
-					assertAccountMapping(sortedSampleAccounts[i+10], account)
-				}
-
-				var state accountsState
-				err = json.Unmarshal(resp.NewState, &state)
-				Expect(err).To(BeNil())
-				Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
-				Expect(resp.HasMore).To(BeFalse())
-			})
-			It("If a full page has the same updatedAt, the next page with the same updatedAt gets processed", func(ctx SpecContext) {
-				// Given a list of account with all the same updatedAt, and we already processed a page
-				req := models.FetchNextAccountsRequest{
-					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": "j"}`, sortedSampleAccounts[0].UpdatedAt)),
-					PageSize: pageSize,
-				}
-
-				for i := range sortedSampleAccounts {
-					sortedSampleAccounts[i].UpdatedAt = sortedSampleAccounts[0].UpdatedAt
-				}
-				copy(sampleAccounts, sortedSampleAccounts)
-				rand.Shuffle(len(sampleAccounts), func(i, j int) {
-					sampleAccounts[i], sampleAccounts[j] = sampleAccounts[j], sampleAccounts[i]
-				})
-				sort.Slice(sortedSampleAccounts, func(i, j int) bool {
-					return sortedSampleAccounts[i].Id < sortedSampleAccounts[j].Id
-				})
-
-				m.EXPECT().GetOrganization(gomock.Any()).Return(
-					&client.Organization{
-						BankAccounts: sampleAccounts,
-					},
-					nil,
-				)
-
-				// When
-				resp, err := plg.FetchNextAccounts(ctx, req)
-
-				// Then
-				Expect(err).To(BeNil())
-				Expect(resp.Accounts).To(HaveLen(10))
-				for i, account := range resp.Accounts {
-					assertAccountMapping(sortedSampleAccounts[i+10], account)
-				}
-
-				var state accountsState
-				err = json.Unmarshal(resp.NewState, &state)
-				Expect(err).To(BeNil())
-				Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
-				Expect(resp.HasMore).To(BeFalse())
-			})
 		})
 	})
 })

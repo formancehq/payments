@@ -8,7 +8,6 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/formancehq/payments/internal/utils/pagination"
 	"sort"
 	"strconv"
 	"time"
@@ -17,8 +16,7 @@ import (
 )
 
 type accountsState struct {
-	LastUpdatedAt   time.Time `json:"lastUpdatedAt"`
-	LastProcessedId string    `json:"lastProcessedId"`
+	LastUpdatedAt time.Time `json:"lastUpdatedAt"`
 }
 
 /*
@@ -26,17 +24,9 @@ type accountsState struct {
 Few things to be aware of on this method specifically for Qonto:
 * There's no way to fetch only the internal accounts, so we fetch the Organization. This returns all accounts,
 without pagination.
-* Since the caller can set a pageLimit, we have some level of pagination regardless (and we will call the underlying
-API to match). This added a bit of complexity (having to order the whole list by updatedAt, filtering already processed ones,
-etc)
+* The same endpoint returns the balances as well (which are handled in fetchNextBalance, but relying on the output of this)
 */
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	if req.PageSize == 0 {
-		return models.FetchNextAccountsResponse{}, models.ErrMissingPageSize
-	}
-	if req.PageSize > client.QONTO_MAX_PAGE_SIZE {
-		return models.FetchNextAccountsResponse{}, models.ErrExceededMaxPageSize
-	}
 
 	var oldState accountsState
 	if req.State != nil {
@@ -52,8 +42,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	newState := accountsState{
-		LastUpdatedAt:   oldState.LastUpdatedAt,
-		LastProcessedId: oldState.LastProcessedId,
+		LastUpdatedAt: oldState.LastUpdatedAt,
 	}
 
 	organization, err := p.client.GetOrganization(ctx)
@@ -69,14 +58,8 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	_, hasMore := pagination.ShouldFetchMore(accounts, organization.BankAccounts, req.PageSize)
-	if hasMore && len(accounts) > 0 {
-		accounts = accounts[:req.PageSize]
-	}
-
 	if len(accounts) > 0 {
 		newState.LastUpdatedAt = accounts[len(accounts)-1].CreatedAt
-		newState.LastProcessedId = accounts[len(accounts)-1].Reference
 	}
 
 	payload, err := json.Marshal(newState)
@@ -87,7 +70,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
-		HasMore:  hasMore,
+		HasMore:  false,
 	}, nil
 }
 
@@ -117,9 +100,6 @@ func fillAccounts(
 
 		// Ignore accounts that have already been processed
 		if updatedAt.Before(oldState.LastUpdatedAt) {
-			continue
-		}
-		if updatedAt.Equal(oldState.LastUpdatedAt) && bankAccount.Id <= oldState.LastProcessedId {
 			continue
 		}
 
