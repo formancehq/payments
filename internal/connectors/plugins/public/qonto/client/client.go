@@ -21,16 +21,14 @@ type Client interface {
 
 type client struct {
 	httpClient httpwrapper.Client
-
-	clientID     string
-	apiKey       string
-	endpoint     string
-	stagingToken string
+	endpoint   string
 }
 
 type apiTransport struct {
-	client     *client
-	underlying http.RoundTripper
+	clientID     string
+	underlying   http.RoundTripper
+	apiKey       string
+	stagingToken string
 }
 
 type MetaPagination struct {
@@ -46,12 +44,12 @@ const QONTO_TIMEFORMAT = "2006-01-02T15:04:05.999Z"
 const QONTO_MAX_PAGE_SIZE = 100
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	auth := fmt.Sprintf("%s:%s", t.client.clientID, t.client.apiKey)
+	auth := fmt.Sprintf("%s:%s", t.clientID, t.apiKey)
 
 	req.Header.Set("Authorization", auth)
 	req.Header.Set("Content-Type", "application/json")
-	if t.client.stagingToken != "" {
-		req.Header.Set("X-Qonto-Staging-Token", t.client.stagingToken)
+	if t.stagingToken != "" {
+		req.Header.Set("X-Qonto-Staging-Token", t.stagingToken)
 	}
 	return t.underlying.RoundTrip(req)
 }
@@ -60,15 +58,14 @@ func New(connectorName, clientID, apiKey, endpoint, stagingToken string) Client 
 	endpoint = strings.TrimSuffix(endpoint, "/")
 
 	client := &client{
-		clientID:     clientID,
-		apiKey:       apiKey,
-		endpoint:     endpoint,
-		stagingToken: stagingToken,
+		endpoint: endpoint,
 	}
 
 	apiTransport := &apiTransport{
-		client:     client,
-		underlying: metrics.NewTransport(connectorName, metrics.TransportOpts{}),
+		clientID:     clientID,
+		apiKey:       apiKey,
+		stagingToken: stagingToken,
+		underlying:   http.DefaultTransport,
 	}
 	config := &httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{
