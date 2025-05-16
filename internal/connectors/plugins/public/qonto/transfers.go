@@ -114,6 +114,10 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 	if transfer.Status != "processing" && transfer.Status != "pending" && transfer.Status != "completed" {
 		return models.PSPPayment{}, errors.Errorf("Unexpected status on newly created transfer: %s", transfer.Status)
 	}
+	currencyUsed := transfer.Currency
+	if currencyUsed == "" {
+		currencyUsed = "EUR"
+	}
 
 	return models.PSPPayment{
 		ParentReference:             "",
@@ -121,7 +125,7 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
 		Amount:                      big.NewInt(amount),
-		Asset:                       currency.FormatAsset(supportedCurrenciesForInternalAccounts, transfer.Currency),
+		Asset:                       currency.FormatAsset(supportedCurrenciesForInternalAccounts, currencyUsed),
 		Scheme:                      models.PAYMENT_SCHEME_SEPA,
 		Status:                      models.PAYMENT_STATUS_PENDING,
 		SourceAccountReference:      &sourceAccountReference,

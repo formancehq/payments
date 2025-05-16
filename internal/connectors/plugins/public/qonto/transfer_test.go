@@ -92,6 +92,39 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			Expect(resp).To(Equal(&expectedPSPPayment))
 		})
 
+		It("defaults to EUR if the currency is not part of the response", func(ctx SpecContext) {
+			// Given a valid request but client's response doesn't have currency set
+			transferResponse.Currency = ""
+			m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).
+				Times(1).
+				Return(&transferResponse, nil)
+
+			// When
+			resp, err := plg.createTransfer(ctx, paymentInitiation)
+
+			// Then
+			Expect(err).To(BeNil())
+
+			raw, _ := json.Marshal(transferResponse)
+			createdAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, transferResponse.CreatedDate, time.UTC)
+			expectedPSPPayment := models.PSPPayment{
+				Reference:                   transferResponse.Id,
+				Type:                        models.PAYMENT_TYPE_TRANSFER,
+				CreatedAt:                   createdAt,
+				Amount:                      paymentInitiation.Amount,
+				Asset:                       paymentInitiation.Asset,
+				Scheme:                      models.PAYMENT_SCHEME_SEPA,
+				Status:                      models.PAYMENT_STATUS_PENDING,
+				SourceAccountReference:      &paymentInitiation.SourceAccount.Reference,
+				DestinationAccountReference: &paymentInitiation.DestinationAccount.Reference,
+				Metadata: map[string]string{
+					"external_reference": transferResponse.Reference,
+				},
+				Raw: raw,
+			}
+			Expect(resp).To(Equal(&expectedPSPPayment))
+		})
+
 		Describe("Invalid requests cases", func() {
 			It("Missing amount", func(ctx SpecContext) {
 				// given
