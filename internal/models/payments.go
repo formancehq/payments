@@ -2,7 +2,8 @@ package models
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
 
@@ -54,27 +55,27 @@ type PSPPayment struct {
 
 func (p *PSPPayment) Validate() error {
 	if p.Reference == "" {
-		return fmt.Errorf("missing payment reference: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("missing payment reference"), ErrValidation)
 	}
 
 	if p.CreatedAt.IsZero() {
-		return fmt.Errorf("missing payment createdAt: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("missing payment createdAt"), ErrValidation)
 	}
 
 	if p.Type == PAYMENT_TYPE_UNKNOWN {
-		return fmt.Errorf("missing payment type: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("missing payment type"), ErrValidation)
 	}
 
 	if p.Amount == nil {
-		return fmt.Errorf("missing payment amount: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("missing payment amount"), ErrValidation)
 	}
 
 	if !assets.IsValid(p.Asset) {
-		return fmt.Errorf("invalid payment asset: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("invalid payment asset"), ErrValidation)
 	}
 
 	if p.Raw == nil {
-		return fmt.Errorf("missing payment raw: %w", ErrValidation)
+		return errorsutils.NewWrappedError(errors.New("missing payment raw"), ErrValidation)
 	}
 
 	return nil
