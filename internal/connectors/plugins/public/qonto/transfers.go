@@ -128,18 +128,10 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		currencyUsed = "EUR"
 	}
 
-	regex, _ := regexp.Compile("transferReference:(.+)/(.+)")
-	matches := regex.FindStringSubmatch(transfer.Reference)
-	if len(matches) < 3 {
-		return models.PSPPayment{}, errors.Errorf("Malformed transfer reference: %s", transfer.Reference)
-	}
-	paymentReference := matches[1]
-	err = uuid.Validate(paymentReference)
+	paymentReference, externalReference, err := parseTransferReference(transfer.Reference)
 	if err != nil {
-		return models.PSPPayment{}, errors.Errorf("Invalid payment reference: %s", paymentReference)
+		return models.PSPPayment{}, err
 	}
-
-	externalReference := matches[2]
 
 	return models.PSPPayment{
 		ParentReference:             "",
@@ -158,4 +150,20 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		},
 		Raw: raw,
 	}, nil
+}
+
+func parseTransferReference(transferReference string) (string, string, error) {
+	regex, _ := regexp.Compile("transferReference:([^/]+)/(.+)")
+	matches := regex.FindStringSubmatch(transferReference)
+	if len(matches) < 3 {
+		return "", "", errors.Errorf("Malformed transfer reference: %s", transferReference)
+	}
+	paymentReference := matches[1]
+	err := uuid.Validate(paymentReference)
+	if err != nil {
+		return "", "", errors.Errorf("Invalid payment reference: %s", paymentReference)
+	}
+
+	externalReference := matches[2]
+	return paymentReference, externalReference, nil
 }

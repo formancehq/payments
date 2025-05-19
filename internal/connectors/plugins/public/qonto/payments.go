@@ -31,6 +31,9 @@ transaction by status -- first all the pending ones, then declined, then complet
 In addition to that, we are using the lastUpdatedAt for state management. However, as in the ExternalAccount fetcher, there
 is a possible edge case when a lot of transactions are changed at the same time (more than a page full), so we also
 keep track of the current page in addition. 99% of the cases, the page in the state will be 1.
+
+Another complexity is around transfer -- Qonto does not provide any common ID between a transfer and the subsequent
+transaction, wo we have to make use of the Reference field to detect it, allowing us to populate the parentID accurately.
 */
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	// Validation / Initialization
@@ -184,11 +187,12 @@ func (p *Plugin) transactionsToPSPPayments(
 			return payments, err
 		}
 
+		parentId, paymentType := calculateParentIdAndType(transaction)
 		payment := models.PSPPayment{
-			ParentReference:             transaction.Id,
+			ParentReference:             parentId,
 			Reference:                   transaction.Id,
 			CreatedAt:                   emittedAt,
-			Type:                        mapQontoTransactionType(transaction.SubjectType),
+			Type:                        paymentType,
 			Amount:                      big.NewInt(transaction.AmountCents),
 			Asset:                       currency.FormatAsset(supportedCurrenciesForInternalAccounts, transaction.Currency),
 			Scheme:                      mapQontoTransactionScheme(transaction.SubjectType),
@@ -225,6 +229,19 @@ func (p *Plugin) transactionsToPSPPayments(
 		payments = append(payments, payment)
 	}
 	return payments, nil
+}
+
+/*
+*
+In the case of transfer, we "hack" the transaction reference to include the transfer reference.
+Here we are retrieving it and, if found, use it as PSP payment parent reference.
+*/
+func calculateParentIdAndType(transaction client.Transactions) (string, models.PaymentType) {
+	transferReference, _, err := parseTransferReference(transaction.Reference)
+	if err != nil {
+		return transaction.Id, mapQontoTransactionType(transaction.SubjectType)
+	}
+	return transferReference, models.PAYMENT_TYPE_TRANSFER
 }
 
 func mapQontoPaymentStatus(status string) models.PaymentStatus {

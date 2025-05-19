@@ -234,6 +234,7 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 					1,
 					true,
 				)
+				Expect(resp.Payments[0].ParentReference).To(Equal(sampleTransaction.Id))
 				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_PAYOUT))
 				Expect(resp.Payments[0].Scheme).To(Equal(models.PAYMENT_SCHEME_UNKNOWN))
 				Expect(resp.Payments[0].DestinationAccountReference).To(BeNil())
@@ -552,6 +553,38 @@ var _ = Describe("Qonto *Plugin Payments", func() {
 				)
 				Expect(resp.Payments[0].Status).To(Equal(models.PAYMENT_STATUS_UNKNOWN))
 			})
+			It("should map a transaction originating from an internal transfer to the correct parent transaction", func(ctx SpecContext) {
+				// Given a valid request, with a reference matching the format of a transfer
+				req := models.FetchNextPaymentsRequest{
+					State:       []byte(`{}`),
+					PageSize:    pageSize,
+					FromPayload: from,
+				}
+
+				transferUUID := "12345678-1234-1234-1234-123456789012"
+				sampleTransaction.Reference = fmt.Sprintf("transferReference:%s/titi", transferUUID)
+				transactionsReturnedByClient := []client.Transactions{sampleTransaction}
+				m.EXPECT().GetTransactions(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(
+					transactionsReturnedByClient,
+					nil,
+				)
+
+				// When
+				resp, err := plg.FetchNextPayments(ctx, req)
+
+				// Then
+				assertTransactionsSuccessResponse(
+					resp,
+					err,
+					client.TransactionStatusPending,
+					client.TransactionStatusDeclined,
+					transactionsReturnedByClient,
+					1,
+					true,
+				)
+				Expect(resp.Payments[0].ParentReference).To(Equal(transferUUID))
+				Expect(resp.Payments[0].Type).To(Equal(models.PAYMENT_TYPE_TRANSFER))
+			})
 		})
 
 		Describe("pagination", func() {
@@ -790,7 +823,6 @@ func assertTransactionsSuccessResponse(
 	var expectedLastUpdatedAt map[string]time.Time
 	if len(transactionsUsed) == 0 {
 		expectedLastUpdatedAt = map[string]time.Time{}
-		//expectedLastUpdatedAt = time.Date(2017, 1, 1, 0, 0, 0, 0, time.UTC)
 	} else {
 		timeExpected, _ := time.ParseInLocation(
 			client.QONTO_TIMEFORMAT,
@@ -900,7 +932,6 @@ func assertSimpleTransactionsMapping(transaction client.Transactions, resultingP
 	var expectedRaw json.RawMessage
 	expectedRaw, _ = json.Marshal(transaction)
 
-	Expect(resultingPSPAPayment.ParentReference).To(Equal(transaction.Id))
 	Expect(resultingPSPAPayment.Reference).To(Equal(transaction.Id))
 	Expect(resultingPSPAPayment.Amount).To(Equal(big.NewInt(transaction.AmountCents)))
 	Expect(resultingPSPAPayment.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(transaction.EmittedAt))
