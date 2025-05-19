@@ -22,6 +22,8 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			m                 *client.MockClient
 			paymentInitiation models.PSPPaymentInitiation
 			transferResponse  client.TransferResponse
+			defaultUUID       = "12345678-1234-1234-1234-123456789012"
+			externalReference = "external-reference"
 		)
 
 		BeforeEach(func() {
@@ -32,7 +34,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				logger: logging.NewDefaultLogger(GinkgoWriter, true, false, false),
 			}
 			paymentInitiation = models.PSPPaymentInitiation{
-				Reference: "new-transfer",
+				Reference: externalReference,
 				SourceAccount: &models.PSPAccount{
 					Reference: "source-account",
 					Metadata: map[string]string{
@@ -55,7 +57,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				Amount:      "1",
 				AmountCents: "100",
 				Currency:    "EUR",
-				Reference:   "external-reference",
+				Reference:   fmt.Sprintf("transferReference:%v/%v", defaultUUID, externalReference),
 				CreatedDate: "2021-01-01T00:00:00.001Z",
 			}
 		})
@@ -67,7 +69,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				Return(&transferResponse, nil)
 
 			// When
-			resp, err := plg.createTransfer(ctx, paymentInitiation)
+			resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 			// Then
 			Expect(err).To(BeNil())
@@ -75,7 +77,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			raw, _ := json.Marshal(transferResponse)
 			createdAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, transferResponse.CreatedDate, time.UTC)
 			expectedPSPPayment := models.PSPPayment{
-				Reference:                   transferResponse.Id,
+				Reference:                   defaultUUID,
 				Type:                        models.PAYMENT_TYPE_TRANSFER,
 				CreatedAt:                   createdAt,
 				Amount:                      paymentInitiation.Amount,
@@ -85,11 +87,12 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				SourceAccountReference:      &paymentInitiation.SourceAccount.Reference,
 				DestinationAccountReference: &paymentInitiation.DestinationAccount.Reference,
 				Metadata: map[string]string{
-					"external_reference": transferResponse.Reference,
+					"external_reference": externalReference,
+					"transfer_id":        transferResponse.Id,
 				},
 				Raw: raw,
 			}
-			Expect(resp).To(Equal(&expectedPSPPayment))
+			Expect(resp.Payment).To(Equal(&expectedPSPPayment))
 		})
 
 		It("defaults to EUR if the currency is not part of the response", func(ctx SpecContext) {
@@ -100,7 +103,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				Return(&transferResponse, nil)
 
 			// When
-			resp, err := plg.createTransfer(ctx, paymentInitiation)
+			resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 			// Then
 			Expect(err).To(BeNil())
@@ -108,7 +111,7 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			raw, _ := json.Marshal(transferResponse)
 			createdAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, transferResponse.CreatedDate, time.UTC)
 			expectedPSPPayment := models.PSPPayment{
-				Reference:                   transferResponse.Id,
+				Reference:                   defaultUUID,
 				Type:                        models.PAYMENT_TYPE_TRANSFER,
 				CreatedAt:                   createdAt,
 				Amount:                      paymentInitiation.Amount,
@@ -118,11 +121,12 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				SourceAccountReference:      &paymentInitiation.SourceAccount.Reference,
 				DestinationAccountReference: &paymentInitiation.DestinationAccount.Reference,
 				Metadata: map[string]string{
-					"external_reference": transferResponse.Reference,
+					"external_reference": externalReference,
+					"transfer_id":        transferResponse.Id,
 				},
 				Raw: raw,
 			}
-			Expect(resp).To(Equal(&expectedPSPPayment))
+			Expect(resp.Payment).To(Equal(&expectedPSPPayment))
 		})
 
 		Describe("Invalid requests cases", func() {
@@ -132,11 +136,11 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).Times(0)
 
 				// when
-				resp, err := plg.createTransfer(ctx, paymentInitiation)
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 				// Then
 				assertTransferErrorResponse(
-					resp,
+					resp.Payment,
 					err,
 					"amount is required in transfer/payout request",
 				)
@@ -197,11 +201,11 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 					m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).Times(0)
 
 					// When
-					resp, err := plg.createTransfer(ctx, paymentInitiation)
+					resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 					// Then
 					assertTransferErrorResponse(
-						resp,
+						resp.Payment,
 						err,
 						fmt.Sprintf("iban is required in %v account", accountType),
 					)
@@ -215,11 +219,11 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).Times(0)
 
 				// When
-				resp, err := plg.createTransfer(ctx, paymentInitiation)
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 				// Then
 				assertTransferErrorResponse(
-					resp,
+					resp.Payment,
 					err,
 					"failed to get currency and precision from asset: invalid asset: EUR",
 				)
@@ -236,10 +240,10 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 			)
 
 			// When
-			resp, err := plg.createTransfer(ctx, paymentInitiation)
+			resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 			// Then
-			assertTransferErrorResponse(resp, err, ":boom: oopsy")
+			assertTransferErrorResponse(resp.Payment, err, ":boom: oopsy")
 		})
 
 		Describe("Invalid response cases", func() {
@@ -252,11 +256,11 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 					Return(&transferResponse, nil)
 
 				// when
-				resp, err := plg.createTransfer(ctx, paymentInitiation)
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 				// then
 				assertTransferErrorResponse(
-					resp,
+					resp.Payment,
 					err,
 					"invalid time format for transfer",
 				)
@@ -271,11 +275,11 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 					Return(&transferResponse, nil)
 
 				// when
-				resp, err := plg.createTransfer(ctx, paymentInitiation)
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 				// then
 				assertTransferErrorResponse(
-					resp,
+					resp.Payment,
 					err,
 					"failed to marshal transfer: json",
 				)
@@ -290,13 +294,51 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 					Return(&transferResponse, nil)
 
 				// when
-				resp, err := plg.createTransfer(ctx, paymentInitiation)
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
 
 				// then
 				assertTransferErrorResponse(
-					resp,
+					resp.Payment,
 					err,
 					fmt.Sprintf("Unexpected status on newly created transfer: %s", transferResponse.Status),
+				)
+			})
+
+			It("Malformed reference returned", func(ctx SpecContext) {
+				// Given a return with a malformed reference
+				transferResponse.Reference = "toto"
+
+				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).
+					Times(1).
+					Return(&transferResponse, nil)
+
+				// when
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
+
+				// then
+				assertTransferErrorResponse(
+					resp.Payment,
+					err,
+					fmt.Sprintf("Malformed transfer reference: %s", transferResponse.Reference),
+				)
+			})
+
+			It("Invalid UUID reference returned", func(ctx SpecContext) {
+				// Given a return with reference where uuid is not valid
+				transferResponse.Reference = "transferReference:1234/toto"
+
+				m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).
+					Times(1).
+					Return(&transferResponse, nil)
+
+				// when
+				resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
+
+				// then
+				assertTransferErrorResponse(
+					resp.Payment,
+					err,
+					fmt.Sprintf("Invalid payment reference: %s", "1234"),
 				)
 			})
 		})

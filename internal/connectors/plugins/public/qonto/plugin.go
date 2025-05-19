@@ -100,16 +100,4 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 	}, nil
 }
 
-// Note: if the connector has webhooks, use this method to create the related
-// webhooks on the PSP.
-func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
-}
-
-// Note: if the connector has webhooks, use this method to translate incoming
-// webhooks to a formance object.
-func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
-}
-
 var _ models.Plugin = &Plugin{}

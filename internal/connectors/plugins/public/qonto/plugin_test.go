@@ -70,6 +70,13 @@ var _ = Describe("Qonto *Plugin", func() {
 			_, err := plg.FetchNextBalances(context.Background(), req)
 			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
+		It("fails when fetch next payments is called before install", func(ctx SpecContext) {
+			req := models.FetchNextPaymentsRequest{
+				State: json.RawMessage(`{}`),
+			}
+			_, err := plg.FetchNextPayments(context.Background(), req)
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+		})
 		It("fails when fetch next external accounts is called before install", func(ctx SpecContext) {
 			req := models.FetchNextExternalAccountsRequest{
 				State: json.RawMessage(`{}`),
@@ -88,4 +95,5 @@ var _ = Describe("Qonto *Plugin", func() {
 			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 	})
+
 })

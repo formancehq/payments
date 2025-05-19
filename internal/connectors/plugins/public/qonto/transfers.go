@@ -8,11 +8,19 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/qonto/client"
 	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"math/big"
+	"regexp"
 	"time"
 )
 
+/*
+*
+Note that the reference returned by Qonto is NOT a transaction, and won't be fetched as one.
+As such, we need to provide a custom UUID in the transfer reference, to be able to match this payment against
+incoming transactions.
+*/
 func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiation) (*models.PSPPayment, error) {
 
 	if err := validateTransferPayoutRequests(pi); err != nil {
@@ -34,11 +42,12 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 			models.ErrInvalidRequest,
 		)
 	}
+	transferReference := fmt.Sprintf("transferReference:%s/%s", uuid.New().String(), pi.Reference)
 
 	request := client.TransferRequest{
 		SourceIBAN:      pi.SourceAccount.Metadata["bank_account_iban"],
 		DestinationIBAN: pi.DestinationAccount.Metadata["bank_account_iban"],
-		Reference:       pi.Reference,
+		Reference:       transferReference,
 		Currency:        curr,
 		Amount:          amount,
 	}
@@ -119,9 +128,22 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		currencyUsed = "EUR"
 	}
 
+	regex, _ := regexp.Compile("transferReference:(.+)/(.+)")
+	matches := regex.FindStringSubmatch(transfer.Reference)
+	if len(matches) < 3 {
+		return models.PSPPayment{}, errors.Errorf("Malformed transfer reference: %s", transfer.Reference)
+	}
+	paymentReference := matches[1]
+	err = uuid.Validate(paymentReference)
+	if err != nil {
+		return models.PSPPayment{}, errors.Errorf("Invalid payment reference: %s", paymentReference)
+	}
+
+	externalReference := matches[2]
+
 	return models.PSPPayment{
 		ParentReference:             "",
-		Reference:                   transfer.Id,
+		Reference:                   paymentReference,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
 		Amount:                      big.NewInt(amount),
@@ -130,7 +152,10 @@ func transferToPayment(transfer *client.TransferResponse, sourceAccountReference
 		Status:                      models.PAYMENT_STATUS_PENDING,
 		SourceAccountReference:      &sourceAccountReference,
 		DestinationAccountReference: &destinationAccountReference,
-		Metadata:                    map[string]string{"external_reference": transfer.Reference},
-		Raw:                         raw,
+		Metadata: map[string]string{
+			"external_reference": externalReference,
+			"transfer_id":        transfer.Id,
+		},
+		Raw: raw,
 	}, nil
 }
