@@ -6171,6 +6171,7 @@ xor
 {
   "clientID": "string",
   "clientSecret": "string",
+  "configurationToken": "string",
   "endpoint": "string",
   "name": "string",
   "pageSize": "25",
@@ -6186,6 +6187,7 @@ xor
 |---|---|---|---|---|
 |clientID|string|true|none|none|
 |clientSecret|string|true|none|none|
+|configurationToken|string|true|none|none|
 |endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|

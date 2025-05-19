@@ -69,3 +69,18 @@ func (mr *MockClientMockRecorder) CreateUser(ctx, userID, market any) *gomock.Ca
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockClient)(nil).CreateUser), ctx, userID, market)
 }
+
+// CreateWebhook mocks base method.
+func (m *MockClient) CreateWebhook(ctx context.Context, eventType WebhookEventType, connectorID, url string) (CreateWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateWebhook", ctx, eventType, connectorID, url)
+	ret0, _ := ret[0].(CreateWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateWebhook indicates an expected call of CreateWebhook.
+func (mr *MockClientMockRecorder) CreateWebhook(ctx, eventType, connectorID, url any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhook", reflect.TypeOf((*MockClient)(nil).CreateWebhook), ctx, eventType, connectorID, url)
+}

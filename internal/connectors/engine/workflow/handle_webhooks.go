@@ -45,6 +45,11 @@ func (w Workflow) runHandleWebhooks(
 		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", errors.New("webhook config not found"))
 	}
 
+	config.FullURL, err = w.getWebhookBaseURL(handleWebhooks.ConnectorID)
+	if err != nil {
+		return fmt.Errorf("getting webhook base URL: %w", err)
+	}
+
 	verifyResponse, err := activities.PluginVerifyWebhook(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,

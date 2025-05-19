@@ -9,9 +9,10 @@ import (
 )
 
 type Config struct {
-	ClientID     string `json:"clientID" validate:"required"`
-	ClientSecret string `json:"clientSecret" validate:"required"`
-	Endpoint     string `json:"endpoint" validate:"required"`
+	ClientID           string `json:"clientID" validate:"required"`
+	ClientSecret       string `json:"clientSecret" validate:"required"`
+	ConfigurationToken string `json:"configurationToken" validate:"required"`
+	Endpoint           string `json:"endpoint" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

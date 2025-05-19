@@ -7,13 +7,14 @@ import (
 )
 
 type V3PowensConfig struct {
-	ClientID      string  `json:"clientID"`
-	ClientSecret  string  `json:"clientSecret"`
-	Endpoint      string  `json:"endpoint"`
-	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
-	Provider      *string `default:"Powens" json:"provider"`
+	ClientID           string  `json:"clientID"`
+	ClientSecret       string  `json:"clientSecret"`
+	ConfigurationToken string  `json:"configurationToken"`
+	Endpoint           string  `json:"endpoint"`
+	Name               string  `json:"name"`
+	PageSize           *int64  `default:"25" json:"pageSize"`
+	PollingPeriod      *string `default:"2m" json:"pollingPeriod"`
+	Provider           *string `default:"Powens" json:"provider"`
 }
 
 func (v V3PowensConfig) MarshalJSON() ([]byte, error) {
@@ -39,6 +40,13 @@ func (o *V3PowensConfig) GetClientSecret() string {
 		return ""
 	}
 	return o.ClientSecret
+}
+
+func (o *V3PowensConfig) GetConfigurationToken() string {
+	if o == nil {
+		return ""
+	}
+	return o.ConfigurationToken
 }
 
 func (o *V3PowensConfig) GetEndpoint() string {

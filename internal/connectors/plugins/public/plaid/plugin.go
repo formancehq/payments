@@ -38,13 +38,17 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 
 	client := client.New(name, config.ClientID, config.ClientSecret, config.IsSandbox)
 
-	return &Plugin{
+	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
 		client: client,
-	}, err
+	}
+
+	p.initWebhookConfig()
+
+	return p, nil
 }
 
 func (p *Plugin) Name() string {
@@ -75,6 +79,14 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}
 
 	return p.createWebhooks(ctx, req)
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.verifyWebhook(ctx, req)
 }
 
 func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {

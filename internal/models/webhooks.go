@@ -12,6 +12,7 @@ type WebhookConfig struct {
 	Name        string      `json:"name"`
 	ConnectorID ConnectorID `json:"connectorID"`
 	URLPath     string      `json:"urlPath"`
+	FullURL     string      `json:"fullURL"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`

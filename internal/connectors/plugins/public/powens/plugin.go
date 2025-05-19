@@ -3,6 +3,7 @@ package powens
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -27,6 +28,8 @@ type Plugin struct {
 	clientID string
 
 	client client.Client
+
+	supportedWebhooks map[client.WebhookEventType]supportedWebhook
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -35,9 +38,9 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	client := client.New(name, config.ClientID, config.ClientSecret, config.Endpoint)
+	client := client.New(name, config.ClientID, config.ClientSecret, config.ConfigurationToken, config.Endpoint)
 
-	return &Plugin{
+	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
 
 		name:     name,
@@ -45,7 +48,11 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		clientID: config.ClientID,
 
 		client: client,
-	}, nil
+	}
+
+	p.initWebhookConfig()
+
+	return p, nil
 }
 
 func (p *Plugin) Name() string {
@@ -73,4 +80,40 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	return resp, nil
+}
+
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	if p.client == nil {
+		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createWebhooks(ctx, req)
+}
+
+func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if p.client == nil {
+		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.verifyWebhook(ctx, req)
+}
+
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	if p.client == nil {
+		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	webhookTranslator, ok := p.supportedWebhooks[client.WebhookEventType(req.Name)]
+	if !ok {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %s", req.Name)
+	}
+
+	resp, err := webhookTranslator.fn(ctx, req)
+	if err != nil {
+		return models.TranslateWebhookResponse{}, err
+	}
+
+	return models.TranslateWebhookResponse{
+		Responses: resp,
+	}, nil
 }

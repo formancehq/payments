@@ -5418,11 +5418,14 @@ components:
         - name
         - clientID
         - clientSecret
+        - configurationToken
         - endpoint
       properties:
         clientID:
           type: string
         clientSecret:
+          type: string
+        configurationToken:
           type: string
         endpoint:
           type: string
