@@ -66,7 +66,7 @@ jobs:
           /nix/var/nix/profiles/default/bin/nix --extra-experimental-features "nix-command" --extra-experimental-features "flakes"
           develop --impure --command just tests
       - name: Upload coverage reports to Codecov with GitHub Action
-        uses: codecov/codecov-action@v5.4.2
+        uses: codecov/codecov-action@v5.4.3
         with:
           files: ./coverage.txt
         env:
