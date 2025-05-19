@@ -14,11 +14,39 @@ import (
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
-func (p *Plugin) verifyWebhook(ctx context.Context, req models.TranslateWebhookRequest) error {
+type supportedWebhook struct {
+	urlPath string
+	fn      func(context.Context, models.TranslateWebhookRequest) ([]models.WebhookResponse, error)
+}
+
+func (p *Plugin) initWebhookConfig() {
+	p.supportedWebhooks = map[string]supportedWebhook{
+		"all": {
+			urlPath: "/all",
+			fn:      p.handleAllWebhook,
+		},
+	}
+}
+
+func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
+	for name, w := range p.supportedWebhooks {
+		configs = append(configs, models.PSPWebhookConfig{
+			Name:    name,
+			URLPath: w.urlPath,
+		})
+	}
+
+	return models.CreateWebhooksResponse{
+		Configs: configs,
+	}, nil
+}
+
+func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	// Extract the signed JWT from the webhook header
 	tokenStrings := req.Webhook.Headers["plaid-verification"]
 	if len(tokenStrings) != 1 {
-		return fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
 	}
 
 	// Verify the token using the public key
@@ -52,22 +80,18 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.TranslateWebhookR
 		return publicKey, nil
 	}, jwt.WithValidMethods([]string{"ES256"}))
 	if err != nil {
-		return fmt.Errorf("failed to verify token: %w", err)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("failed to verify token: %w", err)
 	}
 
 	// Check if the token is valid
 	if !token.Valid {
-		return fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
 	}
 
-	return nil
+	return models.VerifyWebhookResponse{}, nil
 }
 
 func (p *Plugin) translateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
-	if err := p.verifyWebhook(ctx, req); err != nil {
-		return models.TranslateWebhookResponse{}, err
-	}
-
 	webhookTranslator, ok := p.supportedWebhooks[req.Name]
 	if !ok {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %s", req.Name)

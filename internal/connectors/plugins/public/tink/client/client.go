@@ -14,6 +14,7 @@ import (
 type Client interface {
 	CreateUser(ctx context.Context, userID string, market string) (CreateUserResponse, error)
 	CreateTemporaryCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error)
+	CreateWebhook(ctx context.Context, eventType WebhookEventType, connectorID string, url string) (CreateWebhookResponse, error)
 }
 
 type client struct {

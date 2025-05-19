@@ -226,6 +226,7 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running webhooks idempotency key migration...")
 					_, err := tx.ExecContext(ctx, webhooksIdempotencyKey)
 					logger.WithField("error", err).Info("finished running webhooks idempotency key migration")
+					return err
 				})
 			},
 		},
