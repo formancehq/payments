@@ -50,9 +50,10 @@ func (w Workflow) terminateInstance(
 	scheduleID, err := getPaymentScheduleID(info)
 	if err != nil {
 		if errors.Is(err, errNotFromSchedule) {
-			return nil
+			return selectError(terminateError, nil)
 		}
-		return err
+		w.logger.WithField("workflow_id", info.WorkflowExecution.ID).Errorf("failed to get payment schedule ID when terminating instance: %w", err)
+		return selectError(terminateError, err)
 	}
 
 	var errMessage *string
@@ -72,7 +73,18 @@ func (w Workflow) terminateInstance(
 		Error:        errMessage,
 	}
 
-	return activities.StorageInstancesUpdate(infiniteRetryContext(ctx), instance)
+	err = activities.StorageInstancesUpdate(infiniteRetryContext(ctx), instance)
+	if err != nil {
+		w.logger.WithField("workflow_id", info.WorkflowExecution.ID).Errorf("failed to update workflow instance: %w", err)
+	}
+	return selectError(terminateError, err)
+}
+
+func selectError(err1, err2 error) error {
+	if err1 != nil {
+		return err1
+	}
+	return err2
 }
 
 func getPaymentScheduleID(

@@ -65,10 +65,12 @@ func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 }
 
 func TestUnitTestSuite(t *testing.T) {
+	logger := logging.Testing()
 	w := Workflow{
-		plugins:        plugins.New(plugins.CallerWorker, logging.Testing(), true),
+		plugins:        plugins.New(plugins.CallerWorker, logger, true),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
+		logger:         logger,
 	}
 	a := activities.Activities{}
 
