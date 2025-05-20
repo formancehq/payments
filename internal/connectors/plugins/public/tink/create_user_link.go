@@ -9,6 +9,14 @@ import (
 )
 
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
+	if req.PaymentServiceUser == nil {
+		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
+	}
+
+	if req.RedirectURI == "" {
+		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
+	}
+
 	if req.PaymentServiceUser.Address == nil || req.PaymentServiceUser.Address.Country == nil {
 		return fmt.Errorf("missing payment service user country: %w", models.ErrInvalidRequest)
 	}

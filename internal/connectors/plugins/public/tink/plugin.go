@@ -103,6 +103,10 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, plugins.ErrNotYetInstalled
 	}
 
+	if req.Name == "" {
+		return models.TranslateWebhookResponse{}, fmt.Errorf("missing webhook name: %w", models.ErrInvalidRequest)
+	}
+
 	webhookTranslator, ok := p.supportedWebhooks[client.WebhookEventType(req.Name)]
 	if !ok {
 		return models.TranslateWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %s", req.Name)

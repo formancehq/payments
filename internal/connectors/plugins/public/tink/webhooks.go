@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
+	"encoding/base64"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -56,6 +57,13 @@ func (p *Plugin) initWebhookConfig() {
 }
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	if req.ConnectorID == "" {
+		return models.CreateWebhooksResponse{}, fmt.Errorf("missing connector ID: %w", models.ErrInvalidRequest)
+	}
+	if req.WebhookBaseUrl == "" {
+		return models.CreateWebhooksResponse{}, fmt.Errorf("missing webhook base URL: %w", models.ErrInvalidRequest)
+	}
+
 	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
 	for eventType, w := range p.supportedWebhooks {
 		webhookURL, err := url.JoinPath(req.WebhookBaseUrl, w.urlPath)
@@ -84,6 +92,14 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 }
 
 func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+	if req.Config == nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook config: %w", models.ErrWebhookVerification)
+	}
+
+	if req.Webhook.Headers == nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook: %w", models.ErrWebhookVerification)
+	}
+
 	header, ok := req.Webhook.Headers["X-Tink-Signature"]
 	if !ok || len(header) != 1 {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("missing tink signature header: %w", models.ErrWebhookVerification)
@@ -91,7 +107,7 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 
 	timestamp, signature, err := splitVerificationHeader(header[0])
 	if err != nil {
-		return models.VerifyWebhookResponse{}, fmt.Errorf("failed to split verification header: %w", err)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid tink signature header %s: %w", header[0], models.ErrWebhookVerification)
 	}
 
 	timestampInt, err := strconv.ParseInt(timestamp, 10, 64)
@@ -105,13 +121,24 @@ func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequ
 	}
 
 	messageToSign := fmt.Sprintf("%s.%s", timestamp, req.Webhook.Body)
-	secret := req.Config.Metadata[webhookIDMetadataKey]
+	if req.Config.Metadata == nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook config: %w", models.ErrWebhookVerification)
+	}
+	secret := req.Config.Metadata[webhookSecretMetadataKey]
+	if secret == "" {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
+	}
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(messageToSign))
 	computedSignature := mac.Sum(nil)
 
-	if !hmac.Equal(computedSignature, []byte(signature)) {
+	decodedSignature, err := base64.StdEncoding.DecodeString(signature)
+	if err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
+	}
+
+	if !hmac.Equal(computedSignature, decodedSignature) {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
 	}
 
@@ -124,19 +151,17 @@ func splitVerificationHeader(header string) (string, string, error) {
 		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
 	}
 
-	timestampPart := strings.Split(parts[0], "=")
-	if len(timestampPart) != 2 || timestampPart[0] != "t" {
+	timestampPart := strings.TrimSpace(parts[0])
+	if !strings.HasPrefix(timestampPart, "t=") {
 		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
 	}
+	timestamp := strings.TrimPrefix(timestampPart, "t=")
 
-	timestamp := timestampPart[1]
-
-	signaturePart := strings.Split(parts[1], "=")
-	if len(signaturePart) != 2 || signaturePart[0] != "v1" {
+	signaturePart := strings.TrimSpace(parts[1])
+	if !strings.HasPrefix(signaturePart, "v1=") {
 		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
 	}
-
-	signature := signaturePart[1]
+	signature := strings.TrimPrefix(signaturePart, "v1=")
 
 	return timestamp, signature, nil
 }

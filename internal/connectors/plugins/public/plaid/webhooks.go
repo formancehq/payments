@@ -28,7 +28,7 @@ func (p *Plugin) initWebhookConfig() {
 	}
 }
 
-func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+func (p *Plugin) createWebhooks(_ context.Context, _ models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	configs := make([]models.PSPWebhookConfig, 0, len(p.supportedWebhooks))
 	for name, w := range p.supportedWebhooks {
 		configs = append(configs, models.PSPWebhookConfig{
@@ -168,7 +168,7 @@ func (p *Plugin) handleItemWebhook(ctx context.Context, req models.TranslateWebh
 	return []models.WebhookResponse{}, nil
 }
 
-func (p *Plugin) handleLiabilitiesWebhook(ctx context.Context, req models.TranslateWebhookRequest, baseWebhook client.BaseWebhooks) ([]models.WebhookResponse, error) {
+func (p *Plugin) handleLiabilitiesWebhook(_ context.Context, _ models.TranslateWebhookRequest, _ client.BaseWebhooks) ([]models.WebhookResponse, error) {
 	// Not interested in liabilities webhooks
 	return []models.WebhookResponse{}, nil
 }
