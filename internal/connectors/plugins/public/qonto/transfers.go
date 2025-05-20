@@ -43,6 +43,9 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		)
 	}
 	transferReference := fmt.Sprintf("transferReference:%s/%s", uuid.New().String(), pi.Reference)
+	if len(transferReference) > client.QONTO_MAX_REFERENCE_LENGTH {
+		transferReference = transferReference[:client.QONTO_MAX_REFERENCE_LENGTH]
+	}
 
 	request := client.TransferRequest{
 		SourceIBAN:      pi.SourceAccount.Metadata["bank_account_iban"],

@@ -1,6 +1,7 @@
 package qonto
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -127,6 +128,50 @@ var _ = Describe("Qonto *Plugin Transfer", func() {
 				Raw: raw,
 			}
 			Expect(resp.Payment).To(Equal(&expectedPSPPayment))
+		})
+
+		It("truncates the reference as appropriate", func(ctx SpecContext) {
+			// Given a valid request but the reference is too long
+			paymentInitiation.Reference = "very long text that is longer that Qonto limit -- note that we also need to " +
+				"pass extra info like the internal UUID."
+			expectedReferenceUsed := fmt.Sprintf("transferReference:%v/%v", defaultUUID, paymentInitiation.Reference)
+			expectedReferenceUsed = expectedReferenceUsed[:client.QONTO_MAX_REFERENCE_LENGTH]
+			transferResponse.Reference = expectedReferenceUsed
+
+			var usedRequest client.TransferRequest
+			m.EXPECT().CreateInternalTransfer(gomock.Any(), paymentInitiation.Reference, gomock.Any()).
+				Times(1).
+				Do(func(ctx context.Context, idempotencyKey string, req client.TransferRequest) {
+					usedRequest = req
+				}).
+				Return(&transferResponse, nil)
+
+			// When
+			resp, err := plg.CreateTransfer(ctx, models.CreateTransferRequest{PaymentInitiation: paymentInitiation})
+
+			// Then
+			Expect(err).To(BeNil())
+
+			raw, _ := json.Marshal(transferResponse)
+			createdAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, transferResponse.CreatedDate, time.UTC)
+			expectedPSPPayment := models.PSPPayment{
+				Reference:                   defaultUUID,
+				Type:                        models.PAYMENT_TYPE_TRANSFER,
+				CreatedAt:                   createdAt,
+				Amount:                      paymentInitiation.Amount,
+				Asset:                       paymentInitiation.Asset,
+				Scheme:                      models.PAYMENT_SCHEME_SEPA,
+				Status:                      models.PAYMENT_STATUS_PENDING,
+				SourceAccountReference:      &paymentInitiation.SourceAccount.Reference,
+				DestinationAccountReference: &paymentInitiation.DestinationAccount.Reference,
+				Metadata: map[string]string{
+					"external_reference": "very long text that is longer that Qonto lim",
+					"transfer_id":        transferResponse.Id,
+				},
+				Raw: raw,
+			}
+			Expect(resp.Payment).To(Equal(&expectedPSPPayment))
+			Expect(len(usedRequest.Reference)).To(Equal(client.QONTO_MAX_REFERENCE_LENGTH))
 		})
 
 		Describe("Invalid requests cases", func() {
