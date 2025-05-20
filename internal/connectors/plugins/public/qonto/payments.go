@@ -187,11 +187,12 @@ func (p *Plugin) transactionsToPSPPayments(
 			return payments, err
 		}
 
+		parentId, paymentType := calculateParentIdAndType(transaction)
 		payment := models.PSPPayment{
-			ParentReference:             transaction.Id,
+			ParentReference:             parentId,
 			Reference:                   transaction.Id,
 			CreatedAt:                   emittedAt,
-			Type:                        mapQontoTransactionType(transaction.SubjectType),
+			Type:                        paymentType,
 			Amount:                      big.NewInt(transaction.AmountCents),
 			Asset:                       currency.FormatAsset(supportedCurrenciesForInternalAccounts, transaction.Currency),
 			Scheme:                      mapQontoTransactionScheme(transaction.SubjectType),
@@ -228,6 +229,19 @@ func (p *Plugin) transactionsToPSPPayments(
 		payments = append(payments, payment)
 	}
 	return payments, nil
+}
+
+/*
+*
+In the case of transfer, we "hack" the transaction reference to include the transfer reference.
+Here we are retrieving it and, if found, use it as PSP payment parent reference.
+*/
+func calculateParentIdAndType(transaction client.Transactions) (string, models.PaymentType) {
+	transferReference, _, err := parseTransferReference(transaction.Reference)
+	if err != nil {
+		return transaction.Id, mapQontoTransactionType(transaction.SubjectType)
+	}
+	return transferReference, models.PAYMENT_TYPE_TRANSFER
 }
 
 func mapQontoPaymentStatus(status string) models.PaymentStatus {
