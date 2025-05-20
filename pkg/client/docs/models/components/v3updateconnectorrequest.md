@@ -63,6 +63,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestModulr(comp
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3QontoConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestQonto(components.V3QontoConfig{/* values here */})
+```
+
 ### V3StripeConfig
 
 ```go
