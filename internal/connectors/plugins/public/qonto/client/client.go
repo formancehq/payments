@@ -16,7 +16,6 @@ type Client interface {
 	GetOrganization(ctx context.Context) (*Organization, error)
 	GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, page, pageSize int) ([]Beneficiary, error)
 	GetTransactions(ctx context.Context, bankAccountId string, updatedAtFrom time.Time, transactionStatusToFetch string, page, pageSize int) ([]Transactions, error)
-	CreateInternalTransfer(ctx context.Context, idempotencyKey string, request TransferRequest) (*TransferResponse, error)
 }
 
 type client struct {
@@ -42,7 +41,6 @@ type MetaPagination struct {
 
 const QONTO_TIMEFORMAT = "2006-01-02T15:04:05.999Z"
 const QONTO_MAX_PAGE_SIZE = 100
-const QONTO_MAX_REFERENCE_LENGTH = 99
 
 func (t *apiTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	auth := fmt.Sprintf("%s:%s", t.clientID, t.apiKey)

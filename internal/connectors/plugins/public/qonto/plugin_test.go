@@ -87,7 +87,7 @@ var _ = Describe("Qonto *Plugin", func() {
 		It("fails when creating transfer as it's not installed yet", func(ctx SpecContext) {
 			req := models.CreateTransferRequest{}
 			_, err := plg.CreateTransfer(context.Background(), req)
-			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
+			Expect(err).To(MatchError(plugins.ErrNotImplemented))
 		})
 		It("fails when creating payout as it's unimplemented", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}

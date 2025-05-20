@@ -41,21 +41,6 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// CreateInternalTransfer mocks base method.
-func (m *MockClient) CreateInternalTransfer(ctx context.Context, idempotencyKey string, request TransferRequest) (*TransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateInternalTransfer", ctx, idempotencyKey, request)
-	ret0, _ := ret[0].(*TransferResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateInternalTransfer indicates an expected call of CreateInternalTransfer.
-func (mr *MockClientMockRecorder) CreateInternalTransfer(ctx, idempotencyKey, request any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateInternalTransfer", reflect.TypeOf((*MockClient)(nil).CreateInternalTransfer), ctx, idempotencyKey, request)
-}
-
 // GetBeneficiaries mocks base method.
 func (m *MockClient) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, page, pageSize int) ([]Beneficiary, error) {
 	m.ctrl.T.Helper()

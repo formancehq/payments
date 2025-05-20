@@ -85,19 +85,4 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	return p.fetchNextPayments(ctx, req)
 }
 
-func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
-	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
-	}
-
-	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
-	if err != nil {
-		return models.CreateTransferResponse{}, err
-	}
-
-	return models.CreateTransferResponse{
-		Payment: payment,
-	}, nil
-}
-
 var _ models.Plugin = &Plugin{}
