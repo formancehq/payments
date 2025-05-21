@@ -168,7 +168,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
+			Expect(state.LastUpdatedAt.Format(client.QontoTimeformat)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 		})
 
 		It("filters out already processed accounts based on lastUpdatedAt", func(ctx SpecContext) {
@@ -196,7 +196,7 @@ var _ = Describe("Qonto *Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			Expect(state.LastUpdatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
+			Expect(state.LastUpdatedAt.Format(client.QontoTimeformat)).To(Equal(sortedSampleAccounts[19].UpdatedAt))
 			Expect(resp.HasMore).To(BeFalse())
 		})
 	})
@@ -239,7 +239,7 @@ func assertAccountMapping(sampleQontoAccount client.OrganizationBankAccount, res
 	expectedRaw, _ = json.Marshal(sampleQontoAccount)
 	Expect(resultingPSPAccount.Reference).To(Equal(sampleQontoAccount.Id))
 	Expect(*resultingPSPAccount.Name).To(Equal(sampleQontoAccount.Name))
-	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(sampleQontoAccount.UpdatedAt))
+	Expect(resultingPSPAccount.CreatedAt.Format(client.QontoTimeformat)).To(Equal(sampleQontoAccount.UpdatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal("EUR/2"))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"bank_account_iban":   sampleQontoAccount.Iban,

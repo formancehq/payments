@@ -89,7 +89,7 @@ func fillAccounts(
 	oldState accountsState,
 ) ([]models.PSPAccount, error) {
 	for _, bankAccount := range bankAccounts {
-		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, bankAccount.UpdatedAt, time.UTC)
+		updatedAt, err := time.ParseInLocation(client.QontoTimeformat, bankAccount.UpdatedAt, time.UTC)
 		if err != nil {
 			err := errorsutils.NewWrappedError(
 				fmt.Errorf("invalid time format for bank account"),

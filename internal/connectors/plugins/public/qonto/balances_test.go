@@ -117,7 +117,7 @@ func getFixturePSPAccount() models.PSPAccount {
 		AccountNumber:          "1",
 	}
 	marshalledQontoAccount, _ := json.Marshal(sampleQontoAccount)
-	createAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleQontoAccount.UpdatedAt, time.UTC)
+	createAt, _ := time.ParseInLocation(client.QontoTimeformat, sampleQontoAccount.UpdatedAt, time.UTC)
 	return models.PSPAccount{
 		Reference:    "1",
 		CreatedAt:    createAt,

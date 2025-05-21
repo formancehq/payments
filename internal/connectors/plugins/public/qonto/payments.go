@@ -83,7 +83,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if len(payments) > 0 {
 		var err error
 		newState.LastUpdatedAt[oldState.TransactionStatusToFetch], err = time.ParseInLocation(
-			client.QONTO_TIMEFORMAT,
+			client.QontoTimeformat,
 			payments[len(payments)-1].Metadata["updated_at"],
 			time.UTC,
 		)
@@ -162,7 +162,7 @@ func (p *Plugin) transactionsToPSPPayments(
 	transactions []client.Transactions,
 ) ([]models.PSPPayment, error) {
 	for _, transaction := range transactions {
-		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, transaction.UpdatedAt, time.UTC)
+		updatedAt, err := time.ParseInLocation(client.QontoTimeformat, transaction.UpdatedAt, time.UTC)
 		if err != nil {
 			err := errorsutils.NewWrappedError(
 				fmt.Errorf("invalid time format for updatedAt transaction"),
@@ -174,7 +174,7 @@ func (p *Plugin) transactionsToPSPPayments(
 			continue
 		}
 
-		emittedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, transaction.EmittedAt, time.UTC)
+		emittedAt, err := time.ParseInLocation(client.QontoTimeformat, transaction.EmittedAt, time.UTC)
 		if err != nil {
 			err := errorsutils.NewWrappedError(
 				fmt.Errorf("invalid time format for emittedAt transaction"),
