@@ -40,7 +40,7 @@ func (c *client) GetBeneficiaries(ctx context.Context, updatedAtFrom time.Time, 
 	q := req.URL.Query()
 	if !updatedAtFrom.IsZero() {
 		// Qonto doesn't accept udpated_at_from too much in the past
-		q.Add("updated_at_from", updatedAtFrom.Format(QONTO_TIMEFORMAT))
+  q.Add("updated_at_from", updatedAtFrom.Format(QontoTimeformat))
 	}
 	q.Add("per_page", fmt.Sprint(pageSize))
 	q.Add("page", fmt.Sprint(page))

@@ -31,7 +31,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 	if req.PageSize == 0 {
 		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingPageSize
 	}
-	if req.PageSize > client.QONTO_MAX_PAGE_SIZE {
+ if req.PageSize > client.QontoMaxPageSize {
 		return models.FetchNextExternalAccountsResponse{}, models.ErrExceededMaxPageSize
 	}
 	var oldState externalAccountsState
@@ -70,7 +70,7 @@ func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.Fetch
 
 	if len(accounts) > 0 {
 		var err error
-		newState.LastUpdatedAt, err = time.ParseInLocation(client.QONTO_TIMEFORMAT, accounts[len(accounts)-1].Metadata["updated_at"], time.UTC)
+		newState.LastUpdatedAt, err = time.ParseInLocation(client.QontoTimeformat, accounts[len(accounts)-1].Metadata["updated_at"], time.UTC)
 		if err != nil {
 			return models.FetchNextExternalAccountsResponse{}, err
 		}
@@ -101,7 +101,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 	pagedBeneficiaries []client.Beneficiary,
 ) ([]models.PSPAccount, error) {
 	for _, beneficiary := range pagedBeneficiaries {
-		updatedAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.UpdatedAt, time.UTC)
+		updatedAt, err := time.ParseInLocation(client.QontoTimeformat, beneficiary.UpdatedAt, time.UTC)
 		if err != nil {
 			err := errorsutils.NewWrappedError(
 				fmt.Errorf("invalid time format for updatedAt beneficiary"),
@@ -109,7 +109,7 @@ func (p *Plugin) beneficiaryToPSPAccounts(
 			)
 			return accounts, err
 		}
-		createdAt, err := time.ParseInLocation(client.QONTO_TIMEFORMAT, beneficiary.CreatedAt, time.UTC)
+		createdAt, err := time.ParseInLocation(client.QontoTimeformat, beneficiary.CreatedAt, time.UTC)
 		if err != nil {
 			err := errorsutils.NewWrappedError(
 				fmt.Errorf("invalid time format for createdAt beneficiary"),

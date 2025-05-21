@@ -109,7 +109,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			It("invalid time format in beneficiary's updatedAt", func(ctx SpecContext) {
 				// given a beneficiary with an invalid bank account
 				req := models.FetchNextExternalAccountsRequest{
-					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QontoTimeformat))),
 					PageSize: pageSize,
 				}
 				beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
@@ -129,7 +129,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 			It("invalid time format in beneficiary's createdAt", func(ctx SpecContext) {
 				// given a beneficiary with an invalid bank account
 				req := models.FetchNextExternalAccountsRequest{
-					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+					State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QontoTimeformat))),
 					PageSize: pageSize,
 				}
 				beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
@@ -215,7 +215,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 				// Then
-				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[19].UpdatedAt, time.UTC)
+				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[19].UpdatedAt, time.UTC)
 				expectedState := externalAccountsState{
 					Page:            1,
 					LastProcessedId: calcAccountReferenceFromBeneficiary(sampleBeneficiaries[19], 19),
@@ -237,7 +237,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 					PageSize: pageSize,
 				}
 
-				updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[0].UpdatedAt, time.UTC)
+				updatedAtFrom, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[0].UpdatedAt, time.UTC)
 				beneficiariesReturnedByClient := make([]client.Beneficiary, 0)
 				m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, 2, pageSize).Return(
 					beneficiariesReturnedByClient,
@@ -279,7 +279,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 				// Then
-				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[19].UpdatedAt, time.UTC)
+				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[19].UpdatedAt, time.UTC)
 				expectedState := externalAccountsState{
 					Page:            1,
 					LastProcessedId: calcAccountReferenceFromBeneficiary(sampleBeneficiaries[19], 19),
@@ -305,7 +305,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 				// Then
-				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[4].UpdatedAt, time.UTC)
+				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[4].UpdatedAt, time.UTC)
 				expectedState := externalAccountsState{
 					Page:            1,
 					LastProcessedId: calcAccountReferenceFromBeneficiary(sampleBeneficiaries[4], 4),
@@ -321,7 +321,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 					PageSize: 5,
 				}
 				beneficiariesReturnedByClient := sampleBeneficiaries[10:15]
-				updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[9].UpdatedAt, time.UTC)
+				updatedAtFrom, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[9].UpdatedAt, time.UTC)
 
 				m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, gomock.Any(), 5).Times(1).Return(
 					beneficiariesReturnedByClient,
@@ -332,7 +332,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 				resp, err := plg.FetchNextExternalAccounts(ctx, req)
 
 				// Then
-				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[14].UpdatedAt, time.UTC)
+				expectedLastUpdatedAt, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[14].UpdatedAt, time.UTC)
 				expectedState := externalAccountsState{
 					Page:            1,
 					LastProcessedId: calcAccountReferenceFromBeneficiary(sampleBeneficiaries[14], 14),
@@ -355,7 +355,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 					sampleBeneficiaries[i].UpdatedAt = sampleBeneficiaries[4].UpdatedAt
 				}
 				beneficiariesReturnedByClient := sampleBeneficiaries[5:10]
-				updatedAtFrom, _ := time.ParseInLocation(client.QONTO_TIMEFORMAT, sampleBeneficiaries[4].UpdatedAt, time.UTC)
+				updatedAtFrom, _ := time.ParseInLocation(client.QontoTimeformat, sampleBeneficiaries[4].UpdatedAt, time.UTC)
 
 				m.EXPECT().GetBeneficiaries(gomock.Any(), updatedAtFrom, 1, 5).Times(1).Return(
 					beneficiariesReturnedByClient,
@@ -379,7 +379,7 @@ var _ = Describe("Qonto *Plugin External Accounts", func() {
 		It("ignores beneficiaries with invalid bank account", func(ctx SpecContext) {
 			// given a beneficiary with an invalid bank account
 			req := models.FetchNextExternalAccountsRequest{
-				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QONTO_TIMEFORMAT))),
+				State:    []byte(fmt.Sprintf(`{"lastUpdatedAt": "%v", "lastProcessedId": ""}`, time.Time{}.Format(client.QontoTimeformat))),
 				PageSize: pageSize,
 			}
 			beneficiariesReturnedByClient := sampleBeneficiaries[0:1]
@@ -492,7 +492,7 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 	}
 	Expect(resultingPSPAccount.Reference).To(Equal(expectedReference))
 	Expect(*resultingPSPAccount.Name).To(Equal(beneficiary.Name))
-	Expect(resultingPSPAccount.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(beneficiary.CreatedAt))
+ Expect(resultingPSPAccount.CreatedAt.Format(client.QontoTimeformat)).To(Equal(beneficiary.CreatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal(expectedCurrency))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"beneficiary_id":                     beneficiary.Id,

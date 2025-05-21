@@ -793,7 +793,7 @@ func assertTransactionsSuccessResponse(
 		expectedLastUpdatedAt = map[string]time.Time{}
 	} else {
 		timeExpected, _ := time.ParseInLocation(
-			client.QONTO_TIMEFORMAT,
+			client.QontoTimeformat,
 			transactionsUsed[len(transactionsUsed)-1].UpdatedAt,
 			time.UTC,
 		)
@@ -902,7 +902,7 @@ func assertSimpleTransactionsMapping(transaction client.Transactions, resultingP
 
 	Expect(resultingPSPAPayment.Reference).To(Equal(transaction.Id))
 	Expect(resultingPSPAPayment.Amount).To(Equal(big.NewInt(transaction.AmountCents)))
-	Expect(resultingPSPAPayment.CreatedAt.Format(client.QONTO_TIMEFORMAT)).To(Equal(transaction.EmittedAt))
+	Expect(resultingPSPAPayment.CreatedAt.Format(client.QontoTimeformat)).To(Equal(transaction.EmittedAt))
 	Expect(resultingPSPAPayment.Asset).To(Equal("EUR/2"))
 	Expect(resultingPSPAPayment.SourceAccountReference).To(Equal(pointer.For(transaction.BankAccountId)))
 	Expect(resultingPSPAPayment.Metadata).To(Equal(map[string]string{
