@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"testing"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
 	"github.com/formancehq/payments/internal/models"
@@ -13,11 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 )
-
-func TestWebhooks(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Powens Webhooks Suite")
-}
 
 var _ = Describe("Powens *Plugin Webhooks", func() {
 	var (

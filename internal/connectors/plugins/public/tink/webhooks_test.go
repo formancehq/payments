@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
-	"testing"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
@@ -14,11 +13,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 )
-
-func TestWebhooks(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Tink Webhooks Suite")
-}
 
 var _ = Describe("Tink *Plugin Webhooks", func() {
 	var (

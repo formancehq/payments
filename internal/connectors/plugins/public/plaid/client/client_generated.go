@@ -71,6 +71,20 @@ func (mr *MockClientMockRecorder) CreateLinkToken(ctx, req any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLinkToken", reflect.TypeOf((*MockClient)(nil).CreateLinkToken), ctx, req)
 }
 
+// DeleteItem mocks base method.
+func (m *MockClient) DeleteItem(ctx context.Context, req DeleteItemRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteItem", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteItem indicates an expected call of DeleteItem.
+func (mr *MockClientMockRecorder) DeleteItem(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItem", reflect.TypeOf((*MockClient)(nil).DeleteItem), ctx, req)
+}
+
 // GetWebhookVerificationKey mocks base method.
 func (m *MockClient) GetWebhookVerificationKey(ctx context.Context, kid string) (*plaid.JWKPublicKey, error) {
 	m.ctrl.T.Helper()

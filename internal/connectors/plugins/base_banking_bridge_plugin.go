@@ -28,4 +28,12 @@ func (dp *BaseBankingBridgePlugin) CreateUserLink(ctx context.Context, req model
 	return models.CreateUserLinkResponse{}, ErrNotImplemented
 }
 
+func (dp *BaseBankingBridgePlugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	return models.DeleteUserConnectionResponse{}, ErrNotImplemented
+}
+
+func (dp *BaseBankingBridgePlugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	return models.DeleteUserResponse{}, ErrNotImplemented
+}
+
 var _ models.BankingBridgePlugin = &BaseBankingBridgePlugin{}

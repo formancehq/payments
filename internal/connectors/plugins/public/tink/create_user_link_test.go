@@ -3,7 +3,6 @@ package tink
 import (
 	"fmt"
 	"net/url"
-	"testing"
 	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
@@ -13,11 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	"go.uber.org/mock/gomock"
 )
-
-func TestCreateUserLink(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Tink CreateUserLink Suite")
-}
 
 var _ = Describe("Tink *Plugin CreateUserLink", func() {
 	var (
@@ -51,15 +45,24 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 
 		m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(userResp, nil)
 
-		m.EXPECT().CreateTemporaryCode(gomock.Any(), client.CreateTemporaryCodeRequest{
+		m.EXPECT().CreateTemporaryAuthorizationCode(gomock.Any(), client.CreateTemporaryCodeRequest{
 			UserID:   userID.String(),
 			Username: "test-user",
+			WantedScopes: []client.Scopes{
+				client.SCOPES_AUTHORIZATION_READ,
+				client.SCOPES_AUTHORIZATION_GRANT,
+				client.SCOPES_CREDENTIALS_REFRESH,
+				client.SCOPES_CREDENTIALS_READ,
+				client.SCOPES_CREDENTIALS_WRITE,
+				client.SCOPES_PROVIDERS_READ,
+				client.SCOPES_USER_READ,
+			},
 		}).Return(codeResp, nil)
 
 		country := "FR"
 		locale := "fr_FR"
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -92,7 +95,7 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		locale := "fr_FR"
 		userID := uuid.New()
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -114,7 +117,7 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		locale := "fr_FR"
 		userID := uuid.New()
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -138,7 +141,7 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		country := "FR"
 		userID := uuid.New()
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -160,7 +163,7 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		locale := "xx_XX"
 		userID := uuid.New()
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -187,7 +190,7 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(client.CreateUserResponse{}, fmt.Errorf("test error"))
 
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
@@ -217,15 +220,24 @@ var _ = Describe("Tink *Plugin CreateUserLink", func() {
 		m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(createUserResp, nil)
 
 		// Mock CreateTemporaryCode failure
-		m.EXPECT().CreateTemporaryCode(gomock.Any(), client.CreateTemporaryCodeRequest{
+		m.EXPECT().CreateTemporaryAuthorizationCode(gomock.Any(), client.CreateTemporaryCodeRequest{
 			UserID:   "test-external-user-id",
 			Username: "test-user",
+			WantedScopes: []client.Scopes{
+				client.SCOPES_AUTHORIZATION_READ,
+				client.SCOPES_AUTHORIZATION_GRANT,
+				client.SCOPES_CREDENTIALS_REFRESH,
+				client.SCOPES_CREDENTIALS_READ,
+				client.SCOPES_CREDENTIALS_WRITE,
+				client.SCOPES_PROVIDERS_READ,
+				client.SCOPES_USER_READ,
+			},
 		}).Return(client.CreateTemporaryCodeResponse{}, fmt.Errorf("temporary code error"))
 
 		country := "FR"
 		locale := "fr_FR"
 		req := models.CreateUserLinkRequest{
-			PaymentServiceUser: &models.PaymentServiceUser{
+			PaymentServiceUser: &models.PSPPaymentServiceUser{
 				ID:        userID,
 				Name:      "test-user",
 				CreatedAt: time.Now().UTC(),
