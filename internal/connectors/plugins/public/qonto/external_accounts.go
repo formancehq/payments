@@ -24,14 +24,13 @@ type externalAccountsState struct {
 *
 This is a classic implementation, using primarily lastUpdatedAt for pagination. However this has an edge case, if multiple
 external accounts have the same updatedAt -- if the state.lastUpdatedAt doesn't change (as in all external accounts in a
-
-	page were updated at the same time), we have to use Qonto's pagination in addition of the lastUpdatedFrom parameter.
+page were updated at the same time), we have to use Qonto's pagination in addition of the lastUpdatedFrom parameter.
 */
 func (p *Plugin) fetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if req.PageSize == 0 {
 		return models.FetchNextExternalAccountsResponse{}, models.ErrMissingPageSize
 	}
- if req.PageSize > client.QontoMaxPageSize {
+	if req.PageSize > client.QontoMaxPageSize {
 		return models.FetchNextExternalAccountsResponse{}, models.ErrExceededMaxPageSize
 	}
 	var oldState externalAccountsState

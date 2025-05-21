@@ -113,7 +113,7 @@ func (c *client) GetTransactions(
 	q.Add("sort_by", "updated_at:asc")
 	q.Add("bank_account_id", bankAccountId)
 	if !updatedAtFrom.IsZero() {
-  q.Add("updated_at_from", updatedAtFrom.Format(QontoTimeformat))
+		q.Add("updated_at_from", updatedAtFrom.Format(QontoTimeformat))
 	}
 	q.Add("status[]", transactionStatusToFetch) // NOTE -- despite taking an array, Qonto only returns 1 status (as of 2025-05-09)
 	req.URL.RawQuery = q.Encode()

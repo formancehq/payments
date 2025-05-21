@@ -83,7 +83,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	if len(payments) > 0 {
 		var err error
 		newState.LastUpdatedAt[oldState.TransactionStatusToFetch], err = time.ParseInLocation(
- 		client.QontoTimeformat,
+			client.QontoTimeformat,
 			payments[len(payments)-1].Metadata["updated_at"],
 			time.UTC,
 		)

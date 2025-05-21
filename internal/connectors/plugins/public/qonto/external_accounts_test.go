@@ -492,7 +492,7 @@ func assertBeneficiaryMapping(beneficiary client.Beneficiary, resultingPSPAccoun
 	}
 	Expect(resultingPSPAccount.Reference).To(Equal(expectedReference))
 	Expect(*resultingPSPAccount.Name).To(Equal(beneficiary.Name))
- Expect(resultingPSPAccount.CreatedAt.Format(client.QontoTimeformat)).To(Equal(beneficiary.CreatedAt))
+	Expect(resultingPSPAccount.CreatedAt.Format(client.QontoTimeformat)).To(Equal(beneficiary.CreatedAt))
 	Expect(*resultingPSPAccount.DefaultAsset).To(Equal(expectedCurrency))
 	Expect(resultingPSPAccount.Metadata).To(Equal(map[string]string{
 		"beneficiary_id":                     beneficiary.Id,
