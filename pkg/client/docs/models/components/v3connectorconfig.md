@@ -45,6 +45,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigDummypay(components.V3Dum
 v3ConnectorConfig := components.CreateV3ConnectorConfigGeneric(components.V3GenericConfig{/* values here */})
 ```
 
+### V3GocardlessConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigGocardless(components.V3GocardlessConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go

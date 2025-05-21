@@ -45,6 +45,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestDummypay(
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestGeneric(components.V3GenericConfig{/* values here */})
 ```
 
+### V3GocardlessConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestGocardless(components.V3GocardlessConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go

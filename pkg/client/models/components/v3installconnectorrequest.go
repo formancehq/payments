@@ -19,6 +19,7 @@ const (
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
 	V3InstallConnectorRequestTypeGeneric       V3InstallConnectorRequestType = "Generic"
+	V3InstallConnectorRequestTypeGocardless    V3InstallConnectorRequestType = "Gocardless"
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
@@ -35,6 +36,7 @@ type V3InstallConnectorRequest struct {
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
+	V3GocardlessConfig    *V3GocardlessConfig    `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
@@ -126,6 +128,18 @@ func CreateV3InstallConnectorRequestGeneric(generic V3GenericConfig) V3InstallCo
 	return V3InstallConnectorRequest{
 		V3GenericConfig: &generic,
 		Type:            typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestGocardless(gocardless V3GocardlessConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeGocardless
+
+	typStr := string(typ)
+	gocardless.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3GocardlessConfig: &gocardless,
+		Type:               typ,
 	}
 }
 
@@ -276,6 +290,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3GenericConfig = v3GenericConfig
 		u.Type = V3InstallConnectorRequestTypeGeneric
 		return nil
+	case "Gocardless":
+		v3GocardlessConfig := new(V3GocardlessConfig)
+		if err := utils.UnmarshalJSON(data, &v3GocardlessConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Gocardless) type V3GocardlessConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3GocardlessConfig = v3GocardlessConfig
+		u.Type = V3InstallConnectorRequestTypeGocardless
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -362,6 +385,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3GenericConfig != nil {
 		return utils.MarshalJSON(u.V3GenericConfig, "", true)
+	}
+
+	if u.V3GocardlessConfig != nil {
+		return utils.MarshalJSON(u.V3GocardlessConfig, "", true)
 	}
 
 	if u.V3MangopayConfig != nil {
