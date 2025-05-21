@@ -3,6 +3,7 @@ package tink
 import (
 	"context"
 	"fmt"
+	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
@@ -56,12 +57,22 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	// TODO(polo): allow the user to choose which link to have (between business transactions and personal transactions)
-	url := fmt.Sprintf("https://link.tink.com/1.0/transactions/connect-accounts?client_id=%s&redirect_uri=%s&authorization_code=%s&market=%s&locale=%s",
-		p.clientID, req.RedirectURI, temporaryCodeResponse.Code, *req.PaymentServiceUser.Address.Country, *req.PaymentServiceUser.ContactDetails.Locale)
+	url, err := url.Parse("https://link.tink.com/1.0/transactions/connect-accounts")
+	if err != nil {
+		return models.CreateUserLinkResponse{}, err
+	}
+
+	query := url.Query()
+	query.Add("client_id", p.clientID)
+	query.Add("redirect_uri", req.RedirectURI) // TODO(polo): add another url
+	query.Add("authorization_code", temporaryCodeResponse.Code)
+	query.Add("market", *req.PaymentServiceUser.Address.Country)
+	query.Add("locale", *req.PaymentServiceUser.ContactDetails.Locale)
+	query.Add("refreshable_items", "CHECKING_ACCOUNTS,CHECKING_TRANSACTIONS,SAVING_ACCOUNTS,SAVING_TRANSACTIONS,CREDITCARD_ACCOUNTS,CREDITCARD_TRANSACTIONS,TRANSFER_DESTINATIONS")
+	url.RawQuery = query.Encode()
 
 	return models.CreateUserLinkResponse{
-		Link: url,
+		Link: url.String(),
 		TemporaryLinkToken: &models.Token{
 			Token: temporaryCodeResponse.Code,
 			// Tink provides no expiration for this token

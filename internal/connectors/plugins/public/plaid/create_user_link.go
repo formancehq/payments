@@ -73,7 +73,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		UserID:         req.PaymentServiceUser.ID.String(),
 		Language:       language,
 		CountryCode:    *req.PaymentServiceUser.Address.Country,
-		RedirectURI:    req.RedirectURI,
+		RedirectURI:    req.RedirectURI, // TODO(polo): change the redirect uri
 		WebhookBaseURL: req.WebhookBaseURL,
 	})
 	if err != nil {

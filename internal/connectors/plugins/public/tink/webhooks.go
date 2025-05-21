@@ -15,6 +15,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+// https://docs.tink.com/resources/transactions/introduction-to-transactions
 const (
 	webhookCreatedAtThreshold = 5 * time.Minute
 
@@ -33,6 +34,10 @@ func (p *Plugin) initWebhookConfig() {
 			urlPath: "/account-transactions-modified",
 			fn:      p.handleAccountTransactionsModified,
 		},
+		client.AccountTransactionsDeleted: {
+			urlPath: "/account-transactions-deleted",
+			fn:      p.handleAccountTransactionsDeleted,
+		},
 		client.AccountBookedTransactionsModified: {
 			urlPath: "/account-booked-transactions-modified",
 			fn:      p.handleAccountBookedTransactionsModified,
@@ -48,10 +53,6 @@ func (p *Plugin) initWebhookConfig() {
 		client.RefreshFinished: {
 			urlPath: "/refresh-finished",
 			fn:      p.handleRefreshFinished,
-		},
-		client.PaymentUpdated: {
-			urlPath: "/payment-updated",
-			fn:      p.handlePaymentUpdated,
 		},
 	}
 }
@@ -166,26 +167,56 @@ func splitVerificationHeader(header string) (string, string, error) {
 	return timestamp, signature, nil
 }
 
-func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+func (p *Plugin) handleAccountBookedTransactionsModified(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// This event is fired when an account has new or updated transactions that
+	// have status BOOKED.
+
+	// Note: We don't need to do anything here as we will receive the the
+	// hyandle AccountTransactionsModified webhook
 	return nil, nil
 }
 
-func (p *Plugin) handleAccountBookedTransactionsModified(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-modified
+func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// This event is fired when an account has new or updated transactions,
+	// regardless of their booking status.
+	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-modified
+
+	// Note: launch a sync of the transactions -> // TODO(polo): add a new response to call the fetch_payments workflow
+	return nil, nil
+}
+
+func (p *Plugin) handleAccountTransactionsDeleted(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// This event is triggered when an account has deleted transactions,
+	// regardless of their booking status.
+	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-deleted
+
+	// Note: launch a deletion of transactions -> // TODO(polo): add a new response to call the delete_payments workflow
 	return nil, nil
 }
 
 func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// https://docs.tink.com/entries/articles/event-account-created
+
+	// Note: Nothing to do here for now.
 	return nil, nil
 }
 
 func (p *Plugin) handleAccountUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// https://docs.tink.com/entries/articles/event-account-updated
 	return nil, nil
 }
 
 func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handlePaymentUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
+	// The refresh:finished event is triggered when a refresh operation has
+	// finished for a credentials object. This occurs for both on-demand and
+	// background refreshes.
+	// The event is triggered if the refresh attempt was successsful or
+	// unsuccessful. In the case of an unsuccessful refresh, the type of error
+	// is specified in the event.
+	// This event is only triggered by an attempted refresh. For example, it
+	// will not be trigged for refreshes that have been rate limited. For more
+	// information, see rate limits.
+	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-refresh-finished
 	return nil, nil
 }

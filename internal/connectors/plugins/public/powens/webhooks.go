@@ -108,7 +108,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
-func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	signatureDate, ok := req.Webhook.Headers["BI-Signature-Date"]
 	if !ok || len(signatureDate) != 1 {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("missing powens signature date header: %w", models.ErrWebhookVerification)

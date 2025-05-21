@@ -15,11 +15,11 @@ type WebhookEventType string
 
 const (
 	AccountTransactionsModified       WebhookEventType = "account-transactions:modified"
+	AccountTransactionsDeleted        WebhookEventType = "account-transactions:deleted"
 	AccountBookedTransactionsModified WebhookEventType = "account-booked-transactions:modified"
 	AccountCreated                    WebhookEventType = "account:created"
 	AccountUpdated                    WebhookEventType = "account:updated"
 	RefreshFinished                   WebhookEventType = "refresh:finished"
-	PaymentUpdated                    WebhookEventType = "payment:updated"
 )
 
 type CreateWebhookRequest struct {

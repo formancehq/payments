@@ -22,6 +22,7 @@ type client struct {
 	webhookKeysCache *lru.Cache[string, *plaid.JWKPublicKey]
 }
 
+// TODO(polo): enable compression ? We have to activate compression directly in the http client
 func New(name, clientID, clientSecret string, isSandbox bool) Client {
 	configuration := plaid.NewConfiguration()
 
