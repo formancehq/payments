@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"testing"
 	"time"
 
@@ -339,7 +340,15 @@ var _ = Describe("Tink Plugin", func() {
 			}
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Link).To(Equal("https://link.tink.com/1.0/transactions/connect-accounts?client_id=test-client-id&redirect_uri=https://example.com/callback&authorization_code=test-code&market=FR&locale=fr_FR"))
+			url, err := url.Parse(resp.Link)
+			Expect(err).To(BeNil())
+			query := url.Query()
+			Expect(query.Get("client_id")).To(Equal("test-client-id"))
+			Expect(query.Get("redirect_uri")).To(Equal("https://example.com/callback"))
+			Expect(query.Get("authorization_code")).To(Equal("test-code"))
+			Expect(query.Get("market")).To(Equal("FR"))
+			Expect(query.Get("locale")).To(Equal("fr_FR"))
+			Expect(query.Get("refreshable_items")).To(Equal("CHECKING_ACCOUNTS,CHECKING_TRANSACTIONS,SAVING_ACCOUNTS,SAVING_TRANSACTIONS,CREDITCARD_ACCOUNTS,CREDITCARD_TRANSACTIONS,TRANSFER_DESTINATIONS"))
 			Expect(resp.TemporaryLinkToken).ToNot(BeNil())
 			Expect(resp.TemporaryLinkToken.Token).To(Equal("test-code"))
 		})
@@ -400,7 +409,7 @@ var _ = Describe("Tink Plugin", func() {
 			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountCreated, "test-connector", "https://webhook.url/account-created").Return(webhookResp, nil)
 			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountUpdated, "test-connector", "https://webhook.url/account-updated").Return(webhookResp, nil)
 			m.EXPECT().CreateWebhook(gomock.Any(), client.RefreshFinished, "test-connector", "https://webhook.url/refresh-finished").Return(webhookResp, nil)
-			m.EXPECT().CreateWebhook(gomock.Any(), client.PaymentUpdated, "test-connector", "https://webhook.url/payment-updated").Return(webhookResp, nil)
+			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountTransactionsDeleted, "test-connector", "https://webhook.url/account-transactions-deleted").Return(webhookResp, nil)
 
 			req := models.CreateWebhooksRequest{
 				ConnectorID:    "test-connector",

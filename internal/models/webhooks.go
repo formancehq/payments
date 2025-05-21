@@ -1,5 +1,9 @@
 package models
 
+const (
+	RedirectURIQueryParam = "redirect_uri"
+)
+
 type PSPWebhookConfig struct {
 	Name    string `json:"name"`
 	URLPath string `json:"urlPath"`

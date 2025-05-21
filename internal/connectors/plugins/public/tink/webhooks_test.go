@@ -51,7 +51,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountCreated, "connector-id", "https://webhook.url/account-created").Return(webhookResp, nil)
 			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountUpdated, "connector-id", "https://webhook.url/account-updated").Return(webhookResp, nil)
 			m.EXPECT().CreateWebhook(gomock.Any(), client.RefreshFinished, "connector-id", "https://webhook.url/refresh-finished").Return(webhookResp, nil)
-			m.EXPECT().CreateWebhook(gomock.Any(), client.PaymentUpdated, "connector-id", "https://webhook.url/payment-updated").Return(webhookResp, nil)
+			m.EXPECT().CreateWebhook(gomock.Any(), client.AccountTransactionsDeleted, "connector-id", "https://webhook.url/account-transactions-deleted").Return(webhookResp, nil)
 
 			req := models.CreateWebhooksRequest{
 				ConnectorID:    "connector-id",

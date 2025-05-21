@@ -28,7 +28,7 @@ func (c *client) CreateTemporaryCode(ctx context.Context, request CreateTemporar
 	form.Add("external_user_id", request.UserID)
 	form.Add("id_hint", request.Username)
 	form.Add("actor_client_id", "df05e4b379934cd09963197cc855bfe9") // Constant for tink
-	form.Add("scope", "authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read")
+	form.Add("scope", "authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read,accounts:read,transactions:read,balances:read")
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
 	if err != nil {

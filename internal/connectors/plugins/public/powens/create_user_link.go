@@ -23,6 +23,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
+	// TODO(polo): change the redirect uri
 	url := fmt.Sprintf("https://webview.powens.com/connect?domain=formance-sandbox&client_id=%s&redirect_uri=%s&code=%s", p.clientID, req.RedirectURI, temporaryLinkResponse.Code)
 
 	return models.CreateUserLinkResponse{
