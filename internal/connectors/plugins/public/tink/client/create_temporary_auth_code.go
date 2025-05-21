@@ -11,24 +11,30 @@ import (
 )
 
 type CreateTemporaryCodeRequest struct {
-	UserID   string
-	Username string
+	UserID       string
+	Username     string
+	WantedScopes []Scopes
 }
 
 type CreateTemporaryCodeResponse struct {
 	Code string `json:"code"`
 }
 
-func (c *client) CreateTemporaryCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error) {
+func (c *client) CreateTemporaryAuthorizationCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_temporary_code")
 
 	endpoint := fmt.Sprintf("%s/api/v1/oauth/authorization-grant/delegate", c.endpoint)
+
+	scopes := make([]string, len(request.WantedScopes))
+	for i, scope := range request.WantedScopes {
+		scopes[i] = string(scope)
+	}
 
 	form := url.Values{}
 	form.Add("external_user_id", request.UserID)
 	form.Add("id_hint", request.Username)
 	form.Add("actor_client_id", "df05e4b379934cd09963197cc855bfe9") // Constant for tink
-	form.Add("scope", "authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read,accounts:read,transactions:read,balances:read")
+	form.Add("scope", strings.Join(scopes, ","))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
 	if err != nil {

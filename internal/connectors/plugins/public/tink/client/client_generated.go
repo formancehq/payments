@@ -40,19 +40,19 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// CreateTemporaryCode mocks base method.
-func (m *MockClient) CreateTemporaryCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error) {
+// CreateTemporaryAuthorizationCode mocks base method.
+func (m *MockClient) CreateTemporaryAuthorizationCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTemporaryCode", ctx, request)
+	ret := m.ctrl.Call(m, "CreateTemporaryAuthorizationCode", ctx, request)
 	ret0, _ := ret[0].(CreateTemporaryCodeResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateTemporaryCode indicates an expected call of CreateTemporaryCode.
-func (mr *MockClientMockRecorder) CreateTemporaryCode(ctx, request any) *gomock.Call {
+// CreateTemporaryAuthorizationCode indicates an expected call of CreateTemporaryAuthorizationCode.
+func (mr *MockClientMockRecorder) CreateTemporaryAuthorizationCode(ctx, request any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTemporaryCode", reflect.TypeOf((*MockClient)(nil).CreateTemporaryCode), ctx, request)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTemporaryAuthorizationCode", reflect.TypeOf((*MockClient)(nil).CreateTemporaryAuthorizationCode), ctx, request)
 }
 
 // CreateUser mocks base method.
@@ -83,4 +83,32 @@ func (m *MockClient) CreateWebhook(ctx context.Context, eventType WebhookEventTy
 func (mr *MockClientMockRecorder) CreateWebhook(ctx, eventType, connectorID, url any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhook", reflect.TypeOf((*MockClient)(nil).CreateWebhook), ctx, eventType, connectorID, url)
+}
+
+// DeleteUser mocks base method.
+func (m *MockClient) DeleteUser(ctx context.Context, req DeleteUserRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockClientMockRecorder) DeleteUser(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockClient)(nil).DeleteUser), ctx, req)
+}
+
+// DeleteUserConnection mocks base method.
+func (m *MockClient) DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserConnection", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUserConnection indicates an expected call of DeleteUserConnection.
+func (mr *MockClientMockRecorder) DeleteUserConnection(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserConnection", reflect.TypeOf((*MockClient)(nil).DeleteUserConnection), ctx, req)
 }

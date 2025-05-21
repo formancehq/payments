@@ -88,4 +88,12 @@ func (dp *basePlugin) CreateUserLink(ctx context.Context, req models.CreateUserL
 	return models.CreateUserLinkResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	return models.DeleteUserConnectionResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	return models.DeleteUserResponse{}, ErrNotImplemented
+}
+
 var _ models.Plugin = &basePlugin{}

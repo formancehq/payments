@@ -22,6 +22,20 @@ type ContactDetails struct {
 	Locale      *string `json:"locale"`
 }
 
+type PSPPaymentServiceUser struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Optional fields
+	ContactDetails *ContactDetails   `json:"contactDetails"`
+	Address        *Address          `json:"address"`
+	Metadata       map[string]string `json:"metadata"`
+
+	BankAccounts       []BankAccount          `json:"bankAccounts"`
+	BankBridgeConsents []PSUBankBridgeConsent `json:"bankBridgeConsents"`
+}
+
 type PaymentServiceUser struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
@@ -30,8 +44,10 @@ type PaymentServiceUser struct {
 	// Optional fields
 	ContactDetails *ContactDetails   `json:"contactDetails"`
 	Address        *Address          `json:"address"`
-	BankAccountIDs []uuid.UUID       `json:"bankAccountIDs"`
 	Metadata       map[string]string `json:"metadata"`
+
+	BankAccountIDs     []uuid.UUID `json:"bankAccountIDs"`
+	BankBridgeConsents []uuid.UUID `json:"bankBridgeConsents"`
 }
 
 func (psu PaymentServiceUser) MarshalJSON() ([]byte, error) {

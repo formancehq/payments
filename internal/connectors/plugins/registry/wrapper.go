@@ -349,4 +349,40 @@ func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequ
 	return resp, nil
 }
 
+func (i *impl) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.DeleteUserConnection", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleting user consent...")
+
+	resp, err := i.plugin.DeleteUserConnection(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("deleting user consent failed: %v", err)
+		otel.RecordError(span, err)
+		return models.DeleteUserConnectionResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleted user consent succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.DeleteUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleting user...")
+
+	resp, err := i.plugin.DeleteUser(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("deleting user failed: %v", err)
+		otel.RecordError(span, err)
+		return models.DeleteUserResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleted user succeeded!")
+
+	return resp, nil
+}
+
 var _ models.Plugin = &impl{}

@@ -13,6 +13,8 @@ type Client interface {
 	CreateUser(context.Context) (CreateUserResponse, error)
 	CreateTemporaryLink(context.Context, CreateTemporaryLinkRequest) (CreateTemporaryLinkResponse, error)
 	CreateWebhookAuth(ctx context.Context, connectorID string) (string, error)
+	DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error
+	DeleteUser(ctx context.Context, req DeleteUserRequest) error
 }
 
 type client struct {

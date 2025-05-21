@@ -13,8 +13,10 @@ import (
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
 	CreateUser(ctx context.Context, userID string, market string) (CreateUserResponse, error)
-	CreateTemporaryCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error)
+	CreateTemporaryAuthorizationCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error)
 	CreateWebhook(ctx context.Context, eventType WebhookEventType, connectorID string, url string) (CreateWebhookResponse, error)
+	DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error
+	DeleteUser(ctx context.Context, req DeleteUserRequest) error
 }
 
 type client struct {
@@ -36,35 +38,35 @@ func New(connectorName, clientID, clientSecret, endpoint string) Client {
 			TokenURL:     fmt.Sprintf("%s/api/v1/oauth/token", endpoint),
 			Scopes: []string{
 				// Authorization
-				"authorization:read",
-				"authorization:grant",
-				"authorization:revoke",
+				string(SCOPES_AUTHORIZATION_READ),
+				string(SCOPES_AUTHORIZATION_GRANT),
+				string(SCOPES_AUTHORIZATION_REVOKE),
 
 				// Users
-				"user:create",
-				"user:read",
-				"user:write",
-				"user:delete",
+				string(SCOPES_USER_CREATE),
+				string(SCOPES_USER_READ),
+				string(SCOPES_USER_WRITE),
+				string(SCOPES_USER_DELETE),
 
 				// Consents
-				"consents:readonly",
+				string(SCOPES_CONSENTS_READONLY),
 
 				// Providers
-				"providers:read",
+				string(SCOPES_PROVIDERS_READ),
 
 				// Credentials
-				"credentials:read",
-				"credentials:write",
-				"credentials:refresh",
+				string(SCOPES_CREDENTIALS_READ),
+				string(SCOPES_CREDENTIALS_WRITE),
+				string(SCOPES_CREDENTIALS_REFRESH),
 
 				// Accounts
-				"accounts:read",
+				string(SCOPES_ACCOUNTS_READ),
 
 				// Balances
-				"balances:read",
+				string(SCOPES_BALANCES_READ),
 
 				// Transactions
-				"transactions:read",
+				string(SCOPES_TRANSACTIONS_READ),
 			},
 		},
 	}

@@ -5,11 +5,16 @@ import (
 )
 
 type BankingBridgePlugin interface {
+	// User Creation & Link
 	CreateUserLink(context.Context, CreateUserLinkRequest) (CreateUserLinkResponse, error)
+
+	// User Deletion: Consent & User
+	DeleteUserConnection(context.Context, DeleteUserConnectionRequest) (DeleteUserConnectionResponse, error)
+	DeleteUser(context.Context, DeleteUserRequest) (DeleteUserResponse, error)
 }
 
 type CreateUserLinkRequest struct {
-	PaymentServiceUser *PaymentServiceUser
+	PaymentServiceUser *PSPPaymentServiceUser
 	RedirectURI        string
 	WebhookBaseURL     string
 }
@@ -30,3 +35,16 @@ type CreateUserLinkResponse struct {
 	// so this is optional and will be added later on thanks to webhooks.
 	PermanentToken *Token
 }
+
+type DeleteUserConnectionRequest struct {
+	PaymentServiceUser *PSPPaymentServiceUser
+	BankBridgeConsent  *PSUBankBridgeConsent
+	Connection         *PSUBankBridgeConnection
+}
+type DeleteUserConnectionResponse struct{}
+
+type DeleteUserRequest struct {
+	PaymentServiceUser *PSPPaymentServiceUser
+	BankBridgeConsent  *PSUBankBridgeConsent
+}
+type DeleteUserResponse struct{}

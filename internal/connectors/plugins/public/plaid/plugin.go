@@ -73,6 +73,20 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 	return p.createUserLink(ctx, req)
 }
 
+func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	// Nothing to do here, we don't have a notion of users in Plaid (at least
+	// for now because we only fetch data and we do not create payments).
+	return models.DeleteUserResponse{}, nil
+}
+
+func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	if p.client == nil {
+		return models.DeleteUserConnectionResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUserConnection(ctx, req)
+}
+
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled

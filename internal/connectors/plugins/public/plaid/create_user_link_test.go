@@ -41,7 +41,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 
 			sampleRequest = models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.MustParse("00000000-0000-0000-0000-000000000123"),
 					Name: "John Doe",
 					ContactDetails: &models.ContactDetails{

@@ -82,6 +82,22 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 	return resp, nil
 }
 
+func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	if p.client == nil {
+		return models.DeleteUserConnectionResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUserConnection(ctx, req)
+}
+
+func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	if p.client == nil {
+		return models.DeleteUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUser(ctx, req)
+}
+
 func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled

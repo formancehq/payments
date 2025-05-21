@@ -49,9 +49,18 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	temporaryCodeResponse, err := p.client.CreateTemporaryCode(ctx, client.CreateTemporaryCodeRequest{
+	temporaryCodeResponse, err := p.client.CreateTemporaryAuthorizationCode(ctx, client.CreateTemporaryCodeRequest{
 		UserID:   createUserResponse.ExternalUserID,
 		Username: req.PaymentServiceUser.Name,
+		WantedScopes: []client.Scopes{
+			client.SCOPES_AUTHORIZATION_READ,
+			client.SCOPES_AUTHORIZATION_GRANT,
+			client.SCOPES_CREDENTIALS_REFRESH,
+			client.SCOPES_CREDENTIALS_READ,
+			client.SCOPES_CREDENTIALS_WRITE,
+			client.SCOPES_PROVIDERS_READ,
+			client.SCOPES_USER_READ,
+		},
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err

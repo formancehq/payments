@@ -150,7 +150,7 @@ var _ = Describe("Tink Plugin", func() {
 		It("should return error when user country is missing", func(ctx SpecContext) {
 			userID := uuid.New()
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 				},
@@ -166,7 +166,7 @@ var _ = Describe("Tink Plugin", func() {
 			userID := uuid.New()
 			country := "FR"
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -186,7 +186,7 @@ var _ = Describe("Tink Plugin", func() {
 			country := "FR"
 			locale := "fr_FR"
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -208,7 +208,7 @@ var _ = Describe("Tink Plugin", func() {
 			country := "XX"
 			locale := "fr_FR"
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -231,7 +231,7 @@ var _ = Describe("Tink Plugin", func() {
 			country := "FR"
 			locale := "xx_XX"
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -256,7 +256,7 @@ var _ = Describe("Tink Plugin", func() {
 			m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(client.CreateUserResponse{}, fmt.Errorf("test error"))
 
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -283,13 +283,22 @@ var _ = Describe("Tink Plugin", func() {
 				UserID:         "test-user-id",
 			}
 			m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(createUserResp, nil)
-			m.EXPECT().CreateTemporaryCode(gomock.Any(), client.CreateTemporaryCodeRequest{
+			m.EXPECT().CreateTemporaryAuthorizationCode(gomock.Any(), client.CreateTemporaryCodeRequest{
 				UserID:   "test-external-user-id",
 				Username: "test-user",
+				WantedScopes: []client.Scopes{
+					client.SCOPES_AUTHORIZATION_READ,
+					client.SCOPES_AUTHORIZATION_GRANT,
+					client.SCOPES_CREDENTIALS_REFRESH,
+					client.SCOPES_CREDENTIALS_READ,
+					client.SCOPES_CREDENTIALS_WRITE,
+					client.SCOPES_PROVIDERS_READ,
+					client.SCOPES_USER_READ,
+				},
 			}).Return(client.CreateTemporaryCodeResponse{}, fmt.Errorf("temporary code error"))
 
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{
@@ -320,13 +329,22 @@ var _ = Describe("Tink Plugin", func() {
 			}
 
 			m.EXPECT().CreateUser(gomock.Any(), userID.String(), "FR").Return(createUserResp, nil)
-			m.EXPECT().CreateTemporaryCode(gomock.Any(), client.CreateTemporaryCodeRequest{
+			m.EXPECT().CreateTemporaryAuthorizationCode(gomock.Any(), client.CreateTemporaryCodeRequest{
 				UserID:   "test-external-user-id",
 				Username: "test-user",
+				WantedScopes: []client.Scopes{
+					client.SCOPES_AUTHORIZATION_READ,
+					client.SCOPES_AUTHORIZATION_GRANT,
+					client.SCOPES_CREDENTIALS_REFRESH,
+					client.SCOPES_CREDENTIALS_READ,
+					client.SCOPES_CREDENTIALS_WRITE,
+					client.SCOPES_PROVIDERS_READ,
+					client.SCOPES_USER_READ,
+				},
 			}).Return(codeResp, nil)
 
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PaymentServiceUser{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "test-user",
 					Address: &models.Address{

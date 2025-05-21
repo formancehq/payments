@@ -14,6 +14,7 @@ type Client interface {
 	CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest) (CreateLinkTokenResponse, error)
 	GetWebhookVerificationKey(ctx context.Context, kid string) (*plaid.JWKPublicKey, error)
 	BaseWebhookTranslation(body []byte) (BaseWebhooks, error)
+	DeleteItem(ctx context.Context, req DeleteItemRequest) error
 }
 
 type client struct {
