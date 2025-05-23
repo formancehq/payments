@@ -95,12 +95,8 @@ func fillAccounts(
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
 		accountCreationDate := time.Unix(account.CreationDate, 0)
-		switch accountCreationDate.Compare(oldState.LastCreationDate) {
-		case -1, 0:
-			// creationDate <= state.LastCreationDate, nothing to do,
-			// we already processed this account.
+		if accountCreationDate.Before(oldState.LastCreationDate) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(account)
