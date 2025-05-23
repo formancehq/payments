@@ -19,3 +19,11 @@ func (c *client) BaseWebhookTranslation(body []byte) (BaseWebhooks, error) {
 	}
 	return webhook, nil
 }
+
+func (c *client) TranslateItemAddResultWebhook(body []byte) (plaid.ItemAddResultWebhook, error) {
+	var webhook plaid.ItemAddResultWebhook
+	if err := json.Unmarshal(body, &webhook); err != nil {
+		return plaid.ItemAddResultWebhook{}, err
+	}
+	return webhook, nil
+}

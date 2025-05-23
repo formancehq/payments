@@ -33,8 +33,20 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("unsupported payment service user country: %s: %w", *req.PaymentServiceUser.Address.Country, models.ErrInvalidRequest)
 	}
 
-	if req.RedirectURI == "" {
+	if req.ClientRedirectURI == nil || *req.ClientRedirectURI == "" {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
+	}
+
+	if req.PaymentServiceUser.BankBridgeConnections == nil {
+		return fmt.Errorf("missing bank bridge connections: %w", models.ErrInvalidRequest)
+	}
+
+	if req.PaymentServiceUser.BankBridgeConnections.Metadata == nil {
+		return fmt.Errorf("missing bank bridge connections metadata: %w", models.ErrInvalidRequest)
+	}
+
+	if _, ok := req.PaymentServiceUser.BankBridgeConnections.Metadata[UserTokenMetadataKey]; !ok {
+		return fmt.Errorf("missing user token: %w", models.ErrInvalidRequest)
 	}
 
 	return nil
@@ -71,9 +83,10 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
 		UserName:       req.PaymentServiceUser.Name,
 		UserID:         req.PaymentServiceUser.ID.String(),
+		UserToken:      req.PaymentServiceUser.BankBridgeConnections.Metadata[UserTokenMetadataKey],
 		Language:       language,
 		CountryCode:    *req.PaymentServiceUser.Address.Country,
-		RedirectURI:    req.RedirectURI, // TODO(polo): change the redirect uri
+		RedirectURI:    *req.ClientRedirectURI,
 		WebhookBaseURL: req.WebhookBaseURL,
 	})
 	if err != nil {

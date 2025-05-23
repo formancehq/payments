@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 
+	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	"github.com/formancehq/payments/internal/models"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -11,20 +12,28 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
+	CreateUser(ctx context.Context, userID string) (string, error)
 	CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest) (CreateLinkTokenResponse, error)
+	ExchangePublicToken(ctx context.Context, req ExchangePublicTokenRequest) (ExchangePublicTokenResponse, error)
 	GetWebhookVerificationKey(ctx context.Context, kid string) (*plaid.JWKPublicKey, error)
 	BaseWebhookTranslation(body []byte) (BaseWebhooks, error)
 	DeleteItem(ctx context.Context, req DeleteItemRequest) error
+	DeleteUser(ctx context.Context, userToken string) error
+	FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error
+
+	TranslateItemAddResultWebhook(body []byte) (plaid.ItemAddResultWebhook, error)
 }
 
 type client struct {
-	client *plaid.APIClient
+	client             *plaid.APIClient
+	connectorID        models.ConnectorID
+	formanceHTTPClient httpwrapper.Client
 
 	webhookKeysCache *lru.Cache[string, *plaid.JWKPublicKey]
 }
 
 // TODO(polo): enable compression ? We have to activate compression directly in the http client
-func New(name, clientID, clientSecret string, isSandbox bool) Client {
+func New(name, clientID, clientSecret string, connectorID models.ConnectorID, isSandbox bool) Client {
 	configuration := plaid.NewConfiguration()
 
 	configuration.AddDefaultHeader("PLAID-CLIENT-ID", clientID)
@@ -39,8 +48,14 @@ func New(name, clientID, clientSecret string, isSandbox bool) Client {
 	webhookKeysCache, _ := lru.New[string, *plaid.JWKPublicKey](2048)
 	configuration.HTTPClient = metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout)
 
+	formanceHTTPClient := httpwrapper.NewClient(&httpwrapper.Config{
+		Transport: metrics.NewTransport(name, metrics.TransportOpts{}),
+	})
+
 	return &client{
-		client:           plaid.NewAPIClient(configuration),
-		webhookKeysCache: webhookKeysCache,
+		client:             plaid.NewAPIClient(configuration),
+		connectorID:        connectorID,
+		formanceHTTPClient: formanceHTTPClient,
+		webhookKeysCache:   webhookKeysCache,
 	}
 }

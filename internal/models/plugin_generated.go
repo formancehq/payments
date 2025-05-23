@@ -20,7 +20,6 @@ import (
 type MockPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginMockRecorder is the mock recorder for MockPlugin.
@@ -38,6 +37,21 @@ func NewMockPlugin(ctrl *gomock.Controller) *MockPlugin {
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 	return m.recorder
+}
+
+// CompleteUserLink mocks base method.
+func (m *MockPlugin) CompleteUserLink(arg0 context.Context, arg1 CompleteUserLinkRequest) (CompleteUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteUserLink", arg0, arg1)
+	ret0, _ := ret[0].(CompleteUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CompleteUserLink indicates an expected call of CompleteUserLink.
+func (mr *MockPluginMockRecorder) CompleteUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteUserLink", reflect.TypeOf((*MockPlugin)(nil).CompleteUserLink), arg0, arg1)
 }
 
 // CreateBankAccount mocks base method.
@@ -83,6 +97,21 @@ func (m *MockPlugin) CreateTransfer(arg0 context.Context, arg1 CreateTransferReq
 func (mr *MockPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPlugin)(nil).CreateTransfer), arg0, arg1)
+}
+
+// CreateUser mocks base method.
+func (m *MockPlugin) CreateUser(arg0 context.Context, arg1 CreateUserRequest) (CreateUserResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1)
+	ret0, _ := ret[0].(CreateUserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockPluginMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockPlugin)(nil).CreateUser), arg0, arg1)
 }
 
 // CreateUserLink mocks base method.

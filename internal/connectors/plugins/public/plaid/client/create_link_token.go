@@ -14,6 +14,7 @@ import (
 type CreateLinkTokenRequest struct {
 	UserName       string
 	UserID         string
+	UserToken      string
 	Language       string
 	CountryCode    string
 	RedirectURI    string
@@ -49,6 +50,8 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 		return CreateLinkTokenResponse{}, fmt.Errorf("invalid webhook base URL: %w", err)
 	}
 
+	request.SetUserToken(req.UserToken)
+	request.SetEnableMultiItemLink(true)
 	request.SetWebhook(url)
 	request.Products = []plaid.Products{plaid.PRODUCTS_TRANSACTIONS, plaid.PRODUCTS_TRANSACTIONS_REFRESH}
 	request.SetRedirectUri(req.RedirectURI)

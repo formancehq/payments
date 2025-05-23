@@ -8,6 +8,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	UserTokenMetadataKey = "user_token"
+	LinkTokenMetadataKey = "link_token"
+)
+
 var (
 	supportedLanguage = map[string]struct{}{
 		"da": {},

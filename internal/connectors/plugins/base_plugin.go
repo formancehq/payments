@@ -84,8 +84,16 @@ func (dp *basePlugin) TranslateWebhook(ctx context.Context, req models.Translate
 	return models.TranslateWebhookResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	return models.CreateUserResponse{}, ErrNotImplemented
+}
+
 func (dp *basePlugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	return models.CreateUserLinkResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	return models.CompleteUserLinkResponse{}, ErrNotImplemented
 }
 
 func (dp *basePlugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {

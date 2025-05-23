@@ -14,8 +14,8 @@ import (
 const ProviderName = "plaid"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypeBankingBridge, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
-		return New(name, logger, rm)
+	registry.RegisterPlugin(ProviderName, models.PluginTypeBankingBridge, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, logger, connectorID, rm)
 	}, capabilities, Config{})
 }
 
@@ -30,13 +30,13 @@ type Plugin struct {
 	supportedWebhooks map[string]supportedWebhook
 }
 
-func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+func New(name string, logger logging.Logger, connectorID models.ConnectorID, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	client := client.New(name, config.ClientID, config.ClientSecret, config.IsSandbox)
+	client := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox)
 
 	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
@@ -65,6 +65,14 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
+func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	if p.client == nil {
+		return models.CreateUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createUser(ctx, req)
+}
+
 func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	if p.client == nil {
 		return models.CreateUserLinkResponse{}, plugins.ErrNotYetInstalled
@@ -73,10 +81,20 @@ func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRe
 	return p.createUserLink(ctx, req)
 }
 
+func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	if p.client == nil {
+		return models.CompleteUserLinkResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.completeUserLink(ctx, req)
+}
+
 func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
-	// Nothing to do here, we don't have a notion of users in Plaid (at least
-	// for now because we only fetch data and we do not create payments).
-	return models.DeleteUserResponse{}, nil
+	if p.client == nil {
+		return models.DeleteUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUser(ctx, req)
 }
 
 func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {

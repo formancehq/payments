@@ -114,6 +114,10 @@ func (p *Plugin) handleAllWebhook(ctx context.Context, req models.TranslateWebho
 	}
 
 	switch baseWebhook.WebhookType {
+	// This one has no type since it's not inside the plaid sdk definition
+	// but we need it in order to handle the authentication webhook
+	case "LINK":
+		return p.handleLinkWebhook(ctx, req, baseWebhook)
 	case plaid.WEBHOOKTYPE_ASSETS,
 		plaid.WEBHOOKTYPE_AUTH,
 		plaid.WEBHOOKTYPE_HOLDINGS,
@@ -131,6 +135,35 @@ func (p *Plugin) handleAllWebhook(ctx context.Context, req models.TranslateWebho
 	default:
 		return []models.WebhookResponse{}, fmt.Errorf("unsupported webhook type: %s", baseWebhook.WebhookType)
 	}
+}
+
+func (p *Plugin) handleLinkWebhook(ctx context.Context, req models.TranslateWebhookRequest, baseWebhook client.BaseWebhooks) ([]models.WebhookResponse, error) {
+	switch baseWebhook.WebhookCode {
+	case "ITEM_ADD_RESULT":
+		return p.handleItemAddResultWebhook(ctx, req, baseWebhook)
+		// TODO(polo): call the payment service for the banking bridge to complete the link auth.
+	case "EVENTS", "SESSION_FINISHED":
+		// Note: Nothing to do for us here for now.
+		return []models.WebhookResponse{}, nil
+	}
+
+	return []models.WebhookResponse{}, nil
+}
+
+func (p *Plugin) handleItemAddResultWebhook(ctx context.Context, req models.TranslateWebhookRequest, baseWebhook client.BaseWebhooks) ([]models.WebhookResponse, error) {
+	webhook, err := p.client.TranslateItemAddResultWebhook(req.Webhook.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := p.client.FormanceBankBridgeRedirect(ctx, client.FormanceBankBridgeRedirectRequest{
+		LinkToken:   webhook.LinkToken,
+		PublicToken: webhook.PublicToken,
+	}); err != nil {
+		return nil, err
+	}
+
+	return []models.WebhookResponse{}, nil
 }
 
 func (p *Plugin) handleItemWebhook(ctx context.Context, req models.TranslateWebhookRequest, baseWebhook client.BaseWebhooks) ([]models.WebhookResponse, error) {
