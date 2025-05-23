@@ -9,15 +9,11 @@ import (
 )
 
 func validateDeleteUserRequest(req models.DeleteUserRequest) error {
-	if req.PaymentServiceUser == nil {
-		return fmt.Errorf("payment service user is required: %w", models.ErrInvalidRequest)
-	}
-
-	if req.PaymentServiceUser.BankBridgeConnections == nil {
+	if req.PSUBankBridge == nil {
 		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.BankBridgeConnections.AccessToken == nil {
+	if req.PSUBankBridge.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -30,7 +26,7 @@ func (p *Plugin) deleteUser(ctx context.Context, req models.DeleteUserRequest) (
 	}
 
 	err := p.client.DeleteUser(ctx, client.DeleteUserRequest{
-		AccessToken: req.PaymentServiceUser.BankBridgeConnections.AccessToken.Token,
+		AccessToken: req.PSUBankBridge.AccessToken.Token,
 	})
 	if err != nil {
 		return models.DeleteUserResponse{}, err

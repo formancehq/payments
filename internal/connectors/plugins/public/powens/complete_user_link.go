@@ -19,10 +19,6 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("related attempt is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.RelatedAttempt.State == nil {
-		return fmt.Errorf("state is required: %w", models.ErrInvalidRequest)
-	}
-
 	queryState, ok := req.QueryValues[StateQueryParamID]
 	if !ok || len(queryState) != 1 {
 		return fmt.Errorf("missing state: %w", models.ErrInvalidRequest)

@@ -32,6 +32,7 @@ type CreateUserResponse struct {
 
 type CreateUserLinkRequest struct {
 	PaymentServiceUser  *PSPPaymentServiceUser
+	PSUBankBridge       *PSUBankBridge
 	ClientRedirectURI   *string
 	FormanceRedirectURI *string
 	CallBackState       string
@@ -78,11 +79,13 @@ type CompleteUserLinkErrorResponse struct {
 
 type DeleteUserConnectionRequest struct {
 	PaymentServiceUser *PSPPaymentServiceUser
+	PSUBankBridge      *PSUBankBridge
 	Connection         *PSUBankBridgeConnection
 }
 type DeleteUserConnectionResponse struct{}
 
 type DeleteUserRequest struct {
 	PaymentServiceUser *PSPPaymentServiceUser
+	PSUBankBridge      *PSUBankBridge
 }
 type DeleteUserResponse struct{}
