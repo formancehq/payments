@@ -26,7 +26,7 @@ func (p *Plugin) deleteUserConnection(ctx context.Context, req models.DeleteUser
 	}
 
 	err := p.client.DeleteItem(ctx, client.DeleteItemRequest{
-		AccessToken: *req.Connection.AccessToken,
+		AccessToken: req.Connection.AccessToken.Token,
 	})
 	if err != nil {
 		return models.DeleteUserConnectionResponse{}, fmt.Errorf("failed to delete item: %w", err)

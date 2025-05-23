@@ -25,7 +25,7 @@ func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest)
 		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.BankBridgeConnections.AuthToken == nil {
+	if req.PaymentServiceUser.BankBridgeConnections.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -38,7 +38,7 @@ func (p *Plugin) deleteUserConnection(ctx context.Context, req models.DeleteUser
 	}
 
 	err := p.client.DeleteUserConnection(ctx, client.DeleteUserConnectionRequest{
-		AccessToken:  *req.PaymentServiceUser.BankBridgeConnections.AuthToken,
+		AccessToken:  req.PaymentServiceUser.BankBridgeConnections.AccessToken.Token,
 		ConnectionID: req.Connection.ConnectionID,
 	})
 	if err != nil {

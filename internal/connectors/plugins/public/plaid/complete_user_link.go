@@ -22,7 +22,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("missing link token: %w", models.ErrInvalidRequest)
 	}
 
-	if *req.RelatedAttempt.TemporaryToken != linkToken[0] {
+	if req.RelatedAttempt.TemporaryToken.Token != linkToken[0] {
 		return fmt.Errorf("link token mismatch: %w", models.ErrInvalidRequest)
 	}
 
@@ -51,7 +51,9 @@ func (p *Plugin) completeUserLink(ctx context.Context, req models.CompleteUserLi
 			Connections: []models.PSUBankBridgeConnection{
 				{
 					ConnectionID: exchangePublicTokenResponse.ItemID,
-					AccessToken:  &exchangePublicTokenResponse.AccessToken,
+					AccessToken: &models.Token{
+						Token: exchangePublicTokenResponse.AccessToken,
+					},
 				},
 			},
 		},

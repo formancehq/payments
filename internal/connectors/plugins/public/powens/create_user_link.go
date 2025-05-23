@@ -20,7 +20,7 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.BankBridgeConnections.AuthToken == nil {
+	if req.PaymentServiceUser.BankBridgeConnections.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -41,7 +41,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	temporaryLinkResponse, err := p.client.CreateTemporaryLink(ctx, client.CreateTemporaryLinkRequest{
-		AccessToken: *req.PaymentServiceUser.BankBridgeConnections.AuthToken,
+		AccessToken: req.PaymentServiceUser.BankBridgeConnections.AccessToken.Token,
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err
