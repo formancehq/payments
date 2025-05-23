@@ -21,7 +21,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -71,6 +70,21 @@ func (mr *MockClientMockRecorder) CreateLinkToken(ctx, req any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLinkToken", reflect.TypeOf((*MockClient)(nil).CreateLinkToken), ctx, req)
 }
 
+// CreateUser mocks base method.
+func (m *MockClient) CreateUser(ctx context.Context, userID string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", ctx, userID)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockClientMockRecorder) CreateUser(ctx, userID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockClient)(nil).CreateUser), ctx, userID)
+}
+
 // DeleteItem mocks base method.
 func (m *MockClient) DeleteItem(ctx context.Context, req DeleteItemRequest) error {
 	m.ctrl.T.Helper()
@@ -83,6 +97,49 @@ func (m *MockClient) DeleteItem(ctx context.Context, req DeleteItemRequest) erro
 func (mr *MockClientMockRecorder) DeleteItem(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteItem", reflect.TypeOf((*MockClient)(nil).DeleteItem), ctx, req)
+}
+
+// DeleteUser mocks base method.
+func (m *MockClient) DeleteUser(ctx context.Context, userToken string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, userToken)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockClientMockRecorder) DeleteUser(ctx, userToken any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockClient)(nil).DeleteUser), ctx, userToken)
+}
+
+// ExchangePublicToken mocks base method.
+func (m *MockClient) ExchangePublicToken(ctx context.Context, req ExchangePublicTokenRequest) (ExchangePublicTokenResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ExchangePublicToken", ctx, req)
+	ret0, _ := ret[0].(ExchangePublicTokenResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ExchangePublicToken indicates an expected call of ExchangePublicToken.
+func (mr *MockClientMockRecorder) ExchangePublicToken(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExchangePublicToken", reflect.TypeOf((*MockClient)(nil).ExchangePublicToken), ctx, req)
+}
+
+// FormanceBankBridgeRedirect mocks base method.
+func (m *MockClient) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FormanceBankBridgeRedirect", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// FormanceBankBridgeRedirect indicates an expected call of FormanceBankBridgeRedirect.
+func (mr *MockClientMockRecorder) FormanceBankBridgeRedirect(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormanceBankBridgeRedirect", reflect.TypeOf((*MockClient)(nil).FormanceBankBridgeRedirect), ctx, req)
 }
 
 // GetWebhookVerificationKey mocks base method.
@@ -98,4 +155,19 @@ func (m *MockClient) GetWebhookVerificationKey(ctx context.Context, kid string) 
 func (mr *MockClientMockRecorder) GetWebhookVerificationKey(ctx, kid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebhookVerificationKey", reflect.TypeOf((*MockClient)(nil).GetWebhookVerificationKey), ctx, kid)
+}
+
+// TranslateItemAddResultWebhook mocks base method.
+func (m *MockClient) TranslateItemAddResultWebhook(body []byte) (plaid.ItemAddResultWebhook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TranslateItemAddResultWebhook", body)
+	ret0, _ := ret[0].(plaid.ItemAddResultWebhook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TranslateItemAddResultWebhook indicates an expected call of TranslateItemAddResultWebhook.
+func (mr *MockClientMockRecorder) TranslateItemAddResultWebhook(body any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateItemAddResultWebhook", reflect.TypeOf((*MockClient)(nil).TranslateItemAddResultWebhook), body)
 }

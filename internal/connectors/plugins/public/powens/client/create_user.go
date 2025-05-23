@@ -20,7 +20,7 @@ type CreateUserResponse struct {
 	AuthToken string `json:"auth_token"`
 	Type      string `json:"type"`
 	IdUser    int    `json:"id_user"`
-	ExpiresIn int    `json:"expires_in"`
+	ExpiresIn int64  `json:"expires_in"`
 }
 
 func (c *client) CreateUser(ctx context.Context) (CreateUserResponse, error) {

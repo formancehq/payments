@@ -9,20 +9,24 @@ import (
 )
 
 func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest) error {
-	if req.BankBridgeConsent == nil {
-		return fmt.Errorf("bank bridge consent is required: %w", models.ErrInvalidRequest)
-	}
-
-	if req.BankBridgeConsent.AccessToken == "" {
-		return fmt.Errorf("access token is required: %w", models.ErrInvalidRequest)
-	}
-
 	if req.Connection == nil {
 		return fmt.Errorf("connection is required: %w", models.ErrInvalidRequest)
 	}
 
 	if req.Connection.ConnectionID == "" {
 		return fmt.Errorf("connection id is required: %w", models.ErrInvalidRequest)
+	}
+
+	if req.PaymentServiceUser == nil {
+		return fmt.Errorf("payment service user is required: %w", models.ErrInvalidRequest)
+	}
+
+	if req.PaymentServiceUser.BankBridgeConnections == nil {
+		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
+	}
+
+	if req.PaymentServiceUser.BankBridgeConnections.AuthToken == nil {
+		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
 	return nil
@@ -34,7 +38,7 @@ func (p *Plugin) deleteUserConnection(ctx context.Context, req models.DeleteUser
 	}
 
 	err := p.client.DeleteUserConnection(ctx, client.DeleteUserConnectionRequest{
-		AccessToken:  req.BankBridgeConsent.AccessToken,
+		AccessToken:  *req.PaymentServiceUser.BankBridgeConnections.AuthToken,
 		ConnectionID: req.Connection.ConnectionID,
 	})
 	if err != nil {

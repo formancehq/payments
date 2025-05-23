@@ -28,6 +28,7 @@ type Plugin struct {
 	clientID string
 
 	client client.Client
+	config Config
 
 	supportedWebhooks map[client.WebhookEventType]supportedWebhook
 }
@@ -48,6 +49,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		clientID: config.ClientID,
 
 		client: client,
+		config: config,
 	}
 
 	p.initWebhookConfig()
@@ -69,17 +71,28 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
+func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	if p.client == nil {
+		return models.CreateUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createUser(ctx, req)
+}
+
 func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	if p.client == nil {
 		return models.CreateUserLinkResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	resp, err := p.createUserLink(ctx, req)
-	if err != nil {
-		return models.CreateUserLinkResponse{}, err
+	return p.createUserLink(ctx, req)
+}
+
+func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	if p.client == nil {
+		return models.CompleteUserLinkResponse{}, plugins.ErrNotYetInstalled
 	}
 
-	return resp, nil
+	return p.completeUserLink(ctx, req)
 }
 
 func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {

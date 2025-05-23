@@ -11,7 +11,6 @@ import (
 
 type CreateTemporaryLinkRequest struct {
 	AccessToken string
-	RedirectURI string
 }
 
 type CreateTemporaryLinkResponse struct {

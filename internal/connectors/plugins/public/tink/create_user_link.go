@@ -14,8 +14,12 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
 	}
 
-	if req.RedirectURI == "" {
-		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
+	if req.FormanceRedirectURI == nil || *req.FormanceRedirectURI == "" {
+		return fmt.Errorf("missing formanceRedirectURI: %w", models.ErrInvalidRequest)
+	}
+
+	if req.CallBackState == "" {
+		return fmt.Errorf("missing callBackState: %w", models.ErrInvalidRequest)
 	}
 
 	if req.PaymentServiceUser.Address == nil || req.PaymentServiceUser.Address.Country == nil {
@@ -44,13 +48,8 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	createUserResponse, err := p.client.CreateUser(ctx, req.PaymentServiceUser.ID.String(), *req.PaymentServiceUser.Address.Country)
-	if err != nil {
-		return models.CreateUserLinkResponse{}, err
-	}
-
 	temporaryCodeResponse, err := p.client.CreateTemporaryAuthorizationCode(ctx, client.CreateTemporaryCodeRequest{
-		UserID:   createUserResponse.ExternalUserID,
+		UserID:   req.PaymentServiceUser.ID.String(),
 		Username: req.PaymentServiceUser.Name,
 		WantedScopes: []client.Scopes{
 			client.SCOPES_AUTHORIZATION_READ,
@@ -73,7 +72,8 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 
 	query := url.Query()
 	query.Add("client_id", p.clientID)
-	query.Add("redirect_uri", req.RedirectURI) // TODO(polo): add another url
+	query.Add("redirect_uri", *req.FormanceRedirectURI)
+	query.Add("state", req.CallBackState)
 	query.Add("authorization_code", temporaryCodeResponse.Code)
 	query.Add("market", *req.PaymentServiceUser.Address.Country)
 	query.Add("locale", *req.PaymentServiceUser.ContactDetails.Locale)

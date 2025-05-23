@@ -17,12 +17,12 @@ func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest)
 		return fmt.Errorf("name is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.BankBridgeConsent == nil {
-		return fmt.Errorf("bankBridgeConsent is required: %w", models.ErrInvalidRequest)
+	if req.Connection == nil {
+		return fmt.Errorf("connection is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.BankBridgeConsent.AccessToken == "" {
-		return fmt.Errorf("accessToken is required: %w", models.ErrInvalidRequest)
+	if req.Connection.ConnectionID == "" {
+		return fmt.Errorf("connectionID is required: %w", models.ErrInvalidRequest)
 	}
 
 	return nil
@@ -36,7 +36,7 @@ func (p *Plugin) deleteUserConnection(ctx context.Context, req models.DeleteUser
 	err := p.client.DeleteUserConnection(ctx, client.DeleteUserConnectionRequest{
 		UserID:        req.PaymentServiceUser.ID.String(),
 		Username:      req.PaymentServiceUser.Name,
-		CredentialsID: req.BankBridgeConsent.AccessToken,
+		CredentialsID: req.Connection.ConnectionID,
 	})
 	if err != nil {
 		return models.DeleteUserConnectionResponse{}, err

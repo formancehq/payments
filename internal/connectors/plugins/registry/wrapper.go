@@ -331,6 +331,24 @@ func (i *impl) TranslateWebhook(ctx context.Context, req models.TranslateWebhook
 	return resp, nil
 }
 
+func (i *impl) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating user...")
+
+	resp, err := i.plugin.CreateUser(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating user failed: %v", err)
+		otel.RecordError(span, err)
+		return models.CreateUserResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created user succeeded!")
+
+	return resp, nil
+}
+
 func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
 	defer span.End()
@@ -345,6 +363,24 @@ func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequ
 	}
 
 	i.logger.WithField("name", i.plugin.Name()).Info("created user succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateConnection", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating connection...")
+
+	resp, err := i.plugin.CompleteUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating connection failed: %v", err)
+		otel.RecordError(span, err)
+		return models.CompleteUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created connection succeeded!")
 
 	return resp, nil
 }

@@ -8,10 +8,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	UserIDMetadataKey    = "user_id"
+	ExpiresInMetadataKey = "expires_in"
+)
+
 type Config struct {
 	ClientID           string `json:"clientID" validate:"required"`
 	ClientSecret       string `json:"clientSecret" validate:"required"`
 	ConfigurationToken string `json:"configurationToken" validate:"required"`
+	Domain             string `json:"domain" validate:"required"`
+	MaxConnections     int    `json:"maxConnections" validate:"required,min=1"`
 	Endpoint           string `json:"endpoint" validate:"required"`
 }
 

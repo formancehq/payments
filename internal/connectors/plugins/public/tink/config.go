@@ -8,6 +8,10 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	UserIDMetadataKey = "user_id"
+)
+
 var (
 	supportedMarkets = map[string]struct{}{
 		"AT": {},
