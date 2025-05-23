@@ -11,6 +11,8 @@ import (
 type PSUBankBridgeConnectionAttempt struct {
 	// ID of the attempt
 	ID uuid.UUID `json:"id"`
+	// ID of the psu
+	PsuID uuid.UUID `json:"psuID"`
 	// Related connector ID
 	ConnectorID ConnectorID `json:"connectorID"`
 	// Creation date of the attempt
@@ -22,11 +24,11 @@ type PSUBankBridgeConnectionAttempt struct {
 	TemporaryToken *Token `json:"temporaryToken"`
 	// State given to the url in order to be able to verify that the callback
 	// is valid.
-	State *CallbackState `json:"state"`
+	State CallbackState `json:"state"`
 }
 
 // Represents all connections of a psu for a given banking bridge (connector).
-type PSUBankBridgeConnections struct {
+type PSUBankBridge struct {
 	// ID of the connector
 	ConnectorID ConnectorID `json:"connectorID"`
 
@@ -39,7 +41,7 @@ type PSUBankBridgeConnections struct {
 
 	// List of connections for the same banking bridge (for example if the user
 	// connects to multiple banks)
-	Connections []PSUBankBridgeConnection `json:"connections"`
+	Connections []*PSUBankBridgeConnection `json:"connections"`
 }
 
 type PSUBankBridgeConnection struct {
@@ -53,5 +55,5 @@ type PSUBankBridgeConnection struct {
 	// have a notion of connection, but we only have one token for all of them.
 	AccessToken *Token `json:"accessToken"`
 	// Additional information about the connection depending on the connector
-	AdditionalInformation map[string]string `json:"metadata"`
+	Metadata map[string]string `json:"metadata"`
 }

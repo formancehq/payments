@@ -37,15 +37,15 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.BankBridgeConnections == nil {
+	if req.PSUBankBridge == nil {
 		return fmt.Errorf("missing bank bridge connections: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.BankBridgeConnections.Metadata == nil {
+	if req.PSUBankBridge.Metadata == nil {
 		return fmt.Errorf("missing bank bridge connections metadata: %w", models.ErrInvalidRequest)
 	}
 
-	if _, ok := req.PaymentServiceUser.BankBridgeConnections.Metadata[UserTokenMetadataKey]; !ok {
+	if _, ok := req.PSUBankBridge.Metadata[UserTokenMetadataKey]; !ok {
 		return fmt.Errorf("missing user token: %w", models.ErrInvalidRequest)
 	}
 
@@ -83,7 +83,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
 		UserName:       req.PaymentServiceUser.Name,
 		UserID:         req.PaymentServiceUser.ID.String(),
-		UserToken:      req.PaymentServiceUser.BankBridgeConnections.Metadata[UserTokenMetadataKey],
+		UserToken:      req.PSUBankBridge.Metadata[UserTokenMetadataKey],
 		Language:       language,
 		CountryCode:    *req.PaymentServiceUser.Address.Country,
 		RedirectURI:    *req.ClientRedirectURI,

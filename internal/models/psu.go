@@ -31,9 +31,6 @@ type PSPPaymentServiceUser struct {
 	ContactDetails *ContactDetails   `json:"contactDetails"`
 	Address        *Address          `json:"address"`
 	Metadata       map[string]string `json:"metadata"`
-
-	BankAccounts          []BankAccount             `json:"bankAccounts"`
-	BankBridgeConnections *PSUBankBridgeConnections `json:"bankBridgeConnections"`
 }
 
 type PaymentServiceUser struct {
