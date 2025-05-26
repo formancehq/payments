@@ -5756,6 +5756,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3IncreaseConfig](#schemav3increaseconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3MangopayConfig](#schemav3mangopayconfig)|false|none|none|
 
 xor
@@ -6013,6 +6019,38 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+
+<h2 id="tocS_V3IncreaseConfig">V3IncreaseConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3increaseconfig"></a>
+<a id="schema_V3IncreaseConfig"></a>
+<a id="tocSv3increaseconfig"></a>
+<a id="tocsv3increaseconfig"></a>
+
+```json
+{
+  "apiKey": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Increase",
+  "webhookSharedSecret": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|apiKey|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+|webhookSharedSecret|string|true|none|none|
 
 <h2 id="tocS_V3MangopayConfig">V3MangopayConfig</h2>
 <!-- backwards compatibility -->
