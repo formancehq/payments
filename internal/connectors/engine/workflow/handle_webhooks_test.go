@@ -153,7 +153,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_NoConfigForWebhook_Error() {
 func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksConfigsGet_Error() {
 	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -175,6 +175,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksConfigsGet_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_HandleWebhooks_PluginVerifyWebhook_Error() {
@@ -190,7 +191,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_PluginVerifyWebhook_Error() {
 	)
 	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -212,6 +213,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_PluginVerifyWebhook_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksStore_Error() {
@@ -227,7 +229,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksStore_Error() {
 	)
 	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(&models.VerifyWebhookResponse{}, nil)
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -249,6 +251,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_StorageWebhooksStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_HandleWebhooks_PluginTranslateWebhook_Error() {
@@ -265,7 +268,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_PluginTranslateWebhook_Error() {
 	s.env.OnActivity(activities.PluginVerifyWebhookActivity, mock.Anything, mock.Anything).Once().Return(&models.VerifyWebhookResponse{}, nil)
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -287,6 +290,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_PluginTranslateWebhook_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_HandleWebhooks_RunStoreWebhookTranslation_Error() {
@@ -314,7 +318,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_RunStoreWebhookTranslation_Error() {
 		}, nil
 	})
 	s.env.OnWorkflow(RunStoreWebhookTranslation, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -336,4 +340,5 @@ func (s *UnitTestSuite) Test_HandleWebhooks_RunStoreWebhookTranslation_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }

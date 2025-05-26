@@ -29,6 +29,13 @@ var (
 		Raw:         []byte(`{"test":"test"}`),
 	}
 
+	task = models.Task{
+		ID:              models.TaskID{Reference: "test", ConnectorID: connectorID},
+		ConnectorID:     &connectorID,
+		Status:          models.TASK_STATUS_SUCCEEDED,
+		CreatedObjectID: pointer.For("test"),
+	}
+
 	balance = models.Balance{
 		AccountID: models.AccountID{
 			Reference:   "test",
@@ -109,7 +116,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Any_EventsSentGet_Error() {
 	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
 		EventIdempotencyKey: account.IdempotencyKey(),
 		ConnectorID:         &connectorID,
-	}).Return(true, temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")))
+	}).Return(true, temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")))
 
 	// the send events function is called for all data
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
@@ -118,7 +125,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Any_EventsSentGet_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Any_EventsSentStore_Error() {
@@ -129,7 +136,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Any_EventsSentStore_Error() {
 	}).Return(false, nil)
 	s.env.OnActivity(activities.EventsSendAccountActivity, mock.Anything, mock.Anything).Return(nil)
 	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 
 	// the send events function is called for all data
@@ -139,7 +146,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Any_EventsSentStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Account_Event_Exists_Success() {
@@ -176,13 +183,34 @@ func (s *UnitTestSuite) Test_RunSendEvents_Account_Success() {
 	s.NoError(err)
 }
 
+func (s *UnitTestSuite) Test_RunSendEvents_Task_Success() {
+	task.CreatedAt = s.env.Now()
+	task.UpdatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: task.IdempotencyKey(),
+		ConnectorID:         task.ConnectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendTaskUpdatedActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		Task: &task,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
 func (s *UnitTestSuite) Test_RunSendEvents_Account_Error() {
 	account.CreatedAt = s.env.Now()
 	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
 		EventIdempotencyKey: account.IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendAccountActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendAccountActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		Account: &account,
@@ -191,7 +219,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Account_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Balance_Success() {
@@ -220,7 +248,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_Balance_Error() {
 		EventIdempotencyKey: balance.IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendBalanceActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendBalanceActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		Balance: &balance,
@@ -229,7 +259,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Balance_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_BankAccount_Success() {
@@ -254,7 +284,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_BankAccount_Error() {
 		EventIdempotencyKey: s.bankAccount.IdempotencyKey(),
 		ConnectorID:         nil,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendBankAccountActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendBankAccountActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		BankAccount: &s.bankAccount,
@@ -263,7 +295,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_BankAccount_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_Payment_NoAdjustments_Success() {
@@ -355,7 +387,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_Payment_WithAdjustments_Error() {
 		EventIdempotencyKey: payment.Adjustments[0].IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPaymentActivity, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPaymentActivity, mock.Anything, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		Payment: &payment,
@@ -364,7 +398,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Payment_WithAdjustments_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Success() {
@@ -383,7 +417,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Success() {
 
 func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Error() {
 	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, mock.Anything).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendConnectorResetActivity, mock.Anything, connectorID, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendConnectorResetActivity, mock.Anything, connectorID, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		ConnectorReset: &connectorID,
@@ -392,7 +428,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_ConnectorReset_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PoolCreation_Success() {
@@ -419,7 +455,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_PoolCreation_Error() {
 		EventIdempotencyKey: pool.IdempotencyKey(),
 		ConnectorID:         nil,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPoolCreationActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPoolCreationActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PoolsCreation: &pool,
@@ -428,7 +466,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_PoolCreation_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PoolDeletion_Success() {
@@ -453,7 +491,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_Pool_Error() {
 		EventIdempotencyKey: pool.ID.String(),
 		ConnectorID:         nil,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPoolDeletionActivity, mock.Anything, pool.ID).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPoolDeletionActivity, mock.Anything, pool.ID).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PoolsDeletion: &pool.ID,
@@ -462,7 +502,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_Pool_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Success() {
@@ -491,7 +531,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Error() {
 		EventIdempotencyKey: paymentInitiation.IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPaymentInitiationActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPaymentInitiationActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PaymentInitiation: &paymentInitiation,
@@ -500,7 +542,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiation_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Success() {
@@ -527,7 +569,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Error() {
 		EventIdempotencyKey: paymentInitiationAdjustment.IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPaymentInitiationAdjustmentActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPaymentInitiationAdjustmentActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PaymentInitiationAdjustment: &paymentInitiationAdjustment,
@@ -536,7 +580,7 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationAdjustment_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Success() {
@@ -563,7 +607,9 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Error
 		EventIdempotencyKey: paymentInitiationRelatedPayment.IdempotencyKey(),
 		ConnectorID:         &connectorID,
 	}).Return(false, nil)
-	s.env.OnActivity(activities.EventsSendPaymentInitiationRelatedPaymentActivity, mock.Anything, mock.Anything).Return(errors.New("test"))
+	s.env.OnActivity(activities.EventsSendPaymentInitiationRelatedPaymentActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		PaymentInitiationRelatedPayment: &paymentInitiationRelatedPayment,
@@ -572,5 +618,5 @@ func (s *UnitTestSuite) Test_RunSendEvents_PaymentInitiationRelatedPayment_Error
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }

@@ -97,7 +97,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_HasMore_Success() {
 func (s *UnitTestSuite) Test_TerminateSchedules_StorageSchedulesList_Error() {
 	s.env.OnActivity(activities.StorageSchedulesListActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{
@@ -108,7 +108,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_StorageSchedulesList_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_TerminateSchedules_TemporalScheduleDelete_Error() {
@@ -127,7 +127,7 @@ func (s *UnitTestSuite) Test_TerminateSchedules_TemporalScheduleDelete_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.TemporalScheduleDeleteActivity, mock.Anything, "test").Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunTerminateSchedules, UninstallConnector{

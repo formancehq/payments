@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	"github.com/stretchr/testify/mock"
 	"go.temporal.io/sdk/temporal"
+	"go.temporal.io/sdk/workflow"
 )
 
 func (s *UnitTestSuite) Test_UninstallConnector_WithoutTaskID_Success() {
@@ -59,6 +60,10 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
+		return nil
+	})
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
 		ConnectorID: s.connectorID,
@@ -75,10 +80,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
 
 func (s *UnitTestSuite) Test_UninstallConnector_RunTerminateSchedules_Error() {
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -93,16 +102,20 @@ func (s *UnitTestSuite) Test_UninstallConnector_RunTerminateSchedules_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_PluginUninstallConnector_Error() {
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")))
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -117,7 +130,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_PluginUninstallConnector_Error()
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() {
@@ -125,10 +138,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() 
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
 	s.env.OnActivity(activities.StorageEventsSentDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -143,7 +160,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() 
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnectorID_Error() {
@@ -152,10 +169,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnec
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
 	s.env.OnActivity(activities.StorageEventsSentDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageSchedulesDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -170,7 +191,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnec
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
@@ -180,10 +201,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
 	s.env.OnActivity(activities.StorageEventsSentDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageSchedulesDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -198,7 +223,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_Error() {
@@ -209,10 +234,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_
 	s.env.OnActivity(activities.StorageSchedulesDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageInstancesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -227,7 +256,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorID_Error() {
@@ -239,10 +268,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorI
 	s.env.OnActivity(activities.StorageInstancesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -257,7 +290,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorI
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelatedAccounts_Error() {
@@ -270,10 +303,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelated
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -288,7 +325,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelated
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
@@ -302,10 +339,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -320,7 +361,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
@@ -335,10 +376,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -353,7 +398,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
@@ -369,10 +414,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -387,7 +436,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Error() {
@@ -404,10 +453,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Err
 	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -422,7 +475,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Err
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
@@ -440,10 +493,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -458,7 +515,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromConnectorID_Error() {
@@ -477,10 +534,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromCo
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePoolsRemoveAccountsFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -495,7 +556,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromCo
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() {
@@ -515,10 +576,14 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() 
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePoolsRemoveAccountsFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -533,7 +598,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() 
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksStore_Error() {
@@ -554,7 +619,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksStore_Error() {
 	s.env.OnActivity(activities.StoragePoolsRemoveAccountsFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunUninstallConnector, UninstallConnector{
@@ -568,5 +633,5 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }

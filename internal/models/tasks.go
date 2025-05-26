@@ -32,6 +32,10 @@ type Task struct {
 	Error           error   `json:"error,omitempty"`
 }
 
+func (t *Task) IdempotencyKey() string {
+	return IdempotencyKey(t)
+}
+
 func (t Task) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID              string     `json:"id"`

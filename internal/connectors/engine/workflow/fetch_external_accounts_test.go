@@ -185,9 +185,9 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_HasMoreLoop_Success() {
 }
 
 func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesStore_Error() {
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
@@ -209,10 +209,10 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesStore_Err
 
 func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesGet_Error() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -233,6 +233,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesGet_Error() 
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -249,10 +250,10 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_PluginFetchNextExternalAc
 		},
 		nil,
 	)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.PluginFetchNextExternalAccountsActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "PLUGIN", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -273,6 +274,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_PluginFetchNextExternalAc
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -296,9 +298,9 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageAccountsStore_Erro
 		NewState: []byte(`{}`),
 		HasMore:  false,
 	}, nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -319,6 +321,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageAccountsStore_Erro
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -343,9 +346,9 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_RunSendEvents_Error() {
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -366,6 +369,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_RunSendEvents_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -391,9 +395,9 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_Run_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -414,6 +418,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_Run_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -440,9 +445,9 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesStore_Error(
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", expectedErr),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -463,6 +468,7 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageStatesStore_Error(
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
 
@@ -490,11 +496,11 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesUpdate_Er
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	expectedErr := errors.New("test")
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
 		s.Nil(instance.Error)
-		return temporal.NewNonRetryableApplicationError("test", "STORAGE", expectedErr)
+		return temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr)
 	})
 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
@@ -510,5 +516,6 @@ func (s *UnitTestSuite) Test_FetchNextExternalAccounts_StorageInstancesUpdate_Er
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
+	s.Error(err)
 	s.ErrorContains(err, expectedErr.Error())
 }
