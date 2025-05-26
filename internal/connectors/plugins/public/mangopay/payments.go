@@ -67,13 +67,20 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		page++
 	}
 
-	if !needMore {
-		payments = payments[:req.PageSize]
-	}
+	// Note that we are NOT trimming data as in other connectors to respect the pageSize; doing so would mean we could
+	// lose data as we switch to the next page. We would go over the req.PageSize by max 2x
+	//if !needMore {
+	//	payments = payments[:req.PageSize]
+	//}
 
-	newState.LastPage = page
 	if len(payments) > 0 {
+		if oldState.LastCreationDate.Equal(payments[len(payments)-1].CreatedAt) {
+			newState.LastPage = page + 1
+		} else {
+			newState.LastPage = 1
+		}
 		newState.LastCreationDate = payments[len(payments)-1].CreatedAt
+
 	}
 
 	payload, err := json.Marshal(newState)

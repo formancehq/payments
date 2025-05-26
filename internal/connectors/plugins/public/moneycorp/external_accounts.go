@@ -92,6 +92,10 @@ func recipientToPSPAccounts(
 			return accounts, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
+		// TODO we have the potential to skip some here, we should use strict lower
+		if createdAt.Before(lastCreatedAt) {
+			continue
+		}
 		switch createdAt.Compare(lastCreatedAt) {
 		case -1, 0:
 			continue

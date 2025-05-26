@@ -210,7 +210,6 @@ var _ = Describe("Mangopay Plugin Accounts", func() {
 			var state accountsState
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
-			// We fetched everything, state should be resetted
 			Expect(state.LastPage).To(Equal(2))
 			createdTime := time.Unix(sampleAccounts[19].CreationDate, 0)
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
