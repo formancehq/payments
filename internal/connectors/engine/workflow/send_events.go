@@ -23,6 +23,7 @@ type SendEvents struct {
 	PaymentInitiation               *models.PaymentInitiation
 	PaymentInitiationAdjustment     *models.PaymentInitiationAdjustment
 	PaymentInitiationRelatedPayment *models.PaymentInitiationRelatedPayments
+	Task                            *models.Task
 }
 
 func (w Workflow) runSendEvents(
@@ -196,6 +197,23 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendPaymentInitiationRelatedPayment(
 					infiniteRetryContext(ctx),
 					*sendEvents.PaymentInitiationRelatedPayment,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.Task != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.Task.IdempotencyKey(),
+			sendEvents.Task.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendTaskUpdated(
+					infiniteRetryContext(ctx),
+					*sendEvents.Task,
 				)
 			},
 		)

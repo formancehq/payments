@@ -56,7 +56,7 @@ func (s *UnitTestSuite) Test_InstallConnector_NoConfigs_Success() {
 func (s *UnitTestSuite) Test_InstallConnector_PluginInstallConnector_Error() {
 	s.env.OnActivity(activities.PluginInstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 
@@ -68,7 +68,7 @@ func (s *UnitTestSuite) Test_InstallConnector_PluginInstallConnector_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorTasksTreeStore_Error() {
@@ -77,7 +77,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorTasksTreeStore_Err
 			Workflow: []models.ConnectorTaskTree{},
 		}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 
@@ -89,16 +89,18 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorTasksTreeStore_Err
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorsDelete_Error() {
 	s.env.OnActivity(activities.PluginInstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(&models.InstallResponse{
 		Workflow: []models.ConnectorTaskTree{},
 	}, nil)
-	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(errors.New("something"))
+	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
+	)
 	s.env.OnActivity(activities.StorageConnectorsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test-error-connector")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{
@@ -109,7 +111,7 @@ func (s *UnitTestSuite) Test_InstallConnector_StorageConnectorsDelete_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error-connector")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
@@ -118,7 +120,7 @@ func (s *UnitTestSuite) Test_InstallConnector_Run_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageConnectorTasksTreeStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunInstallConnector, InstallConnector{

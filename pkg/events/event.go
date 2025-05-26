@@ -16,4 +16,5 @@ const (
 	EventTypeSavedPaymentInitiation               = "SAVED_PAYMENT_INITIATION"
 	EventTypeSavedPaymentInitiationAdjustment     = "SAVED_PAYMENT_INITIATION_ADJUSTMENT"
 	EventTypeSavedPaymentInitiationRelatedPayment = "SAVED_PAYMENT_INITIATION_RELATED_PAYMENT"
+	EventTypeUpdatedTask                          = "UPDATED_TASK"
 )

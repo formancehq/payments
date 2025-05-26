@@ -49,7 +49,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Success() {
 func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error() {
 	s.env.OnActivity(activities.PluginCreateWebhooksActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
@@ -61,6 +61,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_PluginCreateWebhooksActivity_Error()
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_Error() {
@@ -79,7 +80,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 		},
 	}, nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, configs []models.WebhookConfig) error {
-		return errors.New("something")
+		return temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test"))
 	})
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
@@ -91,6 +92,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_StorageWebhooksConfigsStoreActivity_
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateWebhooks_Run_Error() {
@@ -108,7 +110,7 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Run_Error() {
 		}, nil
 	})
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunCreateWebhooks, CreateWebhooks{
@@ -120,4 +122,5 @@ func (s *UnitTestSuite) Test_CreateWebhooks_Run_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
