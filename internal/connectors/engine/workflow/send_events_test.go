@@ -222,6 +222,27 @@ func (s *UnitTestSuite) Test_RunSendEvents_Account_Error() {
 	s.ErrorContains(err, "error-test")
 }
 
+func (s *UnitTestSuite) Test_RunSendEvents_Task_Error() {
+	task.CreatedAt = s.env.Now()
+	task.UpdatedAt = s.env.Now()
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: task.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendTaskUpdatedActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		Task: &task,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
 func (s *UnitTestSuite) Test_RunSendEvents_Balance_Success() {
 	balance.CreatedAt = s.env.Now()
 	balance.LastUpdatedAt = s.env.Now()
