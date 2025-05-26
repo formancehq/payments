@@ -42,6 +42,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	needMore := false
 	hasMore := false
 	for page := 0; ; page++ {
+		// TODO we can't use just the LastCreatedAt
 		pagedTransactions, err := p.client.GetTransactions(ctx, from.Reference, page, req.PageSize, oldState.LastCreatedAt)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
