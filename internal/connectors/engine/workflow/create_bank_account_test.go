@@ -45,6 +45,17 @@ func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
+		s.Nil(sendEvents.Balance)
+		s.Nil(sendEvents.Account)
+		s.Nil(sendEvents.ConnectorReset)
+		s.Nil(sendEvents.Payment)
+		s.Nil(sendEvents.PoolsCreation)
+		s.Nil(sendEvents.PoolsDeletion)
+		s.Nil(sendEvents.BankAccount)
+		s.NotNil(sendEvents.Task)
+		return nil
+	})
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -62,10 +73,14 @@ func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
 func (s *UnitTestSuite) Test_CreateBankAccount_PluginCreateBankAccount_Error() {
 	s.env.OnActivity(activities.PluginCreateBankAccountActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
+		s.NotNil(sendEvents.Task)
 		return nil
 	})
 
@@ -81,6 +96,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_PluginCreateBankAccount_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateBankAccount_StorageAccountsStore_Error() {
@@ -88,10 +104,14 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageAccountsStore_Error() {
 		RelatedAccount: s.pspAccount,
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
+		s.NotNil(sendEvents.Task)
 		return nil
 	})
 
@@ -107,6 +127,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageAccountsStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateBankAccount_StorageBankAccountsAddRelatedAccount_Error() {
@@ -115,10 +136,14 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageBankAccountsAddRelatedAcco
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
+		s.NotNil(sendEvents.Task)
 		return nil
 	})
 
@@ -134,6 +159,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageBankAccountsAddRelatedAcco
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateBankAccount_RunSendEvents_Error() {
@@ -142,9 +168,13 @@ func (s *UnitTestSuite) Test_CreateBankAccount_RunSendEvents_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")))
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, sendEvents SendEvents) error {
+		s.NotNil(sendEvents.Task)
 		return nil
 	})
 
@@ -160,6 +190,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_RunSendEvents_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
@@ -168,10 +199,10 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("test", "test", errors.New("test")))
+	s.env.OnWorkflow(s.w.runSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return temporal.NewNonRetryableApplicationError("test", "test", errors.New("test"))
+		return temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
 	})
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
@@ -186,5 +217,5 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test")
+	s.ErrorContains(err, "error-test")
 }

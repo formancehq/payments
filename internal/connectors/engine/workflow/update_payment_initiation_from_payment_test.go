@@ -62,7 +62,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_SkipAdjustment_S
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentInitiationIDsListFromPaymentID_Error() {
 	s.env.OnActivity(activities.StoragePaymentInitiationIDsListFromPaymentIDActivity, mock.Anything, s.paymentPayoutID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
@@ -72,7 +72,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentIn
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentInitiationsAdjustmentsStore_Error() {
@@ -81,7 +81,7 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentIn
 		nil,
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunUpdatePaymentInitiationFromPayment, UpdatePaymentInitiationFromPayment{
@@ -91,5 +91,5 @@ func (s *UnitTestSuite) Test_UpdatePaymentInitiationFromPayment_StoragePaymentIn
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }

@@ -83,7 +83,7 @@ func (s *UnitTestSuite) Test_TerminateWorkflows_NotRunningWorkflows_Success() {
 func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowExecutionsList_Error() {
 	s.env.OnActivity(activities.TemporalWorkflowExecutionsListActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunTerminateWorkflows, TerminateWorkflows{
@@ -93,7 +93,7 @@ func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowExecutionsList_E
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowTerminate_Error() {
@@ -112,7 +112,7 @@ func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowTerminate_Error(
 		nil,
 	)
 	s.env.OnActivity(activities.TemporalWorkflowTerminateActivity, mock.Anything, "test-workflow", "test-run", "uninstalling connector").Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "test", errors.New("test-error")),
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunTerminateWorkflows, TerminateWorkflows{
@@ -122,5 +122,5 @@ func (s *UnitTestSuite) Test_TerminateWorkflows_TemporalWorkflowTerminate_Error(
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "test-error")
+	s.ErrorContains(err, "error-test")
 }

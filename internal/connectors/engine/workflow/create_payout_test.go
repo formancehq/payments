@@ -76,6 +76,18 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPayment_Success() {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.Nil(req.Payment)
+		s.Nil(req.PaymentInitiationRelatedPayment)
+		s.Nil(req.Account)
+		s.Nil(req.Balance)
+		s.Nil(req.BankAccount)
+		s.Nil(req.ConnectorReset)
+		s.Nil(req.PoolsCreation)
+		s.Nil(req.PoolsDeletion)
+		s.NotNil(req.Task)
+		return nil
+	})
 
 	s.env.ExecuteWorkflow(RunCreatePayout, CreatePayout{
 		TaskID: models.TaskID{
@@ -167,6 +179,18 @@ func (s *UnitTestSuite) Test_CreatePayout_WithScheduledAt_WithPayment_Success() 
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.Nil(req.Payment)
+		s.Nil(req.PaymentInitiationRelatedPayment)
+		s.Nil(req.Account)
+		s.Nil(req.Balance)
+		s.Nil(req.BankAccount)
+		s.Nil(req.ConnectorReset)
+		s.Nil(req.PoolsCreation)
+		s.Nil(req.PoolsDeletion)
+		s.NotNil(req.Task)
+		return nil
+	})
 
 	s.env.ExecuteWorkflow(RunCreatePayout, CreatePayout{
 		TaskID: models.TaskID{
@@ -231,10 +255,14 @@ func (s *UnitTestSuite) Test_CreatePayout_WithPollingPayment_Success() {
 func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsGet_Error() {
 	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -250,16 +278,21 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsGet_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_StorageAccountsGet_Error() {
 	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(&s.paymentInitiationPayout, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.SourceAccountID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -275,6 +308,7 @@ func (s *UnitTestSuite) Test_CreatePayout_StorageAccountsGet_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsAdjustmentsStore_Error() {
@@ -282,10 +316,14 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsAdjustmentsSt
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.SourceAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, *s.paymentInitiationPayout.DestinationAccountID).Once().Return(&s.account, nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -301,6 +339,7 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentInitiationsAdjustmentsSt
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
@@ -314,7 +353,7 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginCreatePayoutActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StoragePaymentInitiationsAdjustmentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, adj models.PaymentInitiationAdjustment) error {
 		s.Equal(models.PAYMENT_INITIATION_ADJUSTMENT_STATUS_FAILED, adj.Status)
@@ -323,6 +362,10 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -338,6 +381,7 @@ func (s *UnitTestSuite) Test_CreatePayout_PluginCreatePayout_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentsStore_Error() {
@@ -350,10 +394,14 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentsStore_Error() {
 		Payment: &s.pspPayment,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -369,6 +417,7 @@ func (s *UnitTestSuite) Test_CreatePayout_StoragePaymentsStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_RunSendEvents_Error() {
@@ -382,9 +431,13 @@ func (s *UnitTestSuite) Test_CreatePayout_RunSendEvents_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")))
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", errors.New("error-test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -400,6 +453,7 @@ func (s *UnitTestSuite) Test_CreatePayout_RunSendEvents_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayoutStoragePaymentInitiationsRelatedPaymentsStore_Error() {
@@ -413,10 +467,14 @@ func (s *UnitTestSuite) Test_CreatePayoutStoragePaymentInitiationsRelatedPayment
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StoragePaymentInitiationsRelatedPaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -432,6 +490,7 @@ func (s *UnitTestSuite) Test_CreatePayoutStoragePaymentInitiationsRelatedPayment
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_StorageSchedulesStore_Error() {
@@ -444,10 +503,14 @@ func (s *UnitTestSuite) Test_CreatePayout_StorageSchedulesStore_Error() {
 		PollingPayoutID: pointer.For("test"),
 	}, nil)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -463,6 +526,7 @@ func (s *UnitTestSuite) Test_CreatePayout_StorageSchedulesStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_TemporalScheduleCreate_Error() {
@@ -476,10 +540,14 @@ func (s *UnitTestSuite) Test_CreatePayout_TemporalScheduleCreate_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "SCHEDULE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "SCHEDULE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Task)
 		return nil
 	})
 
@@ -495,16 +563,17 @@ func (s *UnitTestSuite) Test_CreatePayout_TemporalScheduleCreate_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_CreatePayout_StorageTasksStoreActivity_Error() {
 	s.env.OnActivity(activities.StoragePaymentInitiationsGetActivity, mock.Anything, s.paymentInitiationID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test"))
+		return temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test"))
 	})
 
 	s.env.ExecuteWorkflow(RunCreatePayout, CreatePayout{
@@ -519,4 +588,5 @@ func (s *UnitTestSuite) Test_CreatePayout_StorageTasksStoreActivity_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
