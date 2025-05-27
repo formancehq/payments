@@ -10,7 +10,9 @@ type V3PowensConfig struct {
 	ClientID           string  `json:"clientID"`
 	ClientSecret       string  `json:"clientSecret"`
 	ConfigurationToken string  `json:"configurationToken"`
+	Domain             string  `json:"domain"`
 	Endpoint           string  `json:"endpoint"`
+	MaxConnections     int64   `json:"maxConnections"`
 	Name               string  `json:"name"`
 	PageSize           *int64  `default:"25" json:"pageSize"`
 	PollingPeriod      *string `default:"2m" json:"pollingPeriod"`
@@ -49,11 +51,25 @@ func (o *V3PowensConfig) GetConfigurationToken() string {
 	return o.ConfigurationToken
 }
 
+func (o *V3PowensConfig) GetDomain() string {
+	if o == nil {
+		return ""
+	}
+	return o.Domain
+}
+
 func (o *V3PowensConfig) GetEndpoint() string {
 	if o == nil {
 		return ""
 	}
 	return o.Endpoint
+}
+
+func (o *V3PowensConfig) GetMaxConnections() int64 {
+	if o == nil {
+		return 0
+	}
+	return o.MaxConnections
 }
 
 func (o *V3PowensConfig) GetName() string {

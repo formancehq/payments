@@ -2,6 +2,10 @@ package models
 
 import (
 	"context"
+	"encoding/base64"
+
+	"github.com/gibson042/canonicaljson-go"
+	"github.com/google/uuid"
 )
 
 type BankingBridgePlugin interface {
@@ -25,25 +29,19 @@ type CreateUserResponse struct {
 	// creation, so we need to pass it back to the core if it's the case.
 	// Other connectors have it when the user finished the authentication flow,
 	// so this is optional and will be added later on thanks to webhooks.
-	PermanentToken *string
+	PermanentToken *Token
 	// Metadata linked to the user above.
 	Metadata map[string]string
 }
 
 type CreateUserLinkRequest struct {
+	AttemptID           string
 	PaymentServiceUser  *PSPPaymentServiceUser
 	PSUBankBridge       *PSUBankBridge
-	ClientRedirectURI   *string
-	FormanceRedirectURI *string
+	ClientRedirectURL   *string
+	FormanceRedirectURL *string
 	CallBackState       string
 	WebhookBaseURL      string
-}
-
-type CallbackState struct {
-	// Used for both Tink and Powens, in order to prevent CSRF attacks, we
-	// add a random string to the redirect URI's state, and when receiving the
-	// callback, we check that the state is the same as the one we sent.
-	Randomized string `json:"randomized"`
 }
 
 type CreateUserLinkResponse struct {
@@ -57,11 +55,8 @@ type CreateUserLinkResponse struct {
 }
 
 type CompleteUserLinkRequest struct {
-	QueryValues map[string][]string
-	Headers     map[string][]string
-	Body        []byte
-
-	RelatedAttempt *PSUBankBridgeConnectionAttempt
+	HTTPCallInformation HTTPCallInformation
+	RelatedAttempt      *PSUBankBridgeConnectionAttempt
 }
 
 type CompleteUserLinkResponse struct {
@@ -89,3 +84,41 @@ type DeleteUserRequest struct {
 	PSUBankBridge      *PSUBankBridge
 }
 type DeleteUserResponse struct{}
+
+type HTTPCallInformation struct {
+	QueryValues map[string][]string
+	Headers     map[string][]string
+	Body        []byte
+}
+
+type CallbackState struct {
+	// Used for both Tink and Powens, in order to prevent CSRF attacks, we
+	// add a random string to the redirect URI's state, and when receiving the
+	// callback, we check that the state is the same as the one we sent.
+	Randomized string `json:"randomized"`
+	// ID of the attempt, used to get the client redirect URL
+	AttemptID uuid.UUID `json:"attemptID"`
+}
+
+func (pid CallbackState) String() string {
+	data, err := canonicaljson.Marshal(pid)
+	if err != nil {
+		panic(err)
+	}
+
+	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
+}
+
+func CallbackStateFromString(value string) (CallbackState, error) {
+	ret := CallbackState{}
+	data, err := base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(value)
+	if err != nil {
+		return ret, err
+	}
+	err = canonicaljson.Unmarshal(data, &ret)
+	if err != nil {
+		return ret, err
+	}
+
+	return ret, nil
+}

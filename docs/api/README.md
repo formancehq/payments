@@ -6172,7 +6172,9 @@ xor
   "clientID": "string",
   "clientSecret": "string",
   "configurationToken": "string",
+  "domain": "string",
   "endpoint": "string",
+  "maxConnections": 0,
   "name": "string",
   "pageSize": "25",
   "pollingPeriod": "2m",
@@ -6188,7 +6190,9 @@ xor
 |clientID|string|true|none|none|
 |clientSecret|string|true|none|none|
 |configurationToken|string|true|none|none|
+|domain|string|true|none|none|
 |endpoint|string|true|none|none|
+|maxConnections|integer|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

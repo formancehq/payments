@@ -6,11 +6,13 @@ create table if not exists bank_bridge_connection_attempts (
     psu_id uuid not null,
     created_at timestamp without time zone not null,
     connector_id varchar not null,
+    status text not null,
 
     -- Optional fields
     temporary_token text,
     expires_at timestamp without time zone,
     state jsonb,
+    error text,
 
     -- Primary key
     primary key (id)

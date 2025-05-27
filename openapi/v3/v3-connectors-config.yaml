@@ -318,6 +318,8 @@ components:
                 - clientID
                 - clientSecret
                 - configurationToken
+                - domain
+                - maxConnections
                 - endpoint
             properties:
                 clientID:
@@ -326,8 +328,12 @@ components:
                     type: string
                 configurationToken:
                     type: string
+                domain:
+                    type: string
                 endpoint:
                     type: string
+                maxConnections:
+                    type: integer
                 name:
                     type: string
                 pageSize:

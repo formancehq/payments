@@ -28,8 +28,8 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("callBackState is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.FormanceRedirectURI == nil || *req.FormanceRedirectURI == "" {
-		return fmt.Errorf("formanceRedirectURI is required: %w", models.ErrInvalidRequest)
+	if req.FormanceRedirectURL == nil || *req.FormanceRedirectURL == "" {
+		return fmt.Errorf("formanceRedirectURL is required: %w", models.ErrInvalidRequest)
 	}
 
 	return nil
@@ -55,10 +55,10 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	query := u.Query()
 	query.Add("domain", p.config.Domain)
 	query.Add("client_id", p.clientID)
-	query.Add("redirect_uri", *req.FormanceRedirectURI)
+	query.Add("redirect_uri", *req.FormanceRedirectURL)
 	query.Add("code", temporaryLinkResponse.Code)
 	query.Add("state", req.CallBackState)
-	query.Add("max_connections", strconv.Itoa(p.config.MaxConnections))
+	query.Add("max_connections", strconv.FormatUint(uint64(p.config.MaxConnections), 10))
 	u.RawQuery = query.Encode()
 
 	return models.CreateUserLinkResponse{

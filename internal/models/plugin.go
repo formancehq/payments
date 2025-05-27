@@ -71,12 +71,12 @@ type TranslateWebhookRequest struct {
 	Config  *WebhookConfig
 }
 
+type TranslateWebhookResponse struct {
+	Responses []WebhookResponse
+}
+
 type WebhookResponse struct {
 	Account         *PSPAccount
 	ExternalAccount *PSPAccount
 	Payment         *PSPPayment
-}
-
-type TranslateWebhookResponse struct {
-	Responses []WebhookResponse
 }

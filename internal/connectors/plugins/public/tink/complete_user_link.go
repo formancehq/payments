@@ -22,7 +22,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("related attempt is required: %w", models.ErrInvalidRequest)
 	}
 
-	queryState, ok := req.QueryValues[StateQueryParamID]
+	queryState, ok := req.HTTPCallInformation.QueryValues[StateQueryParamID]
 	if !ok || len(queryState) != 1 {
 		return fmt.Errorf("missing state: %w", models.ErrInvalidRequest)
 	}
@@ -41,12 +41,12 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("state mismatch: %w", models.ErrInvalidRequest)
 	}
 
-	_, ok = req.QueryValues[ErrorQueryParamID]
+	_, ok = req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
 	if ok {
 		return nil
 	}
 
-	_, ok = req.QueryValues[ErrorMessageQueryParamID]
+	_, ok = req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID]
 	if !ok {
 		return fmt.Errorf("missing connection IDs: %w", models.ErrInvalidRequest)
 	}
@@ -59,12 +59,12 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		return models.CompleteUserLinkResponse{}, err
 	}
 
-	errorCode, ok := req.QueryValues[ErrorQueryParamID]
+	errorCode, ok := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
 	if ok {
 		// Error callback
 		return models.CompleteUserLinkResponse{
 			Error: &models.CompleteUserLinkErrorResponse{
-				Error: fmt.Sprintf("%s: %s", errorCode[0], req.QueryValues[ErrorMessageQueryParamID][0]),
+				Error: fmt.Sprintf("%s: %s", errorCode[0], req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID][0]),
 			},
 		}, nil
 	}
@@ -73,7 +73,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		Success: &models.CompleteUserLinkSuccessResponse{
 			Connections: []models.PSUBankBridgeConnection{
 				{
-					ConnectionID: req.QueryValues[CredentialIDQueryParamID][0],
+					ConnectionID: req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID][0],
 				},
 			},
 		},

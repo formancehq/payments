@@ -11,6 +11,10 @@ import (
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
+const (
+	AttemptIDQueryParamID = "attemptID"
+)
+
 type CreateLinkTokenRequest struct {
 	UserName       string
 	UserID         string
@@ -19,6 +23,7 @@ type CreateLinkTokenRequest struct {
 	CountryCode    string
 	RedirectURI    string
 	WebhookBaseURL string
+	AttemptID      string
 }
 
 type CreateLinkTokenResponse struct {
@@ -45,14 +50,21 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 		},
 	)
 
-	url, err := url.JoinPath(req.WebhookBaseURL, "all")
+	url, err := url.Parse(req.WebhookBaseURL)
 	if err != nil {
 		return CreateLinkTokenResponse{}, fmt.Errorf("invalid webhook base URL: %w", err)
 	}
 
+	url = url.JoinPath("all")
+	query := url.Query()
+	query.Set(AttemptIDQueryParamID, req.AttemptID)
+	url.RawQuery = query.Encode()
+
+	webhookURL := url.String()
+
 	request.SetUserToken(req.UserToken)
 	request.SetEnableMultiItemLink(true)
-	request.SetWebhook(url)
+	request.SetWebhook(webhookURL)
 	request.Products = []plaid.Products{plaid.PRODUCTS_TRANSACTIONS, plaid.PRODUCTS_TRANSACTIONS_REFRESH}
 	request.SetRedirectUri(req.RedirectURI)
 	hostedLink := plaid.NewLinkTokenCreateHostedLink()

@@ -5,16 +5,21 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 )
 
 const (
 	LinkTokenQueryParamID   = "link_token"
 	PublicTokenQueryParamID = "public_token"
+	StateQueryParamID       = "state"
 )
 
 type FormanceBankBridgeRedirectRequest struct {
 	LinkToken   string
 	PublicToken string
+	AttemptID   uuid.UUID
 }
 
 func (c *client) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error {
@@ -26,6 +31,9 @@ func (c *client) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBan
 	q := u.Query()
 	q.Set(LinkTokenQueryParamID, req.LinkToken)
 	q.Set(PublicTokenQueryParamID, req.PublicToken)
+	q.Set(StateQueryParamID, models.CallbackState{
+		AttemptID: req.AttemptID,
+	}.String())
 	u.RawQuery = q.Encode()
 
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, u.String(), nil)
