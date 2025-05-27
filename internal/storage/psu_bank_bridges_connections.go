@@ -17,15 +17,18 @@ type psuBankBridgeConnectionAttempt struct {
 	bun.BaseModel `bun:"table:bank_bridge_connection_attempts"`
 
 	// Mandatory fields
-	ID          uuid.UUID          `bun:"id,pk,type:uuid,notnull"`
-	PsuID       uuid.UUID          `bun:"psu_id,type:uuid,notnull"`
-	ConnectorID models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
-	CreatedAt   time.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
+	ID          uuid.UUID                                   `bun:"id,pk,type:uuid,notnull"`
+	PsuID       uuid.UUID                                   `bun:"psu_id,type:uuid,notnull"`
+	ConnectorID models.ConnectorID                          `bun:"connector_id,type:character varying,notnull"`
+	CreatedAt   time.Time                                   `bun:"created_at,type:timestamp without time zone,notnull"`
+	Status      models.PSUBankBridgeConnectionAttemptStatus `bun:"status,type:text,notnull"`
+	State       json.RawMessage                             `bun:"state,type:jsonb,nullzero"`
 
 	// Optional fields
-	TemporaryToken *string         `bun:"temporary_token,type:text,nullzero"`
-	ExpiresAt      *time.Time      `bun:"expires_at,type:timestamp without time zone,nullzero"`
-	State          json.RawMessage `bun:"state,type:jsonb,nullzero"`
+	ClientRedirectURL *string    `bun:"client_redirect_url,type:text,nullzero"`
+	TemporaryToken    *string    `bun:"temporary_token,type:text,nullzero"`
+	ExpiresAt         *time.Time `bun:"expires_at,type:timestamp without time zone,nullzero"`
+	Error             *string    `bun:"error,type:text,nullzero"`
 }
 
 func (s *store) PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from models.PSUBankBridgeConnectionAttempt) error {
@@ -37,6 +40,8 @@ func (s *store) PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from 
 	_, err = s.db.NewInsert().
 		Model(&attempt).
 		On("CONFLICT (id) DO UPDATE").
+		Set("error = EXCLUDED.error").
+		Set("status = EXCLUDED.status").
 		Set("temporary_token = EXCLUDED.temporary_token").
 		Set("expires_at = EXCLUDED.expires_at").
 		Set("state = EXCLUDED.state").
@@ -190,13 +195,16 @@ func fromPsuBankBridgeConnectionAttemptsModels(from models.PSUBankBridgeConnecti
 	}
 
 	return psuBankBridgeConnectionAttempt{
-		ID:             from.ID,
-		PsuID:          from.PsuID,
-		ConnectorID:    from.ConnectorID,
-		CreatedAt:      time.New(from.CreatedAt),
-		TemporaryToken: token,
-		ExpiresAt:      expiresAt,
-		State:          state,
+		ID:                from.ID,
+		PsuID:             from.PsuID,
+		ConnectorID:       from.ConnectorID,
+		CreatedAt:         time.New(from.CreatedAt),
+		Status:            from.Status,
+		State:             state,
+		ClientRedirectURL: from.ClientRedirectURL,
+		TemporaryToken:    token,
+		ExpiresAt:         expiresAt,
+		Error:             from.Error,
 	}, nil
 }
 
@@ -207,12 +215,15 @@ func toPsuBankBridgeConnectionAttemptsModels(from psuBankBridgeConnectionAttempt
 	}
 
 	return &models.PSUBankBridgeConnectionAttempt{
-		ID:             from.ID,
-		PsuID:          from.PsuID,
-		ConnectorID:    from.ConnectorID,
-		CreatedAt:      from.CreatedAt.Time,
-		TemporaryToken: toTokenModels(from.TemporaryToken, from.ExpiresAt),
-		State:          state,
+		ID:                from.ID,
+		PsuID:             from.PsuID,
+		ConnectorID:       from.ConnectorID,
+		CreatedAt:         from.CreatedAt.Time,
+		Status:            from.Status,
+		State:             state,
+		ClientRedirectURL: from.ClientRedirectURL,
+		TemporaryToken:    toTokenModels(from.TemporaryToken, from.ExpiresAt),
+		Error:             from.Error,
 	}, nil
 }
 

@@ -14,8 +14,8 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
 	}
 
-	if req.FormanceRedirectURI == nil || *req.FormanceRedirectURI == "" {
-		return fmt.Errorf("missing formanceRedirectURI: %w", models.ErrInvalidRequest)
+	if req.FormanceRedirectURL == nil || *req.FormanceRedirectURL == "" {
+		return fmt.Errorf("missing formanceRedirectURL: %w", models.ErrInvalidRequest)
 	}
 
 	if req.CallBackState == "" {
@@ -72,7 +72,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 
 	query := url.Query()
 	query.Add("client_id", p.clientID)
-	query.Add("redirect_uri", *req.FormanceRedirectURI)
+	query.Add("redirect_uri", *req.FormanceRedirectURL)
 	query.Add("state", req.CallBackState)
 	query.Add("authorization_code", temporaryCodeResponse.Code)
 	query.Add("market", *req.PaymentServiceUser.Address.Country)

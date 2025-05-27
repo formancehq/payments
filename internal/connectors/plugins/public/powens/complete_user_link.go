@@ -19,7 +19,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("related attempt is required: %w", models.ErrInvalidRequest)
 	}
 
-	queryState, ok := req.QueryValues[StateQueryParamID]
+	queryState, ok := req.HTTPCallInformation.QueryValues[StateQueryParamID]
 	if !ok || len(queryState) != 1 {
 		return fmt.Errorf("missing state: %w", models.ErrInvalidRequest)
 	}
@@ -38,7 +38,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("state mismatch: %w", models.ErrInvalidRequest)
 	}
 
-	_, ok = req.QueryValues[ConnectionIDsQueryParamID]
+	_, ok = req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
 	if !ok {
 		return fmt.Errorf("missing connection IDs: %w", models.ErrInvalidRequest)
 	}
@@ -51,7 +51,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		return models.CompleteUserLinkResponse{}, err
 	}
 
-	connectionIDs := req.QueryValues[ConnectionIDsQueryParamID]
+	connectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
 	connections := make([]models.PSUBankBridgeConnection, len(connectionIDs))
 	for i, connectionID := range connectionIDs {
 		connections[i] = models.PSUBankBridgeConnection{

@@ -33,7 +33,7 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("unsupported payment service user country: %s: %w", *req.PaymentServiceUser.Address.Country, models.ErrInvalidRequest)
 	}
 
-	if req.ClientRedirectURI == nil || *req.ClientRedirectURI == "" {
+	if req.ClientRedirectURL == nil || *req.ClientRedirectURL == "" {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
@@ -86,8 +86,9 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		UserToken:      req.PSUBankBridge.Metadata[UserTokenMetadataKey],
 		Language:       language,
 		CountryCode:    *req.PaymentServiceUser.Address.Country,
-		RedirectURI:    *req.ClientRedirectURI,
+		RedirectURI:    *req.ClientRedirectURL,
 		WebhookBaseURL: req.WebhookBaseURL,
+		AttemptID:      req.AttemptID,
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err

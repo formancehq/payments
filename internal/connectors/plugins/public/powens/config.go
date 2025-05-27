@@ -18,7 +18,7 @@ type Config struct {
 	ClientSecret       string `json:"clientSecret" validate:"required"`
 	ConfigurationToken string `json:"configurationToken" validate:"required"`
 	Domain             string `json:"domain" validate:"required"`
-	MaxConnections     int    `json:"maxConnections" validate:"required,min=1"`
+	MaxConnections     uint32 `json:"maxConnections" validate:"required,min=1"`
 	Endpoint           string `json:"endpoint" validate:"required"`
 }
 

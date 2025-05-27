@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
@@ -156,9 +157,20 @@ func (p *Plugin) handleItemAddResultWebhook(ctx context.Context, req models.Tran
 		return nil, err
 	}
 
+	ids, ok := req.Webhook.QueryValues[client.AttemptIDQueryParamID]
+	if !ok || len(ids) != 1 {
+		return nil, fmt.Errorf("missing attemptID: %w", models.ErrInvalidRequest)
+	}
+
+	attemptID, err := uuid.Parse(ids[0])
+	if err != nil {
+		return nil, fmt.Errorf("invalid attemptID: %w", models.ErrInvalidRequest)
+	}
+
 	if err := p.client.FormanceBankBridgeRedirect(ctx, client.FormanceBankBridgeRedirectRequest{
 		LinkToken:   webhook.LinkToken,
 		PublicToken: webhook.PublicToken,
+		AttemptID:   attemptID,
 	}); err != nil {
 		return nil, err
 	}

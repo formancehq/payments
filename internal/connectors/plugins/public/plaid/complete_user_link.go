@@ -17,7 +17,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("missing temporary token: %w", models.ErrInvalidRequest)
 	}
 
-	linkToken, ok := req.QueryValues[client.LinkTokenQueryParamID]
+	linkToken, ok := req.HTTPCallInformation.QueryValues[client.LinkTokenQueryParamID]
 	if !ok || len(linkToken) != 1 {
 		return fmt.Errorf("missing link token: %w", models.ErrInvalidRequest)
 	}
@@ -26,7 +26,7 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("link token mismatch: %w", models.ErrInvalidRequest)
 	}
 
-	_, ok = req.QueryValues[client.PublicTokenQueryParamID]
+	_, ok = req.HTTPCallInformation.QueryValues[client.PublicTokenQueryParamID]
 	if !ok {
 		return fmt.Errorf("missing public token: %w", models.ErrInvalidRequest)
 	}
@@ -40,7 +40,7 @@ func (p *Plugin) completeUserLink(ctx context.Context, req models.CompleteUserLi
 	}
 
 	exchangePublicTokenResponse, err := p.client.ExchangePublicToken(ctx, client.ExchangePublicTokenRequest{
-		PublicToken: req.QueryValues[client.PublicTokenQueryParamID][0],
+		PublicToken: req.HTTPCallInformation.QueryValues[client.PublicTokenQueryParamID][0],
 	})
 	if err != nil {
 		return models.CompleteUserLinkResponse{}, err

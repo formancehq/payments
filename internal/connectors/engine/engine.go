@@ -57,6 +57,13 @@ type Engine interface {
 	// Reverse a payout on the given connector (PSP).
 	ReversePayout(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
 
+	// Create a user on the given connector (PSP).
+	ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	// Create a user link on the given connector (PSP).
+	CreateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
+	// Complete a user link on the given connector (PSP).
+	CompleteUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error
+
 	// We received a webhook, handle it by calling the corresponding plugin to
 	// translate it to a formance object and store it.
 	HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error
@@ -791,9 +798,146 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 	return task, nil
 }
 
+func (e *engine) ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUser")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("create-user-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateUser,
+		workflow.CreateUser{
+			TaskID:      task.ID,
+			ConnectorID: connectorID,
+			PsuID:       psuID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) CreateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUserLink")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("create-user-link-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateUserLink,
+		workflow.CreateUserLink{
+			TaskID:            task.ID,
+			ConnectorID:       connectorID,
+			PsuID:             psuID,
+			IdempotencyKey:    idempotencyKey,
+			ClientRedirectURL: ClientRedirectURL,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) CompleteUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CompleteUserLink")
+	defer span.End()
+
+	ctx = context.WithoutCancel(ctx)
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	id := models.TaskIDReference(fmt.Sprintf("complete-user-link-%s", e.stack), connectorID, attemptID.String())
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCompleteUserLink,
+		workflow.CompleteUserLink{
+			HTTPCallInformation: httpCallInformation,
+			ConnectorID:         connectorID,
+			AttemptID:           attemptID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	return nil
+}
+
 func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
+
+	ctx = context.WithoutCancel(ctx)
+	e.wg.Add(1)
+	defer e.wg.Done()
 
 	if _, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
