@@ -184,6 +184,8 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			payment.Raw = raw
 			payment.Status = models.PAYMENT_STATUS_SUCCEEDED
+			payment.ParentReference = "1"
+			payment.Reference = "1"
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{
@@ -212,6 +214,8 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			payment.Raw = raw
 			payment.Status = models.PAYMENT_STATUS_SUCCEEDED
+			payment.ParentReference = "1"
+			payment.Reference = "1"
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{
@@ -240,6 +244,8 @@ var _ = Describe("Increase Plugin Transfers Creation", func() {
 
 			payment.Raw = raw
 			payment.Status = models.PAYMENT_STATUS_CANCELLED
+			payment.ParentReference = "1"
+			payment.Reference = "1"
 			resp, err := plg.CreateTransfer(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp).To(Equal(models.CreateTransferResponse{

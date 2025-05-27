@@ -50,8 +50,7 @@ func (p *Plugin) transferToPayment(transfer *client.TransferResponse) (*models.P
 	}
 
 	pspPayment := &models.PSPPayment{
-		ParentReference:             "",
-		Reference:                   transfer.ID,
+		ParentReference:             transfer.ID,
 		CreatedAt:                   createdAt,
 		Type:                        models.PAYMENT_TYPE_TRANSFER,
 		Amount:                      big.NewInt(transfer.Amount),
