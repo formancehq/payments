@@ -75,6 +75,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestGeneric() *compo
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestGocardless() *components.V3GocardlessConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3GocardlessConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestMangopay() *components.V3MangopayConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3MangopayConfig

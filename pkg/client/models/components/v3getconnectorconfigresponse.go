@@ -41,6 +41,10 @@ func (o *V3GetConnectorConfigResponse) GetDataGeneric() *V3GenericConfig {
 	return o.GetData().V3GenericConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataGocardless() *V3GocardlessConfig {
+	return o.GetData().V3GocardlessConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataMangopay() *V3MangopayConfig {
 	return o.GetData().V3MangopayConfig
 }
