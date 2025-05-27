@@ -86,12 +86,8 @@ func fillUsers(
 ) ([]models.PSPOther, []time.Time, error) {
 	for _, user := range pagedUsers {
 		userCreationDate := time.Unix(user.CreationDate, 0)
-		switch userCreationDate.Compare(oldState.LastCreationDate) {
-		case -1, 0:
-			// creationDate <= state.LastCreationDate, nothing to do,
-			// we already processed this user.
+		if userCreationDate.Before(oldState.LastCreationDate) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(user)

@@ -176,5 +176,42 @@ var _ = Describe("Mangopay Plugin Payments", func() {
 			createdTime := time.Unix(sampleTransactions[48].CreationDate, 0)
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
 		})
+
+		It("should fetch next payments - when last account in current page updatedAt == oldState.updatedAt, we need to fetch next page", func(ctx SpecContext) {
+			// Given
+			lastCreatedAt := time.Unix(sampleTransactions[4].CreationDate, 0).UTC()
+
+			req := models.FetchNextPaymentsRequest{
+				State:       []byte(fmt.Sprintf(`{"lastPage": 1, "lastCreationDate": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
+				PageSize:    5,
+				FromPayload: json.RawMessage(`{"Reference": "test"}`),
+			}
+
+			// Set all transactions to have the same updatedAt
+			for i := range sampleTransactions {
+				sampleTransactions[i].CreationDate = sampleTransactions[4].CreationDate
+			}
+			transactionsReturnedByClient := sampleTransactions[5:10]
+			m.EXPECT().GetTransactions(gomock.Any(), "test", 1, 5, lastCreatedAt).Times(1).Return(
+				transactionsReturnedByClient,
+				nil,
+			)
+
+			// When
+			resp, err := plg.FetchNextPayments(ctx, req)
+
+			// Then
+			Expect(err).To(BeNil())
+			Expect(resp.Payments).To(HaveLen(5))
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state paymentsState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			// We fetched everything, state should be resetted
+			Expect(state.LastPage).To(Equal(2))
+			Expect(state.LastCreationDate.UTC()).To(Equal(lastCreatedAt))
+		})
 	})
 })

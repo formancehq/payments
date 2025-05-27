@@ -142,7 +142,7 @@ var _ = Describe("Mangopay Plugin Users", func() {
 		})
 
 		It("should fetch next users - with state pageSize < total users", func(ctx SpecContext) {
-			lastCreatedAt := time.Unix(sampleUsers[38].CreationDate, 0)
+			lastCreatedAt := time.Unix(sampleUsers[39].CreationDate, 0)
 			req := models.FetchNextOthersRequest{
 				Name:     fetchUsersName,
 				State:    []byte(fmt.Sprintf(`{"lastPage": 1, "lastCreationDate": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
@@ -171,6 +171,35 @@ var _ = Describe("Mangopay Plugin Users", func() {
 			// We fetched everything, state should be resetted
 			Expect(state.LastPage).To(Equal(2))
 			createdTime := time.Unix(sampleUsers[49].CreationDate, 0)
+			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
+		})
+
+		It("should fetch next users - when lastCreationDate form last page is equal to one of the new page's", func(ctx SpecContext) {
+			lastCreatedAt := time.Unix(sampleUsers[9].CreationDate, 0)
+			sampleUsers[10].CreationDate = sampleUsers[9].CreationDate
+			req := models.FetchNextOthersRequest{
+				Name:     fetchUsersName,
+				State:    []byte(fmt.Sprintf(`{"lastPage": 2, "lastCreationDate": "%s"}`, lastCreatedAt.UTC().Format(time.RFC3339Nano))),
+				PageSize: 10,
+			}
+
+			m.EXPECT().GetUsers(gomock.Any(), 2, 10).Times(1).Return(
+				sampleUsers[10:20],
+				nil,
+			)
+
+			resp, err := plg.FetchNextOthers(ctx, req)
+
+			Expect(err).To(BeNil())
+			Expect(resp.Others).To(HaveLen(10))
+			Expect(resp.HasMore).To(BeTrue())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var state usersState
+			err = json.Unmarshal(resp.NewState, &state)
+			Expect(err).To(BeNil())
+			Expect(state.LastPage).To(Equal(2))
+			createdTime := time.Unix(sampleUsers[19].CreationDate, 0)
 			Expect(state.LastCreationDate.UTC()).To(Equal(createdTime.UTC()))
 		})
 	})
