@@ -92,10 +92,8 @@ func recipientToPSPAccounts(
 			return accounts, fmt.Errorf("failed to parse transaction date: %v", err)
 		}
 
-		switch createdAt.Compare(lastCreatedAt) {
-		case -1, 0:
+		if createdAt.Before(lastCreatedAt) || createdAt.Equal(lastCreatedAt) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(recipient)
