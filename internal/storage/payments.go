@@ -101,9 +101,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			case models.PAYMENT_STATUS_RETURNED, models.PAYMENT_STATUS_REVERSED:
 				if i, ok := paymentsToInsertSeen[p.ID]; ok {
 					paymentsToInsert[i].Amount.Sub(paymentsToInsert[i].Amount, a.Amount)
-					adjustmentsToInsert[i].Amount.Sub(adjustmentsToInsert[i].Amount, a.Amount)
-					paymentsToInsert[i].Status = models.PAYMENT_STATUS_FAILED
-					adjustmentsToInsert[i].Status = models.PAYMENT_STATUS_FAILED
+					paymentsToInsert[i].Status = a.Status
 				}
 			case models.PAYMENT_STATUS_CAPTURE, models.PAYMENT_STATUS_REFUND_REVERSED:
 				if i, ok := paymentsCapturedSeen[p.ID]; ok {
