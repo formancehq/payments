@@ -328,6 +328,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePSUBankBridgeConnectionAttemptsGet,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsGetFromConnectionID",
+			Func: a.StoragePSUBankBridgeConnectionsGetFromConnectionID,
+		}).
+		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",
 			Func: a.EventsSendAccount,
 		}).

@@ -24,7 +24,6 @@ import (
 type MockStorage struct {
 	ctrl     *gomock.Controller
 	recorder *MockStorageMockRecorder
-	isgomock struct{}
 }
 
 // MockStorageMockRecorder is the mock recorder for MockStorage.
@@ -605,6 +604,22 @@ func (m *MockStorage) PSUBankBridgeConnectionsGetAll(ctx context.Context, psuID 
 func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsGetAll(ctx, psuID, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsGetAll", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsGetAll), ctx, psuID, connectorID)
+}
+
+// PSUBankBridgeConnectionsGetFromConnectionID mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsGetFromConnectionID", ctx, connectorID, connectionID)
+	ret0, _ := ret[0].(*models.PSUBankBridgeConnection)
+	ret1, _ := ret[1].(uuid.UUID)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// PSUBankBridgeConnectionsGetFromConnectionID indicates an expected call of PSUBankBridgeConnectionsGetFromConnectionID.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsGetFromConnectionID(ctx, connectorID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsGetFromConnectionID", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsGetFromConnectionID), ctx, connectorID, connectionID)
 }
 
 // PSUBankBridgeConnectionsUpsert mocks base method.

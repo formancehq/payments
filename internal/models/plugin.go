@@ -79,4 +79,18 @@ type WebhookResponse struct {
 	Account         *PSPAccount
 	ExternalAccount *PSPAccount
 	Payment         *PSPPayment
+
+	// Webhooks related to banking bridges
+	TransactionReadyToFetch *TransactionReadyToFetch
+}
+
+type TransactionReadyToFetch struct {
+	ID          string
+	FromPayload json.RawMessage
+}
+
+type BankBridgeFromPayload struct {
+	PSUBankBridge           *PSUBankBridge
+	PSUBankBridgeConnection *PSUBankBridgeConnection
+	FromPayload             json.RawMessage
 }

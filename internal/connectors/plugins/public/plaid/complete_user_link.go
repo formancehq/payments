@@ -3,6 +3,7 @@ package plaid
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
@@ -50,6 +51,7 @@ func (p *Plugin) completeUserLink(ctx context.Context, req models.CompleteUserLi
 		Success: &models.CompleteUserLinkSuccessResponse{
 			Connections: []models.PSUBankBridgeConnection{
 				{
+					CreatedAt:    time.Now().UTC(),
 					ConnectionID: exchangePublicTokenResponse.ItemID,
 					AccessToken: &models.Token{
 						Token: exchangePublicTokenResponse.AccessToken,

@@ -66,6 +66,7 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	// TODO(polo): delete webhooks
 	return models.UninstallResponse{}, nil
 }
 

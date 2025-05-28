@@ -3,13 +3,11 @@ package client
 type Scopes string
 
 const (
-	SCOPES_AUTHORIZATION_READ   Scopes = "authorization:read"
-	SCOPES_AUTHORIZATION_GRANT  Scopes = "authorization:grant"
-	SCOPES_AUTHORIZATION_REVOKE Scopes = "authorization:revoke"
+	SCOPES_AUTHORIZATION_READ  Scopes = "authorization:read"
+	SCOPES_AUTHORIZATION_GRANT Scopes = "authorization:grant"
 
 	SCOPES_USER_CREATE Scopes = "user:create"
 	SCOPES_USER_READ   Scopes = "user:read"
-	SCOPES_USER_WRITE  Scopes = "user:write"
 	SCOPES_USER_DELETE Scopes = "user:delete"
 
 	SCOPES_CONSENTS_READONLY Scopes = "consents:readonly"

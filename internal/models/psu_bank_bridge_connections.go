@@ -6,6 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
+const (
+	NoRedirectQueryParamID = "noRedirect"
+)
+
 type PSUBankBridgeConnectionAttemptStatus string
 
 const (

@@ -54,7 +54,7 @@ func (w Workflow) completeUserLink(
 
 	var pluginError error
 	switch {
-	case resp.Error != nil:
+	case resp.Error != nil && resp.Error.Error != "":
 		pluginError = errors.New(resp.Error.Error)
 	case resp.Success == nil:
 		pluginError = errors.New("unexpected response from plugin")

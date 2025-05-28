@@ -9,6 +9,7 @@ create table if not exists bank_bridge_connection_attempts (
     status text not null,
 
     -- Optional fields
+    client_redirect_url text,
     temporary_token text,
     expires_at timestamp without time zone,
     state jsonb,

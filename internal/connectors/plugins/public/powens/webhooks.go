@@ -87,7 +87,7 @@ func (p *Plugin) initWebhookConfig() {
 }
 
 func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
-	secretKey, err := p.client.CreateWebhookAuth(ctx, req.ConnectorID)
+	secretKey, err := p.client.CreateWebhookAuth(ctx, p.name)
 	if err != nil {
 		return models.CreateWebhooksResponse{}, err
 	}

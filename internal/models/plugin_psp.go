@@ -52,9 +52,10 @@ type FetchNextPaymentsRequest struct {
 }
 
 type FetchNextPaymentsResponse struct {
-	Payments []PSPPayment
-	NewState json.RawMessage
-	HasMore  bool
+	Payments         []PSPPayment
+	PaymentsToDelete []PSPPayment
+	NewState         json.RawMessage
+	HasMore          bool
 }
 
 type FetchNextOthersRequest struct {

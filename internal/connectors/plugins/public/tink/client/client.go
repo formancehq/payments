@@ -40,12 +40,10 @@ func New(connectorName, clientID, clientSecret, endpoint string) Client {
 				// Authorization
 				string(SCOPES_AUTHORIZATION_READ),
 				string(SCOPES_AUTHORIZATION_GRANT),
-				string(SCOPES_AUTHORIZATION_REVOKE),
 
 				// Users
 				string(SCOPES_USER_CREATE),
 				string(SCOPES_USER_READ),
-				string(SCOPES_USER_WRITE),
 				string(SCOPES_USER_DELETE),
 
 				// Consents

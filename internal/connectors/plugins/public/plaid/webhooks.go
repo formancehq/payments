@@ -45,7 +45,7 @@ func (p *Plugin) createWebhooks(_ context.Context, _ models.CreateWebhooksReques
 
 func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	// Extract the signed JWT from the webhook header
-	tokenStrings := req.Webhook.Headers["plaid-verification"]
+	tokenStrings := req.Webhook.Headers["Plaid-Verification"]
 	if len(tokenStrings) != 1 {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid token: %w", models.ErrInvalidRequest)
 	}
@@ -113,6 +113,8 @@ func (p *Plugin) handleAllWebhook(ctx context.Context, req models.TranslateWebho
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println("received webhook", baseWebhook)
 
 	switch baseWebhook.WebhookType {
 	// This one has no type since it's not inside the plaid sdk definition
@@ -296,6 +298,28 @@ func (p *Plugin) handleTransactionsWebhook(ctx context.Context, req models.Trans
 
 		// Note: launch a sync of the transactions for the Item -> // TODO(polo): add a new response to call the fetch_payments workflow
 
+		return []models.WebhookResponse{
+			{
+				TransactionReadyToFetch: &models.TransactionReadyToFetch{
+					ID:          baseWebhook.ItemID,
+					FromPayload: req.Webhook.Body,
+				},
+			},
+		}, nil
+
+	case "HISTORICAL_UPDATE":
+		// In our case, we want to wait for this webhook before calling the
+		// transactions sync flow.
+
+		return []models.WebhookResponse{
+			{
+				TransactionReadyToFetch: &models.TransactionReadyToFetch{
+					ID:          baseWebhook.ItemID,
+					FromPayload: req.Webhook.Body,
+				},
+			},
+		}, nil
+
 	case "RECURRING_TRANSACTIONS_UPDATE":
 		// Fired when recurring transactions data is updated. This includes when
 		// a new recurring stream is detected or when a new transaction is added
@@ -306,13 +330,18 @@ func (p *Plugin) handleTransactionsWebhook(ctx context.Context, req models.Trans
 
 		// Note: We don't need to do anything here for now.
 
+		return []models.WebhookResponse{}, nil
+
 	case "INITIAL_UPDATE",
-		"HISTORICAL_UPDATE",
 		"DEFAULT_UPDATE",
 		"TRANSACTIONS_REMOVED":
 		// Note: as specified in the docs (and also in the comment above), we
 		// don't need to do anything here for now as they are deprecated
 		// webhooks.
+
+		return []models.WebhookResponse{}, nil
+
+	default:
+		return []models.WebhookResponse{}, nil
 	}
-	return []models.WebhookResponse{}, nil
 }

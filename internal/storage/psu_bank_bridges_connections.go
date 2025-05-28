@@ -167,6 +167,20 @@ func (s *store) PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID
 	return toPsuBankBridgeConnectionsModels(connection), nil
 }
 
+func (s *store) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, uuid.UUID, error) {
+	connection := psuBankBridgeConnections{}
+	err := s.db.NewSelect().
+		Model(&connection).
+		Where("connector_id = ?", connectorID).
+		Where("connection_id = ?", connectionID).
+		Scan(ctx)
+	if err != nil {
+		return nil, uuid.Nil, err
+	}
+
+	return toPsuBankBridgeConnectionsModels(connection), connection.PsuID, nil
+}
+
 func (s *store) PSUBankBridgeConnectionsGetAll(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) ([]*models.PSUBankBridgeConnection, error) {
 	connections := []psuBankBridgeConnections{}
 	err := s.db.NewSelect().

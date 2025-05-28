@@ -173,6 +173,9 @@ func (p *Plugin) handleAccountBookedTransactionsModified(ctx context.Context, re
 
 	// Note: We don't need to do anything here as we will receive the the
 	// hyandle AccountTransactionsModified webhook
+
+	fmt.Println("account booked transactions modified", string(req.Webhook.Body))
+
 	return nil, nil
 }
 
@@ -183,6 +186,9 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-modified
 
 	// Note: launch a sync of the transactions -> // TODO(polo): add a new response to call the fetch_payments workflow
+
+	fmt.Println("account transactions modified", string(req.Webhook.Body))
+
 	return nil, nil
 }
 
@@ -192,6 +198,9 @@ func (p *Plugin) handleAccountTransactionsDeleted(ctx context.Context, req model
 	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-deleted
 
 	// Note: launch a deletion of transactions -> // TODO(polo): add a new response to call the delete_payments workflow
+
+	fmt.Println("account transactions deleted", string(req.Webhook.Body))
+
 	return nil, nil
 }
 
@@ -199,11 +208,17 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 	// https://docs.tink.com/entries/articles/event-account-created
 
 	// Note: Nothing to do here for now.
+
+	fmt.Println("account created", string(req.Webhook.Body))
+
 	return nil, nil
 }
 
 func (p *Plugin) handleAccountUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
 	// https://docs.tink.com/entries/articles/event-account-updated
+
+	fmt.Println("account updated", string(req.Webhook.Body))
+
 	return nil, nil
 }
 
@@ -218,5 +233,8 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 	// will not be trigged for refreshes that have been rate limited. For more
 	// information, see rate limits.
 	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-refresh-finished
+
+	fmt.Println("refresh finished", string(req.Webhook.Body))
+
 	return nil, nil
 }

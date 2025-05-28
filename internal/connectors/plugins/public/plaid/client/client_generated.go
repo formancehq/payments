@@ -21,7 +21,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -156,6 +155,21 @@ func (m *MockClient) GetWebhookVerificationKey(ctx context.Context, kid string) 
 func (mr *MockClientMockRecorder) GetWebhookVerificationKey(ctx, kid any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetWebhookVerificationKey", reflect.TypeOf((*MockClient)(nil).GetWebhookVerificationKey), ctx, kid)
+}
+
+// ListTransactions mocks base method.
+func (m *MockClient) ListTransactions(ctx context.Context, accessToken, cursor string, pageSize int) (plaid.TransactionsSyncResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTransactions", ctx, accessToken, cursor, pageSize)
+	ret0, _ := ret[0].(plaid.TransactionsSyncResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTransactions indicates an expected call of ListTransactions.
+func (mr *MockClientMockRecorder) ListTransactions(ctx, accessToken, cursor, pageSize any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransactions", reflect.TypeOf((*MockClient)(nil).ListTransactions), ctx, accessToken, cursor, pageSize)
 }
 
 // TranslateItemAddResultWebhook mocks base method.

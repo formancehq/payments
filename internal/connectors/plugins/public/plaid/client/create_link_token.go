@@ -65,14 +65,14 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 	request.SetUserToken(req.UserToken)
 	request.SetEnableMultiItemLink(true)
 	request.SetWebhook(webhookURL)
-	request.Products = []plaid.Products{plaid.PRODUCTS_TRANSACTIONS, plaid.PRODUCTS_TRANSACTIONS_REFRESH}
+	request.Products = []plaid.Products{plaid.PRODUCTS_TRANSACTIONS}
 	request.SetRedirectUri(req.RedirectURI)
 	hostedLink := plaid.NewLinkTokenCreateHostedLink()
 	hostedLink.SetCompletionRedirectUri(req.RedirectURI)
 	request.SetHostedLink(*hostedLink)
 	request.SetAccountFilters(plaid.LinkTokenAccountFilters{
 		Depository: &plaid.DepositoryFilter{
-			AccountSubtypes: []plaid.DepositoryAccountSubtype{plaid.DEPOSITORYACCOUNTSUBTYPE_ALL},
+			AccountSubtypes: []plaid.DepositoryAccountSubtype{plaid.DEPOSITORYACCOUNTSUBTYPE_CHECKING, plaid.DEPOSITORYACCOUNTSUBTYPE_SAVINGS},
 		},
 	})
 

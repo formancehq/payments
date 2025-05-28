@@ -36,7 +36,10 @@ func New(name string, logger logging.Logger, connectorID models.ConnectorID, raw
 		return nil, err
 	}
 
-	client := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox)
+	client, err := client.New(name, config.ClientID, config.ClientSecret, connectorID, config.IsSandbox)
+	if err != nil {
+		return nil, err
+	}
 
 	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
@@ -63,6 +66,14 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
 	return models.UninstallResponse{}, nil
+}
+
+func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {

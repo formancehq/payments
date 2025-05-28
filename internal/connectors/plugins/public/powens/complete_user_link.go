@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 )
@@ -56,6 +57,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 	for i, connectionID := range connectionIDs {
 		connections[i] = models.PSUBankBridgeConnection{
 			ConnectionID: connectionID,
+			CreatedAt:    time.Now().UTC(),
 		}
 	}
 

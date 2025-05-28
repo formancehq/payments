@@ -49,6 +49,11 @@ func bankBridgesRedirect(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		if queryValues.Get(models.NoRedirectQueryParamID) == "true" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }

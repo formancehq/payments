@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -23,12 +22,18 @@ type FormanceBankBridgeRedirectRequest struct {
 }
 
 func (c *client) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error {
-	u, err := url.Parse(fmt.Sprintf("http://localhost:8080/v3/connectors/bank-bridges/%s/redirect", c.connectorID.String()))
+	endpoint, err := url.JoinPath(c.formanceStackEndpoint, "connectors", "bank-bridges", c.connectorID.String(), "redirect")
+	if err != nil {
+		return err
+	}
+
+	u, err := url.Parse(endpoint)
 	if err != nil {
 		return err
 	}
 
 	q := u.Query()
+	q.Set(models.NoRedirectQueryParamID, "true")
 	q.Set(LinkTokenQueryParamID, req.LinkToken)
 	q.Set(PublicTokenQueryParamID, req.PublicToken)
 	q.Set(StateQueryParamID, models.CallbackState{

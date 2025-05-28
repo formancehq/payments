@@ -1,9 +1,7 @@
 package client
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -36,7 +34,7 @@ type CreateWebhookAuthRequest struct {
 }
 
 type CreateWebhookAuthResponse struct {
-	ID     string `json:"id"`
+	ID     int    `json:"id"`
 	Type   string `json:"type"`
 	Name   string `json:"name"`
 	Config struct {
@@ -44,24 +42,24 @@ type CreateWebhookAuthResponse struct {
 	} `json:"config"`
 }
 
-func (c *client) CreateWebhookAuth(ctx context.Context, connectorID string) (string, error) {
+func (c *client) CreateWebhookAuth(ctx context.Context, name string) (string, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_webhook_auth")
 
-	body, err := json.Marshal(&CreateWebhookAuthRequest{
-		Type: "hmac_signature",
-		Name: connectorID,
-	})
-	if err != nil {
-		return "", err
-	}
-
 	endpoint := fmt.Sprintf("%s/webhooks/auth", c.endpoint)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewBuffer(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, http.NoBody)
 	if err != nil {
 		return "", err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.configurationToken))
+
+	query := req.URL.Query()
+	query.Add("type", "hmac_signature")
+
+	// Connector ID is not accepted by the API, it returns a 500....
+	// fortunately name is unique also
+	query.Add("name", name)
+	req.URL.RawQuery = query.Encode()
 
 	var resp CreateWebhookAuthResponse
 	_, err = c.httpClient.Do(ctx, req, &resp, nil)

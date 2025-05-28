@@ -9,6 +9,18 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
+var (
+	refreshableItems = []string{
+		"CHECKING_ACCOUNTS",
+		"CHECKING_TRANSACTIONS",
+		"SAVING_ACCOUNTS",
+		"SAVING_TRANSACTIONS",
+		"CREDITCARD_ACCOUNTS",
+		"CREDITCARD_TRANSACTIONS",
+		"TRANSFER_DESTINATIONS",
+	}
+)
+
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 	if req.PaymentServiceUser == nil {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
@@ -65,23 +77,25 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	url, err := url.Parse("https://link.tink.com/1.0/transactions/connect-accounts")
+	u, err := url.Parse("https://link.tink.com/1.0/transactions/connect-accounts")
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	query := url.Query()
-	query.Add("client_id", p.clientID)
-	query.Add("redirect_uri", *req.FormanceRedirectURL)
-	query.Add("state", req.CallBackState)
-	query.Add("authorization_code", temporaryCodeResponse.Code)
-	query.Add("market", *req.PaymentServiceUser.Address.Country)
-	query.Add("locale", *req.PaymentServiceUser.ContactDetails.Locale)
-	query.Add("refreshable_items", "CHECKING_ACCOUNTS,CHECKING_TRANSACTIONS,SAVING_ACCOUNTS,SAVING_TRANSACTIONS,CREDITCARD_ACCOUNTS,CREDITCARD_TRANSACTIONS,TRANSFER_DESTINATIONS")
-	url.RawQuery = query.Encode()
+	// We have to build the query manually because we don't want to escape the
+	// redirect url
+	u.RawQuery = fmt.Sprintf(
+		"client_id=%s&redirect_uri=%s&state=%s&authorization_code=%s&market=%s&locale=%s&refreshable_items=CHECKING_ACCOUNTS&refreshable_items=CHECKING_TRANSACTIONS&refreshable_items=SAVING_ACCOUNTS&refreshable_items=SAVING_TRANSACTIONS&refreshable_items=CREDITCARD_ACCOUNTS&refreshable_items=CREDITCARD_TRANSACTIONS&refreshable_items=TRANSFER_DESTINATIONS",
+		url.QueryEscape(p.clientID),
+		*req.FormanceRedirectURL, // Don't escape the redirect url
+		url.QueryEscape(req.CallBackState),
+		url.QueryEscape(temporaryCodeResponse.Code),
+		url.QueryEscape(*req.PaymentServiceUser.Address.Country),
+		url.QueryEscape(*req.PaymentServiceUser.ContactDetails.Locale),
+	)
 
 	return models.CreateUserLinkResponse{
-		Link: url.String(),
+		Link: u.String(),
 		TemporaryLinkToken: &models.Token{
 			Token: temporaryCodeResponse.Code,
 			// Tink provides no expiration for this token

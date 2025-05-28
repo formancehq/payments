@@ -5,12 +5,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
 )
 
 const (
-	CredentialIDQueryParamID = "credential_id"
+	CredentialIDQueryParamID = "credentials_id"
 	StateQueryParamID        = "state"
 
 	ErrorQueryParamID        = "error"
@@ -46,9 +47,9 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return nil
 	}
 
-	_, ok = req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID]
-	if !ok {
-		return fmt.Errorf("missing connection IDs: %w", models.ErrInvalidRequest)
+	_, ok = req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID]
+	if !ok || len(req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID]) != 1 {
+		return fmt.Errorf("missing credential IDs: %w", models.ErrInvalidRequest)
 	}
 
 	return nil
@@ -73,6 +74,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		Success: &models.CompleteUserLinkSuccessResponse{
 			Connections: []models.PSUBankBridgeConnection{
 				{
+					CreatedAt:    time.Now().UTC(),
 					ConnectionID: req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID][0],
 				},
 			},
