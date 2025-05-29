@@ -45,6 +45,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestDummypay(co
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestGeneric(components.V3GenericConfig{/* values here */})
 ```
 
+### V3IncreaseConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go
