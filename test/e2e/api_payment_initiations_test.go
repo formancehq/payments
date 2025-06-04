@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payments API Payment Initiation", func() {
+var _ = Context("Payments API Payment Initiation", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -40,7 +40,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
 
-	When("initiating a new transfer with v3", Serial, func() {
+	When("initiating a new transfer with v3", func() {
 		var (
 			e   chan *nats.Msg
 			err error
@@ -189,7 +189,7 @@ var _ = Context("Payments API Payment Initiation", func() {
 		})
 	})
 
-	When("initiating a new payout with v3", Serial, func() {
+	When("initiating a new payout with v3", func() {
 		var (
 			e   chan *nats.Msg
 			err error
