@@ -107,7 +107,7 @@ Note: Payout destination id must be an account with name.
 {
   "metadata": {
     "com.increase.spec/payoutMethod": "check",
-    "com.increase.spec/sourceAccountNumberID": "2354321234", // for check and rtp payout
+    "com.increase.spec/sourceAccountNumberID": "account_number_zhlqj5dkyr95otox5nv3", // for check and rtp payout
     "com.increase.spec/fulfillmentMethod": "method", // third_party or physical_check
     "com.increase.spec/checkNumber": "789", //for third_party fulfillmentMethod
     "com.increase.spec/city": "some city", // for physical_check fulfillmentMethod
@@ -124,7 +124,7 @@ Note: Payout destination id must be an account with name.
 {
   "metadata": {
     "com.increase.spec/payoutMethod": "rtp",
-    "com.increase.spec/sourceAccountNumberID": "2354321234",
+    "com.increase.spec/sourceAccountNumberID": "account_number_zhlqj5dkyr95otox5nv3",
   }
 }
 ```

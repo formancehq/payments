@@ -296,6 +296,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
 				Payment: &models.PSPPayment{
 					Reference:                   "1",
+					ParentReference:             "1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,
 					Amount:                      big.NewInt(100),
@@ -361,6 +362,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
 				Payment: &models.PSPPayment{
 					Reference:                   "1",
+					ParentReference:             "1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,
 					Amount:                      big.NewInt(100),
@@ -422,6 +424,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
 				Payment: &models.PSPPayment{
 					Reference:                   "1",
+					ParentReference:             "1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,
 					Amount:                      big.NewInt(100),
@@ -484,6 +487,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
 				Payment: &models.PSPPayment{
 					Reference:                   "1",
+					ParentReference:             "1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,
 					Amount:                      big.NewInt(100),
@@ -545,6 +549,7 @@ var _ = Describe("Increase Plugin Payouts Creation", func() {
 			Expect(resp).To(Equal(models.CreatePayoutResponse{
 				Payment: &models.PSPPayment{
 					Reference:                   "1",
+					ParentReference:             "1",
 					CreatedAt:                   now,
 					Type:                        models.PAYMENT_TYPE_PAYOUT,
 					Amount:                      big.NewInt(100),

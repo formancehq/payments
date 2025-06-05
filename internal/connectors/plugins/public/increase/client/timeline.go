@@ -7,17 +7,17 @@ import (
 	"strconv"
 )
 
-// Timeline allows the client to navigate the backlog and decide whether to fetch
-// historical or recently added data
+// Timeline tracks the pagination state for fetching transactions
 type Timeline struct {
-	PrevCursor    string   `json:"prev_cursor"`
-	LastCursor    string   `json:"last_cursor"`
-	AllCursors    []string `json:"all_cursors"`
-	BacklogCursor string   `json:"backlog_cursor"`
+	// Cursors encountered while scanning backwards to find oldest records
+	// These will be used in reverse order to fetch forward chronologically
+	Cursors []string `json:"cursors"`
+	// Whether we've found the oldest records
+	FoundOldest bool `json:"found_oldest"`
 }
 
 func (t Timeline) IsCaughtUp() bool {
-	return t.LastCursor != ""
+	return t.FoundOldest
 }
 
 func (c *client) scanForOldest(
@@ -33,8 +33,10 @@ func (c *client) scanForOldest(
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if timeline.BacklogCursor != "" {
-		q.Add("cursor", timeline.BacklogCursor)
+
+	// Use the last cursor if we have any
+	if len(timeline.Cursors) > 0 {
+		q.Add("cursor", timeline.Cursors[len(timeline.Cursors)-1])
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -45,25 +47,22 @@ func (c *client) scanForOldest(
 		return nil, timeline, false, fmt.Errorf("failed to get %s for timeline: %w %w", endpoint, err, errRes.Error())
 	}
 
+	// If we got no data, we're done scanning
 	if len(res.Data) == 0 {
-		return nil, timeline, res.NextCursor != "", nil
+		timeline.FoundOldest = true
+		return nil, timeline, false, nil
 	}
 
-	// If there's no next cursor, this is our oldest data
+	// If there's no next cursor, we've found the oldest data
 	if res.NextCursor == "" {
-		hasMore := len(timeline.AllCursors) > 0 || res.NextCursor != ""
-		if n := len(timeline.AllCursors); n > 0 {
-			timeline.LastCursor = timeline.AllCursors[n-1]
-			timeline.AllCursors = timeline.AllCursors[:n-1]
-			if n > 1 {
-				timeline.PrevCursor = timeline.AllCursors[n-2]
-			}
+		timeline.FoundOldest = true
+		if len(timeline.Cursors) > 0 {
+			timeline.Cursors = timeline.Cursors[:len(timeline.Cursors)-1]
 		}
-		return res.Data, timeline, hasMore, nil
+		return res.Data, timeline, len(timeline.Cursors) > 0, nil
 	}
 
-	// We still have more data to scan
-	timeline.BacklogCursor = res.NextCursor
-	timeline.AllCursors = append(timeline.AllCursors, res.NextCursor)
+	// Store the next cursor and continue scanning
+	timeline.Cursors = append(timeline.Cursors, res.NextCursor)
 	return nil, timeline, true, nil
 }

@@ -120,6 +120,9 @@ func getTransferID(transaction *client.Transaction) string {
 	if transaction.Source.InboundAchTransferID != "" {
 		return transaction.Source.InboundAchTransferID
 	}
+	if transaction.Source.InboundWireTransferID != "" {
+		return transaction.Source.InboundWireTransferID
+	}
 	if transaction.Source.ID != "" {
 		return transaction.Source.ID
 	}
@@ -264,6 +267,10 @@ func isPayin(transactionType string) bool {
 		transactionType == "check_transfer_deposit" ||
 		transactionType == "cashback_payment" ||
 		transactionType == "check_deposit_instruction" ||
+		transactionType == "check_deposit_rejection" ||
+		transactionType == "check_decline" ||
+		transactionType == "wire_decline" ||
+		transactionType == "ach_decline" ||
 		transactionType == "check_deposit_return" ||
 		transactionType == "check_deposit_acceptance" {
 		return true
@@ -306,10 +313,9 @@ func mapTransactionType(transaction *client.Transaction) models.PaymentType {
 func mapTransactionStatus(transactionType string, status models.PaymentStatus) models.PaymentStatus {
 	switch transactionType {
 	case "ach_transfer_return", "inbound_ach_transfer_return_intention",
-		"check_deposit_return", "inbound_check_deposit_return_intention":
-		return models.PAYMENT_STATUS_RETURNED
-	case "inbound_wire_reversal", "inbound_wire_transfer_reversal":
-		return models.PAYMENT_STATUS_REVERSED
+		"check_deposit_return", "inbound_check_deposit_return_intention",
+		"inbound_wire_reversal", "inbound_wire_transfer_reversal":
+		return models.PAYMENT_STATUS_REFUNDED
 	default:
 		return status
 	}

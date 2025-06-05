@@ -93,10 +93,8 @@ func matchPaymentStatus(status string) models.PaymentStatus {
 		return models.PAYMENT_STATUS_SUCCEEDED
 	case "canceled", "rejected", "stopped":
 		return models.PAYMENT_STATUS_CANCELLED
-	case "reversed":
-		return models.PAYMENT_STATUS_REVERSED
-	case "returned":
-		return models.PAYMENT_STATUS_RETURNED
+	case "reversed", "returned":
+		return models.PAYMENT_STATUS_REFUNDED
 	default:
 		return models.PAYMENT_STATUS_UNKNOWN
 	}

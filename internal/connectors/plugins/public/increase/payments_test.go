@@ -196,6 +196,20 @@ var _ = Describe("Increase Plugin Payments", func() {
 				PageSize: 60,
 			}
 
+			// Mock initial scan for oldest records
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data: []*client.Transaction{},
+			}).Times(3)
+
+			// Mock forward scan
 			mockHTTPClient.EXPECT().Do(
 				gomock.Any(),
 				gomock.Any(),

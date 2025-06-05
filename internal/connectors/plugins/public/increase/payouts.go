@@ -146,8 +146,7 @@ func (p *Plugin) payoutToPayment(from *client.PayoutResponse) (*models.PSPPaymen
 	}
 
 	pspPayment := &models.PSPPayment{
-		ParentReference:        "",
-		Reference:              from.ID,
+		ParentReference:        from.ID,
 		CreatedAt:              createdAt,
 		Type:                   models.PAYMENT_TYPE_PAYOUT,
 		Amount:                 big.NewInt(from.Amount),

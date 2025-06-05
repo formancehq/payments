@@ -18,6 +18,7 @@ type Source struct {
 	InboundCheckDepositID string `json:"inbound_check_deposit_id"`
 	CheckDepositID        string `json:"check_deposit_id"`
 	InboundAchTransferID  string `json:"inbound_ach_transfer_id"`
+	InboundWireTransferID string `json:"inbound_wire_transfer_id"`
 	ID                    string `json:"id"`
 	Amount                int64  `json:"amount"`
 }
@@ -96,7 +97,7 @@ func (c *client) getTransactionsByType(ctx context.Context, endpoint string, pag
 		if err != nil {
 			return results, timeline, false, err
 		}
-		// If we got data back but no more to scan, this is our oldest data
+		// If we got data back, this is our oldest data
 		if len(oldest) > 0 {
 			results = reverseTransactions(oldest)
 			return results, timeline, hasMore, nil
@@ -105,7 +106,6 @@ func (c *client) getTransactionsByType(ctx context.Context, endpoint string, pag
 		if !timeline.IsCaughtUp() {
 			return results, timeline, hasMore, nil
 		}
-		return results, timeline, hasMore, nil
 	}
 
 	// Second phase: fetch forward using stored cursors
@@ -117,8 +117,13 @@ func (c *client) getTransactionsByType(ctx context.Context, endpoint string, pag
 
 	q := req.URL.Query()
 	q.Add("limit", strconv.Itoa(pageSize))
-	if timeline.PrevCursor != "" {
-		q.Add("cursor", timeline.PrevCursor)
+
+	// If we have stored cursors, use the last one
+	if len(timeline.Cursors) > 0 {
+		// Get the last cursor and remove it from the list
+		cursor := timeline.Cursors[len(timeline.Cursors)-1]
+		timeline.Cursors = timeline.Cursors[:len(timeline.Cursors)-1]
+		q.Add("cursor", cursor)
 	}
 	req.URL.RawQuery = q.Encode()
 
@@ -131,19 +136,9 @@ func (c *client) getTransactionsByType(ctx context.Context, endpoint string, pag
 	transactions := reverseTransactions(res.Data)
 	results = append(results, transactions...)
 
-	hasMore = len(timeline.AllCursors) > 0 || res.NextCursor != ""
-	// Determine if we have more data to fetch
-	if len(timeline.AllCursors) > 0 {
-		// Update the previous cursor and remove the last cursor from the list
-		timeline.PrevCursor = ""
-		if len(timeline.AllCursors) > 1 {
-			timeline.PrevCursor = timeline.AllCursors[len(timeline.AllCursors)-2]
-		}
-		timeline.AllCursors = timeline.AllCursors[:len(timeline.AllCursors)-1]
-		return results, timeline, true, nil
-	}
+	// We have more data if we have more cursors or if there's a next cursor
+	hasMore = len(timeline.Cursors) > 0 || q.Get("cursor") != ""
 
-	// No more stored cursors, check if API indicates more data
 	return results, timeline, hasMore, nil
 }
 
