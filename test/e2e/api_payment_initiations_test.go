@@ -19,7 +19,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payments API Payment Initiation", func() {
+var _ = Context("Payments API Payment Initiation", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()

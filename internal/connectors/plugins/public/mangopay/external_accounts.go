@@ -92,12 +92,8 @@ func fillExternalAccounts(
 ) ([]models.PSPAccount, error) {
 	for _, bankAccount := range pagedExternalAccounts {
 		creationDate := time.Unix(bankAccount.CreationDate, 0)
-		switch creationDate.Compare(oldState.LastCreationDate) {
-		case -1, 0:
-			// creationDate <= state.LastCreationDate, nothing to do,
-			// we already processed this bank account.
+		if creationDate.Before(oldState.LastCreationDate) {
 			continue
-		default:
 		}
 
 		raw, err := json.Marshal(bankAccount)
