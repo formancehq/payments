@@ -36,6 +36,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		StopPending:       oldState.StopPending,
 		StopDeclined:      oldState.StopDeclined,
 		SucceededTimeline: oldState.SucceededTimeline,
+		PendingTimeline:   oldState.PendingTimeline,
+		DeclinedTimeline:  oldState.DeclinedTimeline,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)

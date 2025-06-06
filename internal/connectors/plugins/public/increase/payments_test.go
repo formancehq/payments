@@ -509,5 +509,122 @@ var _ = Describe("Increase Plugin Payments", func() {
 			err = json.Unmarshal(resp.NewState, &state)
 			Expect(err).To(BeNil())
 		})
+
+		It("should preserve timeline states correctly", func(ctx SpecContext) {
+			initialState := paymentsState{
+				SucceededTimeline: client.Timeline{
+					Cursors:     []string{"succeeded_cursor_1"},
+					FoundOldest: false,
+				},
+				PendingTimeline: client.Timeline{
+					Cursors:     []string{"pending_cursor_1"},
+					FoundOldest: false,
+				},
+				DeclinedTimeline: client.Timeline{
+					Cursors:     []string{"declined_cursor_1"},
+					FoundOldest: false,
+				},
+			}
+			stateBytes, err := json.Marshal(initialState)
+			Expect(err).To(BeNil())
+
+			req := models.FetchNextPaymentsRequest{
+				State:    stateBytes,
+				PageSize: 40,
+			}
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "succeeded_cursor_2",
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "pending_cursor_2",
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "declined_cursor_2",
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "succeeded_cursor_3",
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "pending_cursor_3",
+			})
+
+			mockHTTPClient.EXPECT().Do(
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+				gomock.Any(),
+			).Return(
+				200,
+				nil,
+			).SetArg(2, client.ResponseWrapper[[]*client.Transaction]{
+				Data:       []*client.Transaction{},
+				NextCursor: "declined_cursor_3",
+			})
+
+			resp, err := plg.FetchNextPayments(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.NewState).ToNot(BeNil())
+
+			var newState paymentsState
+			err = json.Unmarshal(resp.NewState, &newState)
+			Expect(err).To(BeNil())
+
+			Expect(newState.SucceededTimeline.Cursors).To(HaveLen(0))
+			Expect(newState.SucceededTimeline.FoundOldest).To(BeTrue())
+			Expect(newState.PendingTimeline.Cursors).To(HaveLen(0))
+			Expect(newState.PendingTimeline.FoundOldest).To(BeTrue())
+			Expect(newState.DeclinedTimeline.Cursors).To(HaveLen(0))
+			Expect(newState.DeclinedTimeline.FoundOldest).To(BeTrue())
+		})
 	})
 })
