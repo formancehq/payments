@@ -39,7 +39,7 @@ require (
 	github.com/spf13/cobra v1.9.1
 	github.com/stretchr/testify v1.10.0
 	github.com/stripe/stripe-go/v79 v79.12.0
-	github.com/uptrace/bun v1.2.11
+	github.com/uptrace/bun v1.2.12
 	github.com/uptrace/bun/dialect/pgdialect v1.2.11
 	github.com/uptrace/bun/extra/bundebug v1.2.11
 	github.com/xeipuuv/gojsonschema v1.2.0
