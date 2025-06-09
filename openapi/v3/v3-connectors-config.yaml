@@ -11,6 +11,7 @@ components:
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
                     Generic: '#/components/schemas/V3GenericConfig'
+                    Increase: '#/components/schemas/V3IncreaseConfig'
                     Mangopay: '#/components/schemas/V3MangopayConfig'
                     Modulr: '#/components/schemas/V3ModulrConfig'
                     Moneycorp: '#/components/schemas/V3MoneycorpConfig'
@@ -25,6 +26,7 @@ components:
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
                 - $ref: '#/components/schemas/V3GenericConfig'
+                - $ref: '#/components/schemas/V3IncreaseConfig'
                 - $ref: '#/components/schemas/V3MangopayConfig'
                 - $ref: '#/components/schemas/V3ModulrConfig'
                 - $ref: '#/components/schemas/V3MoneycorpConfig'
@@ -206,6 +208,31 @@ components:
                 provider:
                     type: string
                     default: Generic
+        V3IncreaseConfig:
+            type: object
+            required:
+                - name
+                - apiKey
+                - endpoint
+                - webhookSharedSecret
+            properties:
+                apiKey:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                provider:
+                    type: string
+                    default: Increase
+                webhookSharedSecret:
+                    type: string
         V3MangopayConfig:
             type: object
             required:

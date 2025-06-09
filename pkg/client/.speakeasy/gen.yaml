@@ -12,8 +12,8 @@ generation:
     requestResponseComponentNamesFeb2024: true
     securityFeb2025: true
   auth:
-    oAuth2ClientCredentialsEnabled: true
-    oAuth2PasswordEnabled: true
+    oAuth2ClientCredentialsEnabled: false
+    oAuth2PasswordEnabled: false
 go:
   version: 0.0.2
   additionalDependencies: {}

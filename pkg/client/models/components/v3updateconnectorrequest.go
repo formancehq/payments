@@ -19,6 +19,7 @@ const (
 	V3UpdateConnectorRequestTypeCurrencycloud V3UpdateConnectorRequestType = "Currencycloud"
 	V3UpdateConnectorRequestTypeDummypay      V3UpdateConnectorRequestType = "Dummypay"
 	V3UpdateConnectorRequestTypeGeneric       V3UpdateConnectorRequestType = "Generic"
+	V3UpdateConnectorRequestTypeIncrease      V3UpdateConnectorRequestType = "Increase"
 	V3UpdateConnectorRequestTypeMangopay      V3UpdateConnectorRequestType = "Mangopay"
 	V3UpdateConnectorRequestTypeModulr        V3UpdateConnectorRequestType = "Modulr"
 	V3UpdateConnectorRequestTypeMoneycorp     V3UpdateConnectorRequestType = "Moneycorp"
@@ -35,6 +36,7 @@ type V3UpdateConnectorRequest struct {
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
+	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
@@ -126,6 +128,18 @@ func CreateV3UpdateConnectorRequestGeneric(generic V3GenericConfig) V3UpdateConn
 	return V3UpdateConnectorRequest{
 		V3GenericConfig: &generic,
 		Type:            typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestIncrease(increase V3IncreaseConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeIncrease
+
+	typStr := string(typ)
+	increase.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3IncreaseConfig: &increase,
+		Type:             typ,
 	}
 }
 
@@ -276,6 +290,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3GenericConfig = v3GenericConfig
 		u.Type = V3UpdateConnectorRequestTypeGeneric
 		return nil
+	case "Increase":
+		v3IncreaseConfig := new(V3IncreaseConfig)
+		if err := utils.UnmarshalJSON(data, &v3IncreaseConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Increase) type V3IncreaseConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3IncreaseConfig = v3IncreaseConfig
+		u.Type = V3UpdateConnectorRequestTypeIncrease
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -362,6 +385,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3GenericConfig != nil {
 		return utils.MarshalJSON(u.V3GenericConfig, "", true)
+	}
+
+	if u.V3IncreaseConfig != nil {
+		return utils.MarshalJSON(u.V3IncreaseConfig, "", true)
 	}
 
 	if u.V3MangopayConfig != nil {
