@@ -5756,6 +5756,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3GocardlessConfig](#schemav3gocardlessconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3MangopayConfig](#schemav3mangopayconfig)|false|none|none|
 
 xor
@@ -6013,6 +6019,38 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+
+<h2 id="tocS_V3GocardlessConfig">V3GocardlessConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3gocardlessconfig"></a>
+<a id="schema_V3GocardlessConfig"></a>
+<a id="tocSv3gocardlessconfig"></a>
+<a id="tocsv3gocardlessconfig"></a>
+
+```json
+{
+  "accessToken": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Gocardless",
+  "shouldFetchMandate": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|accessToken|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+|shouldFetchMandate|string|true|none|none|
 
 <h2 id="tocS_V3MangopayConfig">V3MangopayConfig</h2>
 <!-- backwards compatibility -->
