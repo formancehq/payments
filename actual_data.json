@@ -1,0 +1,1458 @@
+[
+  {
+    "transferID": "c1100418-1113-40fe-a778-66791a6548a0",
+    "createdOn": "2025-05-08T12:19:28Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780037675",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T12:19:28Z",
+        "originatedOn": "2025-05-08T12:31:43Z",
+        "completedOn": "2025-05-08T12:44:31Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780037688",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T12:44:31Z",
+        "originatedOn": "2025-05-08T13:00:22Z",
+        "completedOn": "2025-05-08T13:13:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T13:13:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 1106
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "450f6cfe-fa66-4f04-9123-b209e1e59a07",
+    "createdOn": "2025-05-08T12:18:32Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780077600",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T12:18:32Z",
+        "originatedOn": "2025-05-08T12:31:43Z",
+        "completedOn": "2025-05-08T12:44:31Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780077638",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T12:44:31Z",
+        "originatedOn": "2025-05-08T13:00:22Z",
+        "completedOn": "2025-05-08T13:13:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T13:13:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 1006
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "4ac1c76d-3203-4101-a014-a55f395426e4",
+    "createdOn": "2025-05-08T11:50:20Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780007201",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:50:20Z",
+        "originatedOn": "2025-05-08T12:01:42Z",
+        "completedOn": "2025-05-08T12:14:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780007206",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T12:14:31Z",
+        "originatedOn": "2025-05-08T12:30:22Z",
+        "completedOn": "2025-05-08T12:44:31Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:44:31Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 8906
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "48e663a3-620e-44cf-a35b-709a38a93587",
+    "createdOn": "2025-05-08T11:15:29Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780047050",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:15:29Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780047054",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "cb0519bd-e744-4f1a-9608-cfeee7f75fe4",
+    "createdOn": "2025-05-08T11:15:12Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780107571",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:15:12Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780107581",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "240c5f3e-1266-4738-8382-ce7d51b4d5df",
+    "createdOn": "2025-05-08T11:15:03Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780107570",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:15:03Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780107580",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "ecd3b94b-cc68-403d-95d2-2209d4d00457",
+    "createdOn": "2025-05-08T11:14:58Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780067344",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:14:58Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780067349",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "079043e6-d2ae-4dc0-8084-4895743bc659",
+    "createdOn": "2025-05-08T11:14:55Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780077593",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:14:55Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780077596",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "decbf363-76ba-46d0-92a0-9e1c41936c74",
+    "createdOn": "2025-05-08T11:14:52Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780097272",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T11:14:53Z",
+        "originatedOn": "2025-05-08T11:31:42Z",
+        "completedOn": "2025-05-08T11:44:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780097274",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:44:31Z",
+        "originatedOn": "2025-05-08T12:00:22Z",
+        "completedOn": "2025-05-08T12:14:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T12:14:31Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 876
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "43d4832c-46dc-4899-884b-591e3337eba2",
+    "createdOn": "2025-05-08T10:39:15Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780097269",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T10:39:15Z",
+        "originatedOn": "2025-05-08T11:01:42Z",
+        "completedOn": "2025-05-08T11:13:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780097271",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:13:31Z",
+        "originatedOn": "2025-05-08T11:30:22Z",
+        "completedOn": "2025-05-08T11:44:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T11:44:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 999
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "304cb139-19db-4df4-bda9-63c5e18ddc31",
+    "createdOn": "2025-05-08T10:35:46Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780086983",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T10:35:46Z",
+        "originatedOn": "2025-05-08T11:01:42Z",
+        "completedOn": "2025-05-08T11:13:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780086984",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:13:31Z",
+        "originatedOn": "2025-05-08T11:30:22Z",
+        "completedOn": "2025-05-08T11:44:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T11:44:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 999
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "008f75be-c942-496a-9cb1-72e6efbf8003",
+    "createdOn": "2025-05-08T10:33:23Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780047047",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T10:33:23Z",
+        "originatedOn": "2025-05-08T11:01:42Z",
+        "completedOn": "2025-05-08T11:13:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+      "paymentMethodType": "ach-credit-standard",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780047049",
+        "secCode": "PPD",
+        "initiatedOn": "2025-05-08T11:13:31Z",
+        "originatedOn": "2025-05-08T11:30:22Z",
+        "completedOn": "2025-05-08T11:44:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T11:44:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 99
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "425109b4-b5b3-4ad8-915c-054a3211c44e",
+    "createdOn": "2025-05-08T10:26:56Z",
+    "source": {
+      "paymentMethodID": "3d93ef2d-4086-407d-8626-a734f23ed6c7",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780067340",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T10:26:56Z",
+        "originatedOn": "2025-05-08T10:31:42Z",
+        "completedOn": "2025-05-08T10:43:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "266bc56a-742b-435c-9f54-c0f50291b8f1",
+      "paymentMethodType": "ach-credit-same-day",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "47953099-51ce-4cf1-997b-eccf92ec9fc3",
+        "fingerprint": "bc048623dc6f94fc9baa159a4191c142699ceb30852e0adca0afe78e49bf60af",
+        "status": "verificationFailed",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "5694",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780067341",
+        "secCode": "CCD",
+        "initiatedOn": "2025-05-08T10:43:31Z",
+        "originatedOn": "2025-05-08T11:01:42Z",
+        "completedOn": "2025-05-08T11:13:30Z"
+      }
+    },
+    "completedOn": "2025-05-08T11:13:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 100000
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "079ebe47-861a-4cc2-ab04-966a7b266b94",
+    "createdOn": "2025-04-24T14:16:23Z",
+    "source": {
+      "paymentMethodID": "22fa5b35-12a8-4f17-acda-d2484a8d35e8",
+      "paymentMethodType": "card-payment",
+      "account": {
+        "accountID": "2ddadd7d-a1e1-4a7c-b505-a21afaca0cb2",
+        "email": "stanley@gitstart.com",
+        "displayName": "Test Stanley"
+      },
+      "card": {
+        "cardID": "62df3697-d31f-4eae-a1dd-5a421b81e981",
+        "fingerprint": "820032e4280014eef4b494f967cdb5b012020aea348f8929d322ec7ae2f9d2df",
+        "brand": "Visa",
+        "cardType": "debit",
+        "lastFourCardNumber": "1111",
+        "bin": "411111",
+        "expiration": {
+          "month": "08",
+          "year": "28"
+        },
+        "holderName": "Test Stanley",
+        "billingAddress": {
+          "addressLine1": "",
+          "city": "",
+          "stateOrProvince": "",
+          "postalCode": "19808",
+          "country": ""
+        },
+        "cardVerification": {
+          "cvv": "unavailable",
+          "addressLine1": "unavailable",
+          "postalCode": "unavailable",
+          "accountName": {}
+        },
+        "issuer": "Moov Visa Sandbox",
+        "issuerCountry": "US",
+        "cardAccountUpdater": {}
+      },
+      "cardDetails": {
+        "status": "completed",
+        "dynamicDescriptor": "Gitstart-Stanley",
+        "initiatedOn": "2025-04-24T14:16:23Z",
+        "confirmedOn": "2025-04-24T14:16:23Z",
+        "settledOn": "2025-04-24T14:20:00Z",
+        "completedOn": "2025-04-24T14:38:49Z"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "16b3ab38-6558-48f0-bc77-8649d2c06c1d",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "wallet": {
+        "walletID": "28bed1f7-1c5b-4224-ba41-3a82cd95f17f"
+      }
+    },
+    "completedOn": "2025-04-24T14:38:50Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 60000
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    },
+    "moovFee": 1769,
+    "moovFeeDecimal": "17.69",
+    "moovFeeDetails": {
+      "moovProcessing": "17.69"
+    }
+  },
+  {
+    "transferID": "c19fe5a3-0e1b-46ea-b963-c10d25999e6a",
+    "createdOn": "2025-04-24T14:11:24Z",
+    "source": {
+      "paymentMethodID": "16b3ab38-6558-48f0-bc77-8649d2c06c1d",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "wallet": {
+        "walletID": "28bed1f7-1c5b-4224-ba41-3a82cd95f17f"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "b4b5ce91-81c4-4c7b-8866-489423b4552b",
+      "paymentMethodType": "rtp-credit",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "rtpDetails": {
+        "status": "completed",
+        "initiatedOn": "2025-04-24T14:11:24Z",
+        "completedOn": "2025-04-24T18:11:24Z"
+      }
+    },
+    "completedOn": "2025-04-24T14:11:25Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 20000
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    },
+    "moovFee": 200,
+    "moovFeeDecimal": "2",
+    "moovFeeDetails": {
+      "moovProcessing": "2"
+    }
+  },
+  {
+    "transferID": "decace94-81ab-4535-bc55-2b8ec94ac0e6",
+    "createdOn": "2025-04-24T14:00:23Z",
+    "source": {
+      "paymentMethodID": "3d93ef2d-4086-407d-8626-a734f23ed6c7",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780102273",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T14:00:36Z",
+        "originatedOn": "2025-04-24T14:30:01Z",
+        "completedOn": "2025-04-24T14:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "16b3ab38-6558-48f0-bc77-8649d2c06c1d",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "wallet": {
+        "walletID": "28bed1f7-1c5b-4224-ba41-3a82cd95f17f"
+      }
+    },
+    "completedOn": "2025-04-24T14:39:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 4088800
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "98257d67-d25b-4535-b464-075ad2451e15",
+    "createdOn": "2025-04-24T11:21:07Z",
+    "source": {
+      "paymentMethodID": "3d93ef2d-4086-407d-8626-a734f23ed6c7",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780061755",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T11:21:08Z",
+        "originatedOn": "2025-04-24T11:30:02Z",
+        "completedOn": "2025-04-24T11:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "16b3ab38-6558-48f0-bc77-8649d2c06c1d",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "wallet": {
+        "walletID": "28bed1f7-1c5b-4224-ba41-3a82cd95f17f"
+      }
+    },
+    "completedOn": "2025-04-24T11:39:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 300000
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "cc897873-40e6-4ee5-b93b-0622ae4193fa",
+    "createdOn": "2025-04-24T11:17:40Z",
+    "source": {
+      "paymentMethodID": "3d93ef2d-4086-407d-8626-a734f23ed6c7",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780061754",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T11:17:41Z",
+        "originatedOn": "2025-04-24T11:30:02Z",
+        "completedOn": "2025-04-24T11:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "16b3ab38-6558-48f0-bc77-8649d2c06c1d",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "wallet": {
+        "walletID": "28bed1f7-1c5b-4224-ba41-3a82cd95f17f"
+      }
+    },
+    "completedOn": "2025-04-24T11:39:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 300000
+    },
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "2925cb10-c600-4509-9a78-8b5411ad2890",
+    "createdOn": "2025-04-24T11:17:06Z",
+    "source": {
+      "paymentMethodID": "029ab065-82f0-4eb2-97c9-6d0bf363fd41",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780031859",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T11:17:06Z",
+        "originatedOn": "2025-04-24T11:30:02Z",
+        "completedOn": "2025-04-24T11:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "e6694b65-8bad-45a4-8ba8-fcea2ff5a064",
+      "paymentMethodType": "ach-credit-same-day",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780031864",
+        "secCode": "PPD",
+        "initiatedOn": "2025-04-24T11:39:31Z",
+        "originatedOn": "2025-04-24T12:00:01Z",
+        "completedOn": "2025-04-24T12:09:30Z"
+      }
+    },
+    "completedOn": "2025-04-24T12:09:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 824170
+    },
+    "description": "Sandbox test transfer",
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "225eecf6-bd07-478a-bf5e-6f8162bcfced",
+    "createdOn": "2025-04-24T11:17:06Z",
+    "source": {
+      "paymentMethodID": "3233176c-6a78-40fc-9220-fa33a7c12b51",
+      "paymentMethodType": "ach-debit-collect",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "bankAccount": {
+        "bankAccountID": "6692824e-2c28-4e9b-b10a-f2aeceaa5c1c",
+        "fingerprint": "cf06573c6a4ee05aaec38de4122680a78f14257377bec63c71947c4aabe65c88",
+        "status": "verified",
+        "holderName": "Iris Leonard",
+        "holderType": "individual",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "8833",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780102091",
+        "secCode": "WEB",
+        "initiatedOn": "2025-04-24T11:17:06Z",
+        "originatedOn": "2025-04-24T11:30:02Z",
+        "completedOn": "2025-04-24T11:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "37b8e89d-eba7-47cc-9f09-bb54a9ea78d4",
+      "paymentMethodType": "ach-credit-same-day",
+      "account": {
+        "accountID": "bfae918f-8c6e-4296-aadd-d0dcbd058c34",
+        "email": "stephanie.barrett@example.com",
+        "displayName": "Dollar Tree Stores, Inc."
+      },
+      "bankAccount": {
+        "bankAccountID": "a689c288-77e6-4349-9725-021bab979666",
+        "fingerprint": "79c48584a729b70a236a2f66847e591103a9b2fe985c7e345eb9435d7d4a98b6",
+        "status": "verified",
+        "holderName": "Dollar Tree Stores, Inc.",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "7844",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780102093",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T11:39:31Z",
+        "originatedOn": "2025-04-24T12:00:01Z",
+        "completedOn": "2025-04-24T12:09:30Z"
+      }
+    },
+    "completedOn": "2025-04-24T12:09:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 13745
+    },
+    "description": "Sandbox test transfer",
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  },
+  {
+    "transferID": "01a310a7-148a-4102-be24-25a5020f0f03",
+    "createdOn": "2025-04-24T11:17:06Z",
+    "source": {
+      "paymentMethodID": "3d93ef2d-4086-407d-8626-a734f23ed6c7",
+      "paymentMethodType": "ach-debit-fund",
+      "account": {
+        "accountID": "0e6f8b70-b250-441f-a55f-304d63dba7b8",
+        "email": "",
+        "displayName": "Gitstart-Stanley"
+      },
+      "bankAccount": {
+        "bankAccountID": "9b2ebdd1-3414-4b05-9dc4-bc4c23fc6a3f",
+        "fingerprint": "d71fb4ef295245fe407adb97ee086e8c9a96289d4533f4216abc362e5b5d32e8",
+        "status": "verified",
+        "holderName": "Gitstart-Stanley",
+        "holderType": "business",
+        "bankName": "VERIDIAN CREDIT UNION",
+        "bankAccountType": "checking",
+        "routingNumber": "273976369",
+        "lastFourAccountNumber": "4379",
+        "updatedOn": "0001-01-01T00:00:00Z"
+      },
+      "achDetails": {
+        "status": "completed",
+        "traceNumber": "221475780041428",
+        "secCode": "CCD",
+        "initiatedOn": "2025-04-24T11:17:06Z",
+        "originatedOn": "2025-04-24T11:30:02Z",
+        "completedOn": "2025-04-24T11:39:30Z",
+        "debitHoldPeriod": "2-days"
+      }
+    },
+    "destination": {
+      "paymentMethodID": "064a4488-b9d3-4ad4-be5f-dcb97db13934",
+      "paymentMethodType": "moov-wallet",
+      "account": {
+        "accountID": "5a1c7119-b477-4b6f-ab6b-5db57eb027f7",
+        "email": "iris.leonard@example.com",
+        "displayName": "Iris Leonard"
+      },
+      "wallet": {
+        "walletID": "122c8472-dc75-47b5-bab4-dc56043f28d1"
+      }
+    },
+    "completedOn": "2025-04-24T11:39:30Z",
+    "status": "completed",
+    "amount": {
+      "currency": "USD",
+      "value": 262365
+    },
+    "description": "Sandbox test transfer",
+    "facilitatorFee": {
+      "total": 0,
+      "totalDecimal": "0"
+    }
+  }
+]
