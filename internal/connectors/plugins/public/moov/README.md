@@ -163,12 +163,12 @@ Example of create payout payload
 {
   "amount": 1106, // in cents
   "reference": "mv_1032324323",
-  "connectorID": "eyJQcm92aWRlciI6Im1vb3YiLCJSZWZlcmVuY2UiOiI3Mjg0ZWY3ZS0wY2VkLTQxZTctYjg4My05NWIxM2U0MmI5NjYifQ",
+  "connectorID": "eyJQcm92aWRlciI6Im1vb......",
   "asset": "USD/2",
   "type": "PAYOUT",
   "description": "Another Salary payment for March 2025",
-  "SourceAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3YiLCJSZWZlcmVuY2UiOiI3Mjg0ZWY3ZS0wY2VkLTQxZTctYjg4My05NWIxM2U0MmI5NjYifSwiUmVmZXJlbmNlIjoiNzlkNGNjMzItZjFjOS00ZWMyLTg0ZmQtYmI2YWRmM2IwZWU2In0",
-  "DestinationAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3YiLCJSZWZlcmVuY2UiOiI3Mjg0ZWY3ZS0wY2VkLTQxZTctYjg4My05NWIxM2U0MmI5NjYifSwiUmVmZXJlbmNlIjoiMTIyYzg0NzItZGM3NS00N2I1LWJhYjQtZGM1NjA0M2YyOGQxIn0",
+  "SourceAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3.........",
+  "DestinationAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3YiL...........",
     "metadata": {
         "com.moov.spec/type": "ach",
         "com.moov.spec/destinationPaymentMethodId": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
