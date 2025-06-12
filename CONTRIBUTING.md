@@ -976,6 +976,7 @@ func (p *Plugin) fetchBalances(balance *psp.Balance) (*models.PSPBalance, error)
 13. For internal transfers that appear as two transactions on the PSP side (debit and credit), create two separate payments in our system with one adjustment each, rather than one payment with two adjustments.
 14. Ensure that creditor and debtor transactions have unique payment_id values, even if they share a `transfer_id` on the PSP side. If there is no way of differentiating, you can add a suffix to the payment reference to distinguish between debtor and creditor transactions. If you change this ID, ensure you store the original `transfer_id` from the PSP in the payment metadata.
 15. When processing returns or refunds, update the parent payment amount to reflect the returned funds. For example, if there is a transfer of _$1000_, a return of _$600_ should update the original payment to _$400_.
+16. When event subscriptions are available, there is no need to poll `Periodically` for payments.
 
 ### Setting up Pre-commit Checks
 Pre-commit checks for the repository is done using Just.
