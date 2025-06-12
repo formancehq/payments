@@ -12,7 +12,8 @@ func (c *client) ListBeneficiaries(ctx context.Context, page, pageSize int64, cr
 	req := c.apiClient.DefaultApi.
 		GetBeneficiaries(metrics.OperationContext(ctx, "list_beneficiaries")).
 		Page(page).
-		PageSize(pageSize)
+		PageSize(pageSize).
+		Sort("createdAt:asc")
 
 	if !createdAtFrom.IsZero() {
 		req = req.CreatedAtFrom(createdAtFrom)

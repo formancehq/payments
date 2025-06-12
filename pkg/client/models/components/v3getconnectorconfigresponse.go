@@ -41,6 +41,10 @@ func (o *V3GetConnectorConfigResponse) GetDataGeneric() *V3GenericConfig {
 	return o.GetData().V3GenericConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataIncrease() *V3IncreaseConfig {
+	return o.GetData().V3IncreaseConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataMangopay() *V3MangopayConfig {
 	return o.GetData().V3MangopayConfig
 }
@@ -51,6 +55,10 @@ func (o *V3GetConnectorConfigResponse) GetDataModulr() *V3ModulrConfig {
 
 func (o *V3GetConnectorConfigResponse) GetDataMoneycorp() *V3MoneycorpConfig {
 	return o.GetData().V3MoneycorpConfig
+}
+
+func (o *V3GetConnectorConfigResponse) GetDataQonto() *V3QontoConfig {
+	return o.GetData().V3QontoConfig
 }
 
 func (o *V3GetConnectorConfigResponse) GetDataStripe() *V3StripeConfig {

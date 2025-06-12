@@ -88,7 +88,7 @@ func (c *client) ListAllHooks(ctx context.Context) ([]*Hook, error) {
 	endpoint := fmt.Sprintf("%s/v2.01/%s/hooks", c.endpoint, c.clientID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, http.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create hooks request: %w", err)
+		return nil, fmt.Errorf("failed to create list hooks request: %w", err)
 	}
 
 	q := req.URL.Query()

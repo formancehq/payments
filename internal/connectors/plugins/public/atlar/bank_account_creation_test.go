@@ -101,11 +101,11 @@ var _ = Describe("Atlar Plugin Bank Account Creation", func() {
 				BankAccount: ba,
 			}
 
-			m.EXPECT().PostV1CounterParties(ctx, ba).Return(nil, errors.New("test-error"))
+			m.EXPECT().PostV1CounterParties(ctx, ba).Return(nil, errors.New("error-test"))
 
 			res, err := plg.CreateBankAccount(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err).To(MatchError("test-error"))
+			Expect(err).To(MatchError("error-test"))
 			Expect(res).To(Equal(models.CreateBankAccountResponse{}))
 		})
 

@@ -45,6 +45,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestDummypay(
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestGeneric(components.V3GenericConfig{/* values here */})
 ```
 
+### V3IncreaseConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go
@@ -61,6 +67,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestModulr(co
 
 ```go
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestMoneycorp(components.V3MoneycorpConfig{/* values here */})
+```
+
+### V3QontoConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestQonto(components.V3QontoConfig{/* values here */})
 ```
 
 ### V3StripeConfig

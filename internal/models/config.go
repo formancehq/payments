@@ -2,8 +2,9 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 const (
@@ -12,9 +13,9 @@ const (
 )
 
 type Config struct {
-	Name          string        `json:"name"`
-	PollingPeriod time.Duration `json:"pollingPeriod"`
-	PageSize      int           `json:"pageSize"`
+	Name          string        `json:"name" validate:"required,gte=3,lte=500"`
+	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=30000000000,lte=86400000000000"` // gte=30s lte=1d in ns
+	PageSize      int           `json:"pageSize" validate:"lte=150"`
 }
 
 func (c Config) MarshalJSON() ([]byte, error) {
@@ -63,15 +64,8 @@ func (c *Config) UnmarshalJSON(data []byte) error {
 }
 
 func (c Config) Validate() error {
-	if c.Name == "" {
-		return errors.New("name is required")
-	}
-
-	if c.PollingPeriod.Seconds() < 30 {
-		return errors.New("polling period must be at least 30 seconds")
-	}
-
-	return nil
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	return validate.Struct(c)
 }
 
 func DefaultConfig() Config {

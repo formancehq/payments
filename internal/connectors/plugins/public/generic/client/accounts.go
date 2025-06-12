@@ -12,7 +12,8 @@ func (c *client) ListAccounts(ctx context.Context, page, pageSize int64, created
 	req := c.apiClient.DefaultApi.
 		GetAccounts(metrics.OperationContext(ctx, "list_accounts")).
 		Page(page).
-		PageSize(pageSize)
+		PageSize(pageSize).
+		Sort("createdAt:asc")
 
 	if !createdAtFrom.IsZero() {
 		req = req.CreatedAtFrom(createdAtFrom)

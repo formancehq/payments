@@ -11,7 +11,8 @@ import (
 func (c *client) ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error) {
 	req := c.apiClient.DefaultApi.GetTransactions(metrics.OperationContext(ctx, "list_transactions")).
 		Page(page).
-		PageSize(pageSize)
+		PageSize(pageSize).
+		Sort("updatedAt:asc")
 
 	if !updatedAtFrom.IsZero() {
 		req = req.UpdatedAtFrom(updatedAtFrom)

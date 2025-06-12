@@ -198,8 +198,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_HasMoreLoop_Success() {
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesStore_Error() {
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
@@ -216,13 +217,15 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesGet_Error() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -243,7 +246,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesGet_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_PluginFetchNextPayments_Error() {
@@ -259,9 +263,10 @@ func (s *UnitTestSuite) Test_FetchNextPayments_PluginFetchNextPayments_Error() {
 		},
 		nil,
 	)
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.PluginFetchNextPaymentsActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "PLUGIN", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -282,7 +287,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_PluginFetchNextPayments_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentsStore_Error() {
@@ -305,8 +311,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentsStore_Error() {
 		NewState: []byte(`{}`),
 		HasMore:  false,
 	}, nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -327,7 +334,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StoragePaymentsStore_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_RunUpdatePaymentInitiationFromPayment_Error() {
@@ -351,8 +359,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunUpdatePaymentInitiationFromPay
 		HasMore:  false,
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -373,7 +382,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunUpdatePaymentInitiationFromPay
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
@@ -398,8 +408,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -420,7 +431,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_RunSendEvents_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_Run_Error() {
@@ -446,8 +458,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_Run_Error() {
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -468,7 +481,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_Run_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesStore_Error() {
@@ -495,8 +509,9 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesStore_Error() {
 	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
@@ -517,7 +532,8 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageStatesStore_Error() {
 
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
-	s.NoError(err)
+	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesUpdate_Error() {
@@ -545,10 +561,11 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesUpdate_Error() {
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(Run, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.True(instance.Terminated)
 		s.Nil(instance.Error)
-		return temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test"))
+		return temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr)
 	})
 
 	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
@@ -565,6 +582,7 @@ func (s *UnitTestSuite) Test_FetchNextPayments_StorageInstancesUpdate_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err = s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Empty_Success() {
@@ -605,8 +623,9 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Account_Success() {
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Account_StorageAccountsStore_Error() {
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
@@ -617,6 +636,7 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Account_StorageAccountsStor
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_Success() {
@@ -647,8 +667,9 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_Success() {
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_StorageAccountsStore_Error() {
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
@@ -659,6 +680,7 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_StorageAcco
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_Success() {
@@ -689,8 +711,9 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_Success() {
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_StoragePaymentsStore_Error() {
+	expectedErr := errors.New("error-test")
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", expectedErr),
 	)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
@@ -701,12 +724,14 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Payment_StoragePaymentsStor
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }
 
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_RunSendEvents_Error() {
 	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	expectedErr := errors.New("error-test")
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "WORKFLOW", errors.New("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "WORKFLOW", expectedErr),
 	)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
@@ -717,4 +742,5 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_RunSendEvents_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, expectedErr.Error())
 }

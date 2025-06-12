@@ -19,9 +19,11 @@ const (
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
 	V3InstallConnectorRequestTypeGeneric       V3InstallConnectorRequestType = "Generic"
+	V3InstallConnectorRequestTypeIncrease      V3InstallConnectorRequestType = "Increase"
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
+	V3InstallConnectorRequestTypeQonto         V3InstallConnectorRequestType = "Qonto"
 	V3InstallConnectorRequestTypeStripe        V3InstallConnectorRequestType = "Stripe"
 	V3InstallConnectorRequestTypeWise          V3InstallConnectorRequestType = "Wise"
 )
@@ -34,9 +36,11 @@ type V3InstallConnectorRequest struct {
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
 	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
+	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
@@ -127,6 +131,18 @@ func CreateV3InstallConnectorRequestGeneric(generic V3GenericConfig) V3InstallCo
 	}
 }
 
+func CreateV3InstallConnectorRequestIncrease(increase V3IncreaseConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeIncrease
+
+	typStr := string(typ)
+	increase.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3IncreaseConfig: &increase,
+		Type:             typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestMangopay(mangopay V3MangopayConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeMangopay
 
@@ -160,6 +176,18 @@ func CreateV3InstallConnectorRequestMoneycorp(moneycorp V3MoneycorpConfig) V3Ins
 	return V3InstallConnectorRequest{
 		V3MoneycorpConfig: &moneycorp,
 		Type:              typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestQonto(qonto V3QontoConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeQonto
+
+	typStr := string(typ)
+	qonto.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3QontoConfig: &qonto,
+		Type:          typ,
 	}
 }
 
@@ -262,6 +290,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3GenericConfig = v3GenericConfig
 		u.Type = V3InstallConnectorRequestTypeGeneric
 		return nil
+	case "Increase":
+		v3IncreaseConfig := new(V3IncreaseConfig)
+		if err := utils.UnmarshalJSON(data, &v3IncreaseConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Increase) type V3IncreaseConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3IncreaseConfig = v3IncreaseConfig
+		u.Type = V3InstallConnectorRequestTypeIncrease
+		return nil
 	case "Mangopay":
 		v3MangopayConfig := new(V3MangopayConfig)
 		if err := utils.UnmarshalJSON(data, &v3MangopayConfig, "", true, false); err != nil {
@@ -288,6 +325,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3InstallConnectorRequestTypeMoneycorp
+		return nil
+	case "Qonto":
+		v3QontoConfig := new(V3QontoConfig)
+		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Qonto) type V3QontoConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3QontoConfig = v3QontoConfig
+		u.Type = V3InstallConnectorRequestTypeQonto
 		return nil
 	case "Stripe":
 		v3StripeConfig := new(V3StripeConfig)
@@ -341,6 +387,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3GenericConfig, "", true)
 	}
 
+	if u.V3IncreaseConfig != nil {
+		return utils.MarshalJSON(u.V3IncreaseConfig, "", true)
+	}
+
 	if u.V3MangopayConfig != nil {
 		return utils.MarshalJSON(u.V3MangopayConfig, "", true)
 	}
@@ -351,6 +401,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3MoneycorpConfig != nil {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
+	}
+
+	if u.V3QontoConfig != nil {
+		return utils.MarshalJSON(u.V3QontoConfig, "", true)
 	}
 
 	if u.V3StripeConfig != nil {

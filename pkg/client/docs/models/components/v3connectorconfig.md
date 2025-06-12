@@ -45,6 +45,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigDummypay(components.V3Dum
 v3ConnectorConfig := components.CreateV3ConnectorConfigGeneric(components.V3GenericConfig{/* values here */})
 ```
 
+### V3IncreaseConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigIncrease(components.V3IncreaseConfig{/* values here */})
+```
+
 ### V3MangopayConfig
 
 ```go
@@ -61,6 +67,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigModulr(components.V3Modul
 
 ```go
 v3ConnectorConfig := components.CreateV3ConnectorConfigMoneycorp(components.V3MoneycorpConfig{/* values here */})
+```
+
+### V3QontoConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigQonto(components.V3QontoConfig{/* values here */})
 ```
 
 ### V3StripeConfig

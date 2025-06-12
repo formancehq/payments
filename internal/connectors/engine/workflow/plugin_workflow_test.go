@@ -346,7 +346,7 @@ func (s *UnitTestSuite) Test_Run_UnknownTaskType_Error() {
 func (s *UnitTestSuite) Test_Run_StorageConnectorsGet_Error() {
 	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, s.connectorID).Once().Return(
 		nil,
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", fmt.Errorf("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(
@@ -370,6 +370,7 @@ func (s *UnitTestSuite) Test_Run_StorageConnectorsGet_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
@@ -378,7 +379,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 		nil,
 	)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", fmt.Errorf("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(
@@ -402,6 +403,7 @@ func (s *UnitTestSuite) Test_Run_StorageSchedulesStore_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }
 
 func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
@@ -411,7 +413,7 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	)
 	s.env.OnActivity(activities.StorageSchedulesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.TemporalScheduleCreateActivity, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("test", "STORAGE", fmt.Errorf("test")),
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", fmt.Errorf("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(
@@ -435,4 +437,5 @@ func (s *UnitTestSuite) Test_Run_TemporalScheduleCreate_Error() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
+	s.ErrorContains(err, "error-test")
 }

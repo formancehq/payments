@@ -23,13 +23,11 @@ func init() {
 type Plugin struct {
 	models.Plugin
 
-	name   string
-	logger logging.Logger
+	name string
 
+	logger            logging.Logger
 	client            client.Client
 	supportedWebhooks map[string]supportedWebhook
-
-	connectorID string
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -90,7 +88,6 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	if p.client == nil {
 		return models.CreateWebhooksResponse{}, plugins.ErrNotYetInstalled
 	}
-	p.connectorID = req.ConnectorID
 	configs, err := p.createWebhooks(ctx, req)
 	if err != nil {
 		return models.CreateWebhooksResponse{}, err

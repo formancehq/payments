@@ -146,6 +146,7 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 
 	_, err = tx.NewUpdate().
 		Model((*connector)(nil)).
+		Set("name = ?", c.Name).
 		Set("config = pgp_sym_encrypt(?::TEXT, ?, ?)", c.Config, s.configEncryptionKey, encryptionOptions).
 		Where("id = ?", c.ID).
 		Exec(ctx)

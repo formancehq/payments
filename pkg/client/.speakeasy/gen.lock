@@ -1,12 +1,12 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: bb13729df5ecc0978c8816eeb2105b1e
+  docChecksum: aa36214e735ca58caa5d77f9d10ee263
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
   releaseVersion: 0.0.2
-  configChecksum: 90f4ddd2eabc08712bd7d89d6f6b66d4
+  configChecksum: 3c51a5942091ad83ffec59fb82f0d876
 features:
   go:
     additionalDependencies: 0.1.0
@@ -156,6 +156,7 @@ generatedFiles:
   - /models/components/v3getpaymentserviceuserresponse.go
   - /models/components/v3getpoolresponse.go
   - /models/components/v3gettaskresponse.go
+  - /models/components/v3increaseconfig.go
   - /models/components/v3initiatepaymentrequest.go
   - /models/components/v3initiatepaymentresponse.go
   - /models/components/v3installconnectorrequest.go
@@ -182,6 +183,7 @@ generatedFiles:
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
+  - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
   - /models/components/v3reversepaymentinitiationrequest.go
@@ -459,6 +461,7 @@ generatedFiles:
   - docs/models/components/v3getpaymentserviceuserresponse.md
   - docs/models/components/v3getpoolresponse.md
   - docs/models/components/v3gettaskresponse.md
+  - docs/models/components/v3increaseconfig.md
   - docs/models/components/v3initiatepaymentrequest.md
   - docs/models/components/v3initiatepaymentresponse.md
   - docs/models/components/v3initiatepaymentresponsedata.md
@@ -493,6 +496,7 @@ generatedFiles:
   - docs/models/components/v3poolbalancesresponse.md
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
+  - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md
   - docs/models/components/v3retrypaymentinitiationresponsedata.md

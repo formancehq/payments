@@ -117,7 +117,7 @@ $ go run ./ --connector-dir-path ../../internal/connectors/plugins/public/ --con
 
 We want the DummyPay connector to be capable of fetching various data types from the DummyPay directory.
 
-Open the `capabilities.go` file in the `dummypay2` directory to outline the connector capabilities:
+Open the `capabilities.go` file in the `internal/connectors/plugins/public/dummypay2` directory to outline the connector capabilities:
 
 ```go
 package dummypay2
@@ -180,9 +180,15 @@ func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {
 }
 ```
 
-The `Config` struct contains any data needed to properly connect to and authenticate to the PSP. In a real-world scenario, this is likely going to be data such as APIKeys, Authorization Endpoint URLs, Client IDs, and anything needed by a PSP to identify the user communicating with their APIs.
+The `Config` struct contains any data needed to properly connect to and authenticate to the PSP. In a real-world
+scenario, this is likely going to be data such as APIKeys, Authorization Endpoint URLs, Client IDs, and anything needed
+by a PSP to identify the user communicating with their APIs.
 
-Since our DummyPay PSP uses the local filesystem, the only information we require in the config is the directory where the files to poll will be stored.
+Note that you don't need to provide the actual configuration data here, it will be fed as part of the installation
+request call (see [Launching a new connector](#launching-a-new-connector) for an example).
+
+Since our DummyPay PSP uses the local filesystem, the only information we require in the config is the directory where
+the files to poll will be stored.
 
 ### Define the Connector Struct
 
