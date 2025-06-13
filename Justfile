@@ -3,7 +3,7 @@ set dotenv-load
 default:
   @just --list
 
-pre-commit: tidy generate lint openapi compile-plugins
+pre-commit: tidy generate lint openapi compile-plugins compile-connector-capabilities
 pc: pre-commit
 
 lint:
@@ -20,6 +20,11 @@ compile-connector-configs:
     @go build -o compile-configs {{justfile_directory()}}/tools/compile-configs
     ./compile-configs --path {{justfile_directory()}}/internal/connectors/plugins/public --output {{justfile_directory()}}/openapi/v3/v3-connectors-config.yaml
     @rm ./compile-configs
+
+compile-connector-capabilities:
+    @go build -o compile-capabilities {{justfile_directory()}}/tools/compile-capabilities
+    ./compile-capabilities --path {{justfile_directory()}}/internal/connectors/plugins/public --output {{justfile_directory()}}/docs/other/connector-capabilities.json
+    @rm ./compile-capabilities
 
 [group('openapi')]
 compile-api-yaml: compile-connector-configs
