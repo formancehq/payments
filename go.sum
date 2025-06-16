@@ -1217,8 +1217,8 @@ github.com/tklauser/numcpus v0.9.0 h1:lmyCHtANi8aRUgkckBgoDk1nHCux3n2cgkJLXdQGPD
 github.com/tklauser/numcpus v0.9.0/go.mod h1:SN6Nq1O3VychhC1npsWostA+oW+VOQTxZrS604NSRyI=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc h1:9lRDQMhESg+zvGYmW5DyG0UqvY96Bu5QYsTLvCHdrgo=
 github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc/go.mod h1:bciPuU6GHm1iF1pBvUfxfsH0Wmnc2VbpgvbI9ZWuIRs=
-github.com/uptrace/bun v1.2.13 h1:tFJjT+mIrogD/mgwwS3lUJmd8Z7M63oZYS1dl6f+23w=
-github.com/uptrace/bun v1.2.13/go.mod h1:ZS4nPaEv2Du3OFqAD/irk3WVP6xTB3/9TWqjJbgKYBU=
+github.com/uptrace/bun v1.2.14 h1:5yFSfi/yVWEzQ2lAaHz+JfWN9AHmqYtNmlbaUbAp3rU=
+github.com/uptrace/bun v1.2.14/go.mod h1:ZS4nPaEv2Du3OFqAD/irk3WVP6xTB3/9TWqjJbgKYBU=
 github.com/uptrace/bun/dialect/pgdialect v1.2.13 h1:vSNZaPf4bHLgELCXjKtE8OoVL5z1UbWKJ2YbAMXm0qM=
 github.com/uptrace/bun/dialect/pgdialect v1.2.13/go.mod h1:KvW1z7v+D10PmzVcWe624mbR6oTb3YA9YFshXRf3f1c=
 github.com/uptrace/bun/extra/bundebug v1.2.13 h1:JSFPMAQprdavGBL1QssvdoTlE9nDYqSGsKpX+qGNrM4=
