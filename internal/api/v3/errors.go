@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	ErrValidation                    = "VALIDATION"
-	ErrInvalidID                     = "INVALID_ID"
-	ErrMissingOrInvalidBody          = "MISSING_OR_INVALID_BODY"
-	ErrUniqueReference               = "CONFLICT"
-	ErrConnectorCapacityNotSupported = "CONNECTOR_CAPACITY_NOT_SUPPORTED"
+	ErrValidation                      = "VALIDATION"
+	ErrInvalidID                       = "INVALID_ID"
+	ErrMissingOrInvalidBody            = "MISSING_OR_INVALID_BODY"
+	ErrUniqueReference                 = "CONFLICT"
+	ErrConnectorCapabilityNotSupported = "CONNECTOR_CAPABILITY_NOT_SUPPORTED"
 )
 
 func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
@@ -33,8 +33,8 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
-	case errors.Is(err, engine.ErrConnectorCapacityNotSupported):
-		api.BadRequest(w, ErrConnectorCapacityNotSupported, err)
+	case errors.Is(err, engine.ErrConnectorCapabilityNotSupported):
+		api.BadRequest(w, ErrConnectorCapabilityNotSupported, err)
 	default:
 		common.InternalServerError(w, r, err)
 	}
