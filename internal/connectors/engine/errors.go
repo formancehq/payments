@@ -11,7 +11,8 @@ import (
 var (
 	ErrValidation                    = errors.New("validation error")
 	ErrNotFound                      = errors.New("not found")
-	ErrConnectorCapacityNotSupported = errors.New("this connector does not support this capacity")
+-ErrConnectorCapacityNotSupported = errors.New("this connector does not support this capacity")
++ErrConnectorCapabilityNotSupported = errors.New("this connector does not support this capability")
 )
 
 // handleWorkflowError processes Temporal workflow errors and wraps validation errors
