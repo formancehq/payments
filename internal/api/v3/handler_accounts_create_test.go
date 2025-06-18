@@ -42,9 +42,11 @@ var _ = Describe("API v3 Accounts Create", func() {
 		})
 
 		It("should return a bad request error when connector is not able to create accounts", func(ctx SpecContext) {
-			expectedErr := engine.ErrConnectorCapabilityNotSupported
-			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
 			notSupportedConnectorId := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
+
+			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceAccount", Provider: notSupportedConnectorId.Provider}
+			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
+
 			cra = CreateAccountRequest{
 				Reference:   "reference",
 				ConnectorID: notSupportedConnectorId.String(),

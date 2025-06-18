@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"github.com/formancehq/payments/internal/connectors/engine"
 	"net/http"
 	"net/http/httptest"
 	"time"
@@ -41,6 +42,23 @@ var _ = Describe("API v2 Accounts Create", func() {
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrMissingOrInvalidBody)
+		})
+
+		It("should return a bad request error when connector is not able to create accounts", func(ctx SpecContext) {
+			notSupportedConnectorId := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
+
+			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceAccount", Provider: notSupportedConnectorId.Provider}
+			m.EXPECT().AccountsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
+
+			cra = CreateAccountRequest{
+				Reference:   "reference",
+				ConnectorID: notSupportedConnectorId.String(),
+				CreatedAt:   time.Now(),
+				AccountName: "accountName",
+				Type:        string(models.ACCOUNT_TYPE_EXTERNAL),
+			}
+			handlerFn(w, prepareJSONRequest(http.MethodPost, &cra))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrConnectorCapabilityNotSupported)
 		})
 
 		DescribeTable("validation errors",

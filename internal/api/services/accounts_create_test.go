@@ -47,8 +47,8 @@ func TestAccountsCreate(t *testing.T) {
 		},
 		{
 			name:          "connector capability not supported",
-			err:           engine.ErrConnectorCapabilityNotSupported,
-			expectedError: engine.ErrConnectorCapabilityNotSupported,
+			err:           &engine.ErrConnectorCapabilityNotSupported{},
+			expectedError: &engine.ErrConnectorCapabilityNotSupported{},
 			typedError:    true,
 		},
 		{

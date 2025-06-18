@@ -33,7 +33,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
-	case errors.Is(err, engine.ErrConnectorCapabilityNotSupported):
+	case errors.Is(err, &engine.ErrConnectorCapabilityNotSupported{}):
 		api.BadRequest(w, ErrConnectorCapabilityNotSupported, err)
 	default:
 		common.InternalServerError(w, r, err)

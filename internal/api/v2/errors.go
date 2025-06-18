@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"github.com/formancehq/payments/internal/connectors/engine"
 	"net/http"
 
 	"github.com/formancehq/go-libs/v3/api"
@@ -12,11 +13,12 @@ import (
 )
 
 const (
-	ErrUniqueReference      = "CONFLICT"
-	ErrNotFound             = "NOT_FOUND"
-	ErrInvalidID            = "INVALID_ID"
-	ErrMissingOrInvalidBody = "MISSING_OR_INVALID_BODY"
-	ErrValidation           = "VALIDATION"
+	ErrUniqueReference                 = "CONFLICT"
+	ErrNotFound                        = "NOT_FOUND"
+	ErrInvalidID                       = "INVALID_ID"
+	ErrMissingOrInvalidBody            = "MISSING_OR_INVALID_BODY"
+	ErrValidation                      = "VALIDATION"
+	ErrConnectorCapabilityNotSupported = "CONNECTOR_CAPABILITY_NOT_SUPPORTED"
 )
 
 func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
@@ -32,6 +34,8 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, cause)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
+	case errors.Is(err, &engine.ErrConnectorCapabilityNotSupported{}):
+		api.BadRequest(w, ErrConnectorCapabilityNotSupported, err)
 	default:
 		common.InternalServerError(w, r, err)
 	}

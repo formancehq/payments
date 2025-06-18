@@ -2,6 +2,7 @@ package v2
 
 import (
 	"errors"
+	"github.com/formancehq/payments/internal/connectors/engine"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -42,6 +43,26 @@ var _ = Describe("API v2 Payments Create", func() {
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrMissingOrInvalidBody)
+		})
+
+		It("should return a bad request error when connector is not able to create payments", func(ctx SpecContext) {
+			notSupportedConnectorId := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
+
+			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormancePayment", Provider: notSupportedConnectorId.Provider}
+			m.EXPECT().PaymentsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
+
+			cpr = CreatePaymentRequest{
+				Reference:   "reference-err",
+				ConnectorID: notSupportedConnectorId.String(),
+				CreatedAt:   time.Now(),
+				Amount:      big.NewInt(3500),
+				Asset:       "JPY/0",
+				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
+				Type:        models.PAYMENT_TYPE_PAYIN.String(),
+				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
+			}
+			handlerFn(w, prepareJSONRequest(http.MethodPost, &cpr))
+			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrConnectorCapabilityNotSupported)
 		})
 
 		DescribeTable("validation errors",
