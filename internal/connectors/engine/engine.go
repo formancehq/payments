@@ -366,7 +366,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	}
 
 	if !found {
-		err := errors.New("connector does not support account creation")
+		err := ErrConnectorCapacityNotSupported
 		otel.RecordError(span, err)
 		return err
 	}

@@ -9,8 +9,9 @@ import (
 )
 
 var (
-	ErrValidation = errors.New("validation error")
-	ErrNotFound   = errors.New("not found")
+	ErrValidation                    = errors.New("validation error")
+	ErrNotFound                      = errors.New("not found")
+	ErrConnectorCapacityNotSupported = errors.New("this connector does not support this capacity")
 )
 
 // handleWorkflowError processes Temporal workflow errors and wraps validation errors
