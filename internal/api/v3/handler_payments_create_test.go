@@ -58,14 +58,14 @@ var _ = Describe("API v3 Payments Create", func() {
 		})
 
 		It("should return a bad request error when connector is not able to create payments", func(ctx SpecContext) {
-			notSupportedConnectorId := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
+			notSupportedConnectorID := models.ConnectorID{Reference: uuid.New(), Provider: "stripe"}
 
-			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormancePayment", Provider: notSupportedConnectorId.Provider}
+			expectedErr := &engine.ErrConnectorCapabilityNotSupported{Capability: "CreateFormancePayment", Provider: notSupportedConnectorID.Provider}
 			m.EXPECT().PaymentsCreate(gomock.Any(), gomock.Any()).Return(expectedErr)
 
 			cpr = CreatePaymentRequest{
 				Reference:   "reference-err",
-				ConnectorID: notSupportedConnectorId.String(),
+				ConnectorID: notSupportedConnectorID.String(),
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
 				Asset:       "JPY/0",
