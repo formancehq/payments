@@ -1,6 +1,7 @@
 package v3
 
 import (
+	"github.com/formancehq/payments/internal/connectors/engine"
 	"net/http"
 
 	"github.com/formancehq/go-libs/v3/api"
@@ -11,13 +12,16 @@ import (
 )
 
 const (
-	ErrValidation           = "VALIDATION"
-	ErrInvalidID            = "INVALID_ID"
-	ErrMissingOrInvalidBody = "MISSING_OR_INVALID_BODY"
-	ErrUniqueReference      = "CONFLICT"
+	ErrValidation                      = "VALIDATION"
+	ErrInvalidID                       = "INVALID_ID"
+	ErrMissingOrInvalidBody            = "MISSING_OR_INVALID_BODY"
+	ErrUniqueReference                 = "CONFLICT"
+	ErrConnectorCapabilityNotSupported = "CONNECTOR_CAPABILITY_NOT_SUPPORTED"
 )
 
 func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
+	var capabilityNotSupported *engine.ErrConnectorCapabilityNotSupported
+
 	switch {
 	case errors.Is(err, storage.ErrDuplicateKeyValue):
 		api.BadRequest(w, ErrUniqueReference, err)
@@ -31,6 +35,8 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
+	case errors.As(err, &capabilityNotSupported):
+		api.BadRequest(w, ErrConnectorCapabilityNotSupported, err)
 	default:
 		common.InternalServerError(w, r, err)
 	}
