@@ -76,6 +76,13 @@ func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebho
 	return models.CreateWebhooksResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) TrimWebhook(ctx context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
+	// Base implementation is to return the webhook as is
+	return models.TrimWebhookResponse{
+		Webhook: req.Webhook,
+	}, nil
+}
+
 func (dp *basePlugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	return models.VerifyWebhookResponse{}, ErrNotImplemented
 }

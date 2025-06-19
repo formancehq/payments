@@ -93,7 +93,7 @@ type Backend interface {
 	TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 
 	// Webhooks
-	ConnectorsHandleWebhooks(ctx context.Context, urlPath string, webhook models.Webhook) error
+	ConnectorsHandleWebhooks(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 
 	// Workflows Instances
 	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)

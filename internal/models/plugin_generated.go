@@ -20,7 +20,6 @@ import (
 type MockPlugin struct {
 	ctrl     *gomock.Controller
 	recorder *MockPluginMockRecorder
-	isgomock struct{}
 }
 
 // MockPluginMockRecorder is the mock recorder for MockPlugin.
@@ -352,6 +351,21 @@ func (m *MockPlugin) TranslateWebhook(arg0 context.Context, arg1 TranslateWebhoo
 func (mr *MockPluginMockRecorder) TranslateWebhook(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateWebhook", reflect.TypeOf((*MockPlugin)(nil).TranslateWebhook), arg0, arg1)
+}
+
+// TrimWebhook mocks base method.
+func (m *MockPlugin) TrimWebhook(arg0 context.Context, arg1 TrimWebhookRequest) (TrimWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TrimWebhook", arg0, arg1)
+	ret0, _ := ret[0].(TrimWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TrimWebhook indicates an expected call of TrimWebhook.
+func (mr *MockPluginMockRecorder) TrimWebhook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrimWebhook", reflect.TypeOf((*MockPlugin)(nil).TrimWebhook), arg0, arg1)
 }
 
 // Uninstall mocks base method.

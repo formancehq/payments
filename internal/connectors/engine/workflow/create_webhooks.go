@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
@@ -28,7 +29,7 @@ func (w Workflow) createWebhooks(
 	createWebhooks CreateWebhooks,
 	nextTasks []models.ConnectorTaskTree,
 ) error {
-	webhookBaseURL, err := w.getWebhookBaseURL(createWebhooks.ConnectorID)
+	webhookBaseURL, err := utils.GetWebhookBaseURL(w.stackPublicURL, createWebhooks.ConnectorID)
 	if err != nil {
 		return fmt.Errorf("joining webhook base URL: %w", err)
 	}

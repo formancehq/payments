@@ -3,7 +3,6 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -16,60 +15,17 @@ import (
 
 type HandleWebhooks struct {
 	ConnectorID models.ConnectorID
+	URL         string
 	URLPath     string
 	Webhook     models.Webhook
+	Config      *models.WebhookConfig
 }
 
 func (w Workflow) runHandleWebhooks(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 ) error {
-	configs, err := activities.StorageWebhooksConfigsGet(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting webhook configs: %w", err)
-	}
-
-	var config *models.WebhookConfig
-	for _, c := range configs {
-		if !strings.Contains(handleWebhooks.URLPath, c.URLPath) {
-			continue
-		}
-
-		config = &c
-		break
-	}
-
-	if config == nil {
-		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", errors.New("webhook config not found"))
-	}
-
-	config.FullURL, err = w.getWebhookBaseURL(handleWebhooks.ConnectorID)
-	if err != nil {
-		return fmt.Errorf("getting webhook base URL: %w", err)
-	}
-
-	verifyResponse, err := activities.PluginVerifyWebhook(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-		models.VerifyWebhookRequest{
-			Webhook: models.PSPWebhook{
-				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
-				QueryValues: handleWebhooks.Webhook.QueryValues,
-				Headers:     handleWebhooks.Webhook.Headers,
-				Body:        handleWebhooks.Webhook.Body,
-			},
-			Config: config,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("verifying webhook: %w", err)
-	}
-
-	handleWebhooks.Webhook.IdempotencyKey = verifyResponse.WebhookIdempotencyKey
-	err = activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
+	err := activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
 	if err != nil {
 		return fmt.Errorf("storing webhook: %w", err)
 	}
@@ -78,14 +34,14 @@ func (w Workflow) runHandleWebhooks(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		models.TranslateWebhookRequest{
-			Name: config.Name,
+			Name: handleWebhooks.Config.Name,
 			Webhook: models.PSPWebhook{
 				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
 				QueryValues: handleWebhooks.Webhook.QueryValues,
 				Headers:     handleWebhooks.Webhook.Headers,
 				Body:        handleWebhooks.Webhook.Body,
 			},
-			Config: config,
+			Config: handleWebhooks.Config,
 		},
 	)
 	if err != nil {
@@ -190,7 +146,7 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		return fmt.Errorf("marshalling bank bridge from payload: %w", err)
 	}
 
-	var config models.Config
+	config := models.DefaultConfig()
 	if err := json.Unmarshal(connector.Config, &config); err != nil {
 		return fmt.Errorf("unmarshalling connector config: %w", err)
 	}

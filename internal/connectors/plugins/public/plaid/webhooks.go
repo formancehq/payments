@@ -114,8 +114,6 @@ func (p *Plugin) handleAllWebhook(ctx context.Context, req models.TranslateWebho
 		return nil, err
 	}
 
-	fmt.Println("received webhook", baseWebhook)
-
 	switch baseWebhook.WebhookType {
 	// This one has no type since it's not inside the plaid sdk definition
 	// but we need it in order to handle the authentication webhook

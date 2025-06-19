@@ -75,17 +75,10 @@ var _ = Describe("Engine Tests", func() {
 		wr = activities.NewMockWorkflowRun(ctrl)
 		store = storage.NewMockStorage(ctrl)
 		plgs = plugins.NewMockPlugins(ctrl)
-		eng = engine.New(logger, cl, store, plgs, stackName)
+		eng = engine.New(logger, cl, store, plgs, stackName, "")
 	})
 
 	Context("on start", func() {
-		var (
-		//			config json.RawMessage
-		)
-		BeforeEach(func() {
-			//			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
-		})
-
 		It("should fail when unable to fetch connectors from storage", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(nil, expectedErr)

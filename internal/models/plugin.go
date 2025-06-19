@@ -27,6 +27,7 @@ type Plugin interface {
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
+	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
 	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
@@ -54,6 +55,15 @@ type CreateWebhooksRequest struct {
 type CreateWebhooksResponse struct {
 	Configs []PSPWebhookConfig
 	Others  []PSPOther // used by plugin workflow
+}
+
+type TrimWebhookRequest struct {
+	Webhook PSPWebhook
+	Config  *WebhookConfig
+}
+
+type TrimWebhookResponse struct {
+	Webhook PSPWebhook
 }
 
 type VerifyWebhookRequest struct {

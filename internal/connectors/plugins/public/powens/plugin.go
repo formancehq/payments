@@ -39,7 +39,10 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	client := client.New(name, config.ClientID, config.ClientSecret, config.ConfigurationToken, config.Endpoint)
+	client, err := client.New(name, config.ClientID, config.ClientSecret, config.ConfigurationToken, config.Endpoint)
+	if err != nil {
+		return nil, err
+	}
 
 	p := &Plugin{
 		Plugin: plugins.NewBasePlugin(),
@@ -68,8 +71,23 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
-	// TODO(polo): delete webhook auth
+	if p.client == nil {
+		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	if err := p.deleteWebhooks(ctx, req); err != nil {
+		return models.UninstallResponse{}, err
+	}
+
 	return models.UninstallResponse{}, nil
+}
+
+func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.fetchPayments(ctx, req)
 }
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
@@ -120,6 +138,31 @@ func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	return p.createWebhooks(ctx, req)
 }
 
+func (p *Plugin) TrimWebhook(ctx context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
+	if p.client == nil {
+		return models.TrimWebhookResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	webhookTrimmer, ok := p.supportedWebhooks[client.WebhookEventType(req.Config.Name)]
+	if !ok {
+		return models.TrimWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %s", req.Config.Name)
+	}
+
+	if webhookTrimmer.trimFunction == nil {
+		// Nothing to trim, return the webhook as is
+		return models.TrimWebhookResponse{
+			Webhook: req.Webhook,
+		}, nil
+	}
+
+	trimmedWebhook, err := webhookTrimmer.trimFunction(ctx, req)
+	if err != nil {
+		return models.TrimWebhookResponse{}, err
+	}
+
+	return trimmedWebhook, nil
+}
+
 func (p *Plugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if p.client == nil {
 		return models.VerifyWebhookResponse{}, plugins.ErrNotYetInstalled
@@ -138,7 +181,7 @@ func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebho
 		return models.TranslateWebhookResponse{}, fmt.Errorf("unsupported webhook event type: %s", req.Name)
 	}
 
-	resp, err := webhookTranslator.fn(ctx, req)
+	resp, err := webhookTranslator.handleFunction(ctx, req)
 	if err != nil {
 		return models.TranslateWebhookResponse{}, err
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -66,7 +68,7 @@ type Engine interface {
 
 	// We received a webhook, handle it by calling the corresponding plugin to
 	// translate it to a formance object and store it.
-	HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error
+	HandleWebhook(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 
 	// Create a Formance pool composed of accounts.
 	CreatePool(ctx context.Context, pool models.Pool) error
@@ -94,7 +96,8 @@ type engine struct {
 	// have a listener function that checks for plugin updates or installs
 	plugins plugins.Plugins
 
-	stack string
+	stack          string
+	stackPublicURL string
 
 	wg sync.WaitGroup
 }
@@ -105,6 +108,7 @@ func New(
 	storage storage.Storage,
 	plugins plugins.Plugins,
 	stack string,
+	stackPublicURL string,
 ) Engine {
 	return &engine{
 		logger:         logger,
@@ -113,6 +117,7 @@ func New(
 		plugins:        plugins,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
+		stackPublicURL: stackPublicURL,
 	}
 }
 
@@ -931,13 +936,18 @@ func (e *engine) CompleteUserLink(ctx context.Context, connectorID models.Connec
 	return nil
 }
 
-func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
+func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, webhook models.Webhook) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
 
 	ctx = context.WithoutCancel(ctx)
 	e.wg.Add(1)
 	defer e.wg.Done()
+
+	webhook, config, err := e.verifyAndTrimWebhook(ctx, urlPath, webhook)
+	if err != nil {
+		return err
+	}
 
 	if _, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
@@ -953,8 +963,10 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		workflow.RunHandleWebhooks,
 		workflow.HandleWebhooks{
 			ConnectorID: webhook.ConnectorID,
+			URL:         url,
 			URLPath:     urlPath,
 			Webhook:     webhook,
+			Config:      config,
 		},
 	); err != nil {
 		otel.RecordError(span, err)
@@ -962,6 +974,84 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	}
 
 	return nil
+}
+
+func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) (models.Webhook, *models.WebhookConfig, error) {
+	plugin, err := e.plugins.Get(webhook.ConnectorID)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	configs, err := e.storage.WebhooksConfigsGetFromConnectorID(ctx, webhook.ConnectorID)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	var config *models.WebhookConfig
+	for _, c := range configs {
+		if !strings.Contains(urlPath, c.URLPath) {
+			continue
+		}
+
+		config = &c
+		break
+	}
+
+	if config == nil {
+		return models.Webhook{}, nil, errors.New("webhook config not found")
+	}
+
+	config.FullURL, err = url.JoinPath(e.stackPublicURL, "/api/payments/v3", urlPath)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	verifyResponse, err := plugin.VerifyWebhook(
+		ctx,
+		models.VerifyWebhookRequest{
+			Webhook: models.PSPWebhook{
+				BasicAuth:   webhook.BasicAuth,
+				QueryValues: webhook.QueryValues,
+				Headers:     webhook.Headers,
+				Body:        webhook.Body,
+			},
+			Config: config,
+		},
+	)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	webhook.IdempotencyKey = verifyResponse.WebhookIdempotencyKey
+
+	webhook, err = e.trimWebhook(ctx, plugin, config, webhook)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	return webhook, config, nil
+}
+
+func (e *engine) trimWebhook(ctx context.Context, plugin models.Plugin, config *models.WebhookConfig, webhook models.Webhook) (models.Webhook, error) {
+	trimmedWebhook, err := plugin.TrimWebhook(ctx, models.TrimWebhookRequest{
+		Webhook: models.PSPWebhook{
+			BasicAuth:   webhook.BasicAuth,
+			QueryValues: webhook.QueryValues,
+			Headers:     webhook.Headers,
+			Body:        webhook.Body,
+		},
+		Config: config,
+	})
+	if err != nil {
+		return models.Webhook{}, err
+	}
+
+	webhook.BasicAuth = trimmedWebhook.Webhook.BasicAuth
+	webhook.QueryValues = trimmedWebhook.Webhook.QueryValues
+	webhook.Headers = trimmedWebhook.Webhook.Headers
+	webhook.Body = trimmedWebhook.Webhook.Body
+
+	return webhook, nil
 }
 
 func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
@@ -1212,6 +1302,17 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	if !connector.ScheduledForDeletion {
+		if err := e.plugins.LoadPlugin(
+			connector.ID,
+			connector.Provider,
+			connector.Name,
+			config,
+			connector.Config,
+			false,
+		); err != nil {
+			return err
+		}
+
 		// Launch the workflow
 		if _, err := e.launchInstallWorkflow(ctx, connector, config); err != nil {
 			return err

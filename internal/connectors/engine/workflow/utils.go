@@ -218,15 +218,6 @@ func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
 }
 
-func (w Workflow) getWebhookBaseURL(connectorID models.ConnectorID) (string, error) {
-	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/webhooks", connectorID.String())
-	if err != nil {
-		return "", fmt.Errorf("joining webhook base URL: %w", err)
-	}
-
-	return webhookBaseURL, nil
-}
-
 func (w Workflow) getFormanceRedirectURL(connectorID models.ConnectorID) (string, error) {
 	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/bank-bridges", connectorID.String(), "redirect")
 	if err != nil {

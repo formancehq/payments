@@ -23,7 +23,6 @@ import (
 type MockEngine struct {
 	ctrl     *gomock.Controller
 	recorder *MockEngineMockRecorder
-	isgomock struct{}
 }
 
 // MockEngineMockRecorder is the mock recorder for MockEngine.
@@ -217,17 +216,17 @@ func (mr *MockEngineMockRecorder) ForwardUser(ctx, psuID, connectorID any) *gomo
 }
 
 // HandleWebhook mocks base method.
-func (m *MockEngine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
+func (m *MockEngine) HandleWebhook(ctx context.Context, url, urlPath string, webhook models.Webhook) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleWebhook", ctx, urlPath, webhook)
+	ret := m.ctrl.Call(m, "HandleWebhook", ctx, url, urlPath, webhook)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleWebhook indicates an expected call of HandleWebhook.
-func (mr *MockEngineMockRecorder) HandleWebhook(ctx, urlPath, webhook any) *gomock.Call {
+func (mr *MockEngineMockRecorder) HandleWebhook(ctx, url, urlPath, webhook any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleWebhook", reflect.TypeOf((*MockEngine)(nil).HandleWebhook), ctx, urlPath, webhook)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleWebhook", reflect.TypeOf((*MockEngine)(nil).HandleWebhook), ctx, url, urlPath, webhook)
 }
 
 // InstallConnector mocks base method.

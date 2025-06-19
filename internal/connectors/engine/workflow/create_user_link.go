@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
@@ -97,7 +98,7 @@ func (w Workflow) createUserLink(
 		return "", err
 	}
 
-	webhookBaseURL, err := w.getWebhookBaseURL(createUserLink.ConnectorID)
+	webhookBaseURL, err := utils.GetWebhookBaseURL(w.stackPublicURL, createUserLink.ConnectorID)
 	if err != nil {
 		return "", fmt.Errorf("joining webhook base URL: %w", err)
 	}

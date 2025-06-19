@@ -92,7 +92,7 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
-func (p *Plugin) verifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
+func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if req.Config == nil {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook config: %w", models.ErrWebhookVerification)
 	}

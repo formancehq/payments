@@ -27,7 +27,6 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
-	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -223,17 +222,17 @@ func (mr *MockBackendMockRecorder) ConnectorsConfigs() *gomock.Call {
 }
 
 // ConnectorsHandleWebhooks mocks base method.
-func (m *MockBackend) ConnectorsHandleWebhooks(ctx context.Context, urlPath string, webhook models.Webhook) error {
+func (m *MockBackend) ConnectorsHandleWebhooks(ctx context.Context, url, urlPath string, webhook models.Webhook) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ConnectorsHandleWebhooks", ctx, urlPath, webhook)
+	ret := m.ctrl.Call(m, "ConnectorsHandleWebhooks", ctx, url, urlPath, webhook)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // ConnectorsHandleWebhooks indicates an expected call of ConnectorsHandleWebhooks.
-func (mr *MockBackendMockRecorder) ConnectorsHandleWebhooks(ctx, urlPath, webhook any) *gomock.Call {
+func (mr *MockBackendMockRecorder) ConnectorsHandleWebhooks(ctx, url, urlPath, webhook any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsHandleWebhooks", reflect.TypeOf((*MockBackend)(nil).ConnectorsHandleWebhooks), ctx, urlPath, webhook)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ConnectorsHandleWebhooks", reflect.TypeOf((*MockBackend)(nil).ConnectorsHandleWebhooks), ctx, url, urlPath, webhook)
 }
 
 // ConnectorsInstall mocks base method.
