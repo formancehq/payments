@@ -20,6 +20,8 @@ const (
 )
 
 func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
+	var capabilityNotSupported *engine.ErrConnectorCapabilityNotSupported
+
 	switch {
 	case errors.Is(err, storage.ErrDuplicateKeyValue):
 		api.BadRequest(w, ErrUniqueReference, err)
@@ -33,7 +35,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 		api.BadRequest(w, ErrValidation, err)
 	case errors.Is(err, services.ErrNotFound):
 		api.NotFound(w, err)
-	case errors.Is(err, &engine.ErrConnectorCapabilityNotSupported{}):
+	case errors.As(err, &capabilityNotSupported):
 		api.BadRequest(w, ErrConnectorCapabilityNotSupported, err)
 	default:
 		common.InternalServerError(w, r, err)

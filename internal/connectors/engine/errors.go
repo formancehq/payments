@@ -23,11 +23,6 @@ func (e *ErrConnectorCapabilityNotSupported) Error() string {
 	return fmt.Sprintf("%s capability is not supported by the provider %s. Check here the supported features: https://docs.formance.com/payments/connectors/#supported-processors", e.Capability, e.Provider)
 }
 
-func (e *ErrConnectorCapabilityNotSupported) Is(err error) bool {
-	_, ok := err.(*ErrConnectorCapabilityNotSupported)
-	return ok
-}
-
 // handleWorkflowError processes Temporal workflow errors and wraps validation errors
 // with ErrValidation to provide consistent error handling for API responses.
 func handleWorkflowError(err error) error {
