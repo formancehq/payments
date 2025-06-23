@@ -119,27 +119,34 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		return fmt.Errorf("getting connector: %w", err)
 	}
 
-	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-		response.TransactionReadyToFetch.ID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting bank bridge connection: %w", err)
-	}
+	var conn *models.PSUBankBridgeConnection
+	var ba *models.PSUBankBridge
+	if response.TransactionReadyToFetch.ID != nil {
+		connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+			infiniteRetryContext(ctx),
+			handleWebhooks.ConnectorID,
+			*response.TransactionReadyToFetch.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge connection: %w", err)
+		}
 
-	bankBridge, err := activities.StoragePSUBankBridgesGet(
-		infiniteRetryContext(ctx),
-		psuID,
-		handleWebhooks.ConnectorID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting bank bridge: %w", err)
+		bankBridge, err := activities.StoragePSUBankBridgesGet(
+			infiniteRetryContext(ctx),
+			psuID,
+			handleWebhooks.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge: %w", err)
+		}
+
+		conn = connection
+		ba = bankBridge
 	}
 
 	payload, err := json.Marshal(&models.BankBridgeFromPayload{
-		PSUBankBridge:           bankBridge,
-		PSUBankBridgeConnection: connection,
+		PSUBankBridge:           ba,
+		PSUBankBridgeConnection: conn,
 		FromPayload:             response.TransactionReadyToFetch.FromPayload,
 	})
 	if err != nil {
@@ -167,7 +174,13 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			Config:      config,
 			ConnectorID: handleWebhooks.ConnectorID,
 			FromPayload: &FromPayload{
-				ID:      response.TransactionReadyToFetch.ID,
+				ID: func() string {
+					if response.TransactionReadyToFetch.ID != nil {
+						return *response.TransactionReadyToFetch.ID
+					}
+
+					return ""
+				}(),
 				Payload: payload,
 			},
 			Periodically: false,

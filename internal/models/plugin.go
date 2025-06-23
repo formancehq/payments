@@ -41,7 +41,8 @@ type InstallResponse struct {
 }
 
 type UninstallRequest struct {
-	ConnectorID string
+	ConnectorID    string
+	WebhookConfigs []PSPWebhookConfig
 }
 
 type UninstallResponse struct{}
@@ -95,7 +96,7 @@ type WebhookResponse struct {
 }
 
 type TransactionReadyToFetch struct {
-	ID          string
+	ID          *string
 	FromPayload json.RawMessage
 }
 

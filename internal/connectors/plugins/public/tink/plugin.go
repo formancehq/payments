@@ -66,8 +66,24 @@ func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models
 }
 
 func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
-	// TODO(polo): delete webhooks
+	if p.client == nil {
+		return models.UninstallResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	err := p.deleteWebhooks(ctx, req)
+	if err != nil {
+		return models.UninstallResponse{}, err
+	}
+
 	return models.UninstallResponse{}, nil
+}
+
+func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {

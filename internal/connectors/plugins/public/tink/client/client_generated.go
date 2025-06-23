@@ -20,7 +20,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -111,4 +110,63 @@ func (m *MockClient) DeleteUserConnection(ctx context.Context, req DeleteUserCon
 func (mr *MockClientMockRecorder) DeleteUserConnection(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserConnection", reflect.TypeOf((*MockClient)(nil).DeleteUserConnection), ctx, req)
+}
+
+// DeleteWebhook mocks base method.
+func (m *MockClient) DeleteWebhook(ctx context.Context, webhookID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteWebhook", ctx, webhookID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteWebhook indicates an expected call of DeleteWebhook.
+func (mr *MockClientMockRecorder) DeleteWebhook(ctx, webhookID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhook", reflect.TypeOf((*MockClient)(nil).DeleteWebhook), ctx, webhookID)
+}
+
+// GetAccountCreatedWebhook mocks base method.
+func (m *MockClient) GetAccountCreatedWebhook(ctx context.Context, payload []byte) (AccountCreatedWebhook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountCreatedWebhook", ctx, payload)
+	ret0, _ := ret[0].(AccountCreatedWebhook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountCreatedWebhook indicates an expected call of GetAccountCreatedWebhook.
+func (mr *MockClientMockRecorder) GetAccountCreatedWebhook(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountCreatedWebhook", reflect.TypeOf((*MockClient)(nil).GetAccountCreatedWebhook), ctx, payload)
+}
+
+// GetAccountTransactionsModifiedWebhook mocks base method.
+func (m *MockClient) GetAccountTransactionsModifiedWebhook(ctx context.Context, payload []byte) (AccountTransactionsModifiedWebhook, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetAccountTransactionsModifiedWebhook", ctx, payload)
+	ret0, _ := ret[0].(AccountTransactionsModifiedWebhook)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetAccountTransactionsModifiedWebhook indicates an expected call of GetAccountTransactionsModifiedWebhook.
+func (mr *MockClientMockRecorder) GetAccountTransactionsModifiedWebhook(ctx, payload any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountTransactionsModifiedWebhook", reflect.TypeOf((*MockClient)(nil).GetAccountTransactionsModifiedWebhook), ctx, payload)
+}
+
+// ListTransactions mocks base method.
+func (m *MockClient) ListTransactions(ctx context.Context, req ListTransactionRequest) (ListTransactionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ListTransactions", ctx, req)
+	ret0, _ := ret[0].(ListTransactionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ListTransactions indicates an expected call of ListTransactions.
+func (mr *MockClientMockRecorder) ListTransactions(ctx, req any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransactions", reflect.TypeOf((*MockClient)(nil).ListTransactions), ctx, req)
 }

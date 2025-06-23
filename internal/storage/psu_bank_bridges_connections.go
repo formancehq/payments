@@ -47,7 +47,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from 
 		Set("state = EXCLUDED.state").
 		Exec(ctx)
 	if err != nil {
-		return err
+		return e("upserting bank bridge connection attempt", err)
 	}
 
 	return nil
@@ -60,7 +60,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsGet(ctx context.Context, id uuid.
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, e("getting bank bridge connection attempt", err)
 	}
 
 	return toPsuBankBridgeConnectionAttemptsModels(attempt)
@@ -90,7 +90,7 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
 	if err != nil {
-		return err
+		return e("upserting bank bridge", err)
 	}
 
 	return nil
@@ -104,7 +104,7 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, e("getting bank bridge", err)
 	}
 
 	connections := []psuBankBridgeConnections{}
@@ -114,7 +114,7 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, e("getting bank bridge", err)
 	}
 
 	return toPsuBankBridgesModels(bankBridge, connections), nil
@@ -146,7 +146,7 @@ func (s *store) PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.U
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
 	if err != nil {
-		return err
+		return e("upserting bank bridge connection", err)
 	}
 
 	return nil
@@ -161,7 +161,7 @@ func (s *store) PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID
 		Where("connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, e("getting bank bridge connection", err)
 	}
 
 	return toPsuBankBridgeConnectionsModels(connection), nil
@@ -175,7 +175,7 @@ func (s *store) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context,
 		Where("connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
-		return nil, uuid.Nil, err
+		return nil, uuid.Nil, e("getting bank bridge connection", err)
 	}
 
 	return toPsuBankBridgeConnectionsModels(connection), connection.PsuID, nil
@@ -189,7 +189,7 @@ func (s *store) PSUBankBridgeConnectionsGetAll(ctx context.Context, psuID uuid.U
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, e("getting bank bridge connection", err)
 	}
 
 	connectionsModels := make([]*models.PSUBankBridgeConnection, len(connections))

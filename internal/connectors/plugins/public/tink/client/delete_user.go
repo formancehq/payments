@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
 type DeleteUserRequest struct {
@@ -11,7 +13,7 @@ type DeleteUserRequest struct {
 }
 
 func (c *client) DeleteUser(ctx context.Context, req DeleteUserRequest) error {
-	authCode, err := c.GetUserAccessToken(ctx, GetUserAccessTokenRequest{
+	authCode, err := c.getUserAccessToken(ctx, GetUserAccessTokenRequest{
 		UserID: req.UserID,
 		WantedScopes: []Scopes{
 			SCOPES_USER_DELETE,
@@ -20,6 +22,8 @@ func (c *client) DeleteUser(ctx context.Context, req DeleteUserRequest) error {
 	if err != nil {
 		return err
 	}
+
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "delete_user")
 
 	endpoint := fmt.Sprintf("%s/api/v1/user/delete", c.endpoint)
 

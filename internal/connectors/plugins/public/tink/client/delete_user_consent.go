@@ -15,7 +15,7 @@ type DeleteUserConnectionRequest struct {
 }
 
 func (c *client) DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error {
-	authCode, err := c.GetUserAccessToken(ctx, GetUserAccessTokenRequest{
+	authCode, err := c.getUserAccessToken(ctx, GetUserAccessTokenRequest{
 		UserID: req.UserID,
 		WantedScopes: []Scopes{
 			SCOPES_CREDENTIALS_WRITE,

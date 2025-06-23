@@ -15,8 +15,12 @@ type Client interface {
 	CreateUser(ctx context.Context, userID string, market string) (CreateUserResponse, error)
 	CreateTemporaryAuthorizationCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error)
 	CreateWebhook(ctx context.Context, eventType WebhookEventType, connectorID string, url string) (CreateWebhookResponse, error)
+	DeleteWebhook(ctx context.Context, webhookID string) error
+	GetAccountTransactionsModifiedWebhook(ctx context.Context, payload []byte) (AccountTransactionsModifiedWebhook, error)
+	GetAccountCreatedWebhook(ctx context.Context, payload []byte) (AccountCreatedWebhook, error)
 	DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error
 	DeleteUser(ctx context.Context, req DeleteUserRequest) error
+	ListTransactions(ctx context.Context, req ListTransactionRequest) (ListTransactionResponse, error)
 }
 
 type client struct {
@@ -65,6 +69,9 @@ func New(connectorName, clientID, clientSecret, endpoint string) Client {
 
 				// Transactions
 				string(SCOPES_TRANSACTIONS_READ),
+
+				// Webhooks
+				string(SCOPES_WEBHOOKS),
 			},
 		},
 	}

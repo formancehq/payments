@@ -23,4 +23,6 @@ const (
 	SCOPES_BALANCES_READ Scopes = "balances:read"
 
 	SCOPES_TRANSACTIONS_READ Scopes = "transactions:read"
+
+	SCOPES_WEBHOOKS Scopes = "webhook-endpoints"
 )

@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -217,7 +218,7 @@ func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWe
 	return []models.WebhookResponse{
 		{
 			TransactionReadyToFetch: &models.TransactionReadyToFetch{
-				ID:          strconv.Itoa(webhook.ConnectionID),
+				ID:          pointer.For(strconv.Itoa(webhook.ConnectionID)),
 				FromPayload: req.Webhook.Body,
 			},
 		},

@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/base64"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -92,6 +93,22 @@ func (p *Plugin) createWebhooks(ctx context.Context, req models.CreateWebhooksRe
 	}, nil
 }
 
+func (p *Plugin) deleteWebhooks(ctx context.Context, req models.UninstallRequest) error {
+	for _, config := range req.WebhookConfigs {
+		if config.Metadata == nil ||
+			config.Metadata[webhookIDMetadataKey] == "" {
+			continue
+		}
+
+		err := p.client.DeleteWebhook(ctx, config.Metadata[webhookIDMetadataKey])
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	if req.Config == nil {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook config: %w", models.ErrWebhookVerification)
@@ -121,10 +138,11 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 		return models.VerifyWebhookResponse{}, fmt.Errorf("webhook created at %s is too old: %w", createdAt, models.ErrWebhookVerification)
 	}
 
-	messageToSign := fmt.Sprintf("%s.%s", timestamp, req.Webhook.Body)
+	messageToSign := fmt.Sprintf("%s.%s", timestamp, string(req.Webhook.Body))
 	if req.Config.Metadata == nil {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("missing webhook config: %w", models.ErrWebhookVerification)
 	}
+
 	secret := req.Config.Metadata[webhookSecretMetadataKey]
 	if secret == "" {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
@@ -132,14 +150,9 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(messageToSign))
-	computedSignature := mac.Sum(nil)
+	computedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	decodedSignature, err := base64.StdEncoding.DecodeString(signature)
-	if err != nil {
-		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
-	}
-
-	if !hmac.Equal(computedSignature, decodedSignature) {
+	if computedSignature != signature {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
 	}
 
@@ -171,8 +184,8 @@ func (p *Plugin) handleAccountBookedTransactionsModified(ctx context.Context, re
 	// This event is fired when an account has new or updated transactions that
 	// have status BOOKED.
 
-	// Note: We don't need to do anything here as we will receive the the
-	// hyandle AccountTransactionsModified webhook
+	// Note: We don't need to do anything here as we will receive the
+	// handle AccountTransactionsModified webhook
 
 	fmt.Println("account booked transactions modified", string(req.Webhook.Body))
 
@@ -185,11 +198,23 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 	// regardless of their booking status.
 	// https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-modified
 
-	// Note: launch a sync of the transactions -> // TODO(polo): add a new response to call the fetch_payments workflow
+	accountTransactionsModifiedWebhook, err := p.client.GetAccountTransactionsModifiedWebhook(ctx, req.Webhook.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	fmt.Println("account transactions modified", string(req.Webhook.Body))
+	payload, err := json.Marshal(accountTransactionsModifiedWebhook)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	response := models.WebhookResponse{
+		TransactionReadyToFetch: &models.TransactionReadyToFetch{
+			FromPayload: payload,
+		},
+	}
+
+	return []models.WebhookResponse{response}, nil
 }
 
 func (p *Plugin) handleAccountTransactionsDeleted(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
@@ -209,9 +234,23 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 
 	// Note: Nothing to do here for now.
 
-	fmt.Println("account created", string(req.Webhook.Body))
+	accountCreatedWebhook, err := p.client.GetAccountCreatedWebhook(ctx, req.Webhook.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	payload, err := json.Marshal(accountCreatedWebhook)
+	if err != nil {
+		return nil, err
+	}
+
+	response := models.WebhookResponse{
+		TransactionReadyToFetch: &models.TransactionReadyToFetch{
+			FromPayload: payload,
+		},
+	}
+
+	return []models.WebhookResponse{response}, nil
 }
 
 func (p *Plugin) handleAccountUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {

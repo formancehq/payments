@@ -44,3 +44,19 @@ type Webhook struct {
 	Headers        map[string][]string `json:"headers"`
 	Body           []byte              `json:"payload"`
 }
+
+func ToPSPWebhookConfigs(configs []WebhookConfig) []PSPWebhookConfig {
+	pspConfigs := make([]PSPWebhookConfig, 0, len(configs))
+	for _, config := range configs {
+		pspConfigs = append(pspConfigs, ToPSPWebhookConfig(config))
+	}
+	return pspConfigs
+}
+
+func ToPSPWebhookConfig(config WebhookConfig) PSPWebhookConfig {
+	return PSPWebhookConfig{
+		Name:     config.Name,
+		URLPath:  config.URLPath,
+		Metadata: config.Metadata,
+	}
+}

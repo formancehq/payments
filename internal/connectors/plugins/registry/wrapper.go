@@ -373,16 +373,16 @@ func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequ
 	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
 	defer span.End()
 
-	i.logger.WithField("name", i.plugin.Name()).Info("creating user...")
+	i.logger.WithField("name", i.plugin.Name()).Info("creating user link...")
 
 	resp, err := i.plugin.CreateUserLink(ctx, req)
 	if err != nil {
-		i.logger.WithField("name", i.plugin.Name()).Error("creating user failed:", err)
+		i.logger.WithField("name", i.plugin.Name()).Error("creating user link failed:", err)
 		otel.RecordError(span, err)
 		return models.CreateUserLinkResponse{}, translateError(err)
 	}
 
-	i.logger.WithField("name", i.plugin.Name()).Info("created user succeeded!")
+	i.logger.WithField("name", i.plugin.Name()).Info("created user link succeeded!")
 
 	return resp, nil
 }

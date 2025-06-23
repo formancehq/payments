@@ -299,7 +299,7 @@ func (p *Plugin) handleTransactionsWebhook(ctx context.Context, req models.Trans
 		return []models.WebhookResponse{
 			{
 				TransactionReadyToFetch: &models.TransactionReadyToFetch{
-					ID:          baseWebhook.ItemID,
+					ID:          &baseWebhook.ItemID,
 					FromPayload: req.Webhook.Body,
 				},
 			},
@@ -312,7 +312,7 @@ func (p *Plugin) handleTransactionsWebhook(ctx context.Context, req models.Trans
 		return []models.WebhookResponse{
 			{
 				TransactionReadyToFetch: &models.TransactionReadyToFetch{
-					ID:          baseWebhook.ItemID,
+					ID:          &baseWebhook.ItemID,
 					FromPayload: req.Webhook.Body,
 				},
 			},

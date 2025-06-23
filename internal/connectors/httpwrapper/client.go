@@ -86,6 +86,8 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	reqErr := c.httpErrorCheckerFn(resp.StatusCode)
 	// the caller doesn't care about the response body so we return early
 	if resp.Body == nil || (reqErr == nil && expectedBody == nil) || (reqErr != nil && errorBody == nil) {
+		rawBody, err := io.ReadAll(resp.Body)
+		fmt.Println("TOTOTOTO", string(rawBody), err)
 		return resp.StatusCode, reqErr
 	}
 
@@ -103,6 +105,7 @@ func (c *client) Do(ctx context.Context, req *http.Request, expectedBody, errorB
 	}
 
 	if reqErr != nil {
+		fmt.Println("TOTOTOTO", string(rawBody))
 		if err = json.Unmarshal(rawBody, errorBody); err != nil {
 			return resp.StatusCode, fmt.Errorf("failed to unmarshal error response (%w) with status %d: %w", err, resp.StatusCode, reqErr)
 		}
