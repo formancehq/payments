@@ -115,6 +115,10 @@ func (psu *PaymentServiceUser) UnmarshalJSON(data []byte) error {
 }
 
 func ToPSPPaymentServiceUser(from *PaymentServiceUser) *PSPPaymentServiceUser {
+	if from == nil {
+		return nil
+	}
+
 	return &PSPPaymentServiceUser{
 		ID:             from.ID,
 		Name:           from.Name,

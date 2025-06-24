@@ -149,6 +149,14 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runCreateUser,
 		}).
 		Append(temporalworker.Definition{
+			Name: RunDeleteUser,
+			Func: w.runDeleteUser,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunDeleteUserConnection,
+			Func: w.runDeleteUserConnection,
+		}).
+		Append(temporalworker.Definition{
 			Name: RunCreateUserLink,
 			Func: w.runCreateUserLink,
 		}).

@@ -61,6 +61,10 @@ type Engine interface {
 
 	// Create a user on the given connector (PSP).
 	ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	// Delete a user on the given connector (PSP).
+	DeleteUser(ctx context.Context, psuID uuid.UUID) (models.Task, error)
+	// Delete a user connection on the given connector (PSP).
+	DeleteUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
 	// Create a user link on the given connector (PSP).
 	CreateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
 	// Complete a user link on the given connector (PSP).
@@ -841,6 +845,100 @@ func (e *engine) ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID m
 			TaskID:      task.ID,
 			ConnectorID: connectorID,
 			PsuID:       psuID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) DeleteUser(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.DeleteUser")
+	defer span.End()
+
+	id := fmt.Sprintf("delete-user-%s-%s", e.stack, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference: id,
+		},
+		Status:    models.TASK_STATUS_PROCESSING,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunDeleteUser,
+		workflow.DeleteUser{
+			TaskID: task.ID,
+			PsuID:  psuID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) DeleteUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.DeleteUserConnection")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("delete-user-connection-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunDeleteUserConnection,
+		workflow.DeleteUserConnection{
+			TaskID:       task.ID,
+			ConnectorID:  connectorID,
+			PsuID:        psuID,
+			ConnectionID: connectionID,
 		},
 	)
 	if err != nil {

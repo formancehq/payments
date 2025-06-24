@@ -185,6 +185,36 @@ func (mr *MockEngineMockRecorder) DeletePool(ctx, poolID any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePool", reflect.TypeOf((*MockEngine)(nil).DeletePool), ctx, poolID)
 }
 
+// DeleteUser mocks base method.
+func (m *MockEngine) DeleteUser(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", ctx, psuID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockEngineMockRecorder) DeleteUser(ctx, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockEngine)(nil).DeleteUser), ctx, psuID)
+}
+
+// DeleteUserConnection mocks base method.
+func (m *MockEngine) DeleteUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserConnection", ctx, connectorID, psuID, connectionID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUserConnection indicates an expected call of DeleteUserConnection.
+func (mr *MockEngineMockRecorder) DeleteUserConnection(ctx, connectorID, psuID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserConnection", reflect.TypeOf((*MockEngine)(nil).DeleteUserConnection), ctx, connectorID, psuID, connectionID)
+}
+
 // ForwardBankAccount mocks base method.
 func (m *MockEngine) ForwardBankAccount(ctx context.Context, ba models.BankAccount, connectorID models.ConnectorID, waitResult bool) (models.Task, error) {
 	m.ctrl.T.Helper()

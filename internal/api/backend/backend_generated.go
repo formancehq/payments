@@ -546,6 +546,36 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersCreateLink(ctx, psuID, con
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersCreateLink", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersCreateLink), ctx, psuID, connectorID, idempotencyKey, ClientRedirectURL)
 }
 
+// PaymentServiceUsersDelete mocks base method.
+func (m *MockBackend) PaymentServiceUsersDelete(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersDelete", ctx, psuID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentServiceUsersDelete indicates an expected call of PaymentServiceUsersDelete.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersDelete(ctx, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersDelete", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersDelete), ctx, psuID)
+}
+
+// PaymentServiceUsersDeleteConnection mocks base method.
+func (m *MockBackend) PaymentServiceUsersDeleteConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersDeleteConnection", ctx, connectorID, psuID, connectionID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentServiceUsersDeleteConnection indicates an expected call of PaymentServiceUsersDeleteConnection.
+func (mr *MockBackendMockRecorder) PaymentServiceUsersDeleteConnection(ctx, connectorID, psuID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersDeleteConnection", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersDeleteConnection), ctx, connectorID, psuID, connectionID)
+}
+
 // PaymentServiceUsersForward mocks base method.
 func (m *MockBackend) PaymentServiceUsersForward(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
 	m.ctrl.T.Helper()

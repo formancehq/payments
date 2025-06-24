@@ -74,6 +74,8 @@ type Backend interface {
 	PaymentServiceUsersForwardBankAccountToConnector(ctx context.Context, psuID, bankAccountID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
 	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID uuid.UUID, bankAccountID uuid.UUID) error
 	PaymentServiceUsersForward(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	PaymentServiceUsersDelete(ctx context.Context, psuID uuid.UUID) (models.Task, error)
+	PaymentServiceUsersDeleteConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
 	PaymentServiceUsersCreateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
 	PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error)
 

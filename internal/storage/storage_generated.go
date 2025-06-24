@@ -651,6 +651,21 @@ func (mr *MockStorageMockRecorder) PSUBankBridgesGet(ctx, psuID, connectorID any
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesGet", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesGet), ctx, psuID, connectorID)
 }
 
+// PSUBankBridgesList mocks base method.
+func (m *MockStorage) PSUBankBridgesList(ctx context.Context, query ListPSUBankBridgesQuery) (*bunpaginate.Cursor[models.PSUBankBridge], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgesList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridge])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgesList indicates an expected call of PSUBankBridgesList.
+func (mr *MockStorageMockRecorder) PSUBankBridgesList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesList", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesList), ctx, query)
+}
+
 // PSUBankBridgesUpsert mocks base method.
 func (m *MockStorage) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridge) error {
 	m.ctrl.T.Helper()

@@ -3,8 +3,11 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
+	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -118,6 +121,89 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 	}
 
 	return toPsuBankBridgesModels(bankBridge, connections), nil
+}
+
+type PSUBankBridgesQuery struct{}
+
+type ListPSUBankBridgesQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUBankBridgesQuery]]
+
+func NewListPSUBankBridgesQuery(opts bunpaginate.PaginatedQueryOptions[PSUBankBridgesQuery]) ListPSUBankBridgesQuery {
+	return ListPSUBankBridgesQuery{
+		Order:    bunpaginate.OrderAsc,
+		PageSize: opts.PageSize,
+		Options:  opts,
+	}
+}
+
+func (s *store) psuBankBridgesQueryContext(qb query.Builder) (string, []any, error) {
+	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
+		switch {
+		case key == "connector_id", key == "psu_id":
+			if operator != "$match" {
+				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
+			}
+			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+		case metadataRegex.Match([]byte(key)):
+			if operator != "$match" {
+				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
+			}
+			match := metadataRegex.FindAllStringSubmatch(key, 3)
+
+			key := "metadata"
+			return key + " @> ?", []any{map[string]any{
+				match[0][1]: value,
+			}}, nil
+		default:
+			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)
+		}
+	}))
+}
+
+func (s *store) PSUBankBridgesList(ctx context.Context, query ListPSUBankBridgesQuery) (*bunpaginate.Cursor[models.PSUBankBridge], error) {
+	var (
+		where string
+		args  []any
+		err   error
+	)
+	if query.Options.QueryBuilder != nil {
+		where, args, err = s.psuBankBridgesQueryContext(query.Options.QueryBuilder)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PSUBankBridgesQuery], psuBankBridges](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUBankBridgesQuery]])(&query),
+		func(query *bun.SelectQuery) *bun.SelectQuery {
+			if where != "" {
+				query = query.Where(where, args...)
+			}
+
+			return query
+		},
+	)
+	if err != nil {
+		return nil, e("failed to fetch psu bank bridges", err)
+	}
+
+	psuBankBridges := make([]psuBankBridges, len(cursor.Data))
+	for i, p := range cursor.Data {
+		psuBankBridges[i] = p
+	}
+
+	psuBankBridgesModels := make([]models.PSUBankBridge, len(psuBankBridges))
+	for i, p := range psuBankBridges {
+		bb := toPsuBankBridgesModels(p, []psuBankBridgeConnections{})
+		psuBankBridgesModels[i] = *bb
+	}
+
+	return &bunpaginate.Cursor[models.PSUBankBridge]{
+		PageSize: cursor.PageSize,
+		HasMore:  cursor.HasMore,
+		Previous: cursor.Previous,
+		Next:     cursor.Next,
+		Data:     psuBankBridgesModels,
+	}, nil
 }
 
 type psuBankBridgeConnections struct {
