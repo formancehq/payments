@@ -33,6 +33,7 @@ type MoovClient interface {
 }
 
 type PaymentOptionsRequest struct {
+	PartnerAccountID     string
 	SourceAccountID      string
 	DestinationAccountID string
 	Amount               int64
@@ -46,9 +47,6 @@ type serviceWrapper struct {
 type client struct {
 	service MoovClient
 
-	publicKey string
-	secretKey string
-	endpoint  string
 	accountID string
 }
 
@@ -77,7 +75,7 @@ func (c *serviceWrapper) CreateMoovTransfer(ctx context.Context, partnerAccountI
 }
 
 func (c *serviceWrapper) GetMoovTransferOptions(ctx context.Context, request PaymentOptionsRequest) (*moov.TransferOptions, error) {
-	return c.TransferOptions(ctx, moov.CreateTransferOptions{
+	return c.TransferOptions(ctx, request.PartnerAccountID, moov.CreateTransferOptions{
 		Source: moov.CreateTransferOptionsTarget{
 			AccountID: request.SourceAccountID,
 		},
@@ -108,9 +106,6 @@ func New(connectorName string, endpoint string, publicKey string, secretKey stri
 
 	client := &client{
 		service:   &serviceWrapper{moovClient},
-		endpoint:  endpoint,
-		publicKey: publicKey,
-		secretKey: secretKey,
 		accountID: accountID,
 	}
 

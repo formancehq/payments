@@ -1,8 +1,8 @@
 module github.com/formancehq/payments
 
-go 1.23.2
+go 1.24
 
-toolchain go1.23.5
+toolchain go1.24.4
 
 replace github.com/formancehq/payments/pkg/client => ./pkg/client
 
@@ -32,7 +32,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.5
 	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
 	github.com/lib/pq v1.10.9
-	github.com/moovfinancial/moov-go v0.12.0
+	github.com/moovfinancial/moov-go v0.19.0
 	github.com/nats-io/nats.go v1.43.0
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/onsi/gomega v1.37.0
@@ -109,7 +109,7 @@ require (
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/go-chi/chi v4.1.2+incompatible // indirect
 	github.com/go-chi/render v1.0.3 // indirect
-	github.com/go-jose/go-jose/v4 v4.0.5 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.3.0 // indirect

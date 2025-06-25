@@ -1,7 +1,7 @@
 package client
 
 const (
-	moovMetadataSpecNamespace = "com.moov.spec/"
+	moovMetadataSpecNamespace = "io.moov.spec/"
 
 	MoovWalletCurrencyMetadataKey                   = moovMetadataSpecNamespace + "walletCurrency"
 	MoovWalletValueMetadataKey                      = moovMetadataSpecNamespace + "walletValue"
@@ -59,4 +59,8 @@ const (
 	// Sales tax metadata keys
 	MoovSalesTaxAmountCurrencyMetadataKey = moovMetadataSpecNamespace + "salesTaxAmountCurrency"
 	MoovSalesTaxAmountValueMetadataKey    = moovMetadataSpecNamespace + "salesTaxAmountvalue"
+
+	// Moov fee metadata keys
+	MoovFeeAmountMetadataKey        = moovMetadataSpecNamespace + "moovFeeAmount"
+	MoovFeeAmountDecimalMetadataKey = moovMetadataSpecNamespace + "moovFeeAmountDecimal"
 )

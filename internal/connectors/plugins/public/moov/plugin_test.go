@@ -67,19 +67,6 @@ var _ = Describe("Moov Plugin", func() {
 			Expect(plg.client).NotTo(BeNil())
 		})
 
-		It("should accept valid URL without protocol and keep it as is", func() {
-			config := json.RawMessage(`{
-				"endpoint": "api.test.com",
-				"publicKey": "test-public-key",
-				"privateKey": "test-private-key",
-				"accountID": "test-account-id"
-			}`)
-			plg, err := New(ProviderName, logger, config)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(plg).NotTo(BeNil())
-			Expect(plg.client).NotTo(BeNil())
-		})
-
 		It("should accept valid URL with port", func() {
 			config := json.RawMessage(`{
 				"endpoint": "https://api.test.com:8080",
@@ -178,16 +165,16 @@ var _ = Describe("Moov Plugin", func() {
 			Expect(result.Endpoint).To(Equal("test.com"))
 		})
 
-		It("should accept valid URL without protocol and keep it as is", func() {
+		It("should not accept URL without protocol", func() {
 			config := json.RawMessage(`{
 				"endpoint": "api.test.com",
 				"publicKey": "test-public-key",
 				"privateKey": "test-private-key",
 				"accountID": "test-account-id"
 			}`)
-			result, err := unmarshalAndValidateConfig(config)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(result.Endpoint).To(Equal("api.test.com"))
+			_, err := unmarshalAndValidateConfig(config)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("url"))
 		})
 
 		It("should accept valid URL with port and strip protocol", func() {

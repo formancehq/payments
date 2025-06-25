@@ -29,6 +29,7 @@ func (c *client) InitiatePayout(
 		DestinationAccountID: destinationAccountID,
 		Amount:               pr.Amount.Value,
 		Currency:             pr.Amount.Currency,
+		PartnerAccountID:     c.accountID,
 	}
 
 	transferOptions, err := c.service.GetMoovTransferOptions(ctx, paymentData)
@@ -70,26 +71,6 @@ func (c *client) InitiatePayout(
 
 	if destinationPaymentMethod == nil {
 		return nil, models.NewConnectorValidationError("DestinationAccountID", fmt.Errorf("destination payment method %s not found in available transfer options", pr.Destination.PaymentMethodID))
-	}
-
-	// Validate transaction amount against source payment method limit
-	if sourcePaymentMethod.PaymentMethodType != "" {
-		sourceMethodType := PaymentMethodType(sourcePaymentMethod.PaymentMethodType)
-		isValid, limit := ValidateTransactionLimit(sourceMethodType, float64(pr.Amount.Value))
-		if !isValid {
-			return nil, models.NewConnectorValidationError("amount", fmt.Errorf("transaction amount %d exceeds source payment method limit of %f for %s",
-				pr.Amount.Value, limit, sourceMethodType))
-		}
-	}
-
-	// Validate transaction amount against destination payment method limit
-	if destinationPaymentMethod.PaymentMethodType != "" {
-		destMethodType := PaymentMethodType(destinationPaymentMethod.PaymentMethodType)
-		isValid, limit := ValidateTransactionLimit(destMethodType, float64(pr.Amount.Value))
-		if !isValid {
-			return nil, models.NewConnectorValidationError("amount", fmt.Errorf("transaction amount %d exceeds destination payment method limit of %f for %s",
-				pr.Amount.Value, limit, destMethodType))
-		}
 	}
 
 	// Create the transfer with the selected payment methods

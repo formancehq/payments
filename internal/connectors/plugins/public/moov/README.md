@@ -21,15 +21,15 @@ To install the Column connector, use the following configuration:
 
 ### Configuration Parameters
 
-| Parameter       | Description                                            | Required |
-| --------------- | ------------------------------------------------------ | -------- |
-| `name`          | The name of the connector                              | Yes      |
-| `pollingPeriod` | The frequency at which the connector polls for updates | Yes      |
-| `endpoint`      | The Moov API endpoint                                | Yes      |
-| `privateKey`        | Your Moov API Private key                                    | Yes      |
-| `publicKey`        | Your Moov API Public key                                    | Yes      |
-| `accountID`        | Your Moov Merchant Account ID, can be gotten from business page in the moov dashboard                                    | Yes      |
-| `pageSize`      | The number of items to fetch per page                  | No       |
+| Parameter       | Description                                                                           | Required |
+| --------------- | ------------------------------------------------------------------------------------- | -------- |
+| `name`          | The name of the connector                                                             | Yes      |
+| `pollingPeriod` | The frequency at which the connector polls for updates                                | Yes      |
+| `endpoint`      | The Moov API endpoint                                                                 | Yes      |
+| `privateKey`    | Your Moov API Private key                                                             | Yes      |
+| `publicKey`     | Your Moov API Public key                                                              | Yes      |
+| `accountID`     | Your Moov Merchant Account ID, can be gotten from business page in the moov dashboard | Yes      |
+| `pageSize`      | The number of items to fetch per page                                                 | No       |
 
 ## Features
 
@@ -141,7 +141,7 @@ When integrating with the Moov connector, we recommend the following workflow:
 
 2. **Get Available Payment Methods**:
    - Use accounts IDs to fetch the supported payment methods between two accounts from Moov API. https://api.moov.io/transfer-options
-   - Search the returned payment methods to get the corresponding `com.moov.spec/sourcePaymentMethodId` and `com.moov.spec/destinationPaymentMethodId`
+   - Search the returned payment methods to get the corresponding `io.moov.spec/sourcePaymentMethodId` and `io.moov.spec/destinationPaymentMethodId`
 
 3. **Create the Payment**:
    - Provide the source and destination payment method IDs
@@ -170,16 +170,16 @@ Example of create payout payload
   "SourceAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3.........",
   "DestinationAccountID": "eyJDb25uZWN0b3JJRCI6eyJQcm92aWRlciI6Im1vb3YiL...........",
     "metadata": {
-        "com.moov.spec/type": "ach",
-        "com.moov.spec/destinationPaymentMethodId": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
-        "com.moov.spec/sourcePaymentMethodId": "029ab065-82f0-4eb2-97c9-6d0bf363fd41"
+        "io.moov.spec/type": "ach",
+        "io.moov.spec/destinationPaymentMethodId": "bb6160b7-8ecf-4f66-b72e-a9a96243689c",
+        "io.moov.spec/sourcePaymentMethodId": "029ab065-82f0-4eb2-97c9-6d0bf363fd41"
     }
 }
 ```
 
 ## Metadata Keys
 
-The Moov connector uses the following metadata keys with the namespace `com.moov.spec/`:
+The Moov connector uses the following metadata keys with the namespace `io.moov.spec/`:
 
 ### ACH Payment Creation
 

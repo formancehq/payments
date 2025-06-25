@@ -211,8 +211,17 @@ func mapPaymentMetadata(transfer moov.Transfer) map[string]string {
 
 	// Facilitator fee
 	if transfer.FacilitatorFee != nil {
+		// Convert int64 to float format
 		metadata[client.MoovFacilitatorFeeTotalMetadataKey] = fmt.Sprintf("%d", transfer.FacilitatorFee.Total)
 		metadata[client.MoovFacilitatorFeeTotalDecimalMetadataKey] = transfer.FacilitatorFee.TotalDecimal
+	}
+
+	// Moov fee
+	if transfer.MoovFee != nil {
+		metadata[client.MoovFeeAmountMetadataKey] = fmt.Sprintf("%d", *transfer.MoovFee)
+	}
+	if transfer.MoovFeeDecimal != "" {
+		metadata[client.MoovFeeAmountDecimalMetadataKey] = transfer.MoovFeeDecimal
 	}
 
 	return metadata
