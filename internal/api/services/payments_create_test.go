@@ -46,6 +46,11 @@ func TestPaymentsCreate(t *testing.T) {
 			typedError:    true,
 		},
 		{
+			name:          "capability not supported",
+			err:           &engine.ErrConnectorCapabilityNotSupported{Capability: "CreatePayments", Provider: "Stripe"},
+			expectedError: &engine.ErrConnectorCapabilityNotSupported{Capability: "CreatePayments", Provider: "Stripe"},
+		},
+		{
 			name:          "other error",
 			err:           fmt.Errorf("error"),
 			expectedError: fmt.Errorf("error"),

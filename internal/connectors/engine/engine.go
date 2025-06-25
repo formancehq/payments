@@ -351,7 +351,8 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormanceAccount")
 	defer span.End()
 
-	capabilities, err := registry.GetCapabilities(models.ToV3Provider(account.ConnectorID.Provider))
+	provider := models.ToV3Provider(account.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(provider)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -366,7 +367,7 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 	}
 
 	if !found {
-		err := errors.New("connector does not support account creation")
+		err := &ErrConnectorCapabilityNotSupported{Capability: "CreateFormanceAccount", Provider: provider}
 		otel.RecordError(span, err)
 		return err
 	}
@@ -405,7 +406,8 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateFormancePayment")
 	defer span.End()
 
-	capabilities, err := registry.GetCapabilities(models.ToV3Provider(payment.ConnectorID.Provider))
+	provider := models.ToV3Provider(payment.ConnectorID.Provider)
+	capabilities, err := registry.GetCapabilities(provider)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -420,7 +422,7 @@ func (e *engine) CreateFormancePayment(ctx context.Context, payment models.Payme
 	}
 
 	if !found {
-		err := errors.New("connector does not support payment creation")
+		err := &ErrConnectorCapabilityNotSupported{Capability: "CreateFormancePayment", Provider: provider}
 		otel.RecordError(span, err)
 		return err
 	}
