@@ -10,10 +10,10 @@ import (
 	"go.uber.org/fx"
 )
 
-func Module(stack string, debug bool) fx.Option {
+func Module(stack string, stackPublicURL string, debug bool) fx.Option {
 	ret := []fx.Option{
 		fx.Provide(func(logger logging.Logger) plugins.Plugins {
-			return plugins.New(plugins.CallerEngine, logger, debug)
+			return plugins.New(logger, debug)
 		}),
 		fx.Provide(func(
 			logger logging.Logger,
@@ -21,7 +21,7 @@ func Module(stack string, debug bool) fx.Option {
 			storage storage.Storage,
 			plugins plugins.Plugins,
 		) Engine {
-			return New(logger, temporalClient, storage, plugins, stack)
+			return New(logger, temporalClient, storage, plugins, stack, stackPublicURL)
 		}),
 		fx.Invoke(func(lc fx.Lifecycle, engine Engine) {
 			lc.Append(fx.Hook{

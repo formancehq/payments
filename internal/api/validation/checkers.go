@@ -7,6 +7,7 @@ import (
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
+	"golang.org/x/text/language"
 )
 
 var (
@@ -162,4 +163,13 @@ func IsEmail(fl validator.FieldLevel) bool {
 	}
 
 	return emailRegexp.MatchString(str)
+}
+
+func IsLocale(fl validator.FieldLevel) bool {
+	str, err := fieldLevelToString(fl)
+	if err != nil {
+		return false
+	}
+	_, err = language.Parse(str)
+	return err == nil
 }

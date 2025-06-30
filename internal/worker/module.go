@@ -52,7 +52,7 @@ func NewModule(
 			return events.New(publisher, stackURL)
 		}),
 		fx.Provide(func(logger logging.Logger) plugins.Plugins {
-			return plugins.New(plugins.CallerWorker, logger, debug)
+			return plugins.New(logger, debug)
 		}),
 		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins, logger logging.Logger) workflow.Workflow {
 			return workflow.New(temporalClient, temporalNamespace, plugins, stack, stackURL, logger)

@@ -5780,6 +5780,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3PlaidConfig](#schemav3plaidconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
 
 xor
@@ -6143,6 +6149,38 @@ xor
 |apiKey|string|true|none|none|
 |clientID|string|true|none|none|
 |endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
+<h2 id="tocS_V3PlaidConfig">V3PlaidConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3plaidconfig"></a>
+<a id="schema_V3PlaidConfig"></a>
+<a id="tocSv3plaidconfig"></a>
+<a id="tocsv3plaidconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "isSandbox": true,
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Plaid"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|isSandbox|boolean|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

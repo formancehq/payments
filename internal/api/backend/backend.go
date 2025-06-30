@@ -73,6 +73,11 @@ type Backend interface {
 	PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
 	PaymentServiceUsersForwardBankAccountToConnector(ctx context.Context, psuID, bankAccountID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
 	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID uuid.UUID, bankAccountID uuid.UUID) error
+	PaymentServiceUsersForward(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	PaymentServiceUsersDelete(ctx context.Context, psuID uuid.UUID) (models.Task, error)
+	PaymentServiceUsersDeleteConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
+	PaymentServiceUsersCreateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
+	PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error)
 
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error
@@ -90,7 +95,7 @@ type Backend interface {
 	TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 
 	// Webhooks
-	ConnectorsHandleWebhooks(ctx context.Context, urlPath string, webhook models.Webhook) error
+	ConnectorsHandleWebhooks(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 
 	// Workflows Instances
 	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)

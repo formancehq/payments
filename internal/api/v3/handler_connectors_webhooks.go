@@ -52,7 +52,7 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 			}
 		}
 
-		err = backend.ConnectorsHandleWebhooks(ctx, path, webhook)
+		err = backend.ConnectorsHandleWebhooks(ctx, r.URL.String(), path, webhook)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
