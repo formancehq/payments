@@ -31,6 +31,12 @@ var psuTableCreation string
 //go:embed 16-webhooks-idempotency-key.sql
 var webhooksIdempotencyKey string
 
+//go:embed 17-add-language-psu.sql
+var psuLanguageColumn string
+
+//go:embed 18-bank-bridges-connections.sql
+var bankBridgesConnections string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -223,6 +229,28 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running webhooks idempotency key migration...")
 					_, err := tx.ExecContext(ctx, webhooksIdempotencyKey)
 					logger.WithField("error", err).Info("finished running webhooks idempotency key migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "add language to psu",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add language to psu migration...")
+					_, err := tx.ExecContext(ctx, psuLanguageColumn)
+					logger.WithField("error", err).Info("finished running add language to psu migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "bank bridges connections",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add bank bridges connections migration...")
+					_, err := tx.ExecContext(ctx, bankBridgesConnections)
+					logger.WithField("error", err).Info("finished running add bank bridges connections migration")
 					return err
 				})
 			},

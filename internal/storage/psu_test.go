@@ -22,6 +22,7 @@ var (
 		ContactDetails: &models.ContactDetails{
 			Email:       pointer.For("test"),
 			PhoneNumber: pointer.For("test"),
+			Locale:      pointer.For("test"),
 		},
 		Address: &models.Address{
 			StreetName:   pointer.For("test"),

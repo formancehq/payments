@@ -76,12 +76,47 @@ func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebho
 	return models.CreateWebhooksResponse{}, ErrNotImplemented
 }
 
+func (dp *basePlugin) TrimWebhook(ctx context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
+	// Base implementation is to return the webhook as is
+	return models.TrimWebhookResponse{
+		Webhook: req.Webhook,
+	}, nil
+}
+
 func (dp *basePlugin) VerifyWebhook(ctx context.Context, req models.VerifyWebhookRequest) (models.VerifyWebhookResponse, error) {
 	return models.VerifyWebhookResponse{}, ErrNotImplemented
 }
 
 func (dp *basePlugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
 	return models.TranslateWebhookResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	return models.CreateUserResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	return models.CreateUserLinkResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	return models.CompleteUserLinkResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
+	return models.UpdateUserLinkResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) CompleteUpdateUserLink(ctx context.Context, req models.CompleteUpdateUserLinkRequest) (models.CompleteUpdateUserLinkResponse, error) {
+	return models.CompleteUpdateUserLinkResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	return models.DeleteUserConnectionResponse{}, ErrNotImplemented
+}
+
+func (dp *basePlugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	return models.DeleteUserResponse{}, ErrNotImplemented
 }
 
 var _ models.Plugin = &basePlugin{}

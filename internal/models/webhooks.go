@@ -1,5 +1,9 @@
 package models
 
+const (
+	RedirectURIQueryParam = "redirect_uri"
+)
+
 type PSPWebhookConfig struct {
 	Name    string `json:"name"`
 	URLPath string `json:"urlPath"`
@@ -12,6 +16,7 @@ type WebhookConfig struct {
 	Name        string      `json:"name"`
 	ConnectorID ConnectorID `json:"connectorID"`
 	URLPath     string      `json:"urlPath"`
+	FullURL     string      `json:"fullURL"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -38,4 +43,20 @@ type Webhook struct {
 	QueryValues    map[string][]string `json:"queryValues"`
 	Headers        map[string][]string `json:"headers"`
 	Body           []byte              `json:"payload"`
+}
+
+func ToPSPWebhookConfigs(configs []WebhookConfig) []PSPWebhookConfig {
+	pspConfigs := make([]PSPWebhookConfig, 0, len(configs))
+	for _, config := range configs {
+		pspConfigs = append(pspConfigs, ToPSPWebhookConfig(config))
+	}
+	return pspConfigs
+}
+
+func ToPSPWebhookConfig(config WebhookConfig) PSPWebhookConfig {
+	return PSPWebhookConfig{
+		Name:     config.Name,
+		URLPath:  config.URLPath,
+		Metadata: config.Metadata,
+	}
 }

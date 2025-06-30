@@ -103,6 +103,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestMoneycorp() *com
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestPlaid() *components.V3PlaidConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3PlaidConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestQonto() *components.V3QontoConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3QontoConfig

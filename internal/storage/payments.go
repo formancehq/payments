@@ -257,6 +257,26 @@ func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID m
 	return e("failed to delete payments", err)
 }
 
+// TODO(polo): add tests
+func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to delete payment", err)
+}
+
+// TODO(polo): add tests
+func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("source_account_id = ? OR destination_account_id = ?", accountID, accountID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
 type PaymentQuery struct{}
 
 type ListPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]]
