@@ -103,6 +103,20 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestMoneycorp() *com
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestPlaid() *components.V3PlaidConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3PlaidConfig
+	}
+	return nil
+}
+
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestPowens() *components.V3PowensConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3PowensConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestQonto() *components.V3QontoConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3QontoConfig
@@ -113,6 +127,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestQonto() *compone
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestStripe() *components.V3StripeConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3StripeConfig
+	}
+	return nil
+}
+
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestTink() *components.V3TinkConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3TinkConfig
 	}
 	return nil
 }

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -57,9 +59,22 @@ type Engine interface {
 	// Reverse a payout on the given connector (PSP).
 	ReversePayout(ctx context.Context, reversal models.PaymentInitiationReversal, waitResult bool) (models.Task, error)
 
+	// Create a user on the given connector (PSP).
+	ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	// Delete a user on the given connector (PSP).
+	DeleteUser(ctx context.Context, psuID uuid.UUID) (models.Task, error)
+	// Delete a user connection on the given connector (PSP).
+	DeleteUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
+	// Create a user link on the given connector (PSP).
+	CreateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
+	// Update a user link on the given connector (PSP).
+	UpdateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error)
+	// Complete a user link on the given connector (PSP).
+	CompleteUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error
+
 	// We received a webhook, handle it by calling the corresponding plugin to
 	// translate it to a formance object and store it.
-	HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error
+	HandleWebhook(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 
 	// Create a Formance pool composed of accounts.
 	CreatePool(ctx context.Context, pool models.Pool) error
@@ -87,7 +102,8 @@ type engine struct {
 	// have a listener function that checks for plugin updates or installs
 	plugins plugins.Plugins
 
-	stack string
+	stack          string
+	stackPublicURL string
 
 	wg sync.WaitGroup
 }
@@ -98,6 +114,7 @@ func New(
 	storage storage.Storage,
 	plugins plugins.Plugins,
 	stack string,
+	stackPublicURL string,
 ) Engine {
 	return &engine{
 		logger:         logger,
@@ -106,6 +123,7 @@ func New(
 		plugins:        plugins,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
+		stackPublicURL: stackPublicURL,
 	}
 }
 
@@ -135,7 +153,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Config:    rawConfig,
 	}
 
-	err := e.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	err := e.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -331,7 +349,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	connector.Config = rawConfig
 	connector.Name = config.Name
 
-	err = e.plugins.RegisterPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	err = e.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -793,9 +811,293 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 	return task, nil
 }
 
-func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
+func (e *engine) ForwardUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUser")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("create-user-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateUser,
+		workflow.CreateUser{
+			TaskID:      task.ID,
+			ConnectorID: connectorID,
+			PsuID:       psuID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) DeleteUser(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.DeleteUser")
+	defer span.End()
+
+	id := fmt.Sprintf("delete-user-%s-%s", e.stack, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference: id,
+		},
+		Status:    models.TASK_STATUS_PROCESSING,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunDeleteUser,
+		workflow.DeleteUser{
+			TaskID: task.ID,
+			PsuID:  psuID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) DeleteUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.DeleteUserConnection")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("delete-user-connection-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunDeleteUserConnection,
+		workflow.DeleteUserConnection{
+			TaskID:       task.ID,
+			ConnectorID:  connectorID,
+			PsuID:        psuID,
+			ConnectionID: connectionID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) CreateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUserLink")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("create-user-link-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCreateUserLink,
+		workflow.CreateUserLink{
+			TaskID:            task.ID,
+			ConnectorID:       connectorID,
+			PsuID:             psuID,
+			IdempotencyKey:    idempotencyKey,
+			ClientRedirectURL: ClientRedirectURL,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) UpdateUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (models.Task, error) {
+	ctx, span := otel.Tracer().Start(ctx, "engine.UpdateUserLink")
+	defer span.End()
+
+	id := models.TaskIDReference(fmt.Sprintf("update-user-link-%s", e.stack), connectorID, psuID.String())
+	now := time.Now().UTC()
+	task := models.Task{
+		ID: models.TaskID{
+			Reference:   id,
+			ConnectorID: connectorID,
+		},
+		ConnectorID: &connectorID,
+		Status:      models.TASK_STATUS_PROCESSING,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+	}
+
+	if err := e.storage.TasksUpsert(ctx, task); err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+		},
+		workflow.RunUpdateUserLink,
+		workflow.UpdateUserLink{
+			TaskID:            task.ID,
+			ConnectorID:       connectorID,
+			PsuID:             psuID,
+			ConnectionID:      connectionID,
+			IdempotencyKey:    idempotencyKey,
+			ClientRedirectURL: ClientRedirectURL,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return models.Task{}, err
+	}
+
+	return task, nil
+}
+
+func (e *engine) CompleteUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error {
+	ctx, span := otel.Tracer().Start(ctx, "engine.CompleteUserLink")
+	defer span.End()
+
+	ctx = context.WithoutCancel(ctx)
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	id := models.TaskIDReference(fmt.Sprintf("complete-user-link-%s", e.stack), connectorID, attemptID.String())
+	_, err := e.temporalClient.ExecuteWorkflow(
+		ctx,
+		client.StartWorkflowOptions{
+			ID:                                       id,
+			TaskQueue:                                GetDefaultTaskQueue(e.stack),
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowExecutionErrorWhenAlreadyStarted: false,
+			SearchAttributes: map[string]interface{}{
+				workflow.SearchAttributeStack: e.stack,
+			},
+		},
+		workflow.RunCompleteUserLink,
+		workflow.CompleteUserLink{
+			HTTPCallInformation: httpCallInformation,
+			ConnectorID:         connectorID,
+			AttemptID:           attemptID,
+		},
+	)
+	if err != nil {
+		otel.RecordError(span, err)
+		return err
+	}
+
+	return nil
+}
+
+func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, webhook models.Webhook) error {
 	ctx, span := otel.Tracer().Start(ctx, "engine.HandleWebhook")
 	defer span.End()
+
+	ctx = context.WithoutCancel(ctx)
+	e.wg.Add(1)
+	defer e.wg.Done()
+
+	webhook, config, err := e.verifyAndTrimWebhook(ctx, urlPath, webhook)
+	if err != nil {
+		return err
+	}
 
 	if _, err := e.temporalClient.ExecuteWorkflow(
 		ctx,
@@ -811,8 +1113,10 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 		workflow.RunHandleWebhooks,
 		workflow.HandleWebhooks{
 			ConnectorID: webhook.ConnectorID,
+			URL:         url,
 			URLPath:     urlPath,
 			Webhook:     webhook,
+			Config:      config,
 		},
 	); err != nil {
 		otel.RecordError(span, err)
@@ -820,6 +1124,84 @@ func (e *engine) HandleWebhook(ctx context.Context, urlPath string, webhook mode
 	}
 
 	return nil
+}
+
+func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) (models.Webhook, *models.WebhookConfig, error) {
+	plugin, err := e.plugins.Get(webhook.ConnectorID)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	configs, err := e.storage.WebhooksConfigsGetFromConnectorID(ctx, webhook.ConnectorID)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	var config *models.WebhookConfig
+	for _, c := range configs {
+		if !strings.Contains(urlPath, c.URLPath) {
+			continue
+		}
+
+		config = &c
+		break
+	}
+
+	if config == nil {
+		return models.Webhook{}, nil, errors.New("webhook config not found")
+	}
+
+	config.FullURL, err = url.JoinPath(e.stackPublicURL, "/api/payments/v3", urlPath)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	verifyResponse, err := plugin.VerifyWebhook(
+		ctx,
+		models.VerifyWebhookRequest{
+			Webhook: models.PSPWebhook{
+				BasicAuth:   webhook.BasicAuth,
+				QueryValues: webhook.QueryValues,
+				Headers:     webhook.Headers,
+				Body:        webhook.Body,
+			},
+			Config: config,
+		},
+	)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	webhook.IdempotencyKey = verifyResponse.WebhookIdempotencyKey
+
+	webhook, err = e.trimWebhook(ctx, plugin, config, webhook)
+	if err != nil {
+		return models.Webhook{}, nil, err
+	}
+
+	return webhook, config, nil
+}
+
+func (e *engine) trimWebhook(ctx context.Context, plugin models.Plugin, config *models.WebhookConfig, webhook models.Webhook) (models.Webhook, error) {
+	trimmedWebhook, err := plugin.TrimWebhook(ctx, models.TrimWebhookRequest{
+		Webhook: models.PSPWebhook{
+			BasicAuth:   webhook.BasicAuth,
+			QueryValues: webhook.QueryValues,
+			Headers:     webhook.Headers,
+			Body:        webhook.Body,
+		},
+		Config: config,
+	})
+	if err != nil {
+		return models.Webhook{}, err
+	}
+
+	webhook.BasicAuth = trimmedWebhook.Webhook.BasicAuth
+	webhook.QueryValues = trimmedWebhook.Webhook.QueryValues
+	webhook.Headers = trimmedWebhook.Webhook.Headers
+	webhook.Body = trimmedWebhook.Webhook.Body
+
+	return webhook, nil
 }
 
 func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
@@ -1070,6 +1452,17 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	if !connector.ScheduledForDeletion {
+		if err := e.plugins.LoadPlugin(
+			connector.ID,
+			connector.Provider,
+			connector.Name,
+			config,
+			connector.Config,
+			false,
+		); err != nil {
+			return err
+		}
+
 		// Launch the workflow
 		if _, err := e.launchInstallWorkflow(ctx, connector, config); err != nil {
 			return err

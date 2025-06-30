@@ -1,8 +1,8 @@
 package workflow
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
@@ -15,55 +15,17 @@ import (
 
 type HandleWebhooks struct {
 	ConnectorID models.ConnectorID
+	URL         string
 	URLPath     string
 	Webhook     models.Webhook
+	Config      *models.WebhookConfig
 }
 
 func (w Workflow) runHandleWebhooks(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 ) error {
-	configs, err := activities.StorageWebhooksConfigsGet(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-	)
-	if err != nil {
-		return fmt.Errorf("getting webhook configs: %w", err)
-	}
-
-	var config *models.WebhookConfig
-	for _, c := range configs {
-		if !strings.Contains(handleWebhooks.URLPath, c.URLPath) {
-			continue
-		}
-
-		config = &c
-		break
-	}
-
-	if config == nil {
-		return temporal.NewNonRetryableApplicationError("webhook config not found", "NOT_FOUND", errors.New("webhook config not found"))
-	}
-
-	verifyResponse, err := activities.PluginVerifyWebhook(
-		infiniteRetryContext(ctx),
-		handleWebhooks.ConnectorID,
-		models.VerifyWebhookRequest{
-			Webhook: models.PSPWebhook{
-				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
-				QueryValues: handleWebhooks.Webhook.QueryValues,
-				Headers:     handleWebhooks.Webhook.Headers,
-				Body:        handleWebhooks.Webhook.Body,
-			},
-			Config: config,
-		},
-	)
-	if err != nil {
-		return fmt.Errorf("verifying webhook: %w", err)
-	}
-
-	handleWebhooks.Webhook.IdempotencyKey = verifyResponse.WebhookIdempotencyKey
-	err = activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
+	err := activities.StorageWebhooksStore(infiniteRetryContext(ctx), handleWebhooks.Webhook)
 	if err != nil {
 		return fmt.Errorf("storing webhook: %w", err)
 	}
@@ -72,14 +34,14 @@ func (w Workflow) runHandleWebhooks(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		models.TranslateWebhookRequest{
-			Name: config.Name,
+			Name: handleWebhooks.Config.Name,
 			Webhook: models.PSPWebhook{
 				BasicAuth:   handleWebhooks.Webhook.BasicAuth,
 				QueryValues: handleWebhooks.Webhook.QueryValues,
 				Headers:     handleWebhooks.Webhook.Headers,
 				Body:        handleWebhooks.Webhook.Body,
 			},
-			Config: config,
+			Config: handleWebhooks.Config,
 		},
 	)
 	if err != nil {
@@ -87,36 +49,145 @@ func (w Workflow) runHandleWebhooks(
 	}
 
 	for _, response := range resp.Responses {
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
-				ctx,
-				workflow.ChildWorkflowOptions{
-					WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s", w.stack, handleWebhooks.ConnectorID.String(), handleWebhooks.Webhook.ID),
-					TaskQueue:             w.getDefaultTaskQueue(),
-					ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
-					WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
-				},
-			),
-			RunStoreWebhookTranslation,
-			StoreWebhookTranslation{
-				ConnectorID:     handleWebhooks.ConnectorID,
-				Account:         response.Account,
-				ExternalAccount: response.ExternalAccount,
-				Payment:         response.Payment,
-			},
-		).Get(ctx, nil); err != nil {
-			applicationError := &temporal.ApplicationError{}
-			if errors.As(err, &applicationError) {
-				if applicationError.Type() != "ChildWorkflowExecutionAlreadyStartedError" {
-					return err
-				}
-			} else {
-				return fmt.Errorf("storing webhook translation: %w", err)
+		switch {
+		case response.TransactionReadyToFetch != nil:
+			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling bank bridge webhook: %w", err)
 			}
+
+		default:
+			// Default case, all the other webhooks are to store data
+			if err := w.handleDataToStoreWebhook(ctx, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling data to store webhook: %w", err)
+			}
+
 		}
+	}
+
+	return nil
+}
+
+func (w Workflow) handleDataToStoreWebhook(
+	ctx workflow.Context,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s", w.stack, handleWebhooks.ConnectorID.String(), handleWebhooks.Webhook.ID),
+				TaskQueue:             w.getDefaultTaskQueue(),
+				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
+				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunStoreWebhookTranslation,
+		StoreWebhookTranslation{
+			ConnectorID:     handleWebhooks.ConnectorID,
+			Account:         response.Account,
+			ExternalAccount: response.ExternalAccount,
+			Payment:         response.Payment,
+		},
+	).Get(ctx, nil); err != nil {
+		applicationError := &temporal.ApplicationError{}
+		if errors.As(err, &applicationError) {
+			if applicationError.Type() != "ChildWorkflowExecutionAlreadyStartedError" {
+				return err
+			}
+		} else {
+			return fmt.Errorf("storing webhook translation: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (w Workflow) handleTransactionReadyToFetchWebhook(
+	ctx workflow.Context,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
+	connector, err := activities.StorageConnectorsGet(
+		infiniteRetryContext(ctx),
+		handleWebhooks.ConnectorID,
+	)
+	if err != nil {
+		return fmt.Errorf("getting connector: %w", err)
+	}
+
+	var conn *models.PSUBankBridgeConnection
+	var ba *models.PSUBankBridge
+	if response.TransactionReadyToFetch.ID != nil {
+		connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+			infiniteRetryContext(ctx),
+			handleWebhooks.ConnectorID,
+			*response.TransactionReadyToFetch.ID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge connection: %w", err)
+		}
+
+		bankBridge, err := activities.StoragePSUBankBridgesGet(
+			infiniteRetryContext(ctx),
+			psuID,
+			handleWebhooks.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge: %w", err)
+		}
+
+		conn = connection
+		ba = bankBridge
+	}
+
+	payload, err := json.Marshal(&models.BankBridgeFromPayload{
+		PSUBankBridge:           ba,
+		PSUBankBridgeConnection: conn,
+		FromPayload:             response.TransactionReadyToFetch.FromPayload,
+	})
+	if err != nil {
+		return fmt.Errorf("marshalling bank bridge from payload: %w", err)
+	}
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return fmt.Errorf("unmarshalling connector config: %w", err)
+	}
+
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				TaskQueue:         w.getDefaultTaskQueue(),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunFetchNextPayments,
+		FetchNextPayments{
+			Config:      config,
+			ConnectorID: handleWebhooks.ConnectorID,
+			FromPayload: &FromPayload{
+				ID: func() string {
+					if response.TransactionReadyToFetch.ID != nil {
+						return *response.TransactionReadyToFetch.ID
+					}
+
+					return ""
+				}(),
+				Payload: payload,
+			},
+			Periodically: false,
+		},
+		[]models.ConnectorTaskTree{},
+	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
+		return fmt.Errorf("running transaction ready to fetch: %w", err)
 	}
 
 	return nil

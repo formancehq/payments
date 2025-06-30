@@ -44,13 +44,13 @@ var _ = Describe("API v2 Connector Webhooks", func() {
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", gomock.Any()).Return(fmt.Errorf("connector webhooks err"))
+			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", "/", gomock.Any()).Return(fmt.Errorf("connector webhooks err"))
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "connectorID", connID.String(), &config))
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return status ok on success", func(ctx SpecContext) {
-			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", gomock.Any()).Return(nil)
+			m.EXPECT().ConnectorsHandleWebhooks(gomock.Any(), "/", "/", gomock.Any()).Return(nil)
 			handlerFn(w, prepareJSONRequestWithQuery(http.MethodPost, "connectorID", connID.String(), &config))
 			assertExpectedResponse(w.Result(), http.StatusOK, "")
 		})

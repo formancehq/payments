@@ -75,17 +75,10 @@ var _ = Describe("Engine Tests", func() {
 		wr = activities.NewMockWorkflowRun(ctrl)
 		store = storage.NewMockStorage(ctrl)
 		plgs = plugins.NewMockPlugins(ctrl)
-		eng = engine.New(logger, cl, store, plgs, stackName)
+		eng = engine.New(logger, cl, store, plgs, stackName, "")
 	})
 
 	Context("on start", func() {
-		var (
-		//			config json.RawMessage
-		)
-		BeforeEach(func() {
-			//			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
-		})
-
 		It("should fail when unable to fetch connectors from storage", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(nil, expectedErr)
@@ -148,7 +141,7 @@ var _ = Describe("Engine Tests", func() {
 			expectedConfig.Name = connectorName
 
 			registerErr := errors.New("stop here")
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
 			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -156,7 +149,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
 				expectedErr,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -165,7 +158,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should return validation error when plugin registry fails with validation issues", func(ctx SpecContext) {
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
 				models.ErrInvalidConfig,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -175,7 +168,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
@@ -184,7 +177,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -196,7 +189,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -413,7 +406,7 @@ var _ = Describe("Engine Tests", func() {
 
 			registerErr := errors.New("stop here")
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
 			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -425,7 +418,7 @@ var _ = Describe("Engine Tests", func() {
 				ID: connectorID,
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
 				expectedErr,
 			)
 			err := eng.UpdateConnector(ctx, connectorID, config)
@@ -439,7 +432,7 @@ var _ = Describe("Engine Tests", func() {
 				ID: connectorID,
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(expectedErr)
 			err := eng.UpdateConnector(ctx, connectorID, config)
 			Expect(err).NotTo(BeNil())
@@ -456,7 +449,7 @@ var _ = Describe("Engine Tests", func() {
 				Config:    json.RawMessage(`{"name":"original-name"}`),
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().RegisterPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
 
 			expectedConnector := models.Connector{
 				ID:        connectorID,

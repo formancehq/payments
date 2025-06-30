@@ -5780,6 +5780,18 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3PlaidConfig](#schemav3plaidconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3PowensConfig](#schemav3powensconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
 
 xor
@@ -5787,6 +5799,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |*anonymous*|[V3StripeConfig](#schemav3stripeconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|[V3TinkConfig](#schemav3tinkconfig)|false|none|none|
 
 xor
 
@@ -6148,6 +6166,76 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
+<h2 id="tocS_V3PlaidConfig">V3PlaidConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3plaidconfig"></a>
+<a id="schema_V3PlaidConfig"></a>
+<a id="tocSv3plaidconfig"></a>
+<a id="tocsv3plaidconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "isSandbox": true,
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Plaid"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|isSandbox|boolean|false|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
+<h2 id="tocS_V3PowensConfig">V3PowensConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3powensconfig"></a>
+<a id="schema_V3PowensConfig"></a>
+<a id="tocSv3powensconfig"></a>
+<a id="tocsv3powensconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "configurationToken": "string",
+  "domain": "string",
+  "endpoint": "string",
+  "maxConnections": 0,
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Powens"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|configurationToken|string|true|none|none|
+|domain|string|true|none|none|
+|endpoint|string|true|none|none|
+|maxConnections|integer|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
 <h2 id="tocS_V3QontoConfig">V3QontoConfig</h2>
 <!-- backwards compatibility -->
 <a id="schemav3qontoconfig"></a>
@@ -6205,6 +6293,38 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
+<h2 id="tocS_V3TinkConfig">V3TinkConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3tinkconfig"></a>
+<a id="schema_V3TinkConfig"></a>
+<a id="tocSv3tinkconfig"></a>
+<a id="tocsv3tinkconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Tink"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

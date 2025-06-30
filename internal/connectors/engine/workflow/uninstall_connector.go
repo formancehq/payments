@@ -5,6 +5,8 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/internal/storage"
+	"github.com/pkg/errors"
 	"go.temporal.io/api/enums/v1"
 	"go.temporal.io/sdk/workflow"
 )
@@ -51,6 +53,18 @@ func (w Workflow) uninstallConnector(
 	ctx workflow.Context,
 	uninstallConnector UninstallConnector,
 ) error {
+	webhooksConfigs, err := activities.StorageWebhooksConfigsGet(
+		infiniteRetryContext(ctx),
+		uninstallConnector.ConnectorID,
+	)
+	if err != nil {
+		if !errors.Is(err, storage.ErrNotFound) {
+			return err
+		}
+
+		webhooksConfigs = []models.WebhookConfig{}
+	}
+
 	// First, terminate all schedules in order to prevent any workflows
 	// to be launched again.
 	if err := workflow.ExecuteChildWorkflow(
@@ -96,8 +110,9 @@ func (w Workflow) uninstallConnector(
 
 	wg.Add(1)
 	workflow.Go(ctx, func(ctx workflow.Context) {
+		configs := models.ToPSPWebhookConfigs(webhooksConfigs)
 		defer wg.Done()
-		_, err := activities.PluginUninstallConnector(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+		_, err = activities.PluginUninstallConnector(infiniteRetryContext(ctx), uninstallConnector.ConnectorID, configs)
 		errChan <- err
 	})
 
@@ -194,7 +209,7 @@ func (w Workflow) uninstallConnector(
 		}
 	}
 
-	err := activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
+	err = activities.StorageConnectorsDelete(infiniteRetryContext(ctx), uninstallConnector.ConnectorID)
 	if err != nil {
 		return err
 	}

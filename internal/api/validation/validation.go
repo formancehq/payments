@@ -44,6 +44,7 @@ func NewValidator() *Validator {
 	registerCustomChecker("asset", IsAsset, "", validate, translator)
 	registerCustomChecker("phoneNumber", IsPhoneNumber, "", validate, translator)
 	registerCustomChecker("email", IsEmail, "", validate, translator)
+	registerCustomChecker("locale", IsLocale, "", validate, translator)
 	return &Validator{
 		internal:   validate,
 		translator: translator,

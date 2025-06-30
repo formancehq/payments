@@ -96,6 +96,26 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginTranslateWebhook,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginCreateUser",
+			Func: a.PluginCreateUser,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCreateUserLink",
+			Func: a.PluginCreateUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCompleteUserLink",
+			Func: a.PluginCompleteUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginDeleteUserConnection",
+			Func: a.PluginDeleteUserConnection,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginDeleteUser",
+			Func: a.PluginDeleteUser,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageAccountsStore",
 			Func: a.StorageAccountsStore,
 		}).
@@ -286,6 +306,34 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StoragePoolsRemoveAccountsFromConnectorID",
 			Func: a.StoragePoolsRemoveAccountsFromConnectorID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesStore",
+			Func: a.StoragePSUBankBridgesStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesGet",
+			Func: a.StoragePSUBankBridgesGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesList",
+			Func: a.StoragePSUBankBridgesList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsStore",
+			Func: a.StoragePSUBankBridgeConnectionsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionAttemptsStore",
+			Func: a.StoragePSUBankBridgeConnectionAttemptsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionAttemptsGet",
+			Func: a.StoragePSUBankBridgeConnectionAttemptsGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsGetFromConnectionID",
+			Func: a.StoragePSUBankBridgeConnectionsGetFromConnectionID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",

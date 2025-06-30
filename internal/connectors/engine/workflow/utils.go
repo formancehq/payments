@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"net/url"
 
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
@@ -215,4 +216,13 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 
 func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
+}
+
+func (w Workflow) getFormanceRedirectURL(connectorID models.ConnectorID) (string, error) {
+	webhookBaseURL, err := url.JoinPath(w.stackPublicURL, "api/payments/v3/connectors/bank-bridges", connectorID.String(), "redirect")
+	if err != nil {
+		return "", fmt.Errorf("joining webhook base URL: %w", err)
+	}
+
+	return webhookBaseURL, nil
 }
