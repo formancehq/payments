@@ -69,6 +69,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigModulr(components.V3Modul
 v3ConnectorConfig := components.CreateV3ConnectorConfigMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3MoovConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigMoov(components.V3MoovConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go

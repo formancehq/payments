@@ -23,6 +23,7 @@ const (
 	V3UpdateConnectorRequestTypeMangopay      V3UpdateConnectorRequestType = "Mangopay"
 	V3UpdateConnectorRequestTypeModulr        V3UpdateConnectorRequestType = "Modulr"
 	V3UpdateConnectorRequestTypeMoneycorp     V3UpdateConnectorRequestType = "Moneycorp"
+	V3UpdateConnectorRequestTypeMoov          V3UpdateConnectorRequestType = "Moov"
 	V3UpdateConnectorRequestTypeQonto         V3UpdateConnectorRequestType = "Qonto"
 	V3UpdateConnectorRequestTypeStripe        V3UpdateConnectorRequestType = "Stripe"
 	V3UpdateConnectorRequestTypeWise          V3UpdateConnectorRequestType = "Wise"
@@ -40,6 +41,7 @@ type V3UpdateConnectorRequest struct {
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3MoovConfig          *V3MoovConfig          `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
@@ -176,6 +178,18 @@ func CreateV3UpdateConnectorRequestMoneycorp(moneycorp V3MoneycorpConfig) V3Upda
 	return V3UpdateConnectorRequest{
 		V3MoneycorpConfig: &moneycorp,
 		Type:              typ,
+	}
+}
+
+func CreateV3UpdateConnectorRequestMoov(moov V3MoovConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeMoov
+
+	typStr := string(typ)
+	moov.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3MoovConfig: &moov,
+		Type:         typ,
 	}
 }
 
@@ -326,6 +340,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3UpdateConnectorRequestTypeMoneycorp
 		return nil
+	case "Moov":
+		v3MoovConfig := new(V3MoovConfig)
+		if err := utils.UnmarshalJSON(data, &v3MoovConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Moov) type V3MoovConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3MoovConfig = v3MoovConfig
+		u.Type = V3UpdateConnectorRequestTypeMoov
+		return nil
 	case "Qonto":
 		v3QontoConfig := new(V3QontoConfig)
 		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
@@ -401,6 +424,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3MoneycorpConfig != nil {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
+	}
+
+	if u.V3MoovConfig != nil {
+		return utils.MarshalJSON(u.V3MoovConfig, "", true)
 	}
 
 	if u.V3QontoConfig != nil {

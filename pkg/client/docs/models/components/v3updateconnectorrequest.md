@@ -69,6 +69,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestModulr(comp
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3MoovConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestMoov(components.V3MoovConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go

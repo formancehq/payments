@@ -103,6 +103,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMoneycorp() 
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestMoov() *components.V3MoovConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3MoovConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestQonto() *components.V3QontoConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3QontoConfig

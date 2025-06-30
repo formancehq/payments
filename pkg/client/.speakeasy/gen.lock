@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 86668c33-fde8-4164-be98-cfc24d333a1e
 management:
-  docChecksum: aa36214e735ca58caa5d77f9d10ee263
+  docChecksum: 1945ae85b13bc14956519c45d9d2fb68
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -165,6 +165,7 @@ generatedFiles:
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
+  - /models/components/v3moovconfig.go
   - /models/components/v3payment.go
   - /models/components/v3paymentadjustment.go
   - /models/components/v3paymentinitiation.go
@@ -471,6 +472,7 @@ generatedFiles:
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md
+  - docs/models/components/v3moovconfig.md
   - docs/models/components/v3payment.md
   - docs/models/components/v3paymentadjustment.md
   - docs/models/components/v3paymentadjustmentraw.md

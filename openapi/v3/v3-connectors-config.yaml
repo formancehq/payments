@@ -15,6 +15,7 @@ components:
                     Mangopay: '#/components/schemas/V3MangopayConfig'
                     Modulr: '#/components/schemas/V3ModulrConfig'
                     Moneycorp: '#/components/schemas/V3MoneycorpConfig'
+                    Moov: '#/components/schemas/V3MoovConfig'
                     Qonto: '#/components/schemas/V3QontoConfig'
                     Stripe: '#/components/schemas/V3StripeConfig'
                     Wise: '#/components/schemas/V3WiseConfig'
@@ -30,6 +31,7 @@ components:
                 - $ref: '#/components/schemas/V3MangopayConfig'
                 - $ref: '#/components/schemas/V3ModulrConfig'
                 - $ref: '#/components/schemas/V3MoneycorpConfig'
+                - $ref: '#/components/schemas/V3MoovConfig'
                 - $ref: '#/components/schemas/V3QontoConfig'
                 - $ref: '#/components/schemas/V3StripeConfig'
                 - $ref: '#/components/schemas/V3WiseConfig'
@@ -308,6 +310,34 @@ components:
                 provider:
                     type: string
                     default: Moneycorp
+        V3MoovConfig:
+            type: object
+            required:
+                - name
+                - publicKey
+                - privateKey
+                - endpoint
+                - accountID
+            properties:
+                accountID:
+                    type: string
+                endpoint:
+                    type: string
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                privateKey:
+                    type: string
+                provider:
+                    type: string
+                    default: Moov
+                publicKey:
+                    type: string
         V3QontoConfig:
             type: object
             required:

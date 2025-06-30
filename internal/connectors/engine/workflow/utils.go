@@ -1,7 +1,6 @@
 package workflow
 
 import (
-	"errors"
 	"fmt"
 	"math/big"
 
@@ -178,8 +177,9 @@ func fillFormanceBankAccount(
 		bankAccountUUID,
 		true,
 	)
+
 	if err != nil {
-		if errors.Is(err, storage.ErrNotFound) {
+		if storage.IsStorageNotFound(err) {
 			return nil
 		}
 		return err
