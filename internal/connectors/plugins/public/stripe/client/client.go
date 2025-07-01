@@ -2,10 +2,10 @@ package client
 
 import (
 	"context"
+	"time"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/stripe/stripe-go/v79"
 	"github.com/stripe/stripe-go/v79/account"
@@ -16,6 +16,9 @@ import (
 	"github.com/stripe/stripe-go/v79/transfer"
 	"github.com/stripe/stripe-go/v79/transferreversal"
 )
+
+// https://github.com/stripe/stripe-go/blob/master/stripe.go#L1478
+const StripeDefaultTimeout = 80 * time.Second
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
@@ -40,7 +43,7 @@ type client struct {
 
 func New(name string, backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
-		backends := stripe.NewBackends(metrics.NewHTTPClient(name, models.DefaultConnectorClientTimeout))
+		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
 	}
 
