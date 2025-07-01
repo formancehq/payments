@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const DefaultConnectorClientTimeout = 3 * time.Second
+const DefaultConnectorClientTimeout = 10 * time.Second
 
 type PluginConstructorFn func() Plugin
 
