@@ -19,6 +19,18 @@ type Address struct {
 type ContactDetails struct {
 	Email       *string `json:"email"`
 	PhoneNumber *string `json:"phoneNumber"`
+	Locale      *string `json:"locale"`
+}
+
+type PSPPaymentServiceUser struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Optional fields
+	ContactDetails *ContactDetails   `json:"contactDetails"`
+	Address        *Address          `json:"address"`
+	Metadata       map[string]string `json:"metadata"`
 }
 
 type PaymentServiceUser struct {
@@ -29,8 +41,10 @@ type PaymentServiceUser struct {
 	// Optional fields
 	ContactDetails *ContactDetails   `json:"contactDetails"`
 	Address        *Address          `json:"address"`
-	BankAccountIDs []uuid.UUID       `json:"bankAccountIDs"`
 	Metadata       map[string]string `json:"metadata"`
+
+	BankAccountIDs        []uuid.UUID `json:"bankAccountIDs"`
+	BankBridgeConnections []uuid.UUID `json:"bankBridgeConnections"`
 }
 
 func (psu PaymentServiceUser) MarshalJSON() ([]byte, error) {
@@ -98,4 +112,19 @@ func (psu *PaymentServiceUser) UnmarshalJSON(data []byte) error {
 	}
 
 	return nil
+}
+
+func ToPSPPaymentServiceUser(from *PaymentServiceUser) *PSPPaymentServiceUser {
+	if from == nil {
+		return nil
+	}
+
+	return &PSPPaymentServiceUser{
+		ID:             from.ID,
+		Name:           from.Name,
+		CreatedAt:      from.CreatedAt,
+		ContactDetails: from.ContactDetails,
+		Address:        from.Address,
+		Metadata:       from.Metadata,
+	}
 }

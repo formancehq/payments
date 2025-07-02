@@ -69,6 +69,18 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestModulr(comp
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3PlaidConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestPlaid(components.V3PlaidConfig{/* values here */})
+```
+
+### V3PowensConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestPowens(components.V3PowensConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go
@@ -79,6 +91,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestQonto(compo
 
 ```go
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestStripe(components.V3StripeConfig{/* values here */})
+```
+
+### V3TinkConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestTink(components.V3TinkConfig{/* values here */})
 ```
 
 ### V3WiseConfig

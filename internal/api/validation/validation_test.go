@@ -44,6 +44,8 @@ var _ = Describe("Validator custom type checks", func() {
 			PhoneNumberNullable      *string                      `validate:"omitempty,phoneNumber"`
 			Email                    string                       `validate:"omitempty,email"`
 			EmailNullable            *string                      `validate:"omitempty,email"`
+			Locale                   string                       `validate:"omitempty,locale"`
+			LocaleNullable           *string                      `validate:"omitempty,locale"`
 		}
 
 		DescribeTable("non conforming values",
@@ -208,6 +210,23 @@ var _ = Describe("Validator custom type checks", func() {
 			Entry("email: unsupported type for this matcher", "email", "FieldName", struct {
 				FieldName int `validate:"email"`
 			}{FieldName: 34}),
+
+			// email
+			Entry("locale: invalid value of string on required field", "locale", "StringFieldName", struct {
+				StringFieldName string `validate:"required,locale"`
+			}{StringFieldName: "invalid"}),
+			Entry("locale: invalid value of string", "locale", "StringFieldName", struct {
+				StringFieldName string `validate:"omitempty,locale"`
+			}{StringFieldName: "invalid"}),
+			Entry("locale: invalid value of string on required field", "locale", "StringFieldName", struct {
+				StringFieldName *string `validate:"required,locale"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("locale: invalid value of string", "locale", "StringFieldName", struct {
+				StringFieldName *string `validate:"omitempty,locale"`
+			}{StringFieldName: pointer.For("invalid")}),
+			Entry("locale: unsupported type for this matcher", "locale", "FieldName", struct {
+				FieldName int `validate:"locale"`
+			}{FieldName: 34}),
 		)
 
 		It("connectorID supports expected values", func(ctx SpecContext) {
@@ -292,6 +311,26 @@ var _ = Describe("Validator custom type checks", func() {
 				EmailNullable: pointer.For("dev@formance.com"),
 			})
 			Expect(err).To(BeNil())
+		})
+		It("language supports expected values", func(ctx SpecContext) {
+			_, err := validate.Validate(CustomStruct{
+				Locale:         "en",
+				LocaleNullable: pointer.For("en"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				Locale:         "fr_FR",
+				LocaleNullable: pointer.For("fr_FR"),
+			})
+			Expect(err).To(BeNil())
+
+			_, err = validate.Validate(CustomStruct{
+				Locale:         "iv-u",
+				LocaleNullable: pointer.For("iv"),
+			})
+			Expect(err).ToNot(BeNil())
+
 		})
 	})
 })

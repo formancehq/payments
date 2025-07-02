@@ -50,6 +50,7 @@ var _ = Describe("API v3 Payment Service Users Create", func() {
 			Entry("name too long", PaymentServiceUsersCreateRequest{Name: generateTextString(1001)}),
 			Entry("country invalid", PaymentServiceUsersCreateRequest{Name: "a", Address: &AddressRequest{Country: pointer.For("invalid")}}),
 			Entry("phone number invalid", PaymentServiceUsersCreateRequest{Name: "a", ContactDetails: &ContactDetailsRequest{PhoneNumber: pointer.For("invalid")}}),
+			Entry("language", PaymentServiceUsersCreateRequest{Name: "a", ContactDetails: &ContactDetailsRequest{Locale: pointer.For("invalid")}}),
 			Entry("email invalid", PaymentServiceUsersCreateRequest{Name: "a", ContactDetails: &ContactDetailsRequest{Email: pointer.For("invalid")}}),
 			Entry("street number invalid", PaymentServiceUsersCreateRequest{Name: "a", Address: &AddressRequest{StreetNumber: pointer.For("invalid@")}}),
 		)

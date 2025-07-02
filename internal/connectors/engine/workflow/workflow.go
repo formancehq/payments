@@ -143,6 +143,30 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunUpdatePaymentInitiationFromPayment,
 			Func: w.runUpdatePaymentInitiationFromPayment,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunCreateUser,
+			Func: w.runCreateUser,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunDeleteUser,
+			Func: w.runDeleteUser,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunDeleteUserConnection,
+			Func: w.runDeleteUserConnection,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunCreateUserLink,
+			Func: w.runCreateUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunCompleteUserLink,
+			Func: w.runCompleteUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunUpdateUserLink,
+			Func: w.runUpdateUserLink,
 		})
 }
 

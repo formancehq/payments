@@ -57,12 +57,24 @@ func (o *V3GetConnectorConfigResponse) GetDataMoneycorp() *V3MoneycorpConfig {
 	return o.GetData().V3MoneycorpConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataPlaid() *V3PlaidConfig {
+	return o.GetData().V3PlaidConfig
+}
+
+func (o *V3GetConnectorConfigResponse) GetDataPowens() *V3PowensConfig {
+	return o.GetData().V3PowensConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataQonto() *V3QontoConfig {
 	return o.GetData().V3QontoConfig
 }
 
 func (o *V3GetConnectorConfigResponse) GetDataStripe() *V3StripeConfig {
 	return o.GetData().V3StripeConfig
+}
+
+func (o *V3GetConnectorConfigResponse) GetDataTink() *V3TinkConfig {
+	return o.GetData().V3TinkConfig
 }
 
 func (o *V3GetConnectorConfigResponse) GetDataWise() *V3WiseConfig {

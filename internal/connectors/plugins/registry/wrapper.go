@@ -53,7 +53,7 @@ func (i *impl) Uninstall(ctx context.Context, req models.UninstallRequest) (mode
 
 	resp, err := i.plugin.Uninstall(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("uninstall failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("uninstall failed:", err)
 		otel.RecordError(span, err)
 		return models.UninstallResponse{}, translateError(err)
 	}
@@ -71,7 +71,7 @@ func (i *impl) FetchNextAccounts(ctx context.Context, req models.FetchNextAccoun
 
 	resp, err := i.plugin.FetchNextAccounts(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next accounts failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next accounts failed:", err)
 		otel.RecordError(span, err)
 		return models.FetchNextAccountsResponse{}, translateError(err)
 	}
@@ -89,7 +89,7 @@ func (i *impl) FetchNextExternalAccounts(ctx context.Context, req models.FetchNe
 
 	resp, err := i.plugin.FetchNextExternalAccounts(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next external accounts failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next external accounts failed:", err)
 		otel.RecordError(span, err)
 		return models.FetchNextExternalAccountsResponse{}, translateError(err)
 	}
@@ -107,7 +107,7 @@ func (i *impl) FetchNextPayments(ctx context.Context, req models.FetchNextPaymen
 
 	resp, err := i.plugin.FetchNextPayments(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next payments failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next payments failed:", err)
 		otel.RecordError(span, err)
 		return models.FetchNextPaymentsResponse{}, translateError(err)
 	}
@@ -125,7 +125,7 @@ func (i *impl) FetchNextBalances(ctx context.Context, req models.FetchNextBalanc
 
 	resp, err := i.plugin.FetchNextBalances(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next balances failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next balances failed:", err)
 		otel.RecordError(span, err)
 		return models.FetchNextBalancesResponse{}, translateError(err)
 	}
@@ -143,7 +143,7 @@ func (i *impl) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRe
 
 	resp, err := i.plugin.FetchNextOthers(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next others failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("fetching next others failed:", err)
 		otel.RecordError(span, err)
 		return models.FetchNextOthersResponse{}, translateError(err)
 	}
@@ -161,7 +161,7 @@ func (i *impl) CreateBankAccount(ctx context.Context, req models.CreateBankAccou
 
 	resp, err := i.plugin.CreateBankAccount(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating bank account failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating bank account failed:", err)
 		otel.RecordError(span, err)
 		return models.CreateBankAccountResponse{}, translateError(err)
 	}
@@ -179,7 +179,7 @@ func (i *impl) CreateTransfer(ctx context.Context, req models.CreateTransferRequ
 
 	resp, err := i.plugin.CreateTransfer(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating transfer failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating transfer failed:", err)
 		otel.RecordError(span, err)
 		return models.CreateTransferResponse{}, translateError(err)
 	}
@@ -197,7 +197,7 @@ func (i *impl) ReverseTransfer(ctx context.Context, req models.ReverseTransferRe
 
 	resp, err := i.plugin.ReverseTransfer(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("reversing transfer failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("reversing transfer failed:", err)
 		otel.RecordError(span, err)
 		return models.ReverseTransferResponse{}, translateError(err)
 	}
@@ -215,7 +215,7 @@ func (i *impl) PollTransferStatus(ctx context.Context, req models.PollTransferSt
 
 	resp, err := i.plugin.PollTransferStatus(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("polling transfer status failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("polling transfer status failed:", err)
 		otel.RecordError(span, err)
 		return models.PollTransferStatusResponse{}, translateError(err)
 	}
@@ -233,7 +233,7 @@ func (i *impl) CreatePayout(ctx context.Context, req models.CreatePayoutRequest)
 
 	resp, err := i.plugin.CreatePayout(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating payout failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating payout failed:", err)
 		otel.RecordError(span, err)
 		return models.CreatePayoutResponse{}, translateError(err)
 	}
@@ -251,7 +251,7 @@ func (i *impl) ReversePayout(ctx context.Context, req models.ReversePayoutReques
 
 	resp, err := i.plugin.ReversePayout(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("reversing payout failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("reversing payout failed:", err)
 		otel.RecordError(span, err)
 		return models.ReversePayoutResponse{}, translateError(err)
 	}
@@ -269,7 +269,7 @@ func (i *impl) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatus
 
 	resp, err := i.plugin.PollPayoutStatus(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("polling payout status failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("polling payout status failed:", err)
 		otel.RecordError(span, err)
 		return models.PollPayoutStatusResponse{}, translateError(err)
 	}
@@ -287,12 +287,30 @@ func (i *impl) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequ
 
 	resp, err := i.plugin.CreateWebhooks(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating webhooks failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("creating webhooks failed:", err)
 		otel.RecordError(span, err)
 		return models.CreateWebhooksResponse{}, translateError(err)
 	}
 
 	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("created webhooks succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) TrimWebhook(ctx context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.TrimWebhook", attribute.String("psp", i.connectorID.Provider), attribute.String("trimWebhookRequest.name", req.Config.Name))
+	defer span.End()
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("trimming webhook...")
+
+	resp, err := i.plugin.TrimWebhook(ctx, req)
+	if err != nil {
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("trimming webhook failed:", err)
+		otel.RecordError(span, err)
+		return models.TrimWebhookResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("trimmed webhook succeeded!")
 
 	return resp, nil
 }
@@ -305,7 +323,7 @@ func (i *impl) VerifyWebhook(ctx context.Context, req models.VerifyWebhookReques
 
 	resp, err := i.plugin.VerifyWebhook(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("verifying webhook failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("verifying webhook failed: ", err)
 		otel.RecordError(span, err)
 		return models.VerifyWebhookResponse{}, translateError(err)
 	}
@@ -323,12 +341,138 @@ func (i *impl) TranslateWebhook(ctx context.Context, req models.TranslateWebhook
 
 	resp, err := i.plugin.TranslateWebhook(ctx, req)
 	if err != nil {
-		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("translating webhook failed: %v", err)
+		i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Error("translating webhook failed:", err)
 		otel.RecordError(span, err)
 		return models.TranslateWebhookResponse{}, translateError(err)
 	}
 
 	i.logger.WithField("psp", i.connectorID.Provider).WithField("name", i.plugin.Name()).Info("translated webhook succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating user...")
+
+	resp, err := i.plugin.CreateUser(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating user failed:", err)
+		otel.RecordError(span, err)
+		return models.CreateUserResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created user succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating user link...")
+
+	resp, err := i.plugin.CreateUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating user link failed:", err)
+		otel.RecordError(span, err)
+		return models.CreateUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created user link succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CreateConnection", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("creating connection...")
+
+	resp, err := i.plugin.CompleteUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("creating connection failed:", err)
+		otel.RecordError(span, err)
+		return models.CompleteUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("created connection succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.UpdateUserLink", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("updating user link...")
+
+	resp, err := i.plugin.UpdateUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("updating user link failed:", err)
+		otel.RecordError(span, err)
+		return models.UpdateUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("updated user link succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) CompleteUpdateUserLink(ctx context.Context, req models.CompleteUpdateUserLinkRequest) (models.CompleteUpdateUserLinkResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.CompleteUpdateUserLink", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("completing update user link...")
+
+	resp, err := i.plugin.CompleteUpdateUserLink(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("completing update user link failed:", err)
+		otel.RecordError(span, err)
+		return models.CompleteUpdateUserLinkResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("completed update user link succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.DeleteUserConnection", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleting user consent...")
+
+	resp, err := i.plugin.DeleteUserConnection(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("deleting user consent failed:", err)
+		otel.RecordError(span, err)
+		return models.DeleteUserConnectionResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleted user consent succeeded!")
+
+	return resp, nil
+}
+
+func (i *impl) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	ctx, span := otel.StartSpan(ctx, "plugin.DeleteUser", attribute.String("psp", i.plugin.Name()))
+	defer span.End()
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleting user...")
+
+	resp, err := i.plugin.DeleteUser(ctx, req)
+	if err != nil {
+		i.logger.WithField("name", i.plugin.Name()).Error("deleting user failed:", err)
+		otel.RecordError(span, err)
+		return models.DeleteUserResponse{}, translateError(err)
+	}
+
+	i.logger.WithField("name", i.plugin.Name()).Info("deleted user succeeded!")
 
 	return resp, nil
 }

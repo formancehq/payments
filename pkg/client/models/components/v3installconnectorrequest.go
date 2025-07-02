@@ -23,8 +23,11 @@ const (
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
+	V3InstallConnectorRequestTypePlaid         V3InstallConnectorRequestType = "Plaid"
+	V3InstallConnectorRequestTypePowens        V3InstallConnectorRequestType = "Powens"
 	V3InstallConnectorRequestTypeQonto         V3InstallConnectorRequestType = "Qonto"
 	V3InstallConnectorRequestTypeStripe        V3InstallConnectorRequestType = "Stripe"
+	V3InstallConnectorRequestTypeTink          V3InstallConnectorRequestType = "Tink"
 	V3InstallConnectorRequestTypeWise          V3InstallConnectorRequestType = "Wise"
 )
 
@@ -40,8 +43,11 @@ type V3InstallConnectorRequest struct {
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3PlaidConfig         *V3PlaidConfig         `queryParam:"inline"`
+	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
@@ -179,6 +185,30 @@ func CreateV3InstallConnectorRequestMoneycorp(moneycorp V3MoneycorpConfig) V3Ins
 	}
 }
 
+func CreateV3InstallConnectorRequestPlaid(plaid V3PlaidConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypePlaid
+
+	typStr := string(typ)
+	plaid.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3PlaidConfig: &plaid,
+		Type:          typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestPowens(powens V3PowensConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypePowens
+
+	typStr := string(typ)
+	powens.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3PowensConfig: &powens,
+		Type:           typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestQonto(qonto V3QontoConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeQonto
 
@@ -200,6 +230,18 @@ func CreateV3InstallConnectorRequestStripe(stripe V3StripeConfig) V3InstallConne
 	return V3InstallConnectorRequest{
 		V3StripeConfig: &stripe,
 		Type:           typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestTink(tink V3TinkConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeTink
+
+	typStr := string(typ)
+	tink.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3TinkConfig: &tink,
+		Type:         typ,
 	}
 }
 
@@ -326,6 +368,24 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3InstallConnectorRequestTypeMoneycorp
 		return nil
+	case "Plaid":
+		v3PlaidConfig := new(V3PlaidConfig)
+		if err := utils.UnmarshalJSON(data, &v3PlaidConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Plaid) type V3PlaidConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3PlaidConfig = v3PlaidConfig
+		u.Type = V3InstallConnectorRequestTypePlaid
+		return nil
+	case "Powens":
+		v3PowensConfig := new(V3PowensConfig)
+		if err := utils.UnmarshalJSON(data, &v3PowensConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Powens) type V3PowensConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3PowensConfig = v3PowensConfig
+		u.Type = V3InstallConnectorRequestTypePowens
+		return nil
 	case "Qonto":
 		v3QontoConfig := new(V3QontoConfig)
 		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
@@ -343,6 +403,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 
 		u.V3StripeConfig = v3StripeConfig
 		u.Type = V3InstallConnectorRequestTypeStripe
+		return nil
+	case "Tink":
+		v3TinkConfig := new(V3TinkConfig)
+		if err := utils.UnmarshalJSON(data, &v3TinkConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Tink) type V3TinkConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3TinkConfig = v3TinkConfig
+		u.Type = V3InstallConnectorRequestTypeTink
 		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
@@ -403,12 +472,24 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
 	}
 
+	if u.V3PlaidConfig != nil {
+		return utils.MarshalJSON(u.V3PlaidConfig, "", true)
+	}
+
+	if u.V3PowensConfig != nil {
+		return utils.MarshalJSON(u.V3PowensConfig, "", true)
+	}
+
 	if u.V3QontoConfig != nil {
 		return utils.MarshalJSON(u.V3QontoConfig, "", true)
 	}
 
 	if u.V3StripeConfig != nil {
 		return utils.MarshalJSON(u.V3StripeConfig, "", true)
+	}
+
+	if u.V3TinkConfig != nil {
+		return utils.MarshalJSON(u.V3TinkConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {

@@ -30,6 +30,9 @@ type paymentServiceUser struct {
 	Email        *string `bun:"decrypted_email,scanonly"`
 	PhoneNumber  *string `bun:"decrypted_phone,scanonly"`
 
+	// Optional
+	Locale *string `bun:"locale,nullzero"`
+
 	// Optional fields with default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
@@ -51,22 +54,22 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 	}()
 
 	_, err = tx.NewRaw(`
-		INSERT INTO payment_service_users (id, created_at, metadata, name, street_name, street_number, city, region, postal_code, country, email, phone_number)
-		VALUES (?0, ?1, ?2,
-			pgp_sym_encrypt(?3::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?4::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?5::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?6::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?7::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?8::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?9::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?10::TEXT, ?12, ?13),
-			pgp_sym_encrypt(?11::TEXT, ?12, ?13)
+		INSERT INTO payment_service_users (id, created_at, metadata, locale, name, street_name, street_number, city, region, postal_code, country, email, phone_number)
+		VALUES (?0, ?1, ?2, ?3,
+			pgp_sym_encrypt(?4::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?5::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?6::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?7::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?8::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?9::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?10::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?11::TEXT, ?13, ?14),
+			pgp_sym_encrypt(?12::TEXT, ?13, ?14)
 		)
 		ON CONFLICT (id) DO NOTHING
 		RETURNING id
 	`, paymentServiceUser.ID, paymentServiceUser.CreatedAt, paymentServiceUser.Metadata,
-		paymentServiceUser.Name, paymentServiceUser.StreetName, paymentServiceUser.StreetNumber, paymentServiceUser.City,
+		paymentServiceUser.Locale, paymentServiceUser.Name, paymentServiceUser.StreetName, paymentServiceUser.StreetNumber, paymentServiceUser.City,
 		paymentServiceUser.Region, paymentServiceUser.PostalCode, paymentServiceUser.Country, paymentServiceUser.Email,
 		paymentServiceUser.PhoneNumber, s.configEncryptionKey, encryptionOptions,
 	).Exec(ctx)
@@ -113,7 +116,7 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 	var psu paymentServiceUser
 	query := s.db.NewSelect().
 		Model(&psu).
-		Column("id", "created_at", "metadata").
+		Column("id", "created_at", "metadata", "locale").
 		Where("id = ?", id).
 		Relation("BankAccounts")
 
@@ -183,7 +186,7 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			query = query.Relation("BankAccounts")
-			query = query.Column("id", "created_at", "metadata")
+			query = query.Column("id", "created_at", "metadata", "locale")
 			query = s.paymentServiceUsersSelectDecryptColumnExpr(query)
 
 			if where != "" {
@@ -268,6 +271,7 @@ func fromPaymentServiceUserModels(from models.PaymentServiceUser) (paymentServic
 	if from.ContactDetails != nil {
 		psu.Email = from.ContactDetails.Email
 		psu.PhoneNumber = from.ContactDetails.PhoneNumber
+		psu.Locale = from.ContactDetails.Locale
 	}
 
 	return psu, from.BankAccountIDs
@@ -315,5 +319,6 @@ func fillContactDetails(from paymentServiceUser) *models.ContactDetails {
 	return &models.ContactDetails{
 		Email:       from.Email,
 		PhoneNumber: from.PhoneNumber,
+		Locale:      from.Locale,
 	}
 }

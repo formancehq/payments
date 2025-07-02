@@ -69,6 +69,18 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestModulr(co
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestMoneycorp(components.V3MoneycorpConfig{/* values here */})
 ```
 
+### V3PlaidConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestPlaid(components.V3PlaidConfig{/* values here */})
+```
+
+### V3PowensConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestPowens(components.V3PowensConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go
@@ -79,6 +91,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestQonto(com
 
 ```go
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestStripe(components.V3StripeConfig{/* values here */})
+```
+
+### V3TinkConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestTink(components.V3TinkConfig{/* values here */})
 ```
 
 ### V3WiseConfig
