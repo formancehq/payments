@@ -23,6 +23,7 @@ const (
 	V3InstallConnectorRequestTypeMangopay      V3InstallConnectorRequestType = "Mangopay"
 	V3InstallConnectorRequestTypeModulr        V3InstallConnectorRequestType = "Modulr"
 	V3InstallConnectorRequestTypeMoneycorp     V3InstallConnectorRequestType = "Moneycorp"
+	V3InstallConnectorRequestTypeMoov          V3InstallConnectorRequestType = "Moov"
 	V3InstallConnectorRequestTypeQonto         V3InstallConnectorRequestType = "Qonto"
 	V3InstallConnectorRequestTypeStripe        V3InstallConnectorRequestType = "Stripe"
 	V3InstallConnectorRequestTypeWise          V3InstallConnectorRequestType = "Wise"
@@ -40,6 +41,7 @@ type V3InstallConnectorRequest struct {
 	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3MoovConfig          *V3MoovConfig          `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
@@ -176,6 +178,18 @@ func CreateV3InstallConnectorRequestMoneycorp(moneycorp V3MoneycorpConfig) V3Ins
 	return V3InstallConnectorRequest{
 		V3MoneycorpConfig: &moneycorp,
 		Type:              typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestMoov(moov V3MoovConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeMoov
+
+	typStr := string(typ)
+	moov.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3MoovConfig: &moov,
+		Type:         typ,
 	}
 }
 
@@ -326,6 +340,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3MoneycorpConfig = v3MoneycorpConfig
 		u.Type = V3InstallConnectorRequestTypeMoneycorp
 		return nil
+	case "Moov":
+		v3MoovConfig := new(V3MoovConfig)
+		if err := utils.UnmarshalJSON(data, &v3MoovConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Moov) type V3MoovConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3MoovConfig = v3MoovConfig
+		u.Type = V3InstallConnectorRequestTypeMoov
+		return nil
 	case "Qonto":
 		v3QontoConfig := new(V3QontoConfig)
 		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
@@ -401,6 +424,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3MoneycorpConfig != nil {
 		return utils.MarshalJSON(u.V3MoneycorpConfig, "", true)
+	}
+
+	if u.V3MoovConfig != nil {
+		return utils.MarshalJSON(u.V3MoovConfig, "", true)
 	}
 
 	if u.V3QontoConfig != nil {

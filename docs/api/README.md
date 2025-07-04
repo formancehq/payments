@@ -5780,6 +5780,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3MoovConfig](#schemav3moovconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
 
 xor
@@ -6147,6 +6153,40 @@ xor
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+
+<h2 id="tocS_V3MoovConfig">V3MoovConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3moovconfig"></a>
+<a id="schema_V3MoovConfig"></a>
+<a id="tocSv3moovconfig"></a>
+<a id="tocsv3moovconfig"></a>
+
+```json
+{
+  "accountID": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "privateKey": "string",
+  "provider": "Moov",
+  "publicKey": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|accountID|string|true|none|none|
+|endpoint|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|privateKey|string|true|none|none|
+|provider|string|false|none|none|
+|publicKey|string|true|none|none|
 
 <h2 id="tocS_V3QontoConfig">V3QontoConfig</h2>
 <!-- backwards compatibility -->
