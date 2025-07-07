@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
+	"go.temporal.io/sdk/temporal"
 )
 
 var (
@@ -67,4 +68,29 @@ func rollbackOnTxError(ctx context.Context, tx *bun.Tx, err error) {
 	if rollbackErr := tx.Rollback(); rollbackErr != nil {
 		logging.FromContext(ctx).WithField("original_error", err.Error()).Errorf("failed to rollback transaction: %w", rollbackErr)
 	}
+}
+
+func checkWorkflowStorageNotFound(target error) bool {
+	// Check if the target is directly an ApplicationError with STORAGE type
+	var appErr *temporal.ApplicationError
+	if errors.As(target, &appErr) && appErr.Type() == "STORAGE" && strings.Contains(appErr.Error(), "not found") {
+		return true
+	}
+
+	var actErr *temporal.ActivityError
+	if errors.As(target, &actErr) {
+		unwrapped := actErr.Unwrap()
+		if unwrapped != nil {
+			var innerAppErr *temporal.ApplicationError
+			if errors.As(unwrapped, &innerAppErr) && innerAppErr.Type() == "STORAGE" && strings.Contains(innerAppErr.Error(), "not found") {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func IsStorageNotFound(err error) bool {
+	return errors.Is(err, ErrNotFound) || checkWorkflowStorageNotFound(err)
 }
