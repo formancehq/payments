@@ -320,7 +320,7 @@ var _ = Context("Payments API Pools", func() {
 		})
 	})
 
-	When("fetching balances for a pool with v3", func() {
+	When("fetching balances for a pool", func() {
 		var (
 			connectorID string
 			accountIDs  []string
@@ -373,12 +373,20 @@ var _ = Context("Payments API Pools", func() {
 			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
-		It("should fetch balances for accounts in pool", func() {
+		It("should fetch balances for accounts in pool using v3", func() {
 			res, err := app.GetValue().SDK().Payments.V3.GetPoolBalancesLatest(ctx, poolID)
 			Expect(err).To(BeNil())
 			Expect(res.GetV3PoolBalancesResponse().Data).To(HaveLen(1))
 			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAsset()).To(Equal(balance.GetAsset()))
 			Expect(res.GetV3PoolBalancesResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
+		})
+
+		It("should fetch balances for accounts in pool using v1", func() {
+			res, err := app.GetValue().SDK().Payments.V1.GetPoolBalancesLatest(ctx, poolID)
+			Expect(err).To(BeNil())
+			Expect(res.GetPoolBalancesLatestResponse().Data).To(HaveLen(1))
+			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetAsset()).To(Equal(balance.GetAsset()))
+			Expect(res.GetPoolBalancesLatestResponse().Data[0].GetAmount()).To(Equal(balance.GetBalance()))
 		})
 	})
 })
