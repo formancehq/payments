@@ -346,7 +346,7 @@ paths:
         - $ref: '#/components/parameters/PoolId'
       responses:
         "200":
-          $ref: '#/components/responses/PoolBalances'
+          $ref: '#/components/responses/PoolBalancesLatest'
         default:
           $ref: '#/components/responses/PaymentsErrorResponse'
       security:
@@ -2119,6 +2119,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/PoolBalancesResponse'
+    PoolBalancesLatest:
+      description: OK
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PoolBalancesLatestResponse'
     TransferInitiations:
       description: OK
       content:
@@ -2367,6 +2373,13 @@ components:
       properties:
         data:
           $ref: '#/components/schemas/PoolBalances'
+    PoolBalancesLatestResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          $ref: '#/components/schemas/PoolBalancesLatest'
     PoolResponse:
       type: object
       required:
@@ -3156,6 +3169,10 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PoolBalance'
+    PoolBalancesLatest:
+      type: array
+      items:
+        $ref: '#/components/schemas/PoolBalance'
     PoolBalance:
       type: object
       required:

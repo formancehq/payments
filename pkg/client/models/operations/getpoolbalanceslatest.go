@@ -21,7 +21,7 @@ func (o *GetPoolBalancesLatestRequest) GetPoolID() string {
 type GetPoolBalancesLatestResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// OK
-	PoolBalancesResponse *components.PoolBalancesResponse
+	PoolBalancesLatestResponse *components.PoolBalancesLatestResponse
 	// Error
 	PaymentsErrorResponse *components.PaymentsErrorResponse
 }
@@ -33,11 +33,11 @@ func (o *GetPoolBalancesLatestResponse) GetHTTPMeta() components.HTTPMetadata {
 	return o.HTTPMeta
 }
 
-func (o *GetPoolBalancesLatestResponse) GetPoolBalancesResponse() *components.PoolBalancesResponse {
+func (o *GetPoolBalancesLatestResponse) GetPoolBalancesLatestResponse() *components.PoolBalancesLatestResponse {
 	if o == nil {
 		return nil
 	}
-	return o.PoolBalancesResponse
+	return o.PoolBalancesLatestResponse
 }
 
 func (o *GetPoolBalancesLatestResponse) GetPaymentsErrorResponse() *components.PaymentsErrorResponse {
