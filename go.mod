@@ -52,7 +52,7 @@ require (
 	go.uber.org/fx v1.24.0
 	go.uber.org/mock v0.5.2
 	golang.org/x/oauth2 v0.30.0
-	golang.org/x/sync v0.15.0
+	golang.org/x/sync v0.16.0
 	golang.org/x/text v0.26.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/yaml.v3 v3.0.1
