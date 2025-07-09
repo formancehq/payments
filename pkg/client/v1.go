@@ -4289,12 +4289,12 @@ func (s *V1) GetPoolBalancesLatest(ctx context.Context, poolID string, opts ...o
 				return nil, err
 			}
 
-			var out components.PoolBalancesResponse
+			var out components.PoolBalancesLatestResponse
 			if err := utils.UnmarshalJsonFromResponseBody(bytes.NewBuffer(rawBody), &out, ""); err != nil {
 				return nil, err
 			}
 
-			res.PoolBalancesResponse = &out
+			res.PoolBalancesLatestResponse = &out
 		default:
 			rawBody, err := utils.ConsumeRawBody(httpRes)
 			if err != nil {

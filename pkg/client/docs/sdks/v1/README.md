@@ -1142,7 +1142,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    if res.PoolBalancesResponse != nil {
+    if res.PoolBalancesLatestResponse != nil {
         // handle response
     }
 }
