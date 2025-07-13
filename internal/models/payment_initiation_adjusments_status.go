@@ -101,17 +101,17 @@ func (t PaymentInitiationAdjustmentStatus) Value() (driver.Value, error) {
 
 func (t *PaymentInitiationAdjustmentStatus) Scan(value interface{}) error {
 	if value == nil {
-		return errors.New("payment initiation adjusmtent status status is nil")
+		return errors.New("payment initiation adjustment status  is nil")
 	}
 
 	s, err := driver.String.ConvertValue(value)
 	if err != nil {
-		return fmt.Errorf("failed to convert payment initiation adjusmtent status status")
+		return fmt.Errorf("failed to convert payment initiation adjusmtent status")
 	}
 
 	v, ok := s.(string)
 	if !ok {
-		return fmt.Errorf("failed to cast payment initiation adjusmtent status status")
+		return fmt.Errorf("failed to cast payment initiation adjusmtent status")
 	}
 
 	res, err := PaymentInitiationAdjustmentStatusFromString(v)
