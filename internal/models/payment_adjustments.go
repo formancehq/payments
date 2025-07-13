@@ -17,7 +17,7 @@ type PaymentAdjustment struct {
 	// Creation date of the adjustment
 	CreatedAt time.Time `json:"createdAt"`
 
-	// Status of the payment adjustement
+	// Status of the payment adjustment
 	Status PaymentStatus `json:"status"`
 
 	// Optional
