@@ -198,7 +198,7 @@ func (s *UnitTestSuite) addData() {
 		Amount:      big.NewInt(100),
 		Asset:       "USD/2",
 		Scheme:      models.PAYMENT_SCHEME_A2A,
-		Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+		Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 		SourceAccountID: &models.AccountID{
 			Reference:   "test1",
 			ConnectorID: s.connectorID,
@@ -216,11 +216,11 @@ func (s *UnitTestSuite) addData() {
 					PaymentID: s.paymentPayoutID,
 					Reference: "test",
 					CreatedAt: now,
-					Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+					Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 				},
 				Reference: "test",
 				CreatedAt: now,
-				Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+				Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 				Amount:    big.NewInt(100),
 				Asset:     pointer.For("USD/2"),
 				Metadata: map[string]string{

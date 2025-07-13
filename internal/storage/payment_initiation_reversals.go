@@ -63,9 +63,9 @@ func (s *store) PaymentInitiationReversalsUpsert(
 	}()
 
 	toInsert := fromPaymentInitiationReversalModels(pir)
-	reversalAdjustementsToInsert := make([]paymentInitiationReversalAdjustment, 0, len(reversalAdjustments))
+	reversalAdjustmentsToInsert := make([]paymentInitiationReversalAdjustment, 0, len(reversalAdjustments))
 	for _, adj := range reversalAdjustments {
-		reversalAdjustementsToInsert = append(reversalAdjustementsToInsert, fromPaymentInitiationReversalAdjustmentModels(adj))
+		reversalAdjustmentsToInsert = append(reversalAdjustmentsToInsert, fromPaymentInitiationReversalAdjustmentModels(adj))
 	}
 
 	_, err = tx.NewInsert().
@@ -76,9 +76,9 @@ func (s *store) PaymentInitiationReversalsUpsert(
 		return e("upsert payment initiation reversal", err)
 	}
 
-	if len(reversalAdjustementsToInsert) > 0 {
+	if len(reversalAdjustmentsToInsert) > 0 {
 		_, err = tx.NewInsert().
-			Model(&reversalAdjustementsToInsert).
+			Model(&reversalAdjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {

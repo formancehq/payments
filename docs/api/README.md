@@ -4425,7 +4425,7 @@ None ( Scopes: payments:read )
 |*anonymous*|DISPUTE|
 |*anonymous*|DISPUTE_WON|
 |*anonymous*|DISPUTE_LOST|
-|*anonymous*|AMOUNT_ADJUSTEMENT|
+|*anonymous*|AMOUNT_ADJUSTMENT|
 |*anonymous*|AUTHORISATION|
 |*anonymous*|CAPTURE|
 |*anonymous*|CAPTURE_FAILED|
