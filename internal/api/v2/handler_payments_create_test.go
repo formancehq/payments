@@ -2,11 +2,12 @@ package v2
 
 import (
 	"errors"
-	"github.com/formancehq/payments/internal/connectors/engine"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
 	"time"
+
+	"github.com/formancehq/payments/internal/connectors/engine"
 
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/api/validation"
@@ -57,7 +58,7 @@ var _ = Describe("API v2 Payments Create", func() {
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
 				Asset:       "JPY/0",
-				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
+				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT.String(),
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
 			}
@@ -90,7 +91,7 @@ var _ = Describe("API v2 Payments Create", func() {
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
 				Asset:       "JPY/0",
-				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
+				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT.String(),
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
 			}
@@ -106,7 +107,7 @@ var _ = Describe("API v2 Payments Create", func() {
 				CreatedAt:   time.Now(),
 				Amount:      big.NewInt(3500),
 				Asset:       "JPY/0",
-				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT.String(),
+				Status:      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT.String(),
 				Type:        models.PAYMENT_TYPE_PAYIN.String(),
 				Scheme:      models.PAYMENT_SCHEME_CARD_AMEX.String(),
 			}

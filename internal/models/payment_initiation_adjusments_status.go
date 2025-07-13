@@ -129,7 +129,7 @@ func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiat
 	var err error
 
 	switch from.Status {
-	case PAYMENT_STATUS_AMOUNT_ADJUSTEMENT, PAYMENT_STATUS_UNKNOWN:
+	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT, PAYMENT_STATUS_UNKNOWN:
 		// No need to add an adjustment for this payment initiation
 		return nil
 	case PAYMENT_STATUS_PENDING, PAYMENT_STATUS_AUTHORISATION:
