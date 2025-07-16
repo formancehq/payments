@@ -29,7 +29,7 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jackc/pgx/v5 v5.7.5
-	github.com/jackc/pgxlisten v0.0.0-20241005155529-9d952acd6a6c
+	github.com/jackc/pgxlisten v0.0.0-20241106001234-1d6f6656415c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.43.0
 	github.com/onsi/ginkgo/v2 v2.23.4
