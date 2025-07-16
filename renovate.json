@@ -7,6 +7,7 @@
     "github.com/formancehq/payments/pkg/client"
   ],
   "ignorePaths": [
+      "**/pkg/client/**",
       "internal/connectors/plugins/public/generic/client/generated/"
   ]
 }
