@@ -9,13 +9,7 @@ import (
 // AddForeignKeyIndices is adding a lot of missing indices; note that some indices created here are not mapping 1:1 to "real" foreign key constrains
 func AddForeignKeyIndices(ctx context.Context, db bun.IDB) error {
 	// While we don't have a FK from Balance to Account, as we have some balances being created before the account,
-	// we do create the related index.
-	// TODO -- Do we need to add FK on connector? It's sometimes missing
-	// TODO -- BankAccountRelatedAccount -> Account
-	// TODO -- PoolAccount -> Connector, Account
-	// TODO -- payment_initiation_related_payments -> payments
-	// TODO -- payment -> accounts (source,dest)
-	// TODO -- payment_initiation -> accounts(source,dest)
+	// we do create the related index. We have the same case for a couple of others.
 
 	// Accounts
 	_, err := db.ExecContext(ctx, `
