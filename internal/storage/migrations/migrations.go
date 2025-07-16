@@ -227,6 +227,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+		migrations.Migration{
+			Name: "foreign key indices creation",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running foreign key indices creation migration...")
+				err := AddForeignKeyIndices(ctx, db)
+				logger.WithField("error", err).Info("finished running foreign key indices creation migration")
+				return err
+			},
+		},
 	)
 }
 
