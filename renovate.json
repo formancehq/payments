@@ -5,5 +5,9 @@
   ],
   "ignoreDeps": [
     "github.com/formancehq/payments/pkg/client"
-  ]
+  ],
+  "packageRules": [{
+    "matchPackageNames": ["github.com/formancehq/payments/genericclient"],
+    "enabled": false
+  }]
 }
