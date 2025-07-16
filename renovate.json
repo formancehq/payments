@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>formancehq/shared-config//renovate/presets/golang"
+  ],
+  "ignoreDeps": [
+    "github.com/formancehq/payments/pkg/client"
+  ],
+  "ignorePaths": [
+      "**/pkg/client/**",
+      "internal/connectors/plugins/public/generic/client/generated/"
+  ]
+}
