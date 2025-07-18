@@ -40,6 +40,8 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 
 	if task.Error != nil {
 		query.Set("error = EXCLUDED.error")
+	} else {
+		query.Set("error = NULL")
 	}
 
 	_, err := query.
