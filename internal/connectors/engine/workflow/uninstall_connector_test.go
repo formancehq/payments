@@ -12,6 +12,7 @@ import (
 )
 
 func (s *UnitTestSuite) Test_UninstallConnector_WithoutTaskID_Success() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -21,8 +22,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithoutTaskID_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
@@ -40,6 +41,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithoutTaskID_Success() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -49,8 +51,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
@@ -79,6 +81,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_WithTaskID_Success() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_RunTerminateSchedules_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
@@ -106,6 +109,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_RunTerminateSchedules_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_PluginUninstallConnector_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil,
@@ -134,6 +138,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_PluginUninstallConnector_Error()
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -164,6 +169,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageEventsSentDelete_Error() 
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnectorID_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -195,6 +201,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageSchedulesDeleteFromConnec
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -227,6 +234,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageInstancesDelete_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -260,6 +268,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorTasksTreeDelete_
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorID_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -294,6 +303,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksDeleteFromConnectorI
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelatedAccounts_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -329,6 +339,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageBankAccountsDeleteRelated
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -338,7 +349,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -365,6 +376,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageAccountsDelete_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -374,8 +386,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
@@ -402,6 +414,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePaymentsDelete_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -411,8 +424,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
@@ -440,6 +453,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageStatesDelete_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -449,8 +463,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Err
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
@@ -479,6 +493,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksConfigsDelete_Err
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -488,8 +503,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(
@@ -519,6 +534,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageWebhooksDelete_Error() {
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromConnectorID_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -528,8 +544,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromCo
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
@@ -560,6 +576,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StoragePoolsRemoveAccountsFromCo
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -569,8 +586,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() 
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
@@ -602,6 +619,7 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageConnectorsDelete_Error() 
 }
 
 func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksStore_Error() {
+	s.env.OnActivity(activities.StorageWebhooksConfigsGetActivity, mock.Anything, s.connectorID).Once().Return([]models.WebhookConfig{}, nil)
 	s.env.OnWorkflow(RunTerminateSchedules, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunTerminateWorkflows, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginUninstallConnectorActivity, mock.Anything, mock.Anything).Once().Return(nil, nil)
@@ -611,8 +629,8 @@ func (s *UnitTestSuite) Test_UninstallConnector_StorageTasksStore_Error() {
 	s.env.OnActivity(activities.StorageConnectorTasksTreeDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageTasksDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsDeleteRelatedAccountsActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePaymentsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectorIDActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageStatesDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksConfigsDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)
 	s.env.OnActivity(activities.StorageWebhooksDeleteActivity, mock.Anything, s.connectorID).Once().Return(nil)

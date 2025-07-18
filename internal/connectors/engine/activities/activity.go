@@ -96,6 +96,30 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.PluginTranslateWebhook,
 		}).
 		Append(temporalworker.Definition{
+			Name: "PluginCreateUser",
+			Func: a.PluginCreateUser,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCreateUserLink",
+			Func: a.PluginCreateUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginUpdateUserLink",
+			Func: a.PluginUpdateUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginCompleteUserLink",
+			Func: a.PluginCompleteUserLink,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginDeleteUserConnection",
+			Func: a.PluginDeleteUserConnection,
+		}).
+		Append(temporalworker.Definition{
+			Name: "PluginDeleteUser",
+			Func: a.PluginDeleteUser,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageAccountsStore",
 			Func: a.StorageAccountsStore,
 		}).
@@ -104,16 +128,40 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageAccountsGet,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageAccountsList",
+			Func: a.StorageAccountsList,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StorageAccountsDelete",
 			Func: a.StorageAccountsDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageAccountsDeleteFromConnectorID",
+			Func: a.StorageAccountsDeleteFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentsStore",
 			Func: a.StoragePaymentsStore,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePaymentsList",
+			Func: a.StoragePaymentsList,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePaymentsDelete",
 			Func: a.StoragePaymentsDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromConnectorID",
+			Func: a.StoragePaymentsDeleteFromConnectorID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromReference",
+			Func: a.StoragePaymentsDeleteFromReference,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromAccountID",
+			Func: a.StoragePaymentsDeleteFromAccountID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageStatesGet",
@@ -194,6 +242,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentServiceUsersGet",
 			Func: a.StoragePaymentServiceUsersGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentServiceUsersDelete",
+			Func: a.StoragePaymentServiceUsersDelete,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageBalancesDelete",
@@ -288,6 +340,50 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePoolsRemoveAccountsFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesStore",
+			Func: a.StoragePSUBankBridgesStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesGet",
+			Func: a.StoragePSUBankBridgesGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesDelete",
+			Func: a.StoragePSUBankBridgesDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesList",
+			Func: a.StoragePSUBankBridgesList,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsStore",
+			Func: a.StoragePSUBankBridgeConnectionsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate",
+			Func: a.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionDelete",
+			Func: a.StoragePSUBankBridgeConnectionDelete,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionAttemptsStore",
+			Func: a.StoragePSUBankBridgeConnectionAttemptsStore,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionAttemptsUpdateStatus",
+			Func: a.StoragePSUBankBridgeConnectionAttemptsUpdateStatus,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionAttemptsGet",
+			Func: a.StoragePSUBankBridgeConnectionAttemptsGet,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgeConnectionsGetFromConnectionID",
+			Func: a.StoragePSUBankBridgeConnectionsGetFromConnectionID,
+		}).
+		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",
 			Func: a.EventsSendAccount,
 		}).
@@ -326,6 +422,22 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "EventsSendPaymentInitiationRelatedPayment",
 			Func: a.EventsSendPaymentInitiationRelatedPayment,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserPendingDisconnect",
+			Func: a.EventsSendUserPendingDisconnect,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserDisconnected",
+			Func: a.EventsSendUserDisconnected,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserLinkStatus",
+			Func: a.EventsSendUserLinkStatus,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserConnectionDataSynced",
+			Func: a.EventsSendUserConnectionDataSynced,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendTaskUpdated",
