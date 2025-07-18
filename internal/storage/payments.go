@@ -257,6 +257,34 @@ func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID m
 	return e("failed to delete payments", err)
 }
 
+func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to delete payment", err)
+}
+
+func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("reference = ?", reference).
+		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+
+	return e("failed to delete payment", err)
+}
+
+func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("source_account_id = ? OR destination_account_id = ?", accountID, accountID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
 type PaymentQuery struct{}
 
 type ListPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]]

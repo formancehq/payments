@@ -22,6 +22,7 @@ type Storage interface {
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
 	AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	AccountsDelete(ctx context.Context, id models.AccountID) error
 
 	// Balances
 	BalancesUpsert(ctx context.Context, balances []models.Balance) error
@@ -64,6 +65,9 @@ type Storage interface {
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
 	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+	PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error
+	PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error
+	PaymentsDelete(ctx context.Context, id models.PaymentID) error
 
 	// Payment Initiations
 	PaymentInitiationsInsert(ctx context.Context, pi models.PaymentInitiation, adjustments ...models.PaymentInitiationAdjustment) error
@@ -98,6 +102,7 @@ type Storage interface {
 	// Payment Service Users
 	PaymentServiceUsersCreate(ctx context.Context, psu models.PaymentServiceUser) error
 	PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error)
+	PaymentServiceUsersDelete(ctx context.Context, paymentServiceUserID string) error
 	PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
 	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, bankAccountID uuid.UUID) error
 
@@ -109,6 +114,22 @@ type Storage interface {
 	PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error
 	PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
+
+	// PSU Bank Bridges
+	PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from models.PSUBankBridgeConnectionAttempt) error
+	PSUBankBridgeConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.PSUBankBridgeConnectionAttemptStatus, errMsg *string) error
+	PSUBankBridgeConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error)
+	PSUBankBridgeConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error)
+	PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridge) error
+	PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.PSUBankBridge, error)
+	PSUBankBridgesDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
+	PSUBankBridgesList(ctx context.Context, query ListPSUBankBridgesQuery) (*bunpaginate.Cursor[models.PSUBankBridge], error)
+	PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridgeConnection) error
+	PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error
+	PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, error)
+	PSUBankBridgeConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error
+	PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, uuid.UUID, error)
+	PSUBankBridgeConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error)
 
 	// Schedules
 	SchedulesUpsert(ctx context.Context, schedule models.Schedule) error
