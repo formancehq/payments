@@ -200,6 +200,11 @@ func FormatAsset(currencies map[string]int, cur string) string {
 	return fmt.Sprintf("%s/%d", asset, def)
 }
 
+func FormatAssetWithPrecision(cur string, precision int) string {
+	asset := strings.ToUpper(string(cur))
+	return fmt.Sprintf("%s/%d", asset, precision)
+}
+
 func GetPrecision(currencies map[string]int, cur string) (int, error) {
 	asset := strings.ToUpper(string(cur))
 

@@ -12,12 +12,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	// some methods may be disabled when called outside the worker
-	CallerWorker = "worker"
-	CallerEngine = "engine"
-)
-
 var (
 	ErrNotFound         = errors.New("plugin not found")
 	ErrValidation       = errors.New("validation error")
@@ -26,7 +20,7 @@ var (
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
 type Plugins interface {
-	RegisterPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
+	LoadPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
 	UnregisterPlugin(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -39,8 +33,7 @@ type plugins struct {
 	plugins map[string]pluginInformation
 	rwMutex sync.RWMutex
 
-	caller string
-	debug  bool
+	debug bool
 }
 
 type pluginInformation struct {
@@ -49,19 +42,17 @@ type pluginInformation struct {
 }
 
 func New(
-	caller string,
 	logger logging.Logger,
 	debug bool,
 ) *plugins {
 	return &plugins{
-		caller:  caller,
 		logger:  logger,
 		plugins: make(map[string]pluginInformation),
 		debug:   debug,
 	}
 }
 
-func (p *plugins) RegisterPlugin(
+func (p *plugins) LoadPlugin(
 	connectorID models.ConnectorID,
 	provider string,
 	connectorName string,
@@ -101,7 +92,7 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
 
 	_, ok := p.plugins[connectorID.String()]
 	if !ok {
-		// Nothing to do``
+		// Nothing to do
 		return
 	}
 
@@ -109,10 +100,6 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
 }
 
 func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
-	if p.caller != CallerWorker {
-		return nil, ErrInvalidOperation
-	}
-
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
@@ -125,10 +112,6 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 }
 
 func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
-	if p.caller != CallerWorker {
-		return models.Config{}, ErrInvalidOperation
-	}
-
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 

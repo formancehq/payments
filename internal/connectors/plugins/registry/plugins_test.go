@@ -47,8 +47,8 @@ var _ = Describe("Register Plugin", func() {
 	})
 
 	Context("population of plugin configuration", func() {
-		RegisterPlugin(name, fn, capabilities, conf)
-		RegisterPlugin(DummyPSPName, fn, capabilities, conf)
+		RegisterPlugin(name, models.PluginTypeBankingBridge, fn, capabilities, conf)
+		RegisterPlugin(DummyPSPName, models.PluginTypePSP, fn, capabilities, conf)
 		It("can parse a required string", func(ctx SpecContext) {
 			configs := GetConfigs(false)
 			c, ok := configs[name]
@@ -129,6 +129,16 @@ var _ = Describe("Register Plugin", func() {
 			configs := GetConfigs(true)
 			_, ok := configs[DummyPSPName]
 			Expect(ok).To(BeTrue())
+		})
+
+		It("returns the right plugin type", func(ctx SpecContext) {
+			pluginType, err := GetPluginType(name)
+			Expect(err).To(BeNil())
+			Expect(pluginType).To(Equal(models.PluginTypeBankingBridge))
+
+			pluginType, err = GetPluginType(DummyPSPName)
+			Expect(err).To(BeNil())
+			Expect(pluginType).To(Equal(models.PluginTypePSP))
 		})
 	})
 })
