@@ -8,11 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestConnectorsHandleWebhooks(t *testing.T) {
+func TestPSUCreateLink(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -52,10 +53,16 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 		},
 	}
 
+	id := uuid.New()
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "plaid",
+	}
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().HandleWebhook(gomock.Any(), "/any", "/any", models.Webhook{}).Return(test.err)
-			err := s.ConnectorsHandleWebhooks(context.Background(), "/any", "/any", models.Webhook{})
+			eng.EXPECT().CreatePaymentServiceUserLink(gomock.Any(), id, connectorID, nil, nil).Return("", "", test.err)
+			_, _, err := s.PaymentServiceUsersCreateLink(context.Background(), id, connectorID, nil, nil)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else if test.typedError {

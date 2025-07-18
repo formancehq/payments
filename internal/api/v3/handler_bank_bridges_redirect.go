@@ -8,13 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
-	"github.com/google/uuid"
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
+func bankBridgesRedirect(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := otel.Tracer().Start(r.Context(), "v3_connectorsWebhooks")
+		ctx, span := otel.Tracer().Start(r.Context(), "v3_bankBridgesRedirectURI")
 		defer span.End()
 
 		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
@@ -25,6 +24,8 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		headers := r.Header
+		queryValues := r.URL.Query()
 		body, err := io.ReadAll(r.Body)
 		if err != nil && err != io.EOF {
 			otel.RecordError(span, err)
@@ -32,33 +33,25 @@ func connectorsWebhooks(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
-		headers := r.Header
-		queryValues := r.URL.Query()
-		path := r.URL.Path
-		username, password, ok := r.BasicAuth()
-
-		webhook := models.Webhook{
-			ID:          uuid.New().String(),
-			ConnectorID: connectorID,
-			QueryValues: queryValues,
-			Headers:     headers,
-			Body:        body,
-		}
-
-		if ok {
-			webhook.BasicAuth = &models.BasicAuth{
-				Username: username,
-				Password: password,
-			}
-		}
-
-		err = backend.ConnectorsHandleWebhooks(ctx, r.URL.String(), path, webhook)
+		redirectURL, err := backend.PaymentServiceUsersCompleteLinkFlow(
+			ctx,
+			connectorID,
+			models.HTTPCallInformation{
+				QueryValues: queryValues,
+				Headers:     headers,
+				Body:        body,
+			},
+		)
 		if err != nil {
-			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		api.RawOk(w, nil)
+		if queryValues.Get(models.NoRedirectQueryParamID) == "true" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }

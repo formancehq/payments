@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/formancehq/payments/internal/connectors/engine"
+	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/pkg/errors"
 )
@@ -47,7 +48,7 @@ func handleEngineErrors(err error) error {
 	}
 
 	switch {
-	case errors.Is(err, engine.ErrValidation):
+	case errors.Is(err, engine.ErrValidation), errors.Is(err, models.ErrValidation):
 		return errorsutils.NewWrappedError(
 			err,
 			ErrValidation,

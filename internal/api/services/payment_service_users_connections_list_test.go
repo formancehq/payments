@@ -8,11 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestConnectorsHandleWebhooks(t *testing.T) {
+func TestPSUConnectionsList(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -26,7 +27,6 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 		name          string
 		err           error
 		expectedError error
-		typedError    bool
 	}{
 		{
 			name:          "success",
@@ -34,32 +34,30 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:          "validation error",
-			err:           engine.ErrValidation,
-			expectedError: ErrValidation,
-			typedError:    true,
-		},
-		{
-			name:          "not found error",
-			err:           engine.ErrNotFound,
-			expectedError: ErrNotFound,
-			typedError:    true,
+			name:          "storage error not found",
+			err:           storage.ErrNotFound,
+			expectedError: newStorageError(storage.ErrNotFound, "cannot list psu bank bridge connections"),
 		},
 		{
 			name:          "other error",
 			err:           fmt.Errorf("error"),
-			expectedError: fmt.Errorf("error"),
+			expectedError: newStorageError(fmt.Errorf("error"), "cannot list psu bank bridge connections"),
 		},
+	}
+
+	id := uuid.New()
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "plaid",
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().HandleWebhook(gomock.Any(), "/any", "/any", models.Webhook{}).Return(test.err)
-			err := s.ConnectorsHandleWebhooks(context.Background(), "/any", "/any", models.Webhook{})
+			query := storage.ListPsuBankBridgeConnectionsQuery{}
+			store.EXPECT().PSUBankBridgeConnectionsList(gomock.Any(), id, &connectorID, query).Return(nil, test.err)
+			_, err := s.PaymentServiceUsersConnectionsList(context.Background(), id, &connectorID, query)
 			if test.expectedError == nil {
 				require.NoError(t, err)
-			} else if test.typedError {
-				require.ErrorIs(t, err, test.expectedError)
 			} else {
 				require.Equal(t, test.expectedError, err)
 			}
