@@ -22,6 +22,9 @@ func newServer() *cobra.Command {
 		RunE:         runServer(),
 	}
 	commonFlags(cmd)
+
+	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
+
 	return cmd
 }
 
@@ -49,11 +52,13 @@ func runServer() func(cmd *cobra.Command, args []string) error {
 func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
+	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
+	fmt.Println("TOTOTO 2", stackPublicURL)
 	return fx.Options(
 		auth.FXModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),
 		v2.NewModule(),
 		v3.NewModule(),
-		engine.Module(stack, service.IsDebug(cmd)),
+		engine.Module(stack, stackPublicURL, service.IsDebug(cmd)),
 	), nil
 }
