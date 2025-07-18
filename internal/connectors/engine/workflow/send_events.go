@@ -23,6 +23,10 @@ type SendEvents struct {
 	PaymentInitiation               *models.PaymentInitiation
 	PaymentInitiationAdjustment     *models.PaymentInitiationAdjustment
 	PaymentInitiationRelatedPayment *models.PaymentInitiationRelatedPayments
+	UserPendingDisconnect           *models.UserConnectionPendingDisconnect
+	UserDisconnected                *models.UserConnectionDisconnected
+	UserLinkStatus                  *models.UserLinkSessionFinished
+	UserConnectionDataSynced        *models.UserConnectionDataSynced
 	Task                            *models.Task
 }
 
@@ -214,6 +218,74 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendTaskUpdated(
 					infiniteRetryContext(ctx),
 					*sendEvents.Task,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserPendingDisconnect != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserPendingDisconnect.IdempotencyKey(),
+			&sendEvents.UserPendingDisconnect.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserPendingDisconnect(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserPendingDisconnect,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserDisconnected != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserDisconnected.IdempotencyKey(),
+			&sendEvents.UserDisconnected.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserDisconnected(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserDisconnected,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserLinkStatus != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserLinkStatus.IdempotencyKey(),
+			&sendEvents.UserLinkStatus.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserLinkStatus(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserLinkStatus,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserConnectionDataSynced != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserConnectionDataSynced.IdempotencyKey(),
+			&sendEvents.UserConnectionDataSynced.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserConnectionDataSynced(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserConnectionDataSynced,
 				)
 			},
 		)

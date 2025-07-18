@@ -67,7 +67,7 @@ func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 func TestUnitTestSuite(t *testing.T) {
 	logger := logging.Testing()
 	w := Workflow{
-		plugins:        plugins.New(plugins.CallerWorker, logger, true),
+		plugins:        plugins.New(logger, true),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
 		logger:         logger,
@@ -85,10 +85,10 @@ func (s *UnitTestSuite) addData() {
 		Provider:  "test",
 	}
 
-	registry.RegisterPlugin("test", func(models.ConnectorID, string, logging.Logger, json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin("test", models.PluginTypePSP, func(models.ConnectorID, string, logging.Logger, json.RawMessage) (models.Plugin, error) {
 		return nil, nil
 	}, []models.Capability{}, struct{}{})
-	err := s.w.plugins.RegisterPlugin(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
+	err := s.w.plugins.LoadPlugin(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{
