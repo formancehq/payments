@@ -8,11 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestConnectorsHandleWebhooks(t *testing.T) {
+func TestPSUConnectionsDelete(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -21,6 +22,13 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 	eng := engine.NewMockEngine(ctrl)
 
 	s := New(store, eng, false)
+
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "plaid",
+	}
+	psuID := uuid.New()
+	connectionID := uuid.New().String()
 
 	tests := []struct {
 		name          string
@@ -54,8 +62,8 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().HandleWebhook(gomock.Any(), "/any", "/any", models.Webhook{}).Return(test.err)
-			err := s.ConnectorsHandleWebhooks(context.Background(), "/any", "/any", models.Webhook{})
+			eng.EXPECT().DeletePaymentServiceUserConnection(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(models.Task{}, test.err)
+			_, err := s.PaymentServiceUsersConnectionsDelete(context.Background(), connectorID, psuID, connectionID)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else if test.typedError {

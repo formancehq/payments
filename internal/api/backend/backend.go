@@ -73,6 +73,16 @@ type Backend interface {
 	PaymentServiceUsersList(ctx context.Context, query storage.ListPSUsQuery) (*bunpaginate.Cursor[models.PaymentServiceUser], error)
 	PaymentServiceUsersForwardBankAccountToConnector(ctx context.Context, psuID, bankAccountID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
 	PaymentServiceUsersAddBankAccount(ctx context.Context, psuID uuid.UUID, bankAccountID uuid.UUID) error
+	PaymentServiceUsersForward(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
+	PaymentServiceUsersDelete(ctx context.Context, psuID uuid.UUID) (models.Task, error)
+	PaymentServiceUsersConnectorDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
+	PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error)
+	PaymentServiceUsersConnectionsDelete(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
+	PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error)
+	PaymentServiceUsersLinkAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error)
+	PaymentServiceUsersCreateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	PaymentServiceUsersUpdateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error)
 
 	// Pools
 	PoolsCreate(ctx context.Context, pool models.Pool) error
@@ -90,7 +100,7 @@ type Backend interface {
 	TaskGet(ctx context.Context, id models.TaskID) (*models.Task, error)
 
 	// Webhooks
-	ConnectorsHandleWebhooks(ctx context.Context, urlPath string, webhook models.Webhook) error
+	ConnectorsHandleWebhooks(ctx context.Context, url string, urlPath string, webhook models.Webhook) error
 
 	// Workflows Instances
 	WorkflowsInstancesList(ctx context.Context, query storage.ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)

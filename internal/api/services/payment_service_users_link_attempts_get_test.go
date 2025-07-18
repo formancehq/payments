@@ -8,11 +8,12 @@ import (
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	gomock "go.uber.org/mock/gomock"
 )
 
-func TestConnectorsHandleWebhooks(t *testing.T) {
+func TestPSUUserLinkAttemptsGet(t *testing.T) {
 	t.Parallel()
 
 	ctrl := gomock.NewController(t)
@@ -22,11 +23,12 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 
 	s := New(store, eng, false)
 
+	id := uuid.New()
+
 	tests := []struct {
 		name          string
 		err           error
 		expectedError error
-		typedError    bool
 	}{
 		{
 			name:          "success",
@@ -34,32 +36,24 @@ func TestConnectorsHandleWebhooks(t *testing.T) {
 			expectedError: nil,
 		},
 		{
-			name:          "validation error",
-			err:           engine.ErrValidation,
-			expectedError: ErrValidation,
-			typedError:    true,
-		},
-		{
-			name:          "not found error",
-			err:           engine.ErrNotFound,
-			expectedError: ErrNotFound,
-			typedError:    true,
+			name:          "storage error not found",
+			err:           storage.ErrNotFound,
+			expectedError: newStorageError(storage.ErrNotFound, "cannot get payment service users link attempt"),
 		},
 		{
 			name:          "other error",
 			err:           fmt.Errorf("error"),
-			expectedError: fmt.Errorf("error"),
+			expectedError: newStorageError(fmt.Errorf("error"), "cannot get payment service users link attempt"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().HandleWebhook(gomock.Any(), "/any", "/any", models.Webhook{}).Return(test.err)
-			err := s.ConnectorsHandleWebhooks(context.Background(), "/any", "/any", models.Webhook{})
+			store.EXPECT().PSUBankBridgeConnectionAttemptsGet(gomock.Any(), id).Return(&models.PSUBankBridgeConnectionAttempt{}, test.err)
+			attempt, err := s.PaymentServiceUsersLinkAttemptsGet(context.Background(), id)
 			if test.expectedError == nil {
+				require.NotNil(t, attempt)
 				require.NoError(t, err)
-			} else if test.typedError {
-				require.ErrorIs(t, err, test.expectedError)
 			} else {
 				require.Equal(t, test.expectedError, err)
 			}
