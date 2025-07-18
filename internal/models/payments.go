@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
+
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
@@ -295,7 +296,7 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment,
 		p.Amount = big.NewInt(0)
 	}
 
-	p.Adjustments = append(p.Adjustments, FromPSPPaymentToPaymentAdjustement(from, connectorID))
+	p.Adjustments = append(p.Adjustments, FromPSPPaymentToPaymentAdjustment(from, connectorID))
 
 	return p, nil
 }
@@ -312,7 +313,7 @@ func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) ([]Payment, err
 	return payments, nil
 }
 
-func FromPSPPaymentToPaymentAdjustement(from PSPPayment, connectorID ConnectorID) PaymentAdjustment {
+func FromPSPPaymentToPaymentAdjustment(from PSPPayment, connectorID ConnectorID) PaymentAdjustment {
 	parentReference := from.Reference
 	if from.HasParent() {
 		parentReference = from.ParentReference
