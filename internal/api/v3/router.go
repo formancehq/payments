@@ -25,8 +25,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 		// Authenticated routes
 		r.Group(func(r chi.Router) {
-			// r.Use(auth.Middleware(a))
-			_ = a
+			r.Use(auth.Middleware(a))
 
 			// Accounts
 			r.Route("/accounts", func(r chi.Router) {

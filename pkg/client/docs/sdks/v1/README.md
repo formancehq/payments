@@ -1423,7 +1423,6 @@ func main() {
 
     res, err := s.Payments.V1.CreateBankAccount(ctx, components.BankAccountRequest{
         Country: "GB",
-        ConnectorID: client.String("<id>"),
         Name: "My account",
     })
     if err != nil {
