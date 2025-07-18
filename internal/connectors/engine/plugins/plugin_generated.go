@@ -71,18 +71,18 @@ func (mr *MockPluginsMockRecorder) GetConfig(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockPlugins)(nil).GetConfig), arg0)
 }
 
-// RegisterPlugin mocks base method.
-func (m *MockPlugins) RegisterPlugin(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
+// LoadPlugin mocks base method.
+func (m *MockPlugins) LoadPlugin(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "RegisterPlugin", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "LoadPlugin", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// RegisterPlugin indicates an expected call of RegisterPlugin.
-func (mr *MockPluginsMockRecorder) RegisterPlugin(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
+// LoadPlugin indicates an expected call of LoadPlugin.
+func (mr *MockPluginsMockRecorder) LoadPlugin(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegisterPlugin", reflect.TypeOf((*MockPlugins)(nil).RegisterPlugin), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadPlugin", reflect.TypeOf((*MockPlugins)(nil).LoadPlugin), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
 // UnregisterPlugin mocks base method.
