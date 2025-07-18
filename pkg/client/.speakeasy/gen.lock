@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
-id: 86668c33-fde8-4164-be98-cfc24d333a1e
+id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 9339ce6b60e511a05ad9029fdca8c938
+  docChecksum: b1ba930512e0ac7597c4bf8228300dc3
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -180,6 +180,7 @@ generatedFiles:
   - /models/components/v3paymentserviceuserscursorresponse.go
   - /models/components/v3paymentstatusenum.go
   - /models/components/v3paymenttypeenum.go
+  - /models/components/v3plaidconfig.go
   - /models/components/v3pool.go
   - /models/components/v3poolbalance.go
   - /models/components/v3poolbalancesresponse.go
@@ -493,6 +494,7 @@ generatedFiles:
   - docs/models/components/v3paymentserviceuserscursorresponsecursor.md
   - docs/models/components/v3paymentstatusenum.md
   - docs/models/components/v3paymenttypeenum.md
+  - docs/models/components/v3plaidconfig.md
   - docs/models/components/v3pool.md
   - docs/models/components/v3poolbalance.md
   - docs/models/components/v3poolbalancesresponse.md
@@ -772,7 +774,7 @@ examples:
           sort: ["date:asc", "status:desc"]
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "XXX", "reference": "<value>", "createdAt": "2023-01-31T00:09:09.490Z", "scheduledAt": "2024-04-12T17:55:51.446Z", "description": "shovel aw scrutinise delicious a machine provided thongs eek pfft", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 991707, "initialAmount": 603953, "asset": "USD", "status": "PROCESSING", "error": "<value>"}, {"id": "XXX", "reference": "<value>", "createdAt": "2023-04-20T00:00:16.449Z", "scheduledAt": "2024-05-14T08:21:14.101Z", "description": "vice programme downchange lucky", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "TRANSFER", "amount": 454279, "initialAmount": 185400, "asset": "USD", "status": "PROCESSING", "error": "<value>"}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "XXX", "reference": "<value>", "createdAt": "2023-01-31T00:09:09.490Z", "scheduledAt": "2024-04-12T17:55:51.446Z", "description": "shovel aw scrutinise delicious a machine provided thongs eek pfft", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 991707, "initialAmount": 603953, "asset": "USD", "status": "PROCESSING"}, {"id": "XXX", "reference": "<value>", "createdAt": "2023-04-20T00:00:16.449Z", "scheduledAt": "2024-05-14T08:21:14.101Z", "description": "vice programme downchange lucky", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "TRANSFER", "amount": 454279, "initialAmount": 185400, "asset": "USD", "status": "PROCESSING"}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   createTransferInitiation:
@@ -781,7 +783,7 @@ examples:
         application/json: {"reference": "XXX", "scheduledAt": "2023-10-09T08:11:40.585Z", "description": "worthy pace vague ick liberalize between um", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "type": "PAYOUT", "amount": 847873, "asset": "USD", "validated": true}
       responses:
         "200":
-          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2024-04-08T05:30:28.870Z", "scheduledAt": "2023-01-07T23:05:45.713Z", "description": "jut profane apud newsstand printer fondly", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 10465, "initialAmount": 216310, "asset": "USD", "status": "PARTIALLY_REVERSED", "error": "<value>"}}
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2024-04-08T05:30:28.870Z", "scheduledAt": "2023-01-07T23:05:45.713Z", "description": "jut profane apud newsstand printer fondly", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 10465, "initialAmount": 216310, "asset": "USD", "status": "PARTIALLY_REVERSED"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   getTransferInitiation:
@@ -791,7 +793,7 @@ examples:
           transferId: "XXX"
       responses:
         "200":
-          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2023-03-21T19:16:05.818Z", "scheduledAt": "2023-06-13T16:04:12.992Z", "description": "lack sick cheerfully minor", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 688024, "initialAmount": 52065, "asset": "USD", "status": "ASK_REVERSED", "error": "<value>"}}
+          application/json: {"data": {"id": "XXX", "reference": "<value>", "createdAt": "2023-03-21T19:16:05.818Z", "scheduledAt": "2023-06-13T16:04:12.992Z", "description": "lack sick cheerfully minor", "sourceAccountID": "<id>", "destinationAccountID": "<id>", "connectorID": "<id>", "provider": "<value>", "type": "PAYOUT", "amount": 688024, "initialAmount": 52065, "asset": "USD", "status": "ASK_REVERSED"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   deleteTransferInitiation:
@@ -802,7 +804,7 @@ examples:
       responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
-  udpateTransferInitiationStatus:
+  updateTransferInitiationStatus:
     "":
       parameters:
         path:
@@ -900,6 +902,16 @@ examples:
           application/json: {"data": {"balances": []}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
+  getPoolBalancesLatest:
+    "":
+      parameters:
+        path:
+          poolId: "XXX"
+      responses:
+        "200":
+          application/json: {"data": [{"amount": 100, "asset": "USD"}]}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   createAccount:
     speakeasy-default-create-account:
       requestBody:
@@ -948,7 +960,7 @@ examples:
   createBankAccount:
     speakeasy-default-create-bank-account:
       requestBody:
-        application/json: {"country": "GB", "connectorID": "<id>", "name": "My account"}
+        application/json: {"country": "GB", "name": "My account"}
       responses:
         "200":
           application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-03-09T13:07:34.182Z", "country": "Marshall Islands"}}
@@ -1009,7 +1021,7 @@ examples:
     speakeasy-default-list-configs-available-connectors:
       responses:
         "200":
-          application/json: {}
+          application/json: {"data": {"key": {"key": {"dataType": "text", "required": false}, "key1": {"dataType": "set", "required": false}}, "key1": {"key": {"dataType": "blob", "required": true}, "key1": {"dataType": "real", "required": true}}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   installConnector:
@@ -1264,7 +1276,7 @@ examples:
     speakeasy-default-v3-list-connector-configs:
       responses:
         "200":
-          application/json: {"data": {"connector": {"key": {"dataType": "set", "required": false}}}}
+          application/json: {"data": {"key": {"key": {"dataType": "int", "required": true}, "key1": {"dataType": "serial", "required": true}, "key2": {"dataType": "date", "required": true}}, "key1": {"key": {"dataType": "mediumint", "required": true}, "key1": {"dataType": "mediumint", "required": false}, "key2": {"dataType": "int", "required": true}}}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3UninstallConnector:
@@ -1284,9 +1296,17 @@ examples:
           connectorID: "<id>"
       responses:
         "200":
-          application/json: {"data": {"apiKey": "<value>", "apiSecret": "<value>", "endpoint": "<value>", "name": "<value>", "pageSize": "25", "pollingPeriod": "2m", "provider": "Modulr"}}
+          application/json: {"data": {"clientID": "<id>", "clientSecret": "<value>", "name": "<value>", "pageSize": "25", "pollingPeriod": "2m", "provider": "Plaid"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3UpdateConnectorConfig:
+    speakeasy-default-v3-update-connector-config:
+      parameters:
+        path:
+          connectorID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   v3ResetConnector:
     speakeasy-default-v3-reset-connector:
       parameters:
@@ -1332,7 +1352,7 @@ examples:
           cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2024-02-15T21:59:37.501Z", "updatedAt": "2025-08-17T16:51:51.108Z", "terminated": false}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-09-07T21:29:03.593Z", "updatedAt": "2024-02-15T21:59:37.501Z", "terminated": true}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-02-18T04:47:10.180Z", "updatedAt": "2024-08-01T04:53:30.171Z", "terminated": false}]}}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2024-02-15T21:59:37.501Z", "updatedAt": "2024-08-01T04:53:30.171Z", "terminated": true}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-06-15T11:50:05.647Z", "updatedAt": "2023-02-18T04:47:10.180Z", "terminated": false}, {"id": "<id>", "connectorID": "<value>", "scheduleID": "<id>", "createdAt": "2023-01-19T07:08:13.325Z", "updatedAt": "2025-10-10T07:33:31.102Z", "terminated": false}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3CreatePayment:
@@ -1474,99 +1494,6 @@ examples:
           application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "connectorID": "<value>", "provider": "<value>", "reference": "<value>", "createdAt": "2024-09-23T09:42:34.012Z", "type": "TRANSFER", "initialAmount": 927729, "amount": 913421, "asset": "<value>", "scheme": "<value>", "status": "REFUND_REVERSED"}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3CreatePool:
-    speakeasy-default-v3-create-pool:
-      responses:
-        "201":
-          application/json: {"data": "<value>"}
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3ListPools:
-    "":
-      parameters:
-        query:
-          pageSize: 100
-          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
-      responses:
-        "200":
-          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "poolAccounts": ["<value>"]}]}}
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3GetPool:
-    speakeasy-default-v3-get-pool:
-      parameters:
-        path:
-          poolID: "<id>"
-      responses:
-        "200":
-          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "poolAccounts": ["<value>"]}}
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3DeletePool:
-    speakeasy-default-v3-delete-pool:
-      parameters:
-        path:
-          poolID: "<id>"
-      responses:
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3GetPoolBalances:
-    speakeasy-default-v3-get-pool-balances:
-      parameters:
-        path:
-          poolID: "<id>"
-        query: {}
-      responses:
-        "200":
-          application/json: {"data": [{"asset": "<value>", "amount": 857230}]}
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3AddAccountToPool:
-    speakeasy-default-v3-add-account-to-pool:
-      parameters:
-        path:
-          poolID: "<id>"
-          accountID: "<id>"
-      responses:
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3RemoveAccountFromPool:
-    speakeasy-default-v3-remove-account-from-pool:
-      parameters:
-        path:
-          poolID: "<id>"
-          accountID: "<id>"
-      responses:
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  v3GetTask:
-    speakeasy-default-v3-get-task:
-      parameters:
-        path:
-          taskID: "<id>"
-      responses:
-        "200":
-          application/json: {"data": {"id": "<id>", "status": "FAILED", "createdAt": "2025-09-07T00:11:01.351Z", "updatedAt": "2023-03-17T17:53:01.920Z"}}
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  updateTransferInitiationStatus:
-    "":
-      parameters:
-        path:
-          transferId: "XXX"
-      requestBody:
-        application/json: {"status": "VALIDATED"}
-      responses:
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
-  v3UpdateConnectorConfig:
-    speakeasy-default-v3-update-connector-config:
-      parameters:
-        path:
-          connectorID: "<id>"
-      responses:
-        default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
   v3CreatePaymentServiceUser:
     speakeasy-default-v3-create-payment-service-user:
       responses:
@@ -1615,24 +1542,51 @@ examples:
           application/json: {"data": {"taskID": "<id>"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
-  getPoolBalancesLatest:
+  v3CreatePool:
+    speakeasy-default-v3-create-pool:
+      responses:
+        "201":
+          application/json: {"data": "<value>"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPools:
     "":
       parameters:
-        path:
-          poolId: "XXX"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
-          application/json: {"data": [{"amount": 100, "asset": "USD"}]}
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "", "data": [{"id": "<id>", "name": "<value>", "createdAt": "2025-02-08T15:23:10.325Z", "poolAccounts": []}, {"id": "<id>", "name": "<value>", "createdAt": "2024-04-12T20:16:24.210Z", "poolAccounts": ["<value>"]}]}}
         default:
-          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing reference"}
-  v3GetPoolBalances1:
-    speakeasy-default-v3-get-pool-balances1:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPool:
+    speakeasy-default-v3-get-pool:
       parameters:
         path:
           poolID: "<id>"
       responses:
         "200":
-          application/json: {"data": [{"asset": "<value>", "amount": 960936}, {"asset": "<value>", "amount": 138696}, {"asset": "<value>", "amount": 544404}]}
+          application/json: {"data": {"id": "<id>", "name": "<value>", "createdAt": "2024-04-23T06:52:21.825Z", "poolAccounts": ["<value>"]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePool:
+    speakeasy-default-v3-delete-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPoolBalances:
+    speakeasy-default-v3-get-pool-balances:
+      parameters:
+        path:
+          poolID: "<id>"
+        query: {}
+      responses:
+        "200":
+          application/json: {"data": [{"asset": "<value>", "amount": 857230}]}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3GetPoolBalancesLatest:
@@ -1643,6 +1597,34 @@ examples:
       responses:
         "200":
           application/json: {"data": [{"asset": "<value>", "amount": 960936}, {"asset": "<value>", "amount": 138696}, {"asset": "<value>", "amount": 544404}]}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3AddAccountToPool:
+    speakeasy-default-v3-add-account-to-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+          accountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3RemoveAccountFromPool:
+    speakeasy-default-v3-remove-account-from-pool:
+      parameters:
+        path:
+          poolID: "<id>"
+          accountID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetTask:
+    speakeasy-default-v3-get-task:
+      parameters:
+        path:
+          taskID: "<id>"
+      responses:
+        "200":
+          application/json: {"data": {"id": "<id>", "status": "FAILED", "createdAt": "2025-09-07T00:11:01.351Z", "updatedAt": "2023-03-17T17:53:01.920Z"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0

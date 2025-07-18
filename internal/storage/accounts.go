@@ -75,6 +75,16 @@ func (s *store) AccountsDeleteFromConnectorID(ctx context.Context, connectorID m
 	return e("failed to delete account", err)
 }
 
+// TODO(polo): add tests
+func (s *store) AccountsDelete(ctx context.Context, id models.AccountID) error {
+	_, err := s.db.NewDelete().
+		Model((*account)(nil)).
+		Where("id = ?", id).
+		Exec(ctx)
+
+	return e("failed to delete account", err)
+}
+
 type AccountQuery struct{}
 
 type ListAccountsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[AccountQuery]]

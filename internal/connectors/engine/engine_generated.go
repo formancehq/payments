@@ -57,6 +57,20 @@ func (mr *MockEngineMockRecorder) AddAccountToPool(ctx, id, accountID any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccountToPool", reflect.TypeOf((*MockEngine)(nil).AddAccountToPool), ctx, id, accountID)
 }
 
+// CompletePaymentServiceUserLink mocks base method.
+func (m *MockEngine) CompletePaymentServiceUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompletePaymentServiceUserLink", ctx, connectorID, attemptID, httpCallInformation)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CompletePaymentServiceUserLink indicates an expected call of CompletePaymentServiceUserLink.
+func (mr *MockEngineMockRecorder) CompletePaymentServiceUserLink(ctx, connectorID, attemptID, httpCallInformation any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompletePaymentServiceUserLink", reflect.TypeOf((*MockEngine)(nil).CompletePaymentServiceUserLink), ctx, connectorID, attemptID, httpCallInformation)
+}
+
 // CreateFormanceAccount mocks base method.
 func (m *MockEngine) CreateFormanceAccount(ctx context.Context, account models.Account) error {
 	m.ctrl.T.Helper()
@@ -97,6 +111,22 @@ func (m *MockEngine) CreateFormancePaymentInitiation(ctx context.Context, paymen
 func (mr *MockEngineMockRecorder) CreateFormancePaymentInitiation(ctx, paymentInitiation, adj any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateFormancePaymentInitiation", reflect.TypeOf((*MockEngine)(nil).CreateFormancePaymentInitiation), ctx, paymentInitiation, adj)
+}
+
+// CreatePaymentServiceUserLink mocks base method.
+func (m *MockEngine) CreatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreatePaymentServiceUserLink", ctx, psuID, connectorID, idempotencyKey, ClientRedirectURL)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// CreatePaymentServiceUserLink indicates an expected call of CreatePaymentServiceUserLink.
+func (mr *MockEngineMockRecorder) CreatePaymentServiceUserLink(ctx, psuID, connectorID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePaymentServiceUserLink", reflect.TypeOf((*MockEngine)(nil).CreatePaymentServiceUserLink), ctx, psuID, connectorID, idempotencyKey, ClientRedirectURL)
 }
 
 // CreatePayout mocks base method.
@@ -143,6 +173,51 @@ func (mr *MockEngineMockRecorder) CreateTransfer(ctx, piID, attempt, waitResult 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockEngine)(nil).CreateTransfer), ctx, piID, attempt, waitResult)
 }
 
+// DeletePaymentServiceUser mocks base method.
+func (m *MockEngine) DeletePaymentServiceUser(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePaymentServiceUser", ctx, psuID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePaymentServiceUser indicates an expected call of DeletePaymentServiceUser.
+func (mr *MockEngineMockRecorder) DeletePaymentServiceUser(ctx, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePaymentServiceUser", reflect.TypeOf((*MockEngine)(nil).DeletePaymentServiceUser), ctx, psuID)
+}
+
+// DeletePaymentServiceUserConnection mocks base method.
+func (m *MockEngine) DeletePaymentServiceUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePaymentServiceUserConnection", ctx, connectorID, psuID, connectionID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePaymentServiceUserConnection indicates an expected call of DeletePaymentServiceUserConnection.
+func (mr *MockEngineMockRecorder) DeletePaymentServiceUserConnection(ctx, connectorID, psuID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePaymentServiceUserConnection", reflect.TypeOf((*MockEngine)(nil).DeletePaymentServiceUserConnection), ctx, connectorID, psuID, connectionID)
+}
+
+// DeletePaymentServiceUserConnector mocks base method.
+func (m *MockEngine) DeletePaymentServiceUserConnector(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeletePaymentServiceUserConnector", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(models.Task)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeletePaymentServiceUserConnector indicates an expected call of DeletePaymentServiceUserConnector.
+func (mr *MockEngineMockRecorder) DeletePaymentServiceUserConnector(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeletePaymentServiceUserConnector", reflect.TypeOf((*MockEngine)(nil).DeletePaymentServiceUserConnector), ctx, psuID, connectorID)
+}
+
 // DeletePool mocks base method.
 func (m *MockEngine) DeletePool(ctx context.Context, poolID uuid.UUID) error {
 	m.ctrl.T.Helper()
@@ -172,18 +247,32 @@ func (mr *MockEngineMockRecorder) ForwardBankAccount(ctx, ba, connectorID, waitR
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardBankAccount", reflect.TypeOf((*MockEngine)(nil).ForwardBankAccount), ctx, ba, connectorID, waitResult)
 }
 
-// HandleWebhook mocks base method.
-func (m *MockEngine) HandleWebhook(ctx context.Context, urlPath string, webhook models.Webhook) error {
+// ForwardPaymentServiceUser mocks base method.
+func (m *MockEngine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "HandleWebhook", ctx, urlPath, webhook)
+	ret := m.ctrl.Call(m, "ForwardPaymentServiceUser", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ForwardPaymentServiceUser indicates an expected call of ForwardPaymentServiceUser.
+func (mr *MockEngineMockRecorder) ForwardPaymentServiceUser(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ForwardPaymentServiceUser", reflect.TypeOf((*MockEngine)(nil).ForwardPaymentServiceUser), ctx, psuID, connectorID)
+}
+
+// HandleWebhook mocks base method.
+func (m *MockEngine) HandleWebhook(ctx context.Context, url, urlPath string, webhook models.Webhook) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "HandleWebhook", ctx, url, urlPath, webhook)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
 // HandleWebhook indicates an expected call of HandleWebhook.
-func (mr *MockEngineMockRecorder) HandleWebhook(ctx, urlPath, webhook any) *gomock.Call {
+func (mr *MockEngineMockRecorder) HandleWebhook(ctx, url, urlPath, webhook any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleWebhook", reflect.TypeOf((*MockEngine)(nil).HandleWebhook), ctx, urlPath, webhook)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HandleWebhook", reflect.TypeOf((*MockEngine)(nil).HandleWebhook), ctx, url, urlPath, webhook)
 }
 
 // InstallConnector mocks base method.
@@ -313,4 +402,20 @@ func (m *MockEngine) UpdateConnector(ctx context.Context, connectorID models.Con
 func (mr *MockEngineMockRecorder) UpdateConnector(ctx, connectorID, rawConfig any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateConnector", reflect.TypeOf((*MockEngine)(nil).UpdateConnector), ctx, connectorID, rawConfig)
+}
+
+// UpdatePaymentServiceUserLink mocks base method.
+func (m *MockEngine) UpdatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdatePaymentServiceUserLink", ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(string)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// UpdatePaymentServiceUserLink indicates an expected call of UpdatePaymentServiceUserLink.
+func (mr *MockEngineMockRecorder) UpdatePaymentServiceUserLink(ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdatePaymentServiceUserLink", reflect.TypeOf((*MockEngine)(nil).UpdatePaymentServiceUserLink), ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
 }

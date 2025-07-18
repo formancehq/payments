@@ -265,7 +265,7 @@ func TestFromPSPPayments(t *testing.T) {
 			},
 		}
 
-		payments, err := models.FromPSPPayments(pspPayments, connectorID)
+		payments, err := models.FromPSPPayments(pspPayments, connectorID, nil)
 
 		// Then
 		require.NoError(t, err)
@@ -289,7 +289,7 @@ func TestFromPSPPayments(t *testing.T) {
 		}
 		pspPayments := []models.PSPPayment{invalidPayment}
 
-		_, err := models.FromPSPPayments(pspPayments, connectorID)
+		_, err := models.FromPSPPayments(pspPayments, connectorID, nil)
 
 		// Then
 		assert.Error(t, err)

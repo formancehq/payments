@@ -44,6 +44,20 @@ func (m *MockStorage) EXPECT() *MockStorageMockRecorder {
 	return m.recorder
 }
 
+// AccountsDelete mocks base method.
+func (m *MockStorage) AccountsDelete(ctx context.Context, id models.AccountID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AccountsDelete indicates an expected call of AccountsDelete.
+func (mr *MockStorageMockRecorder) AccountsDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDelete", reflect.TypeOf((*MockStorage)(nil).AccountsDelete), ctx, id)
+}
+
 // AccountsDeleteFromConnectorID mocks base method.
 func (m *MockStorage) AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()
@@ -548,6 +562,210 @@ func (mr *MockStorageMockRecorder) ListenConnectorsChanges(ctx, handler any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListenConnectorsChanges", reflect.TypeOf((*MockStorage)(nil).ListenConnectorsChanges), ctx, handler)
 }
 
+// PSUBankBridgeConnectionAttemptsGet mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionAttemptsGet", ctx, id)
+	ret0, _ := ret[0].(*models.PSUBankBridgeConnectionAttempt)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgeConnectionAttemptsGet indicates an expected call of PSUBankBridgeConnectionAttemptsGet.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionAttemptsGet(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionAttemptsGet", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionAttemptsGet), ctx, id)
+}
+
+// PSUBankBridgeConnectionAttemptsList mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionAttemptsList", ctx, psuID, connectorID, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgeConnectionAttemptsList indicates an expected call of PSUBankBridgeConnectionAttemptsList.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionAttemptsList(ctx, psuID, connectorID, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionAttemptsList", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionAttemptsList), ctx, psuID, connectorID, query)
+}
+
+// PSUBankBridgeConnectionAttemptsUpdateStatus mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.PSUBankBridgeConnectionAttemptStatus, errMsg *string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionAttemptsUpdateStatus", ctx, id, status, errMsg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgeConnectionAttemptsUpdateStatus indicates an expected call of PSUBankBridgeConnectionAttemptsUpdateStatus.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionAttemptsUpdateStatus(ctx, id, status, errMsg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionAttemptsUpdateStatus", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionAttemptsUpdateStatus), ctx, id, status, errMsg)
+}
+
+// PSUBankBridgeConnectionAttemptsUpsert mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from models.PSUBankBridgeConnectionAttempt) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionAttemptsUpsert", ctx, from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgeConnectionAttemptsUpsert indicates an expected call of PSUBankBridgeConnectionAttemptsUpsert.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionAttemptsUpsert(ctx, from any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionAttemptsUpsert", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionAttemptsUpsert), ctx, from)
+}
+
+// PSUBankBridgeConnectionsDelete mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsDelete", ctx, psuID, connectorID, connectionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgeConnectionsDelete indicates an expected call of PSUBankBridgeConnectionsDelete.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsDelete(ctx, psuID, connectorID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsDelete", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsDelete), ctx, psuID, connectorID, connectionID)
+}
+
+// PSUBankBridgeConnectionsGet mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsGet", ctx, psuID, connectorID, connectionID)
+	ret0, _ := ret[0].(*models.PSUBankBridgeConnection)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgeConnectionsGet indicates an expected call of PSUBankBridgeConnectionsGet.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsGet(ctx, psuID, connectorID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsGet", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsGet), ctx, psuID, connectorID, connectionID)
+}
+
+// PSUBankBridgeConnectionsGetFromConnectionID mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, uuid.UUID, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsGetFromConnectionID", ctx, connectorID, connectionID)
+	ret0, _ := ret[0].(*models.PSUBankBridgeConnection)
+	ret1, _ := ret[1].(uuid.UUID)
+	ret2, _ := ret[2].(error)
+	return ret0, ret1, ret2
+}
+
+// PSUBankBridgeConnectionsGetFromConnectionID indicates an expected call of PSUBankBridgeConnectionsGetFromConnectionID.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsGetFromConnectionID(ctx, connectorID, connectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsGetFromConnectionID", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsGetFromConnectionID), ctx, connectorID, connectionID)
+}
+
+// PSUBankBridgeConnectionsList mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsList", ctx, psuID, connectorID, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridgeConnection])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgeConnectionsList indicates an expected call of PSUBankBridgeConnectionsList.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsList(ctx, psuID, connectorID, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsList", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsList), ctx, psuID, connectorID, query)
+}
+
+// PSUBankBridgeConnectionsUpdateLastDataUpdate mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsUpdateLastDataUpdate", ctx, psuID, connectorID, connectionID, updatedAt)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgeConnectionsUpdateLastDataUpdate indicates an expected call of PSUBankBridgeConnectionsUpdateLastDataUpdate.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx, psuID, connectorID, connectionID, updatedAt any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsUpdateLastDataUpdate", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsUpdateLastDataUpdate), ctx, psuID, connectorID, connectionID, updatedAt)
+}
+
+// PSUBankBridgeConnectionsUpsert mocks base method.
+func (m *MockStorage) PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridgeConnection) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgeConnectionsUpsert", ctx, psuID, from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgeConnectionsUpsert indicates an expected call of PSUBankBridgeConnectionsUpsert.
+func (mr *MockStorageMockRecorder) PSUBankBridgeConnectionsUpsert(ctx, psuID, from any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgeConnectionsUpsert", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgeConnectionsUpsert), ctx, psuID, from)
+}
+
+// PSUBankBridgesDelete mocks base method.
+func (m *MockStorage) PSUBankBridgesDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgesDelete", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgesDelete indicates an expected call of PSUBankBridgesDelete.
+func (mr *MockStorageMockRecorder) PSUBankBridgesDelete(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesDelete", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesDelete), ctx, psuID, connectorID)
+}
+
+// PSUBankBridgesGet mocks base method.
+func (m *MockStorage) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.PSUBankBridge, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgesGet", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(*models.PSUBankBridge)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgesGet indicates an expected call of PSUBankBridgesGet.
+func (mr *MockStorageMockRecorder) PSUBankBridgesGet(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesGet", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesGet), ctx, psuID, connectorID)
+}
+
+// PSUBankBridgesList mocks base method.
+func (m *MockStorage) PSUBankBridgesList(ctx context.Context, query ListPSUBankBridgesQuery) (*bunpaginate.Cursor[models.PSUBankBridge], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgesList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridge])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PSUBankBridgesList indicates an expected call of PSUBankBridgesList.
+func (mr *MockStorageMockRecorder) PSUBankBridgesList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesList", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesList), ctx, query)
+}
+
+// PSUBankBridgesUpsert mocks base method.
+func (m *MockStorage) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridge) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PSUBankBridgesUpsert", ctx, psuID, from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PSUBankBridgesUpsert indicates an expected call of PSUBankBridgesUpsert.
+func (mr *MockStorageMockRecorder) PSUBankBridgesUpsert(ctx, psuID, from any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUBankBridgesUpsert", reflect.TypeOf((*MockStorage)(nil).PSUBankBridgesUpsert), ctx, psuID, from)
+}
+
 // PaymentInitiationAdjustmentsGet mocks base method.
 func (m *MockStorage) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
 	m.ctrl.T.Helper()
@@ -872,6 +1090,20 @@ func (mr *MockStorageMockRecorder) PaymentServiceUsersCreate(ctx, psu any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersCreate", reflect.TypeOf((*MockStorage)(nil).PaymentServiceUsersCreate), ctx, psu)
 }
 
+// PaymentServiceUsersDelete mocks base method.
+func (m *MockStorage) PaymentServiceUsersDelete(ctx context.Context, paymentServiceUserID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentServiceUsersDelete", ctx, paymentServiceUserID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentServiceUsersDelete indicates an expected call of PaymentServiceUsersDelete.
+func (mr *MockStorageMockRecorder) PaymentServiceUsersDelete(ctx, paymentServiceUserID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersDelete", reflect.TypeOf((*MockStorage)(nil).PaymentServiceUsersDelete), ctx, paymentServiceUserID)
+}
+
 // PaymentServiceUsersGet mocks base method.
 func (m *MockStorage) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*models.PaymentServiceUser, error) {
 	m.ctrl.T.Helper()
@@ -902,6 +1134,34 @@ func (mr *MockStorageMockRecorder) PaymentServiceUsersList(ctx, query any) *gomo
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersList", reflect.TypeOf((*MockStorage)(nil).PaymentServiceUsersList), ctx, query)
 }
 
+// PaymentsDelete mocks base method.
+func (m *MockStorage) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDelete", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDelete indicates an expected call of PaymentsDelete.
+func (mr *MockStorageMockRecorder) PaymentsDelete(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDelete", reflect.TypeOf((*MockStorage)(nil).PaymentsDelete), ctx, id)
+}
+
+// PaymentsDeleteFromAccountID mocks base method.
+func (m *MockStorage) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromAccountID", ctx, accountID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDeleteFromAccountID indicates an expected call of PaymentsDeleteFromAccountID.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromAccountID(ctx, accountID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromAccountID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromAccountID), ctx, accountID)
+}
+
 // PaymentsDeleteFromConnectorID mocks base method.
 func (m *MockStorage) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	m.ctrl.T.Helper()
@@ -914,6 +1174,20 @@ func (m *MockStorage) PaymentsDeleteFromConnectorID(ctx context.Context, connect
 func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorID), ctx, connectorID)
+}
+
+// PaymentsDeleteFromReference mocks base method.
+func (m *MockStorage) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromReference", ctx, reference, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDeleteFromReference indicates an expected call of PaymentsDeleteFromReference.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromReference(ctx, reference, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromReference", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromReference), ctx, reference, connectorID)
 }
 
 // PaymentsGet mocks base method.
