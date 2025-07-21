@@ -184,7 +184,7 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		status = models.PSUBankBridgeConnectionAttemptStatusFailed
 	}
 
-	for _, publicToken := range *webhook.PublicTokens {
+	for _, publicToken := range webhook.GetPublicTokens() {
 		if err := p.client.FormanceBankBridgeRedirect(ctx, client.FormanceBankBridgeRedirectRequest{
 			LinkToken:   webhook.LinkToken,
 			PublicToken: publicToken,
