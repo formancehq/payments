@@ -15,11 +15,8 @@ func (s *Service) PaymentServiceUsersCompleteLinkFlow(ctx context.Context, conne
 
 	state, err := models.CallbackStateFromString(states[0])
 	if err != nil {
-		fmt.Println("err", err)
 		return "", fmt.Errorf("failed to parse state: %w", err)
 	}
-
-	fmt.Println("states", state.AttemptID)
 
 	attempt, err := s.storage.PSUBankBridgeConnectionAttemptsGet(ctx, state.AttemptID)
 	if err != nil {
