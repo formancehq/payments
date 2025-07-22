@@ -2,6 +2,7 @@ package v3
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -14,11 +15,16 @@ import (
 
 var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 	var (
-		handlerFn http.HandlerFunc
-		attemptID uuid.UUID
+		handlerFn   http.HandlerFunc
+		attemptID   uuid.UUID
+		connectorID models.ConnectorID
 	)
 	BeforeEach(func() {
 		attemptID = uuid.New()
+		connectorID = models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "plaid",
+		}
 	})
 
 	Context("get link attempt", func() {
@@ -34,25 +40,33 @@ var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 		})
 
 		It("should return an invalid ID error when attempt ID is invalid", func(ctx SpecContext) {
-			req := prepareQueryRequest(http.MethodGet, "attemptID", "invalidvalue")
+			req := prepareQueryRequest(http.MethodGet,
+				"attemptID", "invalidvalue",
+				"paymentServiceUserID", uuid.New().String(),
+				"connectorID", connectorID.String())
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrInvalidID)
 		})
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
-			req := prepareQueryRequest(http.MethodGet, "attemptID", attemptID.String())
+			req := prepareQueryRequest(http.MethodGet, "attemptID", attemptID.String(), "paymentServiceUserID", uuid.New().String(), "connectorID", connectorID.String())
 			expectedErr := errors.New("link attempt get error")
 			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), gomock.Any(), gomock.Any(), attemptID).Return(
 				nil, expectedErr,
 			)
 			handlerFn(w, req)
 
+			fmt.Println(w.Result())
+
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})
 
 		It("should return data object", func(ctx SpecContext) {
-			req := prepareQueryRequest(http.MethodGet, "attemptID", attemptID.String())
+			req := prepareQueryRequest(http.MethodGet,
+				"attemptID", attemptID.String(),
+				"paymentServiceUserID", uuid.New().String(),
+				"connectorID", connectorID.String())
 			attempt := &models.PSUBankBridgeConnectionAttempt{
 				ID:     attemptID,
 				PsuID:  uuid.New(),
