@@ -175,10 +175,10 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						switch typ {
 						case "string":
 							fieldType = "string"
-						case "int", "int32", "int64":
+						case "int", "int32", "int64", "uint32", "uint64":
 							fieldType = "integer"
-						case "uint32", "uint64":
-							fieldType = "unsigned integer"
+						case "bool":
+							fieldType = "boolean"
 						default:
 							return V3Config{}, fmt.Errorf("invalid type: %s", typ)
 						}

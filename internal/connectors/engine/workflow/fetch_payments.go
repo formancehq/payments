@@ -3,6 +3,7 @@ package workflow
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/pkg/errors"
@@ -12,10 +13,11 @@ import (
 )
 
 type FetchNextPayments struct {
-	Config       models.Config      `json:"config"`
-	ConnectorID  models.ConnectorID `json:"connectorID"`
-	FromPayload  *FromPayload       `json:"fromPayload"`
-	Periodically bool               `json:"periodically"`
+	Config             models.Config      `json:"config"`
+	ConnectorID        models.ConnectorID `json:"connectorID"`
+	FromPayload        *FromPayload       `json:"fromPayload"`
+	Periodically       bool               `json:"periodically"`
+	AdditionalMetadata map[string]string  `json:"additionalMetadata"`
 }
 
 func (w Workflow) runFetchNextPayments(
@@ -66,6 +68,7 @@ func (w Workflow) fetchNextPayments(
 		payments, err := models.FromPSPPayments(
 			paymentsResponse.Payments,
 			fetchNextPayments.ConnectorID,
+			fetchNextPayments.AdditionalMetadata,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
@@ -86,7 +89,7 @@ func (w Workflow) fetchNextPayments(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(paymentsResponse.Payments)*3)
+		errChan := make(chan error, len(paymentsResponse.Payments)*3+len(paymentsResponse.PaymentsToDelete))
 		for _, payment := range payments {
 			p := payment
 
@@ -176,6 +179,23 @@ func (w Workflow) fetchNextPayments(
 					nextTasks,
 				).Get(ctx, nil); err != nil {
 					errChan <- errors.Wrap(err, "running next workflow")
+				}
+			})
+		}
+
+		for _, payment := range paymentsResponse.PaymentsToDelete {
+			p := payment
+
+			wg.Add(1)
+			workflow.Go(ctx, func(ctx workflow.Context) {
+				defer wg.Done()
+
+				if err := activities.StoragePaymentsDeleteFromReference(
+					infiniteRetryContext(ctx),
+					p.Reference,
+					fetchNextPayments.ConnectorID,
+				); err != nil {
+					errChan <- errors.Wrap(err, "deleting payment")
 				}
 			})
 		}

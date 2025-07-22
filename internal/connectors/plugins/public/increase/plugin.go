@@ -15,12 +15,14 @@ import (
 const ProviderName = "increase"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(connectorID, name, logger, rm)
 	}, capabilities, Config{})
 }
 
 type Plugin struct {
+	models.Plugin
+
 	name   string
 	logger logging.Logger
 
@@ -37,6 +39,7 @@ func New(connectorID models.ConnectorID, name string, logger logging.Logger, raw
 
 	client := client.New(ProviderName, config.APIKey, config.Endpoint, config.WebhookSharedSecret)
 	p := &Plugin{
+		Plugin:              plugins.NewBasePlugin(),
 		name:                name,
 		logger:              logger,
 		client:              client,

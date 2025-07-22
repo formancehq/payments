@@ -168,12 +168,16 @@ func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID Connec
 	}, nil
 }
 
-func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID) ([]Account, error) {
+func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID, additionalMetadata map[string]string) ([]Account, error) {
 	accounts := make([]Account, 0, len(from))
 	for _, a := range from {
 		account, err := FromPSPAccount(a, accountType, connectorID)
 		if err != nil {
 			return nil, err
+		}
+
+		for k, v := range additionalMetadata {
+			account.Metadata[k] = v
 		}
 
 		accounts = append(accounts, account)

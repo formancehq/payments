@@ -1390,3 +1390,164 @@ func comparePaymentAdjustments(t *testing.T, expected, actual models.PaymentAdju
 	require.Equal(t, expected.Amount, actual.Amount)
 	require.Equal(t, expected.Asset, actual.Asset)
 }
+
+func TestPaymentsDelete(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
+
+	t.Run("delete existing payment", func(t *testing.T) {
+		require.NoError(t, store.PaymentsDelete(ctx, pID1))
+
+		_, err := store.PaymentsGet(ctx, pID1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+	})
+
+	t.Run("delete non-existing payment", func(t *testing.T) {
+		nonExistingID := models.PaymentID{
+			PaymentReference: models.PaymentReference{
+				Reference: "non-existing",
+				Type:      models.PAYMENT_TYPE_TRANSFER,
+			},
+			ConnectorID: defaultConnector.ID,
+		}
+
+		require.NoError(t, store.PaymentsDelete(ctx, nonExistingID))
+
+		// Verify other payments still exist
+		payment, err := store.PaymentsGet(ctx, pid2)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid2, payment.ID)
+	})
+}
+
+func TestPaymentsDeleteFromReference(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
+
+	t.Run("delete payment by existing reference and connector", func(t *testing.T) {
+		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "test1", defaultConnector.ID))
+
+		_, err := store.PaymentsGet(ctx, pID1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify other payments still exist
+		payment, err := store.PaymentsGet(ctx, pid2)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid2, payment.ID)
+	})
+
+	t.Run("delete payment by non-existing reference", func(t *testing.T) {
+		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "non-existing", defaultConnector.ID))
+
+		// Verify payments still exist
+		payment, err := store.PaymentsGet(ctx, pid2)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid2, payment.ID)
+	})
+
+	t.Run("delete payment by existing reference but wrong connector", func(t *testing.T) {
+		wrongConnectorID := models.ConnectorID{
+			Reference: uuid.New(),
+			Provider:  "wrong-provider",
+		}
+
+		require.NoError(t, store.PaymentsDeleteFromReference(ctx, "test2", wrongConnectorID))
+
+		// Verify payment still exists
+		payment, err := store.PaymentsGet(ctx, pid2)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid2, payment.ID)
+	})
+}
+
+func TestPaymentsDeleteFromAccountID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertAccounts(t, ctx, store, defaultAccounts())
+	upsertPayments(t, ctx, store, defaultPayments())
+
+	t.Run("delete payments by source account ID", func(t *testing.T) {
+		sourceAccountID := defaultAccounts()[0].ID
+		require.NoError(t, store.PaymentsDeleteFromAccountID(ctx, sourceAccountID))
+
+		// Verify payment with source account ID is deleted
+		_, err := store.PaymentsGet(ctx, pID1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify payment with destination account ID is deleted
+		_, err = store.PaymentsGet(ctx, pid2)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify payment with different source account ID still exists
+		payment, err := store.PaymentsGet(ctx, pid3)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid3, payment.ID)
+	})
+
+	t.Run("delete payments by destination account ID", func(t *testing.T) {
+		// Re-insert payments for this test
+		upsertPayments(t, ctx, store, defaultPayments())
+
+		destinationAccountID := defaultAccounts()[1].ID
+		require.NoError(t, store.PaymentsDeleteFromAccountID(ctx, destinationAccountID))
+
+		// Verify payment with destination account ID is deleted
+		_, err := store.PaymentsGet(ctx, pID1)
+		require.Error(t, err)
+		require.ErrorIs(t, err, ErrNotFound)
+
+		// Verify payment with different destination account ID still exists
+		payment, err := store.PaymentsGet(ctx, pid2)
+		require.NoError(t, err)
+		require.NotNil(t, payment)
+		require.Equal(t, pid2, payment.ID)
+	})
+
+	t.Run("delete payments by non-existing account ID", func(t *testing.T) {
+		// Re-insert payments for this test
+		upsertPayments(t, ctx, store, defaultPayments())
+
+		nonExistingAccountID := models.AccountID{
+			Reference:   "non-existing",
+			ConnectorID: defaultConnector.ID,
+		}
+
+		require.NoError(t, store.PaymentsDeleteFromAccountID(ctx, nonExistingAccountID))
+
+		// Verify all payments still exist
+		for _, p := range defaultPayments() {
+			payment, err := store.PaymentsGet(ctx, p.ID)
+			require.NoError(t, err)
+			require.NotNil(t, payment)
+			require.Equal(t, p.ID, payment.ID)
+		}
+	})
+}

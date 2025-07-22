@@ -16,7 +16,7 @@ import (
 const ProviderName = "column"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(connectorID, name, logger, rm)
 	}, capabilities, Config{})
 }
