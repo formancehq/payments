@@ -27,7 +27,6 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
-	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -653,18 +652,18 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersGet(ctx, id any) *gomock.C
 }
 
 // PaymentServiceUsersLinkAttemptsGet mocks base method.
-func (m *MockBackend) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
+func (m *MockBackend) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsGet", ctx, id)
+	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsGet", ctx, psuID, connectorID, id)
 	ret0, _ := ret[0].(*models.PSUBankBridgeConnectionAttempt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // PaymentServiceUsersLinkAttemptsGet indicates an expected call of PaymentServiceUsersLinkAttemptsGet.
-func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsGet(ctx, id any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsGet(ctx, psuID, connectorID, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersLinkAttemptsGet", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersLinkAttemptsGet), ctx, id)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersLinkAttemptsGet", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersLinkAttemptsGet), ctx, psuID, connectorID, id)
 }
 
 // PaymentServiceUsersLinkAttemptsList mocks base method.

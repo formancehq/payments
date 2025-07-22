@@ -19,7 +19,7 @@ type PSUBankBridgeConnectionAttemptStatus string
 const (
 	PSUBankBridgeConnectionAttemptStatusPending   PSUBankBridgeConnectionAttemptStatus = "pending"
 	PSUBankBridgeConnectionAttemptStatusCompleted PSUBankBridgeConnectionAttemptStatus = "completed"
-	PSUBankBridgeConnectionAttemptStatusFailed    PSUBankBridgeConnectionAttemptStatus = "failed"
+	PSUBankBridgeConnectionAttemptStatusExited    PSUBankBridgeConnectionAttemptStatus = "exited"
 )
 
 // When a user tries to connect to a banking bridge, we will create an attempt

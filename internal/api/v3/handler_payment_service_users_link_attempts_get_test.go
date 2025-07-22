@@ -43,7 +43,7 @@ var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "attemptID", attemptID.String())
 			expectedErr := errors.New("link attempt get error")
-			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), attemptID).Return(
+			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), gomock.Any(), gomock.Any(), attemptID).Return(
 				nil, expectedErr,
 			)
 			handlerFn(w, req)
@@ -58,7 +58,7 @@ var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 				PsuID:  uuid.New(),
 				Status: models.PSUBankBridgeConnectionAttemptStatusPending,
 			}
-			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), attemptID).Return(attempt, nil)
+			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), gomock.Any(), gomock.Any(), attemptID).Return(attempt, nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusOK, "data")

@@ -62,7 +62,7 @@ func (w Workflow) completeUserLink(
 
 	if pluginError != nil {
 		attempt.Error = pointer.For(pluginError.Error())
-		attempt.Status = models.PSUBankBridgeConnectionAttemptStatusFailed
+		attempt.Status = models.PSUBankBridgeConnectionAttemptStatusExited
 
 		err = activities.StoragePSUBankBridgeConnectionAttemptsStore(
 			infiniteRetryContext(ctx),
