@@ -40,6 +40,22 @@ func paymentServiceUsersLinkAttemptGet(backend backend.Backend) http.HandlerFunc
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentServiceUsersLinkAttemptGet")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("paymentServiceUserID", paymentServiceUserID(r)))
+		psuID, err := uuid.Parse(paymentServiceUserID(r))
+		if err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrInvalidID, err)
+			return
+		}
+
+		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
+		connectorID, err := models.ConnectorIDFromString(connectorID(r))
+		if err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrInvalidID, err)
+			return
+		}
+
 		span.SetAttributes(attribute.String("attemptID", attemptID(r)))
 		attemptID, err := uuid.Parse(attemptID(r))
 		if err != nil {
@@ -48,7 +64,7 @@ func paymentServiceUsersLinkAttemptGet(backend backend.Backend) http.HandlerFunc
 			return
 		}
 
-		attempt, err := backend.PaymentServiceUsersLinkAttemptsGet(ctx, attemptID)
+		attempt, err := backend.PaymentServiceUsersLinkAttemptsGet(ctx, psuID, connectorID, attemptID)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

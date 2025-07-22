@@ -136,7 +136,7 @@ func TestPSUBankBridgeConnectionAttemptsUpsert(t *testing.T) {
 			PsuID:       defaultPSUBankBridgeConnectionAttempt.PsuID,
 			ConnectorID: defaultPSUBankBridgeConnectionAttempt.ConnectorID,
 			CreatedAt:   now.Add(-50 * time.Minute).UTC().Time,
-			Status:      models.PSUBankBridgeConnectionAttemptStatusFailed,
+			Status:      models.PSUBankBridgeConnectionAttemptStatusExited,
 			State: models.CallbackState{
 				Randomized: "random_changed",
 				AttemptID:  uuid.New(),
@@ -186,11 +186,11 @@ func TestPSUBankBridgeConnectionAttemptsUpdateStatus(t *testing.T) {
 
 	t.Run("update status to failed", func(t *testing.T) {
 		errMsg := pointer.For("Connection failed")
-		require.NoError(t, store.PSUBankBridgeConnectionAttemptsUpdateStatus(ctx, defaultPSUBankBridgeConnectionAttempt.ID, models.PSUBankBridgeConnectionAttemptStatusFailed, errMsg))
+		require.NoError(t, store.PSUBankBridgeConnectionAttemptsUpdateStatus(ctx, defaultPSUBankBridgeConnectionAttempt.ID, models.PSUBankBridgeConnectionAttemptStatusExited, errMsg))
 
 		actual, err := store.PSUBankBridgeConnectionAttemptsGet(ctx, defaultPSUBankBridgeConnectionAttempt.ID)
 		require.NoError(t, err)
-		require.Equal(t, models.PSUBankBridgeConnectionAttemptStatusFailed, actual.Status)
+		require.Equal(t, models.PSUBankBridgeConnectionAttemptStatusExited, actual.Status)
 		require.Equal(t, errMsg, actual.Error)
 	})
 

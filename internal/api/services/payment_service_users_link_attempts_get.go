@@ -7,7 +7,17 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
+func (s *Service) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
+	_, err := s.storage.PaymentServiceUsersGet(ctx, psuID)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get payment service user")
+	}
+
+	_, err = s.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		return nil, newStorageError(err, "cannot get connector")
+	}
+
 	attempt, err := s.storage.PSUBankBridgeConnectionAttemptsGet(ctx, id)
 	if err != nil {
 		return nil, newStorageError(err, "cannot get payment service users link attempt")

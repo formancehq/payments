@@ -181,7 +181,7 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		status = models.PSUBankBridgeConnectionAttemptStatusCompleted
 	case "exited":
 		errMsg = pointer.For("exited")
-		status = models.PSUBankBridgeConnectionAttemptStatusFailed
+		status = models.PSUBankBridgeConnectionAttemptStatusExited
 	}
 
 	for _, publicToken := range webhook.GetPublicTokens() {
