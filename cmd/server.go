@@ -53,7 +53,6 @@ func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
 	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
-	fmt.Println("TOTOTO 2", stackPublicURL)
 	return fx.Options(
 		auth.FXModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),

@@ -2,7 +2,6 @@ package v3
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 
@@ -56,8 +55,6 @@ var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 				nil, expectedErr,
 			)
 			handlerFn(w, req)
-
-			fmt.Println(w.Result())
 
 			assertExpectedResponse(w.Result(), http.StatusInternalServerError, "INTERNAL")
 		})

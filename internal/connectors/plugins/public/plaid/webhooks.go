@@ -117,8 +117,6 @@ func (p *Plugin) handleAllWebhook(ctx context.Context, req models.TranslateWebho
 		return nil, err
 	}
 
-	fmt.Println("handleAllWebhook", baseWebhook)
-
 	switch baseWebhook.WebhookType {
 	// This one has no type since it's not inside the plaid sdk definition
 	// but we need it in order to handle the authentication webhook
@@ -148,7 +146,6 @@ func (p *Plugin) handleLinkWebhook(ctx context.Context, req models.TranslateWebh
 	case "ITEM_ADD_RESULT":
 		return []models.WebhookResponse{}, nil
 	case "SESSION_FINISHED":
-		fmt.Println("handleSessionFinishedWebhook", string(req.Webhook.Body))
 		return p.handleSessionFinishedWebhook(ctx, req)
 	case "EVENTS":
 		// Note: Nothing to do for us here for now.
@@ -194,7 +191,6 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		}
 	}
 
-	fmt.Println("handleSessionFinishedWebhook", status, errMsg)
 	return []models.WebhookResponse{
 		{
 			UserLinkSessionFinished: &models.PSPUserLinkSessionFinished{
@@ -234,7 +230,6 @@ func (p *Plugin) handleItemWebhook(req models.TranslateWebhookRequest, baseWebho
 		}
 
 	case "LOGIN_REPAIRED":
-		fmt.Println("login repaired", string(req.Webhook.Body))
 		// Fired when an Item has exited the ITEM_LOGIN_REQUIRED state without
 		// the user having gone through the update mode flow in your app (this
 		// can happen if the user completed the update mode in a different app).
