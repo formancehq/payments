@@ -8,7 +8,7 @@ import (
 )
 
 func (c *client) ListAccounts(ctx context.Context, accessToken string) (plaid.AccountsGetResponse, error) {
-	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "lsit_accounts")
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_accounts")
 
 	request := plaid.NewAccountsGetRequest(accessToken)
 

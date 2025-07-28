@@ -388,19 +388,19 @@ func (i *impl) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequ
 }
 
 func (i *impl) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
-	ctx, span := otel.StartSpan(ctx, "plugin.CreateConnection", attribute.String("psp", i.plugin.Name()))
+	ctx, span := otel.StartSpan(ctx, "plugin.CompleteUserLink", attribute.String("psp", i.plugin.Name()))
 	defer span.End()
 
-	i.logger.WithField("name", i.plugin.Name()).Info("creating connection...")
+	i.logger.WithField("name", i.plugin.Name()).Info("completing user link...")
 
 	resp, err := i.plugin.CompleteUserLink(ctx, req)
 	if err != nil {
-		i.logger.WithField("name", i.plugin.Name()).Error("creating connection failed:", err)
+		i.logger.WithField("name", i.plugin.Name()).Error("completing user link failed:", err)
 		otel.RecordError(span, err)
 		return models.CompleteUserLinkResponse{}, translateError(err)
 	}
 
-	i.logger.WithField("name", i.plugin.Name()).Info("created connection succeeded!")
+	i.logger.WithField("name", i.plugin.Name()).Info("completed user link succeeded!")
 
 	return resp, nil
 }

@@ -821,7 +821,9 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	_, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
 	switch {
 	case err == nil:
-		return fmt.Errorf("user already exists on this connector")
+		err := fmt.Errorf("user already exists on this connector")
+		otel.RecordError(span, err)
+		return err
 	case err != nil && !errors.Is(err, storage.ErrNotFound):
 		otel.RecordError(span, err)
 		return err

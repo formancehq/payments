@@ -10,14 +10,25 @@ import (
 
 type BankingBridgePlugin interface {
 	// User Creation & Link
+	// Create the user on the banking bridge aggregator
 	CreateUser(context.Context, CreateUserRequest) (CreateUserResponse, error)
+	// Create the link for a specific user to open the authentication flow in
+	// the aggregator webview
 	CreateUserLink(context.Context, CreateUserLinkRequest) (CreateUserLinkResponse, error)
+	// Complete the user link flow by fetching the data from the banking bridge
+	// aggregator (mostly the permanent access token for the user)
 	CompleteUserLink(context.Context, CompleteUserLinkRequest) (CompleteUserLinkResponse, error)
+	// Create the link to update a specific connection of a user when the user
+	// if disconnected from the banking bridge aggregator
 	UpdateUserLink(context.Context, UpdateUserLinkRequest) (UpdateUserLinkResponse, error)
+	// Complete the user link update flow by fetching the data from the banking
+	// bridge aggregator (mostly the new permanent access token for the user)
 	CompleteUpdateUserLink(context.Context, CompleteUpdateUserLinkRequest) (CompleteUpdateUserLinkResponse, error)
 
 	// User Deletion: Consent & User
+	// Delete a specific connection of a user on the aggregator
 	DeleteUserConnection(context.Context, DeleteUserConnectionRequest) (DeleteUserConnectionResponse, error)
+	// Delete a specific user on the aggregator
 	DeleteUser(context.Context, DeleteUserRequest) (DeleteUserResponse, error)
 }
 

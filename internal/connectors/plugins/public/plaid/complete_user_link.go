@@ -27,6 +27,10 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("link token mismatch: %w", models.ErrInvalidRequest)
 	}
 
+	if req.HTTPCallInformation.QueryValues == nil {
+		return fmt.Errorf("missing query values: %w", models.ErrInvalidRequest)
+	}
+
 	_, ok = req.HTTPCallInformation.QueryValues[client.PublicTokenQueryParamID]
 	if !ok {
 		return fmt.Errorf("missing public token: %w", models.ErrInvalidRequest)

@@ -86,7 +86,6 @@ func (w Workflow) completeUserLink(
 		return err
 	}
 
-	workflow.GetLogger(ctx).Info("TITI", "connections", resp.Success.Connections)
 	for _, connection := range resp.Success.Connections {
 		c := models.FromPSPPsuBankBridgeConnection(connection, completeUserLink.ConnectorID)
 		c.Status = models.ConnectionStatusActive

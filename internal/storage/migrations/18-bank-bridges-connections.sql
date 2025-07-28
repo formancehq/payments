@@ -20,6 +20,8 @@ create table if not exists bank_bridge_connection_attempts (
 );
 
 create index bank_bridge_connection_attempts_created_at_sort_id on bank_bridge_connection_attempts (created_at, sort_id);
+create index bank_bridge_connection_attempts_connector_id on bank_bridge_connection_attempts (connector_id);
+create index bank_bridge_connection_attempts_psu_id on bank_bridge_connection_attempts (psu_id);
 alter table bank_bridge_connection_attempts 
     add constraint bank_bridge_connection_attempts_connector_id_fk foreign key (connector_id) 
     references connectors (id)
@@ -46,6 +48,8 @@ create table if not exists psu_bank_bridges (
     primary key (psu_id, connector_id)
 );
 
+create index psu_bank_bridges_connector_id on psu_bank_bridges (connector_id);
+create index psu_bank_bridges_psu_id on psu_bank_bridges (psu_id);
 alter table psu_bank_bridges 
     add constraint psu_bank_bridges_connector_id_fk foreign key (connector_id) 
     references connectors (id)
@@ -77,6 +81,8 @@ create table if not exists psu_bank_bridge_connections (
     primary key (psu_id, connector_id, connection_id)
 );
 
+create index psu_bank_bridge_connections_connector_id on psu_bank_bridge_connections (connector_id);
+create index psu_bank_bridge_connections_psu_id on psu_bank_bridge_connections (psu_id);
 create index psu_bank_bridge_connections_created_at_sort_id on psu_bank_bridge_connections (created_at, sort_id);
 alter table psu_bank_bridge_connections
     add constraint psu_bank_bridge_connections_psu_id_fk foreign key (psu_id) 
