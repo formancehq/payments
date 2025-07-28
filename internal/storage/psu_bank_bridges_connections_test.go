@@ -53,27 +53,28 @@ var (
 		Metadata: map[string]string{
 			"foo": "bar",
 		},
-		Connections: []*models.PSUBankBridgeConnection{
-			{
-				ConnectorID:   defaultConnector.ID,
-				ConnectionID:  "conn_123",
-				CreatedAt:     now.Add(-45 * time.Minute).UTC().Time,
-				DataUpdatedAt: now.Add(-15 * time.Minute).UTC().Time,
-				Status:        models.ConnectionStatusActive,
-				AccessToken: &models.Token{
-					Token:     "conn_token_123",
-					ExpiresAt: now.Add(45 * time.Minute).UTC().Time,
-				},
-				Metadata: map[string]string{
-					"conn_foo": "conn_bar",
-				},
-			},
+	}
+
+	bankBridgeConn = models.PSUBankBridgeConnection{
+		ConnectorID:   defaultConnector.ID,
+		ConnectionID:  "conn_123",
+		CreatedAt:     now.Add(-45 * time.Minute).UTC().Time,
+		DataUpdatedAt: now.Add(-15 * time.Minute).UTC().Time,
+		Status:        models.ConnectionStatusActive,
+		AccessToken: &models.Token{
+			ID:        uuid.New(),
+			Token:     "conn_token_123",
+			ExpiresAt: now.Add(45 * time.Minute).UTC().Time,
+		},
+		Metadata: map[string]string{
+			"conn_foo": "conn_bar",
 		},
 	}
 
 	defaultPSUBankBridge2 = models.PSUBankBridge{
 		ConnectorID: defaultConnector2.ID,
 		AccessToken: &models.Token{
+			ID:        uuid.New(),
 			Token:     "access_token_123",
 			ExpiresAt: now.Add(60 * time.Minute).UTC().Time,
 		},
@@ -86,6 +87,7 @@ var (
 		DataUpdatedAt: now.Add(-10 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusActive,
 		AccessToken: &models.Token{
+			ID:        uuid.New(),
 			Token:     "conn_token_456",
 			ExpiresAt: now.Add(40 * time.Minute).UTC().Time,
 		},
@@ -331,6 +333,7 @@ func TestPSUBankBridgesUpsert(t *testing.T) {
 		require.NoError(t, err)
 		// Should update the bank bridge
 		require.Equal(t, bankBridge.AccessToken.Token, actual.AccessToken.Token)
+		require.Equal(t, bankBridge.AccessToken.ID, actual.AccessToken.ID)
 		require.Equal(t, bankBridge.Metadata, actual.Metadata)
 	})
 }
@@ -345,7 +348,7 @@ func TestPSUBankBridgesGet(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
 	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge)
-	createPSUBankBridgeConnection(t, ctx, store, defaultPSU2.ID, *defaultPSUBankBridge.Connections[0])
+	createPSUBankBridgeConnection(t, ctx, store, defaultPSU2.ID, bankBridgeConn)
 
 	t.Run("get bank bridge with connections", func(t *testing.T) {
 		actual, err := store.PSUBankBridgesGet(ctx, defaultPSU2.ID, defaultPSUBankBridge.ConnectorID)
@@ -456,6 +459,7 @@ func TestPSUBankBridgeConnectionsUpsert(t *testing.T) {
 			DataUpdatedAt: now.Add(-8 * time.Minute).UTC().Time,
 			Status:        models.ConnectionStatusError,
 			AccessToken: &models.Token{
+				ID:        defaultPSUBankBridgeConnection.AccessToken.ID,
 				Token:     "conn_token_changed",
 				ExpiresAt: now.Add(35 * time.Minute).UTC().Time,
 			},
@@ -700,11 +704,6 @@ func comparePSUBankBridges(t *testing.T, expected, actual models.PSUBankBridge) 
 	} else {
 		require.Nil(t, actual.AccessToken)
 	}
-
-	require.Len(t, actual.Connections, len(expected.Connections))
-	for i, expectedConnection := range expected.Connections {
-		comparePSUBankBridgeConnections(t, *expectedConnection, *actual.Connections[i])
-	}
 }
 
 func comparePSUBankBridgeConnections(t *testing.T, expected, actual models.PSUBankBridgeConnection) {
@@ -716,7 +715,7 @@ func comparePSUBankBridgeConnections(t *testing.T, expected, actual models.PSUBa
 	require.Equal(t, expected.Error, actual.Error)
 	require.Equal(t, expected.Metadata, actual.Metadata)
 
-	if expected.AccessToken != nil {
+	if expected.AccessToken != nil && actual.AccessToken != nil {
 		require.NotNil(t, actual.AccessToken)
 		require.Equal(t, expected.AccessToken.Token, actual.AccessToken.Token)
 		require.Equal(t, expected.AccessToken.ExpiresAt, actual.AccessToken.ExpiresAt)

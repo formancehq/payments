@@ -7,6 +7,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 )
 
 func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
@@ -58,6 +59,7 @@ func (p *Plugin) completeUserLink(ctx context.Context, req models.CompleteUserLi
 					CreatedAt:    time.Now().UTC(),
 					ConnectionID: exchangePublicTokenResponse.ItemID,
 					AccessToken: &models.Token{
+						ID:    uuid.New(),
 						Token: exchangePublicTokenResponse.AccessToken,
 					},
 				},

@@ -22,7 +22,7 @@ type bankBridgeConnection struct {
 	// ID of the connection, given by the banking bridge
 	ConnectionID string `json:"connectionID"`
 	// Connector ID
-	ConnectorID models.ConnectorID `json:"connectorID"`
+	ConnectorID string `json:"connectorID"`
 	// Creation date of the connection
 	CreatedAt time.Time `json:"createdAt"`
 	// Date of the last update of the connection's data
@@ -75,7 +75,7 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 		for _, connection := range cursor.Data {
 			connections = append(connections, bankBridgeConnection{
 				ConnectionID:  connection.ConnectionID,
-				ConnectorID:   connection.ConnectorID,
+				ConnectorID:   connection.ConnectorID.String(),
 				CreatedAt:     connection.CreatedAt,
 				DataUpdatedAt: connection.DataUpdatedAt,
 				Status:        connection.Status,
@@ -140,7 +140,7 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 		for _, connection := range cursor.Data {
 			connections = append(connections, bankBridgeConnection{
 				ConnectionID:  connection.ConnectionID,
-				ConnectorID:   connection.ConnectorID,
+				ConnectorID:   connection.ConnectorID.String(),
 				CreatedAt:     connection.CreatedAt,
 				DataUpdatedAt: connection.DataUpdatedAt,
 				Status:        connection.Status,

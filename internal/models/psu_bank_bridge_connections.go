@@ -119,10 +119,6 @@ type PSUBankBridge struct {
 	AccessToken *Token `json:"authToken"`
 	// per banking bridge additional information
 	Metadata map[string]string `json:"metadata"`
-
-	// List of connections for the same banking bridge (for example if the user
-	// connects to multiple banks)
-	Connections []*PSUBankBridgeConnection `json:"connections"`
 }
 
 type ConnectionStatus string
