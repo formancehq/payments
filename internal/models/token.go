@@ -16,10 +16,7 @@ func (t Token) MarshalJSON() ([]byte, error) {
 		ExpiresAt time.Time `json:"expiresAt"`
 	}
 
-	r := res{
-		Token:     t.Token,
-		ExpiresAt: t.ExpiresAt,
-	}
+	r := res(t)
 
 	return json.Marshal(r)
 }
