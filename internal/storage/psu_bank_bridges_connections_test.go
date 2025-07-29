@@ -62,7 +62,6 @@ var (
 		DataUpdatedAt: now.Add(-15 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusActive,
 		AccessToken: &models.Token{
-			ID:        uuid.New(),
 			Token:     "conn_token_123",
 			ExpiresAt: now.Add(45 * time.Minute).UTC().Time,
 		},
@@ -74,7 +73,6 @@ var (
 	defaultPSUBankBridge2 = models.PSUBankBridge{
 		ConnectorID: defaultConnector2.ID,
 		AccessToken: &models.Token{
-			ID:        uuid.New(),
 			Token:     "access_token_123",
 			ExpiresAt: now.Add(60 * time.Minute).UTC().Time,
 		},
@@ -87,7 +85,6 @@ var (
 		DataUpdatedAt: now.Add(-10 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusActive,
 		AccessToken: &models.Token{
-			ID:        uuid.New(),
 			Token:     "conn_token_456",
 			ExpiresAt: now.Add(40 * time.Minute).UTC().Time,
 		},
@@ -333,7 +330,6 @@ func TestPSUBankBridgesUpsert(t *testing.T) {
 		require.NoError(t, err)
 		// Should update the bank bridge
 		require.Equal(t, bankBridge.AccessToken.Token, actual.AccessToken.Token)
-		require.Equal(t, bankBridge.AccessToken.ID, actual.AccessToken.ID)
 		require.Equal(t, bankBridge.Metadata, actual.Metadata)
 	})
 }
@@ -459,7 +455,6 @@ func TestPSUBankBridgeConnectionsUpsert(t *testing.T) {
 			DataUpdatedAt: now.Add(-8 * time.Minute).UTC().Time,
 			Status:        models.ConnectionStatusError,
 			AccessToken: &models.Token{
-				ID:        defaultPSUBankBridgeConnection.AccessToken.ID,
 				Token:     "conn_token_changed",
 				ExpiresAt: now.Add(35 * time.Minute).UTC().Time,
 			},

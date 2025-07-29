@@ -172,8 +172,7 @@ type psuBankBridges struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 
 	// Optional fields
-	AccessTokenID *uuid.UUID        `bun:"access_token_id,type:uuid,nullzero"`
-	Metadata      map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
 	// Scan only fields
 	AccessToken *string    `bun:"access_token,type:text,nullzero,scanonly"`
@@ -194,7 +193,7 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 	if token != nil {
 		_, err = tx.NewInsert().
 			Model(token).
-			On("CONFLICT (id) DO UPDATE").
+			On("CONFLICT (psu_id, connector_id, connection_id) DO UPDATE").
 			Set("access_token = EXCLUDED.access_token").
 			Set("expires_at = EXCLUDED.expires_at").
 			Exec(ctx)
@@ -206,7 +205,6 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 	_, err = tx.NewInsert().
 		Model(&bankBridge).
 		On("CONFLICT (psu_id, connector_id) DO UPDATE").
-		Set("access_token_id = EXCLUDED.access_token_id").
 		Set("expires_at = EXCLUDED.expires_at").
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
@@ -221,25 +219,13 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 	bankBridge := psuBankBridges{}
 	err := s.db.NewSelect().
 		Model(&bankBridge).
-		Where("psu_id = ?", psuID).
-		Where("connector_id = ?", connectorID).
+		Column("psu_bank_bridges.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
+		Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridges.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridges.connector_id = psu_bank_bridge_access_tokens.connector_id").
+		Where("psu_bank_bridges.psu_id = ?", psuID).
+		Where("psu_bank_bridges.connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
 		return nil, e("getting bank bridge", err)
-	}
-
-	if bankBridge.AccessTokenID != nil {
-		token := psuBankBridgeAccessTokens{}
-		err = s.db.NewSelect().
-			Model(&token).
-			Where("id = ?", bankBridge.AccessTokenID).
-			Scan(ctx)
-		if err != nil {
-			return nil, e("getting bank bridge access token", err)
-		}
-
-		bankBridge.AccessToken = &token.AccessToken
-		bankBridge.ExpiresAt = &token.ExpiresAt
 	}
 
 	return toPsuBankBridgesModels(bankBridge), nil
@@ -348,9 +334,8 @@ type psuBankBridgeConnections struct {
 	Status        models.ConnectionStatus `bun:"status,type:text,notnull"`
 
 	// Optional fields
-	AccessTokenID *uuid.UUID        `bun:"access_token_id,type:uuid,nullzero"`
-	Error         *string           `bun:"error,type:text,nullzero"`
-	Metadata      map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+	Error    *string           `bun:"error,type:text,nullzero"`
+	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
 	// ScanOnly fields
 	AccessToken *string    `bun:"access_token,type:text,nullzero,scanonly"`
@@ -371,7 +356,7 @@ func (s *store) PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.U
 	if token != nil {
 		_, err = tx.NewInsert().
 			Model(token).
-			On("CONFLICT (id) DO UPDATE").
+			On("CONFLICT (psu_id, connector_id, connection_id) DO UPDATE").
 			Set("access_token = EXCLUDED.access_token").
 			Set("expires_at = EXCLUDED.expires_at").
 			Exec(ctx)
@@ -413,26 +398,14 @@ func (s *store) PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID
 	connection := psuBankBridgeConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Where("psu_id = ?", psuID).
-		Where("connector_id = ?", connectorID).
-		Where("connection_id = ?", connectionID).
+		Column("psu_bank_bridge_connections.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
+		Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridge_connections.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridge_connections.connector_id = psu_bank_bridge_access_tokens.connector_id AND psu_bank_bridge_connections.connection_id = psu_bank_bridge_access_tokens.connection_id").
+		Where("psu_bank_bridge_connections.psu_id = ?", psuID).
+		Where("psu_bank_bridge_connections.connector_id = ?", connectorID).
+		Where("psu_bank_bridge_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
 		return nil, e("getting bank bridge connection", err)
-	}
-
-	if connection.AccessTokenID != nil {
-		token := psuBankBridgeAccessTokens{}
-		err = s.db.NewSelect().
-			Model(&token).
-			Where("id = ?", connection.AccessTokenID).
-			Scan(ctx)
-		if err != nil {
-			return nil, e("getting bank bridge connection access token", err)
-		}
-
-		connection.AccessToken = &token.AccessToken
-		connection.ExpiresAt = &token.ExpiresAt
 	}
 
 	return pointer.For(toPsuBankBridgeConnectionsModels(connection)), nil
@@ -442,25 +415,13 @@ func (s *store) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context,
 	connection := psuBankBridgeConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Where("connector_id = ?", connectorID).
-		Where("connection_id = ?", connectionID).
+		Column("psu_bank_bridge_connections.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
+		Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridge_connections.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridge_connections.connector_id = psu_bank_bridge_access_tokens.connector_id AND psu_bank_bridge_connections.connection_id = psu_bank_bridge_access_tokens.connection_id").
+		Where("psu_bank_bridge_connections.connector_id = ?", connectorID).
+		Where("psu_bank_bridge_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
 		return nil, uuid.Nil, e("getting bank bridge connection", err)
-	}
-
-	if connection.AccessTokenID != nil {
-		token := psuBankBridgeAccessTokens{}
-		err = s.db.NewSelect().
-			Model(&token).
-			Where("id = ?", connection.AccessTokenID).
-			Scan(ctx)
-		if err != nil {
-			return nil, uuid.Nil, e("getting bank bridge connection access token", err)
-		}
-
-		connection.AccessToken = &token.AccessToken
-		connection.ExpiresAt = &token.ExpiresAt
 	}
 
 	return pointer.For(toPsuBankBridgeConnectionsModels(connection)), connection.PsuID, nil
@@ -572,7 +533,6 @@ type psuBankBridgeAccessTokens struct {
 	bun.BaseModel `bun:"table:psu_bank_bridge_access_tokens"`
 
 	// Mandatory fields
-	ID           uuid.UUID          `bun:"id,pk,type:uuid,notnull"`
 	PSUID        uuid.UUID          `bun:"psu_id,type:uuid,notnull"`
 	ConnectorID  models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 	ConnectionID *string            `bun:"connection_id,type:character varying,nullzero"`
@@ -584,7 +544,7 @@ func fromPsuBankBridgeConnectionAttemptsModels(from models.PSUBankBridgeConnecti
 	var token *string
 	var expiresAt *time.Time
 	if from.TemporaryToken != nil {
-		_, t, e := fromTokenModels(*from.TemporaryToken)
+		t, e := fromTokenModels(*from.TemporaryToken)
 		token = &t
 		expiresAt = &e
 	}
@@ -622,58 +582,51 @@ func toPsuBankBridgeConnectionAttemptsModels(from psuBankBridgeConnectionAttempt
 		Status:            from.Status,
 		State:             state,
 		ClientRedirectURL: from.ClientRedirectURL,
-		TemporaryToken:    toTokenModels(nil, from.TemporaryToken, from.ExpiresAt),
+		TemporaryToken:    toTokenModels(from.TemporaryToken, from.ExpiresAt),
 		Error:             from.Error,
 	}, nil
 }
 
 func fromPsuBankBridgesModels(from models.PSUBankBridge, psuID uuid.UUID) (psuBankBridges, *psuBankBridgeAccessTokens) {
 	var token *psuBankBridgeAccessTokens
-	var accessTokenID *uuid.UUID
 	if from.AccessToken != nil {
-		id, accessToken, expiresAt := fromTokenModels(*from.AccessToken)
+		accessToken, expiresAt := fromTokenModels(*from.AccessToken)
 
 		token = &psuBankBridgeAccessTokens{
-			ID:          id,
 			PSUID:       psuID,
 			ConnectorID: from.ConnectorID,
 			AccessToken: accessToken,
 			ExpiresAt:   expiresAt,
 		}
-		accessTokenID = &id
 	}
 
 	return psuBankBridges{
-		PsuID:         psuID,
-		ConnectorID:   from.ConnectorID,
-		AccessTokenID: accessTokenID,
-		Metadata:      from.Metadata,
+		PsuID:       psuID,
+		ConnectorID: from.ConnectorID,
+		Metadata:    from.Metadata,
 	}, token
 }
 
 func toPsuBankBridgesModels(from psuBankBridges) *models.PSUBankBridge {
 	return &models.PSUBankBridge{
 		ConnectorID: from.ConnectorID,
-		AccessToken: toTokenModels(from.AccessTokenID, from.AccessToken, from.ExpiresAt),
+		AccessToken: toTokenModels(from.AccessToken, from.ExpiresAt),
 		Metadata:    from.Metadata,
 	}
 }
 
 func fromPsuBankBridgeConnectionsModels(from models.PSUBankBridgeConnection, psuID uuid.UUID) (psuBankBridgeConnections, *psuBankBridgeAccessTokens) {
 	var token *psuBankBridgeAccessTokens
-	var accessTokenID *uuid.UUID
 	if from.AccessToken != nil {
-		id, accessToken, expiresAt := fromTokenModels(*from.AccessToken)
+		accessToken, expiresAt := fromTokenModels(*from.AccessToken)
 
 		token = &psuBankBridgeAccessTokens{
-			ID:           id,
 			PSUID:        psuID,
 			ConnectorID:  from.ConnectorID,
 			ConnectionID: &from.ConnectionID,
 			AccessToken:  accessToken,
 			ExpiresAt:    expiresAt,
 		}
-		accessTokenID = &id
 	}
 
 	return psuBankBridgeConnections{
@@ -684,7 +637,6 @@ func fromPsuBankBridgeConnectionsModels(from models.PSUBankBridgeConnection, psu
 		DataUpdatedAt: time.New(from.DataUpdatedAt),
 		Status:        from.Status,
 		Error:         from.Error,
-		AccessTokenID: accessTokenID,
 		Metadata:      from.Metadata,
 	}, token
 }
@@ -697,26 +649,22 @@ func toPsuBankBridgeConnectionsModels(from psuBankBridgeConnections) models.PSUB
 		DataUpdatedAt: from.DataUpdatedAt.Time,
 		Status:        from.Status,
 		Error:         from.Error,
-		AccessToken:   toTokenModels(from.AccessTokenID, from.AccessToken, from.ExpiresAt),
+		AccessToken:   toTokenModels(from.AccessToken, from.ExpiresAt),
 		Metadata:      from.Metadata,
 	}
 }
 
-func fromTokenModels(from models.Token) (uuid.UUID, string, time.Time) {
-	return from.ID, from.Token, time.New(from.ExpiresAt)
+func fromTokenModels(from models.Token) (string, time.Time) {
+	return from.Token, time.New(from.ExpiresAt)
 }
 
-func toTokenModels(id *uuid.UUID, from *string, expiresAt *time.Time) *models.Token {
+func toTokenModels(from *string, expiresAt *time.Time) *models.Token {
 	if from == nil {
 		return nil
 	}
 
 	token := &models.Token{
 		Token: *from,
-	}
-
-	if id != nil {
-		token.ID = *id
 	}
 
 	if expiresAt != nil {
