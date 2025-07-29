@@ -96,16 +96,13 @@ create table psu_bank_bridge_access_tokens (
 
     psu_id uuid not null,
     connector_id varchar not null,
-    connection_id varchar not null default 'NULL',
+    connection_id varchar not null default '',
     access_token text not null,
     expires_at timestamp without time zone not null,
 
     primary key (psu_id, connector_id, connection_id)
 );
 
-create index psu_bank_bridge_access_tokens_psu_id on psu_bank_bridge_access_tokens (psu_id);
-create index psu_bank_bridge_access_tokens_connector_id on psu_bank_bridge_access_tokens (connector_id);
-create index psu_bank_bridge_access_tokens_connection_id on psu_bank_bridge_access_tokens (connection_id);
 alter table psu_bank_bridge_access_tokens
     add constraint psu_bank_bridge_access_tokens_psu_id_fk foreign key (psu_id)
     references payment_service_users (id)
