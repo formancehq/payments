@@ -1,6 +1,6 @@
 package currencycloud
 
-import "github.com/formancehq/payments/internal/connectors/plugins/currency"
+import "github.com/formancehq/go-libs/v3/currency"
 
 var (
 	// c.f.: https://support.currencycloud.com/hc/en-gb/articles/7840216562972-Currency-Decimal-Places
