@@ -142,16 +142,16 @@ func (s *store) PaymentServiceUsersDelete(ctx context.Context, paymentServiceUse
 		Where("id = ?", paymentServiceUserID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete psu: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete psu")
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return e("delete psu: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete psu")
 	}
 
 	if rowsAffected == 0 {
-		return e("psu", ErrNotFound)
+		return errors.Wrap(ErrNotFound, "psu")
 	}
 
 	return nil

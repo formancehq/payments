@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 	libtime "time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -50,7 +52,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from 
 		Set("state = EXCLUDED.state").
 		Exec(ctx)
 	if err != nil {
-		return e("upserting bank bridge connection attempt", err)
+		return errors.Wrap(postgres.ResolveError(err), "upserting bank bridge connection attempt")
 	}
 
 	return nil
@@ -64,7 +66,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsUpdateStatus(ctx context.Context,
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return e("updating bank bridge connection attempt status", err)
+		return errors.Wrap(postgres.ResolveError(err), "updating bank bridge connection attempt status")
 	}
 
 	return nil
@@ -77,7 +79,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsGet(ctx context.Context, id uuid.
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("getting bank bridge connection attempt", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "getting bank bridge connection attempt")
 	}
 
 	return toPsuBankBridgeConnectionAttemptsModels(attempt)
@@ -143,14 +145,14 @@ func (s *store) PSUBankBridgeConnectionAttemptsList(ctx context.Context, psuID u
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch psu bank bridge connection attempts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch psu bank bridge connection attempts")
 	}
 
 	psuBankBridgeConnectionAttemptsModels := make([]models.PSUBankBridgeConnectionAttempt, len(cursor.Data))
 	for i, attempt := range cursor.Data {
 		res, err := toPsuBankBridgeConnectionAttemptsModels(attempt)
 		if err != nil {
-			return nil, e("failed to fetch psu bank bridge connection attempts", err)
+			return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch psu bank bridge connection attempts")
 		}
 		psuBankBridgeConnectionAttemptsModels[i] = *res
 	}
@@ -198,7 +200,7 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 			Set("expires_at = EXCLUDED.expires_at").
 			Exec(ctx)
 		if err != nil {
-			return e("upserting bank bridge access token", err)
+			return errors.Wrap(postgres.ResolveError(err), "upserting bank bridge access token")
 		}
 	}
 
@@ -209,10 +211,10 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
 	if err != nil {
-		return e("upserting bank bridge", err)
+		return errors.Wrap(postgres.ResolveError(err), "upserting bank bridge")
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transactions")
 }
 
 func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.PSUBankBridge, error) {
@@ -225,7 +227,7 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 		Where("psu_bank_bridges.connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("getting bank bridge", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "getting bank bridge")
 	}
 
 	return toPsuBankBridgesModels(bankBridge), nil
@@ -238,7 +240,7 @@ func (s *store) PSUBankBridgesDelete(ctx context.Context, psuID uuid.UUID, conne
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("deleting bank bridge", err)
+		return errors.Wrap(postgres.ResolveError(err), "deleting bank bridge")
 	}
 
 	return nil
@@ -304,7 +306,7 @@ func (s *store) PSUBankBridgesList(ctx context.Context, query ListPSUBankBridges
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch psu bank bridges", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch psu bank bridges")
 	}
 
 	psuBankBridgesModels := make([]models.PSUBankBridge, len(cursor.Data))
@@ -361,7 +363,7 @@ func (s *store) PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.U
 			Set("expires_at = EXCLUDED.expires_at").
 			Exec(ctx)
 		if err != nil {
-			return e("upserting bank bridge connection access token", err)
+			return errors.Wrap(postgres.ResolveError(err), "upserting bank bridge connection access token")
 		}
 	}
 
@@ -373,10 +375,10 @@ func (s *store) PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.U
 		Set("error = EXCLUDED.error").
 		Exec(ctx)
 	if err != nil {
-		return e("upserting bank bridge connection", err)
+		return errors.Wrap(postgres.ResolveError(err), "upserting bank bridge connection")
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transactions")
 }
 
 func (s *store) PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt libtime.Time) error {
@@ -388,7 +390,7 @@ func (s *store) PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx context.Context
 		Where("connection_id = ?", connectionID).
 		Exec(ctx)
 	if err != nil {
-		return e("updating bank bridge connection last data update", err)
+		return errors.Wrap(postgres.ResolveError(err), "updating bank bridge connection last data update")
 	}
 
 	return nil
@@ -405,7 +407,7 @@ func (s *store) PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID
 		Where("psu_bank_bridge_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("getting bank bridge connection", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "getting bank bridge connection")
 	}
 
 	return pointer.For(toPsuBankBridgeConnectionsModels(connection)), nil
@@ -421,7 +423,7 @@ func (s *store) PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context,
 		Where("psu_bank_bridge_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
-		return nil, uuid.Nil, e("getting bank bridge connection", err)
+		return nil, uuid.Nil, errors.Wrap(postgres.ResolveError(err), "getting bank bridge connection")
 	}
 
 	return pointer.For(toPsuBankBridgeConnectionsModels(connection)), connection.PsuID, nil
@@ -435,7 +437,7 @@ func (s *store) PSUBankBridgeConnectionsDelete(ctx context.Context, psuID uuid.U
 		Where("connection_id = ?", connectionID).
 		Exec(ctx)
 	if err != nil {
-		return e("deleting bank bridge connection", err)
+		return errors.Wrap(postgres.ResolveError(err), "deleting bank bridge connection")
 	}
 
 	return nil
@@ -509,7 +511,7 @@ func (s *store) PSUBankBridgeConnectionsList(ctx context.Context, psuID uuid.UUI
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch psu bank bridge connections", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch psu bank bridge connections")
 	}
 
 	psuBankBridgeConnections := make([]psuBankBridgeConnections, len(cursor.Data))

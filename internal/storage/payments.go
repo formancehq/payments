@@ -265,7 +265,7 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 		Where("id = ?", id).
 		Exec(ctx)
 
-	return e("failed to delete payment", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment")
 }
 
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
@@ -275,7 +275,7 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete payment", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment")
 }
 
 func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
@@ -284,7 +284,7 @@ func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID model
 		Where("source_account_id = ? OR destination_account_id = ?", accountID, accountID).
 		Exec(ctx)
 
-	return e("failed to delete payments", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment")
 }
 
 type PaymentQuery struct{}

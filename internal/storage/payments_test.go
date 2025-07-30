@@ -1408,7 +1408,7 @@ func TestPaymentsDelete(t *testing.T) {
 
 		_, err := store.PaymentsGet(ctx, pID1)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("delete non-existing payment", func(t *testing.T) {
@@ -1446,7 +1446,7 @@ func TestPaymentsDeleteFromReference(t *testing.T) {
 
 		_, err := store.PaymentsGet(ctx, pID1)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 
 		// Verify other payments still exist
 		payment, err := store.PaymentsGet(ctx, pid2)
@@ -1499,12 +1499,12 @@ func TestPaymentsDeleteFromAccountID(t *testing.T) {
 		// Verify payment with source account ID is deleted
 		_, err := store.PaymentsGet(ctx, pID1)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 
 		// Verify payment with destination account ID is deleted
 		_, err = store.PaymentsGet(ctx, pid2)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 
 		// Verify payment with different source account ID still exists
 		payment, err := store.PaymentsGet(ctx, pid3)
@@ -1523,7 +1523,7 @@ func TestPaymentsDeleteFromAccountID(t *testing.T) {
 		// Verify payment with destination account ID is deleted
 		_, err := store.PaymentsGet(ctx, pID1)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 
 		// Verify payment with different destination account ID still exists
 		payment, err := store.PaymentsGet(ctx, pid2)
