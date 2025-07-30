@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/bankingcircle/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"

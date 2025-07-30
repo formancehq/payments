@@ -3,7 +3,7 @@ package validation
 import (
 	"regexp"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"

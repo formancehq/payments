@@ -1,6 +1,6 @@
 package increase
 
-import "github.com/formancehq/payments/internal/connectors/plugins/currency"
+import "github.com/formancehq/go-libs/v3/currency"
 
 var (
 	supportedCurrenciesWithDecimal = map[string]int{

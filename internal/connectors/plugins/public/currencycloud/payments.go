@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/currencycloud/client"
 	"github.com/formancehq/payments/internal/models"
 )

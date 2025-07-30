@@ -7,7 +7,7 @@ import (
 	"math/big"
 
 	"github.com/formancehq/go-libs/v3/metadata"
-	"github.com/formancehq/payments/internal/connectors/plugins/currency"
+	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/get-momo/atlar-v1-go-client/client/transactions"
 	atlar_models "github.com/get-momo/atlar-v1-go-client/models"

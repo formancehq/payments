@@ -19,9 +19,9 @@ func TagVersion() fx.Annotation {
 
 func NewModule(bind string, debug bool) fx.Option {
 	return fx.Options(
-		fx.Invoke(func(m *chi.Mux, lc fx.Lifecycle) {
+		fx.Invoke(fx.Annotate(func(m *chi.Mux, lc fx.Lifecycle) {
 			lc.Append(httpserver.NewHook(m, httpserver.WithAddress(bind)))
-		}),
+		}, fx.ParamTags(`name:"apiRouter"`, ``))),
 		fx.Provide(fx.Annotate(func(
 			backend backend.Backend,
 			info api.ServiceInfo,
@@ -30,7 +30,7 @@ func NewModule(bind string, debug bool) fx.Option {
 			versions ...Version,
 		) *chi.Mux {
 			return NewRouter(backend, info, healthController, a, debug, versions...)
-		}, fx.ParamTags(``, ``, ``, ``, `group:"apiVersions"`))),
+		}, fx.ParamTags(``, ``, ``, ``, `group:"apiVersions"`), fx.ResultTags(`name:"apiRouter"`))),
 		fx.Provide(func(storage storage.Storage, engine engine.Engine) backend.Backend {
 			return services.New(storage, engine, debug)
 		}),
