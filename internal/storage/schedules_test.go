@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -110,7 +111,7 @@ func TestSchedulesDeleteFromConnectorID(t *testing.T) {
 		for _, sch := range defaultSchedules {
 			_, err := store.SchedulesGet(ctx, sch.ID, sch.ConnectorID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }
@@ -142,7 +143,7 @@ func TestSchedulesDelete(t *testing.T) {
 
 		_, err := store.SchedulesGet(ctx, defaultSchedules[0].ID, defaultSchedules[0].ConnectorID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 }
 
@@ -167,7 +168,7 @@ func TestSchedulesGet(t *testing.T) {
 	t.Run("get unknown schedule", func(t *testing.T) {
 		_, err := store.SchedulesGet(ctx, "unknown", defaultConnector.ID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 }
 

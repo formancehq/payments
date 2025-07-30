@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 	"time"
 
@@ -128,7 +129,7 @@ func TestEventsSentGet(t *testing.T) {
 			ConnectorID:         &defaultConnector.ID,
 		})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 		require.Nil(t, got)
 	})
 }
@@ -195,7 +196,7 @@ func TestEventsSentDelete(t *testing.T) {
 			if e.ConnectorID != nil && *e.ConnectorID == defaultConnector.ID {
 				got, err := store.EventsSentGet(ctx, e.ID)
 				require.Error(t, err)
-				require.ErrorIs(t, err, ErrNotFound)
+				require.ErrorIs(t, err, postgres.ErrNotFound)
 				require.Nil(t, got)
 			} else {
 				got, err := store.EventsSentGet(ctx, e.ID)

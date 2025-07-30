@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 	"testing"
 
@@ -142,7 +143,7 @@ func TestPaymentInitiationReversalsGet(t *testing.T) {
 			ConnectorID: defaultConnector.ID,
 		})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("get existing payment initiation", func(t *testing.T) {
@@ -185,7 +186,7 @@ func TestPaymentInitiationReversalsDeleteFromConnectorID(t *testing.T) {
 		for _, pi := range defaultPaymentInitiationReversals() {
 			_, err := store.PaymentInitiationReversalsGet(ctx, pi.ID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }
@@ -636,7 +637,7 @@ func TestPaymentInitiationReversalAdjustmentsGet(t *testing.T) {
 	t.Run("get unknown payment initiation adjustment", func(t *testing.T) {
 		_, err := store.PaymentInitiationReversalAdjustmentsGet(ctx, models.PaymentInitiationReversalAdjustmentID{})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("get existing payment initiation adjustment", func(t *testing.T) {

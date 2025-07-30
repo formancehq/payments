@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -113,7 +114,8 @@ func TestWebhooksInsert(t *testing.T) {
 
 		err := store.WebhooksInsert(ctx, w)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrDuplicateKeyValue)
+		var postgresErr postgres.ErrConstraintsFailed
+		require.ErrorAs(t, err, &postgresErr)
 	})
 }
 

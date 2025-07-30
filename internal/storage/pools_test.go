@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -129,7 +130,7 @@ func TestPoolsGet(t *testing.T) {
 	t.Run("get non-existing pool", func(t *testing.T) {
 		p, err := store.PoolsGet(ctx, uuid.New())
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 		require.Nil(t, p)
 	})
 }
@@ -165,7 +166,7 @@ func TestPoolsDelete(t *testing.T) {
 
 		_, err = store.PoolsGet(ctx, defaultPools()[0].ID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 
 		actual, err := store.PoolsGet(ctx, defaultPools()[1].ID)
 		require.NoError(t, err)

@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
@@ -33,7 +35,7 @@ func (s *store) ConnectorTasksTreeUpsert(ctx context.Context, connectorID models
 		On("CONFLICT (connector_id) DO UPDATE").
 		Set("tasks = EXCLUDED.tasks").
 		Exec(ctx)
-	return e("failed to insert tasks", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert tasks")
 }
 
 func (s *store) ConnectorTasksTreeGet(ctx context.Context, connectorID models.ConnectorID) (*models.ConnectorTasksTree, error) {
@@ -44,7 +46,7 @@ func (s *store) ConnectorTasksTreeGet(ctx context.Context, connectorID models.Co
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to fetch tasks", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch tasks")
 	}
 
 	var tasks models.ConnectorTasksTree
@@ -61,5 +63,5 @@ func (s *store) ConnectorTasksTreeDeleteFromConnectorID(ctx context.Context, con
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete tasks", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete tasks")
 }

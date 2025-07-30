@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
@@ -25,7 +27,7 @@ func (s *store) EventsSentUpsert(ctx context.Context, event models.EventSent) er
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 
-	return e("failed to insert event sent", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert event sent")
 }
 
 func (s *store) EventsSentGet(ctx context.Context, id models.EventID) (*models.EventSent, error) {
@@ -38,7 +40,7 @@ func (s *store) EventsSentGet(ctx context.Context, id models.EventID) (*models.E
 		Scan(ctx)
 
 	if err != nil {
-		return nil, e("failed to get event sent", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get event sent")
 	}
 
 	return pointer.For(toEventSentModel(event)), nil
@@ -51,7 +53,7 @@ func (s *store) EventsSentExists(ctx context.Context, id models.EventID) (bool, 
 		Limit(1).
 		Exists(ctx)
 	if err != nil {
-		return false, e("failed to get event sent", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "failed to get event sent")
 	}
 
 	return exists, nil
@@ -63,7 +65,7 @@ func (s *store) EventsSentDeleteFromConnectorID(ctx context.Context, connectorID
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete event sent", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete event sent")
 }
 
 func fromEventSentModel(from models.EventSent) eventSent {

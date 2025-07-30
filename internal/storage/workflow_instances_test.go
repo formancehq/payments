@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -177,7 +178,7 @@ func TestInstancesDeleteFromConnectorID(t *testing.T) {
 		for _, instance := range defaultWorkflowInstances {
 			_, err := store.InstancesGet(ctx, instance.ID, instance.ScheduleID, instance.ConnectorID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }

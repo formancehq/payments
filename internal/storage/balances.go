@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 	"time"
 
@@ -49,7 +50,7 @@ func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) e
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance) error {
@@ -62,8 +63,8 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		pErr := e("failed to get account", err)
-		if !errors.Is(pErr, ErrNotFound) {
+		pErr := errors.Wrap(postgres.ResolveError(err), "failed to get account")
+		if !errors.Is(pErr, postgres.ErrNotFound) {
 			return pErr
 		}
 		found = false
@@ -83,7 +84,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update balance", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to update balance")
 		}
 
 	case found && lastBalance.Balance.Cmp(balance.Balance) != 0:
@@ -92,7 +93,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Model(balance).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert balance", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to insert balance")
 		}
 
 		// and update last row last updated at to this created at
@@ -102,7 +103,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Where("account_id = ? AND created_at = ? AND asset = ?", lastBalance.AccountID, lastBalance.CreatedAt, lastBalance.Asset).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update balance", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to update balance")
 		}
 
 	case !found:
@@ -111,7 +112,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 			Model(balance).
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert balance", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to insert balance")
 		}
 	}
 
@@ -124,7 +125,7 @@ func (s *store) BalancesDeleteFromConnectorID(ctx context.Context, connectorID m
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete balances", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete balances")
 	}
 
 	return nil
@@ -208,7 +209,7 @@ func (s *store) BalancesList(ctx context.Context, q ListBalancesQuery) (*bunpagi
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch balances", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch balances")
 	}
 
 	balances := toBalancesModels(cursor.Data)
@@ -231,7 +232,7 @@ func (s *store) balancesListAssets(ctx context.Context, accountID models.Account
 		Where("account_id = ?", accountID).
 		Scan(ctx, &assets)
 	if err != nil {
-		return nil, e("failed to list balance assets", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to list balance assets")
 	}
 
 	return assets, nil
@@ -250,7 +251,7 @@ func (s *store) balancesGetAtByAsset(ctx context.Context, accountID models.Accou
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get balance", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get balance")
 	}
 
 	return pointer.For(toBalanceModels(balance)), nil
@@ -267,7 +268,7 @@ func (s *store) balancesGetLatestByAsset(ctx context.Context, accountID models.A
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get latest balance", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get latest balance")
 	}
 
 	return pointer.For(toBalanceModels(balance)), nil
@@ -283,7 +284,7 @@ func (s *store) BalancesGetAt(ctx context.Context, accountID models.AccountID, a
 	for _, currency := range assets {
 		balance, err := s.balancesGetAtByAsset(ctx, accountID, currency, at)
 		if err != nil {
-			if errors.Is(err, ErrNotFound) {
+			if errors.Is(err, postgres.ErrNotFound) {
 				continue
 			}
 			return nil, fmt.Errorf("failed to get balance: %w", err)

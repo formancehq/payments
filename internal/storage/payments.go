@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 	"math/big"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -122,7 +124,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			On("CONFLICT (id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert payments", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to insert payments")
 		}
 	}
 
@@ -133,7 +135,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			Set("initial_amount = EXCLUDED.initial_amount").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update payment", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to update payment")
 		}
 	}
 
@@ -144,7 +146,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			Set("amount = payment.amount + EXCLUDED.amount").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update payment", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to update payment")
 		}
 	}
 
@@ -155,7 +157,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			Set("amount = payment.amount - EXCLUDED.amount").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to update payment", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to update payment")
 		}
 	}
 
@@ -165,17 +167,17 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			On("CONFLICT (id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert adjustments", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to insert adjustments")
 		}
 	}
 
-	return e("failed to commit transactions", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transactions")
 }
 
 func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("update payment metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment metadata")
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -188,7 +190,7 @@ func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID,
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return e("update payment metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment metadata")
 	}
 
 	if payment.Metadata == nil {
@@ -205,10 +207,10 @@ func (s *store) PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID,
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return e("update payment metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment metadata")
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error) {
@@ -219,7 +221,7 @@ func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.P
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment")
 	}
 
 	var ajs []paymentAdjustment
@@ -229,7 +231,7 @@ func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.P
 		Order("created_at DESC", "sort_id DESC").
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment adjustments", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment adjustments")
 	}
 
 	adjustments := make([]models.PaymentAdjustment, 0, len(ajs))
@@ -254,7 +256,7 @@ func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID m
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete payments", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payments")
 }
 
 func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
@@ -372,7 +374,7 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch payments", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch payments")
 	}
 
 	payments := make([]models.Payment, 0, len(cursor.Data))

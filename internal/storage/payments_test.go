@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 	"testing"
 
@@ -666,7 +667,7 @@ func TestPaymentsGet(t *testing.T) {
 			ConnectorID:      defaultConnector.ID,
 		})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("get existing payments", func(t *testing.T) {
@@ -773,7 +774,7 @@ func TestPaymentsDeleteFromConnectorID(t *testing.T) {
 		for _, p := range defaultPayments() {
 			_, err := store.PaymentsGet(ctx, p.ID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }

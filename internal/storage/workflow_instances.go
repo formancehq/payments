@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -41,7 +43,7 @@ func (s *store) InstancesUpsert(ctx context.Context, instance models.Instance) e
 		On("CONFLICT (id, schedule_id, connector_id) DO NOTHING").
 		Exec(ctx)
 
-	return e("failed to insert new instance", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert new instance")
 }
 
 func (s *store) InstancesUpdate(ctx context.Context, instance models.Instance) error {
@@ -56,7 +58,7 @@ func (s *store) InstancesUpdate(ctx context.Context, instance models.Instance) e
 		WherePK().
 		Exec(ctx)
 
-	return e("failed to update instance", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to update instance")
 }
 
 func (s *store) InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
@@ -65,7 +67,7 @@ func (s *store) InstancesDeleteFromConnectorID(ctx context.Context, connectorID 
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete instances", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete instances")
 }
 
 type InstanceQuery struct{}
@@ -104,7 +106,7 @@ func (s *store) InstancesGet(ctx context.Context, id string, scheduleID string, 
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to fetch instance", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch instance")
 	}
 
 	return pointer.For(toInstanceModel(i)), nil
@@ -136,7 +138,7 @@ func (s *store) InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpa
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch instances", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch instances")
 	}
 
 	instances := make([]models.Instance, 0, len(cursor.Data))

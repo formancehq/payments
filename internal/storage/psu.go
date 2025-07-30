@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
@@ -45,7 +47,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "begin transaction: %w")
 	}
 
 	var errTx error
@@ -75,7 +77,7 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 	).Exec(ctx)
 	if err != nil {
 		errTx = err
-		return e("insert psu: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert psu: %w")
 	}
 
 	if len(relatedBankAccounts) > 0 {
@@ -88,25 +90,25 @@ func (s *store) PaymentServiceUsersCreate(ctx context.Context, psu models.Paymen
 				Exec(ctx)
 			if err != nil {
 				errTx = err
-				return e("update bank account to add psu id", err)
+				return errors.Wrap(postgres.ResolveError(err), "update bank account to add psu id")
 			}
 
 			rowsAffected, err := res.RowsAffected()
 			if err != nil {
 				errTx = err
-				return e("update bank account to add psu id", err)
+				return errors.Wrap(postgres.ResolveError(err), "update bank account to add psu id")
 			}
 
 			if rowsAffected == 0 {
 				errTx = ErrNotFound
-				return e("bank account", ErrNotFound)
+				return errors.Wrap(ErrNotFound, "bank account")
 			}
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
 		errTx = err
-		return e("commit transaction", err)
+		return errors.Wrap(postgres.ResolveError(err), "commit transaction")
 	}
 
 	return nil
@@ -125,7 +127,7 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 	err := query.
 		Scan(ctx)
 	if err != nil {
-		return nil, e("select psu: %w", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "select psu: %w")
 	}
 
 	res := toPaymentServiceUserModels(psu)
@@ -221,7 +223,7 @@ func (s *store) PaymentServiceUsersList(ctx context.Context, query ListPSUsQuery
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	counterParties := make([]models.PaymentServiceUser, 0, len(cursor.Data))
@@ -245,16 +247,16 @@ func (s *store) PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, ba
 		Where("id = ?", bankAccountID).
 		Exec(ctx)
 	if err != nil {
-		return e("update bank account to add psu id", err)
+		return errors.Wrap(postgres.ResolveError(err), "update bank account to add psu id")
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return e("update bank account to add psu id", err)
+		return errors.Wrap(postgres.ResolveError(err), "update bank account to add psu id")
 	}
 
 	if rowsAffected == 0 {
-		return e("bank account", ErrNotFound)
+		return errors.Wrap(ErrNotFound, "bank account")
 	}
 
 	return nil

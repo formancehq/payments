@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
@@ -24,7 +26,7 @@ func (s *store) StatesUpsert(ctx context.Context, state models.State) error {
 		On("CONFLICT (id) DO UPDATE").
 		Set("state = EXCLUDED.state").
 		Exec(ctx)
-	return e("failed to upsert state", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to upsert state")
 }
 
 func (s *store) StatesGet(ctx context.Context, id models.StateID) (models.State, error) {
@@ -35,7 +37,7 @@ func (s *store) StatesGet(ctx context.Context, id models.StateID) (models.State,
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return models.State{}, e("failed to get state", err)
+		return models.State{}, errors.Wrap(postgres.ResolveError(err), "failed to get state")
 	}
 
 	res := toStateModels(state)
@@ -48,7 +50,7 @@ func (s *store) StatesDeleteFromConnectorID(ctx context.Context, connectorID mod
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete state", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete state")
 }
 
 func fromStateModels(from models.State) state {

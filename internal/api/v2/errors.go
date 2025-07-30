@@ -26,6 +26,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 
 	switch {
 	case errors.Is(err, storage.ErrDuplicateKeyValue):
+		// TODO here we need to add our magic for whitelisting column names
 		api.BadRequest(w, ErrUniqueReference, err)
 	case errors.Is(err, storage.ErrNotFound):
 		api.NotFound(w, err)

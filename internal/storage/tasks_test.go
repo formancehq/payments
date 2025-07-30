@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -153,8 +154,8 @@ func TestTasksGet(t *testing.T) {
 
 	t.Run("unknown task", func(t *testing.T) {
 		_, err := store.TasksGet(ctx, models.TaskID{})
-		require.ErrorIs(t, err, ErrNotFound)
 		require.Error(t, err)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 }
 
@@ -190,8 +191,8 @@ func TestTasksDeleteFromConnectorID(t *testing.T) {
 		for _, task := range defaultTasks {
 			if task.ConnectorID != nil && *task.ConnectorID == defaultConnector.ID {
 				_, err := store.TasksGet(ctx, task.ID)
-				require.ErrorIs(t, err, ErrNotFound)
 				require.Error(t, err)
+				require.ErrorIs(t, err, postgres.ErrNotFound)
 			} else {
 				t2, err := store.TasksGet(ctx, task.ID)
 				require.NoError(t, err)

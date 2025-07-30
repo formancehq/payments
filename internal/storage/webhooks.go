@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
@@ -29,7 +31,7 @@ func (s *store) WebhooksInsert(ctx context.Context, webhook models.Webhook) erro
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert webhook", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert webhook")
 	}
 
 	return nil
@@ -42,7 +44,7 @@ func (s *store) WebhooksGet(ctx context.Context, id string) (models.Webhook, err
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return models.Webhook{}, e("get webhook", err)
+		return models.Webhook{}, errors.Wrap(postgres.ResolveError(err), "get webhook")
 	}
 
 	return toWebhookModels(w), nil
@@ -54,7 +56,7 @@ func (s *store) WebhooksDeleteFromConnectorID(ctx context.Context, connectorID m
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete webhook", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete webhook")
 	}
 
 	return nil

@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -29,7 +31,7 @@ func (s *store) SchedulesUpsert(ctx context.Context, schedule models.Schedule) e
 		On("CONFLICT (id, connector_id) DO NOTHING").
 		Exec(ctx)
 
-	return e("failed to insert schedule", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert schedule")
 }
 
 func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
@@ -38,7 +40,7 @@ func (s *store) SchedulesDeleteFromConnectorID(ctx context.Context, connectorID 
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete schedule", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete schedule")
 }
 
 func (s *store) SchedulesDelete(ctx context.Context, id string) error {
@@ -47,7 +49,7 @@ func (s *store) SchedulesDelete(ctx context.Context, id string) error {
 		Where("id = ?", id).
 		Exec(ctx)
 
-	return e("failed to delete schedule", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete schedule")
 }
 
 func (s *store) SchedulesGet(ctx context.Context, id string, connectorID models.ConnectorID) (*models.Schedule, error) {
@@ -58,7 +60,7 @@ func (s *store) SchedulesGet(ctx context.Context, id string, connectorID models.
 		Scan(ctx)
 
 	if err != nil {
-		return nil, e("failed to fetch schedule", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch schedule")
 	}
 
 	return pointer.For(toScheduleModel(schedule)), nil
@@ -116,7 +118,7 @@ func (s *store) SchedulesList(ctx context.Context, q ListSchedulesQuery) (*bunpa
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch schedules", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch schedules")
 	}
 
 	schedules := make([]models.Schedule, 0, len(cursor.Data))

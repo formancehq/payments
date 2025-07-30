@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 	stdtime "time"
 
@@ -70,7 +71,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 	var tx bun.Tx
 	tx, err = s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("upsert payment initiations", err)
+		return errors.Wrap(postgres.ResolveError(err), "upsert payment initiations")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -84,7 +85,7 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 		Model(&toInsert).
 		Exec(ctx)
 	if err != nil {
-		return e("failed to insert payment initiations", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to insert payment initiations")
 	}
 
 	if len(adjustmentsToInsert) > 0 {
@@ -93,17 +94,17 @@ func (s *store) PaymentInitiationsInsert(ctx context.Context, pi models.PaymentI
 			On("CONFLICT (id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
-			return e("failed to insert payment initiation adjustments", err)
+			return errors.Wrap(postgres.ResolveError(err), "failed to insert payment initiation adjustments")
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID models.PaymentInitiationID, metadata map[string]string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("update payment metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment metadata")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -114,7 +115,7 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 		Where("id = ?", piID).
 		Scan(ctx)
 	if err != nil {
-		return e("update payment initiation metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment initiation metadata")
 	}
 
 	if pi.Metadata == nil {
@@ -131,10 +132,10 @@ func (s *store) PaymentInitiationsUpdateMetadata(ctx context.Context, piID model
 		Where("id = ?", piID).
 		Exec(ctx)
 	if err != nil {
-		return e("update payment initiation metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update payment initiation metadata")
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) PaymentInitiationsGet(ctx context.Context, piID models.PaymentInitiationID) (*models.PaymentInitiation, error) {
@@ -144,7 +145,7 @@ func (s *store) PaymentInitiationsGet(ctx context.Context, piID models.PaymentIn
 		Where("id = ?", piID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment initiation", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment initiation")
 	}
 
 	res := toPaymentInitiationModels(pi)
@@ -156,7 +157,7 @@ func (s *store) PaymentInitiationsDeleteFromConnectorID(ctx context.Context, con
 		Model((*paymentInitiation)(nil)).
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
-	return e("failed to delete payment initiations", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment initiations")
 }
 
 func (s *store) PaymentInitiationsDelete(ctx context.Context, piID models.PaymentInitiationID) error {
@@ -164,7 +165,7 @@ func (s *store) PaymentInitiationsDelete(ctx context.Context, piID models.Paymen
 		Model((*paymentInitiation)(nil)).
 		Where("id = ?", piID).
 		Exec(ctx)
-	return e("failed to delete payment initiation", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment initiation")
 }
 
 type PaymentInitiationQuery struct{}
@@ -258,7 +259,7 @@ func (s *store) PaymentInitiationsList(ctx context.Context, q ListPaymentInitiat
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch payment initiations", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch payment initiations")
 	}
 
 	pis := make([]models.PaymentInitiation, 0, len(cursor.Data))
@@ -287,7 +288,7 @@ func (s *store) PaymentInitiationRelatedPaymentsUpsert(ctx context.Context, piID
 		On("CONFLICT (payment_initiation_id, payment_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("failed to insert payment initiation related payments", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to insert payment initiation related payments")
 	}
 
 	return nil
@@ -301,7 +302,7 @@ func (s *store) PaymentInitiationIDsListFromPaymentID(ctx context.Context, id mo
 		Where("payment_id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment initiation related payments", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment initiation related payments")
 	}
 
 	ids := make([]models.PaymentInitiationID, 0, len(paymentInitiationRelatedPayments))
@@ -336,14 +337,14 @@ func (s *store) PaymentInitiationRelatedPaymentsList(ctx context.Context, piID m
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	pis := make([]models.Payment, 0, len(cursor.Data))
 	for _, pi := range cursor.Data {
 		p, err := s.PaymentsGet(ctx, pi.PaymentID)
 		if err != nil {
-			return nil, e("failed to get payment", err)
+			return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment")
 		}
 
 		pis = append(pis, *p)
@@ -366,7 +367,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsert(ctx context.Context, adj mode
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("failed to insert payment initiation adjustments", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to insert payment initiation adjustments")
 	}
 
 	return nil
@@ -379,7 +380,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 ) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return false, e("upsert payment initiations", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "upsert payment initiations")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -392,7 +393,7 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		return false, e("failed to get previous payment initiation adjustment", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "failed to get previous payment initiation adjustment")
 	}
 
 	if !predicate(toPaymentInitiationAdjustmentModels(previousAdj)) {
@@ -405,10 +406,10 @@ func (s *store) PaymentInitiationAdjustmentsUpsertIfPredicate(
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return false, e("failed to insert payment initiation adjustments", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "failed to insert payment initiation adjustments")
 	}
 
-	return true, e("failed to commit transaction", tx.Commit())
+	return true, errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.PaymentInitiationAdjustmentID) (*models.PaymentInitiationAdjustment, error) {
@@ -418,7 +419,7 @@ func (s *store) PaymentInitiationAdjustmentsGet(ctx context.Context, id models.P
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment initiation adjustment", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment initiation adjustment")
 	}
 
 	res := toPaymentInitiationAdjustmentModels(adj)
@@ -489,7 +490,7 @@ func (s *store) PaymentInitiationAdjustmentsList(ctx context.Context, piID model
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	pis := make([]models.PaymentInitiationAdjustment, 0, len(cursor.Data))

@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -43,7 +45,7 @@ type bankAccount struct {
 func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction", err)
+		return errors.Wrap(postgres.ResolveError(err), "begin transaction")
 	}
 
 	var errTx error
@@ -61,13 +63,13 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		Exec(ctx)
 	if err != nil {
 		errTx = err
-		return e("insert bank account", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert bank account")
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		errTx = err
-		return e("insert bank account", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert bank account")
 	}
 
 	if rowsAffected > 0 {
@@ -80,7 +82,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			Exec(ctx)
 		if err != nil {
 			errTx = err
-			return e("update bank account", err)
+			return errors.Wrap(postgres.ResolveError(err), "update bank account")
 		}
 	}
 
@@ -92,17 +94,17 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 			Exec(ctx)
 		if err != nil {
 			errTx = err
-			return e("insert related accounts", err)
+			return errors.Wrap(postgres.ResolveError(err), "insert related accounts")
 		}
 	}
 
-	return e("commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "commit transaction")
 }
 
 func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, metadata map[string]string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("update bank account metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update bank account metadata")
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -115,7 +117,7 @@ func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, me
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return e("update bank account metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update bank account metadata")
 	}
 
 	if account.Metadata == nil {
@@ -132,10 +134,10 @@ func (s *store) BankAccountsUpdateMetadata(ctx context.Context, id uuid.UUID, me
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return e("update bank account metadata", err)
+		return errors.Wrap(postgres.ResolveError(err), "update bank account metadata")
 	}
 
-	return e("commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "commit transaction")
 }
 
 func (s *store) BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) (*models.BankAccount, error) {
@@ -151,7 +153,7 @@ func (s *store) BankAccountsGet(ctx context.Context, id uuid.UUID, expand bool) 
 	}
 	err := query.Where("id = ?", id).Scan(ctx)
 	if err != nil {
-		return nil, e("get bank account", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "get bank account")
 	}
 
 	return pointer.For(toBankAccountModels(account)), nil
@@ -220,7 +222,7 @@ func (s *store) BankAccountsList(ctx context.Context, q ListBankAccountsQuery) (
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	bankAccounts := make([]models.BankAccount, 0, len(cursor.Data))
@@ -255,7 +257,7 @@ func (s *store) BankAccountsAddRelatedAccount(ctx context.Context, bID uuid.UUID
 		On("CONFLICT (bank_account_id, account_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("add bank account related account", err)
+		return errors.Wrap(postgres.ResolveError(err), "add bank account related account")
 	}
 
 	return nil
@@ -267,7 +269,7 @@ func (s *store) BankAccountsDeleteRelatedAccountFromConnectorID(ctx context.Cont
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete bank account related account", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete bank account related account")
 	}
 
 	return nil

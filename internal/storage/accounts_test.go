@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -228,7 +229,7 @@ func TestAccountsGet(t *testing.T) {
 
 		account, err := store.AccountsGet(ctx, acc)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 		require.Nil(t, account)
 	})
 }
@@ -273,7 +274,7 @@ func TestAccountsDelete(t *testing.T) {
 			account, err := store.AccountsGet(ctx, acc.ID)
 			require.Error(t, err)
 			require.Nil(t, account)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 
 		for _, acc := range defaultAccounts2() {

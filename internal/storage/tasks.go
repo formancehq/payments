@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/time"
@@ -47,7 +48,7 @@ func (s *store) TasksUpsert(ctx context.Context, task models.Task) error {
 	_, err := query.
 		Exec(ctx)
 
-	return e("failed to insert task", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert task")
 }
 
 func (s *store) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, error) {
@@ -58,7 +59,7 @@ func (s *store) TasksGet(ctx context.Context, id models.TaskID) (*models.Task, e
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to fetch task", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch task")
 	}
 
 	return pointer.For(toTaskModel(t)), nil
@@ -69,7 +70,7 @@ func (s *store) TasksDeleteFromConnectorID(ctx context.Context, connectorID mode
 		Model((*task)(nil)).
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
-	return e("failed to delete tasks", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete tasks")
 }
 
 func fromTaskModel(from models.Task) task {

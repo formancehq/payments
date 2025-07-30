@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -56,7 +57,7 @@ func (s *store) PaymentInitiationReversalsUpsert(
 ) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("upsert payment initiation reversal", err)
+		return errors.Wrap(postgres.ResolveError(err), "upsert payment initiation reversal")
 	}
 	defer func() {
 		rollbackOnTxError(ctx, &tx, err)
@@ -73,7 +74,7 @@ func (s *store) PaymentInitiationReversalsUpsert(
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("upsert payment initiation reversal", err)
+		return errors.Wrap(postgres.ResolveError(err), "upsert payment initiation reversal")
 	}
 
 	if len(reversalAdjustementsToInsert) > 0 {
@@ -82,11 +83,11 @@ func (s *store) PaymentInitiationReversalsUpsert(
 			On("CONFLICT (id) DO NOTHING").
 			Exec(ctx)
 		if err != nil {
-			return e("upsert payment initiation reversal adjustments", err)
+			return errors.Wrap(postgres.ResolveError(err), "upsert payment initiation reversal adjustments")
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) PaymentInitiationReversalsGet(ctx context.Context, id models.PaymentInitiationReversalID) (*models.PaymentInitiationReversal, error) {
@@ -96,7 +97,7 @@ func (s *store) PaymentInitiationReversalsGet(ctx context.Context, id models.Pay
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("get payment initiation reversal", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "get payment initiation reversal")
 	}
 
 	res := toPaymentInitiationReversalModels(pir)
@@ -109,7 +110,7 @@ func (s *store) PaymentInitiationReversalsDeleteFromConnectorID(ctx context.Cont
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete payment initiation reversal", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete payment initiation reversal")
 	}
 
 	return nil
@@ -187,7 +188,7 @@ func (s *store) PaymentInitiationReversalsList(ctx context.Context, q ListPaymen
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch payment initiation reversals", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch payment initiation reversals")
 	}
 
 	pis := make([]models.PaymentInitiationReversal, 0, len(cursor.Data))
@@ -212,7 +213,7 @@ func (s *store) PaymentInitiationReversalAdjustmentsUpsert(ctx context.Context, 
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("upsert payment initiation reversal adjustment", err)
+		return errors.Wrap(postgres.ResolveError(err), "upsert payment initiation reversal adjustment")
 	}
 
 	return nil
@@ -225,7 +226,7 @@ func (s *store) PaymentInitiationReversalAdjustmentsGet(ctx context.Context, id 
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get payment initiation reversal adjustment", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get payment initiation reversal adjustment")
 	}
 
 	res := toPaymentInitiationReversalAdjustmentModels(adj)
@@ -256,7 +257,7 @@ func (s *store) PaymentInitiationReversalAdjustmentsList(ctx context.Context, pi
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	pis := make([]models.PaymentInitiationReversalAdjustment, 0, len(cursor.Data))

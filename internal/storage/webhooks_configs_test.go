@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/logging"
@@ -95,7 +96,7 @@ func TestWebhooksConfigsGet(t *testing.T) {
 	t.Run("unknown webhook config", func(t *testing.T) {
 		_, err := store.WebhooksConfigsGet(ctx, "unknown", defaultConnector.ID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 }
 
@@ -153,7 +154,7 @@ func TestWebhooksConfigsDeleteFromConnectorID(t *testing.T) {
 		for _, w := range defaultWebhooksConfigs {
 			_, err := store.WebhooksConfigsGet(ctx, w.Name, w.ConnectorID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }

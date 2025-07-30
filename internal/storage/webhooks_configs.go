@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/uptrace/bun"
@@ -28,7 +30,7 @@ func (s *store) WebhooksConfigsUpsert(ctx context.Context, webhooksConfigs []mod
 		On("CONFLICT (name, connector_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("upsert webhook config", err)
+		return errors.Wrap(postgres.ResolveError(err), "upsert webhook config")
 	}
 
 	return nil
@@ -41,7 +43,7 @@ func (s *store) WebhooksConfigsGet(ctx context.Context, name string, connectorID
 		Where("name = ? AND connector_id = ?", name, connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("get webhook config", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "get webhook config")
 	}
 
 	return toWebhookConfigModel(webhookConfig), nil
@@ -54,7 +56,7 @@ func (s *store) WebhooksConfigsGetFromConnectorID(ctx context.Context, connector
 		Where("connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("get webhook configs", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "get webhook configs")
 	}
 
 	res := make([]models.WebhookConfig, 0, len(webhookConfigs))
@@ -71,7 +73,7 @@ func (s *store) WebhooksConfigsDeleteFromConnectorID(ctx context.Context, connec
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete webhook config", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete webhook config")
 	}
 
 	return nil

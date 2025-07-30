@@ -3,6 +3,8 @@ package storage
 import (
 	"context"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -35,7 +37,7 @@ type poolAccounts struct {
 func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "begin transaction: %w")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -48,11 +50,11 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 			Limit(1).
 			Exists(ctx)
 		if err != nil {
-			return e("check account exists: %w", err)
+			return errors.Wrap(postgres.ResolveError(err), "check account exists: %w")
 		}
 
 		if !exists {
-			return e("account does not exist: %w", ErrNotFound)
+			return errors.Wrap(ErrNotFound, "account does not exist")
 		}
 	}
 
@@ -61,7 +63,7 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert pool: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert pool: %w")
 	}
 
 	_, err = tx.NewInsert().
@@ -69,10 +71,10 @@ func (s *store) PoolsUpsert(ctx context.Context, pool models.Pool) error {
 		On("CONFLICT (pool_id, account_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert pool accounts: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert pool accounts: %w")
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "commit transaction: %w")
 }
 
 func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error) {
@@ -83,7 +85,7 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("get pool: %w", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "get pool: %w")
 	}
 
 	return pointer.For(toPoolModel(pool)), nil
@@ -92,7 +94,7 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return false, e("begin transaction: %w", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "begin transaction: %w")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -101,7 +103,7 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		Where("id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return false, e("delete pool: %w", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "delete pool: %w")
 	}
 
 	_, err = tx.NewDelete().
@@ -109,21 +111,21 @@ func (s *store) PoolsDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 		Where("pool_id = ?", id).
 		Exec(ctx)
 	if err != nil {
-		return false, e("delete pool accounts: %w", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "delete pool accounts: %w")
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		return false, e("get rows affected: %w", err)
+		return false, errors.Wrap(postgres.ResolveError(err), "get rows affected: %w")
 	}
 
-	return rowsAffected > 0, e("commit transaction: %w", tx.Commit())
+	return rowsAffected > 0, errors.Wrap(postgres.ResolveError(tx.Commit()), "commit transaction: %w")
 }
 
 func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return e("begin transaction: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "begin transaction: %w")
 	}
 	defer tx.Rollback() //nolint:errcheck
 
@@ -133,11 +135,11 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		Limit(1).
 		Exists(ctx)
 	if err != nil {
-		return e("check account exists: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "check account exists: %w")
 	}
 
 	if !exists {
-		return e("account does not exist: %w", ErrNotFound)
+		return errors.Wrap(ErrNotFound, "account does not exist")
 	}
 
 	_, err = tx.NewInsert().
@@ -149,10 +151,10 @@ func (s *store) PoolsAddAccount(ctx context.Context, id uuid.UUID, accountID mod
 		On("CONFLICT (pool_id, account_id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("insert pool account: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "insert pool account: %w")
 	}
 
-	return e("commit transaction: %w", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "commit transaction: %w")
 }
 
 func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID models.AccountID) error {
@@ -161,7 +163,7 @@ func (s *store) PoolsRemoveAccount(ctx context.Context, id uuid.UUID, accountID 
 		Where("pool_id = ? AND account_id = ?", id, accountID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool account: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete pool account: %w")
 	}
 	return nil
 }
@@ -172,7 +174,7 @@ func (s *store) PoolsRemoveAccountsFromConnectorID(ctx context.Context, connecto
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("delete pool accounts: %w", err)
+		return errors.Wrap(postgres.ResolveError(err), "delete pool accounts: %w")
 	}
 	return nil
 }
@@ -249,7 +251,7 @@ func (s *store) PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.C
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch pools", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch pools")
 	}
 
 	pools := make([]models.Pool, 0, len(cursor.Data))

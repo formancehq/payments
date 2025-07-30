@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
+	"github.com/pkg/errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
@@ -48,7 +50,7 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 
-	return e("failed to insert accounts", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to insert accounts")
 }
 
 func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
@@ -59,7 +61,7 @@ func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.A
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to get account", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to get account")
 	}
 
 	res := toAccountModels(account)
@@ -72,7 +74,7 @@ func (s *store) AccountsDeleteFromConnectorID(ctx context.Context, connectorID m
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 
-	return e("failed to delete account", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete accounts")
 }
 
 // TODO(polo): add tests
@@ -150,7 +152,7 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch accounts", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch accounts")
 	}
 
 	accounts := make([]models.Account, 0, len(cursor.Data))

@@ -28,6 +28,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 	case errors.Is(err, storage.ErrNotFound):
 		api.NotFound(w, err)
 	case errors.Is(err, storage.ErrForeignKeyViolation):
+		// TODO here we need to add our magic for whitelisting column names
 		api.BadRequest(w, ErrValidation, errors.Cause(err))
 	case errors.Is(err, storage.ErrValidation):
 		api.BadRequest(w, ErrValidation, err)

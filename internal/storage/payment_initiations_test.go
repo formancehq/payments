@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"math/big"
 	"testing"
 
@@ -131,7 +132,8 @@ func TestPaymentInitiationsInsert(t *testing.T) {
 
 		err := store.PaymentInitiationsInsert(ctx, pi)
 		require.Error(t, err)
-		assert.ErrorIs(t, err, ErrDuplicateKeyValue)
+		var postgresErr postgres.ErrConstraintsFailed
+		assert.ErrorAs(t, err, &postgresErr)
 
 		actual, err := store.PaymentInitiationsGet(ctx, piID1)
 		require.NoError(t, err)
@@ -210,7 +212,7 @@ func TestPaymentInitiationsGet(t *testing.T) {
 			ConnectorID: defaultConnector.ID,
 		})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("get existing payment initiation", func(t *testing.T) {
@@ -246,7 +248,7 @@ func TestPaymentInitiationsDelete(t *testing.T) {
 
 			_, err := store.PaymentInitiationsGet(ctx, pi.ID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }
@@ -281,7 +283,7 @@ func TestPaymentInitiationsDeleteFromConnectorID(t *testing.T) {
 		for _, pi := range defaultPaymentInitiations() {
 			_, err := store.PaymentInitiationsGet(ctx, pi.ID)
 			require.Error(t, err)
-			require.ErrorIs(t, err, ErrNotFound)
+			require.ErrorIs(t, err, postgres.ErrNotFound)
 		}
 	})
 }
@@ -1066,7 +1068,7 @@ func TestPaymentInitiationAdjustmentsGet(t *testing.T) {
 	t.Run("get unknown payment initiation adjustment", func(t *testing.T) {
 		_, err := store.PaymentInitiationAdjustmentsGet(ctx, models.PaymentInitiationAdjustmentID{})
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 	})
 
 	t.Run("get existing payment initiation adjustment", func(t *testing.T) {

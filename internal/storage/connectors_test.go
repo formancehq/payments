@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"encoding/json"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -114,7 +115,7 @@ func TestConnectorsUninstall(t *testing.T) {
 
 		connector, err := store.ConnectorsGet(ctx, defaultConnector.ID)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 		require.Nil(t, connector)
 	})
 
@@ -229,7 +230,7 @@ func TestConnectorsGet(t *testing.T) {
 
 		connector, err := store.ConnectorsGet(ctx, id)
 		require.Error(t, err)
-		require.ErrorIs(t, err, ErrNotFound)
+		require.ErrorIs(t, err, postgres.ErrNotFound)
 		require.Nil(t, connector)
 	})
 }

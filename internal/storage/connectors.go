@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"strings"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -115,7 +116,7 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 		On("CONFLICT (id) DO NOTHING").
 		Exec(ctx)
 	if err != nil {
-		return e("failed to insert connector", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to insert connector")
 	}
 
 	_, err = tx.NewUpdate().
@@ -124,10 +125,10 @@ func (s *store) ConnectorsInstall(ctx context.Context, c models.Connector) error
 		Where("id = ?", toInsert.ID).
 		Exec(ctx)
 	if err != nil {
-		return e("failed to encrypt config", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to encrypt config")
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) error {
@@ -141,7 +142,7 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 
 	_, err = s.ConnectorsGet(ctx, c.ID)
 	if err != nil {
-		return e("connector not found", err)
+		return errors.Wrap(postgres.ResolveError(err), "connector not found")
 	}
 
 	_, err = tx.NewUpdate().
@@ -151,10 +152,10 @@ func (s *store) ConnectorsConfigUpdate(ctx context.Context, c models.Connector) 
 		Where("id = ?", c.ID).
 		Exec(ctx)
 	if err != nil {
-		return e("failed to encrypt config", err)
+		return errors.Wrap(postgres.ResolveError(err), "failed to encrypt config")
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	return errors.Wrap(postgres.ResolveError(tx.Commit()), "failed to commit transaction")
 }
 
 func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.ConnectorID) error {
@@ -163,7 +164,7 @@ func (s *store) ConnectorsScheduleForDeletion(ctx context.Context, id models.Con
 		Set("scheduled_for_deletion = ?", true).
 		Where("id = ?", id).
 		Exec(ctx)
-	return e("failed to schedule connector for deletion", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to schedule connector for deletion")
 }
 
 func (s *store) ConnectorsUninstall(ctx context.Context, id models.ConnectorID) error {
@@ -171,7 +172,7 @@ func (s *store) ConnectorsUninstall(ctx context.Context, id models.ConnectorID) 
 		Model((*connector)(nil)).
 		Where("id = ?", id).
 		Exec(ctx)
-	return e("failed to delete connector", err)
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete connector")
 }
 
 func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*models.Connector, error) {
@@ -183,7 +184,7 @@ func (s *store) ConnectorsGet(ctx context.Context, id models.ConnectorID) (*mode
 		Where("id = ?", id).
 		Scan(ctx)
 	if err != nil {
-		return nil, e("failed to fetch connector", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch connector")
 	}
 
 	return &models.Connector{
@@ -254,7 +255,7 @@ func (s *store) ConnectorsList(ctx context.Context, q ListConnectorsQuery) (*bun
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch connectors", err)
+		return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch connectors")
 	}
 
 	connectors := make([]models.Connector, 0, len(cursor.Data))
