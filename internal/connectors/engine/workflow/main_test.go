@@ -297,7 +297,7 @@ func (s *UnitTestSuite) addData() {
 		CreatedAt:            now,
 		Provider:             "test",
 		ScheduledForDeletion: false,
-		Config:               []byte(`{}`),
+		Config:               []byte(`{"name": "test", "pollingPeriod": "2m", "pageSize": 25}`),
 	}
 
 	s.account = models.Account{
