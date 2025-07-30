@@ -40,6 +40,36 @@ func (m *MockPlugin) EXPECT() *MockPluginMockRecorder {
 	return m.recorder
 }
 
+// CompleteUpdateUserLink mocks base method.
+func (m *MockPlugin) CompleteUpdateUserLink(arg0 context.Context, arg1 CompleteUpdateUserLinkRequest) (CompleteUpdateUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteUpdateUserLink", arg0, arg1)
+	ret0, _ := ret[0].(CompleteUpdateUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CompleteUpdateUserLink indicates an expected call of CompleteUpdateUserLink.
+func (mr *MockPluginMockRecorder) CompleteUpdateUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteUpdateUserLink", reflect.TypeOf((*MockPlugin)(nil).CompleteUpdateUserLink), arg0, arg1)
+}
+
+// CompleteUserLink mocks base method.
+func (m *MockPlugin) CompleteUserLink(arg0 context.Context, arg1 CompleteUserLinkRequest) (CompleteUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CompleteUserLink", arg0, arg1)
+	ret0, _ := ret[0].(CompleteUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CompleteUserLink indicates an expected call of CompleteUserLink.
+func (mr *MockPluginMockRecorder) CompleteUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteUserLink", reflect.TypeOf((*MockPlugin)(nil).CompleteUserLink), arg0, arg1)
+}
+
 // CreateBankAccount mocks base method.
 func (m *MockPlugin) CreateBankAccount(arg0 context.Context, arg1 CreateBankAccountRequest) (CreateBankAccountResponse, error) {
 	m.ctrl.T.Helper()
@@ -85,6 +115,36 @@ func (mr *MockPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPlugin)(nil).CreateTransfer), arg0, arg1)
 }
 
+// CreateUser mocks base method.
+func (m *MockPlugin) CreateUser(arg0 context.Context, arg1 CreateUserRequest) (CreateUserResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUser", arg0, arg1)
+	ret0, _ := ret[0].(CreateUserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUser indicates an expected call of CreateUser.
+func (mr *MockPluginMockRecorder) CreateUser(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockPlugin)(nil).CreateUser), arg0, arg1)
+}
+
+// CreateUserLink mocks base method.
+func (m *MockPlugin) CreateUserLink(arg0 context.Context, arg1 CreateUserLinkRequest) (CreateUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateUserLink", arg0, arg1)
+	ret0, _ := ret[0].(CreateUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateUserLink indicates an expected call of CreateUserLink.
+func (mr *MockPluginMockRecorder) CreateUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUserLink", reflect.TypeOf((*MockPlugin)(nil).CreateUserLink), arg0, arg1)
+}
+
 // CreateWebhooks mocks base method.
 func (m *MockPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksRequest) (CreateWebhooksResponse, error) {
 	m.ctrl.T.Helper()
@@ -98,6 +158,36 @@ func (m *MockPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksReq
 func (mr *MockPluginMockRecorder) CreateWebhooks(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhooks", reflect.TypeOf((*MockPlugin)(nil).CreateWebhooks), arg0, arg1)
+}
+
+// DeleteUser mocks base method.
+func (m *MockPlugin) DeleteUser(arg0 context.Context, arg1 DeleteUserRequest) (DeleteUserResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUser", arg0, arg1)
+	ret0, _ := ret[0].(DeleteUserResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUser indicates an expected call of DeleteUser.
+func (mr *MockPluginMockRecorder) DeleteUser(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUser", reflect.TypeOf((*MockPlugin)(nil).DeleteUser), arg0, arg1)
+}
+
+// DeleteUserConnection mocks base method.
+func (m *MockPlugin) DeleteUserConnection(arg0 context.Context, arg1 DeleteUserConnectionRequest) (DeleteUserConnectionResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteUserConnection", arg0, arg1)
+	ret0, _ := ret[0].(DeleteUserConnectionResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteUserConnection indicates an expected call of DeleteUserConnection.
+func (mr *MockPluginMockRecorder) DeleteUserConnection(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteUserConnection", reflect.TypeOf((*MockPlugin)(nil).DeleteUserConnection), arg0, arg1)
 }
 
 // FetchNextAccounts mocks base method.
@@ -279,6 +369,21 @@ func (mr *MockPluginMockRecorder) TranslateWebhook(arg0, arg1 any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateWebhook", reflect.TypeOf((*MockPlugin)(nil).TranslateWebhook), arg0, arg1)
 }
 
+// TrimWebhook mocks base method.
+func (m *MockPlugin) TrimWebhook(arg0 context.Context, arg1 TrimWebhookRequest) (TrimWebhookResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "TrimWebhook", arg0, arg1)
+	ret0, _ := ret[0].(TrimWebhookResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// TrimWebhook indicates an expected call of TrimWebhook.
+func (mr *MockPluginMockRecorder) TrimWebhook(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TrimWebhook", reflect.TypeOf((*MockPlugin)(nil).TrimWebhook), arg0, arg1)
+}
+
 // Uninstall mocks base method.
 func (m *MockPlugin) Uninstall(arg0 context.Context, arg1 UninstallRequest) (UninstallResponse, error) {
 	m.ctrl.T.Helper()
@@ -294,6 +399,21 @@ func (mr *MockPluginMockRecorder) Uninstall(arg0, arg1 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Uninstall", reflect.TypeOf((*MockPlugin)(nil).Uninstall), arg0, arg1)
 }
 
+// UpdateUserLink mocks base method.
+func (m *MockPlugin) UpdateUserLink(arg0 context.Context, arg1 UpdateUserLinkRequest) (UpdateUserLinkResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateUserLink", arg0, arg1)
+	ret0, _ := ret[0].(UpdateUserLinkResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// UpdateUserLink indicates an expected call of UpdateUserLink.
+func (mr *MockPluginMockRecorder) UpdateUserLink(arg0, arg1 any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateUserLink", reflect.TypeOf((*MockPlugin)(nil).UpdateUserLink), arg0, arg1)
+}
+
 // VerifyWebhook mocks base method.
 func (m *MockPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookRequest) (VerifyWebhookResponse, error) {
 	m.ctrl.T.Helper()
@@ -307,277 +427,4 @@ func (m *MockPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookReque
 func (mr *MockPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhook", reflect.TypeOf((*MockPlugin)(nil).VerifyWebhook), arg0, arg1)
-}
-
-// MockPSPPlugin is a mock of PSPPlugin interface.
-type MockPSPPlugin struct {
-	ctrl     *gomock.Controller
-	recorder *MockPSPPluginMockRecorder
-	isgomock struct{}
-}
-
-// MockPSPPluginMockRecorder is the mock recorder for MockPSPPlugin.
-type MockPSPPluginMockRecorder struct {
-	mock *MockPSPPlugin
-}
-
-// NewMockPSPPlugin creates a new mock instance.
-func NewMockPSPPlugin(ctrl *gomock.Controller) *MockPSPPlugin {
-	mock := &MockPSPPlugin{ctrl: ctrl}
-	mock.recorder = &MockPSPPluginMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPSPPlugin) EXPECT() *MockPSPPluginMockRecorder {
-	return m.recorder
-}
-
-// CreateBankAccount mocks base method.
-func (m *MockPSPPlugin) CreateBankAccount(arg0 context.Context, arg1 CreateBankAccountRequest) (CreateBankAccountResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateBankAccount", arg0, arg1)
-	ret0, _ := ret[0].(CreateBankAccountResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateBankAccount indicates an expected call of CreateBankAccount.
-func (mr *MockPSPPluginMockRecorder) CreateBankAccount(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateBankAccount", reflect.TypeOf((*MockPSPPlugin)(nil).CreateBankAccount), arg0, arg1)
-}
-
-// CreatePayout mocks base method.
-func (m *MockPSPPlugin) CreatePayout(arg0 context.Context, arg1 CreatePayoutRequest) (CreatePayoutResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreatePayout", arg0, arg1)
-	ret0, _ := ret[0].(CreatePayoutResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreatePayout indicates an expected call of CreatePayout.
-func (mr *MockPSPPluginMockRecorder) CreatePayout(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayout", reflect.TypeOf((*MockPSPPlugin)(nil).CreatePayout), arg0, arg1)
-}
-
-// CreateTransfer mocks base method.
-func (m *MockPSPPlugin) CreateTransfer(arg0 context.Context, arg1 CreateTransferRequest) (CreateTransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTransfer", arg0, arg1)
-	ret0, _ := ret[0].(CreateTransferResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateTransfer indicates an expected call of CreateTransfer.
-func (mr *MockPSPPluginMockRecorder) CreateTransfer(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTransfer", reflect.TypeOf((*MockPSPPlugin)(nil).CreateTransfer), arg0, arg1)
-}
-
-// CreateWebhooks mocks base method.
-func (m *MockPSPPlugin) CreateWebhooks(arg0 context.Context, arg1 CreateWebhooksRequest) (CreateWebhooksResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateWebhooks", arg0, arg1)
-	ret0, _ := ret[0].(CreateWebhooksResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// CreateWebhooks indicates an expected call of CreateWebhooks.
-func (mr *MockPSPPluginMockRecorder) CreateWebhooks(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateWebhooks", reflect.TypeOf((*MockPSPPlugin)(nil).CreateWebhooks), arg0, arg1)
-}
-
-// FetchNextAccounts mocks base method.
-func (m *MockPSPPlugin) FetchNextAccounts(arg0 context.Context, arg1 FetchNextAccountsRequest) (FetchNextAccountsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNextAccounts", arg0, arg1)
-	ret0, _ := ret[0].(FetchNextAccountsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchNextAccounts indicates an expected call of FetchNextAccounts.
-func (mr *MockPSPPluginMockRecorder) FetchNextAccounts(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextAccounts", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextAccounts), arg0, arg1)
-}
-
-// FetchNextBalances mocks base method.
-func (m *MockPSPPlugin) FetchNextBalances(arg0 context.Context, arg1 FetchNextBalancesRequest) (FetchNextBalancesResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNextBalances", arg0, arg1)
-	ret0, _ := ret[0].(FetchNextBalancesResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchNextBalances indicates an expected call of FetchNextBalances.
-func (mr *MockPSPPluginMockRecorder) FetchNextBalances(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextBalances", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextBalances), arg0, arg1)
-}
-
-// FetchNextExternalAccounts mocks base method.
-func (m *MockPSPPlugin) FetchNextExternalAccounts(arg0 context.Context, arg1 FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNextExternalAccounts", arg0, arg1)
-	ret0, _ := ret[0].(FetchNextExternalAccountsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchNextExternalAccounts indicates an expected call of FetchNextExternalAccounts.
-func (mr *MockPSPPluginMockRecorder) FetchNextExternalAccounts(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextExternalAccounts", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextExternalAccounts), arg0, arg1)
-}
-
-// FetchNextOthers mocks base method.
-func (m *MockPSPPlugin) FetchNextOthers(arg0 context.Context, arg1 FetchNextOthersRequest) (FetchNextOthersResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNextOthers", arg0, arg1)
-	ret0, _ := ret[0].(FetchNextOthersResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchNextOthers indicates an expected call of FetchNextOthers.
-func (mr *MockPSPPluginMockRecorder) FetchNextOthers(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextOthers", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextOthers), arg0, arg1)
-}
-
-// FetchNextPayments mocks base method.
-func (m *MockPSPPlugin) FetchNextPayments(arg0 context.Context, arg1 FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FetchNextPayments", arg0, arg1)
-	ret0, _ := ret[0].(FetchNextPaymentsResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// FetchNextPayments indicates an expected call of FetchNextPayments.
-func (mr *MockPSPPluginMockRecorder) FetchNextPayments(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNextPayments", reflect.TypeOf((*MockPSPPlugin)(nil).FetchNextPayments), arg0, arg1)
-}
-
-// PollPayoutStatus mocks base method.
-func (m *MockPSPPlugin) PollPayoutStatus(arg0 context.Context, arg1 PollPayoutStatusRequest) (PollPayoutStatusResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PollPayoutStatus", arg0, arg1)
-	ret0, _ := ret[0].(PollPayoutStatusResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PollPayoutStatus indicates an expected call of PollPayoutStatus.
-func (mr *MockPSPPluginMockRecorder) PollPayoutStatus(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollPayoutStatus", reflect.TypeOf((*MockPSPPlugin)(nil).PollPayoutStatus), arg0, arg1)
-}
-
-// PollTransferStatus mocks base method.
-func (m *MockPSPPlugin) PollTransferStatus(arg0 context.Context, arg1 PollTransferStatusRequest) (PollTransferStatusResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PollTransferStatus", arg0, arg1)
-	ret0, _ := ret[0].(PollTransferStatusResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PollTransferStatus indicates an expected call of PollTransferStatus.
-func (mr *MockPSPPluginMockRecorder) PollTransferStatus(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PollTransferStatus", reflect.TypeOf((*MockPSPPlugin)(nil).PollTransferStatus), arg0, arg1)
-}
-
-// ReversePayout mocks base method.
-func (m *MockPSPPlugin) ReversePayout(arg0 context.Context, arg1 ReversePayoutRequest) (ReversePayoutResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReversePayout", arg0, arg1)
-	ret0, _ := ret[0].(ReversePayoutResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ReversePayout indicates an expected call of ReversePayout.
-func (mr *MockPSPPluginMockRecorder) ReversePayout(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReversePayout", reflect.TypeOf((*MockPSPPlugin)(nil).ReversePayout), arg0, arg1)
-}
-
-// ReverseTransfer mocks base method.
-func (m *MockPSPPlugin) ReverseTransfer(arg0 context.Context, arg1 ReverseTransferRequest) (ReverseTransferResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReverseTransfer", arg0, arg1)
-	ret0, _ := ret[0].(ReverseTransferResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// ReverseTransfer indicates an expected call of ReverseTransfer.
-func (mr *MockPSPPluginMockRecorder) ReverseTransfer(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReverseTransfer", reflect.TypeOf((*MockPSPPlugin)(nil).ReverseTransfer), arg0, arg1)
-}
-
-// TranslateWebhook mocks base method.
-func (m *MockPSPPlugin) TranslateWebhook(arg0 context.Context, arg1 TranslateWebhookRequest) (TranslateWebhookResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TranslateWebhook", arg0, arg1)
-	ret0, _ := ret[0].(TranslateWebhookResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// TranslateWebhook indicates an expected call of TranslateWebhook.
-func (mr *MockPSPPluginMockRecorder) TranslateWebhook(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TranslateWebhook", reflect.TypeOf((*MockPSPPlugin)(nil).TranslateWebhook), arg0, arg1)
-}
-
-// VerifyWebhook mocks base method.
-func (m *MockPSPPlugin) VerifyWebhook(arg0 context.Context, arg1 VerifyWebhookRequest) (VerifyWebhookResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "VerifyWebhook", arg0, arg1)
-	ret0, _ := ret[0].(VerifyWebhookResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// VerifyWebhook indicates an expected call of VerifyWebhook.
-func (mr *MockPSPPluginMockRecorder) VerifyWebhook(arg0, arg1 any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "VerifyWebhook", reflect.TypeOf((*MockPSPPlugin)(nil).VerifyWebhook), arg0, arg1)
-}
-
-// MockPSPBankingBridge is a mock of PSPBankingBridge interface.
-type MockPSPBankingBridge struct {
-	ctrl     *gomock.Controller
-	recorder *MockPSPBankingBridgeMockRecorder
-	isgomock struct{}
-}
-
-// MockPSPBankingBridgeMockRecorder is the mock recorder for MockPSPBankingBridge.
-type MockPSPBankingBridgeMockRecorder struct {
-	mock *MockPSPBankingBridge
-}
-
-// NewMockPSPBankingBridge creates a new mock instance.
-func NewMockPSPBankingBridge(ctrl *gomock.Controller) *MockPSPBankingBridge {
-	mock := &MockPSPBankingBridge{ctrl: ctrl}
-	mock.recorder = &MockPSPBankingBridgeMockRecorder{mock}
-	return mock
-}
-
-// EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockPSPBankingBridge) EXPECT() *MockPSPBankingBridgeMockRecorder {
-	return m.recorder
 }

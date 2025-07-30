@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"errors"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"math/big"
 	"time"
+
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
@@ -51,6 +52,10 @@ type PSPPayment struct {
 
 	// PSP response in raw
 	Raw json.RawMessage
+}
+
+type PSPPaymentsToDelete struct {
+	Reference string
 }
 
 func (p *PSPPayment) Validate() error {
@@ -300,13 +305,18 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment,
 	return p, nil
 }
 
-func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) ([]Payment, error) {
+func FromPSPPayments(from []PSPPayment, connectorID ConnectorID, additionalMetadata map[string]string) ([]Payment, error) {
 	payments := make([]Payment, 0, len(from))
 	for _, p := range from {
 		payment, err := FromPSPPaymentToPayment(p, connectorID)
 		if err != nil {
 			return nil, err
 		}
+
+		for k, v := range additionalMetadata {
+			payment.Metadata[k] = v
+		}
+
 		payments = append(payments, payment)
 	}
 	return payments, nil

@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StorageAccountsDelete(ctx context.Context, connectorID models.ConnectorID) error {
-	return temporalStorageError(a.storage.AccountsDeleteFromConnectorID(ctx, connectorID))
+func (a Activities) StorageAccountsDelete(ctx context.Context, id models.AccountID) error {
+	return temporalStorageError(a.storage.AccountsDelete(ctx, id))
 }
 
 var StorageAccountsDeleteActivity = Activities{}.StorageAccountsDelete
 
-func StorageAccountsDelete(ctx workflow.Context, connectorID models.ConnectorID) error {
-	return executeActivity(ctx, StorageAccountsDeleteActivity, nil, connectorID)
+func StorageAccountsDelete(ctx workflow.Context, id models.AccountID) error {
+	return executeActivity(ctx, StorageAccountsDeleteActivity, nil, id)
 }

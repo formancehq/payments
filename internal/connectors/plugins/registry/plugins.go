@@ -23,6 +23,7 @@ type PluginCreateFunction func(
 ) (models.Plugin, error)
 
 type PluginInformation struct {
+	pluginType   models.PluginType
 	capabilities []models.Capability
 	createFunc   PluginCreateFunction
 	config       Config
@@ -38,11 +39,13 @@ var (
 
 func RegisterPlugin(
 	provider string,
+	pluginType models.PluginType,
 	createFunc PluginCreateFunction,
 	capabilities []models.Capability,
 	conf any,
 ) {
 	pluginsRegistry[provider] = PluginInformation{
+		pluginType:   pluginType,
 		capabilities: capabilities,
 		createFunc:   createFunc,
 		config:       setupConfig(conf),
@@ -92,6 +95,8 @@ func setupConfig(conf any) Config {
 				break
 			}
 			fallthrough
+		case reflect.Bool:
+			dataType = TypeBoolean
 		default:
 			log.Panicf("unhandled type for field %q: %q", val.Type().Field(i).Name, field.Type.Name())
 		}
@@ -117,6 +122,16 @@ func GetPlugin(connectorID models.ConnectorID, logger logging.Logger, provider s
 	}
 
 	return New(connectorID, logger, p), nil
+}
+
+func GetPluginType(provider string) (models.PluginType, error) {
+	provider = strings.ToLower(provider)
+	info, ok := pluginsRegistry[provider]
+	if !ok {
+		return 0, fmt.Errorf("%s: %w", provider, ErrPluginNotFound)
+	}
+
+	return info.pluginType, nil
 }
 
 func GetCapabilities(provider string) ([]models.Capability, error) {

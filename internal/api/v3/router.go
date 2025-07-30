@@ -20,6 +20,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 		// Public routes
 		r.Group(func(r chi.Router) {
 			r.Handle("/connectors/webhooks/{connectorID}/*", connectorsWebhooks(backend))
+			r.Handle("/connectors/bank-bridges/{connectorID}/*", bankBridgesRedirect(backend))
 		})
 
 		// Authenticated routes
@@ -130,6 +131,26 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 				r.Route("/{paymentServiceUserID}", func(r chi.Router) {
 					r.Get("/", paymentServiceUsersGet(backend))
+					r.Get("/connections", paymentServiceUsersConnectionsListAll(backend))
+
+					r.Delete("/", paymentServiceUsersDelete(backend))
+
+					r.Route("/connectors/{connectorID}", func(r chi.Router) {
+						r.Delete("/", paymentServiceUsersDeleteConnector(backend))
+						r.Post("/forward", paymentServiceUsersForwardToBankBridge(backend))
+						r.Post("/create-link", paymentServiceUsersCreateLink(backend, validator))
+
+						r.Get("/connections", paymentServiceUsersConnectionsListFromConnectorID(backend))
+						r.Get("/link-attempts", paymentServiceUsersLinkAttemptList(backend))
+						r.Route("/link-attempts/{attemptID}", func(r chi.Router) {
+							r.Get("/", paymentServiceUsersLinkAttemptGet(backend))
+						})
+
+						r.Route("/connections/{connectionID}", func(r chi.Router) {
+							r.Delete("/", paymentServiceUsersDeleteConnection(backend))
+							r.Post("/update-link", paymentServiceUsersUpdateLink(backend, validator))
+						})
+					})
 
 					r.Route("/bank-accounts/{bankAccountID}", func(r chi.Router) {
 						r.Post("/", paymentServiceUsersAddBankAccount(backend))
@@ -151,6 +172,10 @@ func connectorID(r *http.Request) string {
 	return chi.URLParam(r, "connectorID")
 }
 
+func connectionID(r *http.Request) string {
+	return chi.URLParam(r, "connectionID")
+}
+
 func accountID(r *http.Request) string {
 	return chi.URLParam(r, "accountID")
 }
@@ -169,6 +194,10 @@ func bankAccountID(r *http.Request) string {
 
 func paymentServiceUserID(r *http.Request) string {
 	return chi.URLParam(r, "paymentServiceUserID")
+}
+
+func attemptID(r *http.Request) string {
+	return chi.URLParam(r, "attemptID")
 }
 
 func scheduleID(r *http.Request) string {

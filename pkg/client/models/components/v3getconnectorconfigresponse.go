@@ -57,6 +57,10 @@ func (o *V3GetConnectorConfigResponse) GetDataMoneycorp() *V3MoneycorpConfig {
 	return o.GetData().V3MoneycorpConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataPlaid() *V3PlaidConfig {
+	return o.GetData().V3PlaidConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataQonto() *V3QontoConfig {
 	return o.GetData().V3QontoConfig
 }
