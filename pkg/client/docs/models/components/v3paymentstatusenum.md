@@ -17,7 +17,7 @@
 | `V3PaymentStatusEnumDispute`           | DISPUTE                                |
 | `V3PaymentStatusEnumDisputeWon`        | DISPUTE_WON                            |
 | `V3PaymentStatusEnumDisputeLost`       | DISPUTE_LOST                           |
-| `V3PaymentStatusEnumAmountAdjustement` | AMOUNT_ADJUSTEMENT                     |
+| `V3PaymentStatusEnumAmountAdjustment` | AMOUNT_ADJUSTMENT                     |
 | `V3PaymentStatusEnumAuthorisation`     | AUTHORISATION                          |
 | `V3PaymentStatusEnumCapture`           | CAPTURE                                |
 | `V3PaymentStatusEnumCaptureFailed`     | CAPTURE_FAILED                         |
