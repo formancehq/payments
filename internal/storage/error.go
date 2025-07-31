@@ -2,12 +2,11 @@ package storage
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"strings"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
@@ -36,14 +35,15 @@ func e(msg string, err error) error {
 		return nil
 	}
 
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+	err = postgres.ResolveError(err)
+	if (postgres.ErrConstraintsFailed{}.Is(err)) {
 		return ErrDuplicateKeyValue
 	}
 
-	if errors.As(err, &pgErr) && pgErr.Code == "23503" {
+	var fkConstraintErr postgres.ErrFKConstraintFailed
+	if errors.As(err, &fkConstraintErr) {
 		for _, column := range FKViolationColumn {
-			if strings.Contains(pgErr.ConstraintName, column) {
+			if strings.Contains(fkConstraintErr.GetConstraint(), column) {
 				return fmt.Errorf("%s: %w", column, ErrForeignKeyViolation)
 			}
 		}
@@ -51,7 +51,7 @@ func e(msg string, err error) error {
 		return ErrForeignKeyViolation
 	}
 
-	if errors.Is(err, sql.ErrNoRows) {
+	if errors.Is(err, postgres.ErrNotFound) {
 		return ErrNotFound
 	}
 
