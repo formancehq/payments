@@ -46,6 +46,7 @@ func handleServiceErrors(w http.ResponseWriter, r *http.Request, err error) {
 			for _, column := range FKViolationColumn {
 				if strings.Contains(errFKConstraintFailed.GetConstraint(), column) {
 					err = fmt.Errorf("%s: %w", column, storage.ErrForeignKeyViolation)
+					break
 				}
 			}
 		}

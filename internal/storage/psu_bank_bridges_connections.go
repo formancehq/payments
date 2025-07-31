@@ -152,7 +152,7 @@ func (s *store) PSUBankBridgeConnectionAttemptsList(ctx context.Context, psuID u
 	for i, attempt := range cursor.Data {
 		res, err := toPsuBankBridgeConnectionAttemptsModels(attempt)
 		if err != nil {
-			return nil, errors.Wrap(postgres.ResolveError(err), "failed to fetch psu bank bridge connection attempts")
+			return nil, errors.Wrap(err, "failed to fetch psu bank bridge connection attempts")
 		}
 		psuBankBridgeConnectionAttemptsModels[i] = *res
 	}

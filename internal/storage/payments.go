@@ -284,7 +284,7 @@ func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID model
 		Where("source_account_id = ? OR destination_account_id = ?", accountID, accountID).
 		Exec(ctx)
 
-	return errors.Wrap(postgres.ResolveError(err), "failed to delete payment")
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete payments")
 }
 
 type PaymentQuery struct{}

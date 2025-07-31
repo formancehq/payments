@@ -84,7 +84,7 @@ func (s *store) AccountsDelete(ctx context.Context, id models.AccountID) error {
 		Where("id = ?", id).
 		Exec(ctx)
 
-	return errors.Wrap(postgres.ResolveError(err), "failed to delete accounts")
+	return errors.Wrap(postgres.ResolveError(err), "failed to delete account")
 }
 
 type AccountQuery struct{}
