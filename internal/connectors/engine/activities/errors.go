@@ -3,6 +3,7 @@ package activities
 import (
 	"context"
 	"errors"
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 
 	enginePlugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -89,7 +90,16 @@ func temporalStorageError(err error) error {
 	case errors.Is(err, storage.ErrNotFound),
 		errors.Is(err, storage.ErrDuplicateKeyValue),
 		errors.Is(err, storage.ErrValidation),
-		errors.Is(err, storage.ErrForeignKeyViolation):
+		errors.Is(err, storage.ErrForeignKeyViolation),
+		errors.Is(err, postgres.ErrNotFound),
+		errors.Is(err, postgres.ErrDeadlockDetected),
+		errors.Is(err, postgres.ErrSerialization),
+		errors.Is(err, postgres.ErrMissingSchema),
+		errors.Is(err, postgres.ErrMissingTable),
+		postgres.ErrConstraintsFailed{}.Is(err),
+		postgres.ErrValidationFailed{}.Is(err),
+		postgres.ErrRaisedException{}.Is(err),
+		postgres.ErrFKConstraintFailed{}.Is(err):
 		// Do not retry these errors
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeStorage, err)
 	default:

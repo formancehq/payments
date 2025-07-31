@@ -247,6 +247,10 @@ func (s *store) PaymentServiceUsersAddBankAccount(ctx context.Context, psuID, ba
 		Where("id = ?", bankAccountID).
 		Exec(ctx)
 	if err != nil {
+		pgErr := postgres.ResolveError(err)
+		if (postgres.ErrFKConstraintFailed{}.Is(pgErr)) {
+			return ErrForeignKeyViolation
+		}
 		return errors.Wrap(postgres.ResolveError(err), "update bank account to add psu id")
 	}
 
