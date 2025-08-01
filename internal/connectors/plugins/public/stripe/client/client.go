@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
@@ -32,6 +33,8 @@ type Client interface {
 }
 
 type client struct {
+	logger logging.Logger
+
 	accountClient            account.Client
 	balanceClient            balance.Client
 	transferClient           transfer.Client
@@ -41,13 +44,14 @@ type client struct {
 	balanceTransactionClient balancetransaction.Client
 }
 
-func New(name string, backend stripe.Backend, apiKey string) Client {
+func New(name string, logger logging.Logger, backend stripe.Backend, apiKey string) Client {
 	if backend == nil {
 		backends := stripe.NewBackends(metrics.NewHTTPClient(name, StripeDefaultTimeout))
 		backend = backends.API
 	}
 
 	return &client{
+		logger:                   logger,
 		accountClient:            account.Client{B: backend, Key: apiKey},
 		balanceClient:            balance.Client{B: backend, Key: apiKey},
 		transferClient:           transfer.Client{B: backend, Key: apiKey},
