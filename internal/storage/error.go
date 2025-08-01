@@ -36,7 +36,8 @@ func e(msg string, err error) error {
 	}
 
 	err = postgres.ResolveError(err)
-	if (postgres.ErrConstraintsFailed{}.Is(err)) {
+	var failedUniquenessConstraintErr postgres.ErrConstraintsFailed
+	if errors.As(err, &failedUniquenessConstraintErr) {
 		return ErrDuplicateKeyValue
 	}
 
