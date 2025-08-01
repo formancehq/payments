@@ -30,8 +30,23 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			ctrl.Finish()
 		})
 
+		It("should return an error - missing client name", func(ctx SpecContext) {
+			req := models.CreateUserLinkRequest{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
+					ID: uuid.New(),
+				},
+			}
+
+			resp, err := plg.CreateUserLink(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("missing client name"))
+			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
+		})
+
 		It("should return an error - missing payment service user", func(ctx SpecContext) {
-			req := models.CreateUserLinkRequest{}
+			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
+			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
@@ -41,6 +56,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 
 		It("should return an error - missing payment service user name", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID: uuid.New(),
 				},
@@ -54,6 +70,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 
 		It("should return an error - missing payment service user locale", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -69,6 +86,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 		It("should return an error - missing payment service user country", func(ctx SpecContext) {
 			locale := "en-US"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -88,6 +106,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "XX"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -110,6 +129,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			locale := "en-US"
 			country := "US"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -133,6 +153,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 			redirectURL := "https://example.com/callback"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -157,6 +178,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 			redirectURL := "https://example.com/callback"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -182,6 +204,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 			redirectURL := "https://example.com/callback"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -209,6 +232,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 			redirectURL := "https://example.com/callback"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -238,6 +262,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			country := "US"
 			redirectURL := "https://example.com/callback"
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   uuid.New(),
 					Name: "John Doe",
@@ -271,6 +296,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			attemptID := uuid.New()
 
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "John Doe",
@@ -292,14 +318,14 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			}
 
 			expectedReq := client.CreateLinkTokenRequest{
-				UserName:       "John Doe",
-				UserID:         userID.String(),
-				UserToken:      "user-token-123",
-				Language:       "en",
-				CountryCode:    "US",
-				RedirectURI:    "https://example.com/callback",
-				WebhookBaseURL: "https://example.com/webhook",
-				AttemptID:      attemptID.String(),
+				ApplicationName: "Test",
+				UserID:          userID.String(),
+				UserToken:       "user-token-123",
+				Language:        "en",
+				CountryCode:     "US",
+				RedirectURI:     "https://example.com/callback",
+				WebhookBaseURL:  "https://example.com/webhook",
+				AttemptID:       attemptID.String(),
 			}
 
 			expectedResp := client.CreateLinkTokenResponse{
@@ -324,6 +350,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			redirectURL := "https://example.com/callback"
 
 			req := models.CreateUserLinkRequest{
+				ApplicationName: "Test",
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID:   userID,
 					Name: "John Doe",

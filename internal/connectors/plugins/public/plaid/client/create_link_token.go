@@ -16,14 +16,14 @@ const (
 )
 
 type CreateLinkTokenRequest struct {
-	UserName       string
-	UserID         string
-	UserToken      string
-	Language       string
-	CountryCode    string
-	RedirectURI    string
-	WebhookBaseURL string
-	AttemptID      string
+	ApplicationName string
+	UserID          string
+	UserToken       string
+	Language        string
+	CountryCode     string
+	RedirectURI     string
+	WebhookBaseURL  string
+	AttemptID       string
 }
 
 type CreateLinkTokenResponse struct {
@@ -42,7 +42,7 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 	}
 
 	request := plaid.NewLinkTokenCreateRequest(
-		req.UserName,
+		req.ApplicationName,
 		req.Language,
 		[]plaid.CountryCode{countryCode},
 		plaid.LinkTokenCreateRequestUser{

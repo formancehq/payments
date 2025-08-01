@@ -80,7 +80,7 @@ type Backend interface {
 	PaymentServiceUsersConnectionsDelete(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
 	PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error)
 	PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error)
-	PaymentServiceUsersCreateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	PaymentServiceUsersCreateLink(ctx context.Context, ApplicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	PaymentServiceUsersUpdateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error)
 

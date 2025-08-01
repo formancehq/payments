@@ -61,8 +61,8 @@ func TestPSUCreateLink(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().CreatePaymentServiceUserLink(gomock.Any(), id, connectorID, nil, nil).Return("", "", test.err)
-			_, _, err := s.PaymentServiceUsersCreateLink(context.Background(), id, connectorID, nil, nil)
+			eng.EXPECT().CreatePaymentServiceUserLink(gomock.Any(), "Test", id, connectorID, nil, nil).Return("", "", test.err)
+			_, _, err := s.PaymentServiceUsersCreateLink(context.Background(), "Test", id, connectorID, nil, nil)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else if test.typedError {
