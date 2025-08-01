@@ -80,18 +80,20 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 				handlerFn(w, req)
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("client redirect URL missing", PaymentServiceUserCreateLinkRequest{}),
-			Entry("client redirect URL invalid", PaymentServiceUserCreateLinkRequest{ClientRedirectURL: "invalid-url"}),
-			Entry("client redirect URL empty", PaymentServiceUserCreateLinkRequest{ClientRedirectURL: ""}),
+			Entry("client redirect URL missing", PaymentServiceUserCreateLinkRequest{ClientName: "Test"}),
+			Entry("client name missing", PaymentServiceUserCreateLinkRequest{ClientRedirectURL: "https://example.com/callback"}),
+			Entry("client redirect URL invalid", PaymentServiceUserCreateLinkRequest{ClientName: "Test", ClientRedirectURL: "invalid-url"}),
+			Entry("client redirect URL empty", PaymentServiceUserCreateLinkRequest{ClientName: "Test", ClientRedirectURL: ""}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+				ClientName:        "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
 			expectedErr := errors.New("create link error")
-			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, nil, gomock.Any()).Return(
+			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, nil, gomock.Any()).Return(
 				"", "", expectedErr,
 			)
 			handlerFn(w, req)
@@ -101,10 +103,11 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should return created status with link", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+				ClientName:        "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
-			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
@@ -113,11 +116,12 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 		It("should return created status with link when idempotency key is provided", func(ctx SpecContext) {
 			idempotencyKey := uuid.New()
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+				ClientName:        "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
 			req.URL.RawQuery = "Idempotency-Key=" + idempotencyKey.String()
-			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, &idempotencyKey, gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, &idempotencyKey, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
@@ -125,11 +129,12 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should handle empty idempotency key query parameter", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+				ClientName:        "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
 			req.URL.RawQuery = "Idempotency-Key="
-			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
@@ -137,10 +142,11 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should handle missing idempotency key query parameter", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+				ClientName:        "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
-			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, nil, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
@@ -157,10 +163,11 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 			for _, url := range validURLs {
 				w = httptest.NewRecorder()
 				req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
+					ClientName:        "Test",
 					ClientRedirectURL: url,
 				})
 				req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
-				m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), psuID, connectorID, nil, &url).Return("test", "link", nil)
+				m.EXPECT().PaymentServiceUsersCreateLink(gomock.Any(), "Test", psuID, connectorID, nil, &url).Return("test", "link", nil)
 				handlerFn(w, req)
 
 				assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)

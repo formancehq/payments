@@ -16,7 +16,7 @@ const (
 )
 
 type CreateLinkTokenRequest struct {
-	UserName       string
+	ClientName     string
 	UserID         string
 	UserToken      string
 	Language       string
@@ -42,7 +42,7 @@ func (c *client) CreateLinkToken(ctx context.Context, req CreateLinkTokenRequest
 	}
 
 	request := plaid.NewLinkTokenCreateRequest(
-		req.UserName,
+		req.ClientName,
 		req.Language,
 		[]plaid.CountryCode{countryCode},
 		plaid.LinkTokenCreateRequestUser{

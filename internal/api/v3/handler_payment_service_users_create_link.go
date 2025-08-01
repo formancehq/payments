@@ -15,6 +15,7 @@ import (
 )
 
 type PaymentServiceUserCreateLinkRequest struct {
+	ClientName        string `json:"clientName" validate:"required"`
 	ClientRedirectURL string `json:"clientRedirectURL" validate:"required,url"`
 }
 
@@ -83,7 +84,7 @@ func paymentServiceUsersCreateLink(backend backend.Backend, validator *validatio
 			return
 		}
 
-		attemptID, link, err := backend.PaymentServiceUsersCreateLink(ctx, id, connectorID, ik, &req.ClientRedirectURL)
+		attemptID, link, err := backend.PaymentServiceUsersCreateLink(ctx, req.ClientName, id, connectorID, ik, &req.ClientRedirectURL)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)

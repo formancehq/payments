@@ -69,7 +69,7 @@ type Engine interface {
 	// Delete a payment service user specific connection on the given connector (PSP)
 	DeletePaymentServiceUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
 	// Create a payment service user link on the given connector (PSP).
-	CreatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	CreatePaymentServiceUserLink(ctx context.Context, clientName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	// Create a payment service user update link on the given connector (PSP).
 	UpdatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	// Complete a payment service user link on the given connector (PSP).
@@ -1011,7 +1011,7 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 	return task, nil
 }
 
-func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, clientName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUserLink")
 	defer span.End()
 
@@ -1075,6 +1075,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, psuID uuid.UU
 	}
 
 	resp, err := plugin.CreateUserLink(detachedCtx, models.CreateUserLinkRequest{
+		ClientName:          clientName,
 		AttemptID:           attempt.ID.String(),
 		PaymentServiceUser:  models.ToPSPPaymentServiceUser(psu),
 		PSUBankBridge:       bankBridge,

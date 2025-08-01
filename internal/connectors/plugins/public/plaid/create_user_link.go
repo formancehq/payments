@@ -11,6 +11,10 @@ import (
 )
 
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
+	if req.ClientName == "" {
+		return fmt.Errorf("missing client name: %w", models.ErrInvalidRequest)
+	}
+
 	if req.PaymentServiceUser == nil {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
 	}
@@ -81,7 +85,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
-		UserName:       req.PaymentServiceUser.Name,
+		ClientName:     req.ClientName,
 		UserID:         req.PaymentServiceUser.ID.String(),
 		UserToken:      req.PSUBankBridge.Metadata[UserTokenMetadataKey],
 		Language:       language,
