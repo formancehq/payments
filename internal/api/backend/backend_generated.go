@@ -578,9 +578,9 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersCreate(ctx, psu any) *gomo
 }
 
 // PaymentServiceUsersCreateLink mocks base method.
-func (m *MockBackend) PaymentServiceUsersCreateLink(ctx context.Context, clientName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+func (m *MockBackend) PaymentServiceUsersCreateLink(ctx context.Context, ApplicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentServiceUsersCreateLink", ctx, clientName, psuID, connectorID, idempotencyKey, ClientRedirectURL)
+	ret := m.ctrl.Call(m, "PaymentServiceUsersCreateLink", ctx, ApplicationName, psuID, connectorID, idempotencyKey, ClientRedirectURL)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -588,9 +588,9 @@ func (m *MockBackend) PaymentServiceUsersCreateLink(ctx context.Context, clientN
 }
 
 // PaymentServiceUsersCreateLink indicates an expected call of PaymentServiceUsersCreateLink.
-func (mr *MockBackendMockRecorder) PaymentServiceUsersCreateLink(ctx, clientName, psuID, connectorID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentServiceUsersCreateLink(ctx, ApplicationName, psuID, connectorID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersCreateLink", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersCreateLink), ctx, clientName, psuID, connectorID, idempotencyKey, ClientRedirectURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersCreateLink", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersCreateLink), ctx, ApplicationName, psuID, connectorID, idempotencyKey, ClientRedirectURL)
 }
 
 // PaymentServiceUsersDelete mocks base method.

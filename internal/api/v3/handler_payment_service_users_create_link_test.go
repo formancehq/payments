@@ -80,15 +80,15 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 				handlerFn(w, req)
 				assertExpectedResponse(w.Result(), http.StatusBadRequest, ErrValidation)
 			},
-			Entry("client redirect URL missing", PaymentServiceUserCreateLinkRequest{ClientName: "Test"}),
+			Entry("client redirect URL missing", PaymentServiceUserCreateLinkRequest{ApplicationName: "Test"}),
 			Entry("client name missing", PaymentServiceUserCreateLinkRequest{ClientRedirectURL: "https://example.com/callback"}),
-			Entry("client redirect URL invalid", PaymentServiceUserCreateLinkRequest{ClientName: "Test", ClientRedirectURL: "invalid-url"}),
-			Entry("client redirect URL empty", PaymentServiceUserCreateLinkRequest{ClientName: "Test", ClientRedirectURL: ""}),
+			Entry("client redirect URL invalid", PaymentServiceUserCreateLinkRequest{ApplicationName: "Test", ClientRedirectURL: "invalid-url"}),
+			Entry("client redirect URL empty", PaymentServiceUserCreateLinkRequest{ApplicationName: "Test", ClientRedirectURL: ""}),
 		)
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-				ClientName:        "Test",
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
@@ -103,7 +103,7 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should return created status with link", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-				ClientName:        "Test",
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
@@ -116,7 +116,7 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 		It("should return created status with link when idempotency key is provided", func(ctx SpecContext) {
 			idempotencyKey := uuid.New()
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-				ClientName:        "Test",
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
@@ -129,7 +129,7 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should handle empty idempotency key query parameter", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-				ClientName:        "Test",
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
@@ -142,7 +142,7 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 
 		It("should handle missing idempotency key query parameter", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-				ClientName:        "Test",
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
@@ -163,7 +163,7 @@ var _ = Describe("API v3 Payment Service Users Create Link", func() {
 			for _, url := range validURLs {
 				w = httptest.NewRecorder()
 				req := prepareJSONRequest(http.MethodPost, PaymentServiceUserCreateLinkRequest{
-					ClientName:        "Test",
+					ApplicationName:   "Test",
 					ClientRedirectURL: url,
 				})
 				req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())

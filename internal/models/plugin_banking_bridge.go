@@ -51,7 +51,7 @@ type CreateUserLinkRequest struct {
 	AttemptID           string
 	PaymentServiceUser  *PSPPaymentServiceUser
 	PSUBankBridge       *PSUBankBridge
-	ClientName          string
+	ApplicationName     string
 	ClientRedirectURL   *string
 	FormanceRedirectURL *string
 	CallBackState       string

@@ -11,7 +11,7 @@ import (
 )
 
 func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
-	if req.ClientName == "" {
+	if req.ApplicationName == "" {
 		return fmt.Errorf("missing client name: %w", models.ErrInvalidRequest)
 	}
 
@@ -85,14 +85,14 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
-		ClientName:     req.ClientName,
-		UserID:         req.PaymentServiceUser.ID.String(),
-		UserToken:      req.PSUBankBridge.Metadata[UserTokenMetadataKey],
-		Language:       language,
-		CountryCode:    *req.PaymentServiceUser.Address.Country,
-		RedirectURI:    *req.ClientRedirectURL,
-		WebhookBaseURL: req.WebhookBaseURL,
-		AttemptID:      req.AttemptID,
+		ApplicationName: req.ApplicationName,
+		UserID:          req.PaymentServiceUser.ID.String(),
+		UserToken:       req.PSUBankBridge.Metadata[UserTokenMetadataKey],
+		Language:        language,
+		CountryCode:     *req.PaymentServiceUser.Address.Country,
+		RedirectURI:     *req.ClientRedirectURL,
+		WebhookBaseURL:  req.WebhookBaseURL,
+		AttemptID:       req.AttemptID,
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err
