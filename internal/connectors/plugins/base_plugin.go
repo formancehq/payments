@@ -79,7 +79,7 @@ func (dp *basePlugin) CreateWebhooks(ctx context.Context, req models.CreateWebho
 func (dp *basePlugin) TrimWebhook(ctx context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
 	// Base implementation is to return the webhook as is
 	return models.TrimWebhookResponse{
-		Webhook: req.Webhook,
+		Webhooks: []models.PSPWebhook{req.Webhook},
 	}, nil
 }
 

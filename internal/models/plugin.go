@@ -66,7 +66,7 @@ type TrimWebhookRequest struct {
 }
 
 type TrimWebhookResponse struct {
-	Webhook PSPWebhook
+	Webhooks []PSPWebhook
 }
 
 type VerifyWebhookRequest struct {
