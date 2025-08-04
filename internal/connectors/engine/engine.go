@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/formancehq/go-libs/pointer"
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
@@ -1243,31 +1244,42 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	webhook, config, err := e.verifyAndTrimWebhook(ctx, urlPath, webhook)
+	webhooks, config, err := e.verifyAndTrimWebhook(ctx, urlPath, webhook)
 	if err != nil {
 		return err
 	}
 
-	if _, err := e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, webhook.ConnectorID.String(), webhook.ID),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunHandleWebhooks,
-		workflow.HandleWebhooks{
-			ConnectorID: webhook.ConnectorID,
-			URL:         url,
-			URLPath:     urlPath,
-			Webhook:     webhook,
-			Config:      config,
-		},
-	); err != nil {
+	errGroup, groupCtx := errgroup.WithContext(ctx)
+	for _, webhook := range webhooks {
+		w := webhook
+		errGroup.Go(func() error {
+			if _, err := e.temporalClient.ExecuteWorkflow(
+				groupCtx,
+				client.StartWorkflowOptions{
+					ID:                                       fmt.Sprintf("webhook-%s-%s-%s", e.stack, w.ConnectorID.String(), w.ID),
+					TaskQueue:                                GetDefaultTaskQueue(e.stack),
+					WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE,
+					WorkflowExecutionErrorWhenAlreadyStarted: false,
+					SearchAttributes: map[string]interface{}{
+						workflow.SearchAttributeStack: e.stack,
+					},
+				},
+				workflow.RunHandleWebhooks,
+				workflow.HandleWebhooks{
+					ConnectorID: w.ConnectorID,
+					URL:         url,
+					URLPath:     urlPath,
+					Webhook:     w,
+					Config:      config,
+				},
+			); err != nil {
+				return err
+			}
+			return nil
+		})
+	}
+
+	if err := errGroup.Wait(); err != nil {
 		otel.RecordError(span, err)
 		return err
 	}
@@ -1275,15 +1287,15 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 	return nil
 }
 
-func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) (models.Webhook, *models.WebhookConfig, error) {
+func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) ([]models.Webhook, *models.WebhookConfig, error) {
 	plugin, err := e.plugins.Get(webhook.ConnectorID)
 	if err != nil {
-		return models.Webhook{}, nil, err
+		return nil, nil, err
 	}
 
 	configs, err := e.storage.WebhooksConfigsGetFromConnectorID(ctx, webhook.ConnectorID)
 	if err != nil {
-		return models.Webhook{}, nil, err
+		return nil, nil, err
 	}
 
 	var config *models.WebhookConfig
@@ -1297,12 +1309,12 @@ func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webho
 	}
 
 	if config == nil {
-		return models.Webhook{}, nil, errors.New("webhook config not found")
+		return nil, nil, errors.New("webhook config not found")
 	}
 
 	config.FullURL, err = url.JoinPath(e.stackPublicURL, "/api/payments/v3", urlPath)
 	if err != nil {
-		return models.Webhook{}, nil, err
+		return nil, nil, err
 	}
 
 	verifyResponse, err := plugin.VerifyWebhook(
@@ -1318,20 +1330,20 @@ func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webho
 		},
 	)
 	if err != nil {
-		return models.Webhook{}, nil, err
+		return nil, nil, err
 	}
 
 	webhook.IdempotencyKey = verifyResponse.WebhookIdempotencyKey
 
-	webhook, err = e.trimWebhook(ctx, plugin, config, webhook)
+	webhooks, err := e.trimWebhook(ctx, plugin, config, webhook)
 	if err != nil {
-		return models.Webhook{}, nil, err
+		return nil, nil, err
 	}
 
-	return webhook, config, nil
+	return webhooks, config, nil
 }
 
-func (e *engine) trimWebhook(ctx context.Context, plugin models.Plugin, config *models.WebhookConfig, webhook models.Webhook) (models.Webhook, error) {
+func (e *engine) trimWebhook(ctx context.Context, plugin models.Plugin, config *models.WebhookConfig, webhook models.Webhook) ([]models.Webhook, error) {
 	trimmedWebhook, err := plugin.TrimWebhook(ctx, models.TrimWebhookRequest{
 		Webhook: models.PSPWebhook{
 			BasicAuth:   webhook.BasicAuth,
@@ -1342,15 +1354,27 @@ func (e *engine) trimWebhook(ctx context.Context, plugin models.Plugin, config *
 		Config: config,
 	})
 	if err != nil {
-		return models.Webhook{}, err
+		return nil, err
 	}
 
-	webhook.BasicAuth = trimmedWebhook.Webhook.BasicAuth
-	webhook.QueryValues = trimmedWebhook.Webhook.QueryValues
-	webhook.Headers = trimmedWebhook.Webhook.Headers
-	webhook.Body = trimmedWebhook.Webhook.Body
+	webhooks := make([]models.Webhook, 0, len(trimmedWebhook.Webhooks))
+	for i, w := range trimmedWebhook.Webhooks {
+		var ik *string
+		if webhook.IdempotencyKey != nil {
+			ik = pointer.For(fmt.Sprintf("%s-%d", *webhook.IdempotencyKey, i))
+		}
+		webhooks = append(webhooks, models.Webhook{
+			ID:             uuid.New().String(),
+			ConnectorID:    webhook.ConnectorID,
+			IdempotencyKey: ik,
+			BasicAuth:      w.BasicAuth,
+			QueryValues:    w.QueryValues,
+			Headers:        w.Headers,
+			Body:           w.Body,
+		})
+	}
 
-	return webhook, nil
+	return webhooks, nil
 }
 
 func (e *engine) CreatePool(ctx context.Context, pool models.Pool) error {
