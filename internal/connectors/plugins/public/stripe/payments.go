@@ -118,7 +118,7 @@ func (p *Plugin) translatePayment(accountRef *string, balanceTransaction *stripe
 			Reference:                   balanceTransaction.ID,
 			Type:                        models.PAYMENT_TYPE_PAYIN,
 			Status:                      models.PAYMENT_STATUS_SUCCEEDED,
-			Amount:                      big.NewInt(balanceTransaction.Source.Charge.Amount - balanceTransaction.Source.Charge.AmountRefunded),
+			Amount:                      big.NewInt(balanceTransaction.Source.Charge.Amount),
 			Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, transactionCurrency),
 			Scheme:                      detailsToPaymentScheme(balanceTransaction.Source.Charge.PaymentMethodDetails),
 			CreatedAt:                   time.Unix(balanceTransaction.Created, 0),

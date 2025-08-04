@@ -51,10 +51,21 @@ func (c *client) GetExternalAccounts(
 	if err := itr.Err(); err != nil {
 		return nil, timeline, false, wrapSDKErr(err)
 	}
-	results = append(results, itr.BankAccountList().Data...)
+	data := reverseBankAccounts(itr.BankAccountList().Data)
+	results = append(results, data...)
 	if len(results) == 0 {
 		return results, timeline, itr.BankAccountList().ListMeta.HasMore, nil
 	}
 	timeline.LatestID = results[len(results)-1].ID
 	return results, timeline, itr.BankAccountList().ListMeta.HasMore, nil
+}
+
+// Stripe now returns data in reverse chronological order no matter which params we provide so we need to reverse the slice
+func reverseBankAccounts(in []*stripe.BankAccount) []*stripe.BankAccount {
+	out := make([]*stripe.BankAccount, len(in))
+	copy(out, in)
+	for i, j := 0, len(out)-1; i < j; i, j = i+1, j-1 {
+		out[i], out[j] = out[j], out[i]
+	}
+	return out
 }
