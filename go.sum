@@ -772,8 +772,8 @@ github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/formancehq/go-libs v1.7.2 h1:zPLkMVigMxcdPQiA8Q0HLPgA/al/hKmLxLw9muDPM1U=
 github.com/formancehq/go-libs v1.7.2/go.mod h1:3+crp7AA/Rllpo9M/ZQslaHkYt9EtXtbE4qYasV201Q=
-github.com/formancehq/go-libs/v3 v3.0.2-0.20250730140055-06b6c8c68923 h1:uosXIZSczWKX6sqI+2mxrcKFX9ajv1scXGThFs6Jq0U=
-github.com/formancehq/go-libs/v3 v3.0.2-0.20250730140055-06b6c8c68923/go.mod h1:8eYUGAVh8Jja2roQZtIRmPRpnqt3YieAuL6vyRScfyA=
+github.com/formancehq/go-libs/v3 v3.0.2-0.20250804054743-6e6a15dcb5ff h1:kTHc64zrIg0YN0JdOwzIpR0aO0eVeaEpafMfm8p2vYw=
+github.com/formancehq/go-libs/v3 v3.0.2-0.20250804054743-6e6a15dcb5ff/go.mod h1:xB3OQyZIO9p7xuQ1HPrIqZbpfyirboxrDox+OIKLFNQ=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/gabriel-vasile/mimetype v1.4.8 h1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3GqacKw1NM=
@@ -1119,8 +1119,8 @@ github.com/muhlemmer/httpforwarded v0.1.0 h1:x4DLrzXdliq8mprgUMR0olDvHGkou5BJsK/
 github.com/muhlemmer/httpforwarded v0.1.0/go.mod h1:yo9czKedo2pdZhoXe+yDkGVbU0TJ0q9oQ90BVoDEtw0=
 github.com/nats-io/jwt/v2 v2.7.4 h1:jXFuDDxs/GQjGDZGhNgH4tXzSUK6WQi2rsj4xmsNOtI=
 github.com/nats-io/jwt/v2 v2.7.4/go.mod h1:me11pOkwObtcBNR8AiMrUbtVOUGkqYjMQZ6jnSdVUIA=
-github.com/nats-io/nats-server/v2 v2.11.6 h1:4VXRjbTUFKEB+7UoaKL3F5Y83xC7MxPoIONOnGgpkHw=
-github.com/nats-io/nats-server/v2 v2.11.6/go.mod h1:2xoztlcb4lDL5Blh1/BiukkKELXvKQ5Vy29FPVRBUYs=
+github.com/nats-io/nats-server/v2 v2.11.7 h1:lINWQ/Hb3cnaoHmWTjj/7WppZnaSh9C/1cD//nHCbms=
+github.com/nats-io/nats-server/v2 v2.11.7/go.mod h1:DchDPVzAsAPqhqm7VLedX0L7hjnV/SYtlmsl9F8U53s=
 github.com/nats-io/nats.go v1.43.0 h1:uRFZ2FEoRvP64+UUhaTokyS18XBCR/xM2vQZKO4i8ug=
 github.com/nats-io/nats.go v1.43.0/go.mod h1:iRWIPokVIFbVijxuMQq4y9ttaBTMe0SFdlZfMDd+33g=
 github.com/nats-io/nkeys v0.4.11 h1:q44qGV008kYd9W1b1nEBkNzvnWxtRSQ7A8BoqRrcfa0=
