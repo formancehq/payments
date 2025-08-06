@@ -588,3 +588,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 	err := s.env.GetWorkflowError()
 	s.NoError(err)
 }
+
+func stringPtr(s string) *string {
+	return &s
+}

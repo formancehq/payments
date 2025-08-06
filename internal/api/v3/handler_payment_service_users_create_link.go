@@ -91,9 +91,17 @@ func paymentServiceUsersCreateLink(backend backend.Backend, validator *validatio
 			return
 		}
 
-		api.Created(w, PaymentServiceUserCreateLinkResponse{
+		// Since we send a link to the client, we need to disable HTML escaping
+		encoder := json.NewEncoder(w)
+		encoder.SetEscapeHTML(false)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := encoder.Encode(PaymentServiceUserCreateLinkResponse{
 			AttemptID: attemptID,
 			Link:      link,
-		})
+		}); err != nil {
+			panic(err)
+		}
 	}
 }

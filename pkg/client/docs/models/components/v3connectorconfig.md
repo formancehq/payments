@@ -75,6 +75,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigMoneycorp(components.V3Mo
 v3ConnectorConfig := components.CreateV3ConnectorConfigPlaid(components.V3PlaidConfig{/* values here */})
 ```
 
+### V3PowensConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigPowens(components.V3PowensConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go

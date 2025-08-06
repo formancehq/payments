@@ -62,8 +62,8 @@ func TestPSUUpdateLink(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().UpdatePaymentServiceUserLink(gomock.Any(), id, connectorID, connectionID, nil, nil).Return("", "", test.err)
-			_, _, err := s.PaymentServiceUsersUpdateLink(context.Background(), id, connectorID, connectionID, nil, nil)
+			eng.EXPECT().UpdatePaymentServiceUserLink(gomock.Any(), "Test", id, connectorID, connectionID, nil, nil).Return("", "", test.err)
+			_, _, err := s.PaymentServiceUsersUpdateLink(context.Background(), "Test", id, connectorID, connectionID, nil, nil)
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else if test.typedError {

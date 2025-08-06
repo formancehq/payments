@@ -110,6 +110,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestPlaid() *compone
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestPowens() *components.V3PowensConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3PowensConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestQonto() *components.V3QontoConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3QontoConfig

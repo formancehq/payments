@@ -49,7 +49,7 @@ func (w Workflow) runHandleWebhooks(
 		return fmt.Errorf("translating webhook: %w", err)
 	}
 
-	for _, response := range resp.Responses {
+	for i, response := range resp.Responses {
 		switch {
 		case response.DataReadyToFetch != nil:
 			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
@@ -61,9 +61,19 @@ func (w Workflow) runHandleWebhooks(
 				return fmt.Errorf("handling user link session finished webhook: %w", err)
 			}
 
-		case response.UserConnectionDisconnected != nil:
+		case response.UserDisconnected != nil:
 			if err := w.handleUserDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user disconnected webhook: %w", err)
+			}
+
+		case response.UserConnectionDisconnected != nil:
+			if err := w.handleUserConnectionDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling user disconnected webhook: %w", err)
+			}
+
+		case response.UserConnectionReconnected != nil:
+			if err := w.handleUserConnectionReconnectedWebhook(ctx, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling user reconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionPendingDisconnect != nil:
@@ -71,9 +81,19 @@ func (w Workflow) runHandleWebhooks(
 				return fmt.Errorf("handling user pending disconnect webhook: %w", err)
 			}
 
+		case response.BankBridgeAccount != nil:
+			if err := w.handleBankBridgeAccountWebhook(ctx, i, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling bank bridge account webhook: %w", err)
+			}
+
+		case response.BankBridgePayment != nil:
+			if err := w.handleBankBridgePaymentWebhook(ctx, i, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling bank bridge payment webhook: %w", err)
+			}
+
 		default:
 			// Default case, all the other webhooks are to store data
-			if err := w.handleDataToStoreWebhook(ctx, handleWebhooks, response); err != nil {
+			if err := w.handleDataToStoreWebhook(ctx, i, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling data to store webhook: %w", err)
 			}
 
@@ -85,6 +105,7 @@ func (w Workflow) runHandleWebhooks(
 
 func (w Workflow) handleDataToStoreWebhook(
 	ctx workflow.Context,
+	index int,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
@@ -92,7 +113,7 @@ func (w Workflow) handleDataToStoreWebhook(
 		workflow.WithChildOptions(
 			ctx,
 			workflow.ChildWorkflowOptions{
-				WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s", w.stack, handleWebhooks.ConnectorID.String(), handleWebhooks.Webhook.ID),
+				WorkflowID:            fmt.Sprintf("store-webhook-%s-%s-%s-%d", w.stack, handleWebhooks.ConnectorID.String(), handleWebhooks.Webhook.ID, index),
 				TaskQueue:             w.getDefaultTaskQueue(),
 				ParentClosePolicy:     enums.PARENT_CLOSE_POLICY_ABANDON,
 				WorkflowIDReusePolicy: enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
@@ -120,6 +141,94 @@ func (w Workflow) handleDataToStoreWebhook(
 	}
 
 	return nil
+}
+
+func (w Workflow) handleBankBridgeAccountWebhook(
+	ctx workflow.Context,
+	index int,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
+	account := models.PSPAccount{
+		Reference:    response.BankBridgeAccount.Reference,
+		CreatedAt:    response.BankBridgeAccount.CreatedAt,
+		Name:         response.BankBridgeAccount.Name,
+		DefaultAsset: response.BankBridgeAccount.DefaultAsset,
+		Metadata:     response.BankBridgeAccount.Metadata,
+		Raw:          response.BankBridgeAccount.Raw,
+	}
+
+	if account.Metadata == nil {
+		account.Metadata = make(map[string]string)
+	}
+
+	if response.BankBridgeAccount.BankBridgeUserID != nil {
+		bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+			infiniteRetryContext(ctx),
+			*response.BankBridgeAccount.BankBridgeUserID,
+			handleWebhooks.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge: %w", err)
+		}
+
+		account.Metadata[models.ObjectPSUIDMetadataKey] = bridge.PsuID.String()
+	}
+
+	if response.BankBridgeAccount.BankBridgeConnectionID != nil {
+		account.Metadata[models.ObjectConnectionIDMetadataKey] = *response.BankBridgeAccount.BankBridgeConnectionID
+	}
+
+	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
+		Account: &account,
+	})
+}
+
+func (w Workflow) handleBankBridgePaymentWebhook(
+	ctx workflow.Context,
+	index int,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
+	payment := models.PSPPayment{
+		ParentReference:             response.BankBridgePayment.ParentReference,
+		Reference:                   response.BankBridgePayment.Reference,
+		CreatedAt:                   response.BankBridgePayment.CreatedAt,
+		Type:                        response.BankBridgePayment.Type,
+		Amount:                      response.BankBridgePayment.Amount,
+		Asset:                       response.BankBridgePayment.Asset,
+		Scheme:                      response.BankBridgePayment.Scheme,
+		Status:                      response.BankBridgePayment.Status,
+		SourceAccountReference:      response.BankBridgePayment.SourceAccountReference,
+		DestinationAccountReference: response.BankBridgePayment.DestinationAccountReference,
+		Metadata:                    response.BankBridgePayment.Metadata,
+		Raw:                         response.BankBridgePayment.Raw,
+	}
+
+	if payment.Metadata == nil {
+		payment.Metadata = make(map[string]string)
+	}
+
+	if response.BankBridgePayment.BankBridgeUserID != nil {
+		bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+			infiniteRetryContext(ctx),
+			*response.BankBridgePayment.BankBridgeUserID,
+			handleWebhooks.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge: %w", err)
+		}
+
+		payment.Metadata[models.ObjectPSUIDMetadataKey] = bridge.PsuID.String()
+	}
+
+	if response.BankBridgePayment.BankBridgeConnectionID != nil {
+		payment.Metadata[models.ObjectConnectionIDMetadataKey] = *response.BankBridgePayment.BankBridgeConnectionID
+	}
+
+	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
+		Payment: &payment,
+	})
 }
 
 func (w Workflow) handleTransactionReadyToFetchWebhook(
@@ -317,6 +426,48 @@ func (w Workflow) handleUserDisconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
+	bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+		infiniteRetryContext(ctx),
+		response.UserDisconnected.UserID,
+		handleWebhooks.ConnectorID,
+	)
+	if err != nil {
+		return fmt.Errorf("getting bank bridge: %w", err)
+	}
+
+	sendEvent := SendEvents{
+		UserDisconnected: &models.UserDisconnected{
+			PsuID:       bridge.PsuID,
+			ConnectorID: handleWebhooks.ConnectorID,
+			At:          workflow.Now(ctx),
+		},
+	}
+
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				TaskQueue:         w.getDefaultTaskQueue(),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunSendEvents,
+		sendEvent,
+	).Get(ctx, nil); err != nil {
+		return fmt.Errorf("sending events: %w", err)
+	}
+
+	return nil
+}
+
+func (w Workflow) handleUserConnectionDisconnectedWebhook(
+	ctx workflow.Context,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
 	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
@@ -339,12 +490,67 @@ func (w Workflow) handleUserDisconnectedWebhook(
 	}
 
 	sendEvent := SendEvents{
-		UserDisconnected: &models.UserConnectionDisconnected{
+		UserConnectionDisconnected: &models.UserConnectionDisconnected{
 			PsuID:        psuID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			ConnectionID: response.UserConnectionDisconnected.ConnectionID,
 			At:           response.UserConnectionDisconnected.At,
 			Reason:       response.UserConnectionDisconnected.Reason,
+		},
+	}
+
+	if err := workflow.ExecuteChildWorkflow(
+		workflow.WithChildOptions(
+			ctx,
+			workflow.ChildWorkflowOptions{
+				TaskQueue:         w.getDefaultTaskQueue(),
+				ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+				SearchAttributes: map[string]interface{}{
+					SearchAttributeStack: w.stack,
+				},
+			},
+		),
+		RunSendEvents,
+		sendEvent,
+	).Get(ctx, nil); err != nil {
+		return fmt.Errorf("sending events: %w", err)
+	}
+
+	return nil
+}
+
+func (w Workflow) handleUserConnectionReconnectedWebhook(
+	ctx workflow.Context,
+	handleWebhooks HandleWebhooks,
+	response models.WebhookResponse,
+) error {
+	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+		infiniteRetryContext(ctx),
+		handleWebhooks.ConnectorID,
+		response.UserConnectionReconnected.ConnectionID,
+	)
+	if err != nil {
+		return fmt.Errorf("getting bank bridge connection: %w", err)
+	}
+
+	connection.Status = models.ConnectionStatusActive
+	connection.Error = nil
+
+	err = activities.StoragePSUBankBridgeConnectionsStore(
+		infiniteRetryContext(ctx),
+		psuID,
+		*connection,
+	)
+	if err != nil {
+		return fmt.Errorf("storing bank bridge connection: %w", err)
+	}
+
+	sendEvent := SendEvents{
+		UserConnectionReconnected: &models.UserConnectionReconnected{
+			PsuID:        psuID,
+			ConnectorID:  handleWebhooks.ConnectorID,
+			ConnectionID: response.UserConnectionReconnected.ConnectionID,
+			At:           response.UserConnectionReconnected.At,
 		},
 	}
 

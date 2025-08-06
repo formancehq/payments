@@ -15,6 +15,7 @@ import (
 )
 
 type PaymentServiceUserUpdateLinkRequest struct {
+	ApplicationName   string `json:"ApplicationName" validate:"required"`
 	ClientRedirectURL string `json:"clientRedirectURL" validate:"required,url"`
 }
 
@@ -80,16 +81,24 @@ func paymentServiceUsersUpdateLink(backend backend.Backend, validator *validatio
 			return
 		}
 
-		attemptID, link, err := backend.PaymentServiceUsersUpdateLink(ctx, id, connectorID, connectionID, ik, &req.ClientRedirectURL)
+		attemptID, link, err := backend.PaymentServiceUsersUpdateLink(ctx, req.ApplicationName, id, connectorID, connectionID, ik, &req.ClientRedirectURL)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		api.Accepted(w, PaymentServiceUserUpdateLinkResponse{
+		// Since we send a link to the client, we need to disable HTML escaping
+		encoder := json.NewEncoder(w)
+		encoder.SetEscapeHTML(false)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		if err := encoder.Encode(PaymentServiceUserUpdateLinkResponse{
 			AttemptID: attemptID,
 			Link:      link,
-		})
+		}); err != nil {
+			panic(err)
+		}
 	}
 }

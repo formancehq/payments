@@ -27,7 +27,6 @@ import (
 type MockBackend struct {
 	ctrl     *gomock.Controller
 	recorder *MockBackendMockRecorder
-	isgomock struct{}
 }
 
 // MockBackendMockRecorder is the mock recorder for MockBackend.
@@ -698,9 +697,9 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersList(ctx, query any) *gomo
 }
 
 // PaymentServiceUsersUpdateLink mocks base method.
-func (m *MockBackend) PaymentServiceUsersUpdateLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+func (m *MockBackend) PaymentServiceUsersUpdateLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "PaymentServiceUsersUpdateLink", ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
+	ret := m.ctrl.Call(m, "PaymentServiceUsersUpdateLink", ctx, applicationName, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(string)
 	ret2, _ := ret[2].(error)
@@ -708,9 +707,9 @@ func (m *MockBackend) PaymentServiceUsersUpdateLink(ctx context.Context, psuID u
 }
 
 // PaymentServiceUsersUpdateLink indicates an expected call of PaymentServiceUsersUpdateLink.
-func (mr *MockBackendMockRecorder) PaymentServiceUsersUpdateLink(ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
+func (mr *MockBackendMockRecorder) PaymentServiceUsersUpdateLink(ctx, applicationName, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersUpdateLink", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersUpdateLink), ctx, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentServiceUsersUpdateLink", reflect.TypeOf((*MockBackend)(nil).PaymentServiceUsersUpdateLink), ctx, applicationName, psuID, connectorID, connectionID, idempotencyKey, ClientRedirectURL)
 }
 
 // PaymentsCreate mocks base method.

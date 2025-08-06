@@ -16,6 +16,7 @@ components:
                     Modulr: '#/components/schemas/V3ModulrConfig'
                     Moneycorp: '#/components/schemas/V3MoneycorpConfig'
                     Plaid: '#/components/schemas/V3PlaidConfig'
+                    Powens: '#/components/schemas/V3PowensConfig'
                     Qonto: '#/components/schemas/V3QontoConfig'
                     Stripe: '#/components/schemas/V3StripeConfig'
                     Wise: '#/components/schemas/V3WiseConfig'
@@ -32,6 +33,7 @@ components:
                 - $ref: '#/components/schemas/V3ModulrConfig'
                 - $ref: '#/components/schemas/V3MoneycorpConfig'
                 - $ref: '#/components/schemas/V3PlaidConfig'
+                - $ref: '#/components/schemas/V3PowensConfig'
                 - $ref: '#/components/schemas/V3QontoConfig'
                 - $ref: '#/components/schemas/V3StripeConfig'
                 - $ref: '#/components/schemas/V3WiseConfig'
@@ -334,6 +336,40 @@ components:
                 provider:
                     type: string
                     default: Plaid
+        V3PowensConfig:
+            type: object
+            required:
+                - name
+                - clientID
+                - clientSecret
+                - configurationToken
+                - domain
+                - maxConnections
+                - endpoint
+            properties:
+                clientID:
+                    type: string
+                clientSecret:
+                    type: string
+                configurationToken:
+                    type: string
+                domain:
+                    type: string
+                endpoint:
+                    type: string
+                maxConnections:
+                    type: integer
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                provider:
+                    type: string
+                    default: Powens
         V3QontoConfig:
             type: object
             required:

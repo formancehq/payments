@@ -43,6 +43,8 @@ type CreateUserResponse struct {
 	// Other connectors have it when the user finished the authentication flow,
 	// so this is optional and will be added later on thanks to webhooks.
 	PermanentToken *Token
+	// ID of the user on the banking bridge
+	PSPUserID *string
 	// Metadata linked to the user above.
 	Metadata map[string]string
 }
@@ -73,6 +75,7 @@ type UpdateUserLinkRequest struct {
 	PaymentServiceUser  *PSPPaymentServiceUser
 	PSUBankBridge       *PSUBankBridge
 	Connection          *PSUBankBridgeConnection
+	ApplicationName     string
 	ClientRedirectURL   *string
 	FormanceRedirectURL *string
 	CallBackState       string
@@ -165,4 +168,16 @@ func CallbackStateFromString(value string) (CallbackState, error) {
 	}
 
 	return ret, nil
+}
+
+type PSPBankBridgeAccount struct {
+	PSPAccount
+	BankBridgeUserID       *string
+	BankBridgeConnectionID *string
+}
+
+type PSPBankBridgePayment struct {
+	PSPPayment
+	BankBridgeUserID       *string
+	BankBridgeConnectionID *string
 }

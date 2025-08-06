@@ -110,6 +110,8 @@ func (a *PSUBankBridgeConnectionAttempt) UnmarshalJSON(data []byte) error {
 
 // Represents all connections of a psu for a given banking bridge (connector).
 type PSUBankBridge struct {
+	// ID of the psu
+	PsuID uuid.UUID `json:"psuID"`
 	// ID of the connector
 	ConnectorID ConnectorID `json:"connectorID"`
 
@@ -117,6 +119,8 @@ type PSUBankBridge struct {
 	// AccessToken is optional for some banking bridges, like Powens, where we
 	// have a notion of connection, but we only have one token for all of them.
 	AccessToken *Token `json:"authToken"`
+	// ID of the user on the banking bridge
+	PSPUserID *string `json:"pspUserID"`
 	// per banking bridge additional information
 	Metadata map[string]string `json:"metadata"`
 }

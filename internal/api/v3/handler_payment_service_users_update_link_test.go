@@ -76,6 +76,7 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 
 		It("should return a validation error when client redirect URL is invalid", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserUpdateLinkRequest{
+				ApplicationName:   "Test",
 				ClientRedirectURL: "invalid-url",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
@@ -86,11 +87,12 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 
 		It("should return an internal server error when backend returns error", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserUpdateLinkRequest{
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
 			expectedErr := errors.New("update link error")
-			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return(
+			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "Test", psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return(
 				"", "", expectedErr,
 			)
 			handlerFn(w, req)
@@ -100,10 +102,11 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 
 		It("should return accepted status with task ID", func(ctx SpecContext) {
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserUpdateLinkRequest{
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
-			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "Test", psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusAccepted, `{"attemptID":"test","link":"link"}`)
@@ -112,11 +115,12 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 		It("should return accepted status with task ID when idempotency key is provided", func(ctx SpecContext) {
 			idempotencyKey := uuid.New()
 			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserUpdateLinkRequest{
+				ApplicationName:   "Test",
 				ClientRedirectURL: "https://example.com/callback",
 			})
 			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
 			req.URL.RawQuery = "Idempotency-Key=" + idempotencyKey.String()
-			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), psuID, connectorID, connectionID, &idempotencyKey, gomock.Any()).Return("test", "link", nil)
+			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "Test", psuID, connectorID, connectionID, &idempotencyKey, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
 			assertExpectedResponse(w.Result(), http.StatusAccepted, `{"attemptID":"test","link":"link"}`)

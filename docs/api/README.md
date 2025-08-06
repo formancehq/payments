@@ -5786,6 +5786,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3PowensConfig](#schemav3powensconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
 
 xor
@@ -6181,6 +6187,44 @@ xor
 |clientID|string|true|none|none|
 |clientSecret|string|true|none|none|
 |isSandbox|boolean|false|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
+<h2 id="tocS_V3PowensConfig">V3PowensConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3powensconfig"></a>
+<a id="schema_V3PowensConfig"></a>
+<a id="tocSv3powensconfig"></a>
+<a id="tocsv3powensconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "configurationToken": "string",
+  "domain": "string",
+  "endpoint": "string",
+  "maxConnections": 0,
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Powens"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|configurationToken|string|true|none|none|
+|domain|string|true|none|none|
+|endpoint|string|true|none|none|
+|maxConnections|integer|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
