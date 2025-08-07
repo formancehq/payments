@@ -109,7 +109,7 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "Test", psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
-			assertExpectedResponse(w.Result(), http.StatusAccepted, `{"attemptID":"test","link":"link"}`)
+			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
 		})
 
 		It("should return accepted status with task ID when idempotency key is provided", func(ctx SpecContext) {
@@ -123,7 +123,7 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "Test", psuID, connectorID, connectionID, &idempotencyKey, gomock.Any()).Return("test", "link", nil)
 			handlerFn(w, req)
 
-			assertExpectedResponse(w.Result(), http.StatusAccepted, `{"attemptID":"test","link":"link"}`)
+			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
 		})
 	})
 })

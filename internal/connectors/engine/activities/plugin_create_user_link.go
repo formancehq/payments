@@ -2,7 +2,6 @@ package activities
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/workflow"
@@ -23,8 +22,6 @@ func (a Activities) PluginCreateUserLink(ctx context.Context, request CreateUser
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}
-
-	fmt.Println("TOTO 2", resp.Link)
 
 	return &resp, nil
 }

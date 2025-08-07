@@ -20,6 +20,7 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
+	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -39,19 +40,19 @@ func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// CreateTemporaryLink mocks base method.
-func (m *MockClient) CreateTemporaryLink(arg0 context.Context, arg1 CreateTemporaryLinkRequest) (CreateTemporaryLinkResponse, error) {
+// CreateTemporaryCode mocks base method.
+func (m *MockClient) CreateTemporaryCode(arg0 context.Context, arg1 CreateTemporaryLinkRequest) (CreateTemporaryLinkResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateTemporaryLink", arg0, arg1)
+	ret := m.ctrl.Call(m, "CreateTemporaryCode", arg0, arg1)
 	ret0, _ := ret[0].(CreateTemporaryLinkResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateTemporaryLink indicates an expected call of CreateTemporaryLink.
-func (mr *MockClientMockRecorder) CreateTemporaryLink(arg0, arg1 any) *gomock.Call {
+// CreateTemporaryCode indicates an expected call of CreateTemporaryCode.
+func (mr *MockClientMockRecorder) CreateTemporaryCode(arg0, arg1 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTemporaryLink", reflect.TypeOf((*MockClient)(nil).CreateTemporaryLink), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateTemporaryCode", reflect.TypeOf((*MockClient)(nil).CreateTemporaryCode), arg0, arg1)
 }
 
 // CreateUser mocks base method.
