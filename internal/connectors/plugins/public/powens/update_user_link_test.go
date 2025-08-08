@@ -47,6 +47,9 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 		It("should return an error - missing bank bridge connections", func(ctx SpecContext) {
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
+				Connection: &models.PSUBankBridgeConnection{
+					ConnectionID: "test",
+				},
 			}
 
 			resp, err := plg.UpdateUserLink(ctx, req)
@@ -59,6 +62,9 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
 				PSUBankBridge:      &models.PSUBankBridge{},
+				Connection: &models.PSUBankBridgeConnection{
+					ConnectionID: "test",
+				},
 			}
 
 			resp, err := plg.UpdateUserLink(ctx, req)
@@ -75,6 +81,9 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 						Token: "auth-token-123",
 					},
 				},
+				Connection: &models.PSUBankBridgeConnection{
+					ConnectionID: "test",
+				},
 			}
 
 			resp, err := plg.UpdateUserLink(ctx, req)
@@ -90,6 +99,9 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
+				},
+				Connection: &models.PSUBankBridgeConnection{
+					ConnectionID: "test",
 				},
 				CallBackState: "state-123",
 			}

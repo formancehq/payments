@@ -35,7 +35,9 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 
 		It("should return an error - missing state", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{},
+				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID: uuid.New(),
+				},
 				HTTPCallInformation: models.HTTPCallInformation{
 					QueryValues: map[string][]string{},
 				},
@@ -49,7 +51,9 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 
 		It("should return an error - invalid state format", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{},
+				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID: uuid.New(),
+				},
 				HTTPCallInformation: models.HTTPCallInformation{
 					QueryValues: map[string][]string{
 						StateQueryParamID: {"invalid-state"},
@@ -64,18 +68,20 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 		})
 
 		It("should return an error - state mismatch", func(ctx SpecContext) {
+			id := uuid.New()
 			callbackState := models.CallbackState{
 				Randomized: "random-123",
-				AttemptID:  uuid.New(),
+				AttemptID:  id,
 			}
 			stateBytes, _ := json.Marshal(callbackState)
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
 				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID: id,
 					State: models.CallbackState{
 						Randomized: "different-random",
-						AttemptID:  uuid.New(),
+						AttemptID:  id,
 					},
 				},
 				HTTPCallInformation: models.HTTPCallInformation{
@@ -92,15 +98,17 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 		})
 
 		It("should return an error - missing connection IDs and error", func(ctx SpecContext) {
+			id := uuid.New()
 			callbackState := models.CallbackState{
 				Randomized: "random-123",
-				AttemptID:  uuid.New(),
+				AttemptID:  id,
 			}
 			stateBytes, _ := json.Marshal(callbackState)
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
 				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID:    id,
 					State: callbackState,
 				},
 				HTTPCallInformation: models.HTTPCallInformation{
@@ -117,15 +125,17 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 		})
 
 		It("should complete user link successfully with connection IDs", func(ctx SpecContext) {
+			id := uuid.New()
 			callbackState := models.CallbackState{
 				Randomized: "random-123",
-				AttemptID:  uuid.New(),
+				AttemptID:  id,
 			}
 			stateBytes, _ := json.Marshal(callbackState)
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
 				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID:    id,
 					State: callbackState,
 				},
 				HTTPCallInformation: models.HTTPCallInformation{
@@ -148,15 +158,17 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 		})
 
 		It("should complete user link with error", func(ctx SpecContext) {
+			id := uuid.New()
 			callbackState := models.CallbackState{
 				Randomized: "random-123",
-				AttemptID:  uuid.New(),
+				AttemptID:  id,
 			}
 			stateBytes, _ := json.Marshal(callbackState)
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
 				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					ID:    id,
 					State: callbackState,
 				},
 				HTTPCallInformation: models.HTTPCallInformation{

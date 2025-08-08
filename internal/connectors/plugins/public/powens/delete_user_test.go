@@ -33,7 +33,7 @@ var _ = Describe("Powens *Plugin Delete User", func() {
 
 			resp, err := plg.DeleteUser(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("bank bridge connections are required"))
+			Expect(err.Error()).To(ContainSubstring("bank bridge is required"))
 			Expect(resp).To(Equal(models.DeleteUserResponse{}))
 		})
 
