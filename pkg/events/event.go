@@ -21,4 +21,6 @@ const (
 	EventTypeBankBridgeUserConnectionDataSynced        = "BANK_BRIDGE_USER_CONNECTION_DATA_SYNCED"
 	EventTypeBankBridgeUserConnectionPendingDisconnect = "BANK_BRIDGE_USER_CONNECTION_PENDING_DISCONNECT"
 	EventTypeBankBridgeUserConnectionDisconnected      = "BANK_BRIDGE_USER_CONNECTION_DISCONNECTED"
+	EventTypeBankBridgeUserConnectionReconnected       = "BANK_BRIDGE_USER_CONNECTION_RECONNECTED"
+	EventTypeBankBridgeUserDisconnected                = "BANK_BRIDGE_USER_DISCONNECTED"
 )

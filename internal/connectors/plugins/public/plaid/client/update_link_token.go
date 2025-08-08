@@ -12,16 +12,16 @@ import (
 )
 
 type UpdateLinkTokenRequest struct {
-	AttemptID      string
-	UserName       string
-	UserID         string
-	UserToken      string
-	Language       string
-	CountryCode    string
-	RedirectURI    string
-	AccessToken    string
-	ItemID         string
-	WebhookBaseURL string
+	ApplicationName string
+	AttemptID       string
+	UserID          string
+	UserToken       string
+	Language        string
+	CountryCode     string
+	RedirectURI     string
+	AccessToken     string
+	ItemID          string
+	WebhookBaseURL  string
 }
 
 type UpdateLinkTokenResponse struct {
@@ -40,7 +40,7 @@ func (c *client) UpdateLinkToken(ctx context.Context, req UpdateLinkTokenRequest
 	}
 
 	request := plaid.NewLinkTokenCreateRequest(
-		req.UserName,
+		req.ApplicationName,
 		req.Language,
 		[]plaid.CountryCode{countryCode},
 		plaid.LinkTokenCreateRequestUser{

@@ -112,12 +112,26 @@ var (
 		Reason:       pointer.For("test-reason"),
 	}
 
-	userDisconnected = models.UserConnectionDisconnected{
+	userDisconnected = models.UserDisconnected{
+		PsuID:       uuid.New(),
+		ConnectorID: connectorID,
+		At:          time.Now().UTC(),
+		Reason:      pointer.For("test-reason"),
+	}
+
+	userConnectionDisconnected = models.UserConnectionDisconnected{
 		PsuID:        uuid.New(),
 		ConnectorID:  connectorID,
 		ConnectionID: "test-connection-id",
 		At:           time.Now().UTC(),
 		Reason:       pointer.For("test-reason"),
+	}
+
+	userConnectionReconnected = models.UserConnectionReconnected{
+		PsuID:        uuid.New(),
+		ConnectorID:  connectorID,
+		ConnectionID: "test-connection-id",
+		At:           time.Now().UTC(),
 	}
 
 	userLinkStatus = models.UserLinkSessionFinished{
@@ -738,6 +752,78 @@ func (s *UnitTestSuite) Test_RunSendEvents_UserDisconnected_Error() {
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		UserDisconnected: &userDisconnected,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_UserConnectionDisconnected_Success() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: userConnectionDisconnected.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendUserConnectionDisconnectedActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		UserConnectionDisconnected: &userConnectionDisconnected,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_UserConnectionDisconnected_Error() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: userConnectionDisconnected.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendUserConnectionDisconnectedActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		UserConnectionDisconnected: &userConnectionDisconnected,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_UserConnectionReconnected_Success() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: userConnectionReconnected.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendUserConnectionReconnectedActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		UserConnectionReconnected: &userConnectionReconnected,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_UserConnectionReconnected_Error() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: userConnectionReconnected.IdempotencyKey(),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendUserConnectionReconnectedActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		UserConnectionReconnected: &userConnectionReconnected,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

@@ -70,9 +70,9 @@ type Engine interface {
 	// Delete a payment service user specific connection on the given connector (PSP)
 	DeletePaymentServiceUserConnection(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
 	// Create a payment service user link on the given connector (PSP).
-	CreatePaymentServiceUserLink(ctx context.Context, ApplicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	CreatePaymentServiceUserLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	// Create a payment service user update link on the given connector (PSP).
-	UpdatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
+	UpdatePaymentServiceUserLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	// Complete a payment service user link on the given connector (PSP).
 	CompletePaymentServiceUserLink(ctx context.Context, connectorID models.ConnectorID, attemptID uuid.UUID, httpCallInformation models.HTTPCallInformation) error
 
@@ -816,7 +816,7 @@ func (e *engine) ReversePayout(ctx context.Context, reversal models.PaymentIniti
 }
 
 func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
-	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUser")
+	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardPaymentServiceUser")
 	defer span.End()
 
 	_, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
@@ -858,6 +858,7 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	bankBridge := models.PSUBankBridge{
 		ConnectorID: connectorID,
 		AccessToken: resp.PermanentToken,
+		PSPUserID:   resp.PSPUserID,
 		Metadata:    resp.Metadata,
 	}
 
@@ -1012,7 +1013,7 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 	return task, nil
 }
 
-func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, ApplicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUserLink")
 	defer span.End()
 
@@ -1076,7 +1077,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, ApplicationNa
 	}
 
 	resp, err := plugin.CreateUserLink(detachedCtx, models.CreateUserLinkRequest{
-		ApplicationName:     ApplicationName,
+		ApplicationName:     applicationName,
 		AttemptID:           attempt.ID.String(),
 		PaymentServiceUser:  models.ToPSPPaymentServiceUser(psu),
 		PSUBankBridge:       bankBridge,
@@ -1102,7 +1103,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, ApplicationNa
 	return attempt.ID.String(), resp.Link, nil
 }
 
-func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
+func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error) {
 	ctx, span := otel.Tracer().Start(ctx, "engine.UpdateUserLink")
 	defer span.End()
 
@@ -1179,6 +1180,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, psuID uuid.UU
 		PaymentServiceUser:  models.ToPSPPaymentServiceUser(psu),
 		PSUBankBridge:       bankBridge,
 		Connection:          connection,
+		ApplicationName:     applicationName,
 		ClientRedirectURL:   ClientRedirectURL,
 		FormanceRedirectURL: &formanceRedirectURL,
 		CallBackState:       attempt.State.String(),

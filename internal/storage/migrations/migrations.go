@@ -37,6 +37,9 @@ var psuLanguageColumn string
 //go:embed 18-bank-bridges-connections.sql
 var bankBridgesConnections string
 
+//go:embed 19-bank-bridge-psp-user-id.sql
+var bankBridgePSPUserId string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -260,6 +263,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running add bank bridges connections migration...")
 					_, err := tx.ExecContext(ctx, bankBridgesConnections)
 					logger.WithField("error", err).Info("finished running add bank bridges connections migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "bank bridge psp user id",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running bank bridge psp user id migration...")
+					_, err := tx.ExecContext(ctx, bankBridgePSPUserId)
+					logger.WithField("error", err).Info("finished running bank bridge psp user id migration")
 					return err
 				})
 			},

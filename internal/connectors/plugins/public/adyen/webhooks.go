@@ -11,8 +11,8 @@ import (
 	"strings"
 
 	"github.com/adyen/adyen-go-api-library/v7/src/webhook"
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/models"
 )
 

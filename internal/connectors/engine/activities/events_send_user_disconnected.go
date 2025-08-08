@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) EventsSendUserDisconnected(ctx context.Context, userDisconnected models.UserConnectionDisconnected) error {
+func (a Activities) EventsSendUserDisconnected(ctx context.Context, userDisconnected models.UserDisconnected) error {
 	return a.events.Publish(ctx, a.events.NewEventBankBridgeUserDisconnected(userDisconnected))
 }
 
 var EventsSendUserDisconnectedActivity = Activities{}.EventsSendUserDisconnected
 
-func EventsSendUserDisconnected(ctx workflow.Context, userDisconnected models.UserConnectionDisconnected) error {
+func EventsSendUserDisconnected(ctx workflow.Context, userDisconnected models.UserDisconnected) error {
 	return executeActivity(ctx, EventsSendUserDisconnectedActivity, nil, userDisconnected)
 }

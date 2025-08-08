@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
@@ -66,8 +67,8 @@ var _ = Describe("Plugin Create User Link", func() {
 							Provider: "some_provider",
 						},
 					},
-					ClientRedirectURL:   stringPtr("https://client.com/callback"),
-					FormanceRedirectURL: stringPtr("https://formance.com/callback"),
+					ClientRedirectURL:   pointer.For("https://client.com/callback"),
+					FormanceRedirectURL: pointer.For("https://formance.com/callback"),
 					CallBackState:       "test-callback-state",
 					WebhookBaseURL:      "https://webhook.example.com",
 				},
@@ -126,8 +127,3 @@ var _ = Describe("Plugin Create User Link", func() {
 		})
 	})
 })
-
-// Helper function to create string pointers
-func stringPtr(s string) *string {
-	return &s
-}

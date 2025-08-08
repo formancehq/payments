@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
@@ -65,17 +66,17 @@ var _ = Describe("Plugin Create User", func() {
 						Name:      "Test User",
 						CreatedAt: time.Now(),
 						ContactDetails: &models.ContactDetails{
-							Email:       stringPtr("test@example.com"),
-							PhoneNumber: stringPtr("+1234567890"),
-							Locale:      stringPtr("en-US"),
+							Email:       pointer.For("test@example.com"),
+							PhoneNumber: pointer.For("+1234567890"),
+							Locale:      pointer.For("en-US"),
 						},
 						Address: &models.Address{
-							StreetName:   stringPtr("Test Street"),
-							StreetNumber: stringPtr("123"),
-							City:         stringPtr("Test City"),
-							Region:       stringPtr("Test Region"),
-							PostalCode:   stringPtr("12345"),
-							Country:      stringPtr("US"),
+							StreetName:   pointer.For("Test Street"),
+							StreetNumber: pointer.For("123"),
+							City:         pointer.For("Test City"),
+							Region:       pointer.For("Test Region"),
+							PostalCode:   pointer.For("12345"),
+							Country:      pointer.For("US"),
 						},
 						Metadata: map[string]string{
 							"source": "test",

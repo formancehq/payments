@@ -172,7 +172,8 @@ type psuBankBridges struct {
 	ConnectorID models.ConnectorID `bun:"connector_id,pk,type:character varying,notnull"`
 
 	// Optional fields
-	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+	PSPUserID *string           `bun:"psp_user_id,type:text,nullzero"`
+	Metadata  map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
 
 	// Scan only fields
 	AccessToken *string    `bun:"access_token,type:text,nullzero,scanonly"`
@@ -205,6 +206,7 @@ func (s *store) PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from 
 	_, err = tx.NewInsert().
 		Model(&bankBridge).
 		On("CONFLICT (psu_id, connector_id) DO UPDATE").
+		Set("psp_user_id = EXCLUDED.psp_user_id").
 		Set("expires_at = EXCLUDED.expires_at").
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
@@ -222,6 +224,23 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 		Column("psu_bank_bridges.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
 		Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridges.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridges.connector_id = psu_bank_bridge_access_tokens.connector_id").
 		Where("psu_bank_bridges.psu_id = ?", psuID).
+		Where("psu_bank_bridges.connector_id = ?", connectorID).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("getting bank bridge", err)
+	}
+
+	return toPsuBankBridgesModels(bankBridge), nil
+}
+
+// TODO(polo): tests
+func (s *store) PSUBankBridgesGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.PSUBankBridge, error) {
+	bankBridge := psuBankBridges{}
+	err := s.db.NewSelect().
+		Model(&bankBridge).
+		Column("psu_bank_bridges.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
+		Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridges.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridges.connector_id = psu_bank_bridge_access_tokens.connector_id").
+		Where("psu_bank_bridges.psp_user_id = ?", pspUserID).
 		Where("psu_bank_bridges.connector_id = ?", connectorID).
 		Scan(ctx)
 	if err != nil {
@@ -263,14 +282,14 @@ func (s *store) psuBankBridgesQueryContext(qb query.Builder) (string, []any, err
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
-			return fmt.Sprintf("%s = ?", key), []any{value}, nil
+			return fmt.Sprintf("psu_bank_bridges.%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
-			key := "metadata"
+			key := "psu_bank_bridges.metadata"
 			return key + " @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
@@ -299,6 +318,10 @@ func (s *store) PSUBankBridgesList(ctx context.Context, query ListPSUBankBridges
 			if where != "" {
 				query = query.Where(where, args...)
 			}
+
+			query = query.
+				Column("psu_bank_bridges.*", "psu_bank_bridge_access_tokens.access_token", "psu_bank_bridge_access_tokens.expires_at").
+				Join("LEFT JOIN psu_bank_bridge_access_tokens ON psu_bank_bridges.psu_id = psu_bank_bridge_access_tokens.psu_id AND psu_bank_bridges.connector_id = psu_bank_bridge_access_tokens.connector_id")
 
 			return query
 		},
@@ -602,6 +625,7 @@ func fromPsuBankBridgesModels(from models.PSUBankBridge, psuID uuid.UUID) (psuBa
 
 	return psuBankBridges{
 		PsuID:       psuID,
+		PSPUserID:   from.PSPUserID,
 		ConnectorID: from.ConnectorID,
 		Metadata:    from.Metadata,
 	}, token
@@ -609,7 +633,9 @@ func fromPsuBankBridgesModels(from models.PSUBankBridge, psuID uuid.UUID) (psuBa
 
 func toPsuBankBridgesModels(from psuBankBridges) *models.PSUBankBridge {
 	return &models.PSUBankBridge{
+		PsuID:       from.PsuID,
 		ConnectorID: from.ConnectorID,
+		PSPUserID:   from.PSPUserID,
 		AccessToken: toTokenModels(from.AccessToken, from.ExpiresAt),
 		Metadata:    from.Metadata,
 	}

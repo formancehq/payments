@@ -24,7 +24,9 @@ type SendEvents struct {
 	PaymentInitiationAdjustment     *models.PaymentInitiationAdjustment
 	PaymentInitiationRelatedPayment *models.PaymentInitiationRelatedPayments
 	UserPendingDisconnect           *models.UserConnectionPendingDisconnect
-	UserDisconnected                *models.UserConnectionDisconnected
+	UserDisconnected                *models.UserDisconnected
+	UserConnectionDisconnected      *models.UserConnectionDisconnected
+	UserConnectionReconnected       *models.UserConnectionReconnected
 	UserLinkStatus                  *models.UserLinkSessionFinished
 	UserConnectionDataSynced        *models.UserConnectionDataSynced
 	Task                            *models.Task
@@ -235,6 +237,40 @@ func (w Workflow) runSendEvents(
 				return activities.EventsSendUserPendingDisconnect(
 					infiniteRetryContext(ctx),
 					*sendEvents.UserPendingDisconnect,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserConnectionDisconnected != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserConnectionDisconnected.IdempotencyKey(),
+			&sendEvents.UserConnectionDisconnected.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserConnectionDisconnected(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserConnectionDisconnected,
+				)
+			},
+		)
+		if err != nil {
+			return err
+		}
+	}
+
+	if sendEvents.UserConnectionReconnected != nil {
+		err := sendEvent(
+			ctx,
+			sendEvents.UserConnectionReconnected.IdempotencyKey(),
+			&sendEvents.UserConnectionReconnected.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendUserConnectionReconnected(
+					infiniteRetryContext(ctx),
+					*sendEvents.UserConnectionReconnected,
 				)
 			},
 		)

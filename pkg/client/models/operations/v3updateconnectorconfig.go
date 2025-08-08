@@ -110,6 +110,13 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPlaid() *com
 	return nil
 }
 
+func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestPowens() *components.V3PowensConfig {
+	if v := o.GetV3UpdateConnectorRequest(); v != nil {
+		return v.V3PowensConfig
+	}
+	return nil
+}
+
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestQonto() *components.V3QontoConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3QontoConfig

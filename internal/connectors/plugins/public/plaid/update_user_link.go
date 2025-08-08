@@ -21,10 +21,6 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.Name == "" {
-		return fmt.Errorf("missing payment service user name: %w", models.ErrInvalidRequest)
-	}
-
 	if req.PaymentServiceUser.ContactDetails == nil ||
 		req.PaymentServiceUser.ContactDetails.Locale == nil ||
 		*req.PaymentServiceUser.ContactDetails.Locale == "" {
@@ -69,16 +65,16 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 	}
 
 	resp, err := p.client.UpdateLinkToken(ctx, client.UpdateLinkTokenRequest{
-		AttemptID:      req.AttemptID,
-		UserName:       req.PaymentServiceUser.Name,
-		UserID:         req.PaymentServiceUser.ID.String(),
-		UserToken:      req.PSUBankBridge.Metadata[UserTokenMetadataKey],
-		Language:       language,
-		CountryCode:    *req.PaymentServiceUser.Address.Country,
-		RedirectURI:    *req.ClientRedirectURL,
-		AccessToken:    req.Connection.AccessToken.Token,
-		ItemID:         req.Connection.ConnectionID,
-		WebhookBaseURL: req.WebhookBaseURL,
+		AttemptID:       req.AttemptID,
+		ApplicationName: req.ApplicationName,
+		UserID:          req.PaymentServiceUser.ID.String(),
+		UserToken:       req.PSUBankBridge.Metadata[UserTokenMetadataKey],
+		Language:        language,
+		CountryCode:     *req.PaymentServiceUser.Address.Country,
+		RedirectURI:     *req.ClientRedirectURL,
+		AccessToken:     req.Connection.AccessToken.Token,
+		ItemID:          req.Connection.ConnectionID,
+		WebhookBaseURL:  req.WebhookBaseURL,
 	})
 	if err != nil {
 		return models.UpdateUserLinkResponse{}, err

@@ -407,6 +407,7 @@ func TestPSUBankBridgesList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
+		require.NotNil(t, cursor.Data[0].AccessToken)
 	})
 
 	t.Run("list bank bridges by psu_id", func(t *testing.T) {

@@ -75,6 +75,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestMoneycorp(c
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestPlaid(components.V3PlaidConfig{/* values here */})
 ```
 
+### V3PowensConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestPowens(components.V3PowensConfig{/* values here */})
+```
+
 ### V3QontoConfig
 
 ```go
