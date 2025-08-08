@@ -32,8 +32,8 @@ func TestFromPaymentToPaymentInitiationAdjustment(t *testing.T) {
 		expectNil      bool
 	}{
 		{
-			name:          "PAYMENT_STATUS_AMOUNT_ADJUSTEMENT returns nil",
-			paymentStatus: models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+			name:          "PAYMENT_STATUS_AMOUNT_ADJUSTMENT returns nil",
+			paymentStatus: models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 			expectNil:     true,
 		},
 		{
