@@ -50,7 +50,7 @@ func (c *client) GetBankAccount(ctx context.Context, accessToken string, bankAcc
 	var errResp powensError
 	if _, err := c.httpClient.Do(ctx, req, &resp, &errResp); err != nil {
 		return BankAccount{}, errorsutils.NewWrappedError(
-			fmt.Errorf("failed to get bank account: %w", errResp.Error()),
+			fmt.Errorf("failed to get bank account: %s", errResp.Error()),
 			err,
 		)
 	}

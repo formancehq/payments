@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
@@ -69,8 +70,8 @@ var _ = Describe("Plugin Update User Link", func() {
 					Connection: &models.PSUBankBridgeConnection{
 						ConnectionID: "test-connection-id",
 					},
-					ClientRedirectURL:   stringPtr("https://client.com/update-callback"),
-					FormanceRedirectURL: stringPtr("https://formance.com/update-callback"),
+					ClientRedirectURL:   pointer.For("https://client.com/update-callback"),
+					FormanceRedirectURL: pointer.For("https://formance.com/update-callback"),
 					CallBackState:       "test-update-callback-state",
 					WebhookBaseURL:      "https://webhook.example.com",
 				},
