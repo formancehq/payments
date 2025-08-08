@@ -11,6 +11,6 @@ type powensError struct {
 	RequestID   string `json:"requestId"`
 }
 
-func (pe *powensError) Error() error {
-	return fmt.Errorf("%s: %s", pe.Code, pe.Description)
+func (pe *powensError) Error() string {
+	return fmt.Sprintf("%s: %s", pe.Code, pe.Description)
 }

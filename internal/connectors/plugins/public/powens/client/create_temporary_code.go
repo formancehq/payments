@@ -17,7 +17,7 @@ type CreateTemporaryLinkResponse struct {
 	Code      string `json:"code"`
 	Type      string `json:"type"`
 	Access    string `json:"access"`
-	ExpiredIn int    `json:"expired_in"`
+	ExpiresIn int    `json:"expires_in"`
 }
 
 func (c *client) CreateTemporaryCode(ctx context.Context, request CreateTemporaryLinkRequest) (CreateTemporaryLinkResponse, error) {

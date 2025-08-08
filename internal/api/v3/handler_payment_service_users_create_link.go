@@ -15,7 +15,7 @@ import (
 )
 
 type PaymentServiceUserCreateLinkRequest struct {
-	ApplicationName   string `json:"ApplicationName" validate:"required"`
+	ApplicationName   string `json:"applicationName" validate:"required"`
 	ClientRedirectURL string `json:"clientRedirectURL" validate:"required,url"`
 }
 
@@ -101,7 +101,9 @@ func paymentServiceUsersCreateLink(backend backend.Backend, validator *validatio
 			AttemptID: attemptID,
 			Link:      link,
 		}); err != nil {
-			panic(err)
+			otel.RecordError(span, err)
+			api.InternalServerError(w, r, err)
+			return
 		}
 	}
 }

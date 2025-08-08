@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
@@ -32,6 +33,7 @@ type client struct {
 	configurationToken string
 	endpoint           string
 
+	mux               *sync.RWMutex
 	bankAccountsCache *lru.Cache[string, BankAccount]
 }
 

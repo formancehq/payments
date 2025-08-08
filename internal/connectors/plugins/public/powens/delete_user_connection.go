@@ -18,7 +18,7 @@ func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest)
 	}
 
 	if req.PSUBankBridge == nil {
-		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
+		return fmt.Errorf("bank bridge is required: %w", models.ErrInvalidRequest)
 	}
 
 	if req.PSUBankBridge.AccessToken == nil {

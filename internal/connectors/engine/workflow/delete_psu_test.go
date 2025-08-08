@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -23,16 +24,16 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 		Name:      "Test User",
 		CreatedAt: s.env.Now().UTC(),
 		ContactDetails: &models.ContactDetails{
-			Email:       stringPtr("test@example.com"),
-			PhoneNumber: stringPtr("+1234567890"),
+			Email:       pointer.For("test@example.com"),
+			PhoneNumber: pointer.For("+1234567890"),
 		},
 		Address: &models.Address{
-			StreetName:   stringPtr("Test Street"),
-			StreetNumber: stringPtr("123"),
-			City:         stringPtr("Test City"),
-			Region:       stringPtr("Test Region"),
-			PostalCode:   stringPtr("12345"),
-			Country:      stringPtr("US"),
+			StreetName:   pointer.For("Test Street"),
+			StreetNumber: pointer.For("123"),
+			City:         pointer.For("Test City"),
+			Region:       pointer.For("Test Region"),
+			PostalCode:   pointer.For("12345"),
+			Country:      pointer.For("US"),
 		},
 		Metadata: map[string]string{
 			"source": "test",
@@ -587,8 +588,4 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.NoError(err)
-}
-
-func stringPtr(s string) *string {
-	return &s
 }

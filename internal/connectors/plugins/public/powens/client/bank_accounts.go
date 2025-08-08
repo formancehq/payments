@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/formancehq/payments/internal/connectors/metrics"
+	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 )
 
 func getBankAccountCacheKey(accessToken string, bankAccountID int) string {
@@ -29,9 +30,12 @@ type BankAccount struct {
 func (c *client) GetBankAccount(ctx context.Context, accessToken string, bankAccountID int) (BankAccount, error) {
 	cacheKey := getBankAccountCacheKey(accessToken, bankAccountID)
 
+	c.mux.RLock()
 	if bankAccount, ok := c.bankAccountsCache.Get(cacheKey); ok {
+		c.mux.RUnlock()
 		return bankAccount, nil
 	}
+	c.mux.RUnlock()
 
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_bank_account")
 
@@ -45,10 +49,15 @@ func (c *client) GetBankAccount(ctx context.Context, accessToken string, bankAcc
 	var resp BankAccount
 	var errResp powensError
 	if _, err := c.httpClient.Do(ctx, req, &resp, &errResp); err != nil {
-		return BankAccount{}, fmt.Errorf("failed to get bank account: %w", errResp.Error())
+		return BankAccount{}, errorsutils.NewWrappedError(
+			fmt.Errorf("failed to get bank account: %w", errResp.Error()),
+			err,
+		)
 	}
 
+	c.mux.Lock()
 	c.bankAccountsCache.Add(cacheKey, resp)
+	c.mux.Unlock()
 
 	return resp, nil
 }

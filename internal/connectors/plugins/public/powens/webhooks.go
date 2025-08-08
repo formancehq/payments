@@ -71,7 +71,7 @@ func (p *Plugin) initWebhookConfig() {
 			handleFunction: p.handleAccountFound,
 		},
 		client.WebhookEventTypeAccountOwnerhipsFound: {
-			urlPath:        "/account-ownerhips-found",
+			urlPath:        "/account-ownerships-found",
 			handleFunction: p.handleAccountOwnerhipsFound,
 		},
 		client.WebhookEventTypeAccountCategorized: {
@@ -362,7 +362,9 @@ func (p *Plugin) trimAccountsSynced(_ context.Context, req models.TrimWebhookReq
 			Currency:      webhook.Currency,
 			Transactions:  make([]client.Transaction, 0, webhookAccountSyncedTransactionsLimit),
 		}
-		for ; index < len(webhook.Transactions) && index < index+webhookAccountSyncedTransactionsLimit; index++ {
+
+		limit := index + webhookAccountSyncedTransactionsLimit
+		for ; index < len(webhook.Transactions) && index < limit; index++ {
 			accountSyncedWebhook.Transactions = append(accountSyncedWebhook.Transactions, webhook.Transactions[index])
 		}
 

@@ -120,7 +120,7 @@ type PSUBankBridge struct {
 	// have a notion of connection, but we only have one token for all of them.
 	AccessToken *Token `json:"authToken"`
 	// ID of the user on the banking bridge
-	PSPUserID *string `json:"pspUserID"`
+	PSPUserID *string `json:"pspUserID,omitempty"`
 	// per banking bridge additional information
 	Metadata map[string]string `json:"metadata"`
 }

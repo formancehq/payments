@@ -59,13 +59,15 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	query.Add("state", req.CallBackState)
 	query.Add("max_connections", strconv.FormatUint(uint64(p.config.MaxConnections), 10))
 	u.RawQuery = query.Encode()
+	// We need to add the redirect URI to the query string directly because
+	// the encoded redirect URI is not UI friendly
 	u.RawQuery += "&redirect_uri=" + *req.FormanceRedirectURL
 
 	return models.CreateUserLinkResponse{
 		Link: u.String(),
 		TemporaryLinkToken: &models.Token{
 			Token:     temporaryCodeResponse.Code,
-			ExpiresAt: time.Now().Add(time.Duration(temporaryCodeResponse.ExpiredIn) * time.Second),
+			ExpiresAt: time.Now().Add(time.Duration(temporaryCodeResponse.ExpiresIn) * time.Second),
 		},
 	}, nil
 }

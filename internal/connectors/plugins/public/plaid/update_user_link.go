@@ -21,10 +21,6 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("missing payment service user: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PaymentServiceUser.Name == "" {
-		return fmt.Errorf("missing payment service user name: %w", models.ErrInvalidRequest)
-	}
-
 	if req.PaymentServiceUser.ContactDetails == nil ||
 		req.PaymentServiceUser.ContactDetails.Locale == nil ||
 		*req.PaymentServiceUser.ContactDetails.Locale == "" {

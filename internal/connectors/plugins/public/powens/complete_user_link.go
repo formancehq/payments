@@ -40,11 +40,15 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 		return fmt.Errorf("state mismatch: %w", models.ErrInvalidRequest)
 	}
 
-	_, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
-	_, okError := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
+	if callbackState.AttemptID != req.RelatedAttempt.ID {
+		return fmt.Errorf("attempt ID mismatch: %w", models.ErrInvalidRequest)
+	}
+
+	connectionIDs, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
+	errors, okError := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
 	switch {
-	case okError:
-	case okConnectionIDs:
+	case okError && len(errors) > 0:
+	case okConnectionIDs && len(connectionIDs) > 0:
 	default:
 		return fmt.Errorf("missing connection IDs or error: %w", models.ErrInvalidRequest)
 	}

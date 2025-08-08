@@ -116,7 +116,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 
 			temporaryCodeResponse := client.CreateTemporaryLinkResponse{
 				Code:      "temp-code-123",
-				ExpiredIn: 3600,
+				ExpiresIn: 3600,
 			}
 
 			m.EXPECT().CreateTemporaryCode(gomock.Any(), client.CreateTemporaryLinkRequest{

@@ -23,6 +23,14 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
+	if req.Connection == nil {
+		return fmt.Errorf("connection is required: %w", models.ErrInvalidRequest)
+	}
+
+	if req.Connection.ConnectionID == "" {
+		return fmt.Errorf("connection ID is required: %w", models.ErrInvalidRequest)
+	}
+
 	if req.CallBackState == "" {
 		return fmt.Errorf("callBackState is required: %w", models.ErrInvalidRequest)
 	}
@@ -64,7 +72,7 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 		Link: u.String(),
 		TemporaryLinkToken: &models.Token{
 			Token:     temporaryCodeResponse.Code,
-			ExpiresAt: time.Now().Add(time.Duration(temporaryCodeResponse.ExpiredIn) * time.Second),
+			ExpiresAt: time.Now().Add(time.Duration(temporaryCodeResponse.ExpiresIn) * time.Second),
 		},
 	}, nil
 }
