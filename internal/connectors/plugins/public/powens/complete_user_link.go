@@ -12,6 +12,7 @@ import (
 
 const (
 	ConnectionIDsQueryParamID = "connection_ids"
+	ConnectionIDQueryParamID  = "connection_id"
 	StateQueryParamID         = "state"
 	ErrorQueryParamID         = "error"
 )
@@ -46,9 +47,11 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 
 	connectionIDs, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
 	errors, okError := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
+	connectionID, okConnectionID := req.HTTPCallInformation.QueryValues[ConnectionIDQueryParamID]
 	switch {
 	case okError && len(errors) > 0:
 	case okConnectionIDs && len(connectionIDs) > 0:
+	case okConnectionID && len(connectionID) > 0:
 	default:
 		return fmt.Errorf("missing connection IDs or error: %w", models.ErrInvalidRequest)
 	}
@@ -63,6 +66,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 
 	connectionIDs, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
 	errors, okError := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
+	connectionID, okConnectionID := req.HTTPCallInformation.QueryValues[ConnectionIDQueryParamID]
 
 	switch {
 	case okError:
@@ -84,6 +88,18 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		return models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
 				Connections: connections,
+			},
+		}, nil
+
+	case okConnectionID:
+		return models.CompleteUserLinkResponse{
+			Success: &models.UserLinkSuccessResponse{
+				Connections: []models.PSPPsuBankBridgeConnection{
+					{
+						ConnectionID: connectionID[0],
+						CreatedAt:    time.Now().UTC(),
+					},
+				},
 			},
 		}, nil
 

@@ -258,9 +258,13 @@ func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	lastUpdate, err := time.Parse(time.DateTime, aux.LastUpdate)
-	if err != nil {
-		return err
+	lastUpdate := time.Time{}
+	if aux.LastUpdate != "" {
+		var err error
+		lastUpdate, err = time.Parse(time.DateTime, aux.LastUpdate)
+		if err != nil {
+			return err
+		}
 	}
 
 	*c = ConnectionSyncedConnection{
