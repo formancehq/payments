@@ -144,19 +144,6 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			Expect(err.Error()).To(ContainSubstring("unsupported webhook event type"))
 			Expect(resp).To(Equal(models.TranslateWebhookResponse{}))
 		})
-
-		It("should translate user created webhook successfully", func(ctx SpecContext) {
-			req := models.TranslateWebhookRequest{
-				Name: string(client.WebhookEventTypeUserCreated),
-				Webhook: models.PSPWebhook{
-					Body: []byte(`{"user_id": "123"}`),
-				},
-			}
-
-			resp, err := plg.TranslateWebhook(ctx, req)
-			Expect(err).To(BeNil())
-			Expect(resp.Responses).To(HaveLen(0))
-		})
 	})
 
 	Context("trim webhook", func() {

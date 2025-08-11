@@ -6206,7 +6206,7 @@ xor
   "configurationToken": "string",
   "domain": "string",
   "endpoint": "string",
-  "maxConnections": 0,
+  "maxConnectionsPerLink": 0,
   "name": "string",
   "pageSize": "25",
   "pollingPeriod": "2m",
@@ -6224,7 +6224,7 @@ xor
 |configurationToken|string|true|none|none|
 |domain|string|true|none|none|
 |endpoint|string|true|none|none|
-|maxConnections|integer|true|none|none|
+|maxConnectionsPerLink|integer|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

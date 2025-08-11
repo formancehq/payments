@@ -344,7 +344,7 @@ components:
                 - clientSecret
                 - configurationToken
                 - domain
-                - maxConnections
+                - maxConnectionsPerLink
                 - endpoint
             properties:
                 clientID:
@@ -357,7 +357,7 @@ components:
                     type: string
                 endpoint:
                     type: string
-                maxConnections:
+                maxConnectionsPerLink:
                     type: integer
                 name:
                     type: string

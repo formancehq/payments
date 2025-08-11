@@ -32,10 +32,6 @@ type supportedWebhook struct {
 
 func (p *Plugin) initWebhookConfig() {
 	p.supportedWebhooks = map[client.WebhookEventType]supportedWebhook{
-		client.WebhookEventTypeUserCreated: {
-			urlPath:        "/user-created",
-			handleFunction: p.handleUserCreated,
-		},
 		client.WebhookEventTypeUserDeleted: {
 			urlPath:        "/user-deleted",
 			handleFunction: p.handleUserDeleted,
@@ -57,42 +53,6 @@ func (p *Plugin) initWebhookConfig() {
 			urlPath:        "/account-synced",
 			trimFunction:   p.trimAccountsSynced,
 			handleFunction: p.handleAccountSynced,
-		},
-		client.WebhookEventTypeAccountDisabled: {
-			urlPath:        "/account-disabled",
-			handleFunction: p.handleAccountDisabled,
-		},
-		client.WebhookEventTypeAccountEnabled: {
-			urlPath:        "/account-enabled",
-			handleFunction: p.handleAccountEnabled,
-		},
-		client.WebhookEventTypeAccountFound: {
-			urlPath:        "/account-found",
-			handleFunction: p.handleAccountFound,
-		},
-		client.WebhookEventTypeAccountOwnerhipsFound: {
-			urlPath:        "/account-ownerships-found",
-			handleFunction: p.handleAccountOwnerhipsFound,
-		},
-		client.WebhookEventTypeAccountCategorized: {
-			urlPath:        "/account-categorized",
-			handleFunction: p.handleAccountCategorized,
-		},
-		client.WebhookEventTypeSubscriptionFound: {
-			urlPath:        "/subscription-found",
-			handleFunction: p.handleSubscriptionFound,
-		},
-		client.WebhookEventTypeSubscriptionSynced: {
-			urlPath:        "/subscription-synced",
-			handleFunction: p.handleSubscriptionSynced,
-		},
-		client.WebhookEventTypePaymentStateUpdated: {
-			urlPath:        "/payment-state-updated",
-			handleFunction: p.handlePaymentStateUpdated,
-		},
-		client.WebhookEventTypeTransactionAttachmentsFound: {
-			urlPath:        "/transaction-attachments-found",
-			handleFunction: p.handleTransactionAttachmentsFound,
 		},
 	}
 }
@@ -163,15 +123,21 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 	mac.Write([]byte(messageToSign))
 	expectedSignature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
 
-	if expectedSignature != signature[0] {
+	sigBytes, err := base64.StdEncoding.DecodeString(signature[0])
+	if err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature encoding: %w", models.ErrWebhookVerification)
+	}
+
+	expBytes, err := base64.StdEncoding.DecodeString(expectedSignature)
+	if err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature encoding: %w", models.ErrWebhookVerification)
+	}
+
+	if !hmac.Equal(expBytes, sigBytes) {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid powens signature: %w", models.ErrWebhookVerification)
 	}
 
 	return models.VerifyWebhookResponse{}, nil
-}
-
-func (p *Plugin) handleUserCreated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
 }
 
 func (p *Plugin) handleUserDeleted(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
@@ -322,15 +288,23 @@ func (p *Plugin) handleAccountsFetched(ctx context.Context, req models.Translate
 			return nil, err
 		}
 
+		pspAccount := models.PSPAccount{
+			Reference:    strconv.Itoa(account.ID),
+			CreatedAt:    time.Now().UTC(),
+			Name:         &account.OriginalName,
+			DefaultAsset: pointer.For(currency.FormatAssetWithPrecision(account.Currency.ID, account.Currency.Precision)),
+			Raw:          raw,
+		}
+
+		if account.Error != "" {
+			pspAccount.Metadata = map[string]string{
+				"error": account.Error,
+			}
+		}
+
 		resp = append(resp, models.WebhookResponse{
 			BankBridgeAccount: &models.PSPBankBridgeAccount{
-				PSPAccount: models.PSPAccount{
-					Reference:    strconv.Itoa(account.ID),
-					CreatedAt:    time.Now().UTC(),
-					Name:         &account.OriginalName,
-					DefaultAsset: pointer.For(currency.FormatAssetWithPrecision(account.Currency.ID, account.Currency.Precision)),
-					Raw:          raw,
-				},
+				PSPAccount:             pspAccount,
 				BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
 				BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
 			},
@@ -419,42 +393,6 @@ func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWe
 	}
 
 	return responses, nil
-}
-
-func (p *Plugin) handleAccountDisabled(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleAccountEnabled(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleAccountFound(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleAccountOwnerhipsFound(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleAccountCategorized(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleSubscriptionFound(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleSubscriptionSynced(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handlePaymentStateUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
-}
-
-func (p *Plugin) handleTransactionAttachmentsFound(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return nil, nil
 }
 
 func translateTransactionToPSPPayment(transaction client.Transaction, curr string, precision int) (models.PSPPayment, error) {

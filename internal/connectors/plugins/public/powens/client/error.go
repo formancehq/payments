@@ -12,5 +12,5 @@ type powensError struct {
 }
 
 func (pe *powensError) Error() string {
-	return fmt.Sprintf("%s: %s", pe.Code, pe.Description)
+	return fmt.Sprintf("%s: %s (requestId: %s)", pe.Code, pe.Description, pe.RequestID)
 }

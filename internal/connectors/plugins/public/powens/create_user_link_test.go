@@ -26,8 +26,8 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 				client:   m,
 				clientID: "client-123",
 				config: Config{
-					Domain:         "test.com",
-					MaxConnections: 5,
+					Domain:                "test.com",
+					MaxConnectionsPerLink: 5,
 				},
 			}
 		})
@@ -125,7 +125,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Link).To(ContainSubstring("https://webview.powens.com/connect"))
+			Expect(resp.Link).To(ContainSubstring(powensWebviewBaseURL + "/connect"))
 			Expect(resp.Link).To(ContainSubstring("domain=test.com"))
 			Expect(resp.Link).To(ContainSubstring("client_id=client-123"))
 			Expect(resp.Link).To(ContainSubstring("code=temp-code-123"))

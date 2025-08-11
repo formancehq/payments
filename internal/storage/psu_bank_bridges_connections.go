@@ -233,7 +233,6 @@ func (s *store) PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connecto
 	return toPsuBankBridgesModels(bankBridge), nil
 }
 
-// TODO(polo): tests
 func (s *store) PSUBankBridgesGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.PSUBankBridge, error) {
 	bankBridge := psuBankBridges{}
 	err := s.db.NewSelect().

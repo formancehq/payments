@@ -133,7 +133,6 @@ func (s *store) PaymentServiceUsersGet(ctx context.Context, id uuid.UUID) (*mode
 	return &res, nil
 }
 
-// TODO(polo): add tests
 func (s *store) PaymentServiceUsersDelete(ctx context.Context, paymentServiceUserID string) error {
 	res, err := s.db.NewDelete().
 		Model((*paymentServiceUser)(nil)).

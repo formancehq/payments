@@ -20,7 +20,6 @@ import (
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
-	isgomock struct{}
 }
 
 // MockClientMockRecorder is the mock recorder for MockClient.
@@ -125,21 +124,6 @@ func (m *MockClient) DeleteWebhookAuth(ctx context.Context, id int) error {
 func (mr *MockClientMockRecorder) DeleteWebhookAuth(ctx, id any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteWebhookAuth", reflect.TypeOf((*MockClient)(nil).DeleteWebhookAuth), ctx, id)
-}
-
-// GetBankAccount mocks base method.
-func (m *MockClient) GetBankAccount(ctx context.Context, accessToken string, bankAccountID int) (BankAccount, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetBankAccount", ctx, accessToken, bankAccountID)
-	ret0, _ := ret[0].(BankAccount)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetBankAccount indicates an expected call of GetBankAccount.
-func (mr *MockClientMockRecorder) GetBankAccount(ctx, accessToken, bankAccountID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetBankAccount", reflect.TypeOf((*MockClient)(nil).GetBankAccount), ctx, accessToken, bankAccountID)
 }
 
 // ListWebhookAuths mocks base method.

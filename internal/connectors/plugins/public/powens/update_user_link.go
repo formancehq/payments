@@ -54,7 +54,12 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 		return models.UpdateUserLinkResponse{}, err
 	}
 
-	u, err := url.Parse("https://webview.powens.com/reconnect")
+	reconnectURL, err := url.JoinPath(powensWebviewBaseURL, "reconnect")
+	if err != nil {
+		return models.UpdateUserLinkResponse{}, err
+	}
+
+	u, err := url.Parse(reconnectURL)
 	if err != nil {
 		return models.UpdateUserLinkResponse{}, err
 	}

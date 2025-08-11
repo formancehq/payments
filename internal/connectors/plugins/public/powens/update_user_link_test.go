@@ -139,7 +139,7 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 
 			resp, err := plg.UpdateUserLink(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Link).To(ContainSubstring("https://webview.powens.com/reconnect"))
+			Expect(resp.Link).To(ContainSubstring(powensWebviewBaseURL + "/reconnect"))
 			Expect(resp.Link).To(ContainSubstring("domain=test.com"))
 			Expect(resp.Link).To(ContainSubstring("client_id=client-123"))
 			Expect(resp.Link).To(ContainSubstring("code=temp-code-123"))

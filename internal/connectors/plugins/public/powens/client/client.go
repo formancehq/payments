@@ -2,13 +2,10 @@ package client
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/formancehq/payments/internal/connectors/httpwrapper"
 	"github.com/formancehq/payments/internal/connectors/metrics"
-	lru "github.com/hashicorp/golang-lru/v2"
 )
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
@@ -18,7 +15,6 @@ type Client interface {
 
 	DeleteUserConnection(ctx context.Context, req DeleteUserConnectionRequest) error
 	DeleteUser(ctx context.Context, req DeleteUserRequest) error
-	GetBankAccount(ctx context.Context, accessToken string, bankAccountID int) (BankAccount, error)
 	DeleteWebhookAuth(ctx context.Context, id int) error
 
 	CreateWebhookAuth(ctx context.Context, name string) (string, error)
@@ -32,18 +28,10 @@ type client struct {
 	clientSecret       string
 	configurationToken string
 	endpoint           string
-
-	mux               *sync.RWMutex
-	bankAccountsCache *lru.Cache[string, BankAccount]
 }
 
 func New(connectorName, clientID, clientSecret, configurationToken, endpoint string) (Client, error) {
 	endpoint = strings.TrimSuffix(endpoint, "/")
-
-	bankAccountsCache, err := lru.New[string, BankAccount](1024)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create bank accounts cache: %w", err)
-	}
 
 	config := &httpwrapper.Config{
 		Transport: metrics.NewTransport(connectorName, metrics.TransportOpts{}),
@@ -56,7 +44,5 @@ func New(connectorName, clientID, clientSecret, configurationToken, endpoint str
 		clientSecret:       clientSecret,
 		configurationToken: configurationToken,
 		endpoint:           endpoint,
-
-		bankAccountsCache: bankAccountsCache,
 	}, nil
 }

@@ -13,21 +13,20 @@ import (
 type WebhookEventType string
 
 const (
-	WebhookEventTypeUserCreated                 WebhookEventType = "USER_CREATED"
-	WebhookEventTypeUserDeleted                 WebhookEventType = "USER_DELETED"
-	WebhookEventTypeConnectionSynced            WebhookEventType = "CONNECTION_SYNCED"
-	WebhookEventTypeConnectionDeleted           WebhookEventType = "CONNECTION_DELETED"
-	WebhookEventTypeAccountsFetched             WebhookEventType = "ACCOUNTS_FETCHED"
-	WebhookEventTypeAccountSynced               WebhookEventType = "ACCOUNT_SYNCED"
-	WebhookEventTypeAccountDisabled             WebhookEventType = "ACCOUNT_DISABLED"
-	WebhookEventTypeAccountEnabled              WebhookEventType = "ACCOUNT_ENABLED"
-	WebhookEventTypeAccountFound                WebhookEventType = "ACCOUNT_FOUND"
-	WebhookEventTypeAccountOwnerhipsFound       WebhookEventType = "ACCOUNT_OWNERSHIPS_FOUND"
-	WebhookEventTypeAccountCategorized          WebhookEventType = "ACCOUNT_CATEGORIZED"
-	WebhookEventTypeSubscriptionFound           WebhookEventType = "SUBSCRIPTION_FOUND"
-	WebhookEventTypeSubscriptionSynced          WebhookEventType = "SUBSCRIPTION_SYNCED"
-	WebhookEventTypePaymentStateUpdated         WebhookEventType = "PAYMENT_STATE_UPDATED"
-	WebhookEventTypeTransactionAttachmentsFound WebhookEventType = "TRANSACTION_ATTACHMENTS_FOUND"
+	// User Deleted indicates that a specific user has been deleted.
+	WebhookEventTypeUserDeleted WebhookEventType = "USER_DELETED"
+	// Connection Synced indicates that a specific connection of a user has been
+	// synced. It's the first webhook that is received when a user connects to
+	// his bank.
+	WebhookEventTypeConnectionSynced WebhookEventType = "CONNECTION_SYNCED"
+	// Connection Deleted indicates that a specific connection of a user has been
+	// deleted. It's the last webhook that is received when a user disconnects
+	// from his bank.
+	WebhookEventTypeConnectionDeleted WebhookEventType = "CONNECTION_DELETED"
+	// Accounts Fetched returns only the list of accounts that were fetched.
+	WebhookEventTypeAccountsFetched WebhookEventType = "ACCOUNTS_FETCHED"
+	// Accounts Synced returns the list of transactions that were fetched from a specific accounts
+	WebhookEventTypeAccountSynced WebhookEventType = "ACCOUNT_SYNCED"
 )
 
 type CreateWebhookAuthRequest struct {
@@ -83,10 +82,10 @@ type WebhookAuth struct {
 }
 
 // There is no api documentation for these webhook auth endpoints, and I didn't
-// found anything to filter them by name. So for now, we have no choice but to
+// find anything to filter them by name. So for now, we have no choice but to
 // list them all and filter them by name by hand after that.
-// A ticket has been created on powens to add the missing api documentation and
-// to add a filter by name.
+// After creating a ticket, they decided to not add the filter by name and
+// closed the ticket.
 func (c *client) ListWebhookAuths(ctx context.Context) ([]WebhookAuth, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "list_webhook_auths")
 

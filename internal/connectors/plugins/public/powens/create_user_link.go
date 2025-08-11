@@ -47,7 +47,12 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 		return models.CreateUserLinkResponse{}, err
 	}
 
-	u, err := url.Parse("https://webview.powens.com/connect")
+	connectURL, err := url.JoinPath(powensWebviewBaseURL, "connect")
+	if err != nil {
+		return models.CreateUserLinkResponse{}, err
+	}
+
+	u, err := url.Parse(connectURL)
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err
 	}
@@ -57,7 +62,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	query.Add("client_id", p.clientID)
 	query.Add("code", temporaryCodeResponse.Code)
 	query.Add("state", req.CallBackState)
-	query.Add("max_connections", strconv.FormatUint(uint64(p.config.MaxConnections), 10))
+	query.Add("max_connections", strconv.FormatUint(uint64(p.config.MaxConnectionsPerLink), 10))
 	u.RawQuery = query.Encode()
 	// We need to add the redirect URI to the query string directly because
 	// the encoded redirect URI is not UI friendly

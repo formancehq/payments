@@ -52,41 +52,63 @@ func (w Workflow) runHandleWebhooks(
 	for i, response := range resp.Responses {
 		switch {
 		case response.DataReadyToFetch != nil:
+			// A webhook has been received from the connector indicating that
+			// there is new data to fetch from the connector.
+			// Let's launch the related workflow to fetch the data.
 			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling bank bridge webhook: %w", err)
 			}
 
 		case response.UserLinkSessionFinished != nil:
+			// BankBridge specific webhook. A user has finished the link flow
+			// and has a valid connection to his bank. We need to update the
+			// bank bridge status to active and send an event to the user.
 			if err := w.handleUserLinkSessionFinishedWebhook(ctx, response); err != nil {
 				return fmt.Errorf("handling user link session finished webhook: %w", err)
 			}
 
 		case response.UserDisconnected != nil:
+			// BankBridge specific webhook. A user has disconnected was totally
+			// disconnected from the bank bridge connector. We need to update
+			// the bank bridge status to disconnected and send an event to the
+			// user.
 			if err := w.handleUserDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user disconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionDisconnected != nil:
+			// BankBridge specific webhook. A user has disconnected from his
+			// bank. We need to update the bank bridge status to disconnected
+			// and send an event to the user.
 			if err := w.handleUserConnectionDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user disconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionReconnected != nil:
+			// BankBridge specific webhook. A user has reconnected to his bank.
+			// We need to update the bank bridge status to active and send an
+			// event to the user.
 			if err := w.handleUserConnectionReconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user reconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionPendingDisconnect != nil:
+			// BankBridge specific webhook. A user is nearly disconnected from
+			// his bank. We need to send an event to the user to warn him.
 			if err := w.handleUserPendingDisconnectWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user pending disconnect webhook: %w", err)
 			}
 
 		case response.BankBridgeAccount != nil:
+			// BankBridge specific webhook. A new account has been found in the
+			// bank. We need to store the account in the database.
 			if err := w.handleBankBridgeAccountWebhook(ctx, i, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling bank bridge account webhook: %w", err)
 			}
 
 		case response.BankBridgePayment != nil:
+			// BankBridge specific webhook. A new payment has been found in the
+			// bank. We need to store the payment in the database.
 			if err := w.handleBankBridgePaymentWebhook(ctx, i, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling bank bridge payment webhook: %w", err)
 			}
