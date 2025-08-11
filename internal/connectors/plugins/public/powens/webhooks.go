@@ -223,7 +223,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 	}
 
 	switch webhook.Connection.State {
-	case "null":
+	case "null", "":
 		return []models.WebhookResponse{
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
