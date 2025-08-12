@@ -29,7 +29,7 @@ var _ = Describe("Powens *Plugin", func() {
 		plg = &powens.Plugin{
 			Plugin: plugins.NewBasePlugin(),
 		}
-		config = json.RawMessage(`{"clientID":"1234","clientSecret":"abc123","configurationToken":"config123","domain":"test.com","maxConnections":5,"endpoint":"https://api.test.com"}`)
+		config = json.RawMessage(`{"clientID":"1234","clientSecret":"abc123","configurationToken":"config123","domain":"test.com","maxConnectionsPerLink":5,"endpoint":"https://api.test.com"}`)
 	})
 
 	Context("install", func() {
