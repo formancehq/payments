@@ -24,6 +24,7 @@ const (
 	V3ConnectorConfigTypeModulr        V3ConnectorConfigType = "Modulr"
 	V3ConnectorConfigTypeMoneycorp     V3ConnectorConfigType = "Moneycorp"
 	V3ConnectorConfigTypePlaid         V3ConnectorConfigType = "Plaid"
+	V3ConnectorConfigTypePowens        V3ConnectorConfigType = "Powens"
 	V3ConnectorConfigTypeQonto         V3ConnectorConfigType = "Qonto"
 	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
 	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
@@ -42,6 +43,7 @@ type V3ConnectorConfig struct {
 	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
 	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
 	V3PlaidConfig         *V3PlaidConfig         `queryParam:"inline"`
+	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
@@ -190,6 +192,18 @@ func CreateV3ConnectorConfigPlaid(plaid V3PlaidConfig) V3ConnectorConfig {
 	return V3ConnectorConfig{
 		V3PlaidConfig: &plaid,
 		Type:          typ,
+	}
+}
+
+func CreateV3ConnectorConfigPowens(powens V3PowensConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypePowens
+
+	typStr := string(typ)
+	powens.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3PowensConfig: &powens,
+		Type:           typ,
 	}
 }
 
@@ -349,6 +363,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3PlaidConfig = v3PlaidConfig
 		u.Type = V3ConnectorConfigTypePlaid
 		return nil
+	case "Powens":
+		v3PowensConfig := new(V3PowensConfig)
+		if err := utils.UnmarshalJSON(data, &v3PowensConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Powens) type V3PowensConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3PowensConfig = v3PowensConfig
+		u.Type = V3ConnectorConfigTypePowens
+		return nil
 	case "Qonto":
 		v3QontoConfig := new(V3QontoConfig)
 		if err := utils.UnmarshalJSON(data, &v3QontoConfig, "", true, false); err != nil {
@@ -428,6 +451,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3PlaidConfig != nil {
 		return utils.MarshalJSON(u.V3PlaidConfig, "", true)
+	}
+
+	if u.V3PowensConfig != nil {
+		return utils.MarshalJSON(u.V3PowensConfig, "", true)
 	}
 
 	if u.V3QontoConfig != nil {

@@ -97,10 +97,10 @@ type BankBridgeUserConnectionDisconnected struct {
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
 	At           time.Time `json:"at"`
-	Reason       *string   `json:"reason"`
+	Reason       *string   `json:"reason,omitempty"`
 }
 
-func (e Events) NewEventBankBridgeUserDisconnected(userDisconnected models.UserConnectionDisconnected) publish.EventMessage {
+func (e Events) NewEventBankBridgeUserConnectionDisconnected(userDisconnected models.UserConnectionDisconnected) publish.EventMessage {
 	payload := BankBridgeUserConnectionDisconnected{
 		PsuID:        userDisconnected.PsuID,
 		ConnectorID:  userDisconnected.ConnectorID.String(),
@@ -117,6 +117,58 @@ func (e Events) NewEventBankBridgeUserDisconnected(userDisconnected models.UserC
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeBankBridgeUserConnectionDisconnected,
+		Payload:        payload,
+	}
+}
+
+type BankBridgeUserConnectionReconnected struct {
+	PsuID        uuid.UUID `json:"psuID"`
+	ConnectorID  string    `json:"connectorID"`
+	ConnectionID string    `json:"connectionID"`
+	At           time.Time `json:"at"`
+}
+
+func (e Events) NewEventBankBridgeUserConnectionReconnected(userReconnected models.UserConnectionReconnected) publish.EventMessage {
+	payload := BankBridgeUserConnectionReconnected{
+		PsuID:        userReconnected.PsuID,
+		ConnectorID:  userReconnected.ConnectorID.String(),
+		ConnectionID: userReconnected.ConnectionID,
+		At:           userReconnected.At,
+	}
+
+	ik := models.IdempotencyKey(payload)
+
+	return publish.EventMessage{
+		IdempotencyKey: ik,
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeBankBridgeUserConnectionReconnected,
+		Payload:        payload,
+	}
+}
+
+type BankBridgeUserDisconnected struct {
+	PsuID       uuid.UUID `json:"psuID"`
+	ConnectorID string    `json:"connectorID"`
+	At          time.Time `json:"at"`
+	Reason      *string   `json:"reason,omitempty"`
+}
+
+func (e Events) NewEventBankBridgeUserDisconnected(userDisconnected models.UserDisconnected) publish.EventMessage {
+	payload := BankBridgeUserDisconnected{
+		PsuID:       userDisconnected.PsuID,
+		ConnectorID: userDisconnected.ConnectorID.String(),
+		At:          userDisconnected.At,
+		Reason:      userDisconnected.Reason,
+	}
+
+	return publish.EventMessage{
+		IdempotencyKey: models.IdempotencyKey(payload),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeBankBridgeUserDisconnected,
 		Payload:        payload,
 	}
 }

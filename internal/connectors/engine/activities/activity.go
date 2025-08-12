@@ -348,6 +348,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePSUBankBridgesGet,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePSUBankBridgesGetByPSPUserID",
+			Func: a.StoragePSUBankBridgesGetByPSPUserID,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePSUBankBridgesDelete",
 			Func: a.StoragePSUBankBridgesDelete,
 		}).
@@ -426,6 +430,14 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "EventsSendUserPendingDisconnect",
 			Func: a.EventsSendUserPendingDisconnect,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserConnectionDisconnected",
+			Func: a.EventsSendUserConnectionDisconnected,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendUserConnectionReconnected",
+			Func: a.EventsSendUserConnectionReconnected,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendUserDisconnected",

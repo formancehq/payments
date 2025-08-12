@@ -78,6 +78,30 @@ var (
 		},
 	}
 
+	defaultPSUBankBridgeWithPSPUserID = models.PSUBankBridge{
+		ConnectorID: defaultConnector.ID,
+		PSPUserID:   pointer.For("psp_user_123"),
+		AccessToken: &models.Token{
+			Token:     "access_token_psp_123",
+			ExpiresAt: now.Add(60 * time.Minute).UTC().Time,
+		},
+		Metadata: map[string]string{
+			"psp_foo": "psp_bar",
+		},
+	}
+
+	defaultPSUBankBridgeWithPSPUserID2 = models.PSUBankBridge{
+		ConnectorID: defaultConnector2.ID,
+		PSPUserID:   pointer.For("psp_user_456"),
+		AccessToken: &models.Token{
+			Token:     "access_token_psp_456",
+			ExpiresAt: now.Add(60 * time.Minute).UTC().Time,
+		},
+		Metadata: map[string]string{
+			"psp_foo2": "psp_bar2",
+		},
+	}
+
 	defaultPSUBankBridgeConnection = models.PSUBankBridgeConnection{
 		ConnectorID:   defaultConnector.ID,
 		ConnectionID:  "conn_456",
@@ -407,6 +431,7 @@ func TestPSUBankBridgesList(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
+		require.NotNil(t, cursor.Data[0].AccessToken)
 	})
 
 	t.Run("list bank bridges by psu_id", func(t *testing.T) {
@@ -666,6 +691,38 @@ func TestPSUBankBridgeConnectionsList(t *testing.T) {
 		cursor, err := store.PSUBankBridgeConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
+	})
+}
+
+func TestPSUBankBridgesGetByPSPUserID(t *testing.T) {
+	t.Parallel()
+
+	ctx := logging.TestingContext()
+	store := newStore(t)
+	defer store.Close()
+
+	upsertConnector(t, ctx, store, defaultConnector)
+	upsertConnector(t, ctx, store, defaultConnector2)
+	createPSU(t, ctx, store, defaultPSU2)
+	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridgeWithPSPUserID)
+	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridgeWithPSPUserID2)
+
+	t.Run("get bank bridge by PSPUserID with first connector", func(t *testing.T) {
+		actual, err := store.PSUBankBridgesGetByPSPUserID(ctx, *defaultPSUBankBridgeWithPSPUserID.PSPUserID, defaultPSUBankBridgeWithPSPUserID.ConnectorID)
+		require.NoError(t, err)
+		comparePSUBankBridges(t, defaultPSUBankBridgeWithPSPUserID, *actual)
+	})
+
+	t.Run("get bank bridge by PSPUserID with second connector", func(t *testing.T) {
+		actual, err := store.PSUBankBridgesGetByPSPUserID(ctx, *defaultPSUBankBridgeWithPSPUserID2.PSPUserID, defaultPSUBankBridgeWithPSPUserID2.ConnectorID)
+		require.NoError(t, err)
+		comparePSUBankBridges(t, defaultPSUBankBridgeWithPSPUserID2, *actual)
+	})
+
+	t.Run("get non-existent bank bridge by PSPUserID", func(t *testing.T) {
+		actual, err := store.PSUBankBridgesGetByPSPUserID(ctx, "non_existent", defaultPSUBankBridgeWithPSPUserID.ConnectorID)
+		require.Error(t, err)
+		require.Nil(t, actual)
 	})
 }
 
