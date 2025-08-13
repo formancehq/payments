@@ -9,6 +9,7 @@ const (
 	EventTypeSavedPool                                 = "SAVED_POOL"
 	EventTypeDeletePool                                = "DELETED_POOL"
 	EventTypeSavedPayments                             = "SAVED_PAYMENT"
+	EventTypeDeletedPayments                           = "DELETED_PAYMENT"
 	EventTypeSavedAccounts                             = "SAVED_ACCOUNT"
 	EventTypeSavedBalances                             = "SAVED_BALANCE"
 	EventTypeSavedBankAccount                          = "SAVED_BANK_ACCOUNT"

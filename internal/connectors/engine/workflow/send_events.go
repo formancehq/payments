@@ -17,6 +17,7 @@ type SendEvents struct {
 	Balance                         *models.Balance
 	BankAccount                     *models.BankAccount
 	Payment                         *models.Payment
+	PaymentDeleted                  *models.PaymentID
 	ConnectorReset                  *models.ConnectorID
 	PoolsCreation                   *models.Pool
 	PoolsDeletion                   *uuid.UUID
@@ -104,6 +105,23 @@ func (w Workflow) runSendEvents(
 			if err != nil {
 				return err
 			}
+		}
+	}
+
+	if sendEvents.PaymentDeleted != nil {
+		err := sendEvent(
+			ctx,
+			fmt.Sprintf("delete:%s", sendEvents.PaymentDeleted.String()),
+			&sendEvents.PaymentDeleted.ConnectorID,
+			func(ctx workflow.Context) error {
+				return activities.EventsSendPaymentDeleted(
+					infiniteRetryContext(ctx),
+					*sendEvents.PaymentDeleted,
+				)
+			},
+		)
+		if err != nil {
+			return err
 		}
 	}
 

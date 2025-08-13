@@ -93,6 +93,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestQonto(compo
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestStripe(components.V3StripeConfig{/* values here */})
 ```
 
+### V3TinkConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestTink(components.V3TinkConfig{/* values here */})
+```
+
 ### V3WiseConfig
 
 ```go

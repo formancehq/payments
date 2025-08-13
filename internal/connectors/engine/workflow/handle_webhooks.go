@@ -150,6 +150,7 @@ func (w Workflow) handleDataToStoreWebhook(
 			Account:         response.Account,
 			ExternalAccount: response.ExternalAccount,
 			Payment:         response.Payment,
+			PaymentToDelete: response.PaymentToDelete,
 		},
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
@@ -270,11 +271,11 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	var ba *models.PSUBankBridge
 	var psuID uuid.UUID
 	var connectionID string
-	if response.DataReadyToFetch.ID != nil {
+	if response.DataReadyToFetch.ConnectionID != nil {
 		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
 			infiniteRetryContext(ctx),
 			handleWebhooks.ConnectorID,
-			*response.DataReadyToFetch.ID,
+			*response.DataReadyToFetch.ConnectionID,
 		)
 		if err != nil {
 			return fmt.Errorf("getting bank bridge connection: %w", err)
@@ -311,8 +312,8 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 
 	fromPayload := &FromPayload{
 		ID: func() string {
-			if response.DataReadyToFetch.ID != nil {
-				return *response.DataReadyToFetch.ID
+			if response.DataReadyToFetch.ConnectionID != nil {
+				return *response.DataReadyToFetch.ConnectionID
 			}
 
 			return ""
@@ -603,6 +604,7 @@ type StoreWebhookTranslation struct {
 	Account         *models.PSPAccount
 	ExternalAccount *models.PSPAccount
 	Payment         *models.PSPPayment
+	PaymentToDelete *models.PSPPaymentsToDelete
 }
 
 func (w Workflow) runStoreWebhookTranslation(
@@ -690,6 +692,17 @@ func (w Workflow) runStoreWebhookTranslation(
 
 		sendEvent = &SendEvents{
 			Payment: pointer.For(payments[0]),
+		}
+	}
+
+	if storeWebhookTranslation.PaymentToDelete != nil {
+		err := activities.StoragePaymentsDeleteFromReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToDelete.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("deleting payment: %w", err)
 		}
 	}
 

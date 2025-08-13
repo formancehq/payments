@@ -5804,6 +5804,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3TinkConfig](#schemav3tinkconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3WiseConfig](#schemav3wiseconfig)|false|none|none|
 
 <h2 id="tocS_V3AdyenConfig">V3AdyenConfig</h2>
@@ -6287,6 +6293,38 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |apiKey|string|true|none|none|
+|name|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|provider|string|false|none|none|
+
+<h2 id="tocS_V3TinkConfig">V3TinkConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3tinkconfig"></a>
+<a id="schema_V3TinkConfig"></a>
+<a id="tocSv3tinkconfig"></a>
+<a id="tocsv3tinkconfig"></a>
+
+```json
+{
+  "clientID": "string",
+  "clientSecret": "string",
+  "endpoint": "string",
+  "name": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "provider": "Tink"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|clientID|string|true|none|none|
+|clientSecret|string|true|none|none|
+|endpoint|string|true|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|

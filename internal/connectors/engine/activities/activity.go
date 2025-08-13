@@ -408,6 +408,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.EventsSendPayment,
 		}).
 		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentDeleted",
+			Func: a.EventsSendPaymentDeleted,
+		}).
+		Append(temporalworker.Definition{
 			Name: "EventsSendPoolCreation",
 			Func: a.EventsSendPoolCreation,
 		}).

@@ -221,8 +221,8 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 			Responses: []models.WebhookResponse{
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
-						ID:          &connectionID,
-						FromPayload: []byte(`{"test": "data"}`),
+						ConnectionID: &connectionID,
+						FromPayload:  []byte(`{"test": "data"}`),
 					},
 				},
 			},
@@ -290,8 +290,8 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGe
 			Responses: []models.WebhookResponse{
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
-						ID:          &connectionID,
-						FromPayload: []byte(`{"test": "data"}`),
+						ConnectionID: &connectionID,
+						FromPayload:  []byte(`{"test": "data"}`),
 					},
 				},
 			},
@@ -909,8 +909,8 @@ func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 				},
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
-						ID:          &connectionID,
-						FromPayload: []byte(`{"test": "data"}`),
+						ConnectionID: &connectionID,
+						FromPayload:  []byte(`{"test": "data"}`),
 					},
 				},
 				{

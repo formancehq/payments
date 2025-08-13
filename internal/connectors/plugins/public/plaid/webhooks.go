@@ -389,8 +389,8 @@ func (p *Plugin) handleTransactionsWebhook(req models.TranslateWebhookRequest, b
 		return []models.WebhookResponse{
 			{
 				DataReadyToFetch: &models.PSPDataReadyToFetch{
-					ID:          &baseWebhook.ItemID,
-					FromPayload: req.Webhook.Body,
+					ConnectionID: &baseWebhook.ItemID,
+					FromPayload:  req.Webhook.Body,
 				},
 			},
 		}, nil
@@ -402,8 +402,8 @@ func (p *Plugin) handleTransactionsWebhook(req models.TranslateWebhookRequest, b
 		return []models.WebhookResponse{
 			{
 				DataReadyToFetch: &models.PSPDataReadyToFetch{
-					ID:          &baseWebhook.ItemID,
-					FromPayload: req.Webhook.Body,
+					ConnectionID: &baseWebhook.ItemID,
+					FromPayload:  req.Webhook.Body,
 				},
 			},
 		}, nil

@@ -93,6 +93,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigQonto(components.V3QontoC
 v3ConnectorConfig := components.CreateV3ConnectorConfigStripe(components.V3StripeConfig{/* values here */})
 ```
 
+### V3TinkConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigTink(components.V3TinkConfig{/* values here */})
+```
+
 ### V3WiseConfig
 
 ```go
