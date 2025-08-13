@@ -76,5 +76,5 @@ func (pid *PaymentInitiationAdjustmentID) Scan(value interface{}) error {
 		}
 	}
 
-	return fmt.Errorf("failed to scan payment adjustement id: %v", value)
+	return fmt.Errorf("failed to scan payment adjustment id: %v", value)
 }

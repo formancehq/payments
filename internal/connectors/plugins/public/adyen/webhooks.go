@@ -183,7 +183,7 @@ func (p *Plugin) handleAuthorisationAdjustment(
 		Amount:                      big.NewInt(item.Amount.Value),
 		Asset:                       currency.FormatAsset(supportedCurrenciesWithDecimal, item.Amount.Currency),
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
-		Status:                      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+		Status:                      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 		DestinationAccountReference: pointer.For(item.MerchantAccountCode),
 		Raw:                         raw,
 	}
