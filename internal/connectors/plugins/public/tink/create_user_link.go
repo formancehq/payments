@@ -71,8 +71,6 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 			client.SCOPES_CREDENTIALS_WRITE,
 			client.SCOPES_PROVIDERS_READ,
 			client.SCOPES_USER_READ,
-			client.SCOPES_USER_CREATE,
-			client.SCOPES_USER_DELETE,
 		},
 	})
 	if err != nil {

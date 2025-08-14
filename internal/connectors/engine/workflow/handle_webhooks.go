@@ -696,13 +696,26 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	if storeWebhookTranslation.PaymentToDelete != nil {
-		err := activities.StoragePaymentsDeleteFromReference(
+		payment, err := activities.StoragePaymentsGetByReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToDelete.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting payment: %w", err)
+		}
+
+		err = activities.StoragePaymentsDeleteFromReference(
 			infiniteRetryContext(ctx),
 			storeWebhookTranslation.PaymentToDelete.Reference,
 			storeWebhookTranslation.ConnectorID,
 		)
 		if err != nil {
 			return fmt.Errorf("deleting payment: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			PaymentDeleted: &payment.ID,
 		}
 	}
 

@@ -46,39 +46,13 @@ func New(connectorName, clientID, clientSecret, endpoint string) Client {
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
 			TokenURL:     fmt.Sprintf("%s/api/v1/oauth/token", endpoint),
-			Scopes: []string{
-				// Authorization
-				string(SCOPES_AUTHORIZATION_READ),
-				string(SCOPES_AUTHORIZATION_GRANT),
-
-				// Users
-				string(SCOPES_USER_CREATE),
-				string(SCOPES_USER_READ),
-				string(SCOPES_USER_DELETE),
-
-				// Consents
-				string(SCOPES_CONSENTS_READONLY),
-
-				// Providers
-				string(SCOPES_PROVIDERS_READ),
-
-				// Credentials
-				string(SCOPES_CREDENTIALS_READ),
-				string(SCOPES_CREDENTIALS_WRITE),
-				string(SCOPES_CREDENTIALS_REFRESH),
-
-				// Accounts
-				string(SCOPES_ACCOUNTS_READ),
-
-				// Balances
-				string(SCOPES_BALANCES_READ),
-
-				// Transactions
-				string(SCOPES_TRANSACTIONS_READ),
-
-				// Webhooks
-				string(SCOPES_WEBHOOKS),
-			},
+			Scopes: func() []string {
+				out := make([]string, len(allScopes))
+				for i, s := range allScopes {
+					out[i] = string(s)
+				}
+				return out
+			}(),
 		},
 	}
 

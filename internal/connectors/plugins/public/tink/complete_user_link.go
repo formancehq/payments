@@ -48,7 +48,8 @@ func validateCompleteUserLinkRequest(req models.CompleteUserLinkRequest) error {
 	}
 
 	_, ok = req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID]
-	if !ok || len(req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID]) != 1 {
+	if !ok || len(req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID]) != 1 ||
+		req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID][0] == "" {
 		return fmt.Errorf("missing credential IDs: %w", models.ErrInvalidRequest)
 	}
 
@@ -62,10 +63,18 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 
 	errorCode, ok := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
 	if ok {
+		errMessage := "got an error from tink"
+		if len(errorCode) > 0 {
+			errMessage += fmt.Sprintf(": %s", errorCode[0])
+		}
+		if len(req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID]) > 0 {
+			errMessage += fmt.Sprintf(": %s", req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID][0])
+		}
+
 		// Error callback
 		return models.CompleteUserLinkResponse{
 			Error: &models.UserLinkErrorResponse{
-				Error: fmt.Sprintf("%s: %s", errorCode[0], req.HTTPCallInformation.QueryValues[ErrorMessageQueryParamID][0]),
+				Error: errMessage,
 			},
 		}, nil
 	}

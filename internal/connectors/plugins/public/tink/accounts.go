@@ -26,7 +26,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}
 
 	accounts := make([]models.PSPAccount, 0, 1)
-	accounts, err = toPSPAccounts(accounts, []client.Account{account})
+	accounts, err = toPSPAccounts(accounts, []client.Account{account}, from)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -39,6 +39,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 func toPSPAccounts(
 	accounts []models.PSPAccount,
 	pagedAccounts []client.Account,
+	from models.BankBridgeFromPayload,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
 		raw, err := json.Marshal(account)
@@ -46,12 +47,23 @@ func toPSPAccounts(
 			return accounts, err
 		}
 
-		accounts = append(accounts, models.PSPAccount{
+		acc := models.PSPAccount{
 			Reference: account.ID,
 			CreatedAt: time.Now().UTC(),
 			Name:      &account.Name,
+			Metadata:  make(map[string]string),
 			Raw:       raw,
-		})
+		}
+
+		if from.PSUBankBridge != nil {
+			acc.Metadata[models.ObjectPSUIDMetadataKey] = from.PSUBankBridge.PsuID.String()
+		}
+
+		if from.PSUBankBridgeConnection != nil {
+			acc.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUBankBridgeConnection.ConnectionID
+		}
+
+		accounts = append(accounts, acc)
 	}
 
 	return accounts, nil

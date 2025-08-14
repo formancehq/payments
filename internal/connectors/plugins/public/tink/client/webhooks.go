@@ -110,15 +110,22 @@ func (w *WebhookTransactions) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &tmp); err != nil {
 		return err
 	}
-
-	earliestModifiedBookedDate, err := time.Parse(time.DateOnly, tmp.EarliestModifiedBookedDate)
-	if err != nil {
-		return err
+	var earliestModifiedBookedDate time.Time
+	if tmp.EarliestModifiedBookedDate != "" {
+		parsed, err := time.Parse(time.DateOnly, tmp.EarliestModifiedBookedDate)
+		if err != nil {
+			return fmt.Errorf("invalid earliestModifiedBookedDate %q: %w", tmp.EarliestModifiedBookedDate, err)
+		}
+		earliestModifiedBookedDate = parsed
 	}
 
-	latestModifiedBookedDate, err := time.Parse(time.DateOnly, tmp.LatestModifiedBookedDate)
-	if err != nil {
-		return err
+	var latestModifiedBookedDate time.Time
+	if tmp.LatestModifiedBookedDate != "" {
+		parsed, err := time.Parse(time.DateOnly, tmp.LatestModifiedBookedDate)
+		if err != nil {
+			return fmt.Errorf("invalid latestModifiedBookedDate %q: %w", tmp.LatestModifiedBookedDate, err)
+		}
+		latestModifiedBookedDate = parsed
 	}
 
 	*w = WebhookTransactions{
@@ -224,7 +231,7 @@ type RefreshFinishedWebhook struct {
 	ExternalUserID    string `json:"externalUserId"`
 	CredentialsID     string `json:"credentialsId"`
 	CredentialsStatus string `json:"credentialsStatus"`
-	Finished          uint64 `json:"finished"`
+	Finished          int64  `json:"finished"`
 	DetailedError     struct {
 		Type           string `json:"type"`
 		DisplayMessage string `json:"displayMessage"`

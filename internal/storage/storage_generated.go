@@ -1220,6 +1220,21 @@ func (mr *MockStorageMockRecorder) PaymentsGet(ctx, id any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsGet", reflect.TypeOf((*MockStorage)(nil).PaymentsGet), ctx, id)
 }
 
+// PaymentsGetByReference mocks base method.
+func (m *MockStorage) PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsGetByReference", ctx, reference, connectorID)
+	ret0, _ := ret[0].(*models.Payment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// PaymentsGetByReference indicates an expected call of PaymentsGetByReference.
+func (mr *MockStorageMockRecorder) PaymentsGetByReference(ctx, reference, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsGetByReference", reflect.TypeOf((*MockStorage)(nil).PaymentsGetByReference), ctx, reference, connectorID)
+}
+
 // PaymentsList mocks base method.
 func (m *MockStorage) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error) {
 	m.ctrl.T.Helper()

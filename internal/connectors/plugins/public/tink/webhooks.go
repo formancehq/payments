@@ -150,9 +150,14 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 
 	mac := hmac.New(sha256.New, []byte(secret))
 	mac.Write([]byte(messageToSign))
-	computedSignature := hex.EncodeToString(mac.Sum(nil))
 
-	if computedSignature != signature {
+	expectedMAC, err := hex.DecodeString(signature)
+	if err != nil {
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature encoding: %w", models.ErrWebhookVerification)
+	}
+
+	computedMAC := mac.Sum(nil)
+	if !hmac.Equal(computedMAC, expectedMAC) {
 		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid signature: %w", models.ErrWebhookVerification)
 	}
 
@@ -160,23 +165,19 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 }
 
 func splitVerificationHeader(header string) (string, string, error) {
-	parts := strings.Split(header, ",")
-	if len(parts) != 2 {
+	var timestamp, signature string
+	for _, part := range strings.Split(header, ",") {
+		p := strings.TrimSpace(part)
+		switch {
+		case strings.HasPrefix(p, "t="):
+			timestamp = strings.TrimPrefix(p, "t=")
+		case strings.HasPrefix(p, "v1="):
+			signature = strings.TrimPrefix(p, "v1=")
+		}
+	}
+	if timestamp == "" || signature == "" {
 		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
 	}
-
-	timestampPart := strings.TrimSpace(parts[0])
-	if !strings.HasPrefix(timestampPart, "t=") {
-		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
-	}
-	timestamp := strings.TrimPrefix(timestampPart, "t=")
-
-	signaturePart := strings.TrimSpace(parts[1])
-	if !strings.HasPrefix(signaturePart, "v1=") {
-		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
-	}
-	signature := strings.TrimPrefix(signaturePart, "v1=")
-
 	return timestamp, signature, nil
 }
 
@@ -307,7 +308,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
-					At:           time.Unix(0, int64(refreshFinishedWebhook.Finished)*int64(time.Millisecond)),
+					At:           time.Unix(0, refreshFinishedWebhook.Finished*int64(time.Millisecond)),
 				},
 			},
 		}, nil
@@ -320,7 +321,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
-					At:           time.Unix(0, int64(refreshFinishedWebhook.Finished)*int64(time.Millisecond)),
+					At:           time.Unix(0, refreshFinishedWebhook.Finished*int64(time.Millisecond)),
 					Reason:       &reason,
 				},
 			},

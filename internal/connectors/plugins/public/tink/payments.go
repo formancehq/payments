@@ -51,18 +51,18 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		payments, err = toPSPPayments(payments, resp.Transactions)
+		payments, err = toPSPPayments(payments, resp.Transactions, from)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
 		newState.NextPageToken = resp.NextPageToken
+		hasMore = resp.NextPageToken != ""
 		if resp.NextPageToken == "" {
 			break
 		}
 
 		needMore := len(payments) < req.PageSize
-		hasMore = resp.NextPageToken != ""
 
 		if !needMore || !hasMore {
 			break
@@ -84,6 +84,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func toPSPPayments(
 	payments []models.PSPPayment,
 	transactions []client.Transaction,
+	from models.BankBridgeFromPayload,
 ) ([]models.PSPPayment, error) {
 	for _, transaction := range transactions {
 		precision, err := strconv.Atoi(transaction.Amount.Value.Scale)
@@ -124,7 +125,7 @@ func toPSPPayments(
 			status = models.PAYMENT_STATUS_OTHER
 		}
 
-		payments = append(payments, models.PSPPayment{
+		p := models.PSPPayment{
 			Reference:                   transaction.ID,
 			CreatedAt:                   transaction.TransactionDateTime,
 			Type:                        paymentType,
@@ -134,8 +135,19 @@ func toPSPPayments(
 			Status:                      status,
 			SourceAccountReference:      sourceReference,
 			DestinationAccountReference: destinationReference,
+			Metadata:                    make(map[string]string),
 			Raw:                         raw,
-		})
+		}
+
+		if from.PSUBankBridge != nil {
+			p.Metadata[models.ObjectPSUIDMetadataKey] = from.PSUBankBridge.PsuID.String()
+		}
+
+		if from.PSUBankBridgeConnection != nil {
+			p.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUBankBridgeConnection.ConnectionID
+		}
+
+		payments = append(payments, p)
 	}
 
 	return payments, nil
