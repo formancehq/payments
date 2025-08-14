@@ -96,7 +96,7 @@ func (c *client) ListTransactions(ctx context.Context, req ListTransactionReques
 	request.URL.RawQuery = query.Encode()
 
 	var response ListTransactionResponse
-	_, err = c.httpClient.Do(ctx, request, &response, nil)
+	_, err = c.userClient.Do(ctx, request, &response, nil)
 	if err != nil {
 		return ListTransactionResponse{}, err
 	}

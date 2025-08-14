@@ -196,6 +196,29 @@ func (c *client) GetAccountTransactionsDeletedWebhook(ctx context.Context, paylo
 	return base.Content, nil
 }
 
+type AccountCreatedWebhook struct {
+	UserID         string `json:"userId"`
+	ExternalUserID string `json:"externalUserId"`
+	ID             string `json:"id"`
+}
+
+func (c *client) GetAccountCreatedWebhook(ctx context.Context, payload []byte) (AccountCreatedWebhook, error) {
+	type baseWebhook struct {
+		Context WebhookContext        `json:"context"`
+		Content AccountCreatedWebhook `json:"content"`
+	}
+
+	var base baseWebhook
+	if err := json.Unmarshal(payload, &base); err != nil {
+		return AccountCreatedWebhook{}, err
+	}
+
+	base.Content.UserID = base.Context.UserID
+	base.Content.ExternalUserID = base.Context.ExternalUserID
+
+	return base.Content, nil
+}
+
 type RefreshFinishedWebhook struct {
 	UserID            string `json:"userId"`
 	ExternalUserID    string `json:"externalUserId"`
@@ -221,30 +244,6 @@ func (c *client) GetRefreshFinishedWebhook(ctx context.Context, payload []byte) 
 	var base baseWebhook
 	if err := json.Unmarshal(payload, &base); err != nil {
 		return RefreshFinishedWebhook{}, err
-	}
-
-	base.Content.UserID = base.Context.UserID
-	base.Content.ExternalUserID = base.Context.ExternalUserID
-
-	return base.Content, nil
-}
-
-type AccountCreatedWebhook struct {
-	UserID         string `json:"userId"`
-	ExternalUserID string `json:"externalUserId"`
-
-	ID string `json:"id"`
-}
-
-func (c *client) GetAccountCreatedWebhook(ctx context.Context, payload []byte) (AccountCreatedWebhook, error) {
-	type baseWebhook struct {
-		Context WebhookContext        `json:"context"`
-		Content AccountCreatedWebhook `json:"content"`
-	}
-
-	var base baseWebhook
-	if err := json.Unmarshal(payload, &base); err != nil {
-		return AccountCreatedWebhook{}, err
 	}
 
 	base.Content.UserID = base.Context.UserID

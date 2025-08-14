@@ -51,9 +51,38 @@ func (c *client) ListAccounts(ctx context.Context, userID string, nextPageToken 
 	request.URL.RawQuery = query.Encode()
 
 	var response ListAccountsResponse
-	_, err = c.httpClient.Do(ctx, request, &response, nil)
+	_, err = c.userClient.Do(ctx, request, &response, nil)
 	if err != nil {
 		return ListAccountsResponse{}, err
+	}
+
+	return response, nil
+}
+
+func (c *client) GetAccount(ctx context.Context, userID string, accountID string) (Account, error) {
+	authCode, err := c.getUserAccessToken(ctx, GetUserAccessTokenRequest{
+		UserID: userID,
+		WantedScopes: []Scopes{
+			SCOPES_ACCOUNTS_READ,
+		},
+	})
+	if err != nil {
+		return Account{}, err
+	}
+
+	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_account")
+
+	endpoint := fmt.Sprintf("%s/data/v2/accounts/%s", c.endpoint, accountID)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return Account{}, err
+	}
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authCode))
+
+	var response Account
+	_, err = c.userClient.Do(ctx, request, &response, nil)
+	if err != nil {
+		return Account{}, err
 	}
 
 	return response, nil

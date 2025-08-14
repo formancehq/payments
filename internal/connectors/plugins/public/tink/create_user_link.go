@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/url"
-	"strings"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
@@ -72,6 +71,8 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 			client.SCOPES_CREDENTIALS_WRITE,
 			client.SCOPES_PROVIDERS_READ,
 			client.SCOPES_USER_READ,
+			client.SCOPES_USER_CREATE,
+			client.SCOPES_USER_DELETE,
 		},
 	})
 	if err != nil {
@@ -91,11 +92,13 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	query.Add("authorization_code", temporaryCodeResponse.Code)
 	query.Add("market", *req.PaymentServiceUser.Address.Country)
 	query.Add("locale", *req.PaymentServiceUser.ContactDetails.Locale)
-	query.Add("refreshable_items", strings.Join(refreshableItems, "&refreshable_items="))
 	u.RawQuery = query.Encode()
 	// We need to add the redirect URI to the query string directly because
 	// the encoded redirect URI is not UI friendly
 	u.RawQuery += "&redirect_uri=" + *req.FormanceRedirectURL
+	for _, item := range refreshableItems {
+		u.RawQuery += "&refreshable_items=" + item
+	}
 
 	return models.CreateUserLinkResponse{
 		Link: u.String(),

@@ -24,14 +24,17 @@ type Client interface {
 	DeleteUser(ctx context.Context, req DeleteUserRequest) error
 	ListTransactions(ctx context.Context, req ListTransactionRequest) (ListTransactionResponse, error)
 	ListAccounts(ctx context.Context, userID string, nextPageToken string) (ListAccountsResponse, error)
+	GetAccount(ctx context.Context, userID string, accountID string) (Account, error)
 }
 
 type client struct {
 	httpClient httpwrapper.Client
+	userClient httpwrapper.Client
 
-	clientID     string
-	clientSecret string
-	endpoint     string
+	connectorName string
+	clientID      string
+	clientSecret  string
+	endpoint      string
 }
 
 func New(connectorName, clientID, clientSecret, endpoint string) Client {
@@ -79,11 +82,24 @@ func New(connectorName, clientID, clientSecret, endpoint string) Client {
 		},
 	}
 
-	return &client{
+	c := &client{
 		httpClient: httpwrapper.NewClient(config),
 
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		endpoint:     endpoint,
+		connectorName: connectorName,
+		clientID:      clientID,
+		clientSecret:  clientSecret,
+		endpoint:      endpoint,
 	}
+
+	c.userClient = c.createUserHTTPClient()
+
+	return c
+}
+
+func (c *client) createUserHTTPClient() httpwrapper.Client {
+	config := &httpwrapper.Config{
+		Transport: metrics.NewTransport(c.connectorName, metrics.TransportOpts{}),
+	}
+
+	return httpwrapper.NewClient(config)
 }

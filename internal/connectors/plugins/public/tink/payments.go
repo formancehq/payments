@@ -31,7 +31,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
-	var webhook client.AccountTransactionsModifiedWebhook
+	var webhook fetchNextDataRequest
 	if err := json.Unmarshal(from.FromPayload, &webhook); err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -41,9 +41,9 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	for {
 		resp, err := p.client.ListTransactions(ctx, client.ListTransactionRequest{
 			UserID:        webhook.ExternalUserID,
-			AccountID:     webhook.Account.ID,
-			BookedDateGTE: webhook.Transactions.EarliestModifiedBookedDate,
-			BookedDateLTE: webhook.Transactions.LatestModifiedBookedDate,
+			AccountID:     webhook.AccountID,
+			BookedDateGTE: webhook.TransactionEarliestModifiedBookedDate,
+			BookedDateLTE: webhook.TransactionLatestModifiedBookedDate,
 			PageSize:      req.PageSize,
 			NextPageToken: newState.NextPageToken,
 		})

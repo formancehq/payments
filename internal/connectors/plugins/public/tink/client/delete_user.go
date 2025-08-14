@@ -24,16 +24,14 @@ func (c *client) DeleteUser(ctx context.Context, req DeleteUserRequest) error {
 	}
 
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "delete_user")
-
 	endpoint := fmt.Sprintf("%s/api/v1/user/delete", c.endpoint)
-
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, nil)
 	if err != nil {
 		return err
 	}
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authCode))
 
-	_, err = c.httpClient.Do(ctx, request, nil, nil)
+	_, err = c.userClient.Do(ctx, request, nil, nil)
 	if err != nil {
 		return err
 	}

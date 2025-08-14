@@ -35,7 +35,7 @@ func (c *client) DeleteUserConnection(ctx context.Context, req DeleteUserConnect
 	}
 	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", authCode))
 
-	_, err = c.httpClient.Do(ctx, request, nil, nil)
+	_, err = c.userClient.Do(ctx, request, nil, nil)
 	if err != nil {
 		return fmt.Errorf("failed to delete user consent: %w", err)
 	}

@@ -9,67 +9,30 @@ import (
 	"github.com/formancehq/payments/internal/models"
 )
 
-type accountsState struct {
-	NextPageToken string `json:"nextPageToken"`
-}
-
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var oldState accountsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
-		}
-	}
-
-	newState := accountsState{
-		NextPageToken: oldState.NextPageToken,
-	}
-
 	var from models.BankBridgeFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	var webhook client.AccountTransactionsModifiedWebhook
+	var webhook fetchNextDataRequest
 	if err := json.Unmarshal(from.FromPayload, &webhook); err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
 
-	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	hasMore := false
-	for {
-		pagedAccounts, err := p.client.ListAccounts(ctx, webhook.ExternalUserID, newState.NextPageToken)
-		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
-		}
-
-		accounts, err = toPSPAccounts(accounts, pagedAccounts.Accounts)
-		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
-		}
-
-		newState.NextPageToken = pagedAccounts.NextPageToken
-		if pagedAccounts.NextPageToken != "" {
-			break
-		}
-
-		needMore := len(accounts) < req.PageSize
-		hasMore = pagedAccounts.NextPageToken != ""
-
-		if !needMore || !hasMore {
-			break
-		}
+	account, err := p.client.GetAccount(ctx, webhook.ExternalUserID, webhook.AccountID)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
 	}
 
-	payload, err := json.Marshal(newState)
+	accounts := make([]models.PSPAccount, 0, 1)
+	accounts, err = toPSPAccounts(accounts, []client.Account{account})
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
 
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
-		NewState: payload,
-		HasMore:  hasMore,
 	}, nil
 }
 

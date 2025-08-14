@@ -190,6 +190,14 @@ func (p *Plugin) handleAccountBookedTransactionsModified(ctx context.Context, re
 	return nil, nil
 }
 
+type fetchNextDataRequest struct {
+	UserID                                string    `json:"userId"`
+	ExternalUserID                        string    `json:"externalUserId"`
+	AccountID                             string    `json:"accountId"`
+	TransactionEarliestModifiedBookedDate time.Time `json:"transactionEarliestModifiedBookedDate"`
+	TransactionLatestModifiedBookedDate   time.Time `json:"transactionLatestModifiedBookedDate"`
+}
+
 // https://docs.tink.com/resources/transactions/webhooks-for-transactions#event-account-transactions-modified
 func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
 	// This event is fired when an account has new or updated transactions,
@@ -201,7 +209,13 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 		return nil, err
 	}
 
-	payload, err := json.Marshal(accountTransactionsModifiedWebhook)
+	payload, err := json.Marshal(fetchNextDataRequest{
+		UserID:                                accountTransactionsModifiedWebhook.UserID,
+		ExternalUserID:                        accountTransactionsModifiedWebhook.ExternalUserID,
+		AccountID:                             accountTransactionsModifiedWebhook.Account.ID,
+		TransactionEarliestModifiedBookedDate: accountTransactionsModifiedWebhook.Transactions.EarliestModifiedBookedDate,
+		TransactionLatestModifiedBookedDate:   accountTransactionsModifiedWebhook.Transactions.LatestModifiedBookedDate,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -241,9 +255,27 @@ func (p *Plugin) handleAccountTransactionsDeleted(ctx context.Context, req model
 func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
 	// https://docs.tink.com/entries/articles/event-account-created
 
-	// Note: Nothing to do here for now.
+	accountCreatedWebhook, err := p.client.GetAccountCreatedWebhook(ctx, req.Webhook.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return nil, nil
+	payload, err := json.Marshal(fetchNextDataRequest{
+		UserID:         accountCreatedWebhook.UserID,
+		ExternalUserID: accountCreatedWebhook.ExternalUserID,
+		AccountID:      accountCreatedWebhook.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []models.WebhookResponse{
+		{
+			DataReadyToFetch: &models.PSPDataReadyToFetch{
+				FromPayload: payload,
+			},
+		},
+	}, nil
 }
 
 func (p *Plugin) handleAccountUpdated(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
@@ -275,7 +307,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
-					At:           time.Unix(int64(refreshFinishedWebhook.Finished), 0),
+					At:           time.Unix(0, int64(refreshFinishedWebhook.Finished)*int64(time.Millisecond)),
 				},
 			},
 		}, nil
@@ -288,7 +320,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
-					At:           time.Unix(int64(refreshFinishedWebhook.Finished), 0),
+					At:           time.Unix(0, int64(refreshFinishedWebhook.Finished)*int64(time.Millisecond)),
 					Reason:       &reason,
 				},
 			},
