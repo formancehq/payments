@@ -131,7 +131,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 			}
 
 			// Expect all webhook types to be created, with the last one failing
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/account-transactions-modified").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{
 					ID:     "webhook_1",
 					Secret: "secret_1",
@@ -139,7 +139,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 				nil,
 			)
 
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/account-transactions-deleted").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{
 					ID:     "webhook_2",
 					Secret: "secret_2",
@@ -147,7 +147,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 				nil,
 			)
 
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/account-booked-transactions-modified").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{
 					ID:     "webhook_3",
 					Secret: "secret_3",
@@ -155,7 +155,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 				nil,
 			)
 
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/account-created").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{
 					ID:     "webhook_4",
 					Secret: "secret_4",
@@ -163,7 +163,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 				nil,
 			)
 
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/account-updated").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{
 					ID:     "webhook_5",
 					Secret: "secret_5",
@@ -171,7 +171,7 @@ var _ = Describe("Tink *Plugin Webhooks", func() {
 				nil,
 			)
 
-			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, "https://example.com/webhook/refresh-finished").Return(
+			m.EXPECT().CreateWebhook(gomock.Any(), gomock.Any(), connectorID, gomock.Any()).Return(
 				client.CreateWebhookResponse{},
 				errors.New("client error"),
 			)

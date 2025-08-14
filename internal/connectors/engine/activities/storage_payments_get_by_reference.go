@@ -19,6 +19,8 @@ var StoragePaymentsGetByReferenceActivity = Activities{}.StoragePaymentsGetByRef
 
 func StoragePaymentsGetByReference(ctx workflow.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error) {
 	var result models.Payment
-	err := executeActivity(ctx, StoragePaymentsGetByReferenceActivity, &result, reference, connectorID)
-	return &result, err
+	if err := executeActivity(ctx, StoragePaymentsGetByReferenceActivity, &result, reference, connectorID); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

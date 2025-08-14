@@ -125,7 +125,7 @@ func (p *Plugin) verifyWebhook(_ context.Context, req models.VerifyWebhookReques
 
 	timestamp, signature, err := splitVerificationHeader(header[0])
 	if err != nil {
-		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid tink signature header %s: %w", header[0], models.ErrWebhookVerification)
+		return models.VerifyWebhookResponse{}, fmt.Errorf("invalid tink signature header: %w", models.ErrWebhookVerification)
 	}
 
 	timestampInt, err := strconv.ParseInt(timestamp, 10, 64)
@@ -176,7 +176,7 @@ func splitVerificationHeader(header string) (string, string, error) {
 		}
 	}
 	if timestamp == "" || signature == "" {
-		return "", "", fmt.Errorf("invalid tink signature header %s: %w", header, models.ErrWebhookVerification)
+		return "", "", fmt.Errorf("invalid tink signature header: %w", models.ErrWebhookVerification)
 	}
 	return timestamp, signature, nil
 }
