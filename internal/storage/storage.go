@@ -63,6 +63,7 @@ type Storage interface {
 	PaymentsUpsert(ctx context.Context, payments []models.Payment) error
 	PaymentsUpdateMetadata(ctx context.Context, id models.PaymentID, metadata map[string]string) error
 	PaymentsGet(ctx context.Context, id models.PaymentID) (*models.Payment, error)
+	PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error)
 	PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpaginate.Cursor[models.Payment], error)
 	PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error

@@ -896,7 +896,7 @@ func (e *engine) DeletePaymentServiceUser(ctx context.Context, psuID uuid.UUID) 
 		client.StartWorkflowOptions{
 			ID:                                       id,
 			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
+			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_ALLOW_DUPLICATE_FAILED_ONLY,
 			WorkflowExecutionErrorWhenAlreadyStarted: false,
 			SearchAttributes: map[string]interface{}{
 				workflow.SearchAttributeStack: e.stack,

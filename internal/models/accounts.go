@@ -176,6 +176,10 @@ func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID Con
 			return nil, err
 		}
 
+		if account.Metadata == nil {
+			account.Metadata = make(map[string]string)
+		}
+
 		for k, v := range additionalMetadata {
 			account.Metadata[k] = v
 		}

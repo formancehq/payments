@@ -27,6 +27,7 @@ const (
 	V3InstallConnectorRequestTypePowens        V3InstallConnectorRequestType = "Powens"
 	V3InstallConnectorRequestTypeQonto         V3InstallConnectorRequestType = "Qonto"
 	V3InstallConnectorRequestTypeStripe        V3InstallConnectorRequestType = "Stripe"
+	V3InstallConnectorRequestTypeTink          V3InstallConnectorRequestType = "Tink"
 	V3InstallConnectorRequestTypeWise          V3InstallConnectorRequestType = "Wise"
 )
 
@@ -46,6 +47,7 @@ type V3InstallConnectorRequest struct {
 	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3InstallConnectorRequestType
@@ -231,6 +233,18 @@ func CreateV3InstallConnectorRequestStripe(stripe V3StripeConfig) V3InstallConne
 	}
 }
 
+func CreateV3InstallConnectorRequestTink(tink V3TinkConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeTink
+
+	typStr := string(typ)
+	tink.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3TinkConfig: &tink,
+		Type:         typ,
+	}
+}
+
 func CreateV3InstallConnectorRequestWise(wise V3WiseConfig) V3InstallConnectorRequest {
 	typ := V3InstallConnectorRequestTypeWise
 
@@ -390,6 +404,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3StripeConfig = v3StripeConfig
 		u.Type = V3InstallConnectorRequestTypeStripe
 		return nil
+	case "Tink":
+		v3TinkConfig := new(V3TinkConfig)
+		if err := utils.UnmarshalJSON(data, &v3TinkConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Tink) type V3TinkConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3TinkConfig = v3TinkConfig
+		u.Type = V3InstallConnectorRequestTypeTink
+		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
 		if err := utils.UnmarshalJSON(data, &v3WiseConfig, "", true, false); err != nil {
@@ -463,6 +486,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3StripeConfig != nil {
 		return utils.MarshalJSON(u.V3StripeConfig, "", true)
+	}
+
+	if u.V3TinkConfig != nil {
+		return utils.MarshalJSON(u.V3TinkConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {

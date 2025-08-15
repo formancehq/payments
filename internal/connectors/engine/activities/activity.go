@@ -148,6 +148,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePaymentsList,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePaymentsGetByReference",
+			Func: a.StoragePaymentsGetByReference,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePaymentsDelete",
 			Func: a.StoragePaymentsDelete,
 		}).
@@ -406,6 +410,10 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "EventsSendPayment",
 			Func: a.EventsSendPayment,
+		}).
+		Append(temporalworker.Definition{
+			Name: "EventsSendPaymentDeleted",
+			Func: a.EventsSendPaymentDeleted,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendPoolCreation",

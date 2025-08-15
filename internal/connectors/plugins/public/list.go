@@ -16,5 +16,6 @@ import (
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/powens"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/qonto"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/stripe"
+    _ "github.com/formancehq/payments/internal/connectors/plugins/public/tink"
     _ "github.com/formancehq/payments/internal/connectors/plugins/public/wise"
 )

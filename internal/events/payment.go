@@ -2,6 +2,7 @@ package events
 
 import (
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"time"
 
@@ -82,6 +83,25 @@ func (e Events) NewEventSavedPayments(payment models.Payment, adjustment models.
 		App:            events.EventApp,
 		Version:        events.EventVersion,
 		Type:           events.EventTypeSavedPayments,
+		Payload:        payload,
+	}
+}
+
+type paymentDeletedMessagePayload struct {
+	ID string `json:"id"`
+}
+
+func (e Events) NewEventPaymentDeleted(paymentID models.PaymentID) publish.EventMessage {
+	payload := paymentDeletedMessagePayload{
+		ID: paymentID.String(),
+	}
+
+	return publish.EventMessage{
+		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+		Date:           time.Now().UTC(),
+		App:            events.EventApp,
+		Version:        events.EventVersion,
+		Type:           events.EventTypeDeletedPayments,
 		Payload:        payload,
 	}
 }

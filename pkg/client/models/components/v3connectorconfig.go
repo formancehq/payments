@@ -27,6 +27,7 @@ const (
 	V3ConnectorConfigTypePowens        V3ConnectorConfigType = "Powens"
 	V3ConnectorConfigTypeQonto         V3ConnectorConfigType = "Qonto"
 	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
+	V3ConnectorConfigTypeTink          V3ConnectorConfigType = "Tink"
 	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
 )
 
@@ -46,6 +47,7 @@ type V3ConnectorConfig struct {
 	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
@@ -231,6 +233,18 @@ func CreateV3ConnectorConfigStripe(stripe V3StripeConfig) V3ConnectorConfig {
 	}
 }
 
+func CreateV3ConnectorConfigTink(tink V3TinkConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeTink
+
+	typStr := string(typ)
+	tink.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3TinkConfig: &tink,
+		Type:         typ,
+	}
+}
+
 func CreateV3ConnectorConfigWise(wise V3WiseConfig) V3ConnectorConfig {
 	typ := V3ConnectorConfigTypeWise
 
@@ -390,6 +404,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3StripeConfig = v3StripeConfig
 		u.Type = V3ConnectorConfigTypeStripe
 		return nil
+	case "Tink":
+		v3TinkConfig := new(V3TinkConfig)
+		if err := utils.UnmarshalJSON(data, &v3TinkConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Tink) type V3TinkConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3TinkConfig = v3TinkConfig
+		u.Type = V3ConnectorConfigTypeTink
+		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
 		if err := utils.UnmarshalJSON(data, &v3WiseConfig, "", true, false); err != nil {
@@ -463,6 +486,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3StripeConfig != nil {
 		return utils.MarshalJSON(u.V3StripeConfig, "", true)
+	}
+
+	if u.V3TinkConfig != nil {
+		return utils.MarshalJSON(u.V3TinkConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {
