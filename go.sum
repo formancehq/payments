@@ -772,8 +772,8 @@ github.com/fogleman/gg v1.2.1-0.20190220221249-0403632d5b90/go.mod h1:R/bRT+9gY/
 github.com/fogleman/gg v1.3.0/go.mod h1:R/bRT+9gY/C5z7JzPU0zXsXHKM4/ayA+zqcVNZzPa1k=
 github.com/formancehq/go-libs v1.7.2 h1:zPLkMVigMxcdPQiA8Q0HLPgA/al/hKmLxLw9muDPM1U=
 github.com/formancehq/go-libs v1.7.2/go.mod h1:3+crp7AA/Rllpo9M/ZQslaHkYt9EtXtbE4qYasV201Q=
-github.com/formancehq/go-libs/v3 v3.0.2-0.20250813072847-b74d714f002f h1:4kHES74ATsrByYt3Q/AoGfKFm9PpPLGPMftTMxxuyM0=
-github.com/formancehq/go-libs/v3 v3.0.2-0.20250813072847-b74d714f002f/go.mod h1:lYWGsAmwPiS2zbUKxrxHj0wghIcBeTl2ZkLrXTPIQsA=
+github.com/formancehq/go-libs/v3 v3.0.2-0.20250814071617-0f5bb98d939b h1:jmWZvgOPW22c0+FokpNFQbf6ceFCj+9xNcbLF/tg6yM=
+github.com/formancehq/go-libs/v3 v3.0.2-0.20250814071617-0f5bb98d939b/go.mod h1:HgSiCLTW/yu3Or5gWB20/N8/xWV6zkdI8WoQXP4vLLs=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/gabriel-vasile/mimetype v1.4.8 h1:FfZ3gj38NjllZIeJAmMhr+qKL8Wu+nOoI3GqacKw1NM=

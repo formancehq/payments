@@ -13,7 +13,7 @@ require (
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
 	github.com/emvi/iso-639-1 v1.1.1
-	github.com/formancehq/go-libs/v3 v3.0.2-0.20250813072847-b74d714f002f
+	github.com/formancehq/go-libs/v3 v3.0.2-0.20250814071617-0f5bb98d939b
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
 	github.com/formancehq/payments/pkg/client v0.0.0-00010101000000-000000000000
 	github.com/get-momo/atlar-v1-go-client v1.4.0
