@@ -271,6 +271,20 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	var ba *models.PSUBankBridge
 	var psuID uuid.UUID
 	var connectionID string
+	if response.DataReadyToFetch.PSUID != nil {
+		bankBridge, err := activities.StoragePSUBankBridgesGet(
+			infiniteRetryContext(ctx),
+			*response.DataReadyToFetch.PSUID,
+			handleWebhooks.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge: %w", err)
+		}
+
+		ba = bankBridge
+		psuID = bankBridge.PsuID
+	}
+
 	if response.DataReadyToFetch.ConnectionID != nil {
 		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
 			infiniteRetryContext(ctx),
@@ -281,17 +295,7 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			return fmt.Errorf("getting bank bridge connection: %w", err)
 		}
 
-		bankBridge, err := activities.StoragePSUBankBridgesGet(
-			infiniteRetryContext(ctx),
-			psu,
-			handleWebhooks.ConnectorID,
-		)
-		if err != nil {
-			return fmt.Errorf("getting bank bridge: %w", err)
-		}
-
 		conn = connection
-		ba = bankBridge
 		connectionID = connection.ConnectionID
 		psuID = psu
 	}

@@ -107,6 +107,7 @@ type WebhookResponse struct {
 }
 
 type PSPDataReadyToFetch struct {
+	PSUID        *uuid.UUID
 	ConnectionID *string
 	FromPayload  json.RawMessage
 }

@@ -14,6 +14,7 @@ import (
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 )
 
 // https://docs.tink.com/resources/transactions/introduction-to-transactions
@@ -270,9 +271,15 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 		return nil, err
 	}
 
+	psuID, err := uuid.Parse(accountCreatedWebhook.ExternalUserID)
+	if err != nil {
+		return nil, err
+	}
+
 	return []models.WebhookResponse{
 		{
 			DataReadyToFetch: &models.PSPDataReadyToFetch{
+				PSUID:       &psuID,
 				FromPayload: payload,
 			},
 		},
