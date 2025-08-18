@@ -10,6 +10,10 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
+const (
+	actorClientID = "df05e4b379934cd09963197cc855bfe9"
+)
+
 type CreateTemporaryCodeRequest struct {
 	UserID       string
 	Username     string
@@ -33,7 +37,7 @@ func (c *client) CreateTemporaryAuthorizationCode(ctx context.Context, request C
 	form := url.Values{}
 	form.Add("external_user_id", request.UserID)
 	form.Add("id_hint", request.Username)
-	form.Add("actor_client_id", "df05e4b379934cd09963197cc855bfe9") // Constant for tink
+	form.Add("actor_client_id", actorClientID) // Constant for tink
 	form.Add("scope", strings.Join(scopes, ","))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(form.Encode()))
