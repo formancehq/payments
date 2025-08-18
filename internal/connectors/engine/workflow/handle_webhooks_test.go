@@ -221,6 +221,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 			Responses: []models.WebhookResponse{
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
+						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
 					},
@@ -283,6 +284,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 
 func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGet_Error() {
 	connectionID := "test-connection-id"
+	psuID := uuid.New()
 
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
@@ -290,6 +292,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGe
 			Responses: []models.WebhookResponse{
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
+						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
 					},
@@ -899,6 +902,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StoragePSU
 func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 	connectionID := "test-connection-id"
 	attemptID := uuid.New()
+	psuID := uuid.New()
 
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
@@ -909,6 +913,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 				},
 				{
 					DataReadyToFetch: &models.PSPDataReadyToFetch{
+						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
 					},
