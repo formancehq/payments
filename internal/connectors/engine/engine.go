@@ -138,7 +138,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	config := models.DefaultConfig()
 	if err := json.Unmarshal(rawConfig, &config); err != nil {
 		otel.RecordError(span, err)
-		return models.ConnectorID{}, err
+		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 	}
 
 	if err := config.Validate(); err != nil {
