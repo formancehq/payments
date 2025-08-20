@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	APIKey   string `json:"apiKey" validate:"required"`
-	Endpoint string `json:"endpoint" validate:"required"`
+	Endpoint string `json:"endpoint" validate:"required,url"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

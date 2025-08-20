@@ -62,6 +62,13 @@ var _ = Describe("Column Plugin", func() {
 			Expect(err.Error()).To(ContainSubstring("Endpoint"))
 		})
 
+		It("should report errors in config - endpoint not url", func(ctx SpecContext) {
+			config := json.RawMessage(`{"apiKey": "test", "endpoint": "fake"}`)
+			_, err := New(connID, ProviderName, logger, config)
+			fmt.Println(err.Error())
+			Expect(err.Error()).To(ContainSubstring("Field validation"))
+		})
+
 		It("should return valid install response", func(ctx SpecContext) {
 			config := json.RawMessage(fmt.Sprintf(`{"apiKey": "test","endpoint": "%s"}`, ts.URL))
 			plg, err := New(connID, ProviderName, logger, config)
