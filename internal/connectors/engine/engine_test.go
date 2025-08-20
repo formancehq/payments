@@ -131,6 +131,12 @@ var _ = Describe("Engine Tests", func() {
 			config = json.RawMessage(`{"name":"somename","pollingPeriod":"30s"}`)
 		})
 
+		It("should return validation error when config is not a valid json", func(ctx SpecContext) {
+			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{`))
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
 		It("should return error when config has validation issues", func(ctx SpecContext) {
 			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(`{}`))
 			Expect(err).NotTo(BeNil())
