@@ -151,6 +151,7 @@ func (w Workflow) handleDataToStoreWebhook(
 			ExternalAccount: response.ExternalAccount,
 			Payment:         response.Payment,
 			PaymentToDelete: response.PaymentToDelete,
+			PaymentToCancel: response.PaymentToCancel,
 		},
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
@@ -609,6 +610,7 @@ type StoreWebhookTranslation struct {
 	ExternalAccount *models.PSPAccount
 	Payment         *models.PSPPayment
 	PaymentToDelete *models.PSPPaymentsToDelete
+	PaymentToCancel *models.PSPPaymentsToCancel
 }
 
 func (w Workflow) runStoreWebhookTranslation(
@@ -720,6 +722,44 @@ func (w Workflow) runStoreWebhookTranslation(
 
 		sendEvent = &SendEvents{
 			PaymentDeleted: &payment.ID,
+		}
+	}
+
+	if storeWebhookTranslation.PaymentToCancel != nil {
+		payment, err := activities.StoragePaymentsGetByReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToCancel.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting payment: %w", err)
+		}
+
+		now := workflow.Now(ctx)
+		payment.Adjustments = []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: payment.ID,
+					Reference: storeWebhookTranslation.PaymentToCancel.Reference,
+					CreatedAt: now,
+					Status:    models.PAYMENT_STATUS_CANCELLED,
+				},
+				Reference: storeWebhookTranslation.PaymentToCancel.Reference,
+				CreatedAt: now,
+				Status:    models.PAYMENT_STATUS_CANCELLED,
+			},
+		}
+
+		err = activities.StoragePaymentsStore(
+			infiniteRetryContext(ctx),
+			[]models.Payment{*payment},
+		)
+		if err != nil {
+			return fmt.Errorf("storing payment: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Payment: payment,
 		}
 	}
 

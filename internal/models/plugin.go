@@ -93,6 +93,7 @@ type WebhookResponse struct {
 	ExternalAccount *PSPAccount
 	Payment         *PSPPayment
 	PaymentToDelete *PSPPaymentsToDelete
+	PaymentToCancel *PSPPaymentsToCancel
 
 	BankBridgeAccount *PSPBankBridgeAccount
 	BankBridgePayment *PSPBankBridgePayment

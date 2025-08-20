@@ -244,7 +244,7 @@ func (p *Plugin) handleAccountTransactionsDeleted(ctx context.Context, req model
 	responses := make([]models.WebhookResponse, 0, len(accountTransactionsDeletedWebhook.Transactions.IDs))
 	for _, transactionID := range accountTransactionsDeletedWebhook.Transactions.IDs {
 		response := models.WebhookResponse{
-			PaymentToDelete: &models.PSPPaymentsToDelete{
+			PaymentToCancel: &models.PSPPaymentsToCancel{
 				Reference: transactionID,
 			},
 		}
