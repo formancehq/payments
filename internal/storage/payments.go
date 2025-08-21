@@ -248,6 +248,44 @@ func (s *store) PaymentsGet(ctx context.Context, id models.PaymentID) (*models.P
 	return &res, nil
 }
 
+func (s *store) PaymentsGetByReference(ctx context.Context, reference string, connectorID models.ConnectorID) (*models.Payment, error) {
+	var payment payment
+
+	err := s.db.NewSelect().
+		Model(&payment).
+		Where("reference = ?", reference).
+		Where("connector_id = ?", connectorID).
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get payment", err)
+	}
+
+	var ajs []paymentAdjustment
+	err = s.db.NewSelect().
+		Model(&ajs).
+		Where("payment_id = ?", payment.ID).
+		Order("created_at DESC", "sort_id DESC").
+		Scan(ctx)
+	if err != nil {
+		return nil, e("failed to get payment adjustments", err)
+	}
+
+	adjustments := make([]models.PaymentAdjustment, 0, len(ajs))
+	for _, a := range ajs {
+		adjustments = append(adjustments, toPaymentAdjustmentModels(a))
+	}
+
+	status := models.PAYMENT_STATUS_PENDING
+	if len(adjustments) > 0 {
+		// This list is ordered by created_at DESC, so the first element is the
+		// last adjustment, and we want the last status.
+		status = adjustments[0].Status
+	}
+	res := toPaymentModels(payment, status)
+	res.Adjustments = adjustments
+	return &res, nil
+}
+
 func (s *store) PaymentsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
 		Model((*payment)(nil)).

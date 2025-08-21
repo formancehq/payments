@@ -58,6 +58,10 @@ type PSPPaymentsToDelete struct {
 	Reference string
 }
 
+type PSPPaymentsToCancel struct {
+	Reference string
+}
+
 func (p *PSPPayment) Validate() error {
 	if p.Reference == "" {
 		return errorsutils.NewWrappedError(errors.New("missing payment reference"), ErrValidation)

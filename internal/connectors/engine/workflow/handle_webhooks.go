@@ -150,6 +150,8 @@ func (w Workflow) handleDataToStoreWebhook(
 			Account:         response.Account,
 			ExternalAccount: response.ExternalAccount,
 			Payment:         response.Payment,
+			PaymentToDelete: response.PaymentToDelete,
+			PaymentToCancel: response.PaymentToCancel,
 		},
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
@@ -270,27 +272,31 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	var ba *models.PSUBankBridge
 	var psuID uuid.UUID
 	var connectionID string
-	if response.DataReadyToFetch.ID != nil {
-		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-			infiniteRetryContext(ctx),
-			handleWebhooks.ConnectorID,
-			*response.DataReadyToFetch.ID,
-		)
-		if err != nil {
-			return fmt.Errorf("getting bank bridge connection: %w", err)
-		}
-
+	if response.DataReadyToFetch.PSUID != nil {
 		bankBridge, err := activities.StoragePSUBankBridgesGet(
 			infiniteRetryContext(ctx),
-			psu,
+			*response.DataReadyToFetch.PSUID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
 			return fmt.Errorf("getting bank bridge: %w", err)
 		}
 
-		conn = connection
 		ba = bankBridge
+		psuID = bankBridge.PsuID
+	}
+
+	if response.DataReadyToFetch.ConnectionID != nil {
+		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+			infiniteRetryContext(ctx),
+			handleWebhooks.ConnectorID,
+			*response.DataReadyToFetch.ConnectionID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting bank bridge connection: %w", err)
+		}
+
+		conn = connection
 		connectionID = connection.ConnectionID
 		psuID = psu
 	}
@@ -311,8 +317,8 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 
 	fromPayload := &FromPayload{
 		ID: func() string {
-			if response.DataReadyToFetch.ID != nil {
-				return *response.DataReadyToFetch.ID
+			if response.DataReadyToFetch.ConnectionID != nil {
+				return *response.DataReadyToFetch.ConnectionID
 			}
 
 			return ""
@@ -603,6 +609,8 @@ type StoreWebhookTranslation struct {
 	Account         *models.PSPAccount
 	ExternalAccount *models.PSPAccount
 	Payment         *models.PSPPayment
+	PaymentToDelete *models.PSPPaymentsToDelete
+	PaymentToCancel *models.PSPPaymentsToCancel
 }
 
 func (w Workflow) runStoreWebhookTranslation(
@@ -690,6 +698,68 @@ func (w Workflow) runStoreWebhookTranslation(
 
 		sendEvent = &SendEvents{
 			Payment: pointer.For(payments[0]),
+		}
+	}
+
+	if storeWebhookTranslation.PaymentToDelete != nil {
+		payment, err := activities.StoragePaymentsGetByReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToDelete.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting payment: %w", err)
+		}
+
+		err = activities.StoragePaymentsDeleteFromReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToDelete.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("deleting payment: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			PaymentDeleted: &payment.ID,
+		}
+	}
+
+	if storeWebhookTranslation.PaymentToCancel != nil {
+		payment, err := activities.StoragePaymentsGetByReference(
+			infiniteRetryContext(ctx),
+			storeWebhookTranslation.PaymentToCancel.Reference,
+			storeWebhookTranslation.ConnectorID,
+		)
+		if err != nil {
+			return fmt.Errorf("getting payment: %w", err)
+		}
+
+		now := workflow.Now(ctx)
+		payment.Adjustments = []models.PaymentAdjustment{
+			{
+				ID: models.PaymentAdjustmentID{
+					PaymentID: payment.ID,
+					Reference: storeWebhookTranslation.PaymentToCancel.Reference,
+					CreatedAt: now,
+					Status:    models.PAYMENT_STATUS_CANCELLED,
+				},
+				Reference: storeWebhookTranslation.PaymentToCancel.Reference,
+				CreatedAt: now,
+				Status:    models.PAYMENT_STATUS_CANCELLED,
+			},
+		}
+
+		err = activities.StoragePaymentsStore(
+			infiniteRetryContext(ctx),
+			[]models.Payment{*payment},
+		)
+		if err != nil {
+			return fmt.Errorf("storing payment: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Payment: payment,
 		}
 	}
 

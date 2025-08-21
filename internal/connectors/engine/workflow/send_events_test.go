@@ -1,6 +1,7 @@
 package workflow
 
 import (
+	"fmt"
 	"math/big"
 	"time"
 
@@ -44,6 +45,14 @@ var (
 		},
 		Asset:   "USD/2",
 		Balance: big.NewInt(100),
+	}
+
+	paymentID = models.PaymentID{
+		PaymentReference: models.PaymentReference{
+			Reference: "test",
+			Type:      models.PAYMENT_TYPE_PAYIN,
+		},
+		ConnectorID: connectorID,
 	}
 
 	payment = models.Payment{
@@ -357,6 +366,42 @@ func (s *UnitTestSuite) Test_RunSendEvents_BankAccount_Error() {
 
 	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
 		BankAccount: &s.bankAccount,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentDeleted_Success() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentDeletedActivity, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnActivity(activities.StorageEventsSentStoreActivity, mock.Anything, mock.Anything).Return(nil)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentDeleted: &paymentID,
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_RunSendEvents_PaymentDeleted_Error() {
+	s.env.OnActivity(activities.StorageEventsSentGetActivity, mock.Anything, models.EventID{
+		EventIdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
+		ConnectorID:         &connectorID,
+	}).Return(false, nil)
+	s.env.OnActivity(activities.EventsSendPaymentDeletedActivity, mock.Anything, mock.Anything).Return(
+		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunSendEvents, SendEvents{
+		PaymentDeleted: &paymentID,
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

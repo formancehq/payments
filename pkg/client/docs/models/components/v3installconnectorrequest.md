@@ -93,6 +93,12 @@ v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestQonto(com
 v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestStripe(components.V3StripeConfig{/* values here */})
 ```
 
+### V3TinkConfig
+
+```go
+v3InstallConnectorRequest := components.CreateV3InstallConnectorRequestTink(components.V3TinkConfig{/* values here */})
+```
+
 ### V3WiseConfig
 
 ```go

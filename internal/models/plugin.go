@@ -92,6 +92,8 @@ type WebhookResponse struct {
 	Account         *PSPAccount
 	ExternalAccount *PSPAccount
 	Payment         *PSPPayment
+	PaymentToDelete *PSPPaymentsToDelete
+	PaymentToCancel *PSPPaymentsToCancel
 
 	BankBridgeAccount *PSPBankBridgeAccount
 	BankBridgePayment *PSPBankBridgePayment
@@ -106,8 +108,9 @@ type WebhookResponse struct {
 }
 
 type PSPDataReadyToFetch struct {
-	ID          *string
-	FromPayload json.RawMessage
+	PSUID        *uuid.UUID
+	ConnectionID *string
+	FromPayload  json.RawMessage
 }
 
 type PSPDataToDelete struct {

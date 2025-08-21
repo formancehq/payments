@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 6f38fd737465b7a4c97ae7e0794b7b8c
+  docChecksum: bfb5504ede6f314954ebabaa8c298afc
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -195,6 +195,7 @@ generatedFiles:
   - /models/components/v3stripeconfig.go
   - /models/components/v3task.go
   - /models/components/v3taskstatusenum.go
+  - /models/components/v3tinkconfig.go
   - /models/components/v3uninstallconnectorresponse.go
   - /models/components/v3updatebankaccountmetadatarequest.go
   - /models/components/v3updateconnectorrequest.go
@@ -513,6 +514,7 @@ generatedFiles:
   - docs/models/components/v3stripeconfig.md
   - docs/models/components/v3task.md
   - docs/models/components/v3taskstatusenum.md
+  - docs/models/components/v3tinkconfig.md
   - docs/models/components/v3uninstallconnectorresponse.md
   - docs/models/components/v3uninstallconnectorresponsedata.md
   - docs/models/components/v3updatebankaccountmetadatarequest.md

@@ -27,6 +27,7 @@ const (
 	V3UpdateConnectorRequestTypePowens        V3UpdateConnectorRequestType = "Powens"
 	V3UpdateConnectorRequestTypeQonto         V3UpdateConnectorRequestType = "Qonto"
 	V3UpdateConnectorRequestTypeStripe        V3UpdateConnectorRequestType = "Stripe"
+	V3UpdateConnectorRequestTypeTink          V3UpdateConnectorRequestType = "Tink"
 	V3UpdateConnectorRequestTypeWise          V3UpdateConnectorRequestType = "Wise"
 )
 
@@ -46,6 +47,7 @@ type V3UpdateConnectorRequest struct {
 	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
 	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
 	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
 	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3UpdateConnectorRequestType
@@ -231,6 +233,18 @@ func CreateV3UpdateConnectorRequestStripe(stripe V3StripeConfig) V3UpdateConnect
 	}
 }
 
+func CreateV3UpdateConnectorRequestTink(tink V3TinkConfig) V3UpdateConnectorRequest {
+	typ := V3UpdateConnectorRequestTypeTink
+
+	typStr := string(typ)
+	tink.Provider = &typStr
+
+	return V3UpdateConnectorRequest{
+		V3TinkConfig: &tink,
+		Type:         typ,
+	}
+}
+
 func CreateV3UpdateConnectorRequestWise(wise V3WiseConfig) V3UpdateConnectorRequest {
 	typ := V3UpdateConnectorRequestTypeWise
 
@@ -390,6 +404,15 @@ func (u *V3UpdateConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3StripeConfig = v3StripeConfig
 		u.Type = V3UpdateConnectorRequestTypeStripe
 		return nil
+	case "Tink":
+		v3TinkConfig := new(V3TinkConfig)
+		if err := utils.UnmarshalJSON(data, &v3TinkConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Tink) type V3TinkConfig within V3UpdateConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3TinkConfig = v3TinkConfig
+		u.Type = V3UpdateConnectorRequestTypeTink
+		return nil
 	case "Wise":
 		v3WiseConfig := new(V3WiseConfig)
 		if err := utils.UnmarshalJSON(data, &v3WiseConfig, "", true, false); err != nil {
@@ -463,6 +486,10 @@ func (u V3UpdateConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3StripeConfig != nil {
 		return utils.MarshalJSON(u.V3StripeConfig, "", true)
+	}
+
+	if u.V3TinkConfig != nil {
+		return utils.MarshalJSON(u.V3TinkConfig, "", true)
 	}
 
 	if u.V3WiseConfig != nil {

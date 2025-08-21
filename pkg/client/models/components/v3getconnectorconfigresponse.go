@@ -73,6 +73,10 @@ func (o *V3GetConnectorConfigResponse) GetDataStripe() *V3StripeConfig {
 	return o.GetData().V3StripeConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataTink() *V3TinkConfig {
+	return o.GetData().V3TinkConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataWise() *V3WiseConfig {
 	return o.GetData().V3WiseConfig
 }
