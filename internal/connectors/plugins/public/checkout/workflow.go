@@ -9,14 +9,14 @@ func workflow() models.ConnectorTasksTree {
 			TaskType:     models.TASK_FETCH_ACCOUNTS,
 			Name:         "fetch_accounts",
 		    Periodically: true,
-			NextTasks: []models.ConnectorTaskTree{},
+			NextTasks:    []models.ConnectorTaskTree{},
 		},
-		// {
-		// 	TaskType:     models.TASK_FETCH_BALANCES,
-		// 	Name:         "fetch_balances",
-		// 	Periodically: true,
-		// 	NextTasks:    []models.ConnectorTaskTree{},
-		// },
+		{
+			TaskType:     models.TASK_FETCH_BALANCES,
+			Name:         "fetch_balances",
+			Periodically: true,
+			NextTasks:    []models.ConnectorTaskTree{},
+		},
 		// {
 		// 	TaskType:     models.TASK_FETCH_PAYMENTS,
 		// 	Name:         "fetch_payments",
