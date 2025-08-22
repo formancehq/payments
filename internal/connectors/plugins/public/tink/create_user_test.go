@@ -3,6 +3,7 @@ package tink
 import (
 	"errors"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/tink/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -38,6 +39,9 @@ var _ = Describe("Tink *Plugin Create User", func() {
 					ID: userID,
 					Address: &models.Address{
 						Country: &country,
+					},
+					ContactDetails: &models.ContactDetails{
+						Locale: pointer.For("fr_FR"),
 					},
 				},
 			}
@@ -103,6 +107,47 @@ var _ = Describe("Tink *Plugin Create User", func() {
 			Expect(resp).To(Equal(models.CreateUserResponse{}))
 		})
 
+		It("should return error when payment service user address country is not supported", func(ctx SpecContext) {
+			userID := uuid.New()
+			country := "US"
+
+			req := models.CreateUserRequest{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
+					ID: userID,
+					Address: &models.Address{
+						Country: &country,
+					},
+				},
+			}
+
+			resp, err := plg.CreateUser(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("unsupported payment service user country"))
+			Expect(resp).To(Equal(models.CreateUserResponse{}))
+		})
+
+		It("should return error when payment service user locale is not supported", func(ctx SpecContext) {
+			userID := uuid.New()
+			locale := "xx_XX" // Unsupported locale
+
+			req := models.CreateUserRequest{
+				PaymentServiceUser: &models.PSPPaymentServiceUser{
+					ID: userID,
+					Address: &models.Address{
+						Country: pointer.For("FR"),
+					},
+					ContactDetails: &models.ContactDetails{
+						Locale: &locale,
+					},
+				},
+			}
+
+			resp, err := plg.CreateUser(ctx, req)
+			Expect(err).ToNot(BeNil())
+			Expect(err.Error()).To(ContainSubstring("unsupported payment service user locale"))
+			Expect(resp).To(Equal(models.CreateUserResponse{}))
+		})
+
 		It("should return error when client create user fails", func(ctx SpecContext) {
 			userID := uuid.New()
 			country := "FR"
@@ -112,6 +157,9 @@ var _ = Describe("Tink *Plugin Create User", func() {
 					ID: userID,
 					Address: &models.Address{
 						Country: &country,
+					},
+					ContactDetails: &models.ContactDetails{
+						Locale: pointer.For("fr_FR"),
 					},
 				},
 			}

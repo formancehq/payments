@@ -852,7 +852,7 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	})
 	if err != nil {
 		otel.RecordError(span, err)
-		return err
+		return handlePluginErrors(err)
 	}
 
 	bankBridge := models.PSUBankBridge{
@@ -1088,7 +1088,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	})
 	if err != nil {
 		otel.RecordError(span, err)
-		return "", "", err
+		return "", "", handlePluginErrors(err)
 	}
 
 	attempt.TemporaryToken = resp.TemporaryLinkToken
@@ -1188,7 +1188,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	})
 	if err != nil {
 		otel.RecordError(span, err)
-		return "", "", err
+		return "", "", handlePluginErrors(err)
 	}
 
 	attempt.TemporaryToken = resp.TemporaryLinkToken
