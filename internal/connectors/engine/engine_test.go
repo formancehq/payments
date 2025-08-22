@@ -661,6 +661,18 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(expectedErr))
 		})
 
+		It("should return validation error when plugin CreateUser returns validation error", func(ctx SpecContext) {
+			expectedErr := fmt.Errorf("plugin error: %w", models.ErrInvalidRequest)
+			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, expectedErr)
+			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
+		})
+
 		It("should return error when bank bridge upsert fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("upsert error")
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
@@ -900,6 +912,18 @@ var _ = Describe("Engine Tests", func() {
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
+		})
+
+		It("should return validation error when plugin CreateUserLink returns validation error", func(ctx SpecContext) {
+			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
+			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
+			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
+			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			plugin.EXPECT().CreateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserLinkRequest{})).Return(models.CreateUserLinkResponse{}, models.ErrInvalidRequest)
+			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
+			Expect(err).NotTo(BeNil())
+			Expect(err).To(MatchError(engine.ErrValidation))
 		})
 
 		It("should return error when final attempt upsert fails", func(ctx SpecContext) {

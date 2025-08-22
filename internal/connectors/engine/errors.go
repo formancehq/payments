@@ -2,8 +2,10 @@ package engine
 
 import (
 	"fmt"
+
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
+	"github.com/formancehq/payments/internal/models"
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
 	"github.com/pkg/errors"
 	"go.temporal.io/sdk/temporal"
@@ -40,4 +42,17 @@ func handleWorkflowError(err error) error {
 	}
 
 	return err
+}
+
+func handlePluginErrors(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	switch {
+	case errors.Is(err, models.ErrInvalidRequest), errors.Is(err, models.ErrInvalidConfig):
+		return errorsutils.NewWrappedError(err, ErrValidation)
+	default:
+		return err
+	}
 }
