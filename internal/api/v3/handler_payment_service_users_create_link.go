@@ -16,7 +16,7 @@ import (
 )
 
 type PaymentServiceUserCreateLinkRequest struct {
-	ApplicationName   string `json:"applicationName" validate:""`
+	ApplicationName   string `json:"applicationName" validate:"required"`
 	ClientRedirectURL string `json:"clientRedirectURL" validate:"required,url"`
 }
 
