@@ -3,21 +3,55 @@ package checkout
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"math/big"
+	"strings"
 
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/utils/pagination"
+	"github.com/formancehq/go-libs/v3/currency"
 )
 
 type paymentsState struct {
-	// TODO: paymentsState will be used to know at what point we're at when
-	// fetching the PSP payments. We highly recommend to use this state to not
-	// poll data already polled.
-	// This struct will be stored as a raw json, you're free to put whatever
-	// you want.
-	// Example:
-	// LastPage int `json:"lastPage"`
-	// LastIDCreated int64 `json:"lastIDCreated"`
+	LastPage int `json:"lastPage"`
 }
+
+func mapCheckoutPaymentStatus(s string) models.PaymentStatus {
+	if s == "" {
+		return models.PAYMENT_STATUS_UNKNOWN
+	}
+	ls := strings.ToLower(strings.TrimSpace(s))
+
+	switch ls {
+		case "authorized", "authorised", "card verified", "approved":
+			return models.PAYMENT_STATUS_AUTHORISATION
+		case "captured", "capture", "partially captured":
+			return models.PAYMENT_STATUS_CAPTURE
+		case "refunded", "partially refunded":
+			return models.PAYMENT_STATUS_REFUNDED
+		case "pending", "capture pending", "refund pending":
+			return models.PAYMENT_STATUS_PENDING
+		case "declined", "failed", "failure":
+			return models.PAYMENT_STATUS_FAILED
+		case "expired":
+			return models.PAYMENT_STATUS_EXPIRED
+		case "canceled", "cancelled", "voided", "void":
+			return models.PAYMENT_STATUS_CANCELLED
+		case "refund declined", "refund_failed", "refund failed":
+			return models.PAYMENT_STATUS_REFUNDED_FAILURE
+		case "refund reversed", "reversed":
+			return models.PAYMENT_STATUS_REFUND_REVERSED
+		case "disputed", "chargeback":
+			return models.PAYMENT_STATUS_DISPUTE
+		case "chargeback won", "dispute won":
+			return models.PAYMENT_STATUS_DISPUTE_WON
+		case "chargeback lost", "dispute lost":
+			return models.PAYMENT_STATUS_DISPUTE_LOST
+		default:
+			return models.PAYMENT_STATUS_OTHER
+	}
+}
+
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
@@ -27,45 +61,66 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	// TODO: if needed, uncomment the following lines to get the related account in request
-	// var from models.PSPAccount
-	// if req.FromPayload == nil {
-	// 	return models.FetchNextPaymentsResponse{}, models.ErrMissingFromPayloadInRequest
-	// }
-	// if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-	// 	return models.FetchNextPaymentsResponse{}, err
-	// }
-
+	startPage := oldState.LastPage + 1
 	newState := paymentsState{
-		// TODO: fill new state with old state values
+		LastPage: oldState.LastPage,
 	}
 
 	payments := make([]models.PSPPayment, 0, req.PageSize)
 	needMore := false
 	hasMore := false
-	for /* TODO: range over pages or others */ page := 0; ; page++ {
-		pagedTransactions, err := p.client.GetTransactions(ctx, page, req.PageSize)
+
+	for page := startPage; ; page++ {
+		pagedTxs, err := p.client.GetTransactions(ctx, page, req.PageSize)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
 
-		// TODO: transfer PSP object into formance object
-		payments = append(payments, models.PSPPayment{})
+		for _, t := range pagedTxs {
+			raw, _ := json.Marshal(t)
 
-		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTransactions, req.PageSize)
+			asset := currency.FormatAsset(supportedCurrenciesWithDecimal, t.Currency)
+
+			md := map[string]string{
+				"payment_id": t.PaymentID,
+				"type":       t.Type,
+				"status":     t.Status,
+			}
+
+			payments = append(payments, models.PSPPayment{
+				ParentReference: "",
+				Reference: t.ID,
+				Amount:    big.NewInt(t.Amount),
+				Asset:     asset,
+				CreatedAt: t.CreatedAt,
+				SourceAccountReference: &t.SourceAccountReference,
+				Status: mapCheckoutPaymentStatus(t.Status),
+				Scheme: models.PAYMENT_SCHEME_CARD_ALIPAY,
+				Type: models.PAYMENT_TYPE_UNKNOWN,
+				Metadata:  md,
+				Raw:       raw,
+			})
+		}
+
+		needMore, hasMore = pagination.ShouldFetchMore(payments, pagedTxs, req.PageSize)
+		newState.LastPage = page
+
 		if !needMore || !hasMore {
 			break
 		}
 	}
 
-	if !needMore {
+	if !needMore && len(payments) > req.PageSize {
 		payments = payments[:req.PageSize]
 	}
 
-	// TODO: don't forget to update your state accordingly
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	if t, _ := json.Marshal(payments); true {
+		fmt.Printf("[checkout] payments returns %d payment(s): %s\n", len(payments), string(t))
 	}
 
 	return models.FetchNextPaymentsResponse{

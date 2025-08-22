@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/checkout/checkout-sdk-go/balances"
@@ -45,6 +46,10 @@ func (c *client) GetAccountBalances(ctx context.Context) ([]*Balance, error) {
 			Payable:           ab.Balances.Payable,
 			Collateral:        ab.Balances.Collateral,
 		})
+	}
+
+	if b, _ := json.Marshal(balances); true {
+		fmt.Printf("[checkout] GetAccountBalances returns %d balance(s): %s\n", len(balances), string(b))
 	}
 
 	return balances, nil

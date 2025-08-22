@@ -2,7 +2,10 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -23,8 +26,13 @@ type Client interface {
 }
 
 type client struct {
-	sdk              *nas.Api
-	entityID 		 string
+	sdk              	*nas.Api
+	httpClient 		 	*http.Client
+	apiBase			 	string
+	apiAuthUrl		 	string
+	oauthClientID		string
+	oauthClientSecret	string
+	entityID 		 	string
 }
 
 type acceptHeaderTransport struct {
@@ -48,11 +56,14 @@ func New(
 ) *client {
 	var environment configuration.Environment
 	switch strings.ToLower(strings.TrimSpace(env)) {
-	case "sandbox":
-		environment = configuration.Sandbox()
-	default:
-		environment = configuration.Production()
-	}
+		case "sandbox":
+			environment = configuration.Sandbox()
+		default:
+			environment = configuration.Production()
+	} 
+
+	apiBase := environment.BaseUri()
+	apiAuthUrl := environment.AuthorizationUri()
 
 	httpClient := &http.Client{
 		Transport: &acceptHeaderTransport{
@@ -73,11 +84,55 @@ func New(
 	}
 
 	return &client{
-		sdk:      sdk,
-		entityID: entityID,
+		sdk:      			sdk,
+		httpClient: 		httpClient,
+		apiBase: 			apiBase,
+		apiAuthUrl:			apiAuthUrl,
+		oauthClientID: 		oauthClientID,
+		oauthClientSecret: 	oauthClientSecret,
+		entityID: 			entityID,
 	}
 }
 
 func getOAuthScopes() []string {
-	return []string{"accounts", "balances"}
+	return []string{"accounts", "balances", "payments:search"}
+}
+
+func (c *client) getAccessToken(ctx context.Context) (string, error) {
+	form := url.Values{}
+	form.Set("grant_type", "client_credentials")
+	form.Set("scope", strings.Join(getOAuthScopes(), " "))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, strings.TrimSpace(c.apiAuthUrl), strings.NewReader(form.Encode()))
+	if err != nil {
+		return "", err
+	}
+	req.SetBasicAuth(strings.TrimSpace(c.oauthClientID), strings.TrimSpace(c.oauthClientSecret))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		var apiErr map[string]any
+		_ = json.NewDecoder(resp.Body).Decode(&apiErr)
+		return "", fmt.Errorf("oauth token %d: %v", resp.StatusCode, apiErr)
+	}
+
+	var tok struct {
+		AccessToken string `json:"access_token"`
+		ExpiresIn   int64  `json:"expires_in"`
+		TokenType   string `json:"token_type"`
+		Scope       string `json:"scope"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tok); err != nil {
+		return "", err
+	}
+	if tok.AccessToken == "" {
+		return "", fmt.Errorf("oauth token missing access_token")
+	}
+	return tok.AccessToken, nil
 }
