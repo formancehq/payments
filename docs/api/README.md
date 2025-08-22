@@ -2406,6 +2406,539 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
+## Delete a payment service user by ID
+
+<a id="opIdv3DeletePaymentServiceUser"></a>
+
+> Code samples
+
+```http
+DELETE /v3/payment-service-users/{paymentServiceUserID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`DELETE /v3/payment-service-users/{paymentServiceUserID}`
+
+<h3 id="delete-a-payment-service-user-by-id-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+
+> Example responses
+
+> 202 Response
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+```
+
+<h3 id="delete-a-payment-service-user-by-id-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3PaymentServiceUserDeleteResponse](#schemav3paymentserviceuserdeleteresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## List all connections for a payment service user
+
+<a id="opIdv3ListPaymentServiceUserConnections"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users/{paymentServiceUserID}/connections HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users/{paymentServiceUserID}/connections`
+
+<h3 id="list-all-connections-for-a-payment-service-user-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "connectionID": "string",
+        "connectorID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "dataUpdatedAt": "2019-08-24T14:15:22Z",
+        "status": "ACTIVE",
+        "error": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-connections-for-a-payment-service-user-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUserConnectionsCursorResponse](#schemav3paymentserviceuserconnectionscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Delete a payment service user on a connector
+
+<a id="opIdv3DeletePaymentServiceUserConnector"></a>
+
+> Code samples
+
+```http
+DELETE /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`DELETE /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}`
+
+<h3 id="delete-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+
+> Example responses
+
+> 202 Response
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+```
+
+<h3 id="delete-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3PaymentServiceUserDeleteConnectorResponse](#schemav3paymentserviceuserdeleteconnectorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## Forward a payment service user to a connector
+
+<a id="opIdv3ForwardPaymentServiceUserToBankBridge"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward HTTP/1.1
+
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward`
+
+<h3 id="forward-a-payment-service-user-to-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+
+> Example responses
+
+> default Response
+
+```json
+{
+  "errorCode": "VALIDATION",
+  "errorMessage": "[VALIDATION] missing required config field: pollingPeriod",
+  "details": "string"
+}
+```
+
+<h3 id="forward-a-payment-service-user-to-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## Create a link for a payment service user on a connector
+
+<a id="opIdv3CreateLinkForPaymentServiceUser"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link`
+
+> Body parameter
+
+```json
+{
+  "applicationName": "string",
+  "clientRedirectURL": "string"
+}
+```
+
+<h3 id="create-a-link-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+|body|body|[V3PaymentServiceUserCreateLinkRequest](#schemav3paymentserviceusercreatelinkrequest)|false|none|
+
+> Example responses
+
+> 201 Response
+
+```json
+{
+  "attemptID": "string",
+  "link": "string"
+}
+```
+
+<h3 id="create-a-link-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3PaymentServiceUserCreateLinkResponse](#schemav3paymentserviceusercreatelinkresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## List all connections for a payment service user on a connector
+
+<a id="opIdv3ListPaymentServiceUserConnectionsFromConnectorID"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections`
+
+<h3 id="list-all-connections-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "connectionID": "string",
+        "connectorID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "dataUpdatedAt": "2019-08-24T14:15:22Z",
+        "status": "ACTIVE",
+        "error": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-connections-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUserConnectionsCursorResponse](#schemav3paymentserviceuserconnectionscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## List all link attempts for a payment service user on a connector
+
+<a id="opIdv3ListPaymentServiceUserLinkAttemptsFromConnectorID"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts`
+
+<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "id": "string",
+        "psuID": "string",
+        "connectorID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "pending",
+        "clientRedirectURL": "string",
+        "error": "string"
+      }
+    ]
+  }
+}
+```
+
+<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUserLinkAttemptsCursorResponse](#schemav3paymentserviceuserlinkattemptscursorresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Get a link attempt for a payment service user on a connector
+
+<a id="opIdv3GetPaymentServiceUserLinkAttemptFromConnectorID"></a>
+
+> Code samples
+
+```http
+GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID}`
+
+<h3 id="get-a-link-attempt-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+|attemptID|path|string|true|The attempt ID|
+
+> Example responses
+
+> 200 Response
+
+```json
+{
+  "id": "string",
+  "psuID": "string",
+  "connectorID": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "status": "pending",
+  "clientRedirectURL": "string",
+  "error": "string"
+}
+```
+
+<h3 id="get-a-link-attempt-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUserLinkAttempt](#schemav3paymentserviceuserlinkattempt)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:read )
+</aside>
+
+## Delete a connection for a payment service user on a connector
+
+<a id="opIdv3DeletePaymentServiceUserConnectionFromConnectorID"></a>
+
+> Code samples
+
+```http
+DELETE /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID} HTTP/1.1
+
+Accept: application/json
+
+```
+
+`DELETE /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}`
+
+<h3 id="delete-a-connection-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+|connectionID|path|string|true|The connection ID|
+
+> Example responses
+
+> 202   Response
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+```
+
+<h3 id="delete-a-connection-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|202  |Unknown|Accepted|[V3PaymentServiceUserDeleteConnectionResponse](#schemav3paymentserviceuserdeleteconnectionresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
+## Update a link for a payment service user on a connector
+
+<a id="opIdv3UpdateLinkForPaymentServiceUserOnConnector"></a>
+
+> Code samples
+
+```http
+POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link HTTP/1.1
+
+Content-Type: application/json
+Accept: application/json
+
+```
+
+`POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link`
+
+> Body parameter
+
+```json
+{
+  "applicationName": "string",
+  "clientRedirectURL": "string"
+}
+```
+
+<h3 id="update-a-link-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+
+|Name|In|Type|Required|Description|
+|---|---|---|---|---|
+|paymentServiceUserID|path|string|true|The payment service user ID|
+|connectorID|path|string|true|The connector ID|
+|connectionID|path|string|true|The connection ID|
+|body|body|[V3PaymentServiceUserUpdateLinkRequest](#schemav3paymentserviceuserupdatelinkrequest)|false|none|
+
+> Example responses
+
+> 201 Response
+
+```json
+{
+  "attemptID": "string",
+  "link": "string"
+}
+```
+
+<h3 id="update-a-link-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+
+|Status|Meaning|Description|Schema|
+|---|---|---|---|
+|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3PaymentServiceUserUpdateLinkResponse](#schemav3paymentserviceuserupdatelinkresponse)|
+|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+
+<aside class="warning">
+To perform this operation, you must be authenticated by means of one of the following methods:
+None ( Scopes: payments:write )
+</aside>
+
 ## Add a bank account to a payment service user
 
 <a id="opIdv3AddBankAccountToPaymentServiceUser"></a>
@@ -5060,6 +5593,75 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |data|string|true|none|The ID of the created payment service user|
 
+<h2 id="tocS_V3PaymentServiceUserDeleteResponse">V3PaymentServiceUserDeleteResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserdeleteresponse"></a>
+<a id="schema_V3PaymentServiceUserDeleteResponse"></a>
+<a id="tocSv3paymentserviceuserdeleteresponse"></a>
+<a id="tocsv3paymentserviceuserdeleteresponse"></a>
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|object|true|none|none|
+|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user. You can use the task API to check the status of the task.|
+
+<h2 id="tocS_V3PaymentServiceUserDeleteConnectorResponse">V3PaymentServiceUserDeleteConnectorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserdeleteconnectorresponse"></a>
+<a id="schema_V3PaymentServiceUserDeleteConnectorResponse"></a>
+<a id="tocSv3paymentserviceuserdeleteconnectorresponse"></a>
+<a id="tocsv3paymentserviceuserdeleteconnectorresponse"></a>
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|object|true|none|none|
+|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user on the connector. You can use the task API to check the status of the task.|
+
+<h2 id="tocS_V3PaymentServiceUserDeleteConnectionResponse">V3PaymentServiceUserDeleteConnectionResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserdeleteconnectionresponse"></a>
+<a id="schema_V3PaymentServiceUserDeleteConnectionResponse"></a>
+<a id="tocSv3paymentserviceuserdeleteconnectionresponse"></a>
+<a id="tocsv3paymentserviceuserdeleteconnectionresponse"></a>
+
+```json
+{
+  "data": {
+    "taskID": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|data|object|true|none|none|
+|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to delete the connection. You can use the task API to check the status of the task.|
+
 <h2 id="tocS_V3PaymentServiceUsersCursorResponse">V3PaymentServiceUsersCursorResponse</h2>
 <!-- backwards compatibility -->
 <a id="schemav3paymentserviceuserscursorresponse"></a>
@@ -5116,6 +5718,91 @@ None ( Scopes: payments:read )
 |» next|string|false|none|none|
 |» data|[[V3PaymentServiceUser](#schemav3paymentserviceuser)]|true|none|none|
 
+<h2 id="tocS_V3PaymentServiceUserConnectionsCursorResponse">V3PaymentServiceUserConnectionsCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserconnectionscursorresponse"></a>
+<a id="schema_V3PaymentServiceUserConnectionsCursorResponse"></a>
+<a id="tocSv3paymentserviceuserconnectionscursorresponse"></a>
+<a id="tocsv3paymentserviceuserconnectionscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "connectionID": "string",
+        "connectorID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "dataUpdatedAt": "2019-08-24T14:15:22Z",
+        "status": "ACTIVE",
+        "error": "string",
+        "metadata": {
+          "property1": "string",
+          "property2": "string"
+        }
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3PaymentServiceUserConnection](#schemav3paymentserviceuserconnection)]|true|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserLinkAttemptsCursorResponse">V3PaymentServiceUserLinkAttemptsCursorResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserlinkattemptscursorresponse"></a>
+<a id="schema_V3PaymentServiceUserLinkAttemptsCursorResponse"></a>
+<a id="tocSv3paymentserviceuserlinkattemptscursorresponse"></a>
+<a id="tocsv3paymentserviceuserlinkattemptscursorresponse"></a>
+
+```json
+{
+  "cursor": {
+    "pageSize": 15,
+    "hasMore": false,
+    "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=",
+    "data": [
+      {
+        "id": "string",
+        "psuID": "string",
+        "connectorID": "string",
+        "createdAt": "2019-08-24T14:15:22Z",
+        "status": "pending",
+        "clientRedirectURL": "string",
+        "error": "string"
+      }
+    ]
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|cursor|object|true|none|none|
+|» pageSize|integer(int64)|true|none|none|
+|» hasMore|boolean|true|none|none|
+|» previous|string|false|none|none|
+|» next|string|false|none|none|
+|» data|[[V3PaymentServiceUserLinkAttempt](#schemav3paymentserviceuserlinkattempt)]|true|none|none|
+
 <h2 id="tocS_V3PaymentServiceUser">V3PaymentServiceUser</h2>
 <!-- backwards compatibility -->
 <a id="schemav3paymentserviceuser"></a>
@@ -5162,6 +5849,73 @@ None ( Scopes: payments:read )
 |address|[V3Address](#schemav3address)|false|none|none|
 |bankAccountIDs|[string]¦null|false|none|none|
 |metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserConnection">V3PaymentServiceUserConnection</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserconnection"></a>
+<a id="schema_V3PaymentServiceUserConnection"></a>
+<a id="tocSv3paymentserviceuserconnection"></a>
+<a id="tocsv3paymentserviceuserconnection"></a>
+
+```json
+{
+  "connectionID": "string",
+  "connectorID": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "dataUpdatedAt": "2019-08-24T14:15:22Z",
+  "status": "ACTIVE",
+  "error": "string",
+  "metadata": {
+    "property1": "string",
+    "property2": "string"
+  }
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|connectionID|string|true|none|none|
+|connectorID|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|dataUpdatedAt|string(date-time)|true|none|none|
+|status|[V3ConnectionStatusEnum](#schemav3connectionstatusenum)|true|none|none|
+|error|string¦null|false|none|none|
+|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserLinkAttempt">V3PaymentServiceUserLinkAttempt</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserlinkattempt"></a>
+<a id="schema_V3PaymentServiceUserLinkAttempt"></a>
+<a id="tocSv3paymentserviceuserlinkattempt"></a>
+<a id="tocsv3paymentserviceuserlinkattempt"></a>
+
+```json
+{
+  "id": "string",
+  "psuID": "string",
+  "connectorID": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "status": "pending",
+  "clientRedirectURL": "string",
+  "error": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|true|none|none|
+|psuID|string|true|none|none|
+|connectorID|string|true|none|none|
+|createdAt|string(date-time)|true|none|none|
+|status|[V3PSUBankBridgeConnectionAttemptStatusEnum](#schemav3psubankbridgeconnectionattemptstatusenum)|true|none|none|
+|clientRedirectURL|string(url)|true|none|none|
+|error|string¦null|false|none|none|
 
 <h2 id="tocS_V3ContactDetails">V3ContactDetails</h2>
 <!-- backwards compatibility -->
@@ -5300,6 +6054,145 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |data|object|true|none|none|
 |» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
+
+<h2 id="tocS_V3ConnectionStatusEnum">V3ConnectionStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectionstatusenum"></a>
+<a id="schema_V3ConnectionStatusEnum"></a>
+<a id="tocSv3connectionstatusenum"></a>
+<a id="tocsv3connectionstatusenum"></a>
+
+```json
+"ACTIVE"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|ACTIVE|
+|*anonymous*|ERROR|
+
+<h2 id="tocS_V3PSUBankBridgeConnectionAttemptStatusEnum">V3PSUBankBridgeConnectionAttemptStatusEnum</h2>
+<!-- backwards compatibility -->
+<a id="schemav3psubankbridgeconnectionattemptstatusenum"></a>
+<a id="schema_V3PSUBankBridgeConnectionAttemptStatusEnum"></a>
+<a id="tocSv3psubankbridgeconnectionattemptstatusenum"></a>
+<a id="tocsv3psubankbridgeconnectionattemptstatusenum"></a>
+
+```json
+"pending"
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|*anonymous*|string|false|none|none|
+
+#### Enumerated Values
+
+|Property|Value|
+|---|---|
+|*anonymous*|pending|
+|*anonymous*|completed|
+|*anonymous*|exited|
+
+<h2 id="tocS_V3PaymentServiceUserCreateLinkRequest">V3PaymentServiceUserCreateLinkRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceusercreatelinkrequest"></a>
+<a id="schema_V3PaymentServiceUserCreateLinkRequest"></a>
+<a id="tocSv3paymentserviceusercreatelinkrequest"></a>
+<a id="tocsv3paymentserviceusercreatelinkrequest"></a>
+
+```json
+{
+  "applicationName": "string",
+  "clientRedirectURL": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|applicationName|string|true|none|none|
+|clientRedirectURL|string(url)|true|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserCreateLinkResponse">V3PaymentServiceUserCreateLinkResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceusercreatelinkresponse"></a>
+<a id="schema_V3PaymentServiceUserCreateLinkResponse"></a>
+<a id="tocSv3paymentserviceusercreatelinkresponse"></a>
+<a id="tocsv3paymentserviceusercreatelinkresponse"></a>
+
+```json
+{
+  "attemptID": "string",
+  "link": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|attemptID|string|true|none|none|
+|link|string(url)|true|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserUpdateLinkRequest">V3PaymentServiceUserUpdateLinkRequest</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserupdatelinkrequest"></a>
+<a id="schema_V3PaymentServiceUserUpdateLinkRequest"></a>
+<a id="tocSv3paymentserviceuserupdatelinkrequest"></a>
+<a id="tocsv3paymentserviceuserupdatelinkrequest"></a>
+
+```json
+{
+  "applicationName": "string",
+  "clientRedirectURL": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|applicationName|string|true|none|none|
+|clientRedirectURL|string(url)|true|none|none|
+
+<h2 id="tocS_V3PaymentServiceUserUpdateLinkResponse">V3PaymentServiceUserUpdateLinkResponse</h2>
+<!-- backwards compatibility -->
+<a id="schemav3paymentserviceuserupdatelinkresponse"></a>
+<a id="schema_V3PaymentServiceUserUpdateLinkResponse"></a>
+<a id="tocSv3paymentserviceuserupdatelinkresponse"></a>
+<a id="tocsv3paymentserviceuserupdatelinkresponse"></a>
+
+```json
+{
+  "attemptID": "string",
+  "link": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|attemptID|string|true|none|none|
+|link|string(url)|true|none|none|
 
 <h2 id="tocS_V3CreatePoolRequest">V3CreatePoolRequest</h2>
 <!-- backwards compatibility -->

@@ -1015,6 +1015,282 @@ paths:
       security:
         - Authorization:
             - payments:read
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a payment service user by ID
+      operationId: v3DeletePaymentServiceUser
+      x-speakeasy-name-override: DeletePaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserDeleteResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+
+  /v3/payment-service-users/{paymentServiceUserID}/connections:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connections for a payment service user
+      operationId: v3ListPaymentServiceUserConnections
+      x-speakeasy-name-override: ListPaymentServiceUserConnections
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserConnectionsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a payment service user on a connector
+      operationId: v3DeletePaymentServiceUserConnector
+      x-speakeasy-name-override: DeletePaymentServiceUserConnector
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserDeleteConnectorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward:
+    post:
+      tags:
+        - payments.v3
+      summary: Forward a payment service user to a connector
+      operationId: v3ForwardPaymentServiceUserToBankBridge
+      x-speakeasy-name-override: ForwardPaymentServiceUserToBankBridge
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "204":
+          description: No Content
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/create-link:
+    post:
+      tags:
+        - payments.v3
+      summary: Create a link for a payment service user on a connector
+      operationId: v3CreateLinkForPaymentServiceUser
+      x-speakeasy-name-override: CreateLinkForPaymentServiceUser
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3PaymentServiceUserCreateLinkRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserCreateLinkResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections:
+    get:
+      tags:
+        - payments.v3
+      summary: List all connections for a payment service user on a connector
+      operationId: v3ListPaymentServiceUserConnectionsFromConnectorID
+      x-speakeasy-name-override: ListPaymentServiceUserConnectionsFromConnectorID
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserConnectionsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts:
+    get:
+      tags:
+        - payments.v3
+      summary: List all link attempts for a payment service user on a connector
+      operationId: v3ListPaymentServiceUserLinkAttemptsFromConnectorID
+      x-speakeasy-name-override: ListPaymentServiceUserLinkAttemptsFromConnectorID
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserLinkAttemptsCursorResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts/{attemptID}:
+    get:
+      tags:
+        - payments.v3
+      summary: Get a link attempt for a payment service user on a connector
+      operationId: v3GetPaymentServiceUserLinkAttemptFromConnectorID
+      x-speakeasy-name-override: GetPaymentServiceUserLinkAttemptFromConnectorID
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3AttemptID'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserLinkAttempt"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:read
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}:
+    delete:
+      tags:
+        - payments.v3
+      summary: Delete a connection for a payment service user on a connector
+      operationId: v3DeletePaymentServiceUserConnectionFromConnectorID
+      x-speakeasy-name-override: DeletePaymentServiceUserConnectionFromConnectorID
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3ConnectionID'
+      responses:
+        "202  ":
+          description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserDeleteConnectionResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
+
+  /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections/{connectionID}/update-link:
+    post:
+      tags:
+        - payments.v3
+      summary: Update a link for a payment service user on a connector
+      operationId: v3UpdateLinkForPaymentServiceUserOnConnector
+      x-speakeasy-name-override: UpdateLinkForPaymentServiceUserOnConnector
+      parameters:
+        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3ConnectionID'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3PaymentServiceUserUpdateLinkRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3PaymentServiceUserUpdateLinkResponse"
+        default:
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/V3ErrorResponse"
+      security:
+        - Authorization:
+            - payments:write
 
   /v3/payment-service-users/{paymentServiceUserID}/bank-accounts/{bankAccountID}:
     post:
