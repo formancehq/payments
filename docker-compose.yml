@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 volumes:
   postgres:
 
@@ -10,7 +10,7 @@ services:
     ports:
       - 8092:80
     environment:
-     DEBUG: true
+      DEBUG: true
 
   postgres:
     image: "postgres:14-alpine"
@@ -82,7 +82,7 @@ services:
     image: golang:1.23.4-alpine
     command: go run ./ server
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -105,13 +105,13 @@ services:
       PLUGIN_MAGIC_COOKIE: mysupercookie
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: true
       STACK_URL: http://gateway:8092
-      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      STACK_PUBLIC_URL: http://localhost:8080
 
   payments-worker:
     image: golang:1.23.4-alpine
     command: go run ./ worker
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -133,4 +133,4 @@ services:
       PLUGIN_MAGIC_COOKIE: mysupercookie
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
       STACK_URL: http://gateway:8092
-      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+      STACK_PUBLIC_URL: http://localhost:8080
