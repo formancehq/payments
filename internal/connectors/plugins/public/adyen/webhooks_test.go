@@ -220,7 +220,7 @@ var _ = Describe("Adyen Plugin Accounts", func() {
 			Amount:                      big.NewInt(150),
 			Asset:                       "EUR/2",
 			Scheme:                      models.PAYMENT_SCHEME_OTHER,
-			Status:                      models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+			Status:                      models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 			DestinationAccountReference: pointer.For("test"),
 		}
 

@@ -77,7 +77,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 		for _, a := range p.Adjustments {
 			adjustmentsToInsert = append(adjustmentsToInsert, fromPaymentAdjustmentModels(a))
 			switch a.Status {
-			case models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT:
+			case models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT:
 				if i, ok := paymentsInitialAmountToAdjustSeen[p.ID]; ok {
 					paymentsInitialAmountToAdjust[i].InitialAmount = a.Amount
 				} else {

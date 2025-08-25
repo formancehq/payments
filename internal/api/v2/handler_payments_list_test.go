@@ -68,7 +68,7 @@ var _ = Describe("API v2 Payments List", func() {
 									ID:        models.PaymentAdjustmentID{},
 									Reference: "test",
 									CreatedAt: time.Now().UTC(),
-									Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTEMENT,
+									Status:    models.PAYMENT_STATUS_AMOUNT_ADJUSTMENT,
 									Amount:    big.NewInt(100),
 									Asset:     pointer.For("EUR/2"),
 									Metadata: map[string]string{

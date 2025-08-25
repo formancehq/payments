@@ -4471,7 +4471,7 @@ components:
         - DISPUTE
         - DISPUTE_WON
         - DISPUTE_LOST
-        - AMOUNT_ADJUSTEMENT
+        - AMOUNT_ADJUSTMENT
         - AUTHORISATION
         - CAPTURE
         - CAPTURE_FAILED
