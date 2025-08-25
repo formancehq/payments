@@ -3,7 +3,6 @@ package checkout
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strings"
 
@@ -52,6 +51,48 @@ func mapCheckoutPaymentStatus(s string) models.PaymentStatus {
 	}
 }
 
+func mapCheckoutScheme(scheme string) models.PaymentScheme {
+	switch strings.ToUpper(scheme) {
+		case "VISA":
+			return models.PAYMENT_SCHEME_CARD_VISA
+		case "MASTERCARD":
+			return models.PAYMENT_SCHEME_CARD_MASTERCARD
+		case "AMEX", "AMERICAN_EXPRESS":
+			return models.PAYMENT_SCHEME_CARD_AMEX
+		case "DINERS":
+			return models.PAYMENT_SCHEME_CARD_DINERS
+		case "DISCOVER":
+			return models.PAYMENT_SCHEME_CARD_DISCOVER
+		case "JCB":
+			return models.PAYMENT_SCHEME_CARD_JCB
+		case "UNIONPAY", "UNION_PAY":
+			return models.PAYMENT_SCHEME_CARD_UNION_PAY
+		case "ALIPAY":
+			return models.PAYMENT_SCHEME_CARD_ALIPAY
+		case "CUP":
+			return models.PAYMENT_SCHEME_CARD_CUP
+		case "GOOGLEPAY", "GOOGLE_PAY":
+			return models.PAYMENT_SCHEME_GOOGLE_PAY
+		case "APPLEPAY", "APPLE_PAY":
+			return models.PAYMENT_SCHEME_APPLE_PAY
+		case "MAESTRO":
+			return models.PAYMENT_SCHEME_MAESTRO
+		case "ACH":
+			return models.PAYMENT_SCHEME_ACH
+		case "ACH_DEBIT":
+			return models.PAYMENT_SCHEME_ACH_DEBIT
+		case "RTP":
+			return models.PAYMENT_SCHEME_RTP
+		case "SEPA":
+			return models.PAYMENT_SCHEME_SEPA
+		case "SEPA_CREDIT":
+			return models.PAYMENT_SCHEME_SEPA_CREDIT
+		case "SEPA_DEBIT":
+			return models.PAYMENT_SCHEME_SEPA_DEBIT
+		default:
+			return models.PAYMENT_SCHEME_OTHER
+	}
+}
 
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	var oldState paymentsState
@@ -87,16 +128,24 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 				"status":     t.Status,
 			}
 
+			paymentType := models.PAYMENT_TYPE_PAYIN
+			for _, act := range t.Actions {
+				if strings.EqualFold(act.Type, "Payout") {
+					paymentType = models.PAYMENT_TYPE_PAYOUT
+					break
+				}
+			}
+
 			payments = append(payments, models.PSPPayment{
 				ParentReference: "",
 				Reference: t.ID,
+				CreatedAt: t.CreatedAt,
+				Type: paymentType,
 				Amount:    big.NewInt(t.Amount),
 				Asset:     asset,
-				CreatedAt: t.CreatedAt,
-				SourceAccountReference: &t.SourceAccountReference,
+				Scheme: mapCheckoutScheme(t.Scheme),
 				Status: mapCheckoutPaymentStatus(t.Status),
-				Scheme: models.PAYMENT_SCHEME_CARD_ALIPAY,
-				Type: models.PAYMENT_TYPE_UNKNOWN,
+				SourceAccountReference: &t.SourceAccountReference,
 				Metadata:  md,
 				Raw:       raw,
 			})
@@ -117,10 +166,6 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextPaymentsResponse{}, err
-	}
-
-	if t, _ := json.Marshal(payments); true {
-		fmt.Printf("[checkout] payments returns %d payment(s): %s\n", len(payments), string(t))
 	}
 
 	return models.FetchNextPaymentsResponse{

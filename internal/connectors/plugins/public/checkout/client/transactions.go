@@ -12,16 +12,21 @@ import (
 	"github.com/formancehq/payments/internal/connectors/metrics"
 )
 
-type Transaction struct {
-	ID        string     `json:"id"`
-	PaymentID string     `json:"payment_id"`
+type TransactionAction struct {
 	Type      string   	 `json:"type"`
-	Status    string     `json:"status"`
-	Amount    int64      `json:"amount"`
-	Currency  string     `json:"currency"`
-	Scheme    string     `json:"scheme"`
-	SourceAccountReference string `json:"sourceAccountReference"`
-	CreatedAt time.Time  `json:"created_at"`
+}
+
+type Transaction struct {
+	ID        				string     			`json:"id"`
+	PaymentID 				string     			`json:"payment_id"`
+	Type      				string     			`json:"type"`
+	Status    				string     			`json:"status"`
+	Amount    				int64      			`json:"amount"`
+	Currency  				string     			`json:"currency"`
+	Scheme    				string     			`json:"scheme"`
+	SourceAccountReference 	string 				`json:"sourceAccountReference"`
+	Actions	  			   	[]TransactionAction `json:"actions"`
+	CreatedAt 				time.Time  			`json:"created_at"`
 }
 
 type searchSort struct {
@@ -40,15 +45,16 @@ type searchPaymentsRequest struct {
 }
 type searchPaymentsResponse struct {
 	Data []struct {
-		ID          string    `json:"id"`
-		Amount      int64     `json:"amount"`
-		Currency    string    `json:"currency"`
-		Status      string    `json:"status"`
-		Approved    bool      `json:"approved"`
+		ID          string    			`json:"id"`
+		Amount      int64     			`json:"amount"`
+		Currency    string    			`json:"currency"`
+		Status      string    			`json:"status"`
+		Approved    bool      			`json:"approved"`
 		Source      struct {
 			Scheme      string    `json:"scheme"`
 		} `json:"source"`
-		RequestedOn time.Time `json:"requested_on"`
+		RequestedOn time.Time 			`json:"requested_on"`
+		Actions		[]TransactionAction `json:"actions"`
 	} `json:"data"`
 }
 
@@ -115,12 +121,9 @@ func (c *client) GetTransactions(ctx context.Context, page, pageSize int) ([]*Tr
 			Amount:    it.Amount,
 			Currency:  it.Currency,
 			SourceAccountReference: c.entityID,
+			Actions:   it.Actions,
 			CreatedAt: it.RequestedOn,
 		})
-	}
-
-	if t, _ := json.Marshal(transactions); true {
-		fmt.Printf("[checkout] GetTransactions returns %d transaction(s): %s\n", len(transactions), string(t))
 	}
 
 	return transactions, nil
