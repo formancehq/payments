@@ -2,6 +2,7 @@ package checkout
 
 import (
 	"context"
+	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/checkout/client"
 	"github.com/formancehq/payments/internal/models"
@@ -12,25 +13,16 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 		return nil, err
 	}
 
-	// TODO: Since we are in minor units currency in the PSPPaymentInitiation
-	// object, we sometimes need to put back the amount in float for
-	// the PSP. You can use the next methods to do that.
-	// curr, precision, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	// if err != nil {
-	//	return nil, fmt.Errorf("failed to get currency and precision from asset: %v: %w", err, models.ErrInvalidRequest)
-	//}
+	var pr client.PayoutRequest
+	pr.Amount = pi.Amount.Int64()
+	pr.Currency = pi.Asset
+	pr.Reference = pi.Reference
+	pr.SourceEntityID = pi.SourceAccount.Reference
+	pr.DestinationInstrumentID = pi.DestinationAccount.Reference
+	pr.BillingDescriptor = pi.Description
+	pr.IdempotencyKey = p.generateIdempotencyKey(pi.Reference)
 
-	// amount, err := currency.GetStringAmountFromBigIntWithPrecision(pi.Amount, precision)
-	// if err != nil {
-	//	 return nil, fmt.Errorf("failed to get string amount from big int: %v: %w", err, models.ErrInvalidRequest)
-	// }
-
-	resp, err := p.client.InitiatePayout(
-		ctx,
-		&client.PayoutRequest{
-			// TODO: fill payout request
-		},
-	)
+	resp, err := p.client.InitiatePayout(ctx, &pr)
 	if err != nil {
 		return nil, err
 	}
@@ -39,6 +31,28 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 }
 
 func payoutToPayment(from *client.PayoutResponse) (*models.PSPPayment, error) {
-	// TODO: translate payout to formance payment object
-	return nil, nil
+	if from == nil {
+		return nil, errors.New("nil payout response")
+	}
+
+	p := &models.PSPPayment{
+		Status:            mapStatus(from),
+		Reference:         from.Reference,
+	}
+	return p, nil
+}
+
+func mapStatus(from *client.PayoutResponse) models.PaymentStatus {
+	switch from.Status {
+	case "Pending":
+		return models.PAYMENT_STATUS_PENDING
+	case "Captured", "Authorized", "Active":
+		return models.PAYMENT_STATUS_SUCCEEDED
+	case "Declined", "Failed", "Voided":
+		return models.PAYMENT_STATUS_FAILED
+	case "Canceled":
+		return models.PAYMENT_STATUS_CANCELLED
+	default:
+		return models.PAYMENT_STATUS_UNKNOWN
+	}
 }

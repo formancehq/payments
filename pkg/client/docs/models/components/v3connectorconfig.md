@@ -21,6 +21,12 @@ v3ConnectorConfig := components.CreateV3ConnectorConfigAtlar(components.V3AtlarC
 v3ConnectorConfig := components.CreateV3ConnectorConfigBankingcircle(components.V3BankingcircleConfig{/* values here */})
 ```
 
+### V3CheckoutConfig
+
+```go
+v3ConnectorConfig := components.CreateV3ConnectorConfigCheckout(components.V3CheckoutConfig{/* values here */})
+```
+
 ### V3ColumnConfig
 
 ```go

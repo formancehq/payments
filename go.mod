@@ -12,6 +12,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.4.7
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
+	github.com/checkout/checkout-sdk-go v1.7.2
 	github.com/emvi/iso-639-1 v1.1.1
 	github.com/formancehq/go-libs/v3 v3.0.2-0.20250814071617-0f5bb98d939b
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
@@ -95,7 +96,6 @@ require (
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
-	github.com/checkout/checkout-sdk-go v1.7.2 // indirect
 	github.com/containerd/continuity v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect

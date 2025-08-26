@@ -15,6 +15,7 @@ const (
 	V3InstallConnectorRequestTypeAdyen         V3InstallConnectorRequestType = "Adyen"
 	V3InstallConnectorRequestTypeAtlar         V3InstallConnectorRequestType = "Atlar"
 	V3InstallConnectorRequestTypeBankingcircle V3InstallConnectorRequestType = "Bankingcircle"
+	V3InstallConnectorRequestTypeCheckout      V3InstallConnectorRequestType = "Checkout"
 	V3InstallConnectorRequestTypeColumn        V3InstallConnectorRequestType = "Column"
 	V3InstallConnectorRequestTypeCurrencycloud V3InstallConnectorRequestType = "Currencycloud"
 	V3InstallConnectorRequestTypeDummypay      V3InstallConnectorRequestType = "Dummypay"
@@ -34,6 +35,7 @@ type V3InstallConnectorRequest struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3CheckoutConfig      *V3CheckoutConfig      `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
@@ -84,6 +86,18 @@ func CreateV3InstallConnectorRequestBankingcircle(bankingcircle V3BankingcircleC
 	return V3InstallConnectorRequest{
 		V3BankingcircleConfig: &bankingcircle,
 		Type:                  typ,
+	}
+}
+
+func CreateV3InstallConnectorRequestCheckout(checkout V3CheckoutConfig) V3InstallConnectorRequest {
+	typ := V3InstallConnectorRequestTypeCheckout
+
+	typStr := string(typ)
+	checkout.Provider = &typStr
+
+	return V3InstallConnectorRequest{
+		V3CheckoutConfig: &checkout,
+		Type:             typ,
 	}
 }
 
@@ -282,6 +296,15 @@ func (u *V3InstallConnectorRequest) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3InstallConnectorRequestTypeBankingcircle
 		return nil
+	case "Checkout":
+		v3CheckoutConfig := new(V3CheckoutConfig)
+		if err := utils.UnmarshalJSON(data, &v3CheckoutConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Checkout) type V3CheckoutConfig within V3InstallConnectorRequest: %w", string(data), err)
+		}
+
+		u.V3CheckoutConfig = v3CheckoutConfig
+		u.Type = V3InstallConnectorRequestTypeCheckout
+		return nil
 	case "Column":
 		v3ColumnConfig := new(V3ColumnConfig)
 		if err := utils.UnmarshalJSON(data, &v3ColumnConfig, "", true, false); err != nil {
@@ -415,6 +438,10 @@ func (u V3InstallConnectorRequest) MarshalJSON() ([]byte, error) {
 
 	if u.V3BankingcircleConfig != nil {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
+	}
+
+	if u.V3CheckoutConfig != nil {
+		return utils.MarshalJSON(u.V3CheckoutConfig, "", true)
 	}
 
 	if u.V3ColumnConfig != nil {

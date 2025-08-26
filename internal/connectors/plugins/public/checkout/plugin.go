@@ -39,6 +39,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		cfg.OAuthClientID,
 		cfg.OAuthClientSecret,
 		cfg.EntityID,
+		cfg.ProcessingChannelId,
 	)
 
 	return &Plugin{

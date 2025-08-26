@@ -25,6 +25,10 @@ func (o *V3GetConnectorConfigResponse) GetDataBankingcircle() *V3BankingcircleCo
 	return o.GetData().V3BankingcircleConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataCheckout() *V3CheckoutConfig {
+	return o.GetData().V3CheckoutConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataColumn() *V3ColumnConfig {
 	return o.GetData().V3ColumnConfig
 }

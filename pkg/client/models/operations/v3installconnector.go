@@ -47,6 +47,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestBankingcircle() 
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCheckout() *components.V3CheckoutConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3CheckoutConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestColumn() *components.V3ColumnConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3ColumnConfig

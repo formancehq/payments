@@ -5732,6 +5732,12 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
+|*anonymous*|[V3CheckoutConfig](#schemav3checkoutconfig)|false|none|none|
+
+xor
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
 |*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
 
 xor
@@ -5911,6 +5917,42 @@ xor
 |userCertificate|string|true|none|none|
 |userCertificateKey|string|true|none|none|
 |username|string|true|none|none|
+
+<h2 id="tocS_V3CheckoutConfig">V3CheckoutConfig</h2>
+<!-- backwards compatibility -->
+<a id="schemav3checkoutconfig"></a>
+<a id="schema_V3CheckoutConfig"></a>
+<a id="tocSv3checkoutconfig"></a>
+<a id="tocsv3checkoutconfig"></a>
+
+```json
+{
+  "entityId": "string",
+  "environment": "string",
+  "name": "string",
+  "oauthClientID": "string",
+  "oauthClientSecret": "string",
+  "pageSize": "25",
+  "pollingPeriod": "2m",
+  "processingChannelId": "string",
+  "provider": "Checkout"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|entityId|string|true|none|none|
+|environment|string|true|none|none|
+|name|string|true|none|none|
+|oauthClientID|string|true|none|none|
+|oauthClientSecret|string|true|none|none|
+|pageSize|integer|false|none|none|
+|pollingPeriod|string|false|none|none|
+|processingChannelId|string|true|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>
 <!-- backwards compatibility -->

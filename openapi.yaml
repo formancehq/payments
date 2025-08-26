@@ -5125,6 +5125,7 @@ components:
           Adyen: '#/components/schemas/V3AdyenConfig'
           Atlar: '#/components/schemas/V3AtlarConfig'
           Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
+          Checkout: '#/components/schemas/V3CheckoutConfig'
           Column: '#/components/schemas/V3ColumnConfig'
           Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
           Dummypay: '#/components/schemas/V3DummypayConfig'
@@ -5142,6 +5143,7 @@ components:
         - $ref: '#/components/schemas/V3AdyenConfig'
         - $ref: '#/components/schemas/V3AtlarConfig'
         - $ref: '#/components/schemas/V3BankingcircleConfig'
+        - $ref: '#/components/schemas/V3CheckoutConfig'
         - $ref: '#/components/schemas/V3ColumnConfig'
         - $ref: '#/components/schemas/V3CurrencycloudConfig'
         - $ref: '#/components/schemas/V3DummypayConfig'
@@ -5242,6 +5244,37 @@ components:
           type: string
         username:
           type: string
+    V3CheckoutConfig:
+      type: object
+      required:
+        - name
+        - environment
+        - oauthClientID
+        - oauthClientSecret
+        - entityId
+        - processingChannelId
+      properties:
+        entityId:
+          type: string
+        environment:
+          type: string
+        name:
+          type: string
+        oauthClientID:
+          type: string
+        oauthClientSecret:
+          type: string
+        pageSize:
+          type: integer
+          default: "25"
+        pollingPeriod:
+          type: string
+          default: 2m
+        processingChannelId:
+          type: string
+        provider:
+          type: string
+          default: Checkout
     V3ColumnConfig:
       type: object
       required:

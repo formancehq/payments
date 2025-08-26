@@ -1,7 +1,10 @@
 package checkout
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"strings"
 
 	"github.com/formancehq/payments/internal/models"
 )
@@ -16,4 +19,10 @@ func (p *Plugin) validateTransferPayoutRequests(pi models.PSPPaymentInitiation) 
 	}
 
 	return nil
+}
+
+func (p *Plugin) generateIdempotencyKey(values ...string) string {
+	joined := strings.Join(values, "-")
+	hash := sha256.Sum256([]byte(joined))
+	return hex.EncodeToString(hash[:])
 }

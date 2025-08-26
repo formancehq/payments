@@ -15,6 +15,7 @@ type Config struct {
 	OAuthClientID   string `json:"oauthClientID" validate:"required"`
 	OAuthClientSecret   string `json:"oauthClientSecret" validate:"required"`
 	EntityID   string `json:"entityId" validate:"required"`
+	ProcessingChannelId string `json:"processingChannelId" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

@@ -33,6 +33,7 @@ type client struct {
 	oauthClientID		string
 	oauthClientSecret	string
 	entityID 		 	string
+	processingChannelId string
 }
 
 type acceptHeaderTransport struct {
@@ -53,6 +54,7 @@ func New(
 	oauthClientID string,
 	oauthClientSecret string,
 	entityID string,
+	processingChannelId string,
 ) *client {
 	var environment configuration.Environment
 	switch strings.ToLower(strings.TrimSpace(env)) {
@@ -84,13 +86,14 @@ func New(
 	}
 
 	return &client{
-		sdk:      			sdk,
-		httpClient: 		httpClient,
-		apiBase: 			apiBase,
-		apiAuthUrl:			apiAuthUrl,
-		oauthClientID: 		oauthClientID,
-		oauthClientSecret: 	oauthClientSecret,
-		entityID: 			entityID,
+		sdk:      			 sdk,
+		httpClient: 		 httpClient,
+		apiBase: 			 apiBase,
+		apiAuthUrl:			 apiAuthUrl,
+		oauthClientID: 		 oauthClientID,
+		oauthClientSecret: 	 oauthClientSecret,
+		entityID: 			 entityID,
+		processingChannelId: processingChannelId,
 	}
 }
 

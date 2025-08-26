@@ -41,13 +41,6 @@ type sdkTransferRequest = transfers.TransferRequest
 func (c *client) InitiateTransfer(ctx context.Context, tr *TransferRequest) (*TransferResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "initiate_transfer")
 
-	if tr == nil {
-		return nil, fmt.Errorf("missing transfer request")
-	}
-	if tr.Amount <= 0 {
-		return nil, fmt.Errorf("amount must be > 0")
-	}
-
 	req := transfers.TransferRequest{
 		Reference: tr.Reference,
 		TransferType: "commission",

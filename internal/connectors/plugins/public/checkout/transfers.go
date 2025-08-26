@@ -3,7 +3,6 @@ package checkout
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 	"time"
 	"math/big"
@@ -19,33 +18,16 @@ func (p *Plugin) createTransfer(ctx context.Context, pi models.PSPPaymentInitiat
 		return nil, err
 	}
 
-	curr, _, err := currency.GetCurrencyAndPrecisionFromAsset(supportedCurrenciesWithDecimal, pi.Asset)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get currency from asset %q: %w", pi.Asset, models.ErrInvalidRequest)
-	}
-
-	if !pi.Amount.IsInt64() {
-		return nil, fmt.Errorf("amount overflows int64: %w", models.ErrInvalidRequest)
-	}
-	amountMinor := pi.Amount.Int64()
-
-	var srcEnt, dstEnt string
-	if pi.SourceAccount != nil {
-		srcEnt = pi.SourceAccount.Reference
-	}
-	if pi.DestinationAccount != nil {
-		dstEnt = pi.DestinationAccount.Reference
-	}
-
 	tr := &client.TransferRequest{
 		Reference: pi.Reference,
 		Reason:    "Formance transfer",
 	}
-	tr.Source.EntityID = srcEnt
-	tr.Source.Currency = curr
-	tr.Destination.EntityID = dstEnt
-	tr.Destination.Currency = curr
-	tr.Amount = amountMinor
+	tr.Source.EntityID = pi.SourceAccount.Reference
+	tr.Source.Currency = pi.Asset
+	tr.Destination.EntityID = pi.DestinationAccount.Reference
+	tr.Destination.Currency = pi.Asset
+	tr.Amount = pi.Amount.Int64()
+	tr.IdempotencyKey = p.generateIdempotencyKey(pi.Reference)
 
 	resp, err := p.client.InitiateTransfer(ctx, tr)
 	if err != nil {

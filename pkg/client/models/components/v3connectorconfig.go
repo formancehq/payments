@@ -15,6 +15,7 @@ const (
 	V3ConnectorConfigTypeAdyen         V3ConnectorConfigType = "Adyen"
 	V3ConnectorConfigTypeAtlar         V3ConnectorConfigType = "Atlar"
 	V3ConnectorConfigTypeBankingcircle V3ConnectorConfigType = "Bankingcircle"
+	V3ConnectorConfigTypeCheckout      V3ConnectorConfigType = "Checkout"
 	V3ConnectorConfigTypeColumn        V3ConnectorConfigType = "Column"
 	V3ConnectorConfigTypeCurrencycloud V3ConnectorConfigType = "Currencycloud"
 	V3ConnectorConfigTypeDummypay      V3ConnectorConfigType = "Dummypay"
@@ -34,6 +35,7 @@ type V3ConnectorConfig struct {
 	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
 	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
 	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3CheckoutConfig      *V3CheckoutConfig      `queryParam:"inline"`
 	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
 	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
 	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
@@ -84,6 +86,18 @@ func CreateV3ConnectorConfigBankingcircle(bankingcircle V3BankingcircleConfig) V
 	return V3ConnectorConfig{
 		V3BankingcircleConfig: &bankingcircle,
 		Type:                  typ,
+	}
+}
+
+func CreateV3ConnectorConfigCheckout(checkout V3CheckoutConfig) V3ConnectorConfig {
+	typ := V3ConnectorConfigTypeCheckout
+
+	typStr := string(typ)
+	checkout.Provider = &typStr
+
+	return V3ConnectorConfig{
+		V3CheckoutConfig: &checkout,
+		Type:             typ,
 	}
 }
 
@@ -282,6 +296,15 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3BankingcircleConfig = v3BankingcircleConfig
 		u.Type = V3ConnectorConfigTypeBankingcircle
 		return nil
+	case "Checkout":
+		v3CheckoutConfig := new(V3CheckoutConfig)
+		if err := utils.UnmarshalJSON(data, &v3CheckoutConfig, "", true, false); err != nil {
+			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Checkout) type V3CheckoutConfig within V3ConnectorConfig: %w", string(data), err)
+		}
+
+		u.V3CheckoutConfig = v3CheckoutConfig
+		u.Type = V3ConnectorConfigTypeCheckout
+		return nil
 	case "Column":
 		v3ColumnConfig := new(V3ColumnConfig)
 		if err := utils.UnmarshalJSON(data, &v3ColumnConfig, "", true, false); err != nil {
@@ -415,6 +438,10 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3BankingcircleConfig != nil {
 		return utils.MarshalJSON(u.V3BankingcircleConfig, "", true)
+	}
+
+	if u.V3CheckoutConfig != nil {
+		return utils.MarshalJSON(u.V3CheckoutConfig, "", true)
 	}
 
 	if u.V3ColumnConfig != nil {
