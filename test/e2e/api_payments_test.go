@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payments API Payments", func() {
+var _ = Context("Payments API Payments", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -37,6 +37,10 @@ var _ = Context("Payments API Payments", func() {
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
 		}
+	})
+
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
 	})
 
 	When("creating a new payment with v3", func() {

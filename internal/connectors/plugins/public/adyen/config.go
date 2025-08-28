@@ -11,7 +11,7 @@ import (
 type Config struct {
 	APIKey             string `json:"apiKey" validate:"required"`
 	CompanyID          string `json:"companyID" validate:"required"`
-	LiveEndpointPrefix string `json:"liveEndpointPrefix" validate:"omitempty,alphanum"`
+	LiveEndpointPrefix string `json:"liveEndpointPrefix" validate:"omitempty,url_encoded"`
 
 	// https://datatracker.ietf.org/doc/html/rfc7617
 	WebhookUsername string `json:"webhookUsername" validate:"omitempty,excludes=:"`

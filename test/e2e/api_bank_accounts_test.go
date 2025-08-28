@@ -20,7 +20,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Context("Payments API Bank Accounts", func() {
+var _ = Context("Payments API Bank Accounts", Serial, func() {
 	var (
 		db  = UseTemplatedDatabase()
 		ctx = logging.TestingContext()
@@ -42,6 +42,10 @@ var _ = Context("Payments API Bank Accounts", func() {
 			TemporalAddress:       temporalServer.GetValue().Address(),
 			Output:                GinkgoWriter,
 		}
+	})
+
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
 	})
 
 	v3CreateRequest = &components.V3CreateBankAccountRequest{
