@@ -168,7 +168,6 @@ func iterateThroughTemporalWorkflowExecutions(
 
 		var shouldStop bool
 		for _, info := range workflowRes.Executions {
-			// TODO do something
 			if callbackFn(info) {
 				shouldStop = true
 				break
