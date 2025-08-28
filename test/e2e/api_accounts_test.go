@@ -42,6 +42,10 @@ var _ = Context("Payments API Accounts", func() {
 		}
 	})
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
 
 	When("creating a new account", func() {

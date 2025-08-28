@@ -40,6 +40,10 @@ var _ = Context("Payments API Payment Initiation", Serial, func() {
 
 	createdAt, _ := time.Parse("2006-Jan-02", "2024-Nov-29")
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	When("initiating a new transfer with v3", func() {
 		var (
 			e   chan *nats.Msg

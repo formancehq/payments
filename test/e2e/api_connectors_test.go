@@ -16,10 +16,12 @@ import (
 	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/formancehq/payments/pkg/testserver"
 	"github.com/google/uuid"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	v17 "go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Context("Payments API Connectors", func() {
@@ -37,6 +39,10 @@ var _ = Context("Payments API Connectors", func() {
 			Output:                GinkgoWriter,
 			Debug:                 true,
 		}
+	})
+
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
 	})
 
 	When("installing a connector", func() {
@@ -437,6 +443,8 @@ var _ = Context("Payments API Connectors", func() {
 	})
 })
 
+// if this turns out to be slow we might also consider executing each test suite on its own namespace
+// presumably there would be fewer competing workflow executions that way
 func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searchKeyword string) string {
 	var (
 		workflowID string
@@ -444,27 +452,24 @@ func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searc
 	)
 
 	connectorID := models.MustConnectorIDFromString(connectorIDStr)
-
 	cl := temporalServer.GetValue().DefaultClient()
-	req := &workflowservice.ListOpenWorkflowExecutionsRequest{Namespace: temporalServer.GetValue().DefaultNamespace()}
-	workflowRes, err := cl.ListOpenWorkflow(ctx, req)
-	Expect(err).To(BeNil())
-	for _, info := range workflowRes.Executions {
+	iterateThroughTemporalWorkflowExecutions(ctx, cl, func(info *v17.WorkflowExecutionInfo) bool {
 		if (strings.Contains(info.Execution.WorkflowId, connectorID.Reference.String()) ||
 			strings.Contains(info.Execution.WorkflowId, connectorID.String())) &&
 			strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
 			workflowID = info.Execution.WorkflowId
 			runID = info.Execution.RunId
-			break
+			return true
 		}
-	}
+		return false
+	})
 
 	// if we couldn't find it either it's already done or it wasn't scheduled
 	if workflowID == "" {
 		return ""
 	}
 	workflowRun := cl.GetWorkflow(ctx, workflowID, runID)
-	err = workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
+	err := workflowRun.Get(ctx, nil) // blocks to ensure workflow is finished
 	Expect(err).To(BeNil())
 	return workflowID
 }

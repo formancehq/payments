@@ -39,6 +39,10 @@ var _ = Context("Payments API Payments", func() {
 		}
 	})
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	When("creating a new payment with v3", func() {
 		var (
 			connectorID   string

@@ -42,6 +42,10 @@ var _ = Context("Payments API Pools", func() {
 		}
 	})
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	When("creating a new pool with v3", func() {
 		var (
 			connectorID string

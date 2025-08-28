@@ -44,6 +44,10 @@ var _ = Context("Payments API Bank Accounts", func() {
 		}
 	})
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	v3CreateRequest = &components.V3CreateBankAccountRequest{
 		Name:          "foo",
 		AccountNumber: &accountNumber,

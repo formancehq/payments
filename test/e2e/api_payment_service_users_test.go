@@ -42,6 +42,10 @@ var _ = Context("Payment API Payment Service Users", func() {
 		}
 	})
 
+	AfterEach(func() {
+		flushRemainingWorkflows(ctx)
+	})
+
 	v3CreateRequest = &components.V3CreatePaymentServiceUserRequest{
 		Name: "test",
 		ContactDetails: &components.V3ContactDetailsRequest{

@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"sync"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunconnect"
@@ -16,6 +17,9 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
+	v17 "go.temporal.io/api/workflow/v1"
+	"go.temporal.io/api/workflowservice/v1"
+	"go.temporal.io/sdk/client"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -127,4 +131,53 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 	return pgtesting.UsePostgresDatabase(pgServer, pgtesting.CreateWithTemplate(DBTemplate))
+}
+
+func flushRemainingWorkflows(ctx context.Context) {
+	cl := temporalServer.GetValue().DefaultClient()
+
+	wg := &sync.WaitGroup{}
+	iterateThroughTemporalWorkflowExecutions(ctx, cl, func(info *v17.WorkflowExecutionInfo) bool {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
+			Expect(err).To(BeNil())
+		}()
+		return false
+	})
+	wg.Wait()
+}
+
+// pages through all workflow executions until the callback function returns true
+func iterateThroughTemporalWorkflowExecutions(
+	ctx context.Context,
+	cl client.Client,
+	callbackFn func(info *v17.WorkflowExecutionInfo) bool,
+) {
+	namespace := temporalServer.GetValue().DefaultNamespace()
+	var nextPageToken []byte
+
+	for {
+		req := &workflowservice.ListOpenWorkflowExecutionsRequest{
+			Namespace:     namespace,
+			NextPageToken: nextPageToken,
+		}
+		workflowRes, err := cl.ListOpenWorkflow(ctx, req)
+		Expect(err).To(BeNil())
+
+		var shouldStop bool
+		for _, info := range workflowRes.Executions {
+			// TODO do something
+			if callbackFn(info) {
+				shouldStop = true
+				break
+			}
+		}
+
+		if len(workflowRes.NextPageToken) == 0 || shouldStop {
+			break
+		}
+		nextPageToken = workflowRes.NextPageToken
+	}
 }
