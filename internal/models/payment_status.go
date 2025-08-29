@@ -56,7 +56,9 @@ func (t PaymentStatus) String() string {
 	case PAYMENT_STATUS_DISPUTE_LOST:
 		return "DISPUTE_LOST"
 	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT:
-		return "AMOUNT_ADJUSTMENT"
+		// There is a known typo here, but changing it would break old SDKs that expect this value.
+		return "AMOUNT_ADJUSTEMENT"
+
 	case PAYMENT_STATUS_AUTHORISATION:
 		return "AUTHORISATION"
 	case PAYMENT_STATUS_CAPTURE:
@@ -94,10 +96,8 @@ func PaymentStatusFromString(value string) (PaymentStatus, error) {
 		return PAYMENT_STATUS_DISPUTE_WON, nil
 	case "DISPUTE_LOST":
 		return PAYMENT_STATUS_DISPUTE_LOST, nil
-	case "AMOUNT_ADJUSTMENT":
-		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil
 	case "AMOUNT_ADJUSTEMENT":
-		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil // Only from backward compatibility, we can get rid of it as soon as the above block is released.
+		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil
 	case "AUTHORISATION":
 		return PAYMENT_STATUS_AUTHORISATION, nil
 	case "CAPTURE":
