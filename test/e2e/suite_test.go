@@ -135,21 +135,16 @@ func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 
 func flushRemainingWorkflows(ctx context.Context) {
 	cl := temporalServer.GetValue().DefaultClient()
-	ch := make(chan error)
+	maxPageSize := 25
+	ch := make(chan error, maxPageSize)
 
-	wg := &sync.WaitGroup{}
-	iterateThroughTemporalWorkflowExecutions(ctx, cl, func(info *v17.WorkflowExecutionInfo) bool {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
-			if err != nil {
-				ch <- err
-			}
-		}()
+	iterateThroughTemporalWorkflowExecutions(ctx, cl, int32(maxPageSize), func(info *v17.WorkflowExecutionInfo) bool {
+		err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
+		if err != nil {
+			ch <- err
+		}
 		return false
 	})
-	wg.Wait()
 
 	close(ch)
 	for err := range ch {
@@ -161,6 +156,7 @@ func flushRemainingWorkflows(ctx context.Context) {
 func iterateThroughTemporalWorkflowExecutions(
 	ctx context.Context,
 	cl client.Client,
+	maxPageSize int32,
 	callbackFn func(info *v17.WorkflowExecutionInfo) bool,
 ) {
 	namespace := temporalServer.GetValue().DefaultNamespace()
@@ -168,21 +164,34 @@ func iterateThroughTemporalWorkflowExecutions(
 
 	for {
 		req := &workflowservice.ListOpenWorkflowExecutionsRequest{
-			Namespace:     namespace,
-			NextPageToken: nextPageToken,
+			Namespace:       namespace,
+			NextPageToken:   nextPageToken,
+			MaximumPageSize: maxPageSize,
 		}
 		workflowRes, err := cl.ListOpenWorkflow(ctx, req)
 		Expect(err).To(BeNil())
 
-		var shouldStop bool
+		ch := make(chan bool, maxPageSize)
+		wg := &sync.WaitGroup{}
 		for _, info := range workflowRes.Executions {
-			if callbackFn(info) {
-				shouldStop = true
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				ch <- callbackFn(info)
+			}()
+		}
+
+		// wait for this batch of goroutines to finish before allowing the loop to continue
+		wg.Wait()
+		close(ch)
+
+		for shouldStop := range ch {
+			if shouldStop {
 				break
 			}
 		}
 
-		if len(workflowRes.NextPageToken) == 0 || shouldStop {
+		if len(workflowRes.NextPageToken) == 0 {
 			break
 		}
 		nextPageToken = workflowRes.NextPageToken
