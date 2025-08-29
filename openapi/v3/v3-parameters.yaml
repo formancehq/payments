@@ -29,6 +29,22 @@ components:
       schema:
         type: string
 
+    V3AttemptID:
+      name: attemptID
+      in: path
+      required: true
+      description: The attempt ID
+      schema:
+        type: string
+
+    V3ConnectionID:
+      name: connectionID
+      in: path
+      required: true
+      description: The connection ID
+      schema:
+        type: string
+
     V3PaymentID:
       name: paymentID
       in: path
