@@ -5,6 +5,7 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/api/serviceerror"
 	v17 "go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
@@ -135,46 +137,72 @@ func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 
 func flushRemainingWorkflows(ctx context.Context) {
 	cl := temporalServer.GetValue().DefaultClient()
+	maxPageSize := 25
 
-	wg := &sync.WaitGroup{}
-	iterateThroughTemporalWorkflowExecutions(ctx, cl, func(info *v17.WorkflowExecutionInfo) bool {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
-			Expect(err).To(BeNil())
-		}()
+	mu := &sync.Mutex{}
+	errs := make([]error, 0)
+
+	iterateThroughTemporalWorkflowExecutions(ctx, cl, int32(maxPageSize), func(info *v17.WorkflowExecutionInfo) bool {
+		err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
+		if err != nil {
+			mu.Lock()
+			errs = append(errs, err)
+			mu.Unlock()
+		}
 		return false
 	})
-	wg.Wait()
+
+	for _, err := range errs {
+		// might already be completed
+		var notFoundErr *serviceerror.NotFound
+		if errors.As(err, &notFoundErr) {
+			continue
+		}
+		Expect(err).To(BeNil())
+	}
 }
 
 // pages through all workflow executions until the callback function returns true
 func iterateThroughTemporalWorkflowExecutions(
 	ctx context.Context,
 	cl client.Client,
+	maxPageSize int32,
 	callbackFn func(info *v17.WorkflowExecutionInfo) bool,
 ) {
 	namespace := temporalServer.GetValue().DefaultNamespace()
 	var nextPageToken []byte
 
+PAGES:
 	for {
 		req := &workflowservice.ListOpenWorkflowExecutionsRequest{
-			Namespace:     namespace,
-			NextPageToken: nextPageToken,
+			Namespace:       namespace,
+			NextPageToken:   nextPageToken,
+			MaximumPageSize: maxPageSize,
 		}
 		workflowRes, err := cl.ListOpenWorkflow(ctx, req)
 		Expect(err).To(BeNil())
 
-		var shouldStop bool
+		ch := make(chan bool, int(maxPageSize))
+		wg := &sync.WaitGroup{}
 		for _, info := range workflowRes.Executions {
-			if callbackFn(info) {
-				shouldStop = true
-				break
+			wg.Add(1)
+			go func(in *v17.WorkflowExecutionInfo) {
+				defer wg.Done()
+				ch <- callbackFn(in)
+			}(info)
+		}
+
+		// wait for this batch of goroutines to finish before allowing the loop to continue
+		wg.Wait()
+		close(ch)
+
+		for shouldStop := range ch {
+			if shouldStop {
+				break PAGES
 			}
 		}
 
-		if len(workflowRes.NextPageToken) == 0 || shouldStop {
+		if len(workflowRes.NextPageToken) == 0 {
 			break
 		}
 		nextPageToken = workflowRes.NextPageToken
