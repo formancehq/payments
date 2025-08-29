@@ -135,6 +135,7 @@ func UseTemplatedDatabase() *deferred.Deferred[*pgtesting.Database] {
 
 func flushRemainingWorkflows(ctx context.Context) {
 	cl := temporalServer.GetValue().DefaultClient()
+	ch := make(chan error)
 
 	wg := &sync.WaitGroup{}
 	iterateThroughTemporalWorkflowExecutions(ctx, cl, func(info *v17.WorkflowExecutionInfo) bool {
@@ -142,11 +143,18 @@ func flushRemainingWorkflows(ctx context.Context) {
 		go func() {
 			defer wg.Done()
 			err := cl.TerminateWorkflow(ctx, info.Execution.WorkflowId, info.Execution.RunId, "system flush")
-			Expect(err).To(BeNil())
+			if err != nil {
+				ch <- err
+			}
 		}()
 		return false
 	})
 	wg.Wait()
+
+	close(ch)
+	for err := range ch {
+		Expect(err).To(BeNil())
+	}
 }
 
 // pages through all workflow executions until the callback function returns true
