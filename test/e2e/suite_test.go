@@ -181,14 +181,14 @@ func iterateThroughTemporalWorkflowExecutions(
 		workflowRes, err := cl.ListOpenWorkflow(ctx, req)
 		Expect(err).To(BeNil())
 
-		ch := make(chan bool, maxPageSize)
+		ch := make(chan bool, int(maxPageSize))
 		wg := &sync.WaitGroup{}
 		for _, info := range workflowRes.Executions {
 			wg.Add(1)
-			go func() {
+			go func(in *v17.WorkflowExecutionInfo) {
 				defer wg.Done()
-				ch <- callbackFn(info)
-			}()
+				ch <- callbackFn(in)
+			}(info)
 		}
 
 		// wait for this batch of goroutines to finish before allowing the loop to continue
