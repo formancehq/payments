@@ -97,7 +97,7 @@ func PaymentStatusFromString(value string) (PaymentStatus, error) {
 	case "AMOUNT_ADJUSTMENT":
 		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil
 	case "AMOUNT_ADJUSTEMENT":
-		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil // Only from backward compatibility
+		return PAYMENT_STATUS_AMOUNT_ADJUSTMENT, nil // Only from backward compatibility, we can get rid of it as soon as the above block is released.
 	case "AUTHORISATION":
 		return PAYMENT_STATUS_AUTHORISATION, nil
 	case "CAPTURE":
