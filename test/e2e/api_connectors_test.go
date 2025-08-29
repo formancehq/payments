@@ -454,9 +454,7 @@ func blockTillWorkflowComplete(ctx context.Context, connectorIDStr string, searc
 	connectorID := models.MustConnectorIDFromString(connectorIDStr)
 	cl := temporalServer.GetValue().DefaultClient()
 	iterateThroughTemporalWorkflowExecutions(ctx, cl, 25, func(info *v17.WorkflowExecutionInfo) bool {
-		if (strings.Contains(info.Execution.WorkflowId, connectorID.Reference.String()) ||
-			strings.Contains(info.Execution.WorkflowId, connectorID.String())) &&
-			strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
+		if strings.Contains(info.Execution.WorkflowId, connectorID.String()) && strings.HasPrefix(info.Execution.WorkflowId, searchKeyword) {
 			workflowID = info.Execution.WorkflowId
 			runID = info.Execution.RunId
 			return true
