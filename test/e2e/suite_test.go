@@ -172,6 +172,7 @@ func iterateThroughTemporalWorkflowExecutions(
 	namespace := temporalServer.GetValue().DefaultNamespace()
 	var nextPageToken []byte
 
+PAGES:
 	for {
 		req := &workflowservice.ListOpenWorkflowExecutionsRequest{
 			Namespace:       namespace,
@@ -197,7 +198,7 @@ func iterateThroughTemporalWorkflowExecutions(
 
 		for shouldStop := range ch {
 			if shouldStop {
-				break
+				break PAGES
 			}
 		}
 
