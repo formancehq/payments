@@ -1,4 +1,4 @@
-# TransferInitiationAdjusments
+# TransferInitiationAdjustments
 
 
 ## Fields

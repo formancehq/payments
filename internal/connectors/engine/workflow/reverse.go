@@ -65,7 +65,7 @@ func (w Workflow) validateOnlyReverse(
 	}
 
 	// Second, ensure that we do not have another reverse currently being processed
-	inserted, err := activities.StoragePaymentInitiationsAdjusmentsIfPredicateStore(
+	inserted, err := activities.StoragePaymentInitiationsAdjustmentsIfPredicateStore(
 		infiniteRetryContext(ctx),
 		adj,
 		[]models.PaymentInitiationAdjustmentStatus{

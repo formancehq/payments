@@ -296,8 +296,12 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePaymentInitiationAdjustmentsList,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StoragePaymentInitiationsAdjustmentsIfPredicateStore",
+			Func: a.StoragePaymentInitiationsAdjustmentsIfPredicateStore,
+		}).
+		Append(temporalworker.Definition{ // Only for backward compatibility, we can get rid of it as soon as the above block is released.
 			Name: "StoragePaymentInitiationsAdjusmentsIfPredicateStore",
-			Func: a.StoragePaymentInitiationsAdjusmentsIfPredicateStore,
+			Func: a.StoragePaymentInitiationsAdjustmentsIfPredicateStore,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentInitiationIDsListFromPaymentID",

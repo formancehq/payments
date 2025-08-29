@@ -73,12 +73,12 @@ func (t *PaymentInitiationReversalAdjustmentStatus) Scan(value interface{}) erro
 
 	s, err := driver.String.ConvertValue(value)
 	if err != nil {
-		return fmt.Errorf("failed to convert payment initiation reversal status status")
+		return fmt.Errorf("failed to convert payment initiation reversal status")
 	}
 
 	v, ok := s.(string)
 	if !ok {
-		return fmt.Errorf("failed to cast payment initiation reversal status status")
+		return fmt.Errorf("failed to cast payment initiation reversal status")
 	}
 
 	res, err := PaymentInitiationReversalStatusFromString(v)

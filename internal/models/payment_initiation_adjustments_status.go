@@ -101,17 +101,17 @@ func (t PaymentInitiationAdjustmentStatus) Value() (driver.Value, error) {
 
 func (t *PaymentInitiationAdjustmentStatus) Scan(value interface{}) error {
 	if value == nil {
-		return errors.New("payment initiation adjusmtent status status is nil")
+		return errors.New("payment initiation adjustment status is nil")
 	}
 
 	s, err := driver.String.ConvertValue(value)
 	if err != nil {
-		return fmt.Errorf("failed to convert payment initiation adjusmtent status status")
+		return fmt.Errorf("failed to convert payment initiation adjustment status")
 	}
 
 	v, ok := s.(string)
 	if !ok {
-		return fmt.Errorf("failed to cast payment initiation adjusmtent status status")
+		return fmt.Errorf("failed to cast payment initiation adjustment status")
 	}
 
 	res, err := PaymentInitiationAdjustmentStatusFromString(v)
@@ -129,7 +129,7 @@ func FromPaymentToPaymentInitiationAdjustment(from *Payment, piID PaymentInitiat
 	var err error
 
 	switch from.Status {
-	case PAYMENT_STATUS_AMOUNT_ADJUSTEMENT, PAYMENT_STATUS_UNKNOWN:
+	case PAYMENT_STATUS_AMOUNT_ADJUSTMENT, PAYMENT_STATUS_UNKNOWN:
 		// No need to add an adjustment for this payment initiation
 		return nil
 	case PAYMENT_STATUS_PENDING, PAYMENT_STATUS_AUTHORISATION:

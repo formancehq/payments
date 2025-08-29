@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type TransferInitiationAdjusments struct {
+type TransferInitiationAdjustments struct {
 	AdjustmentID string                   `json:"adjustmentID"`
 	CreatedAt    time.Time                `json:"createdAt"`
 	Status       TransferInitiationStatus `json:"status"`
@@ -15,46 +15,46 @@ type TransferInitiationAdjusments struct {
 	Metadata     map[string]string        `json:"metadata,omitempty"`
 }
 
-func (t TransferInitiationAdjusments) MarshalJSON() ([]byte, error) {
+func (t TransferInitiationAdjustments) MarshalJSON() ([]byte, error) {
 	return utils.MarshalJSON(t, "", false)
 }
 
-func (t *TransferInitiationAdjusments) UnmarshalJSON(data []byte) error {
+func (t *TransferInitiationAdjustments) UnmarshalJSON(data []byte) error {
 	if err := utils.UnmarshalJSON(data, &t, "", false, false); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (o *TransferInitiationAdjusments) GetAdjustmentID() string {
+func (o *TransferInitiationAdjustments) GetAdjustmentID() string {
 	if o == nil {
 		return ""
 	}
 	return o.AdjustmentID
 }
 
-func (o *TransferInitiationAdjusments) GetCreatedAt() time.Time {
+func (o *TransferInitiationAdjustments) GetCreatedAt() time.Time {
 	if o == nil {
 		return time.Time{}
 	}
 	return o.CreatedAt
 }
 
-func (o *TransferInitiationAdjusments) GetStatus() TransferInitiationStatus {
+func (o *TransferInitiationAdjustments) GetStatus() TransferInitiationStatus {
 	if o == nil {
 		return TransferInitiationStatus("")
 	}
 	return o.Status
 }
 
-func (o *TransferInitiationAdjusments) GetError() *string {
+func (o *TransferInitiationAdjustments) GetError() *string {
 	if o == nil {
 		return nil
 	}
 	return o.Error
 }
 
-func (o *TransferInitiationAdjusments) GetMetadata() map[string]string {
+func (o *TransferInitiationAdjustments) GetMetadata() map[string]string {
 	if o == nil {
 		return nil
 	}
