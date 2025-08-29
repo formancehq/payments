@@ -71,28 +71,28 @@ func (mr *MockManagerMockRecorder) GetConfig(arg0 any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConfig", reflect.TypeOf((*MockManager)(nil).GetConfig), arg0)
 }
 
-// LoadPlugin mocks base method.
-func (m *MockManager) LoadPlugin(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
+// Load mocks base method.
+func (m *MockManager) Load(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "LoadPlugin", arg0, arg1, arg2, arg3, arg4, arg5)
+	ret := m.ctrl.Call(m, "Load", arg0, arg1, arg2, arg3, arg4, arg5)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// LoadPlugin indicates an expected call of LoadPlugin.
-func (mr *MockManagerMockRecorder) LoadPlugin(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
+// Load indicates an expected call of Load.
+func (mr *MockManagerMockRecorder) Load(arg0, arg1, arg2, arg3, arg4, arg5 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "LoadPlugin", reflect.TypeOf((*MockManager)(nil).LoadPlugin), arg0, arg1, arg2, arg3, arg4, arg5)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Load", reflect.TypeOf((*MockManager)(nil).Load), arg0, arg1, arg2, arg3, arg4, arg5)
 }
 
-// UnregisterPlugin mocks base method.
-func (m *MockManager) UnregisterPlugin(arg0 models.ConnectorID) {
+// Unload mocks base method.
+func (m *MockManager) Unload(arg0 models.ConnectorID) {
 	m.ctrl.T.Helper()
-	m.ctrl.Call(m, "UnregisterPlugin", arg0)
+	m.ctrl.Call(m, "Unload", arg0)
 }
 
-// UnregisterPlugin indicates an expected call of UnregisterPlugin.
-func (mr *MockManagerMockRecorder) UnregisterPlugin(arg0 any) *gomock.Call {
+// Unload indicates an expected call of Unload.
+func (mr *MockManagerMockRecorder) Unload(arg0 any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UnregisterPlugin", reflect.TypeOf((*MockManager)(nil).UnregisterPlugin), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Unload", reflect.TypeOf((*MockManager)(nil).Unload), arg0)
 }

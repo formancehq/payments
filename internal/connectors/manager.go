@@ -20,8 +20,8 @@ var (
 
 //go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
 type Manager interface {
-	LoadPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
-	UnregisterPlugin(models.ConnectorID)
+	Load(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
+	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
 }
@@ -52,7 +52,7 @@ func NewManager(
 	}
 }
 
-func (p *manager) LoadPlugin(
+func (p *manager) Load(
 	connectorID models.ConnectorID,
 	provider string,
 	connectorName string,
@@ -86,7 +86,7 @@ func (p *manager) LoadPlugin(
 	return nil
 }
 
-func (p *manager) UnregisterPlugin(connectorID models.ConnectorID) {
+func (p *manager) Unload(connectorID models.ConnectorID) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 

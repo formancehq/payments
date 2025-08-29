@@ -157,7 +157,7 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		Config:    rawConfig,
 	}
 
-	err := e.connectors.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	err := e.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -353,7 +353,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 	connector.Config = rawConfig
 	connector.Name = config.Name
 
-	err = e.connectors.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	err = e.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -1627,7 +1627,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	if !connector.ScheduledForDeletion {
-		if err := e.connectors.LoadPlugin(
+		if err := e.connectors.Load(
 			connector.ID,
 			connector.Provider,
 			connector.Name,

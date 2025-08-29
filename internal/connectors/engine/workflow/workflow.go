@@ -31,7 +31,7 @@ type Workflow struct {
 	temporalNamespace string
 	temporalClient    client.Client
 
-	plugins connectors.Manager
+	connectors connectors.Manager
 
 	stackPublicURL string
 	stack          string
@@ -39,11 +39,11 @@ type Workflow struct {
 	logger logging.Logger
 }
 
-func New(temporalClient client.Client, temporalNamespace string, plugins connectors.Manager, stack string, stackPublicURL string, logger logging.Logger) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, connectors connectors.Manager, stack string, stackPublicURL string, logger logging.Logger) Workflow {
 	return Workflow{
 		temporalClient:    temporalClient,
 		temporalNamespace: temporalNamespace,
-		plugins:           plugins,
+		connectors:        connectors,
 		stack:             stack,
 		stackPublicURL:    stackPublicURL,
 		logger:            logger,

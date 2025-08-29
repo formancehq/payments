@@ -140,7 +140,7 @@ func (w Workflow) createPayout(
 		}
 
 		if createPayoutResponse.PollingPayoutID != nil {
-			config, err := w.plugins.GetConfig(createPayout.ConnectorID)
+			config, err := w.connectors.GetConfig(createPayout.ConnectorID)
 			if err != nil {
 				return err
 			}

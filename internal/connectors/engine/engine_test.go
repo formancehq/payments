@@ -62,7 +62,7 @@ var _ = Describe("Engine Tests", func() {
 		defaultTaskQueue string
 		eng              engine.Engine
 		store            *storage.MockStorage
-		plgs             *connectors.MockManager
+		manager          *connectors.MockManager
 		cl               *activities.MockClient
 		wr               *activities.MockWorkflowRun
 	)
@@ -74,8 +74,8 @@ var _ = Describe("Engine Tests", func() {
 		cl = activities.NewMockClient(ctrl)
 		wr = activities.NewMockWorkflowRun(ctrl)
 		store = storage.NewMockStorage(ctrl)
-		plgs = connectors.NewMockManager(ctrl)
-		eng = engine.New(logger, cl, store, plgs, stackName, "")
+		manager = connectors.NewMockManager(ctrl)
+		eng = engine.New(logger, cl, store, manager, stackName, "")
 	})
 
 	Context("on start", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should fail when workflow cannot be launched", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow error")
 			connector := models.Connector{Config: json.RawMessage(`{}`)}
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -113,7 +113,7 @@ var _ = Describe("Engine Tests", func() {
 				{Config: json.RawMessage(`{}`)},
 			}
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil).MinTimes(len(connectors))
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil).MinTimes(len(connectors))
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -149,7 +149,7 @@ var _ = Describe("Engine Tests", func() {
 			expectedConfig.Name = connectorName
 
 			registerErr := errors.New("stop here")
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
 			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -157,7 +157,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
 				expectedErr,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -166,7 +166,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should return validation error when plugin registry fails with validation issues", func(ctx SpecContext) {
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
 				models.ErrInvalidConfig,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -176,7 +176,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
@@ -185,7 +185,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -197,7 +197,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -414,7 +414,7 @@ var _ = Describe("Engine Tests", func() {
 
 			registerErr := errors.New("stop here")
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
 			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -426,7 +426,7 @@ var _ = Describe("Engine Tests", func() {
 				ID: connectorID,
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
 				expectedErr,
 			)
 			err := eng.UpdateConnector(ctx, connectorID, config)
@@ -440,7 +440,7 @@ var _ = Describe("Engine Tests", func() {
 				ID: connectorID,
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(expectedErr)
 			err := eng.UpdateConnector(ctx, connectorID, config)
 			Expect(err).NotTo(BeNil())
@@ -457,7 +457,7 @@ var _ = Describe("Engine Tests", func() {
 				Config:    json.RawMessage(`{"name":"original-name"}`),
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			plgs.EXPECT().LoadPlugin(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
 
 			expectedConnector := models.Connector{
 				ID:        connectorID,
@@ -643,7 +643,7 @@ var _ = Describe("Engine Tests", func() {
 			expectedErr := fmt.Errorf("plugin not found")
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			plgs.EXPECT().Get(connectorID).Return(nil, expectedErr)
+			manager.EXPECT().Get(connectorID).Return(nil, expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -654,7 +654,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
@@ -666,7 +666,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
@@ -678,7 +678,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, nil)
 			store.EXPECT().PSUBankBridgesUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.PSUBankBridge{})).Return(expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
@@ -690,7 +690,7 @@ var _ = Describe("Engine Tests", func() {
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, nil)
 			store.EXPECT().PSUBankBridgesUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.PSUBankBridge{})).Return(nil)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
@@ -864,7 +864,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when plugin not found", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin not found")
-			plgs.EXPECT().Get(connectorID).Return(nil, expectedErr)
+			manager.EXPECT().Get(connectorID).Return(nil, expectedErr)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -872,7 +872,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when payment service user not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
@@ -881,7 +881,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when bank bridge not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
@@ -892,7 +892,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when connection attempt upsert fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("upsert error")
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(expectedErr)
@@ -904,7 +904,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when plugin CreateUserLink fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin error")
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
@@ -916,7 +916,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return validation error when plugin CreateUserLink returns validation error", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
@@ -929,7 +929,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when final attempt upsert fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("final upsert error")
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			// First call to create the attempt should succeed
@@ -944,7 +944,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should successfully create payment service user link", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			// First call to create the attempt
@@ -992,7 +992,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when plugin not found", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin not found")
-			plgs.EXPECT().Get(connectorID).Return(nil, expectedErr)
+			manager.EXPECT().Get(connectorID).Return(nil, expectedErr)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -1000,7 +1000,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when payment service user not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
@@ -1009,7 +1009,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when bank bridge not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
@@ -1019,7 +1019,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when connection not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(nil, uuid.Nil, storage.ErrNotFound)
@@ -1031,7 +1031,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when connection attempt upsert fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("upsert error")
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
@@ -1044,7 +1044,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when plugin UpdateUserLink fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin error")
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
@@ -1057,7 +1057,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should successfully update payment service user link", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
-			plgs.EXPECT().Get(connectorID).Return(plugin, nil)
+			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
 			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)

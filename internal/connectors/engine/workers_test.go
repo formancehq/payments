@@ -23,10 +23,10 @@ import (
 var _ = Describe("Worker Tests", func() {
 	Context("on start", func() {
 		var (
-			pool  *engine.WorkerPool
-			store *storage.MockStorage
-			plgs  *connectors.MockManager
-			conns []models.Connector
+			pool    *engine.WorkerPool
+			store   *storage.MockStorage
+			manager *connectors.MockManager
+			conns   []models.Connector
 		)
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -34,8 +34,8 @@ var _ = Describe("Worker Tests", func() {
 			cl, err := client.NewLazyClient(client.Options{})
 			Expect(err).To(BeNil())
 			store = storage.NewMockStorage(ctrl)
-			plgs = connectors.NewMockManager(ctrl)
-			pool = engine.NewWorkerPool(logger, "stackname", cl, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, plgs, worker.Options{})
+			manager = connectors.NewMockManager(ctrl)
+			pool = engine.NewWorkerPool(logger, "stackname", cl, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, manager, worker.Options{})
 
 			connID1 := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}
@@ -71,8 +71,8 @@ var _ = Describe("Worker Tests", func() {
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
 				Data: conns,
 			}, nil)
-			plgs.EXPECT().LoadPlugin(conns[0].ID, conns[0].Provider, conns[0].Name, gomock.Any(), conns[0].Config, false).Return(nil)
-			plgs.EXPECT().LoadPlugin(conns[1].ID, conns[1].Provider, conns[1].Name, gomock.Any(), conns[1].Config, false).Return(nil)
+			manager.EXPECT().Load(conns[0].ID, conns[0].Provider, conns[0].Name, gomock.Any(), conns[0].Config, false).Return(nil)
+			manager.EXPECT().Load(conns[1].ID, conns[1].Provider, conns[1].Name, gomock.Any(), conns[1].Config, false).Return(nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})
