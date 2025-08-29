@@ -15,7 +15,7 @@ type FetchNextOthersRequest struct {
 }
 
 func (a Activities) PluginFetchNextOthers(ctx context.Context, request FetchNextOthersRequest) (*models.FetchNextOthersResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

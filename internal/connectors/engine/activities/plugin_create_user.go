@@ -13,7 +13,7 @@ type CreateUserRequest struct {
 }
 
 func (a Activities) PluginCreateUser(ctx context.Context, request CreateUserRequest) (*models.CreateUserResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

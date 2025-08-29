@@ -13,7 +13,7 @@ type TranslateWebhookRequest struct {
 }
 
 func (a Activities) PluginTranslateWebhook(ctx context.Context, request TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

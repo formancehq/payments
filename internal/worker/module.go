@@ -62,9 +62,9 @@ func NewModule(
 			temporalClient client.Client,
 			storage storage.Storage,
 			events *events.Events,
-			plugins connectors.Manager,
+			connectors connectors.Manager,
 		) activities.Activities {
-			return activities.New(logger, temporalClient, storage, events, plugins, temporalRateLimitingRetryDelay)
+			return activities.New(logger, temporalClient, storage, events, connectors, temporalRateLimitingRetryDelay)
 		}),
 		fx.Provide(
 			fx.Annotate(func(
@@ -73,10 +73,10 @@ func NewModule(
 				workflows,
 				activities []temporal.DefinitionSet,
 				storage storage.Storage,
-				plugins connectors.Manager,
+				connectors connectors.Manager,
 				options worker.Options,
 			) *engine.WorkerPool {
-				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, plugins, options)
+				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, connectors, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
 		fx.Invoke(func(lc fx.Lifecycle, workers *engine.WorkerPool) {

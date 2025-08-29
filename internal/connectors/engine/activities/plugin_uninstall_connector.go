@@ -15,7 +15,7 @@ type UninstallConnectorRequest struct {
 }
 
 func (a Activities) PluginUninstallConnector(ctx context.Context, request UninstallConnectorRequest) (*models.UninstallResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	switch {
 	case errors.Is(err, connectors.ErrNotFound):
 		// When the plugin is not found, we consider it as uninstalled.

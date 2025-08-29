@@ -22,7 +22,7 @@ type Activities struct {
 
 	rateLimitingRetryDelay time.Duration
 
-	plugins connectors.Manager
+	connectors connectors.Manager
 }
 
 func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
@@ -490,14 +490,14 @@ func New(
 	temporalClient client.Client,
 	storage storage.Storage,
 	events *events.Events,
-	plugins connectors.Manager,
+	connectors connectors.Manager,
 	rateLimitingRetryDelay time.Duration,
 ) Activities {
 	return Activities{
 		logger:                 logger,
 		temporalClient:         temporalClient,
 		storage:                storage,
-		plugins:                plugins,
+		connectors:             connectors,
 		events:                 events,
 		rateLimitingRetryDelay: rateLimitingRetryDelay,
 	}

@@ -33,8 +33,8 @@ type WorkerPool struct {
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
 
-	plugins connectors.Manager
-	options worker.Options
+	connectors connectors.Manager
+	options    worker.Options
 }
 
 type Worker struct {
@@ -48,7 +48,7 @@ func NewWorkerPool(
 	workflows,
 	activities []temporal.DefinitionSet,
 	storage storage.Storage,
-	plugins connectors.Manager,
+	connectors connectors.Manager,
 	options worker.Options,
 ) *WorkerPool {
 	workers := &WorkerPool{
@@ -59,7 +59,7 @@ func NewWorkerPool(
 		workflows:      workflows,
 		activities:     activities,
 		storage:        storage,
-		plugins:        plugins,
+		connectors:     connectors,
 		options:        options,
 	}
 
@@ -125,7 +125,7 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 		return err
 	}
 
-	err := w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	err := w.connectors.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin: %w", err)
 		// We don't want to crash the pod if the plugin registration fails,
@@ -156,7 +156,7 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if err := w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
+	if err := w.connectors.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
 		return err
 	}
 
@@ -197,7 +197,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	err = w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	err = w.connectors.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
 		return err
@@ -207,7 +207,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
 	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
-	w.plugins.UnregisterPlugin(connectorID)
+	w.connectors.UnregisterPlugin(connectorID)
 
 	if err := w.RemoveWorker(connectorID.String()); err != nil {
 		return err
