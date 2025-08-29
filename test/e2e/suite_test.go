@@ -5,6 +5,7 @@ package test_suite
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -17,6 +18,7 @@ import (
 	"github.com/formancehq/go-libs/v3/testing/platform/pgtesting"
 	"github.com/formancehq/go-libs/v3/testing/platform/temporaltesting"
 	"github.com/formancehq/payments/internal/storage"
+	"go.temporal.io/api/serviceerror"
 	v17 "go.temporal.io/api/workflow/v1"
 	"go.temporal.io/api/workflowservice/v1"
 	"go.temporal.io/sdk/client"
@@ -148,6 +150,11 @@ func flushRemainingWorkflows(ctx context.Context) {
 
 	close(ch)
 	for err := range ch {
+		// might already be completed
+		var notFoundErr *serviceerror.NotFound
+		if errors.As(err, &notFoundErr) {
+			continue
+		}
 		Expect(err).To(BeNil())
 	}
 }
