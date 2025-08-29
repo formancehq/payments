@@ -808,7 +808,7 @@ components:
         - DISPUTE
         - DISPUTE_WON
         - DISPUTE_LOST
-        - AMOUNT_ADJUSTMENT
+        - AMOUNT_ADJUSTEMENT
         - AUTHORISATION
         - CAPTURE
         - CAPTURE_FAILED
