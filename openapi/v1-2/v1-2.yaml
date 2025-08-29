@@ -1886,8 +1886,8 @@ components:
         relatedAdjustments:
           type: array
           items:
-            $ref: '#/components/schemas/TransferInitiationAdjusments'
-    TransferInitiationAdjusments:
+            $ref: '#/components/schemas/TransferInitiationAdjustments'
+    TransferInitiationAdjustments:
       type: object
       required:
         - adjustmentID
