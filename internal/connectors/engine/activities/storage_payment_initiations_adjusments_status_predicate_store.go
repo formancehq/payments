@@ -7,7 +7,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePaymentInitiationsAdjusmentsIfPredicateStore(ctx context.Context, adj models.PaymentInitiationAdjustment, unAcceptablePreviousStatus []models.PaymentInitiationAdjustmentStatus) (bool, error) {
+func (a Activities) StoragePaymentInitiationsAdjustmentsIfPredicateStore(ctx context.Context, adj models.PaymentInitiationAdjustment, unAcceptablePreviousStatus []models.PaymentInitiationAdjustmentStatus) (bool, error) {
 	inserted, err := a.storage.PaymentInitiationAdjustmentsUpsertIfPredicate(ctx, adj, func(pia models.PaymentInitiationAdjustment) bool {
 		for _, status := range unAcceptablePreviousStatus {
 			if pia.Status == status {
@@ -19,10 +19,10 @@ func (a Activities) StoragePaymentInitiationsAdjusmentsIfPredicateStore(ctx cont
 	return inserted, temporalStorageError(err)
 }
 
-var StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity = Activities{}.StoragePaymentInitiationsAdjusmentsIfPredicateStore
+var StoragePaymentInitiationsAdjustmentsIfStatusEqualStoreActivity = Activities{}.StoragePaymentInitiationsAdjustmentsIfPredicateStore
 
-func StoragePaymentInitiationsAdjusmentsIfPredicateStore(ctx workflow.Context, adj models.PaymentInitiationAdjustment, unAcceptablePreviousStatus []models.PaymentInitiationAdjustmentStatus) (bool, error) {
+func StoragePaymentInitiationsAdjustmentsIfPredicateStore(ctx workflow.Context, adj models.PaymentInitiationAdjustment, unAcceptablePreviousStatus []models.PaymentInitiationAdjustmentStatus) (bool, error) {
 	var result bool
-	err := executeActivity(ctx, StoragePaymentInitiationsAdjusmentsIfStatusEqualStoreActivity, &result, adj, unAcceptablePreviousStatus)
+	err := executeActivity(ctx, StoragePaymentInitiationsAdjustmentsIfStatusEqualStoreActivity, &result, adj, unAcceptablePreviousStatus)
 	return result, err
 }
