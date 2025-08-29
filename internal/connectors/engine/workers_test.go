@@ -8,8 +8,8 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
@@ -23,10 +23,10 @@ import (
 var _ = Describe("Worker Tests", func() {
 	Context("on start", func() {
 		var (
-			pool       *engine.WorkerPool
-			store      *storage.MockStorage
-			plgs       *plugins.MockPlugins
-			connectors []models.Connector
+			pool  *engine.WorkerPool
+			store *storage.MockStorage
+			plgs  *connectors.MockManager
+			conns []models.Connector
 		)
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
@@ -34,13 +34,13 @@ var _ = Describe("Worker Tests", func() {
 			cl, err := client.NewLazyClient(client.Options{})
 			Expect(err).To(BeNil())
 			store = storage.NewMockStorage(ctrl)
-			plgs = plugins.NewMockPlugins(ctrl)
+			plgs = connectors.NewMockManager(ctrl)
 			pool = engine.NewWorkerPool(logger, "stackname", cl, []temporal.DefinitionSet{}, []temporal.DefinitionSet{}, store, plgs, worker.Options{})
 
 			connID1 := models.ConnectorID{Reference: uuid.New(), Provider: "provider1"}
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}
 
-			connectors = []models.Connector{
+			conns = []models.Connector{
 				{ID: connID1, Name: "abc-connector", Provider: connID1.Provider, CreatedAt: time.Now().Add(-time.Minute), Config: json.RawMessage(`{}`)},
 				{ID: connID2, Name: "efg-connector", Provider: connID2.Provider, CreatedAt: time.Now(), Config: json.RawMessage(`{}`)},
 			}
@@ -69,10 +69,10 @@ var _ = Describe("Worker Tests", func() {
 			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{
-				Data: connectors,
+				Data: conns,
 			}, nil)
-			plgs.EXPECT().LoadPlugin(connectors[0].ID, connectors[0].Provider, connectors[0].Name, gomock.Any(), connectors[0].Config, false).Return(nil)
-			plgs.EXPECT().LoadPlugin(connectors[1].ID, connectors[1].Provider, connectors[1].Name, gomock.Any(), connectors[1].Config, false).Return(nil)
+			plgs.EXPECT().LoadPlugin(conns[0].ID, conns[0].Provider, conns[0].Name, gomock.Any(), conns[0].Config, false).Return(nil)
+			plgs.EXPECT().LoadPlugin(conns[1].ID, conns[1].Provider, conns[1].Name, gomock.Any(), conns[1].Config, false).Return(nil)
 			err := pool.OnStart(ctx)
 			Expect(err).To(BeNil())
 		})

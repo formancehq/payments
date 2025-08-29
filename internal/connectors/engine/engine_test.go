@@ -9,9 +9,9 @@ import (
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -62,7 +62,7 @@ var _ = Describe("Engine Tests", func() {
 		defaultTaskQueue string
 		eng              engine.Engine
 		store            *storage.MockStorage
-		plgs             *plugins.MockPlugins
+		plgs             *connectors.MockManager
 		cl               *activities.MockClient
 		wr               *activities.MockWorkflowRun
 	)
@@ -74,7 +74,7 @@ var _ = Describe("Engine Tests", func() {
 		cl = activities.NewMockClient(ctrl)
 		wr = activities.NewMockWorkflowRun(ctrl)
 		store = storage.NewMockStorage(ctrl)
-		plgs = plugins.NewMockPlugins(ctrl)
+		plgs = connectors.NewMockManager(ctrl)
 		eng = engine.New(logger, cl, store, plgs, stackName, "")
 	})
 

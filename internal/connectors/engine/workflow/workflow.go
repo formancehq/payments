@@ -5,7 +5,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	temporalworker "github.com/formancehq/go-libs/v3/temporal"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 )
@@ -31,7 +31,7 @@ type Workflow struct {
 	temporalNamespace string
 	temporalClient    client.Client
 
-	plugins plugins.Plugins
+	plugins connectors.Manager
 
 	stackPublicURL string
 	stack          string
@@ -39,7 +39,7 @@ type Workflow struct {
 	logger logging.Logger
 }
 
-func New(temporalClient client.Client, temporalNamespace string, plugins plugins.Plugins, stack string, stackPublicURL string, logger logging.Logger) Workflow {
+func New(temporalClient client.Client, temporalNamespace string, plugins connectors.Manager, stack string, stackPublicURL string, logger logging.Logger) Workflow {
 	return Workflow{
 		temporalClient:    temporalClient,
 		temporalNamespace: temporalNamespace,

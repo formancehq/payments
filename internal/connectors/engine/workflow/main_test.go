@@ -7,8 +7,8 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -67,7 +67,7 @@ func (s *UnitTestSuite) AfterTest(suiteName, testName string) {
 func TestUnitTestSuite(t *testing.T) {
 	logger := logging.Testing()
 	w := Workflow{
-		plugins:        plugins.New(logger, true),
+		plugins:        connectors.NewManager(logger, true),
 		stackPublicURL: "http://localhost:8080",
 		stack:          "test",
 		logger:         logger,

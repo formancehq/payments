@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -104,7 +104,7 @@ type engine struct {
 	// plugins is only really present in engine to allow validation of plugin configs prior to insert into the DB
 	// other plugin-side work should be performed inside workers and not directly in the engine since we don't
 	// have a listener function that checks for plugin updates or installs
-	plugins plugins.Plugins
+	plugins connectors.Manager
 
 	stack          string
 	stackPublicURL string
@@ -116,7 +116,7 @@ func New(
 	logger logging.Logger,
 	temporalClient client.Client,
 	storage storage.Storage,
-	plugins plugins.Plugins,
+	plugins connectors.Manager,
 	stack string,
 	stackPublicURL string,
 ) Engine {

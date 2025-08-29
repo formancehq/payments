@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -33,7 +33,7 @@ type WorkerPool struct {
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
 
-	plugins plugins.Plugins
+	plugins connectors.Manager
 	options worker.Options
 }
 
@@ -48,7 +48,7 @@ func NewWorkerPool(
 	workflows,
 	activities []temporal.DefinitionSet,
 	storage storage.Storage,
-	plugins plugins.Plugins,
+	plugins connectors.Manager,
 	options worker.Options,
 ) *WorkerPool {
 	workers := &WorkerPool{

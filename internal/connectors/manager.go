@@ -1,4 +1,4 @@
-package plugins
+package connectors
 
 import (
 	"encoding/json"
@@ -18,16 +18,16 @@ var (
 	ErrInvalidOperation = errors.New("invalid operation")
 )
 
-//go:generate mockgen -source plugin.go -destination plugin_generated.go -package plugins . Plugins
-type Plugins interface {
+//go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
+type Manager interface {
 	LoadPlugin(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
 	UnregisterPlugin(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
 }
 
-// Will start, hold, manage and stop *Plugins
-type plugins struct {
+// Will start, hold, manage and stop Connectors
+type manager struct {
 	logger logging.Logger
 
 	plugins map[string]pluginInformation
@@ -41,18 +41,18 @@ type pluginInformation struct {
 	config models.Config
 }
 
-func New(
+func NewManager(
 	logger logging.Logger,
 	debug bool,
-) *plugins {
-	return &plugins{
+) *manager {
+	return &manager{
 		logger:  logger,
 		plugins: make(map[string]pluginInformation),
 		debug:   debug,
 	}
 }
 
-func (p *plugins) LoadPlugin(
+func (p *manager) LoadPlugin(
 	connectorID models.ConnectorID,
 	provider string,
 	connectorName string,
@@ -86,7 +86,7 @@ func (p *plugins) LoadPlugin(
 	return nil
 }
 
-func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
+func (p *manager) UnregisterPlugin(connectorID models.ConnectorID) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
@@ -99,7 +99,7 @@ func (p *plugins) UnregisterPlugin(connectorID models.ConnectorID) {
 	delete(p.plugins, connectorID.String())
 }
 
-func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
+func (p *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
@@ -111,7 +111,7 @@ func (p *plugins) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	return pluginInfo.client, nil
 }
 
-func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
+func (p *manager) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
@@ -123,4 +123,4 @@ func (p *plugins) GetConfig(connectorID models.ConnectorID) (models.Config, erro
 	return pluginInfo.config, nil
 }
 
-var _ Plugins = &plugins{}
+var _ Manager = &manager{}
