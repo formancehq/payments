@@ -1204,6 +1204,54 @@ components:
           description: The ID of the created payment service user
           type: string
 
+    V3PaymentServiceUserDeleteResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: >
+                Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user. You can use the task API to check the status of
+                the task.
+              type: string
+    
+    V3PaymentServiceUserDeleteConnectorResponse: 
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: >
+                Since this call is asynchronous, the response will contain the ID of the task that was created to delete the payment service user on the connector. You can use the task API to check the status of
+                the task.
+              type: string
+
+    V3PaymentServiceUserDeleteConnectionResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: object
+          required:
+            - taskID
+          properties:
+            taskID:
+              description: >
+                Since this call is asynchronous, the response will contain the ID of the task that was created to delete the connection. You can use the task API to check the status of
+                the task.
+              type: string
+
     V3PaymentServiceUsersCursorResponse:
       type: object
       required:
@@ -1235,6 +1283,68 @@ components:
               items:
                 $ref: '#/components/schemas/V3PaymentServiceUser'
 
+    V3PaymentServiceUserConnectionsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentServiceUserConnection'
+
+    V3PaymentServiceUserLinkAttemptsCursorResponse:
+      type: object
+      required:
+        - cursor
+      properties:
+        cursor:
+          type: object
+          required:
+            - pageSize
+            - hasMore
+            - data
+          properties:
+            pageSize:
+              type: integer
+              format: int64
+              minimum: 1
+              example: 15
+            hasMore:
+              type: boolean
+              example: false
+            previous:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            next:
+              type: string
+              example: YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/V3PaymentServiceUserLinkAttempt'
+
     V3PaymentServiceUser:
       type: object
       required:
@@ -1262,6 +1372,61 @@ components:
           nullable: true
         metadata:
           $ref: '#/components/schemas/V3Metadata'
+
+    V3PaymentServiceUserConnection:
+      type: object
+      required:
+        - connectionID
+        - connectorID
+        - createdAt
+        - dataUpdatedAt
+        - status
+      properties:
+        connectionID:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        dataUpdatedAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3ConnectionStatusEnum'
+        error:
+          type: string
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/V3Metadata'
+
+    V3PaymentServiceUserLinkAttempt:
+      type: object
+      required:
+        - id
+        - psuID
+        - connectorID
+        - createdAt
+        - status
+        - clientRedirectURL
+      properties:
+        id:
+          type: string
+        psuID:
+          type: string
+        connectorID:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        status:
+          $ref: '#/components/schemas/V3PSUBankBridgeConnectionAttemptStatusEnum'
+        clientRedirectURL:
+          type: string
+          format: url
+        error:
+          type: string
+          nullable: true
 
     V3ContactDetails:
       type: object
@@ -1319,6 +1484,69 @@ components:
                 Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of
                 the task and get the resulting bank account ID.
               type: string
+
+    V3ConnectionStatusEnum:
+      type: string
+      enum:
+        - ACTIVE
+        - ERROR
+
+    V3PSUBankBridgeConnectionAttemptStatusEnum:
+      type: string
+      enum:
+        - pending
+        - completed
+        - exited
+
+    V3PaymentServiceUserCreateLinkRequest:
+      type: object
+      required:
+        - applicationName
+        - clientRedirectURL
+      properties:
+        applicationName:
+          type: string
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider).
+        clientRedirectURL:
+          type: string
+          format: url
+          description: The URL to redirect the user to after the link flow is completed.
+
+    V3PaymentServiceUserCreateLinkResponse:
+      type: object
+      required:
+        - attemptID
+        - link
+      properties:
+        attemptID:
+          type: string
+        link:
+          type: string
+          format: url
+
+    V3PaymentServiceUserUpdateLinkRequest:
+      type: object
+      required:
+        - applicationName
+        - clientRedirectURL
+      properties:
+        applicationName:
+          type: string
+        clientRedirectURL:
+          type: string
+          format: url
+
+    V3PaymentServiceUserUpdateLinkResponse:
+      type: object
+      required:
+        - attemptID
+        - link
+      properties:
+        attemptID:
+          type: string
+        link:
+          type: string
+          format: url
 
     # POOLS
     V3CreatePoolRequest:

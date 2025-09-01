@@ -221,6 +221,18 @@ func main() {
 * [CreatePaymentServiceUser](docs/sdks/v3/README.md#createpaymentserviceuser) - Create a formance payment service user object
 * [ListPaymentServiceUsers](docs/sdks/v3/README.md#listpaymentserviceusers) - List all payment service users
 * [GetPaymentServiceUser](docs/sdks/v3/README.md#getpaymentserviceuser) - Get a payment service user by ID
+* [DeletePaymentServiceUser](docs/sdks/v3/README.md#deletepaymentserviceuser) - Delete a payment service user by ID
+* [ListPaymentServiceUserConnections](docs/sdks/v3/README.md#listpaymentserviceuserconnections) - List all connections for a payment service user
+* [DeletePaymentServiceUserConnector](docs/sdks/v3/README.md#deletepaymentserviceuserconnector) - Remove a payment service user from a connector, the PSU will still exist in Formance
+* [ForwardPaymentServiceUserToBankBridge](docs/sdks/v3/README.md#forwardpaymentserviceusertobankbridge) - Register/forward a payment service user on/to a connector
+* [CreateLinkForPaymentServiceUser](docs/sdks/v3/README.md#createlinkforpaymentserviceuser) - Create an authentication link for a payment service user on a connector, for oauth flow
+* [ListPaymentServiceUserConnectionsFromConnectorID](docs/sdks/v3/README.md#listpaymentserviceuserconnectionsfromconnectorid) - List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
+* [ListPaymentServiceUserLinkAttemptsFromConnectorID](docs/sdks/v3/README.md#listpaymentserviceuserlinkattemptsfromconnectorid) - List all link attempts for a payment service user on a connector.
+Allows to check if users used the link and completed the oauth flow.
+
+* [GetPaymentServiceUserLinkAttemptFromConnectorID](docs/sdks/v3/README.md#getpaymentserviceuserlinkattemptfromconnectorid) - Get a link attempt for a payment service user on a connector
+* [DeletePaymentServiceUserConnectionFromConnectorID](docs/sdks/v3/README.md#deletepaymentserviceuserconnectionfromconnectorid) - Delete a connection for a payment service user on a connector
+* [UpdateLinkForPaymentServiceUserOnConnector](docs/sdks/v3/README.md#updatelinkforpaymentserviceuseronconnector) - Update/Regenerate a link for a payment service user on a connector
 * [AddBankAccountToPaymentServiceUser](docs/sdks/v3/README.md#addbankaccounttopaymentserviceuser) - Add a bank account to a payment service user
 * [ForwardPaymentServiceUserBankAccount](docs/sdks/v3/README.md#forwardpaymentserviceuserbankaccount) - Forward a payment service user's bank account to a connector
 * [CreatePool](docs/sdks/v3/README.md#createpool) - Create a formance pool object

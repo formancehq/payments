@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 68f7c47837506f36da64bca001197daa
+  docChecksum: 6ebaedba7e289dd0a5ecfb1860264901
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -120,6 +120,7 @@ generatedFiles:
   - /models/components/v3bankaccountscursorresponse.go
   - /models/components/v3bankingcircleconfig.go
   - /models/components/v3columnconfig.go
+  - /models/components/v3connectionstatusenum.go
   - /models/components/v3connector.go
   - /models/components/v3connectorconfig.go
   - /models/components/v3connectorconfigsresponse.go
@@ -177,7 +178,18 @@ generatedFiles:
   - /models/components/v3paymentinitiationtypeenum.go
   - /models/components/v3paymentscursorresponse.go
   - /models/components/v3paymentserviceuser.go
+  - /models/components/v3paymentserviceuserconnection.go
+  - /models/components/v3paymentserviceuserconnectionscursorresponse.go
+  - /models/components/v3paymentserviceusercreatelinkrequest.go
+  - /models/components/v3paymentserviceusercreatelinkresponse.go
+  - /models/components/v3paymentserviceuserdeleteconnectionresponse.go
+  - /models/components/v3paymentserviceuserdeleteconnectorresponse.go
+  - /models/components/v3paymentserviceuserdeleteresponse.go
+  - /models/components/v3paymentserviceuserlinkattempt.go
+  - /models/components/v3paymentserviceuserlinkattemptscursorresponse.go
   - /models/components/v3paymentserviceuserscursorresponse.go
+  - /models/components/v3paymentserviceuserupdatelinkrequest.go
+  - /models/components/v3paymentserviceuserupdatelinkresponse.go
   - /models/components/v3paymentstatusenum.go
   - /models/components/v3paymenttypeenum.go
   - /models/components/v3plaidconfig.go
@@ -186,6 +198,7 @@ generatedFiles:
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
   - /models/components/v3powensconfig.go
+  - /models/components/v3psubankbridgeconnectionattemptstatusenum.go
   - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
@@ -251,13 +264,18 @@ generatedFiles:
   - /models/operations/v3approvepaymentinitiation.go
   - /models/operations/v3createaccount.go
   - /models/operations/v3createbankaccount.go
+  - /models/operations/v3createlinkforpaymentserviceuser.go
   - /models/operations/v3createpayment.go
   - /models/operations/v3createpaymentserviceuser.go
   - /models/operations/v3createpool.go
   - /models/operations/v3deletepaymentinitiation.go
+  - /models/operations/v3deletepaymentserviceuser.go
+  - /models/operations/v3deletepaymentserviceuserconnectionfromconnectorid.go
+  - /models/operations/v3deletepaymentserviceuserconnector.go
   - /models/operations/v3deletepool.go
   - /models/operations/v3forwardbankaccount.go
   - /models/operations/v3forwardpaymentserviceuserbankaccount.go
+  - /models/operations/v3forwardpaymentserviceusertobankbridge.go
   - /models/operations/v3getaccount.go
   - /models/operations/v3getaccountbalances.go
   - /models/operations/v3getbankaccount.go
@@ -266,6 +284,7 @@ generatedFiles:
   - /models/operations/v3getpayment.go
   - /models/operations/v3getpaymentinitiation.go
   - /models/operations/v3getpaymentserviceuser.go
+  - /models/operations/v3getpaymentserviceuserlinkattemptfromconnectorid.go
   - /models/operations/v3getpool.go
   - /models/operations/v3getpoolbalances.go
   - /models/operations/v3getpoolbalanceslatest.go
@@ -282,6 +301,9 @@ generatedFiles:
   - /models/operations/v3listpaymentinitiationrelatedpayments.go
   - /models/operations/v3listpaymentinitiations.go
   - /models/operations/v3listpayments.go
+  - /models/operations/v3listpaymentserviceuserconnections.go
+  - /models/operations/v3listpaymentserviceuserconnectionsfromconnectorid.go
+  - /models/operations/v3listpaymentserviceuserlinkattemptsfromconnectorid.go
   - /models/operations/v3listpaymentserviceusers.go
   - /models/operations/v3listpools.go
   - /models/operations/v3rejectpaymentinitiation.go
@@ -292,6 +314,7 @@ generatedFiles:
   - /models/operations/v3uninstallconnector.go
   - /models/operations/v3updatebankaccountmetadata.go
   - /models/operations/v3updateconnectorconfig.go
+  - /models/operations/v3updatelinkforpaymentserviceuseronconnector.go
   - /models/operations/v3updatepaymentmetadata.go
   - USAGE.md
   - docs/models/components/account.md
@@ -423,6 +446,7 @@ generatedFiles:
   - docs/models/components/v3bankaccountscursorresponsecursor.md
   - docs/models/components/v3bankingcircleconfig.md
   - docs/models/components/v3columnconfig.md
+  - docs/models/components/v3connectionstatusenum.md
   - docs/models/components/v3connector.md
   - docs/models/components/v3connectorconfig.md
   - docs/models/components/v3connectorconfigsresponse.md
@@ -492,8 +516,24 @@ generatedFiles:
   - docs/models/components/v3paymentscursorresponse.md
   - docs/models/components/v3paymentscursorresponsecursor.md
   - docs/models/components/v3paymentserviceuser.md
+  - docs/models/components/v3paymentserviceuserconnection.md
+  - docs/models/components/v3paymentserviceuserconnectionscursorresponse.md
+  - docs/models/components/v3paymentserviceuserconnectionscursorresponsecursor.md
+  - docs/models/components/v3paymentserviceusercreatelinkrequest.md
+  - docs/models/components/v3paymentserviceusercreatelinkresponse.md
+  - docs/models/components/v3paymentserviceuserdeleteconnectionresponse.md
+  - docs/models/components/v3paymentserviceuserdeleteconnectionresponsedata.md
+  - docs/models/components/v3paymentserviceuserdeleteconnectorresponse.md
+  - docs/models/components/v3paymentserviceuserdeleteconnectorresponsedata.md
+  - docs/models/components/v3paymentserviceuserdeleteresponse.md
+  - docs/models/components/v3paymentserviceuserdeleteresponsedata.md
+  - docs/models/components/v3paymentserviceuserlinkattempt.md
+  - docs/models/components/v3paymentserviceuserlinkattemptscursorresponse.md
+  - docs/models/components/v3paymentserviceuserlinkattemptscursorresponsecursor.md
   - docs/models/components/v3paymentserviceuserscursorresponse.md
   - docs/models/components/v3paymentserviceuserscursorresponsecursor.md
+  - docs/models/components/v3paymentserviceuserupdatelinkrequest.md
+  - docs/models/components/v3paymentserviceuserupdatelinkresponse.md
   - docs/models/components/v3paymentstatusenum.md
   - docs/models/components/v3paymenttypeenum.md
   - docs/models/components/v3plaidconfig.md
@@ -503,6 +543,7 @@ generatedFiles:
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
   - docs/models/components/v3powensconfig.md
+  - docs/models/components/v3psubankbridgeconnectionattemptstatusenum.md
   - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md
@@ -611,17 +652,27 @@ generatedFiles:
   - docs/models/operations/v3approvepaymentinitiationresponse.md
   - docs/models/operations/v3createaccountresponse.md
   - docs/models/operations/v3createbankaccountresponse.md
+  - docs/models/operations/v3createlinkforpaymentserviceuserrequest.md
+  - docs/models/operations/v3createlinkforpaymentserviceuserresponse.md
   - docs/models/operations/v3createpaymentresponse.md
   - docs/models/operations/v3createpaymentserviceuserresponse.md
   - docs/models/operations/v3createpoolresponse.md
   - docs/models/operations/v3deletepaymentinitiationrequest.md
   - docs/models/operations/v3deletepaymentinitiationresponse.md
+  - docs/models/operations/v3deletepaymentserviceuserconnectionfromconnectoridrequest.md
+  - docs/models/operations/v3deletepaymentserviceuserconnectionfromconnectoridresponse.md
+  - docs/models/operations/v3deletepaymentserviceuserconnectorrequest.md
+  - docs/models/operations/v3deletepaymentserviceuserconnectorresponse.md
+  - docs/models/operations/v3deletepaymentserviceuserrequest.md
+  - docs/models/operations/v3deletepaymentserviceuserresponse.md
   - docs/models/operations/v3deletepoolrequest.md
   - docs/models/operations/v3deletepoolresponse.md
   - docs/models/operations/v3forwardbankaccountrequest.md
   - docs/models/operations/v3forwardbankaccountresponse.md
   - docs/models/operations/v3forwardpaymentserviceuserbankaccountrequest.md
   - docs/models/operations/v3forwardpaymentserviceuserbankaccountresponse.md
+  - docs/models/operations/v3forwardpaymentserviceusertobankbridgerequest.md
+  - docs/models/operations/v3forwardpaymentserviceusertobankbridgeresponse.md
   - docs/models/operations/v3getaccountbalancesrequest.md
   - docs/models/operations/v3getaccountbalancesresponse.md
   - docs/models/operations/v3getaccountrequest.md
@@ -636,6 +687,8 @@ generatedFiles:
   - docs/models/operations/v3getpaymentinitiationresponse.md
   - docs/models/operations/v3getpaymentrequest.md
   - docs/models/operations/v3getpaymentresponse.md
+  - docs/models/operations/v3getpaymentserviceuserlinkattemptfromconnectoridrequest.md
+  - docs/models/operations/v3getpaymentserviceuserlinkattemptfromconnectoridresponse.md
   - docs/models/operations/v3getpaymentserviceuserrequest.md
   - docs/models/operations/v3getpaymentserviceuserresponse.md
   - docs/models/operations/v3getpoolbalanceslatestrequest.md
@@ -667,6 +720,12 @@ generatedFiles:
   - docs/models/operations/v3listpaymentinitiationrelatedpaymentsresponse.md
   - docs/models/operations/v3listpaymentinitiationsrequest.md
   - docs/models/operations/v3listpaymentinitiationsresponse.md
+  - docs/models/operations/v3listpaymentserviceuserconnectionsfromconnectoridrequest.md
+  - docs/models/operations/v3listpaymentserviceuserconnectionsfromconnectoridresponse.md
+  - docs/models/operations/v3listpaymentserviceuserconnectionsrequest.md
+  - docs/models/operations/v3listpaymentserviceuserconnectionsresponse.md
+  - docs/models/operations/v3listpaymentserviceuserlinkattemptsfromconnectoridrequest.md
+  - docs/models/operations/v3listpaymentserviceuserlinkattemptsfromconnectoridresponse.md
   - docs/models/operations/v3listpaymentserviceusersrequest.md
   - docs/models/operations/v3listpaymentserviceusersresponse.md
   - docs/models/operations/v3listpaymentsrequest.md
@@ -689,6 +748,8 @@ generatedFiles:
   - docs/models/operations/v3updatebankaccountmetadataresponse.md
   - docs/models/operations/v3updateconnectorconfigrequest.md
   - docs/models/operations/v3updateconnectorconfigresponse.md
+  - docs/models/operations/v3updatelinkforpaymentserviceuseronconnectorrequest.md
+  - docs/models/operations/v3updatelinkforpaymentserviceuseronconnectorresponse.md
   - docs/models/operations/v3updatepaymentmetadatarequest.md
   - docs/models/operations/v3updatepaymentmetadataresponse.md
   - docs/sdks/formance/README.md
@@ -1629,6 +1690,153 @@ examples:
       responses:
         "200":
           application/json: {"data": {"id": "<id>", "status": "FAILED", "createdAt": "2025-09-07T00:11:01.351Z", "updatedAt": "2023-03-17T17:53:01.920Z"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePaymentServiceUser:
+    speakeasy-default-v3-delete-payment-service-user:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentServiceUserConnections:
+    speakeasy-default-v3-list-payment-service-user-connections:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2023-09-22T05:20:37.449Z", "dataUpdatedAt": "2025-02-21T06:12:46.620Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2023-09-22T05:20:37.449Z", "dataUpdatedAt": "2025-02-21T06:12:46.620Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePaymentServiceUserConnector:
+    speakeasy-default-v3-delete-payment-service-user-connector:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
+        "202":
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ForwardPaymentServiceUserToBankBridge:
+    speakeasy-default-v3-forward-payment-service-user-to-bank-bridge:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3CreateLinkForPaymentServiceUser:
+    speakeasy-default-v3-create-link-for-payment-service-user:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
+        "201":
+          application/json: {"attemptID": "<id>", "link": "https://all-trash.info"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentServiceUserConnectionsFromConnectorID:
+    speakeasy-default-v3-list-payment-service-user-connections-from-connector-ID:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-03-17T03:01:59.982Z", "dataUpdatedAt": "2024-06-24T12:14:28.260Z", "status": "ERROR"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-13T23:50:26.851Z", "dataUpdatedAt": "2025-12-09T21:21:43.784Z", "status": "ACTIVE"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-08T09:44:12.931Z", "dataUpdatedAt": "2023-07-18T08:34:16.806Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-03-17T03:01:59.982Z", "dataUpdatedAt": "2024-06-24T12:14:28.260Z", "status": "ERROR"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-13T23:50:26.851Z", "dataUpdatedAt": "2025-12-09T21:21:43.784Z", "status": "ACTIVE"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-08T09:44:12.931Z", "dataUpdatedAt": "2023-07-18T08:34:16.806Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ListPaymentServiceUserLinkAttemptsFromConnectorID:
+    speakeasy-default-v3-list-payment-service-user-link-attempts-from-connector-ID:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2025-08-03T20:18:34.993Z", "status": "pending", "clientRedirectURL": "https://alive-siege.net/"}, {"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2024-06-01T09:58:35.647Z", "status": "exited", "clientRedirectURL": "https://puzzled-consistency.biz/"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2025-08-03T20:18:34.993Z", "status": "pending", "clientRedirectURL": "https://alive-siege.net/"}, {"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2024-06-01T09:58:35.647Z", "status": "exited", "clientRedirectURL": "https://puzzled-consistency.biz/"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3GetPaymentServiceUserLinkAttemptFromConnectorID:
+    speakeasy-default-v3-get-payment-service-user-link-attempt-from-connector-ID:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+          attemptID: "<id>"
+      responses:
+        "200":
+          application/json: {"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2025-10-07T08:28:43.008Z", "status": "pending", "clientRedirectURL": "https://vibrant-surface.biz/"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3DeletePaymentServiceUserConnectionFromConnectorID:
+    speakeasy-default-v3-delete-payment-service-user-connection-from-connector-ID:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+          connectionID: "<id>"
+      responses:
+        '202  ':
+          application/json: {"data": {"taskID": "<id>"}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3UpdateLinkForPaymentServiceUserOnConnector:
+    speakeasy-default-v3-update-link-for-payment-service-user-on-connector:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+          connectionID: "<id>"
+      responses:
+        "201":
+          application/json: {"attemptID": "<id>", "link": "https://wasteful-coordination.name"}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0
