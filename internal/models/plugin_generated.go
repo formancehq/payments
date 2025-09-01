@@ -70,6 +70,20 @@ func (mr *MockPluginMockRecorder) CompleteUserLink(arg0, arg1 any) *gomock.Call 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CompleteUserLink", reflect.TypeOf((*MockPlugin)(nil).CompleteUserLink), arg0, arg1)
 }
 
+// Config mocks base method.
+func (m *MockPlugin) Config() PluginInternalConfig {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Config")
+	ret0, _ := ret[0].(PluginInternalConfig)
+	return ret0
+}
+
+// Config indicates an expected call of Config.
+func (mr *MockPluginMockRecorder) Config() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Config", reflect.TypeOf((*MockPlugin)(nil).Config))
+}
+
 // CreateBankAccount mocks base method.
 func (m *MockPlugin) CreateBankAccount(arg0 context.Context, arg1 CreateBankAccountRequest) (CreateBankAccountResponse, error) {
 	m.ctrl.T.Helper()

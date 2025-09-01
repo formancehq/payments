@@ -27,6 +27,10 @@ func (i *impl) Name() string {
 	return i.plugin.Name()
 }
 
+func (i *impl) Config() models.PluginInternalConfig {
+	return i.plugin.Config()
+}
+
 func (i *impl) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	ctx, span := otel.StartSpan(ctx, "plugin.Install", attribute.String("psp", i.connectorID.Provider), attribute.String("connector_id", i.connectorID.String()))
 	defer span.End()

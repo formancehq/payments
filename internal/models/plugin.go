@@ -25,6 +25,8 @@ type Plugin interface {
 
 	// Common methods
 	Name() string
+	// Config is used to fetch back the validated config struct from a plugin
+	Config() PluginInternalConfig
 	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
