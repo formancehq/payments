@@ -1831,6 +1831,13 @@ paths:
       x-speakeasy-name-override: ListPaymentServiceUserConnections
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -1936,6 +1943,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
         - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -1962,6 +1976,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
         - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V3QueryBuilder'
       responses:
         "200":
           description: OK
@@ -5390,9 +5411,11 @@ components:
       properties:
         applicationName:
           type: string
+          description: The name of the application to be displayed to the user.
         clientRedirectURL:
           type: string
           format: url
+          description: The URL to redirect the user to after the link flow is completed.
     V3PaymentServiceUserCreateLinkResponse:
       type: object
       required:

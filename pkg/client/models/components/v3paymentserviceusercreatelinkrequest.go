@@ -3,7 +3,9 @@
 package components
 
 type V3PaymentServiceUserCreateLinkRequest struct {
-	ApplicationName   string `json:"applicationName"`
+	// The name of the application to be displayed to the user.
+	ApplicationName string `json:"applicationName"`
+	// The URL to redirect the user to after the link flow is completed.
 	ClientRedirectURL string `json:"clientRedirectURL"`
 }
 

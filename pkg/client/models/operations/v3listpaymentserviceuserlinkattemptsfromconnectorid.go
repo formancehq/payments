@@ -11,6 +11,12 @@ type V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest struct {
 	PaymentServiceUserID string `pathParam:"style=simple,explode=false,name=paymentServiceUserID"`
 	// The connector ID
 	ConnectorID string `pathParam:"style=simple,explode=false,name=connectorID"`
+	// The number of items to return
+	PageSize *int64 `queryParam:"style=form,explode=true,name=pageSize"`
+	// Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
+	//
+	Cursor      *string        `queryParam:"style=form,explode=true,name=cursor"`
+	RequestBody map[string]any `request:"mediaType=application/json"`
 }
 
 func (o *V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest) GetPaymentServiceUserID() string {
@@ -25,6 +31,27 @@ func (o *V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest) GetConnecto
 		return ""
 	}
 	return o.ConnectorID
+}
+
+func (o *V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest) GetPageSize() *int64 {
+	if o == nil {
+		return nil
+	}
+	return o.PageSize
+}
+
+func (o *V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest) GetCursor() *string {
+	if o == nil {
+		return nil
+	}
+	return o.Cursor
+}
+
+func (o *V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest) GetRequestBody() map[string]any {
+	if o == nil {
+		return nil
+	}
+	return o.RequestBody
 }
 
 type V3ListPaymentServiceUserLinkAttemptsFromConnectorIDResponse struct {

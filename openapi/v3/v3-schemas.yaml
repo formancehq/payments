@@ -1506,9 +1506,11 @@ components:
       properties:
         applicationName:
           type: string
+          description: The name of the application to be displayed to the user.
         clientRedirectURL:
           type: string
           format: url
+          description: The URL to redirect the user to after the link flow is completed.
 
     V3PaymentServiceUserCreateLinkResponse:
       type: object

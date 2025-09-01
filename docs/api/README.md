@@ -2460,17 +2460,31 @@ None ( Scopes: payments:write )
 ```http
 GET /v3/payment-service-users/{paymentServiceUserID}/connections HTTP/1.1
 
+Content-Type: application/json
 Accept: application/json
 
 ```
 
 `GET /v3/payment-service-users/{paymentServiceUserID}/connections`
 
+> Body parameter
+
+```json
+{}
+```
+
 <h3 id="list-all-connections-for-a-payment-service-user-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
 |paymentServiceUserID|path|string|true|The payment service user ID|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
 
 > Example responses
 
@@ -2670,11 +2684,18 @@ None ( Scopes: payments:write )
 ```http
 GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections HTTP/1.1
 
+Content-Type: application/json
 Accept: application/json
 
 ```
 
 `GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/connections`
+
+> Body parameter
+
+```json
+{}
+```
 
 <h3 id="list-all-connections-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
 
@@ -2682,6 +2703,13 @@ Accept: application/json
 |---|---|---|---|---|
 |paymentServiceUserID|path|string|true|The payment service user ID|
 |connectorID|path|string|true|The connector ID|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
 
 > Example responses
 
@@ -2733,11 +2761,18 @@ None ( Scopes: payments:read )
 ```http
 GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts HTTP/1.1
 
+Content-Type: application/json
 Accept: application/json
 
 ```
 
 `GET /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/link-attempts`
+
+> Body parameter
+
+```json
+{}
+```
 
 <h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
 
@@ -2745,6 +2780,13 @@ Accept: application/json
 |---|---|---|---|---|
 |paymentServiceUserID|path|string|true|The payment service user ID|
 |connectorID|path|string|true|The connector ID|
+|pageSize|query|integer(int64)|false|The number of items to return|
+|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+
+#### Detailed descriptions
+
+**cursor**: Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.
 
 > Example responses
 
@@ -6125,8 +6167,8 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|applicationName|string|true|none|none|
-|clientRedirectURL|string(url)|true|none|none|
+|applicationName|string|true|none|The name of the application to be displayed to the user.|
+|clientRedirectURL|string(url)|true|none|The URL to redirect the user to after the link flow is completed.|
 
 <h2 id="tocS_V3PaymentServiceUserCreateLinkResponse">V3PaymentServiceUserCreateLinkResponse</h2>
 <!-- backwards compatibility -->

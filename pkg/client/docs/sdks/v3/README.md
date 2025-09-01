@@ -2053,7 +2053,7 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V3.ListPaymentServiceUserConnections(ctx, "<id>")
+    res, err := s.Payments.V3.ListPaymentServiceUserConnections(ctx, "<id>", client.Int64(100), client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="), nil)
     if err != nil {
         log.Fatal(err)
     }
@@ -2065,11 +2065,14 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `paymentServiceUserID`                                   | *string*                                                 | :heavy_check_mark:                                       | The payment service user ID                              |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                                                                                                                                                                | Type                                                                                                                                                                                                                     | Required                                                                                                                                                                                                                 | Description                                                                                                                                                                                                              | Example                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ctx`                                                                                                                                                                                                                    | [context.Context](https://pkg.go.dev/context#Context)                                                                                                                                                                    | :heavy_check_mark:                                                                                                                                                                                                       | The context to use for the request.                                                                                                                                                                                      |                                                                                                                                                                                                                          |
+| `paymentServiceUserID`                                                                                                                                                                                                   | *string*                                                                                                                                                                                                                 | :heavy_check_mark:                                                                                                                                                                                                       | The payment service user ID                                                                                                                                                                                              |                                                                                                                                                                                                                          |
+| `pageSize`                                                                                                                                                                                                               | **int64*                                                                                                                                                                                                                 | :heavy_minus_sign:                                                                                                                                                                                                       | The number of items to return                                                                                                                                                                                            | 100                                                                                                                                                                                                                      |
+| `cursor`                                                                                                                                                                                                                 | **string*                                                                                                                                                                                                                | :heavy_minus_sign:                                                                                                                                                                                                       | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.<br/> | aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ==                                                                                                                                                                             |
+| `requestBody`                                                                                                                                                                                                            | map[string]*any*                                                                                                                                                                                                         | :heavy_minus_sign:                                                                                                                                                                                                       | N/A                                                                                                                                                                                                                      |                                                                                                                                                                                                                          |
+| `opts`                                                                                                                                                                                                                   | [][operations.Option](../../models/operations/option.md)                                                                                                                                                                 | :heavy_minus_sign:                                                                                                                                                                                                       | The options for this request.                                                                                                                                                                                            |                                                                                                                                                                                                                          |
 
 ### Response
 
@@ -2254,6 +2257,7 @@ import(
 	"context"
 	"github.com/formancehq/payments/pkg/client"
 	"os"
+	"github.com/formancehq/payments/pkg/client/models/operations"
 	"log"
 )
 
@@ -2265,7 +2269,12 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V3.ListPaymentServiceUserConnectionsFromConnectorID(ctx, "<id>", "<id>")
+    res, err := s.Payments.V3.ListPaymentServiceUserConnectionsFromConnectorID(ctx, operations.V3ListPaymentServiceUserConnectionsFromConnectorIDRequest{
+        PaymentServiceUserID: "<id>",
+        ConnectorID: "<id>",
+        PageSize: client.Int64(100),
+        Cursor: client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -2277,12 +2286,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `paymentServiceUserID`                                   | *string*                                                 | :heavy_check_mark:                                       | The payment service user ID                              |
-| `connectorID`                                            | *string*                                                 | :heavy_check_mark:                                       | The connector ID                                         |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                                                                                                    | Type                                                                                                                                                         | Required                                                                                                                                                     | Description                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ctx`                                                                                                                                                        | [context.Context](https://pkg.go.dev/context#Context)                                                                                                        | :heavy_check_mark:                                                                                                                                           | The context to use for the request.                                                                                                                          |
+| `request`                                                                                                                                                    | [operations.V3ListPaymentServiceUserConnectionsFromConnectorIDRequest](../../models/operations/v3listpaymentserviceuserconnectionsfromconnectoridrequest.md) | :heavy_check_mark:                                                                                                                                           | The request object to use for the request.                                                                                                                   |
+| `opts`                                                                                                                                                       | [][operations.Option](../../models/operations/option.md)                                                                                                     | :heavy_minus_sign:                                                                                                                                           | The options for this request.                                                                                                                                |
 
 ### Response
 
@@ -2307,6 +2315,7 @@ import(
 	"context"
 	"github.com/formancehq/payments/pkg/client"
 	"os"
+	"github.com/formancehq/payments/pkg/client/models/operations"
 	"log"
 )
 
@@ -2318,7 +2327,12 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V3.ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx, "<id>", "<id>")
+    res, err := s.Payments.V3.ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx, operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest{
+        PaymentServiceUserID: "<id>",
+        ConnectorID: "<id>",
+        PageSize: client.Int64(100),
+        Cursor: client.String("aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="),
+    })
     if err != nil {
         log.Fatal(err)
     }
@@ -2330,12 +2344,11 @@ func main() {
 
 ### Parameters
 
-| Parameter                                                | Type                                                     | Required                                                 | Description                                              |
-| -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| `ctx`                                                    | [context.Context](https://pkg.go.dev/context#Context)    | :heavy_check_mark:                                       | The context to use for the request.                      |
-| `paymentServiceUserID`                                   | *string*                                                 | :heavy_check_mark:                                       | The payment service user ID                              |
-| `connectorID`                                            | *string*                                                 | :heavy_check_mark:                                       | The connector ID                                         |
-| `opts`                                                   | [][operations.Option](../../models/operations/option.md) | :heavy_minus_sign:                                       | The options for this request.                            |
+| Parameter                                                                                                                                                      | Type                                                                                                                                                           | Required                                                                                                                                                       | Description                                                                                                                                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ctx`                                                                                                                                                          | [context.Context](https://pkg.go.dev/context#Context)                                                                                                          | :heavy_check_mark:                                                                                                                                             | The context to use for the request.                                                                                                                            |
+| `request`                                                                                                                                                      | [operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest](../../models/operations/v3listpaymentserviceuserlinkattemptsfromconnectoridrequest.md) | :heavy_check_mark:                                                                                                                                             | The request object to use for the request.                                                                                                                     |
+| `opts`                                                                                                                                                         | [][operations.Option](../../models/operations/option.md)                                                                                                       | :heavy_minus_sign:                                                                                                                                             | The options for this request.                                                                                                                                  |
 
 ### Response
 

@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 68f7c47837506f36da64bca001197daa
+  docChecksum: 14bf36a79ac37c5b6765554e176ac837
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -1712,6 +1712,18 @@ examples:
           application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2023-09-22T05:20:37.449Z", "dataUpdatedAt": "2025-02-21T06:12:46.620Z", "status": "ACTIVE"}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2023-09-22T05:20:37.449Z", "dataUpdatedAt": "2025-02-21T06:12:46.620Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3DeletePaymentServiceUserConnector:
     speakeasy-default-v3-delete-payment-service-user-connector:
       parameters:
@@ -1754,12 +1766,38 @@ examples:
           application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-03-17T03:01:59.982Z", "dataUpdatedAt": "2024-06-24T12:14:28.260Z", "status": "ERROR"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-13T23:50:26.851Z", "dataUpdatedAt": "2025-12-09T21:21:43.784Z", "status": "ACTIVE"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-08T09:44:12.931Z", "dataUpdatedAt": "2023-07-18T08:34:16.806Z", "status": "ACTIVE"}]}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-03-17T03:01:59.982Z", "dataUpdatedAt": "2024-06-24T12:14:28.260Z", "status": "ERROR"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-13T23:50:26.851Z", "dataUpdatedAt": "2025-12-09T21:21:43.784Z", "status": "ACTIVE"}, {"connectionID": "<id>", "connectorID": "<id>", "createdAt": "2024-02-08T09:44:12.931Z", "dataUpdatedAt": "2023-07-18T08:34:16.806Z", "status": "ACTIVE"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
   v3ListPaymentServiceUserLinkAttemptsFromConnectorID:
     speakeasy-default-v3-list-payment-service-user-link-attempts-from-connector-ID:
       parameters:
         path:
           paymentServiceUserID: "<id>"
           connectorID: "<id>"
+      responses:
+        "200":
+          application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2025-08-03T20:18:34.993Z", "status": "pending", "clientRedirectURL": "https://alive-siege.net/"}, {"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2024-06-01T09:58:35.647Z", "status": "exited", "clientRedirectURL": "https://puzzled-consistency.biz/"}]}}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+    "":
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+        query:
+          pageSize: 100
+          cursor: "aHR0cHM6Ly9nLnBhZ2UvTmVrby1SYW1lbj9zaGFyZQ=="
       responses:
         "200":
           application/json: {"cursor": {"pageSize": 15, "hasMore": false, "previous": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "next": "YXVsdCBhbmQgYSBtYXhpbXVtIG1heF9yZXN1bHRzLol=", "data": [{"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2025-08-03T20:18:34.993Z", "status": "pending", "clientRedirectURL": "https://alive-siege.net/"}, {"id": "<id>", "psuID": "<id>", "connectorID": "<id>", "createdAt": "2024-06-01T09:58:35.647Z", "status": "exited", "clientRedirectURL": "https://puzzled-consistency.biz/"}]}}

@@ -8265,9 +8265,12 @@ func (s *V3) DeletePaymentServiceUser(ctx context.Context, paymentServiceUserID 
 }
 
 // ListPaymentServiceUserConnections - List all connections for a payment service user
-func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServiceUserID string, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsResponse, error) {
+func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServiceUserID string, pageSize *int64, cursor *string, requestBody map[string]any, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsResponse, error) {
 	request := operations.V3ListPaymentServiceUserConnectionsRequest{
 		PaymentServiceUserID: paymentServiceUserID,
+		PageSize:             pageSize,
+		Cursor:               cursor,
+		RequestBody:          requestBody,
 	}
 
 	o := operations.Options{}
@@ -8300,6 +8303,10 @@ func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServi
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	if err != nil {
+		return nil, err
+	}
 
 	timeout := o.Timeout
 	if timeout == nil {
@@ -8312,12 +8319,19 @@ func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServi
 		defer cancel()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", opURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", opURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", s.sdkConfiguration.UserAgent)
+	if reqContentType != "" {
+		req.Header.Set("Content-Type", reqContentType)
+	}
+
+	if err := utils.PopulateQueryParams(ctx, req, request, nil); err != nil {
+		return nil, fmt.Errorf("error populating query params: %w", err)
+	}
 
 	if err := utils.PopulateSecurity(ctx, req, s.sdkConfiguration.Security); err != nil {
 		return nil, err
@@ -9136,12 +9150,7 @@ func (s *V3) CreateLinkForPaymentServiceUser(ctx context.Context, paymentService
 }
 
 // ListPaymentServiceUserConnectionsFromConnectorID - List all connections for a payment service user on a connector
-func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsFromConnectorIDResponse, error) {
-	request := operations.V3ListPaymentServiceUserConnectionsFromConnectorIDRequest{
-		PaymentServiceUserID: paymentServiceUserID,
-		ConnectorID:          connectorID,
-	}
-
+func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Context, request operations.V3ListPaymentServiceUserConnectionsFromConnectorIDRequest, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsFromConnectorIDResponse, error) {
 	o := operations.Options{}
 	supportedOptions := []string{
 		operations.SupportedOptionRetries,
@@ -9172,6 +9181,10 @@ func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Contex
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	if err != nil {
+		return nil, err
+	}
 
 	timeout := o.Timeout
 	if timeout == nil {
@@ -9184,12 +9197,19 @@ func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Contex
 		defer cancel()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", opURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", opURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", s.sdkConfiguration.UserAgent)
+	if reqContentType != "" {
+		req.Header.Set("Content-Type", reqContentType)
+	}
+
+	if err := utils.PopulateQueryParams(ctx, req, request, nil); err != nil {
+		return nil, fmt.Errorf("error populating query params: %w", err)
+	}
 
 	if err := utils.PopulateSecurity(ctx, req, s.sdkConfiguration.Security); err != nil {
 		return nil, err
@@ -9357,12 +9377,7 @@ func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Contex
 }
 
 // ListPaymentServiceUserLinkAttemptsFromConnectorID - List all link attempts for a payment service user on a connector
-func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDResponse, error) {
-	request := operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest{
-		PaymentServiceUserID: paymentServiceUserID,
-		ConnectorID:          connectorID,
-	}
-
+func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Context, request operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest, opts ...operations.Option) (*operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDResponse, error) {
 	o := operations.Options{}
 	supportedOptions := []string{
 		operations.SupportedOptionRetries,
@@ -9393,6 +9408,10 @@ func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Conte
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
+	bodyReader, reqContentType, err := utils.SerializeRequestBody(ctx, request, false, true, "RequestBody", "json", `request:"mediaType=application/json"`)
+	if err != nil {
+		return nil, err
+	}
 
 	timeout := o.Timeout
 	if timeout == nil {
@@ -9405,12 +9424,19 @@ func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Conte
 		defer cancel()
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", opURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", opURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("error creating request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", s.sdkConfiguration.UserAgent)
+	if reqContentType != "" {
+		req.Header.Set("Content-Type", reqContentType)
+	}
+
+	if err := utils.PopulateQueryParams(ctx, req, request, nil); err != nil {
+		return nil, fmt.Errorf("error populating query params: %w", err)
+	}
 
 	if err := utils.PopulateSecurity(ctx, req, s.sdkConfiguration.Security); err != nil {
 		return nil, err

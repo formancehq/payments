@@ -1050,6 +1050,13 @@ paths:
       x-speakeasy-name-override: ListPaymentServiceUserConnections
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
@@ -1159,6 +1166,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
         - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
@@ -1186,6 +1200,13 @@ paths:
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
         - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: '#/components/parameters/V3PageSize'
+        - $ref: '#/components/parameters/V3Cursor'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
