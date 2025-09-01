@@ -16,6 +16,10 @@ compile-plugins:
   ./tools/compile-plugins/compile-plugin.sh list.go internal/connectors/plugins/public
 
 [group('openapi')]
+validate-openapi:
+  @go run github.com/getkin/kin-openapi/cmd/validate@latest openapi.yaml
+
+[group('openapi')]
 compile-connector-configs:
     @go build -o compile-configs {{justfile_directory()}}/tools/compile-configs
     ./compile-configs --path {{justfile_directory()}}/internal/connectors/plugins/public --output {{justfile_directory()}}/openapi/v3/v3-connectors-config.yaml
@@ -39,7 +43,7 @@ compile-api-docs:
     @rm {{justfile_directory()}}/openapi.json
 
 [group('openapi')]
-openapi: compile-api-yaml compile-api-docs
+openapi: compile-api-yaml compile-api-docs validate-openapi
 
 [group('test')]
 tests:

@@ -728,7 +728,7 @@ Accept: application/json
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -904,7 +904,7 @@ Accept: application/json
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
-    "pageSize": "25",
+    "pageSize": 25,
     "pollingPeriod": "2m",
     "provider": "Adyen",
     "webhookPassword": "string",
@@ -950,7 +950,7 @@ Update connector config
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -2907,7 +2907,7 @@ Accept: application/json
 
 > Example responses
 
-> 202   Response
+> 202 Response
 
 ```json
 {
@@ -2921,7 +2921,7 @@ Accept: application/json
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|202  |Unknown|Accepted|[V3PaymentServiceUserDeleteConnectionResponse](#schemav3paymentserviceuserdeleteconnectionresponse)|
+|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3PaymentServiceUserDeleteConnectionResponse](#schemav3paymentserviceuserdeleteconnectionresponse)|
 |default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
 
 <aside class="warning">
@@ -4140,7 +4140,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -4280,7 +4280,7 @@ None ( Scopes: payments:read )
     "companyID": "string",
     "liveEndpointPrefix": "string",
     "name": "string",
-    "pageSize": "25",
+    "pageSize": 25,
     "pollingPeriod": "2m",
     "provider": "Adyen",
     "webhookPassword": "string",
@@ -4309,7 +4309,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6639,7 +6639,7 @@ None ( Scopes: payments:read )
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6765,7 +6765,7 @@ xor
   "companyID": "string",
   "liveEndpointPrefix": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Adyen",
   "webhookPassword": "string",
@@ -6800,7 +6800,7 @@ xor
   "accessKey": "string",
   "baseUrl": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Atlar",
   "secret": "string"
@@ -6832,7 +6832,7 @@ xor
   "authorizationEndpoint": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "password": "string",
   "pollingPeriod": "2m",
   "provider": "Bankingcircle",
@@ -6870,7 +6870,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Column"
 }
@@ -6901,7 +6901,7 @@ xor
   "endpoint": "string",
   "loginID": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Currencycloud"
 }
@@ -6931,7 +6931,7 @@ xor
 {
   "directory": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Dummypay"
 }
@@ -6960,7 +6960,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Generic"
 }
@@ -6990,7 +6990,7 @@ xor
   "apiKey": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Increase",
   "webhookSharedSecret": "string"
@@ -7023,7 +7023,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Mangopay"
 }
@@ -7055,7 +7055,7 @@ xor
   "apiSecret": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Modulr"
 }
@@ -7087,7 +7087,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Moneycorp"
 }
@@ -7119,7 +7119,7 @@ xor
   "clientSecret": "string",
   "isSandbox": true,
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Plaid"
 }
@@ -7154,7 +7154,7 @@ xor
   "endpoint": "string",
   "maxConnectionsPerLink": 0,
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Powens"
 }
@@ -7189,7 +7189,7 @@ xor
   "clientID": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Qonto",
   "stagingToken": "string"
@@ -7221,7 +7221,7 @@ xor
 {
   "apiKey": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Stripe"
 }
@@ -7251,7 +7251,7 @@ xor
   "clientSecret": "string",
   "endpoint": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Tink"
 }
@@ -7281,7 +7281,7 @@ xor
 {
   "apiKey": "string",
   "name": "string",
-  "pageSize": "25",
+  "pageSize": 25,
   "pollingPeriod": "2m",
   "provider": "Wise",
   "webhookPublicKey": "string"
