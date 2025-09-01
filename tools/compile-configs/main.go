@@ -131,7 +131,7 @@ func readConfig(name string, caserName string) (V3Config, error) {
 		},
 		"pageSize": {
 			Type:    "integer",
-			Default: "25",
+			Default: 25,
 		},
 	}
 	for _, decl := range f.Decls {
