@@ -47,11 +47,22 @@ Here is the complete interface definition for your reference:
 
 ```go
 type Plugin interface {
-	Name() string
+	PSPPlugin
+	BankingBridgePlugin
 
+	// Common methods
+	Name() string
 	Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
+	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
+	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
+	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
+	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
+}
+
+// PSPPlugin contains methods for Payment Service Provider functionality
+type PSPPlugin interface {
 	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
 	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
 	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
@@ -65,9 +76,6 @@ type Plugin interface {
 	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
 	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
 	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
-
-	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
-	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 ```
 
@@ -130,6 +138,8 @@ var capabilities = []models.Capability{
 	models.CAPABILITY_FETCH_EXTERNAL_ACCOUNTS,
 	models.CAPABILITY_FETCH_PAYMENTS,
 
+	models.CAPABILITY_ALLOW_FORMANCE_ACCOUNT_CREATION,
+	models.CAPABILITY_ALLOW_FORMANCE_PAYMENT_CREATION,
 	models.CAPABILITY_CREATE_TRANSFER,
 	models.CAPABILITY_CREATE_PAYOUT,
 }
@@ -154,7 +164,7 @@ You can find below the list of capabilities supported:
 
 ### Define connector configuration
 
-Open the config.go file in the dummypay2 directory to define the connector configuration:
+Open the `config.go` file in the `dummypay2` directory to define the connector configuration:
 
 ```go
 package dummypay2
@@ -192,7 +202,7 @@ the files to poll will be stored.
 
 ### Define the Connector Struct
 
-Open the file called plugin.go to define the connector struct:
+Open the file called `plugin.go` to define the connector struct:
 
 ```go
 package dummypay2
@@ -200,30 +210,39 @@ package dummypay2
 import (
 	"encoding/json"
 
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay2/client"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 func init() {
-	registry.RegisterPlugin("dummypay", func(name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(registry.DummyPSPName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
 
 type Plugin struct {
-	name string
+	models.Plugin
+
+	name   string
 	logger logging.Logger
+	client client.Client
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
-	_, err := unmarshalAndValidateConfig(rawConfig)
+	conf, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Plugin{
-		name: name,
+		Plugin: plugins.NewBasePlugin(),
+
+		name:   name,
 		logger: logger,
+		client: client.New(conf.Directory),
 	}, nil
 }
 ```
@@ -349,10 +368,8 @@ Here, we have defined a task tree containing two parent nodes. This configuratio
 Now that the workflow has been established, we need to go back to our `Plugin` struct and implement the installation logic. Replace the `plugins.ErrNotImplemented` return value with a valid `models.InstallResponse`, which will include the workflow we've just defined.
 
 ```go
-func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.InstallResponse, error) {
-	return models.InstallResponse{
-		Workflow: workflow(),
-	}, nil
+func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	return p.install(ctx, req)
 }
 ```
 
@@ -361,8 +378,8 @@ func (p *Plugin) Install(_ context.Context, _ models.InstallRequest) (models.Ins
 To add the ability to uninstall the connector, we can return an empty model.UninstallResponse:
 
 ```go
-func (p *Plugin) Uninstall(_ context.Context, _ models.UninstallRequest) (models.UninstallResponse, error) {
-	return models.UninstallResponse{}, nil
+func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	return p.uninstall(ctx, req)
 }
 ```
 
@@ -448,7 +465,10 @@ Within the `client` package, open the file called `account.go` and define the st
 ```go
 package client
 
-import "time"
+import (
+	"math/big"
+	"time"
+)
 
 type Account struct {
 	ID          string    `json:"id"`
@@ -465,6 +485,10 @@ package client
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path"
 
 	"github.com/formancehq/payments/internal/models"
 )
