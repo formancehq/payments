@@ -33,6 +33,10 @@ func (o *V3GetConnectorConfigResponse) GetDataCurrencycloud() *V3CurrencycloudCo
 	return o.GetData().V3CurrencycloudConfig
 }
 
+func (o *V3GetConnectorConfigResponse) GetDataDummyopenbanking() *V3DummyopenbankingConfig {
+	return o.GetData().V3DummyopenbankingConfig
+}
+
 func (o *V3GetConnectorConfigResponse) GetDataDummypay() *V3DummypayConfig {
 	return o.GetData().V3DummypayConfig
 }

@@ -61,6 +61,13 @@ func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestCurrencycloud() 
 	return nil
 }
 
+func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestDummyopenbanking() *components.V3DummyopenbankingConfig {
+	if v := o.GetV3InstallConnectorRequest(); v != nil {
+		return v.V3DummyopenbankingConfig
+	}
+	return nil
+}
+
 func (o *V3InstallConnectorRequest) GetV3InstallConnectorRequestDummypay() *components.V3DummypayConfig {
 	if v := o.GetV3InstallConnectorRequest(); v != nil {
 		return v.V3DummypayConfig

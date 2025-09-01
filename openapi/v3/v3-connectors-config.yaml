@@ -9,6 +9,7 @@ components:
                     Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
                     Column: '#/components/schemas/V3ColumnConfig'
                     Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
+                    Dummyopenbanking: '#/components/schemas/V3DummyopenbankingConfig'
                     Dummypay: '#/components/schemas/V3DummypayConfig'
                     Generic: '#/components/schemas/V3GenericConfig'
                     Increase: '#/components/schemas/V3IncreaseConfig'
@@ -27,6 +28,7 @@ components:
                 - $ref: '#/components/schemas/V3BankingcircleConfig'
                 - $ref: '#/components/schemas/V3ColumnConfig'
                 - $ref: '#/components/schemas/V3CurrencycloudConfig'
+                - $ref: '#/components/schemas/V3DummyopenbankingConfig'
                 - $ref: '#/components/schemas/V3DummypayConfig'
                 - $ref: '#/components/schemas/V3GenericConfig'
                 - $ref: '#/components/schemas/V3IncreaseConfig'
@@ -173,6 +175,31 @@ components:
                 provider:
                     type: string
                     default: Currencycloud
+        V3DummyopenbankingConfig:
+            type: object
+            required:
+                - name
+                - directory
+                - linkFlowError
+                - updateLinkFlowError
+            properties:
+                directory:
+                    type: string
+                linkFlowError:
+                    type: boolean
+                name:
+                    type: string
+                pageSize:
+                    type: integer
+                    default: "25"
+                pollingPeriod:
+                    type: string
+                    default: 2m
+                provider:
+                    type: string
+                    default: Dummyopenbanking
+                updateLinkFlowError:
+                    type: boolean
         V3DummypayConfig:
             type: object
             required:

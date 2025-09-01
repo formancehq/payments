@@ -142,6 +142,7 @@ generatedFiles:
   - /models/components/v3createpoolrequest.go
   - /models/components/v3createpoolresponse.go
   - /models/components/v3currencycloudconfig.go
+  - /models/components/v3dummyopenbankingconfig.go
   - /models/components/v3dummypayconfig.go
   - /models/components/v3errorresponse.go
   - /models/components/v3errorsenum.go
@@ -472,6 +473,7 @@ generatedFiles:
   - docs/models/components/v3createpoolrequest.md
   - docs/models/components/v3createpoolresponse.md
   - docs/models/components/v3currencycloudconfig.md
+  - docs/models/components/v3dummyopenbankingconfig.md
   - docs/models/components/v3dummypayconfig.md
   - docs/models/components/v3errorresponse.md
   - docs/models/components/v3errorsenum.md

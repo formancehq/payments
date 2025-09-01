@@ -33,6 +33,12 @@ v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestColumn(comp
 v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestCurrencycloud(components.V3CurrencycloudConfig{/* values here */})
 ```
 
+### V3DummyopenbankingConfig
+
+```go
+v3UpdateConnectorRequest := components.CreateV3UpdateConnectorRequestDummyopenbanking(components.V3DummyopenbankingConfig{/* values here */})
+```
+
 ### V3DummypayConfig
 
 ```go
