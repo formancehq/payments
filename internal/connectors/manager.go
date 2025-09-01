@@ -20,7 +20,7 @@ var (
 
 //go:generate mockgen -source manager.go -destination manager_generated.go -package connectors . Manager
 type Manager interface {
-	Load(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) error
+	Load(models.ConnectorID, string, string, models.Config, json.RawMessage, bool) (json.RawMessage, error)
 	Unload(models.ConnectorID)
 	GetConfig(models.ConnectorID) (models.Config, error)
 	Get(models.ConnectorID) (models.Plugin, error)
@@ -39,6 +39,8 @@ type manager struct {
 type connector struct {
 	plugin models.Plugin
 	config models.Config
+
+	validatedConfigJson json.RawMessage
 }
 
 func NewManager(
@@ -59,31 +61,37 @@ func (p *manager) Load(
 	config models.Config,
 	rawConfig json.RawMessage,
 	updateExisting bool,
-) error {
+) (validatedConfigJson json.RawMessage, err error) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
 	// Check if plugin is already installed
 	_, ok := p.connectors[connectorID.String()]
 	if ok && !updateExisting {
-		return nil
+		return p.connectors[connectorID.String()].validatedConfigJson, nil
 	}
 
 	plugin, err := registry.GetPlugin(connectorID, p.logger, provider, connectorName, rawConfig)
 	switch {
 	case errors.Is(err, pluginserrors.ErrNotImplemented),
 		errors.Is(err, pluginserrors.ErrInvalidClientRequest):
-		return fmt.Errorf("%w: %w", err, ErrValidation)
+		return nil, fmt.Errorf("%w: %w", err, ErrValidation)
 	case err != nil:
-		return err
+		return nil, err
 	}
 
+	b, err := combineConfigs(config, plugin.Config())
+	if err != nil {
+		return nil, fmt.Errorf("failed to combine configs: %w", err)
+	}
+
+	validatedConfigJson = json.RawMessage(b)
 	p.connectors[connectorID.String()] = connector{
-		plugin: plugin,
-		config: config,
+		plugin:              plugin,
+		config:              config,
+		validatedConfigJson: validatedConfigJson,
 	}
-
-	return nil
+	return validatedConfigJson, nil
 }
 
 func (p *manager) Unload(connectorID models.ConnectorID) {

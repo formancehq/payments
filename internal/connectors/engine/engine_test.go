@@ -95,8 +95,9 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when workflow cannot be launched", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow error")
-			connector := models.Connector{Config: json.RawMessage(`{}`)}
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			conf := json.RawMessage(`{}`)
+			connector := models.Connector{Config: conf}
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -108,12 +109,13 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should launch a workflow for each connector", func(ctx SpecContext) {
+			conf := json.RawMessage(`{}`)
 			connectors := []models.Connector{
-				{Config: json.RawMessage(`{}`)},
-				{Config: json.RawMessage(`{}`)},
+				{Config: conf},
+				{Config: conf},
 			}
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil).MinTimes(len(connectors))
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil).MinTimes(len(connectors))
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
 				gomock.AssignableToTypeOf(workflow.InstallConnector{}),
@@ -149,7 +151,7 @@ var _ = Describe("Engine Tests", func() {
 			expectedConfig.Name = connectorName
 
 			registerErr := errors.New("stop here")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(registerErr)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), false).Return(nil, registerErr)
 			_, err := eng.InstallConnector(ctx, "psp", json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -158,6 +160,7 @@ var _ = Describe("Engine Tests", func() {
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+				nil,
 				expectedErr,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -167,6 +170,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return validation error when plugin registry fails with validation issues", func(ctx SpecContext) {
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(
+				nil,
 				models.ErrInvalidConfig,
 			)
 			_, err := eng.InstallConnector(ctx, "psp", config)
@@ -176,7 +180,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when storage error happens", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(expectedErr)
 			_, err := eng.InstallConnector(ctx, "psp", config)
 			Expect(err).NotTo(BeNil())
@@ -185,7 +189,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should fail when workflow start fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("workflow err")
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -197,7 +201,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should call WorkflowRun.Get before returning", func(ctx SpecContext) {
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(json.RawMessage(`{}`), nil)
 			store.EXPECT().ConnectorsInstall(gomock.Any(), gomock.Any()).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -414,7 +418,7 @@ var _ = Describe("Engine Tests", func() {
 
 			registerErr := errors.New("stop here")
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(registerErr)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), expectedConfig, gomock.Any(), true).Return(nil, registerErr)
 			err := eng.UpdateConnector(ctx, connectorID, json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"0s","pageSize":0}`, connectorName)))
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(registerErr))
@@ -427,6 +431,7 @@ var _ = Describe("Engine Tests", func() {
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
+				nil,
 				expectedErr,
 			)
 			err := eng.UpdateConnector(ctx, connectorID, config)
@@ -440,7 +445,7 @@ var _ = Describe("Engine Tests", func() {
 				ID: connectorID,
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(json.RawMessage(`{}`), nil)
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), gomock.Any()).Return(expectedErr)
 			err := eng.UpdateConnector(ctx, connectorID, config)
 			Expect(err).NotTo(BeNil())
@@ -457,7 +462,7 @@ var _ = Describe("Engine Tests", func() {
 				Config:    json.RawMessage(`{"name":"original-name"}`),
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
-			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(nil)
+			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(inputJson, nil)
 
 			expectedConnector := models.Connector{
 				ID:        connectorID,

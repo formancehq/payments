@@ -88,7 +88,7 @@ func (s *UnitTestSuite) addData() {
 	registry.RegisterPlugin("test", models.PluginTypePSP, func(models.ConnectorID, string, logging.Logger, json.RawMessage) (models.Plugin, error) {
 		return nil, nil
 	}, []models.Capability{}, struct{}{})
-	err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
+	_, err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{

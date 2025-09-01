@@ -51,7 +51,7 @@ func TestManager_Load(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
-			err := manager.Load(connectorID, tt.provider, name, tt.config, tt.rawConfig, false)
+			_, err := manager.Load(connectorID, tt.provider, name, tt.config, tt.rawConfig, false)
 			if tt.expectError {
 				require.Error(t, err)
 

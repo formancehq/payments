@@ -72,11 +72,12 @@ func (mr *MockManagerMockRecorder) GetConfig(arg0 any) *gomock.Call {
 }
 
 // Load mocks base method.
-func (m *MockManager) Load(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) error {
+func (m *MockManager) Load(arg0 models.ConnectorID, arg1, arg2 string, arg3 models.Config, arg4 json.RawMessage, arg5 bool) (json.RawMessage, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Load", arg0, arg1, arg2, arg3, arg4, arg5)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(json.RawMessage)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // Load indicates an expected call of Load.

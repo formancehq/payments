@@ -146,24 +146,25 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 	}
 
-	connector := models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
-			Provider:  provider,
-		},
-		Name:      config.Name,
-		CreatedAt: time.Now().UTC(),
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
 		Provider:  provider,
-		Config:    rawConfig,
 	}
-
-	err := e.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	validatedConfig, err := e.connectors.Load(connectorID, provider, config.Name, config, rawConfig, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
 			return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 		}
 		return models.ConnectorID{}, err
+	}
+
+	connector := models.Connector{
+		ID:        connectorID,
+		Name:      config.Name,
+		CreatedAt: time.Now().UTC(),
+		Provider:  provider,
+		Config:    validatedConfig,
 	}
 
 	// Detached the context to avoid being in a weird state if request is
@@ -350,10 +351,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connector.Config = rawConfig
-	connector.Name = config.Name
-
-	err = e.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, config.Name, config, rawConfig, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -361,6 +359,8 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		}
 		return err
 	}
+	connector.Name = config.Name
+	connector.Config = validatedConfig
 
 	if err := e.storage.ConnectorsConfigUpdate(ctx, *connector); err != nil {
 		otel.RecordError(span, err)
@@ -1627,7 +1627,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	if !connector.ScheduledForDeletion {
-		if err := e.connectors.Load(
+		if _, err := e.connectors.Load(
 			connector.ID,
 			connector.Provider,
 			connector.Name,
