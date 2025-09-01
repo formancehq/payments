@@ -1858,7 +1858,7 @@ paths:
     delete:
       tags:
         - payments.v3
-      summary: Delete a payment service user on a connector
+      summary: Remove a payment service user from a connector, the PSU will still exist in Formance
       operationId: v3DeletePaymentServiceUserConnector
       x-speakeasy-name-override: DeletePaymentServiceUserConnector
       parameters:
