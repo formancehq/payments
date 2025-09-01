@@ -1506,7 +1506,7 @@ components:
       properties:
         applicationName:
           type: string
-          description: The name of the application to be displayed to the user.
+          description: The name of the application to be displayed to the user when they click the link (depending on the open banking provider).
         clientRedirectURL:
           type: string
           format: url

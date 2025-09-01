@@ -46,14 +46,16 @@
 * [GetPaymentServiceUser](#getpaymentserviceuser) - Get a payment service user by ID
 * [DeletePaymentServiceUser](#deletepaymentserviceuser) - Delete a payment service user by ID
 * [ListPaymentServiceUserConnections](#listpaymentserviceuserconnections) - List all connections for a payment service user
-* [DeletePaymentServiceUserConnector](#deletepaymentserviceuserconnector) - Delete a payment service user on a connector
-* [ForwardPaymentServiceUserToBankBridge](#forwardpaymentserviceusertobankbridge) - Forward a payment service user to a connector
-* [CreateLinkForPaymentServiceUser](#createlinkforpaymentserviceuser) - Create a link for a payment service user on a connector
-* [ListPaymentServiceUserConnectionsFromConnectorID](#listpaymentserviceuserconnectionsfromconnectorid) - List all connections for a payment service user on a connector
-* [ListPaymentServiceUserLinkAttemptsFromConnectorID](#listpaymentserviceuserlinkattemptsfromconnectorid) - List all link attempts for a payment service user on a connector
+* [DeletePaymentServiceUserConnector](#deletepaymentserviceuserconnector) - Remove a payment service user from a connector, the PSU will still exist in Formance
+* [ForwardPaymentServiceUserToBankBridge](#forwardpaymentserviceusertobankbridge) - Register/forward a payment service user on/to a connector
+* [CreateLinkForPaymentServiceUser](#createlinkforpaymentserviceuser) - Create an authentication link for a payment service user on a connector, for oauth flow
+* [ListPaymentServiceUserConnectionsFromConnectorID](#listpaymentserviceuserconnectionsfromconnectorid) - List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
+* [ListPaymentServiceUserLinkAttemptsFromConnectorID](#listpaymentserviceuserlinkattemptsfromconnectorid) - List all link attempts for a payment service user on a connector.
+Allows to check if users used the link and completed the oauth flow.
+
 * [GetPaymentServiceUserLinkAttemptFromConnectorID](#getpaymentserviceuserlinkattemptfromconnectorid) - Get a link attempt for a payment service user on a connector
 * [DeletePaymentServiceUserConnectionFromConnectorID](#deletepaymentserviceuserconnectionfromconnectorid) - Delete a connection for a payment service user on a connector
-* [UpdateLinkForPaymentServiceUserOnConnector](#updatelinkforpaymentserviceuseronconnector) - Update a link for a payment service user on a connector
+* [UpdateLinkForPaymentServiceUserOnConnector](#updatelinkforpaymentserviceuseronconnector) - Update/Regenerate a link for a payment service user on a connector
 * [AddBankAccountToPaymentServiceUser](#addbankaccounttopaymentserviceuser) - Add a bank account to a payment service user
 * [ForwardPaymentServiceUserBankAccount](#forwardpaymentserviceuserbankaccount) - Forward a payment service user's bank account to a connector
 * [CreatePool](#createpool) - Create a formance pool object
@@ -2086,7 +2088,7 @@ func main() {
 
 ## DeletePaymentServiceUserConnector
 
-Delete a payment service user on a connector
+Remove a payment service user from a connector, the PSU will still exist in Formance
 
 ### Example Usage
 
@@ -2139,7 +2141,7 @@ func main() {
 
 ## ForwardPaymentServiceUserToBankBridge
 
-Forward a payment service user to a connector
+Register/forward a payment service user on/to a connector
 
 ### Example Usage
 
@@ -2192,7 +2194,7 @@ func main() {
 
 ## CreateLinkForPaymentServiceUser
 
-Create a link for a payment service user on a connector
+Create an authentication link for a payment service user on a connector, for oauth flow
 
 ### Example Usage
 
@@ -2246,7 +2248,7 @@ func main() {
 
 ## ListPaymentServiceUserConnectionsFromConnectorID
 
-List all connections for a payment service user on a connector
+List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
 
 ### Example Usage
 
@@ -2304,7 +2306,9 @@ func main() {
 
 ## ListPaymentServiceUserLinkAttemptsFromConnectorID
 
-List all link attempts for a payment service user on a connector
+List all link attempts for a payment service user on a connector.
+Allows to check if users used the link and completed the oauth flow.
+
 
 ### Example Usage
 
@@ -2470,7 +2474,7 @@ func main() {
 
 ## UpdateLinkForPaymentServiceUserOnConnector
 
-Update a link for a payment service user on a connector
+Update/Regenerate a link for a payment service user on a connector
 
 ### Example Usage
 

@@ -2527,7 +2527,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## Delete a payment service user on a connector
+## Remove a payment service user from a connector, the PSU will still exist in Formance
 
 <a id="opIdv3DeletePaymentServiceUserConnector"></a>
 
@@ -2542,7 +2542,7 @@ Accept: application/json
 
 `DELETE /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}`
 
-<h3 id="delete-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+<h3 id="remove-a-payment-service-user-from-a-connector,-the-psu-will-still-exist-in-formance-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2561,7 +2561,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="delete-a-payment-service-user-on-a-connector-responses">Responses</h3>
+<h3 id="remove-a-payment-service-user-from-a-connector,-the-psu-will-still-exist-in-formance-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -2573,7 +2573,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
-## Forward a payment service user to a connector
+## Register/forward a payment service user on/to a connector
 
 <a id="opIdv3ForwardPaymentServiceUserToBankBridge"></a>
 
@@ -2588,7 +2588,7 @@ Accept: application/json
 
 `POST /v3/payment-service-users/{paymentServiceUserID}/connectors/{connectorID}/forward`
 
-<h3 id="forward-a-payment-service-user-to-a-connector-parameters">Parameters</h3>
+<h3 id="register/forward-a-payment-service-user-on/to-a-connector-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2607,7 +2607,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="forward-a-payment-service-user-to-a-connector-responses">Responses</h3>
+<h3 id="register/forward-a-payment-service-user-on/to-a-connector-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -2619,7 +2619,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
-## Create a link for a payment service user on a connector
+## Create an authentication link for a payment service user on a connector, for oauth flow
 
 <a id="opIdv3CreateLinkForPaymentServiceUser"></a>
 
@@ -2644,7 +2644,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="create-a-link-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+<h3 id="create-an-authentication-link-for-a-payment-service-user-on-a-connector,-for-oauth-flow-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2663,7 +2663,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="create-a-link-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+<h3 id="create-an-authentication-link-for-a-payment-service-user-on-a-connector,-for-oauth-flow-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -2675,7 +2675,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
-## List all connections for a payment service user on a connector
+## List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
 
 <a id="opIdv3ListPaymentServiceUserConnectionsFromConnectorID"></a>
 
@@ -2697,7 +2697,7 @@ Accept: application/json
 {}
 ```
 
-<h3 id="list-all-connections-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+<h3 id="list-enabled-connections-for-a-payment-service-user-on-a-connector-(i.e.-the-various-banks-psuser-has-enabled-on-the-connector)-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2740,7 +2740,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="list-all-connections-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+<h3 id="list-enabled-connections-for-a-payment-service-user-on-a-connector-(i.e.-the-various-banks-psuser-has-enabled-on-the-connector)-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -2752,7 +2752,8 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:read )
 </aside>
 
-## List all link attempts for a payment service user on a connector
+## List all link attempts for a payment service user on a connector.
+Allows to check if users used the link and completed the oauth flow.
 
 <a id="opIdv3ListPaymentServiceUserLinkAttemptsFromConnectorID"></a>
 
@@ -2774,7 +2775,9 @@ Accept: application/json
 {}
 ```
 
-<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector.
+allows-to-check-if-users-used-the-link-and-completed-the-oauth-flow.
+-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2814,7 +2817,9 @@ Accept: application/json
 }
 ```
 
-<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+<h3 id="list-all-link-attempts-for-a-payment-service-user-on-a-connector.
+allows-to-check-if-users-used-the-link-and-completed-the-oauth-flow.
+-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -2924,7 +2929,7 @@ To perform this operation, you must be authenticated by means of one of the foll
 None ( Scopes: payments:write )
 </aside>
 
-## Update a link for a payment service user on a connector
+## Update/Regenerate a link for a payment service user on a connector
 
 <a id="opIdv3UpdateLinkForPaymentServiceUserOnConnector"></a>
 
@@ -2949,7 +2954,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="update-a-link-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
+<h3 id="update/regenerate-a-link-for-a-payment-service-user-on-a-connector-parameters">Parameters</h3>
 
 |Name|In|Type|Required|Description|
 |---|---|---|---|---|
@@ -2969,7 +2974,7 @@ Accept: application/json
 }
 ```
 
-<h3 id="update-a-link-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
+<h3 id="update/regenerate-a-link-for-a-payment-service-user-on-a-connector-responses">Responses</h3>
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
@@ -6167,7 +6172,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|applicationName|string|true|none|The name of the application to be displayed to the user.|
+|applicationName|string|true|none|The name of the application to be displayed to the user when they click the link (depending on the open banking provider).|
 |clientRedirectURL|string(url)|true|none|The URL to redirect the user to after the link flow is completed.|
 
 <h2 id="tocS_V3PaymentServiceUserCreateLinkResponse">V3PaymentServiceUserCreateLinkResponse</h2>

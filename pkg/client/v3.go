@@ -8498,7 +8498,7 @@ func (s *V3) ListPaymentServiceUserConnections(ctx context.Context, paymentServi
 
 }
 
-// DeletePaymentServiceUserConnector - Delete a payment service user on a connector
+// DeletePaymentServiceUserConnector - Remove a payment service user from a connector, the PSU will still exist in Formance
 func (s *V3) DeletePaymentServiceUserConnector(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3DeletePaymentServiceUserConnectorResponse, error) {
 	request := operations.V3DeletePaymentServiceUserConnectorRequest{
 		PaymentServiceUserID: paymentServiceUserID,
@@ -8719,7 +8719,7 @@ func (s *V3) DeletePaymentServiceUserConnector(ctx context.Context, paymentServi
 
 }
 
-// ForwardPaymentServiceUserToBankBridge - Forward a payment service user to a connector
+// ForwardPaymentServiceUserToBankBridge - Register/forward a payment service user on/to a connector
 func (s *V3) ForwardPaymentServiceUserToBankBridge(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3ForwardPaymentServiceUserToBankBridgeResponse, error) {
 	request := operations.V3ForwardPaymentServiceUserToBankBridgeRequest{
 		PaymentServiceUserID: paymentServiceUserID,
@@ -8920,7 +8920,7 @@ func (s *V3) ForwardPaymentServiceUserToBankBridge(ctx context.Context, paymentS
 
 }
 
-// CreateLinkForPaymentServiceUser - Create a link for a payment service user on a connector
+// CreateLinkForPaymentServiceUser - Create an authentication link for a payment service user on a connector, for oauth flow
 func (s *V3) CreateLinkForPaymentServiceUser(ctx context.Context, paymentServiceUserID string, connectorID string, v3PaymentServiceUserCreateLinkRequest *components.V3PaymentServiceUserCreateLinkRequest, opts ...operations.Option) (*operations.V3CreateLinkForPaymentServiceUserResponse, error) {
 	request := operations.V3CreateLinkForPaymentServiceUserRequest{
 		PaymentServiceUserID:                  paymentServiceUserID,
@@ -9149,7 +9149,7 @@ func (s *V3) CreateLinkForPaymentServiceUser(ctx context.Context, paymentService
 
 }
 
-// ListPaymentServiceUserConnectionsFromConnectorID - List all connections for a payment service user on a connector
+// ListPaymentServiceUserConnectionsFromConnectorID - List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
 func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Context, request operations.V3ListPaymentServiceUserConnectionsFromConnectorIDRequest, opts ...operations.Option) (*operations.V3ListPaymentServiceUserConnectionsFromConnectorIDResponse, error) {
 	o := operations.Options{}
 	supportedOptions := []string{
@@ -9376,7 +9376,8 @@ func (s *V3) ListPaymentServiceUserConnectionsFromConnectorID(ctx context.Contex
 
 }
 
-// ListPaymentServiceUserLinkAttemptsFromConnectorID - List all link attempts for a payment service user on a connector
+// ListPaymentServiceUserLinkAttemptsFromConnectorID - List all link attempts for a payment service user on a connector.
+// Allows to check if users used the link and completed the oauth flow.
 func (s *V3) ListPaymentServiceUserLinkAttemptsFromConnectorID(ctx context.Context, request operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDRequest, opts ...operations.Option) (*operations.V3ListPaymentServiceUserLinkAttemptsFromConnectorIDResponse, error) {
 	o := operations.Options{}
 	supportedOptions := []string{
@@ -10047,7 +10048,7 @@ func (s *V3) DeletePaymentServiceUserConnectionFromConnectorID(ctx context.Conte
 
 }
 
-// UpdateLinkForPaymentServiceUserOnConnector - Update a link for a payment service user on a connector
+// UpdateLinkForPaymentServiceUserOnConnector - Update/Regenerate a link for a payment service user on a connector
 func (s *V3) UpdateLinkForPaymentServiceUserOnConnector(ctx context.Context, paymentServiceUserID string, connectorID string, connectionID string, v3PaymentServiceUserUpdateLinkRequest *components.V3PaymentServiceUserUpdateLinkRequest, opts ...operations.Option) (*operations.V3UpdateLinkForPaymentServiceUserOnConnectorResponse, error) {
 	request := operations.V3UpdateLinkForPaymentServiceUserOnConnectorRequest{
 		PaymentServiceUserID:                  paymentServiceUserID,

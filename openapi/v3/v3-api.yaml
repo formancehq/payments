@@ -1078,7 +1078,7 @@ paths:
     delete:
       tags:
         - payments.v3
-      summary: Delete a payment service user on a connector
+      summary: Remove a payment service user from a connector, the PSU will still exist in Formance
       operationId: v3DeletePaymentServiceUserConnector
       x-speakeasy-name-override: DeletePaymentServiceUserConnector
       parameters:
@@ -1105,7 +1105,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Forward a payment service user to a connector
+      summary: Register/forward a payment service user on/to a connector
       operationId: v3ForwardPaymentServiceUserToBankBridge
       x-speakeasy-name-override: ForwardPaymentServiceUserToBankBridge
       parameters:
@@ -1128,7 +1128,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Create a link for a payment service user on a connector
+      summary: Create an authentication link for a payment service user on a connector, for oauth flow
       operationId: v3CreateLinkForPaymentServiceUser
       x-speakeasy-name-override: CreateLinkForPaymentServiceUser
       parameters:
@@ -1160,7 +1160,7 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: List all connections for a payment service user on a connector
+      summary: List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
       operationId: v3ListPaymentServiceUserConnectionsFromConnectorID
       x-speakeasy-name-override: ListPaymentServiceUserConnectionsFromConnectorID
       parameters:
@@ -1194,7 +1194,9 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: List all link attempts for a payment service user on a connector
+      summary: |
+        List all link attempts for a payment service user on a connector.
+        Allows to check if users used the link and completed the oauth flow.
       operationId: v3ListPaymentServiceUserLinkAttemptsFromConnectorID
       x-speakeasy-name-override: ListPaymentServiceUserLinkAttemptsFromConnectorID
       parameters:
@@ -1284,7 +1286,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Update a link for a payment service user on a connector
+      summary: Update/Regenerate a link for a payment service user on a connector
       operationId: v3UpdateLinkForPaymentServiceUserOnConnector
       x-speakeasy-name-override: UpdateLinkForPaymentServiceUserOnConnector
       parameters:
