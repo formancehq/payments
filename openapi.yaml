@@ -1884,7 +1884,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Forward a payment service user to a connector
+      summary: Register/forward a payment service user on/to a connector
       operationId: v3ForwardPaymentServiceUserToBankBridge
       x-speakeasy-name-override: ForwardPaymentServiceUserToBankBridge
       parameters:
