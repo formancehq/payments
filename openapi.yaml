@@ -1970,7 +1970,9 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: List all link attempts for a payment service user on a connector
+      summary: |
+        List all link attempts for a payment service user on a connector.
+        Allows to check if users used the link and completed the oauth flow.
       operationId: v3ListPaymentServiceUserLinkAttemptsFromConnectorID
       x-speakeasy-name-override: ListPaymentServiceUserLinkAttemptsFromConnectorID
       parameters:
