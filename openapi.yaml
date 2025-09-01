@@ -2057,7 +2057,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Update a link for a payment service user on a connector
+      summary: Update/Regenerate a link for a payment service user on a connector
       operationId: v3UpdateLinkForPaymentServiceUserOnConnector
       x-speakeasy-name-override: UpdateLinkForPaymentServiceUserOnConnector
       parameters:
