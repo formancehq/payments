@@ -1937,7 +1937,7 @@ paths:
     get:
       tags:
         - payments.v3
-      summary: List all connections for a payment service user on a connector
+    summary: List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
       operationId: v3ListPaymentServiceUserConnectionsFromConnectorID
       x-speakeasy-name-override: ListPaymentServiceUserConnectionsFromConnectorID
       parameters:
