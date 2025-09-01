@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 6ebaedba7e289dd0a5ecfb1860264901
+  docChecksum: 82d2b1fba0fc7bd3e214892b61103b2c
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -1823,7 +1823,7 @@ examples:
           connectorID: "<id>"
           connectionID: "<id>"
       responses:
-        '202  ':
+        "202":
           application/json: {"data": {"taskID": "<id>"}}
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}

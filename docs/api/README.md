@@ -2907,7 +2907,7 @@ Accept: application/json
 
 > Example responses
 
-> 202   Response
+> 202 Response
 
 ```json
 {
@@ -2921,7 +2921,7 @@ Accept: application/json
 
 |Status|Meaning|Description|Schema|
 |---|---|---|---|
-|202  |Unknown|Accepted|[V3PaymentServiceUserDeleteConnectionResponse](#schemav3paymentserviceuserdeleteconnectionresponse)|
+|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3PaymentServiceUserDeleteConnectionResponse](#schemav3paymentserviceuserdeleteconnectionresponse)|
 |default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
 
 <aside class="warning">

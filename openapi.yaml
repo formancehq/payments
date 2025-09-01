@@ -2040,7 +2040,7 @@ paths:
         - $ref: '#/components/parameters/V3ConnectorID'
         - $ref: '#/components/parameters/V3ConnectionID'
       responses:
-        '202  ':
+        "202":
           description: Accepted
           content:
             application/json:
