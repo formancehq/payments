@@ -1906,7 +1906,7 @@ paths:
     post:
       tags:
         - payments.v3
-      summary: Create a link for a payment service user on a connector
+      summary: Create an authentication link for a payment service user on a connector, for oauth flow
       operationId: v3CreateLinkForPaymentServiceUser
       x-speakeasy-name-override: CreateLinkForPaymentServiceUser
       parameters:
