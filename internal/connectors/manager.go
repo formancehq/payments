@@ -30,14 +30,14 @@ type Manager interface {
 type manager struct {
 	logger logging.Logger
 
-	plugins map[string]pluginInformation
-	rwMutex sync.RWMutex
+	connectors map[string]connector
+	rwMutex    sync.RWMutex
 
 	debug bool
 }
 
-type pluginInformation struct {
-	client models.Plugin
+type connector struct {
+	plugin models.Plugin
 	config models.Config
 }
 
@@ -46,9 +46,9 @@ func NewManager(
 	debug bool,
 ) *manager {
 	return &manager{
-		logger:  logger,
-		plugins: make(map[string]pluginInformation),
-		debug:   debug,
+		logger:     logger,
+		connectors: make(map[string]connector),
+		debug:      debug,
 	}
 }
 
@@ -64,7 +64,7 @@ func (p *manager) Load(
 	defer p.rwMutex.Unlock()
 
 	// Check if plugin is already installed
-	_, ok := p.plugins[connectorID.String()]
+	_, ok := p.connectors[connectorID.String()]
 	if ok && !updateExisting {
 		return nil
 	}
@@ -78,8 +78,8 @@ func (p *manager) Load(
 		return err
 	}
 
-	p.plugins[connectorID.String()] = pluginInformation{
-		client: plugin,
+	p.connectors[connectorID.String()] = connector{
+		plugin: plugin,
 		config: config,
 	}
 
@@ -90,37 +90,37 @@ func (p *manager) Unload(connectorID models.ConnectorID) {
 	p.rwMutex.Lock()
 	defer p.rwMutex.Unlock()
 
-	_, ok := p.plugins[connectorID.String()]
+	_, ok := p.connectors[connectorID.String()]
 	if !ok {
 		// Nothing to do
 		return
 	}
 
-	delete(p.plugins, connectorID.String())
+	delete(p.connectors, connectorID.String())
 }
 
 func (p *manager) Get(connectorID models.ConnectorID) (models.Plugin, error) {
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
-	pluginInfo, ok := p.plugins[connectorID.String()]
+	c, ok := p.connectors[connectorID.String()]
 	if !ok {
 		return nil, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}
 
-	return pluginInfo.client, nil
+	return c.plugin, nil
 }
 
 func (p *manager) GetConfig(connectorID models.ConnectorID) (models.Config, error) {
 	p.rwMutex.RLock()
 	defer p.rwMutex.RUnlock()
 
-	pluginInfo, ok := p.plugins[connectorID.String()]
+	c, ok := p.connectors[connectorID.String()]
 	if !ok {
 		return models.Config{}, fmt.Errorf("%s: %w", connectorID.String(), ErrNotFound)
 	}
 
-	return pluginInfo.config, nil
+	return c.config, nil
 }
 
 var _ Manager = &manager{}

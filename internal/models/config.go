@@ -12,6 +12,7 @@ const (
 	defaultPageSize      = 25
 )
 
+// Config is the generic configuration that all connectors share
 type Config struct {
 	Name          string        `json:"name" validate:"required,gte=3,lte=500"`
 	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=30000000000,lte=86400000000000"` // gte=30s lte=1d in ns
