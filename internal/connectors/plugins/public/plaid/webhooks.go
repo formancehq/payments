@@ -222,6 +222,7 @@ func (p *Plugin) handleItemWebhook(req models.TranslateWebhookRequest, baseWebho
 				{
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: baseWebhook.ItemID,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						At:           time.Now().UTC(),
 						Reason:       pointer.For(webhook.GetError().ErrorMessage),
 					},
@@ -319,6 +320,7 @@ func (p *Plugin) handleItemWebhook(req models.TranslateWebhookRequest, baseWebho
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: baseWebhook.ItemID,
+					ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 					At:           time.Now().UTC(),
 				},
 			},
@@ -342,6 +344,7 @@ func (p *Plugin) handleItemWebhook(req models.TranslateWebhookRequest, baseWebho
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: baseWebhook.ItemID,
+					ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 					At:           time.Now().UTC(),
 				},
 			},

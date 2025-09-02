@@ -543,6 +543,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 			PsuID:        psuID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			ConnectionID: response.UserConnectionDisconnected.ConnectionID,
+			ErrorType:    response.UserConnectionDisconnected.ErrorType,
 			At:           response.UserConnectionDisconnected.At,
 			Reason:       response.UserConnectionDisconnected.Reason,
 		},
