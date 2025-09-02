@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -85,10 +86,10 @@ func (s *UnitTestSuite) addData() {
 		Provider:  "test",
 	}
 
-	registry.RegisterPlugin("test", models.PluginTypePSP, func(models.ConnectorID, string, logging.Logger, json.RawMessage) (models.Plugin, error) {
-		return nil, nil
+	registry.RegisterPlugin("test", models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return dummypay.New(name, logger, rm)
 	}, []models.Capability{}, struct{}{})
-	_, err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{}`), true)
+	_, err := s.w.connectors.Load(s.connectorID, "test", "test", models.DefaultConfig(), json.RawMessage(`{"directory":"/tmp"}`), true)
 	s.NoError(err)
 
 	s.accountID = models.AccountID{
