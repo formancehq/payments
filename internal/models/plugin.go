@@ -154,7 +154,6 @@ const (
 	ConnectionDisconnectedErrorTypeTemporaryError   ConnectionDisconnectedErrorType = "TEMPORARY_ERROR"
 	ConnectionDisconnectedErrorTypeNonRecoverable   ConnectionDisconnectedErrorType = "NON_RECOVERABLE"
 	ConnectionDisconnectedErrorTypeUserActionNeeded ConnectionDisconnectedErrorType = "USER_ACTION_NEEDED"
-	ConnectionDisconnectedErrorTypeOther            ConnectionDisconnectedErrorType = "OTHER"
 )
 
 type PSPUserConnectionDisconnected struct {
