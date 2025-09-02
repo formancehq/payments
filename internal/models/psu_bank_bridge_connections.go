@@ -175,6 +175,7 @@ func (psu PSUBankBridgeConnection) MarshalJSON() ([]byte, error) {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
 		CreatedAt    time.Time         `json:"createdAt"`
+		UpdatedAt    time.Time         `json:"updatedAt"`
 		Status       string            `json:"status"`
 		AccessToken  *Token            `json:"accessToken"`
 		Metadata     map[string]string `json:"metadata"`
@@ -183,6 +184,7 @@ func (psu PSUBankBridgeConnection) MarshalJSON() ([]byte, error) {
 		ConnectionID: psu.ConnectionID,
 		ConnectorID:  psu.ConnectorID.String(),
 		CreatedAt:    psu.CreatedAt,
+		UpdatedAt:    psu.UpdatedAt,
 		Status:       string(psu.Status),
 		AccessToken:  psu.AccessToken,
 		Metadata:     psu.Metadata,
@@ -195,6 +197,7 @@ func (psu *PSUBankBridgeConnection) UnmarshalJSON(data []byte) error {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
 		CreatedAt    time.Time         `json:"createdAt"`
+		UpdatedAt    time.Time         `json:"updatedAt"`
 		Status       string            `json:"status"`
 		AccessToken  *Token            `json:"accessToken"`
 		Metadata     map[string]string `json:"metadata"`
@@ -213,6 +216,7 @@ func (psu *PSUBankBridgeConnection) UnmarshalJSON(data []byte) error {
 	psu.ConnectionID = aux.ConnectionID
 	psu.ConnectorID = connectorID
 	psu.CreatedAt = aux.CreatedAt
+	psu.UpdatedAt = aux.UpdatedAt
 	psu.Status = ConnectionStatus(aux.Status)
 	psu.AccessToken = aux.AccessToken
 	psu.Metadata = aux.Metadata

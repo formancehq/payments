@@ -291,6 +291,7 @@ func (p *Plugin) handleConnectionDeleted(ctx context.Context, req models.Transla
 		{
 			UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 				ConnectionID: strconv.Itoa(webhook.ConnectionID),
+				ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 				At:           time.Now().UTC(),
 			},
 		},
