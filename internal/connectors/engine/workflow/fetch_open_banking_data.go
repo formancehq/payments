@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type FetchBankBridgeData struct {
+type FetchOpenBankingData struct {
 	PsuID        uuid.UUID
 	ConnectionID string
 	ConnectorID  models.ConnectorID
@@ -18,13 +18,13 @@ type FetchBankBridgeData struct {
 	FromPayload  *FromPayload
 }
 
-func (w Workflow) runFetchBankBridgeData(
+func (w Workflow) runFetchOpenBankingData(
 	ctx workflow.Context,
-	fetchBankBridgeData FetchBankBridgeData,
+	fetchOpenBankingData FetchOpenBankingData,
 ) error {
 	additionalMetadata := map[string]string{
-		models.ObjectConnectionIDMetadataKey: fetchBankBridgeData.ConnectionID,
-		models.ObjectPSUIDMetadataKey:        fetchBankBridgeData.PsuID.String(),
+		models.ObjectConnectionIDMetadataKey: fetchOpenBankingData.ConnectionID,
+		models.ObjectPSUIDMetadataKey:        fetchOpenBankingData.PsuID.String(),
 	}
 
 	wg := workflow.NewWaitGroup(ctx)
@@ -46,9 +46,9 @@ func (w Workflow) runFetchBankBridgeData(
 			),
 			RunFetchNextAccounts,
 			FetchNextAccounts{
-				Config:             fetchBankBridgeData.Config,
-				ConnectorID:        fetchBankBridgeData.ConnectorID,
-				FromPayload:        fetchBankBridgeData.FromPayload,
+				Config:             fetchOpenBankingData.Config,
+				ConnectorID:        fetchOpenBankingData.ConnectorID,
+				FromPayload:        fetchOpenBankingData.FromPayload,
 				Periodically:       false,
 				AdditionalMetadata: additionalMetadata,
 			},
@@ -75,9 +75,9 @@ func (w Workflow) runFetchBankBridgeData(
 			),
 			RunFetchNextPayments,
 			FetchNextPayments{
-				Config:             fetchBankBridgeData.Config,
-				ConnectorID:        fetchBankBridgeData.ConnectorID,
-				FromPayload:        fetchBankBridgeData.FromPayload,
+				Config:             fetchOpenBankingData.Config,
+				ConnectorID:        fetchOpenBankingData.ConnectorID,
+				FromPayload:        fetchOpenBankingData.FromPayload,
 				Periodically:       false,
 				AdditionalMetadata: additionalMetadata,
 			},
@@ -91,22 +91,22 @@ func (w Workflow) runFetchBankBridgeData(
 
 	now := workflow.Now(ctx)
 
-	err := activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate(
+	err := activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate(
 		infiniteRetryContext(ctx),
-		fetchBankBridgeData.PsuID,
-		fetchBankBridgeData.ConnectorID,
-		fetchBankBridgeData.ConnectionID,
+		fetchOpenBankingData.PsuID,
+		fetchOpenBankingData.ConnectorID,
+		fetchOpenBankingData.ConnectionID,
 		now,
 	)
 	if err != nil {
-		return fmt.Errorf("updating bank bridge connection last updated at: %w", err)
+		return fmt.Errorf("updating open banking connection last updated at: %w", err)
 	}
 
 	sendEvent := SendEvents{
 		UserConnectionDataSynced: &models.UserConnectionDataSynced{
-			PsuID:        fetchBankBridgeData.PsuID,
-			ConnectorID:  fetchBankBridgeData.ConnectorID,
-			ConnectionID: fetchBankBridgeData.ConnectionID,
+			PsuID:        fetchOpenBankingData.PsuID,
+			ConnectorID:  fetchOpenBankingData.ConnectorID,
+			ConnectionID: fetchOpenBankingData.ConnectionID,
 			At:           now,
 		},
 	}
@@ -131,4 +131,4 @@ func (w Workflow) runFetchBankBridgeData(
 	return nil
 }
 
-const RunFetchBankBridgeData = "RunFetchBankBridgeData"
+const RunFetchOpenBankingData = "RunFetchOpenBankingData"

@@ -77,9 +77,9 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		}, nil
 
 	case okConnectionIDs:
-		connections := make([]models.PSPPsuBankBridgeConnection, len(connectionIDs))
+		connections := make([]models.PSPPsuOpenBankingConnection, len(connectionIDs))
 		for i, connectionID := range connectionIDs {
-			connections[i] = models.PSPPsuBankBridgeConnection{
+			connections[i] = models.PSPPsuOpenBankingConnection{
 				ConnectionID: connectionID,
 				CreatedAt:    time.Now().UTC(),
 			}
@@ -94,7 +94,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 	case okConnectionID:
 		return models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
-				Connections: []models.PSPPsuBankBridgeConnection{
+				Connections: []models.PSPPsuOpenBankingConnection{
 					{
 						ConnectionID: connectionID[0],
 						CreatedAt:    time.Now().UTC(),

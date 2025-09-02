@@ -26,7 +26,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		NextPageToken: oldState.NextPageToken,
 	}
 
-	var from models.BankBridgeFromPayload
+	var from models.OpenBankingProviderPSUFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -84,7 +84,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 func toPSPPayments(
 	payments []models.PSPPayment,
 	transactions []client.Transaction,
-	from models.BankBridgeFromPayload,
+	from models.OpenBankingProviderPSUFromPayload,
 ) ([]models.PSPPayment, error) {
 	for _, transaction := range transactions {
 		precision, err := strconv.Atoi(transaction.Amount.Value.Scale)
@@ -139,12 +139,12 @@ func toPSPPayments(
 			Raw:                         raw,
 		}
 
-		if from.PSUBankBridge != nil {
-			p.Metadata[models.ObjectPSUIDMetadataKey] = from.PSUBankBridge.PsuID.String()
+		if from.OpenBankingProviderPSU != nil {
+			p.Metadata[models.ObjectPSUIDMetadataKey] = from.OpenBankingProviderPSU.PsuID.String()
 		}
 
-		if from.PSUBankBridgeConnection != nil {
-			p.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUBankBridgeConnection.ConnectionID
+		if from.PSUOpenBankingConnection != nil {
+			p.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUOpenBankingConnection.ConnectionID
 		}
 
 		payments = append(payments, p)

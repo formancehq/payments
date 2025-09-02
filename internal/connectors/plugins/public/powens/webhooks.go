@@ -303,10 +303,10 @@ func (p *Plugin) handleAccountsFetched(ctx context.Context, req models.Translate
 		}
 
 		resp = append(resp, models.WebhookResponse{
-			BankBridgeAccount: &models.PSPBankBridgeAccount{
-				PSPAccount:             pspAccount,
-				BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
-				BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
+			OpenBankingAccount: &models.PSPOpenBankingAccount{
+				PSPAccount:              pspAccount,
+				OpenBankingUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
+				OpenBankingConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
 			},
 		})
 	}
@@ -381,14 +381,14 @@ func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWe
 			return nil, err
 		}
 
-		bankBridgePayment := models.PSPBankBridgePayment{
-			PSPPayment:             payment,
-			BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.UserID)),
-			BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.ConnectionID)),
+		bankBridgePayment := models.PSPOpenBankingPayment{
+			PSPPayment:              payment,
+			OpenBankingUserID:       pointer.For(strconv.Itoa(webhook.UserID)),
+			OpenBankingConnectionID: pointer.For(strconv.Itoa(webhook.ConnectionID)),
 		}
 
 		responses = append(responses, models.WebhookResponse{
-			BankBridgePayment: &bankBridgePayment,
+			OpenBankingPayment: &bankBridgePayment,
 		})
 	}
 

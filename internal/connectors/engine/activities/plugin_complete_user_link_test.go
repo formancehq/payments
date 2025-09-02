@@ -56,7 +56,7 @@ var _ = Describe("Plugin Complete User Link", func() {
 						Headers:     map[string][]string{"authorization": {"Bearer token"}},
 						Body:        []byte("test body"),
 					},
-					RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+					RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 						ID: uuid.New(),
 					},
 				},

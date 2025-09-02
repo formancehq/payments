@@ -39,15 +39,15 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge == nil {
-		return fmt.Errorf("missing bank bridge connections: %w", models.ErrInvalidRequest)
+	if req.OpenBankingProviderPSU == nil {
+		return fmt.Errorf("missing open banking connections: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge.Metadata == nil {
-		return fmt.Errorf("missing bank bridge connections metadata: %w", models.ErrInvalidRequest)
+	if req.OpenBankingProviderPSU.Metadata == nil {
+		return fmt.Errorf("missing open banking connections metadata: %w", models.ErrInvalidRequest)
 	}
 
-	if _, ok := req.PSUBankBridge.Metadata[UserTokenMetadataKey]; !ok {
+	if _, ok := req.OpenBankingProviderPSU.Metadata[UserTokenMetadataKey]; !ok {
 		return fmt.Errorf("missing user token: %w", models.ErrInvalidRequest)
 	}
 
@@ -68,7 +68,7 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 		AttemptID:       req.AttemptID,
 		ApplicationName: req.ApplicationName,
 		UserID:          req.PaymentServiceUser.ID.String(),
-		UserToken:       req.PSUBankBridge.Metadata[UserTokenMetadataKey],
+		UserToken:       req.OpenBankingProviderPSU.Metadata[UserTokenMetadataKey],
 		Language:        language,
 		CountryCode:     *req.PaymentServiceUser.Address.Country,
 		RedirectURI:     *req.ClientRedirectURL,

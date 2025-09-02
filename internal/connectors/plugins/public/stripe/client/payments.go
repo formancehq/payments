@@ -68,12 +68,12 @@ func (c *client) GetPayments(
 	data := reverseTransactions(itr.BalanceTransactionList().Data)
 	results = append(results, data...)
 	if len(results) == 0 {
-		return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, wrapSDKErr(itr.Err())
+		return results, timeline, itr.BalanceTransactionList().HasMore, wrapSDKErr(itr.Err())
 	}
 
 	timeline.LatestID = results[len(results)-1].ID
 	c.logger.WithField("account", accountID).WithField("latest_id", timeline.LatestID).Debugf("set latest id after batch with %d entries", len(results))
-	return results, timeline, itr.BalanceTransactionList().ListMeta.HasMore, wrapSDKErr(itr.Err())
+	return results, timeline, itr.BalanceTransactionList().HasMore, wrapSDKErr(itr.Err())
 }
 
 func expandBalanceTransactionParams(params *stripe.BalanceTransactionListParams) {

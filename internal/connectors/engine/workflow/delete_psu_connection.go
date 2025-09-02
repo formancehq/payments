@@ -54,7 +54,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	connection, _, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+	connection, _, err := activities.StoragePSUOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.ConnectorID,
 		deletePSUConnection.ConnectionID,
@@ -63,7 +63,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	psuBankBridge, err := activities.StoragePSUBankBridgesGet(
+	psuOpenBanking, err := activities.StorageOpenBankingProviderPSUsGet(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.PsuID,
 		deletePSUConnection.ConnectorID,
@@ -73,9 +73,9 @@ func (w Workflow) deletePSUConnection(
 	}
 
 	if _, err := activities.PluginDeleteUserConnection(infiniteRetryContext(ctx), deletePSUConnection.ConnectorID, models.DeleteUserConnectionRequest{
-		PaymentServiceUser: models.ToPSPPaymentServiceUser(psu),
-		PSUBankBridge:      psuBankBridge,
-		Connection:         pointer.For(models.ToPSPPsuBankBridgeConnection(*connection)),
+		PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
+		OpenBankingProviderPSU: psuOpenBanking,
+		Connection:             pointer.For(models.ToPSPPsuOpenBankingConnection(*connection)),
 	}); err != nil {
 		return err
 	}
@@ -91,10 +91,10 @@ func (w Workflow) deletePSUConnection(
 				},
 			},
 		),
-		RunDeleteBankBridgeConnectionData,
-		DeleteBankBridgeConnectionData{
+		RunDeleteOpenBankingConnectionData,
+		DeleteOpenBankingConnectionData{
 			PSUID: deletePSUConnection.PsuID,
-			FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+			FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
 				ConnectionID: deletePSUConnection.ConnectionID,
 			},
 		},
@@ -102,7 +102,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	if err := activities.StoragePSUBankBridgeConnectionDelete(
+	if err := activities.StoragePSUOpenBankingConnectionsDelete(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.PsuID,
 		deletePSUConnection.ConnectorID,

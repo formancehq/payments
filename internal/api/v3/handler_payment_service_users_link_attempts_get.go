@@ -26,7 +26,7 @@ type attemptResponse struct {
 	// Creation date of the attempt
 	CreatedAt time.Time `json:"createdAt"`
 	// Status of the attempt
-	Status models.PSUBankBridgeConnectionAttemptStatus `json:"status"`
+	Status models.PSUOpenBankingConnectionAttemptStatus `json:"status"`
 	// Client redirect URL, given by the user
 	ClientRedirectURL *string `json:"clientRedirectURL"`
 

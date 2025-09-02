@@ -30,7 +30,7 @@ func (w Workflow) completeUserLink(
 	ctx workflow.Context,
 	completeUserLink CompleteUserLink,
 ) error {
-	attempt, err := activities.StoragePSUBankBridgeConnectionAttemptsGet(
+	attempt, err := activities.StoragePSUOpenBankingConnectionAttemptsGet(
 		infiniteRetryContext(ctx),
 		completeUserLink.AttemptID,
 	)
@@ -62,9 +62,9 @@ func (w Workflow) completeUserLink(
 
 	if pluginError != nil {
 		attempt.Error = pointer.For(pluginError.Error())
-		attempt.Status = models.PSUBankBridgeConnectionAttemptStatusExited
+		attempt.Status = models.PSUOpenBankingConnectionAttemptStatusExited
 
-		err = activities.StoragePSUBankBridgeConnectionAttemptsStore(
+		err = activities.StoragePSUOpenBankingConnectionAttemptsStore(
 			infiniteRetryContext(ctx),
 			*attempt,
 		)
@@ -77,8 +77,8 @@ func (w Workflow) completeUserLink(
 	}
 
 	// Case of success
-	attempt.Status = models.PSUBankBridgeConnectionAttemptStatusCompleted
-	err = activities.StoragePSUBankBridgeConnectionAttemptsStore(
+	attempt.Status = models.PSUOpenBankingConnectionAttemptStatusCompleted
+	err = activities.StoragePSUOpenBankingConnectionAttemptsStore(
 		infiniteRetryContext(ctx),
 		*attempt,
 	)
@@ -87,9 +87,9 @@ func (w Workflow) completeUserLink(
 	}
 
 	for _, connection := range resp.Success.Connections {
-		c := models.FromPSPPsuBankBridgeConnection(connection, completeUserLink.ConnectorID)
+		c := models.FromPSPPsuOpenBankingConnection(connection, completeUserLink.ConnectorID)
 		c.Status = models.ConnectionStatusActive
-		if err := activities.StoragePSUBankBridgeConnectionsStore(
+		if err := activities.StoragePSUOpenBankingConnectionsStore(
 			infiniteRetryContext(ctx),
 			attempt.PsuID,
 			c,

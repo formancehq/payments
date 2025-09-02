@@ -62,7 +62,7 @@ var _ = Describe("Plugin Create User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},

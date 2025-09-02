@@ -39,7 +39,7 @@ var _ = Describe("Powens *Plugin Delete User Connection", func() {
 
 		It("should return an error - missing connection id", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{},
+				Connection: &models.PSPPsuOpenBankingConnection{},
 			}
 
 			resp, err := plg.DeleteUserConnection(ctx, req)
@@ -48,25 +48,25 @@ var _ = Describe("Powens *Plugin Delete User Connection", func() {
 			Expect(resp).To(Equal(models.DeleteUserConnectionResponse{}))
 		})
 
-		It("should return an error - missing bank bridge connections", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
 			}
 
 			resp, err := plg.DeleteUserConnection(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("bank bridge is required"))
+			Expect(err.Error()).To(ContainSubstring("open banking provider psu is required"))
 			Expect(resp).To(Equal(models.DeleteUserConnectionResponse{}))
 		})
 
 		It("should return an error - missing auth token", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
-				PSUBankBridge: &models.PSUBankBridge{},
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
 			}
 
 			resp, err := plg.DeleteUserConnection(ctx, req)
@@ -77,10 +77,10 @@ var _ = Describe("Powens *Plugin Delete User Connection", func() {
 
 		It("should delete user connection successfully", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -99,10 +99,10 @@ var _ = Describe("Powens *Plugin Delete User Connection", func() {
 
 		It("should return an error - client delete user connection error", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},

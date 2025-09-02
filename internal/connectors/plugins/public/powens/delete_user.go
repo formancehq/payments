@@ -9,11 +9,11 @@ import (
 )
 
 func validateDeleteUserRequest(req models.DeleteUserRequest) error {
-	if req.PSUBankBridge == nil {
-		return fmt.Errorf("bank bridge is required: %w", models.ErrInvalidRequest)
+	if req.OpenBankingProviderPSU == nil {
+		return fmt.Errorf("open banking provider psu is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge.AccessToken == nil {
+	if req.OpenBankingProviderPSU.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -26,7 +26,7 @@ func (p *Plugin) deleteUser(ctx context.Context, req models.DeleteUserRequest) (
 	}
 
 	err := p.client.DeleteUser(ctx, client.DeleteUserRequest{
-		AccessToken: req.PSUBankBridge.AccessToken.Token,
+		AccessToken: req.OpenBankingProviderPSU.AccessToken.Token,
 	})
 	if err != nil {
 		return models.DeleteUserResponse{}, err

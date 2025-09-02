@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/increase/client"
 	"github.com/formancehq/payments/internal/models"
 )
@@ -79,7 +79,7 @@ func (p *Plugin) processPaymentTypes(ctx context.Context, state *paymentsState, 
 		return payments[i].CreatedAt.Before(payments[j].CreatedAt)
 	})
 
-	hasMore := !(state.StopPending && state.StopSucceeded && state.StopDeclined)
+	hasMore := !state.StopPending || !state.StopSucceeded || !state.StopDeclined
 
 	return payments, hasMore, nil
 }

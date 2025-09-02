@@ -39,7 +39,7 @@ var _ = Describe("Plaid *Plugin Delete User Connection", func() {
 
 		It("should return an error - missing access token", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "test-connection",
 				},
 			}
@@ -52,7 +52,7 @@ var _ = Describe("Plaid *Plugin Delete User Connection", func() {
 
 		It("should delete user connection successfully", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "test-connection",
 					AccessToken: &models.Token{
 						Token: "access-token-123",
@@ -73,7 +73,7 @@ var _ = Describe("Plaid *Plugin Delete User Connection", func() {
 
 		It("should return an error - client delete item error", func(ctx SpecContext) {
 			req := models.DeleteUserConnectionRequest{
-				Connection: &models.PSPPsuBankBridgeConnection{
+				Connection: &models.PSPPsuOpenBankingConnection{
 					ConnectionID: "test-connection",
 					AccessToken: &models.Token{
 						Token: "access-token-123",

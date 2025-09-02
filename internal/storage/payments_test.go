@@ -1354,16 +1354,16 @@ func comparePayments(t *testing.T, expected, actual models.Payment) {
 	require.Equal(t, expected.Asset, actual.Asset)
 	require.Equal(t, expected.Scheme, actual.Scheme)
 
-	switch {
-	case expected.SourceAccountID == nil:
+	switch expected.SourceAccountID {
+	case nil:
 		require.Nil(t, actual.SourceAccountID)
 	default:
 		require.NotNil(t, actual.SourceAccountID)
 		require.Equal(t, *expected.SourceAccountID, *actual.SourceAccountID)
 	}
 
-	switch {
-	case expected.DestinationAccountID == nil:
+	switch expected.DestinationAccountID {
+	case nil:
 		require.Nil(t, actual.DestinationAccountID)
 	default:
 		require.NotNil(t, actual.DestinationAccountID)

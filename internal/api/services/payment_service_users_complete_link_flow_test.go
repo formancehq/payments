@@ -106,7 +106,7 @@ func TestPSUCompleteLinkFlow(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 
 			if test.otherError == nil {
-				store.EXPECT().PSUBankBridgeConnectionAttemptsGet(gomock.Any(), gomock.Any()).Return(&models.PSUBankBridgeConnectionAttempt{
+				store.EXPECT().PSUOpenBankingConnectionAttemptsGet(gomock.Any(), gomock.Any()).Return(&models.PSUOpenBankingConnectionAttempt{
 					ClientRedirectURL: &clientRedirectURL,
 				}, test.storageErr)
 			}

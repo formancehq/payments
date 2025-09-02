@@ -9,15 +9,15 @@ import (
 	"github.com/google/uuid"
 )
 
-type BankBridgeUserLinkStatus struct {
+type OpenBankingUserLinkStatus struct {
 	PsuID       uuid.UUID `json:"psuID"`
 	ConnectorID string    `json:"connectorID"`
 	Status      string    `json:"status"`
 	Error       *string   `json:"error,omitempty"`
 }
 
-func (e Events) NewEventBankBridgeUserLinkStatus(userLinkStatus models.UserLinkSessionFinished) publish.EventMessage {
-	payload := BankBridgeUserLinkStatus{
+func (e Events) NewEventOpenBankingUserLinkStatus(userLinkStatus models.UserLinkSessionFinished) publish.EventMessage {
+	payload := OpenBankingUserLinkStatus{
 		PsuID:       userLinkStatus.PsuID,
 		ConnectorID: userLinkStatus.ConnectorID.String(),
 		Status:      string(userLinkStatus.Status),
@@ -31,20 +31,20 @@ func (e Events) NewEventBankBridgeUserLinkStatus(userLinkStatus models.UserLinkS
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserLinkStatus,
+		Type:           events.EventTypeOpenBankingUserLinkStatus,
 		Payload:        payload,
 	}
 }
 
-type BankBridgeUserConnectionDataSynced struct {
+type OpenBankingUserConnectionDataSynced struct {
 	PsuID        uuid.UUID `json:"psuID"`
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
 	At           time.Time `json:"at"`
 }
 
-func (e Events) NewEventBankBridgeUserConnectionDataSynced(userConnectionUpdated models.UserConnectionDataSynced) publish.EventMessage {
-	payload := BankBridgeUserConnectionDataSynced{
+func (e Events) NewEventOpenBankingUserConnectionDataSynced(userConnectionUpdated models.UserConnectionDataSynced) publish.EventMessage {
+	payload := OpenBankingUserConnectionDataSynced{
 		PsuID:        userConnectionUpdated.PsuID,
 		ConnectorID:  userConnectionUpdated.ConnectorID.String(),
 		ConnectionID: userConnectionUpdated.ConnectionID,
@@ -58,12 +58,12 @@ func (e Events) NewEventBankBridgeUserConnectionDataSynced(userConnectionUpdated
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserConnectionDataSynced,
+		Type:           events.EventTypeOpenBankingUserConnectionDataSynced,
 		Payload:        payload,
 	}
 }
 
-type BankBridgeUserConnectionPendingDisconnect struct {
+type OpenBankingUserConnectionPendingDisconnect struct {
 	PsuID        uuid.UUID `json:"psuID"`
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
@@ -71,8 +71,8 @@ type BankBridgeUserConnectionPendingDisconnect struct {
 	Reason       *string   `json:"reason"`
 }
 
-func (e Events) NewEventBankBridgeUserPendingDisconnect(userPendingDisconnect models.UserConnectionPendingDisconnect) publish.EventMessage {
-	payload := BankBridgeUserConnectionPendingDisconnect{
+func (e Events) NewEventOpenBankingUserPendingDisconnect(userPendingDisconnect models.UserConnectionPendingDisconnect) publish.EventMessage {
+	payload := OpenBankingUserConnectionPendingDisconnect{
 		PsuID:        userPendingDisconnect.PsuID,
 		ConnectorID:  userPendingDisconnect.ConnectorID.String(),
 		ConnectionID: userPendingDisconnect.ConnectionID,
@@ -87,12 +87,12 @@ func (e Events) NewEventBankBridgeUserPendingDisconnect(userPendingDisconnect mo
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserConnectionPendingDisconnect,
+		Type:           events.EventTypeOpenBankingUserConnectionPendingDisconnect,
 		Payload:        payload,
 	}
 }
 
-type BankBridgeUserConnectionDisconnected struct {
+type OpenBankingUserConnectionDisconnected struct {
 	PsuID        uuid.UUID `json:"psuID"`
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
@@ -100,8 +100,8 @@ type BankBridgeUserConnectionDisconnected struct {
 	Reason       *string   `json:"reason,omitempty"`
 }
 
-func (e Events) NewEventBankBridgeUserConnectionDisconnected(userDisconnected models.UserConnectionDisconnected) publish.EventMessage {
-	payload := BankBridgeUserConnectionDisconnected{
+func (e Events) NewEventOpenBankingUserConnectionDisconnected(userDisconnected models.UserConnectionDisconnected) publish.EventMessage {
+	payload := OpenBankingUserConnectionDisconnected{
 		PsuID:        userDisconnected.PsuID,
 		ConnectorID:  userDisconnected.ConnectorID.String(),
 		ConnectionID: userDisconnected.ConnectionID,
@@ -116,20 +116,20 @@ func (e Events) NewEventBankBridgeUserConnectionDisconnected(userDisconnected mo
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserConnectionDisconnected,
+		Type:           events.EventTypeOpenBankingUserConnectionDisconnected,
 		Payload:        payload,
 	}
 }
 
-type BankBridgeUserConnectionReconnected struct {
+type OpenBankingUserConnectionReconnected struct {
 	PsuID        uuid.UUID `json:"psuID"`
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
 	At           time.Time `json:"at"`
 }
 
-func (e Events) NewEventBankBridgeUserConnectionReconnected(userReconnected models.UserConnectionReconnected) publish.EventMessage {
-	payload := BankBridgeUserConnectionReconnected{
+func (e Events) NewEventOpenBankingUserConnectionReconnected(userReconnected models.UserConnectionReconnected) publish.EventMessage {
+	payload := OpenBankingUserConnectionReconnected{
 		PsuID:        userReconnected.PsuID,
 		ConnectorID:  userReconnected.ConnectorID.String(),
 		ConnectionID: userReconnected.ConnectionID,
@@ -143,20 +143,20 @@ func (e Events) NewEventBankBridgeUserConnectionReconnected(userReconnected mode
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserConnectionReconnected,
+		Type:           events.EventTypeOpenBankingUserConnectionReconnected,
 		Payload:        payload,
 	}
 }
 
-type BankBridgeUserDisconnected struct {
+type OpenBankingUserDisconnected struct {
 	PsuID       uuid.UUID `json:"psuID"`
 	ConnectorID string    `json:"connectorID"`
 	At          time.Time `json:"at"`
 	Reason      *string   `json:"reason,omitempty"`
 }
 
-func (e Events) NewEventBankBridgeUserDisconnected(userDisconnected models.UserDisconnected) publish.EventMessage {
-	payload := BankBridgeUserDisconnected{
+func (e Events) NewEventOpenBankingUserDisconnected(userDisconnected models.UserDisconnected) publish.EventMessage {
+	payload := OpenBankingUserDisconnected{
 		PsuID:       userDisconnected.PsuID,
 		ConnectorID: userDisconnected.ConnectorID.String(),
 		At:          userDisconnected.At,
@@ -168,7 +168,7 @@ func (e Events) NewEventBankBridgeUserDisconnected(userDisconnected models.UserD
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
-		Type:           events.EventTypeBankBridgeUserDisconnected,
+		Type:           events.EventTypeOpenBankingUserDisconnected,
 		Payload:        payload,
 	}
 }

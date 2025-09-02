@@ -45,21 +45,21 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
-		It("should return an error - missing bank bridge connections", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
 			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("bank bridge connections are required"))
+			Expect(err.Error()).To(ContainSubstring("open banking connections are required"))
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
 		It("should return an error - missing auth token", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				PSUBankBridge:      &models.PSUBankBridge{},
+				PaymentServiceUser:     &models.PSPPaymentServiceUser{},
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
 			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
@@ -71,7 +71,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 		It("should return an error - missing callBackState", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -87,7 +87,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 		It("should return an error - missing formanceRedirectURL", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -105,7 +105,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -141,7 +141,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},

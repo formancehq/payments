@@ -40,8 +40,8 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 		},
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuOpenBankings := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -67,15 +67,15 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	// Mock PSU open banking list
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuOpenBankings, nil)
 
-	// Mock plugin delete user (called for each bank bridge)
+	// Mock plugin delete user (called for each aggregator)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(nil)
@@ -138,7 +138,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePSUBankBridgesList_Error() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list error
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(
 		nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("database error")),
 	)
 
@@ -170,8 +170,8 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -189,7 +189,7 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user error
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
@@ -224,8 +224,8 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -243,13 +243,13 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow error
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("child workflow error")),
 	)
 
@@ -281,8 +281,8 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -300,13 +300,13 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion error
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(
@@ -368,8 +368,8 @@ func (s *UnitTestSuite) Test_DeletePSU_UpdateTaskSuccess_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -387,13 +387,13 @@ func (s *UnitTestSuite) Test_DeletePSU_UpdateTaskSuccess_Error() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(nil)
@@ -427,8 +427,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleBankBridges() {
 	}
 
 	// Multiple bank bridges in a single page
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -464,15 +464,15 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleBankBridges() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
-	// Mock plugin delete user (called for each bank bridge - 3 total)
+	// Mock plugin delete user (called for each provider - 3 total)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(nil)
@@ -505,8 +505,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoBankBridges() {
 	}
 
 	// Empty bank bridges list
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data:    []models.PSUBankBridge{},
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data:    []models.OpenBankingProviderPSU{},
 		HasMore: false,
 	}
 
@@ -514,10 +514,10 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoBankBridges() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(nil)
@@ -549,8 +549,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.PSUBankBridge]{
-		Data: []models.PSUBankBridge{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -565,13 +565,13 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StoragePSUBankBridgesListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
 	// Mock PSU deletion
 	s.env.OnActivity(activities.StoragePaymentServiceUsersDeleteActivity, mock.Anything, psuID.String()).Once().Return(nil)

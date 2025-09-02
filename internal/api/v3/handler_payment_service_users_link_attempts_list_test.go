@@ -61,7 +61,7 @@ var _ = Describe("API v3 Payment Service Users Link Attempts List", func() {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
 			expectedErr := errors.New("link attempts list error")
 			m.EXPECT().PaymentServiceUsersLinkAttemptsList(gomock.Any(), psuID, connectorID, gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt]{}, expectedErr,
+				&bunpaginate.Cursor[models.PSUOpenBankingConnectionAttempt]{}, expectedErr,
 			)
 			handlerFn(w, req)
 
@@ -70,12 +70,12 @@ var _ = Describe("API v3 Payment Service Users Link Attempts List", func() {
 
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String())
-			cursor := &bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt]{
-				Data: []models.PSUBankBridgeConnectionAttempt{
+			cursor := &bunpaginate.Cursor[models.PSUOpenBankingConnectionAttempt]{
+				Data: []models.PSUOpenBankingConnectionAttempt{
 					{
 						ID:     uuid.New(),
 						PsuID:  psuID,
-						Status: models.PSUBankBridgeConnectionAttemptStatusPending,
+						Status: models.PSUOpenBankingConnectionAttemptStatusPending,
 					},
 				},
 			}

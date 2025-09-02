@@ -39,7 +39,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_Success() {
 		},
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -52,17 +52,17 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_Success() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock open banking PSU retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock PSU bank bridge deletion
-	s.env.OnActivity(activities.StoragePSUBankBridgesDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
+	// Mock open banking PSU deletion
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -107,7 +107,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePaymentServiceUsersGet_Er
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUBankBridgesGet_Error() {
+func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUOpenBankingGet_Error() {
 	taskID := models.TaskID{
 		Reference:   "delete-psu-connector-task",
 		ConnectorID: s.connectorID,
@@ -123,8 +123,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUBankBridgesGet_Error()
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval error
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(
+	// Mock open banking PSU retrieval error
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(
 		nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
@@ -157,7 +157,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_PluginDeleteUser_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -170,8 +170,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_PluginDeleteUser_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock PSU open banking retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user error
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(
@@ -207,7 +207,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_ChildWorkflow_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -220,14 +220,14 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_ChildWorkflow_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock PSU open banking retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution error
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
@@ -247,7 +247,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_ChildWorkflow_Error() {
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUBankBridgesDelete_Error() {
+func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUOpenBankingDelete_Error() {
 	taskID := models.TaskID{
 		Reference:   "delete-psu-connector-task",
 		ConnectorID: s.connectorID,
@@ -260,7 +260,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUBankBridgesDelete_Erro
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -273,17 +273,17 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_StoragePSUBankBridgesDelete_Erro
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock PSU open banking retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock PSU bank bridge deletion error
-	s.env.OnActivity(activities.StoragePSUBankBridgesDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(
+	// Mock PSU open banking deletion error
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
@@ -345,7 +345,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_TaskSuccessUpdate_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -358,17 +358,17 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_TaskSuccessUpdate_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock PSU open banking retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock PSU bank bridge deletion
-	s.env.OnActivity(activities.StoragePSUBankBridgesDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
+	// Mock PSU open banking deletion
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
 
 	// Mock task success update error
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(
@@ -399,7 +399,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithMinimalPSU() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridge := &models.PSUBankBridge{
+	openBanking := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -409,17 +409,17 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithMinimalPSU() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuBankBridge, nil)
+	// Mock PSU open banking retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBanking, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
 
 	// Mock child workflow execution
-	s.env.OnWorkflow(RunDeleteBankBridgeConnectionData, mock.Anything, mock.Anything).Return(nil)
+	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
 
-	// Mock PSU bank bridge deletion
-	s.env.OnActivity(activities.StoragePSUBankBridgesDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
+	// Mock PSU open banking deletion
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsDeleteActivity, mock.Anything, psuID, s.connectorID).Once().Return(nil)
 
 	// Mock task success update
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -436,7 +436,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithMinimalPSU() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnector_WithPSUWithoutBankBridge() {
+func (s *UnitTestSuite) Test_DeletePSUConnector_WithPSUWithoutOpenBanking() {
 	taskID := models.TaskID{
 		Reference:   "delete-psu-connector-task",
 		ConnectorID: s.connectorID,
@@ -452,8 +452,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnector_WithPSUWithoutBankBridge() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridge retrieval - no bank bridge found
-	s.env.OnActivity(activities.StoragePSUBankBridgesGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(
+	// Mock PSU open banking retrieval - no PSU open banking found
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(
 		nil, temporal.NewNonRetryableApplicationError("not found", "not found", errors.New("not found")),
 	)
 

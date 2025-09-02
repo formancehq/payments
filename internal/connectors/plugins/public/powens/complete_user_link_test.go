@@ -35,7 +35,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 
 		It("should return an error - missing state", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID: uuid.New(),
 				},
 				HTTPCallInformation: models.HTTPCallInformation{
@@ -51,7 +51,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 
 		It("should return an error - invalid state format", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID: uuid.New(),
 				},
 				HTTPCallInformation: models.HTTPCallInformation{
@@ -77,7 +77,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID: id,
 					State: models.CallbackState{
 						Randomized: "different-random",
@@ -107,7 +107,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID:    id,
 					State: callbackState,
 				},
@@ -134,7 +134,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID:    id,
 					State: callbackState,
 				},
@@ -167,7 +167,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 			encodedState := base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(stateBytes)
 
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.PSUOpenBankingConnectionAttempt{
 					ID:    id,
 					State: callbackState,
 				},

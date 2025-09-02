@@ -12,53 +12,53 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type DeleteBankBridgeConnectionData struct {
+type DeleteOpenBankingConnectionData struct {
 	PSUID uuid.UUID
 
-	FromConnectionID *DeleteBankBridgeConnectionDataFromConnectionID
-	FromAccountID    *DeleteBankBridgeConnectionDataFromAccountID
-	FromConnectorID  *DeleteBankBridgeConnectionDataFromConnectorID
+	FromConnectionID *DeleteOpenBankingConnectionDataFromConnectionID
+	FromAccountID    *DeleteOpenBankingConnectionDataFromAccountID
+	FromConnectorID  *DeleteOpenBankingConnectionDataFromConnectorID
 }
 
-type DeleteBankBridgeConnectionDataFromConnectionID struct {
+type DeleteOpenBankingConnectionDataFromConnectionID struct {
 	ConnectionID string
 }
 
-type DeleteBankBridgeConnectionDataFromAccountID struct {
+type DeleteOpenBankingConnectionDataFromAccountID struct {
 	AccountID models.AccountID
 }
 
-type DeleteBankBridgeConnectionDataFromConnectorID struct {
+type DeleteOpenBankingConnectionDataFromConnectorID struct {
 	ConnectorID models.ConnectorID
 }
 
-func (w Workflow) runDeleteBankBridgeConnectionData(
+func (w Workflow) runDeleteOpenBankingConnectionData(
 	ctx workflow.Context,
-	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
+	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
 	switch {
-	case deleteBankBridgeConnectionData.FromConnectionID != nil:
+	case deleteOpenBankingConnectionData.FromConnectionID != nil:
 		// Delete all data related to the connection
-		return w.deleteBankBridgeConnectionData(ctx, deleteBankBridgeConnectionData)
-	case deleteBankBridgeConnectionData.FromAccountID != nil:
+		return w.deleteOpenBankingConnectionData(ctx, deleteOpenBankingConnectionData)
+	case deleteOpenBankingConnectionData.FromAccountID != nil:
 		// Delete only the account and payments related to this account
-		return w.deleteBankBridgeConnectionAccountIDData(ctx, deleteBankBridgeConnectionData)
-	case deleteBankBridgeConnectionData.FromConnectorID != nil:
+		return w.deleteOpenBankingConnectionAccountIDData(ctx, deleteOpenBankingConnectionData)
+	case deleteOpenBankingConnectionData.FromConnectorID != nil:
 		// Delete all data related to the connector
-		return w.deleteBankBridgeConnectorIDData(ctx, deleteBankBridgeConnectionData)
+		return w.deleteOpenBankingConnectorIDData(ctx, deleteOpenBankingConnectionData)
 	default:
 		// Delete all data related to the psu
-		return w.deleteBankBridgePSUData(ctx, deleteBankBridgeConnectionData)
+		return w.deleteOpenBankingPSUData(ctx, deleteOpenBankingConnectionData)
 	}
 }
 
-func (w Workflow) deleteBankBridgeConnectionAccountIDData(
+func (w Workflow) deleteOpenBankingConnectionAccountIDData(
 	ctx workflow.Context,
-	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
+	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
 	err := activities.StoragePaymentsDeleteFromAccountID(
 		infiniteRetryContext(ctx),
-		deleteBankBridgeConnectionData.FromAccountID.AccountID,
+		deleteOpenBankingConnectionData.FromAccountID.AccountID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments from account ID: %w", err)
@@ -66,7 +66,7 @@ func (w Workflow) deleteBankBridgeConnectionAccountIDData(
 
 	err = activities.StorageAccountsDelete(
 		infiniteRetryContext(ctx),
-		deleteBankBridgeConnectionData.FromAccountID.AccountID,
+		deleteOpenBankingConnectionData.FromAccountID.AccountID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting account: %w", err)
@@ -75,24 +75,24 @@ func (w Workflow) deleteBankBridgeConnectionAccountIDData(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgeConnectionData(
+func (w Workflow) deleteOpenBankingConnectionData(
 	ctx workflow.Context,
-	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
+	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteOpenBankingPayments(
 		ctx,
 		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
+			models.ObjectConnectionIDMetadataKey: deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteOpenBankingAccounts(
 		ctx,
 		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
+			models.ObjectConnectionIDMetadataKey: deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
 		},
 	)
 	if err != nil {
@@ -102,26 +102,26 @@ func (w Workflow) deleteBankBridgeConnectionData(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgeConnectorIDData(
+func (w Workflow) deleteOpenBankingConnectorIDData(
 	ctx workflow.Context,
-	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
+	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteOpenBankingPayments(
 		ctx,
 		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-			"connector_id":                deleteBankBridgeConnectionData.FromConnectorID.ConnectorID.String(),
+			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
+			"connector_id":                deleteOpenBankingConnectionData.FromConnectorID.ConnectorID.String(),
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteOpenBankingAccounts(
 		ctx,
 		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-			"connector_id":                deleteBankBridgeConnectionData.FromConnectorID.ConnectorID.String(),
+			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
+			"connector_id":                deleteOpenBankingConnectionData.FromConnectorID.ConnectorID.String(),
 		},
 	)
 	if err != nil {
@@ -131,24 +131,24 @@ func (w Workflow) deleteBankBridgeConnectorIDData(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgePSUData(
+func (w Workflow) deleteOpenBankingPSUData(
 	ctx workflow.Context,
-	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
+	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteOpenBankingPayments(
 		ctx,
 		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
+			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
 		},
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteOpenBankingAccounts(
 		ctx,
 		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
+			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
 		},
 	)
 	if err != nil {
@@ -158,7 +158,7 @@ func (w Workflow) deleteBankBridgePSUData(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgePayments(
+func (w Workflow) deleteOpenBankingPayments(
 	ctx workflow.Context,
 	filteredMetadata map[string]string,
 ) error {
@@ -220,7 +220,7 @@ func (w Workflow) deleteBankBridgePayments(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgeAccounts(
+func (w Workflow) deleteOpenBankingAccounts(
 	ctx workflow.Context,
 	filteredMetadata map[string]string,
 ) error {
@@ -282,4 +282,4 @@ func (w Workflow) deleteBankBridgeAccounts(
 	return nil
 }
 
-const RunDeleteBankBridgeConnectionData = "DeleteBankBridgeConnectionData"
+const RunDeleteOpenBankingConnectionData = "DeleteOpenBankingConnectionData"

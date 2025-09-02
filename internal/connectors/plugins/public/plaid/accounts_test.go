@@ -49,8 +49,8 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 		})
 
 		It("should return an error - list accounts error", func(ctx SpecContext) {
-			fromPayload := models.BankBridgeFromPayload{
-				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
+			fromPayload := models.OpenBankingProviderPSUFromPayload{
+				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -78,8 +78,8 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 		})
 
 		It("should fetch accounts successfully", func(ctx SpecContext) {
-			fromPayload := models.BankBridgeFromPayload{
-				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
+			fromPayload := models.OpenBankingProviderPSUFromPayload{
+				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -113,8 +113,8 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 		})
 
 		It("should handle empty accounts response", func(ctx SpecContext) {
-			fromPayload := models.BankBridgeFromPayload{
-				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
+			fromPayload := models.OpenBankingProviderPSUFromPayload{
+				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -153,8 +153,8 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 		})
 
 		It("should handle invalid base webhook payload", func(ctx SpecContext) {
-			fromPayload := models.BankBridgeFromPayload{
-				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
+			fromPayload := models.OpenBankingProviderPSUFromPayload{
+				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",

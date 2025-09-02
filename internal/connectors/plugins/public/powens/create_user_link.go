@@ -16,11 +16,11 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("payment service user is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge == nil {
-		return fmt.Errorf("bank bridge connections are required: %w", models.ErrInvalidRequest)
+	if req.OpenBankingProviderPSU == nil {
+		return fmt.Errorf("open banking connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge.AccessToken == nil {
+	if req.OpenBankingProviderPSU.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -41,7 +41,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	temporaryCodeResponse, err := p.client.CreateTemporaryCode(ctx, client.CreateTemporaryLinkRequest{
-		AccessToken: req.PSUBankBridge.AccessToken.Token,
+		AccessToken: req.OpenBankingProviderPSU.AccessToken.Token,
 	})
 	if err != nil {
 		return models.CreateUserLinkResponse{}, err
