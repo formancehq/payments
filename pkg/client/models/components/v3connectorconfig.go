@@ -12,45 +12,43 @@ import (
 type V3ConnectorConfigType string
 
 const (
-	V3ConnectorConfigTypeAdyen            V3ConnectorConfigType = "Adyen"
-	V3ConnectorConfigTypeAtlar            V3ConnectorConfigType = "Atlar"
-	V3ConnectorConfigTypeBankingcircle    V3ConnectorConfigType = "Bankingcircle"
-	V3ConnectorConfigTypeColumn           V3ConnectorConfigType = "Column"
-	V3ConnectorConfigTypeCurrencycloud    V3ConnectorConfigType = "Currencycloud"
-	V3ConnectorConfigTypeDummyopenbanking V3ConnectorConfigType = "Dummyopenbanking"
-	V3ConnectorConfigTypeDummypay         V3ConnectorConfigType = "Dummypay"
-	V3ConnectorConfigTypeGeneric          V3ConnectorConfigType = "Generic"
-	V3ConnectorConfigTypeIncrease         V3ConnectorConfigType = "Increase"
-	V3ConnectorConfigTypeMangopay         V3ConnectorConfigType = "Mangopay"
-	V3ConnectorConfigTypeModulr           V3ConnectorConfigType = "Modulr"
-	V3ConnectorConfigTypeMoneycorp        V3ConnectorConfigType = "Moneycorp"
-	V3ConnectorConfigTypePlaid            V3ConnectorConfigType = "Plaid"
-	V3ConnectorConfigTypePowens           V3ConnectorConfigType = "Powens"
-	V3ConnectorConfigTypeQonto            V3ConnectorConfigType = "Qonto"
-	V3ConnectorConfigTypeStripe           V3ConnectorConfigType = "Stripe"
-	V3ConnectorConfigTypeTink             V3ConnectorConfigType = "Tink"
-	V3ConnectorConfigTypeWise             V3ConnectorConfigType = "Wise"
+	V3ConnectorConfigTypeAdyen         V3ConnectorConfigType = "Adyen"
+	V3ConnectorConfigTypeAtlar         V3ConnectorConfigType = "Atlar"
+	V3ConnectorConfigTypeBankingcircle V3ConnectorConfigType = "Bankingcircle"
+	V3ConnectorConfigTypeColumn        V3ConnectorConfigType = "Column"
+	V3ConnectorConfigTypeCurrencycloud V3ConnectorConfigType = "Currencycloud"
+	V3ConnectorConfigTypeDummypay      V3ConnectorConfigType = "Dummypay"
+	V3ConnectorConfigTypeGeneric       V3ConnectorConfigType = "Generic"
+	V3ConnectorConfigTypeIncrease      V3ConnectorConfigType = "Increase"
+	V3ConnectorConfigTypeMangopay      V3ConnectorConfigType = "Mangopay"
+	V3ConnectorConfigTypeModulr        V3ConnectorConfigType = "Modulr"
+	V3ConnectorConfigTypeMoneycorp     V3ConnectorConfigType = "Moneycorp"
+	V3ConnectorConfigTypePlaid         V3ConnectorConfigType = "Plaid"
+	V3ConnectorConfigTypePowens        V3ConnectorConfigType = "Powens"
+	V3ConnectorConfigTypeQonto         V3ConnectorConfigType = "Qonto"
+	V3ConnectorConfigTypeStripe        V3ConnectorConfigType = "Stripe"
+	V3ConnectorConfigTypeTink          V3ConnectorConfigType = "Tink"
+	V3ConnectorConfigTypeWise          V3ConnectorConfigType = "Wise"
 )
 
 type V3ConnectorConfig struct {
-	V3AdyenConfig            *V3AdyenConfig            `queryParam:"inline"`
-	V3AtlarConfig            *V3AtlarConfig            `queryParam:"inline"`
-	V3BankingcircleConfig    *V3BankingcircleConfig    `queryParam:"inline"`
-	V3ColumnConfig           *V3ColumnConfig           `queryParam:"inline"`
-	V3CurrencycloudConfig    *V3CurrencycloudConfig    `queryParam:"inline"`
-	V3DummyopenbankingConfig *V3DummyopenbankingConfig `queryParam:"inline"`
-	V3DummypayConfig         *V3DummypayConfig         `queryParam:"inline"`
-	V3GenericConfig          *V3GenericConfig          `queryParam:"inline"`
-	V3IncreaseConfig         *V3IncreaseConfig         `queryParam:"inline"`
-	V3MangopayConfig         *V3MangopayConfig         `queryParam:"inline"`
-	V3ModulrConfig           *V3ModulrConfig           `queryParam:"inline"`
-	V3MoneycorpConfig        *V3MoneycorpConfig        `queryParam:"inline"`
-	V3PlaidConfig            *V3PlaidConfig            `queryParam:"inline"`
-	V3PowensConfig           *V3PowensConfig           `queryParam:"inline"`
-	V3QontoConfig            *V3QontoConfig            `queryParam:"inline"`
-	V3StripeConfig           *V3StripeConfig           `queryParam:"inline"`
-	V3TinkConfig             *V3TinkConfig             `queryParam:"inline"`
-	V3WiseConfig             *V3WiseConfig             `queryParam:"inline"`
+	V3AdyenConfig         *V3AdyenConfig         `queryParam:"inline"`
+	V3AtlarConfig         *V3AtlarConfig         `queryParam:"inline"`
+	V3BankingcircleConfig *V3BankingcircleConfig `queryParam:"inline"`
+	V3ColumnConfig        *V3ColumnConfig        `queryParam:"inline"`
+	V3CurrencycloudConfig *V3CurrencycloudConfig `queryParam:"inline"`
+	V3DummypayConfig      *V3DummypayConfig      `queryParam:"inline"`
+	V3GenericConfig       *V3GenericConfig       `queryParam:"inline"`
+	V3IncreaseConfig      *V3IncreaseConfig      `queryParam:"inline"`
+	V3MangopayConfig      *V3MangopayConfig      `queryParam:"inline"`
+	V3ModulrConfig        *V3ModulrConfig        `queryParam:"inline"`
+	V3MoneycorpConfig     *V3MoneycorpConfig     `queryParam:"inline"`
+	V3PlaidConfig         *V3PlaidConfig         `queryParam:"inline"`
+	V3PowensConfig        *V3PowensConfig        `queryParam:"inline"`
+	V3QontoConfig         *V3QontoConfig         `queryParam:"inline"`
+	V3StripeConfig        *V3StripeConfig        `queryParam:"inline"`
+	V3TinkConfig          *V3TinkConfig          `queryParam:"inline"`
+	V3WiseConfig          *V3WiseConfig          `queryParam:"inline"`
 
 	Type V3ConnectorConfigType
 }
@@ -112,18 +110,6 @@ func CreateV3ConnectorConfigCurrencycloud(currencycloud V3CurrencycloudConfig) V
 	return V3ConnectorConfig{
 		V3CurrencycloudConfig: &currencycloud,
 		Type:                  typ,
-	}
-}
-
-func CreateV3ConnectorConfigDummyopenbanking(dummyopenbanking V3DummyopenbankingConfig) V3ConnectorConfig {
-	typ := V3ConnectorConfigTypeDummyopenbanking
-
-	typStr := string(typ)
-	dummyopenbanking.Provider = &typStr
-
-	return V3ConnectorConfig{
-		V3DummyopenbankingConfig: &dummyopenbanking,
-		Type:                     typ,
 	}
 }
 
@@ -328,15 +314,6 @@ func (u *V3ConnectorConfig) UnmarshalJSON(data []byte) error {
 		u.V3CurrencycloudConfig = v3CurrencycloudConfig
 		u.Type = V3ConnectorConfigTypeCurrencycloud
 		return nil
-	case "Dummyopenbanking":
-		v3DummyopenbankingConfig := new(V3DummyopenbankingConfig)
-		if err := utils.UnmarshalJSON(data, &v3DummyopenbankingConfig, "", true, false); err != nil {
-			return fmt.Errorf("could not unmarshal `%s` into expected (Provider == Dummyopenbanking) type V3DummyopenbankingConfig within V3ConnectorConfig: %w", string(data), err)
-		}
-
-		u.V3DummyopenbankingConfig = v3DummyopenbankingConfig
-		u.Type = V3ConnectorConfigTypeDummyopenbanking
-		return nil
 	case "Dummypay":
 		v3DummypayConfig := new(V3DummypayConfig)
 		if err := utils.UnmarshalJSON(data, &v3DummypayConfig, "", true, false); err != nil {
@@ -469,10 +446,6 @@ func (u V3ConnectorConfig) MarshalJSON() ([]byte, error) {
 
 	if u.V3CurrencycloudConfig != nil {
 		return utils.MarshalJSON(u.V3CurrencycloudConfig, "", true)
-	}
-
-	if u.V3DummyopenbankingConfig != nil {
-		return utils.MarshalJSON(u.V3DummyopenbankingConfig, "", true)
 	}
 
 	if u.V3DummypayConfig != nil {

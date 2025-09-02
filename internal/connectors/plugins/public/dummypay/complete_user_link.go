@@ -1,11 +1,11 @@
-package dummyopenbanking
+package dummypay
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/dummyopenbanking/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 )

@@ -6684,12 +6684,6 @@ xor
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|*anonymous*|[V3DummyopenbankingConfig](#schemav3dummyopenbankingconfig)|false|none|none|
-
-xor
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
 |*anonymous*|[V3DummypayConfig](#schemav3dummypayconfig)|false|none|none|
 
 xor
@@ -6926,38 +6920,6 @@ xor
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
 
-<h2 id="tocS_V3DummyopenbankingConfig">V3DummyopenbankingConfig</h2>
-<!-- backwards compatibility -->
-<a id="schemav3dummyopenbankingconfig"></a>
-<a id="schema_V3DummyopenbankingConfig"></a>
-<a id="tocSv3dummyopenbankingconfig"></a>
-<a id="tocsv3dummyopenbankingconfig"></a>
-
-```json
-{
-  "directory": "string",
-  "linkFlowError": true,
-  "name": "string",
-  "pageSize": "25",
-  "pollingPeriod": "2m",
-  "provider": "Dummyopenbanking",
-  "updateLinkFlowError": true
-}
-
-```
-
-### Properties
-
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|directory|string|true|none|none|
-|linkFlowError|boolean|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|updateLinkFlowError|boolean|true|none|none|
-
 <h2 id="tocS_V3DummypayConfig">V3DummypayConfig</h2>
 <!-- backwards compatibility -->
 <a id="schemav3dummypayconfig"></a>
@@ -6968,10 +6930,12 @@ xor
 ```json
 {
   "directory": "string",
+  "linkFlowError": true,
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "2m",
-  "provider": "Dummypay"
+  "provider": "Dummypay",
+  "updateLinkFlowError": true
 }
 
 ```
@@ -6981,10 +6945,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |directory|string|true|none|none|
+|linkFlowError|boolean|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+|updateLinkFlowError|boolean|false|none|none|
 
 <h2 id="tocS_V3GenericConfig">V3GenericConfig</h2>
 <!-- backwards compatibility -->

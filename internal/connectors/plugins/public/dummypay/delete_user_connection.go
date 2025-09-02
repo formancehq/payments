@@ -1,4 +1,4 @@
-package dummyopenbanking
+package dummypay
 
 import (
 	"context"

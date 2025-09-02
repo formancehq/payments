@@ -8,7 +8,9 @@ import (
 )
 
 type Config struct {
-	Directory string `json:"directory" validate:"required,dirpath"`
+	Directory           string `json:"directory" validate:"required,dirpath"`
+	CreateLinkFlowError bool   `json:"linkFlowError" validate:""`
+	UpdateLinkFlowError bool   `json:"updateLinkFlowError" validate:"false"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

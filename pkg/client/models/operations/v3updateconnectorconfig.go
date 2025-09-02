@@ -61,13 +61,6 @@ func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestCurrencyclou
 	return nil
 }
 
-func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestDummyopenbanking() *components.V3DummyopenbankingConfig {
-	if v := o.GetV3UpdateConnectorRequest(); v != nil {
-		return v.V3DummyopenbankingConfig
-	}
-	return nil
-}
-
 func (o *V3UpdateConnectorConfigRequest) GetV3UpdateConnectorRequestDummypay() *components.V3DummypayConfig {
 	if v := o.GetV3UpdateConnectorRequest(); v != nil {
 		return v.V3DummypayConfig

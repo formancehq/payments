@@ -1,4 +1,4 @@
-package dummyopenbanking
+package dummypay
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/formancehq/payments/internal/connectors/plugins/public/dummyopenbanking/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/dummypay/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 )
 
-func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
+func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 	if req.AttemptID == "" {
 		return fmt.Errorf("missing attempt ID: %w", models.ErrInvalidRequest)
 	}
@@ -23,18 +23,19 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 	return nil
 }
 
-func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
-	if err := validateUpdateUserLinkRequest(req); err != nil {
-		return models.UpdateUserLinkResponse{}, err
+func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	if err := validateCreateUserLinkRequest(req); err != nil {
+		return models.CreateUserLinkResponse{}, err
 	}
 
 	url, err := url.Parse(*req.FormanceRedirectURL)
 	if err != nil {
-		return models.UpdateUserLinkResponse{}, fmt.Errorf("failed to parse formance redirect URI: %w", err)
+		return models.CreateUserLinkResponse{}, fmt.Errorf("failed to parse formance redirect URI: %w", err)
 	}
 
 	query := url.Query()
-	if p.config.UpdateLinkFlowError {
+	query.Set(client.UserIDQueryParamID, req.PaymentServiceUser.ID.String())
+	if p.config.CreateLinkFlowError {
 		query.Set(client.StatusQueryParamID, string(client.LinkStatusError))
 	} else {
 		query.Set(client.StatusQueryParamID, string(client.LinkStatusSuccess))
@@ -42,7 +43,7 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 
 	url.RawQuery = query.Encode()
 
-	return models.UpdateUserLinkResponse{
+	return models.CreateUserLinkResponse{
 		Link: url.String(),
 		TemporaryLinkToken: &models.Token{
 			Token:     uuid.New().String(),

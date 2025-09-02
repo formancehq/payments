@@ -22,6 +22,7 @@ type Plugin struct {
 	models.Plugin
 
 	name   string
+	config Config
 	logger logging.Logger
 	client client.Client
 	config Config
@@ -59,61 +60,12 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 	return models.UninstallResponse{}, nil
 }
 
-type accountsState struct {
-	NextToken int `json:"nextToken"`
-}
-
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var oldState accountsState
-	if req.State != nil {
-		if err := json.Unmarshal(req.State, &oldState); err != nil {
-			return models.FetchNextAccountsResponse{}, err
-		}
-	}
-
-	accounts, next, err := p.client.FetchAccounts(ctx, oldState.NextToken, req.PageSize)
-	if err != nil {
-		return models.FetchNextAccountsResponse{}, fmt.Errorf("failed to fetch accounts from client: %w", err)
-	}
-
-	newState := accountsState{
-		NextToken: next,
-	}
-	payload, err := json.Marshal(newState)
-	if err != nil {
-		return models.FetchNextAccountsResponse{}, err
-	}
-
-	return models.FetchNextAccountsResponse{
-		Accounts: accounts,
-		NewState: payload,
-		HasMore:  next > 0,
-	}, nil
+	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.PSPAccount
-	if req.FromPayload == nil {
-		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
-	}
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
-	balance, err := p.client.FetchBalance(ctx, from.Reference)
-	if err != nil {
-		return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to fetch balance from client: %w", err)
-	}
-
-	balances := make([]models.PSPBalance, 0, 1)
-	if balance != nil {
-		balances = append(balances, *balance)
-	}
-
-	return models.FetchNextBalancesResponse{
-		Balances: balances,
-		HasMore:  false,
-	}, nil
+	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
@@ -167,6 +119,54 @@ func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequ
 		return models.ReversePayoutResponse{}, fmt.Errorf("failed to reverse payout using client: %w", err)
 	}
 	return models.ReversePayoutResponse{Payment: pspPayment}, nil
+}
+
+func (p *Plugin) CreateUser(ctx context.Context, req models.CreateUserRequest) (models.CreateUserResponse, error) {
+	if p.client == nil {
+		return models.CreateUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createUser(ctx, req)
+}
+
+func (p *Plugin) CreateUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+	if p.client == nil {
+		return models.CreateUserLinkResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.createUserLink(ctx, req)
+}
+
+func (p *Plugin) CompleteUserLink(ctx context.Context, req models.CompleteUserLinkRequest) (models.CompleteUserLinkResponse, error) {
+	if p.client == nil {
+		return models.CompleteUserLinkResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.completeUserLink(ctx, req)
+}
+
+func (p *Plugin) UpdateUserLink(ctx context.Context, req models.UpdateUserLinkRequest) (models.UpdateUserLinkResponse, error) {
+	if p.client == nil {
+		return models.UpdateUserLinkResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.updateUserLink(ctx, req)
+}
+
+func (p *Plugin) DeleteUser(ctx context.Context, req models.DeleteUserRequest) (models.DeleteUserResponse, error) {
+	if p.client == nil {
+		return models.DeleteUserResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUser(ctx, req)
+}
+
+func (p *Plugin) DeleteUserConnection(ctx context.Context, req models.DeleteUserConnectionRequest) (models.DeleteUserConnectionResponse, error) {
+	if p.client == nil {
+		return models.DeleteUserConnectionResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	return p.deleteUserConnection(ctx, req)
 }
 
 var _ models.Plugin = &Plugin{}
