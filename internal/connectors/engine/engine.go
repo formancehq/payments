@@ -855,14 +855,14 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 		return handlePluginErrors(err)
 	}
 
-	openBankingPSU := models.OpenBankingProviderPSU{
+	openBankingProviderPSU := models.OpenBankingProviderPSU{
 		ConnectorID: connectorID,
 		AccessToken: resp.PermanentToken,
 		PSPUserID:   resp.PSPUserID,
 		Metadata:    resp.Metadata,
 	}
 
-	err = e.storage.OpenBankingProviderPSUUpsert(detachedCtx, psuID, openBankingPSU)
+	err = e.storage.OpenBankingProviderPSUUpsert(detachedCtx, psuID, openBankingProviderPSU)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -1029,7 +1029,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 		return "", "", err
 	}
 
-	openBanking, err := e.storage.OpenBankingProviderPSUGet(ctx, psuID, connectorID)
+	openBankingProviderPSU, err := e.storage.OpenBankingProviderPSUGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
@@ -1080,7 +1080,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 		ApplicationName:        applicationName,
 		AttemptID:              attempt.ID.String(),
 		PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
-		OpenBankingProviderPSU: openBanking,
+		OpenBankingProviderPSU: openBankingProviderPSU,
 		ClientRedirectURL:      ClientRedirectURL,
 		FormanceRedirectURL:    &formanceRedirectURL,
 		CallBackState:          attempt.State.String(),
@@ -1119,7 +1119,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 		return "", "", err
 	}
 
-	openBanking, err := e.storage.OpenBankingProviderPSUGet(ctx, psuID, connectorID)
+	openBankingProviderPSU, err := e.storage.OpenBankingProviderPSUGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
@@ -1178,7 +1178,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	resp, err := plugin.UpdateUserLink(detachedCtx, models.UpdateUserLinkRequest{
 		AttemptID:              attempt.ID.String(),
 		PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
-		OpenBankingProviderPSU: openBanking,
+		OpenBankingProviderPSU: openBankingProviderPSU,
 		Connection:             connection,
 		ApplicationName:        applicationName,
 		ClientRedirectURL:      ClientRedirectURL,

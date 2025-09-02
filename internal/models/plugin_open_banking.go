@@ -43,7 +43,7 @@ type CreateUserResponse struct {
 	// Other connectors have it when the user finished the authentication flow,
 	// so this is optional and will be added later on thanks to webhooks.
 	PermanentToken *Token
-	// ID of the user on the aggregator
+	// ID of the user on the provider
 	PSPUserID *string
 	// Metadata linked to the user above.
 	Metadata map[string]string

@@ -19,7 +19,7 @@ import (
 // access token. We still need them in the models object because of temporal,
 // that's why we need to create a custom response type.
 type openBankingConnection struct {
-	// ID of the connection, given by the aggregator
+	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Connector ID
 	ConnectorID string `json:"connectorID"`

@@ -40,7 +40,7 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 		},
 	}
 
-	psuOpenBankings := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+	obProviderPSUs := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
 		Data: []models.OpenBankingProviderPSU{
 			{
 				ConnectorID: s.connectorID,
@@ -67,10 +67,10 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU open banking list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuOpenBankings, nil)
+	// Mock open banking provider psu list
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(obProviderPSUs, nil)
 
-	// Mock plugin delete user (called for each aggregator)
+	// Mock plugin delete user (called for each provider)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
 

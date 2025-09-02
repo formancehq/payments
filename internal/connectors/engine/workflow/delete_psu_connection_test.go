@@ -154,7 +154,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingsGet_Error() {
+func (s *UnitTestSuite) Test_DeletePSUConnection_StorageOpenBankingProviderPSUGet_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -241,7 +241,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_PluginDeleteUserConnection_Erro
 		},
 	}
 
-	psuOpenBanking := &models.OpenBankingProviderPSU{
+	openBankingProviderPSU := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -262,8 +262,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_PluginDeleteUserConnection_Erro
 		}, nil,
 	)
 
-	// Mock PSU open banking retrieval
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuOpenBanking, nil)
+	// Mock open banking provider PSU retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingProviderPSU, nil)
 
 	// Mock plugin delete user connection error (multiple calls for retries)
 	s.env.OnActivity(activities.PluginDeleteUserConnectionActivity, mock.Anything, mock.Anything).Return(
@@ -314,7 +314,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_ChildWorkflow_Error() {
 		},
 	}
 
-	psuOpenBanking := &models.OpenBankingProviderPSU{
+	openBankingProviderPSU := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -335,8 +335,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_ChildWorkflow_Error() {
 		}, nil,
 	)
 
-	// Mock PSU open banking retrieval
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuOpenBanking, nil)
+	// Mock open banking provider PSU retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingProviderPSU, nil)
 
 	// Mock plugin delete user connection
 	s.env.OnActivity(activities.PluginDeleteUserConnectionActivity, mock.Anything, mock.Anything).Return(&models.DeleteUserConnectionResponse{}, nil)
@@ -390,7 +390,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 		},
 	}
 
-	psuOpenBanking := &models.OpenBankingProviderPSU{
+	openBankingProviderPSU := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -411,8 +411,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 		}, nil,
 	)
 
-	// Mock PSU open banking retrieval
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuOpenBanking, nil)
+	// Mock open banking provider PSU retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingProviderPSU, nil)
 
 	// Mock plugin delete user connection
 	s.env.OnActivity(activities.PluginDeleteUserConnectionActivity, mock.Anything, mock.Anything).Return(&models.DeleteUserConnectionResponse{}, nil)
@@ -500,7 +500,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_TaskSuccessUpdate_Error() {
 		},
 	}
 
-	psuOpenBanking := &models.OpenBankingProviderPSU{
+	openBankingProviderPSU := &models.OpenBankingProviderPSU{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -521,8 +521,8 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_TaskSuccessUpdate_Error() {
 		}, nil,
 	)
 
-	// Mock PSU open banking retrieval
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(psuOpenBanking, nil)
+	// Mock open banking provider PSU retrieval
+	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingProviderPSU, nil)
 
 	// Mock plugin delete user connection
 	s.env.OnActivity(activities.PluginDeleteUserConnectionActivity, mock.Anything, mock.Anything).Return(&models.DeleteUserConnectionResponse{}, nil)

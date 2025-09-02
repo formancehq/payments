@@ -219,16 +219,14 @@ func (s *store) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUI
 
 func (s *store) OpenBankingProviderPSUGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
 	openBanking := openBankingProviderPSUs{}
-	query := s.db.NewSelect().
+	err := s.db.NewSelect().
 		Model(&openBanking).
 		Column("open_banking_provider_psus.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
 		Join("LEFT JOIN psu_open_banking_access_tokens ON open_banking_provider_psus.psu_id = psu_open_banking_access_tokens.psu_id AND open_banking_provider_psus.connector_id = psu_open_banking_access_tokens.connector_id").
 		Where("open_banking_provider_psus.psu_id = ?", psuID).
-		Where("open_banking_provider_psus.connector_id = ?", connectorID)
-	//Scan(ctx)
+		Where("open_banking_provider_psus.connector_id = ?", connectorID).
+		Scan(ctx)
 
-	println(query.String())
-	err := query.Scan(ctx)
 	if err != nil {
 		return nil, e("getting open banking provider psu", err)
 	}
@@ -239,16 +237,14 @@ func (s *store) OpenBankingProviderPSUGet(ctx context.Context, psuID uuid.UUID, 
 func (s *store) OpenBankingProviderPSUGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
 	openBankingPSU := openBankingProviderPSUs{}
 
-	query := s.db.NewSelect().
+	err := s.db.NewSelect().
 		Model(&openBankingPSU).
 		Column("open_banking_provider_psus.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
 		Join("LEFT JOIN psu_open_banking_access_tokens ON open_banking_provider_psus.psu_id = psu_open_banking_access_tokens.psu_id AND open_banking_provider_psus.connector_id = psu_open_banking_access_tokens.connector_id").
 		Where("open_banking_provider_psus.psp_user_id = ?", pspUserID).
-		Where("open_banking_provider_psus.connector_id = ?", connectorID)
-	//		Scan(ctx)
+		Where("open_banking_provider_psus.connector_id = ?", connectorID).
+		Scan(ctx)
 
-	println(query.String())
-	err := query.Scan(ctx)
 	if err != nil {
 		return nil, e("getting open banking provider PSU", err)
 	}

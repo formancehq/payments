@@ -137,7 +137,7 @@ func newRouter(backend backend.Backend, a auth.Authenticator, debug bool) *chi.M
 
 					r.Route("/connectors/{connectorID}", func(r chi.Router) {
 						r.Delete("/", paymentServiceUsersDeleteConnector(backend))
-						r.Post("/forward", paymentServiceUsersForwardToAggregator(backend))
+						r.Post("/forward", paymentServiceUsersForwardToProvider(backend))
 						r.Post("/create-link", paymentServiceUsersCreateLink(backend, validator))
 
 						r.Get("/connections", paymentServiceUsersConnectionsListFromConnectorID(backend))

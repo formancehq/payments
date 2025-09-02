@@ -133,13 +133,13 @@ const (
 )
 
 type PSPPsuOpenBankingConnection struct {
-	// ID of the connection, given by the aggregator
+	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Creation date of the connection
 	CreatedAt time.Time `json:"createdAt"`
 
 	// Optional
-	// AccessToken is optional for some aggregators, like Powens, where we
+	// AccessToken is optional for some providers, like Powens, where we
 	// have a notion of connection, but we only have one token for all of them.
 	AccessToken *Token `json:"accessToken"`
 	// Additional information about the connection depending on the connector
@@ -147,7 +147,7 @@ type PSPPsuOpenBankingConnection struct {
 }
 
 type PSUOpenBankingConnection struct {
-	// ID of the connection, given by the aggregator
+	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Connector ID
 	ConnectorID ConnectorID `json:"connectorID"`
@@ -159,7 +159,7 @@ type PSUOpenBankingConnection struct {
 	Status ConnectionStatus `json:"status"`
 
 	// Optional
-	// AccessToken is optional for some aggregator, like Powens, where we
+	// AccessToken is optional for some provider, like Powens, where we
 	// have a notion of connection, but we only have one token for all of them.
 	AccessToken *Token `json:"accessToken"`
 	// Error message in case of failure

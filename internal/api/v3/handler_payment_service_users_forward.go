@@ -11,13 +11,13 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-type PaymentServiceUserForwardToAggregatorResponse struct {
+type PaymentServiceUserForwardToProviderResponse struct {
 	TaskID string `json:"taskID"`
 }
 
-func paymentServiceUsersForwardToAggregator(backend backend.Backend) http.HandlerFunc {
+func paymentServiceUsersForwardToProvider(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentServiceUsersForwardToAggregator")
+		ctx, span := otel.Tracer().Start(r.Context(), "v3_paymentServiceUsersForwardToProvider")
 		defer span.End()
 
 		span.SetAttributes(attribute.String("paymentServiceUserID", paymentServiceUserID(r)))
