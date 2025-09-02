@@ -6,41 +6,41 @@ import (
 	"github.com/formancehq/payments/pkg/client/models/components"
 )
 
-type V3ForwardPaymentServiceUserToBankBridgeRequest struct {
+type V3ForwardPaymentServiceUserToProviderRequest struct {
 	// The payment service user ID
 	PaymentServiceUserID string `pathParam:"style=simple,explode=false,name=paymentServiceUserID"`
 	// The connector ID
 	ConnectorID string `pathParam:"style=simple,explode=false,name=connectorID"`
 }
 
-func (o *V3ForwardPaymentServiceUserToBankBridgeRequest) GetPaymentServiceUserID() string {
+func (o *V3ForwardPaymentServiceUserToProviderRequest) GetPaymentServiceUserID() string {
 	if o == nil {
 		return ""
 	}
 	return o.PaymentServiceUserID
 }
 
-func (o *V3ForwardPaymentServiceUserToBankBridgeRequest) GetConnectorID() string {
+func (o *V3ForwardPaymentServiceUserToProviderRequest) GetConnectorID() string {
 	if o == nil {
 		return ""
 	}
 	return o.ConnectorID
 }
 
-type V3ForwardPaymentServiceUserToBankBridgeResponse struct {
+type V3ForwardPaymentServiceUserToProviderResponse struct {
 	HTTPMeta components.HTTPMetadata `json:"-"`
 	// Error
 	V3ErrorResponse *components.V3ErrorResponse
 }
 
-func (o *V3ForwardPaymentServiceUserToBankBridgeResponse) GetHTTPMeta() components.HTTPMetadata {
+func (o *V3ForwardPaymentServiceUserToProviderResponse) GetHTTPMeta() components.HTTPMetadata {
 	if o == nil {
 		return components.HTTPMetadata{}
 	}
 	return o.HTTPMeta
 }
 
-func (o *V3ForwardPaymentServiceUserToBankBridgeResponse) GetV3ErrorResponse() *components.V3ErrorResponse {
+func (o *V3ForwardPaymentServiceUserToProviderResponse) GetV3ErrorResponse() *components.V3ErrorResponse {
 	if o == nil {
 		return nil
 	}

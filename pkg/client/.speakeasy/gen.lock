@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 3f2afbc5621723ac307dc89c701f3b6b
+  docChecksum: 7ad9f3838d88e4ec397b0d6ed9c809a6
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -198,7 +198,7 @@ generatedFiles:
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
   - /models/components/v3powensconfig.go
-  - /models/components/v3psubankbridgeconnectionattemptstatusenum.go
+  - /models/components/v3psuopenbankingconnectionattemptstatusenum.go
   - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
@@ -275,7 +275,7 @@ generatedFiles:
   - /models/operations/v3deletepool.go
   - /models/operations/v3forwardbankaccount.go
   - /models/operations/v3forwardpaymentserviceuserbankaccount.go
-  - /models/operations/v3forwardpaymentserviceusertobankbridge.go
+  - /models/operations/v3forwardpaymentserviceusertoprovider.go
   - /models/operations/v3getaccount.go
   - /models/operations/v3getaccountbalances.go
   - /models/operations/v3getbankaccount.go
@@ -543,7 +543,7 @@ generatedFiles:
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
   - docs/models/components/v3powensconfig.md
-  - docs/models/components/v3psubankbridgeconnectionattemptstatusenum.md
+  - docs/models/components/v3psuopenbankingconnectionattemptstatusenum.md
   - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md
@@ -671,8 +671,8 @@ generatedFiles:
   - docs/models/operations/v3forwardbankaccountresponse.md
   - docs/models/operations/v3forwardpaymentserviceuserbankaccountrequest.md
   - docs/models/operations/v3forwardpaymentserviceuserbankaccountresponse.md
-  - docs/models/operations/v3forwardpaymentserviceusertobankbridgerequest.md
-  - docs/models/operations/v3forwardpaymentserviceusertobankbridgeresponse.md
+  - docs/models/operations/v3forwardpaymentserviceusertoproviderrequest.md
+  - docs/models/operations/v3forwardpaymentserviceusertoproviderresponse.md
   - docs/models/operations/v3getaccountbalancesrequest.md
   - docs/models/operations/v3getaccountbalancesresponse.md
   - docs/models/operations/v3getaccountrequest.md
@@ -1837,6 +1837,15 @@ examples:
       responses:
         "201":
           application/json: {"attemptID": "<id>", "link": "https://wasteful-coordination.name"}
+        default:
+          application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
+  v3ForwardPaymentServiceUserToProvider:
+    speakeasy-default-v3-forward-payment-service-user-to-provider:
+      parameters:
+        path:
+          paymentServiceUserID: "<id>"
+          connectorID: "<id>"
+      responses:
         default:
           application/json: {"errorCode": "VALIDATION", "errorMessage": "[VALIDATION] missing required config field: pollingPeriod"}
 examplesVersion: 1.0.0

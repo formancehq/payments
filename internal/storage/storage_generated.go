@@ -562,6 +562,79 @@ func (mr *MockStorageMockRecorder) ListenConnectorsChanges(ctx, handler any) *go
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListenConnectorsChanges", reflect.TypeOf((*MockStorage)(nil).ListenConnectorsChanges), ctx, handler)
 }
 
+// OpenBankingProviderPSUDelete mocks base method.
+func (m *MockStorage) OpenBankingProviderPSUDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenBankingProviderPSUDelete", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenBankingProviderPSUDelete indicates an expected call of OpenBankingProviderPSUDelete.
+func (mr *MockStorageMockRecorder) OpenBankingProviderPSUDelete(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUDelete", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUDelete), ctx, psuID, connectorID)
+}
+
+// OpenBankingProviderPSUGet mocks base method.
+func (m *MockStorage) OpenBankingProviderPSUGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenBankingProviderPSUGet", ctx, psuID, connectorID)
+	ret0, _ := ret[0].(*models.OpenBankingProviderPSU)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OpenBankingProviderPSUGet indicates an expected call of OpenBankingProviderPSUGet.
+func (mr *MockStorageMockRecorder) OpenBankingProviderPSUGet(ctx, psuID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUGet", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUGet), ctx, psuID, connectorID)
+}
+
+// OpenBankingProviderPSUGetByPSPUserID mocks base method.
+func (m *MockStorage) OpenBankingProviderPSUGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenBankingProviderPSUGetByPSPUserID", ctx, pspUserID, connectorID)
+	ret0, _ := ret[0].(*models.OpenBankingProviderPSU)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OpenBankingProviderPSUGetByPSPUserID indicates an expected call of OpenBankingProviderPSUGetByPSPUserID.
+func (mr *MockStorageMockRecorder) OpenBankingProviderPSUGetByPSPUserID(ctx, pspUserID, connectorID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUGetByPSPUserID", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUGetByPSPUserID), ctx, pspUserID, connectorID)
+}
+
+// OpenBankingProviderPSUList mocks base method.
+func (m *MockStorage) OpenBankingProviderPSUList(ctx context.Context, query ListOpenBankingProviderPSUQuery) (*bunpaginate.Cursor[models.OpenBankingProviderPSU], error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenBankingProviderPSUList", ctx, query)
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingProviderPSU])
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// OpenBankingProviderPSUList indicates an expected call of OpenBankingProviderPSUList.
+func (mr *MockStorageMockRecorder) OpenBankingProviderPSUList(ctx, query any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUList", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUList), ctx, query)
+}
+
+// OpenBankingProviderPSUUpsert mocks base method.
+func (m *MockStorage) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingProviderPSU) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "OpenBankingProviderPSUUpsert", ctx, psuID, from)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// OpenBankingProviderPSUUpsert indicates an expected call of OpenBankingProviderPSUUpsert.
+func (mr *MockStorageMockRecorder) OpenBankingProviderPSUUpsert(ctx, psuID, from any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUUpsert), ctx, psuID, from)
+}
+
 // PSUOpenBankingConnectionAttemptsGet mocks base method.
 func (m *MockStorage) PSUOpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUOpenBankingConnectionAttempt, error) {
 	m.ctrl.T.Helper()
@@ -706,79 +779,6 @@ func (m *MockStorage) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID
 func (mr *MockStorageMockRecorder) PSUOpenBankingConnectionsUpsert(ctx, psuID, from any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PSUOpenBankingConnectionsUpsert", reflect.TypeOf((*MockStorage)(nil).PSUOpenBankingConnectionsUpsert), ctx, psuID, from)
-}
-
-// PSUOpenBankingDelete mocks base method.
-func (m *MockStorage) OpenBankingProviderPSUDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenBankingProviderPSUDelete", ctx, psuID, connectorID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PSUOpenBankingDelete indicates an expected call of PSUOpenBankingDelete.
-func (mr *MockStorageMockRecorder) PSUOpenBankingDelete(ctx, psuID, connectorID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUDelete", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUDelete), ctx, psuID, connectorID)
-}
-
-// PSUOpenBankingGet mocks base method.
-func (m *MockStorage) OpenBankingProviderPSUGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenBankingProviderPSUGet", ctx, psuID, connectorID)
-	ret0, _ := ret[0].(*models.OpenBankingProviderPSU)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PSUOpenBankingGet indicates an expected call of PSUOpenBankingGet.
-func (mr *MockStorageMockRecorder) PSUOpenBankingGet(ctx, psuID, connectorID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUGet", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUGet), ctx, psuID, connectorID)
-}
-
-// PSUOpenBankingGetByPSPUserID mocks base method.
-func (m *MockStorage) OpenBankingProviderPSUGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenBankingProviderPSUGetByPSPUserID", ctx, pspUserID, connectorID)
-	ret0, _ := ret[0].(*models.OpenBankingProviderPSU)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PSUOpenBankingGetByPSPUserID indicates an expected call of PSUOpenBankingGetByPSPUserID.
-func (mr *MockStorageMockRecorder) PSUOpenBankingGetByPSPUserID(ctx, pspUserID, connectorID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUGetByPSPUserID", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUGetByPSPUserID), ctx, pspUserID, connectorID)
-}
-
-// PSUOpenBankingList mocks base method.
-func (m *MockStorage) OpenBankingProviderPSUList(ctx context.Context, query ListOpenBankingProviderPSUQuery) (*bunpaginate.Cursor[models.OpenBankingProviderPSU], error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenBankingProviderPSUList", ctx, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingProviderPSU])
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// PSUOpenBankingList indicates an expected call of PSUOpenBankingList.
-func (mr *MockStorageMockRecorder) PSUOpenBankingList(ctx, query any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUList", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUList), ctx, query)
-}
-
-// PSUOpenBankingUpsert mocks base method.
-func (m *MockStorage) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingProviderPSU) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "OpenBankingProviderPSUUpsert", ctx, psuID, from)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// PSUOpenBankingUpsert indicates an expected call of PSUOpenBankingUpsert.
-func (mr *MockStorageMockRecorder) PSUOpenBankingUpsert(ctx, psuID, from any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "OpenBankingProviderPSUUpsert", reflect.TypeOf((*MockStorage)(nil).OpenBankingProviderPSUUpsert), ctx, psuID, from)
 }
 
 // PaymentInitiationAdjustmentsGet mocks base method.
