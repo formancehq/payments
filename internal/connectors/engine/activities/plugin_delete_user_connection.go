@@ -13,7 +13,7 @@ type DeleteUserConnectionRequest struct {
 }
 
 func (a Activities) PluginDeleteUserConnection(ctx context.Context, request DeleteUserConnectionRequest) (*models.DeleteUserConnectionResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

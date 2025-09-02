@@ -13,7 +13,7 @@ type ReverseTransferRequest struct {
 }
 
 func (a Activities) PluginReverseTransfer(ctx context.Context, request ReverseTransferRequest) (*models.ReverseTransferResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

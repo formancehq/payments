@@ -142,7 +142,7 @@ func (w Workflow) createTransfer(
 
 		if createTransferResponse.PollingTransferID != nil {
 			// payment not yet available, waiting for the next polling
-			config, err := w.plugins.GetConfig(createTransfer.ConnectorID)
+			config, err := w.connectors.GetConfig(createTransfer.ConnectorID)
 			if err != nil {
 				return err
 			}

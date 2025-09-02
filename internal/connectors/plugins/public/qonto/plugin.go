@@ -25,6 +25,7 @@ type Plugin struct {
 	logger logging.Logger
 
 	client client.Client
+	config Config
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
@@ -40,11 +41,16 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		name:   name,
 		logger: logger,
 		client: clientInstance,
+		config: config,
 	}, nil
 }
 
 func (p *Plugin) Name() string {
 	return p.name
+}
+
+func (p *Plugin) Config() models.PluginInternalConfig {
+	return p.config
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {

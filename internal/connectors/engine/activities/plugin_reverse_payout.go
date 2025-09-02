@@ -13,7 +13,7 @@ type ReversePayoutRequest struct {
 }
 
 func (a Activities) PluginReversePayout(ctx context.Context, request ReversePayoutRequest) (*models.ReversePayoutResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

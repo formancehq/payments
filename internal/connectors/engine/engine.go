@@ -12,7 +12,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine/utils"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/connectors/plugins/registry"
@@ -89,9 +89,9 @@ type Engine interface {
 	// Delete a Formance pool.
 	DeletePool(ctx context.Context, poolID uuid.UUID) error
 
-	// Called when the engine is starting, to start all the plugins.
+	// Called when the engine is starting, to start all the connectors.
 	OnStart(ctx context.Context) error
-	// Called when the engine is stopping, to stop all the plugins.
+	// Called when the engine is stopping, to stop all the connectors.
 	OnStop(ctx context.Context)
 }
 
@@ -101,10 +101,10 @@ type engine struct {
 	temporalClient client.Client
 	storage        storage.Storage
 
-	// plugins is only really present in engine to allow validation of plugin configs prior to insert into the DB
+	// connectors is only really present in engine to allow validation of plugin configs prior to insert into the DB
 	// other plugin-side work should be performed inside workers and not directly in the engine since we don't
 	// have a listener function that checks for plugin updates or installs
-	plugins plugins.Plugins
+	connectors connectors.Manager
 
 	stack          string
 	stackPublicURL string
@@ -116,7 +116,7 @@ func New(
 	logger logging.Logger,
 	temporalClient client.Client,
 	storage storage.Storage,
-	plugins plugins.Plugins,
+	connectors connectors.Manager,
 	stack string,
 	stackPublicURL string,
 ) Engine {
@@ -124,7 +124,7 @@ func New(
 		logger:         logger,
 		temporalClient: temporalClient,
 		storage:        storage,
-		plugins:        plugins,
+		connectors:     connectors,
 		stack:          stack,
 		wg:             sync.WaitGroup{},
 		stackPublicURL: stackPublicURL,
@@ -146,24 +146,25 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 		return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 	}
 
-	connector := models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
-			Provider:  provider,
-		},
-		Name:      config.Name,
-		CreatedAt: time.Now().UTC(),
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
 		Provider:  provider,
-		Config:    rawConfig,
 	}
-
-	err := e.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	validatedConfig, err := e.connectors.Load(connectorID, provider, config.Name, config, rawConfig, false)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
 			return models.ConnectorID{}, errorsutils.NewWrappedError(err, ErrValidation)
 		}
 		return models.ConnectorID{}, err
+	}
+
+	connector := models.Connector{
+		ID:        connectorID,
+		Name:      config.Name,
+		CreatedAt: time.Now().UTC(),
+		Provider:  provider,
+		Config:    validatedConfig,
 	}
 
 	// Detached the context to avoid being in a weird state if request is
@@ -350,10 +351,7 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		return err
 	}
 
-	connector.Config = rawConfig
-	connector.Name = config.Name
-
-	err = e.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	validatedConfig, err := e.connectors.Load(connector.ID, connector.Provider, config.Name, config, rawConfig, true)
 	if err != nil {
 		otel.RecordError(span, err)
 		if _, ok := err.(validator.ValidationErrors); ok || errors.Is(err, models.ErrInvalidConfig) {
@@ -361,6 +359,8 @@ func (e *engine) UpdateConnector(ctx context.Context, connectorID models.Connect
 		}
 		return err
 	}
+	connector.Name = config.Name
+	connector.Config = validatedConfig
 
 	if err := e.storage.ConnectorsConfigUpdate(ctx, *connector); err != nil {
 		otel.RecordError(span, err)
@@ -841,7 +841,7 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	plugin, err := e.plugins.Get(connectorID)
+	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -1017,7 +1017,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	ctx, span := otel.Tracer().Start(ctx, "engine.CreateUserLink")
 	defer span.End()
 
-	plugin, err := e.plugins.Get(connectorID)
+	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
@@ -1107,7 +1107,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	ctx, span := otel.Tracer().Start(ctx, "engine.UpdateUserLink")
 	defer span.End()
 
-	plugin, err := e.plugins.Get(connectorID)
+	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
@@ -1290,7 +1290,7 @@ func (e *engine) HandleWebhook(ctx context.Context, url string, urlPath string, 
 }
 
 func (e *engine) verifyAndTrimWebhook(ctx context.Context, urlPath string, webhook models.Webhook) ([]models.Webhook, *models.WebhookConfig, error) {
-	plugin, err := e.plugins.Get(webhook.ConnectorID)
+	plugin, err := e.connectors.Get(webhook.ConnectorID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1627,7 +1627,7 @@ func (e *engine) onStartPlugin(ctx context.Context, connector models.Connector) 
 	}
 
 	if !connector.ScheduledForDeletion {
-		if err := e.plugins.LoadPlugin(
+		if _, err := e.connectors.Load(
 			connector.ID,
 			connector.Provider,
 			connector.Name,

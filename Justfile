@@ -71,3 +71,9 @@ release-ci:
 [group('releases')]
 release:
     @goreleaser release --clean
+
+[group('plugins')]
+bootstrap-plugin CONNECTOR_NAME:
+    @go build -o connector-template {{justfile_directory()}}/tools/connector-template
+    ./connector-template --connector-dir-path {{justfile_directory()}}/internal/connectors/plugins/public --connector-name {{CONNECTOR_NAME}}
+    @rm ./connector-template

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	enginePlugins "github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
@@ -43,7 +43,7 @@ func (a Activities) temporalPluginErrorCheck(ctx context.Context, err error, isP
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, cause)
 	case errors.Is(err, plugins.ErrCurrencyNotSupported):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, cause)
-	case errors.Is(err, enginePlugins.ErrNotFound):
+	case errors.Is(err, connectors.ErrNotFound):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, cause)
 	case errors.Is(err, models.ErrMissingConnectorMetadata):
 		return temporal.NewNonRetryableApplicationError(err.Error(), ErrTypeInvalidArgument, cause)

@@ -13,7 +13,7 @@ type UpdateUserLinkRequest struct {
 }
 
 func (a Activities) PluginUpdateUserLink(ctx context.Context, request UpdateUserLinkRequest) (*models.UpdateUserLinkResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

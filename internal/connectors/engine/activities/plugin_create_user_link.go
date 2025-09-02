@@ -13,7 +13,7 @@ type CreateUserLinkRequest struct {
 }
 
 func (a Activities) PluginCreateUserLink(ctx context.Context, request CreateUserLinkRequest) (*models.CreateUserLinkResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

@@ -6,7 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"
 	. "github.com/onsi/ginkgo/v2"
@@ -21,7 +21,7 @@ var _ = Describe("Temporal Schedule Deletion", func() {
 		t      *activities.MockClient
 		sc     *activities.MockScheduleClient
 		sh     *activities.MockScheduleHandle
-		p      *plugins.MockPlugins
+		p      *connectors.MockManager
 		s      *storage.MockStorage
 		evts   *events.Events
 		logger logging.Logger
@@ -31,7 +31,7 @@ var _ = Describe("Temporal Schedule Deletion", func() {
 
 	BeforeEach(func() {
 		ctrl := gomock.NewController(GinkgoT())
-		p = plugins.NewMockPlugins(ctrl)
+		p = connectors.NewMockManager(ctrl)
 		t = activities.NewMockClient(ctrl)
 		sc = activities.NewMockScheduleClient(ctrl)
 		sh = activities.NewMockScheduleHandle(ctrl)
