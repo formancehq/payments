@@ -104,7 +104,8 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig).To(Equal(connectorConf.DummyPayConfig))
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(connectorConf.DummyPayConfig.Name))
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
 			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
 		})
 
@@ -173,7 +174,8 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V1.ReadConnectorConfigV1(ctx, components.ConnectorDummyPay, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.ConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig).To(Equal(config.DummyPayConfig))
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Name).To(Equal(config.DummyPayConfig.Name))
+			Expect(getRes.ConnectorConfigResponse.Data.DummyPayConfig.Directory).To(Equal(dir))
 			Expect(getRes.ConnectorConfigResponse.Data.Type).To(Equal(components.ConnectorConfigTypeDummypay))
 		})
 
@@ -184,7 +186,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-			config.PollingPeriod = pointer.For("2m")
+			config.PollingPeriod = pointer.For("2m0s")
 			_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
 				V3DummypayConfig: config,
 			})
