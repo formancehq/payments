@@ -39,7 +39,7 @@ This guide demonstrates the process of building a basic connector for a hypothet
 
 ## Understanding the Plugin interface
 
-The [Plugin interface](https://github.com/formancehq/payments/blob/main/internal/models/plugin.go#L14-L36) defines the required methods for all connectors and serves as the blueprint for their implementation. Since it's written in Go, Go's type system requires all methods to be implemented to satisfy the interface, even if some are not used by the connector.
+The [Plugin interface](https://github.com/formancehq/payments/blob/main/internal/models/plugin.go#L22-L37) defines the required methods for all connectors and serves as the blueprint for their implementation. Since it's written in Go, Go's type system requires all methods to be implemented to satisfy the interface, even if some are not used by the connector.
 
 The `Install()` and `Uninstall()` methods are essential for activating, deactivating, and managing data synchronization with a PSP, and must always be implemented. Other methods—such as those for data polling, transfer initiation, and webhook management—are optional in terms of functionality but must still be implemented to satisfy the interface. If these methods are not supported by the PSP, they can return an UNIMPLEMENTED error.
 
@@ -47,26 +47,17 @@ Here is the complete interface definition for your reference:
 
 ```go
 type Plugin interface {
-	Name() string
+	PSPPlugin
 
-	Install(context.Context, InstallRequest) (InstallResponse, error)
+	Name() string
+	Config() PluginInternalConfig
+
+    Install(context.Context, InstallRequest) (InstallResponse, error)
 	Uninstall(context.Context, UninstallRequest) (UninstallResponse, error)
 
-	FetchNextAccounts(context.Context, FetchNextAccountsRequest) (FetchNextAccountsResponse, error)
-	FetchNextPayments(context.Context, FetchNextPaymentsRequest) (FetchNextPaymentsResponse, error)
-	FetchNextBalances(context.Context, FetchNextBalancesRequest) (FetchNextBalancesResponse, error)
-	FetchNextExternalAccounts(context.Context, FetchNextExternalAccountsRequest) (FetchNextExternalAccountsResponse, error)
-	FetchNextOthers(context.Context, FetchNextOthersRequest) (FetchNextOthersResponse, error)
-
-	CreateBankAccount(context.Context, CreateBankAccountRequest) (CreateBankAccountResponse, error)
-	CreateTransfer(context.Context, CreateTransferRequest) (CreateTransferResponse, error)
-	ReverseTransfer(context.Context, ReverseTransferRequest) (ReverseTransferResponse, error)
-	PollTransferStatus(context.Context, PollTransferStatusRequest) (PollTransferStatusResponse, error)
-	CreatePayout(context.Context, CreatePayoutRequest) (CreatePayoutResponse, error)
-	ReversePayout(context.Context, ReversePayoutRequest) (ReversePayoutResponse, error)
-	PollPayoutStatus(context.Context, PollPayoutStatusRequest) (PollPayoutStatusResponse, error)
-
 	CreateWebhooks(context.Context, CreateWebhooksRequest) (CreateWebhooksResponse, error)
+	TrimWebhook(context.Context, TrimWebhookRequest) (TrimWebhookResponse, error)
+	VerifyWebhook(context.Context, VerifyWebhookRequest) (VerifyWebhookResponse, error)
 	TranslateWebhook(context.Context, TranslateWebhookRequest) (TranslateWebhookResponse, error)
 }
 ```
@@ -74,6 +65,7 @@ type Plugin interface {
 | Method                         | Description                                                                                                                                                                                                                         |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Name()                         | Returns the name of the plugin, which is used to register the connector in the connector registry                                                                                                                                   |
+| Config()                       | Returns the configuration of the plugin                                                                                                                                     |
 | Install(...)                   | Activates the connector, sets up the required configuration and start Data synchronization with the PSP                                                                                                                             |
 | Uninstall(...)                 | Deactivates the connector, cleans up any resources created during installation, such as webhooks or cache data                                                                                                                      |
 | FetchNextAccounts(...)         | Retrieves the next set of account data from the PSP for synchronization                                                                                                                                                             |

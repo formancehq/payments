@@ -9,7 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -33,8 +33,8 @@ type WorkerPool struct {
 	workflows  []temporal.DefinitionSet
 	activities []temporal.DefinitionSet
 
-	plugins plugins.Plugins
-	options worker.Options
+	connectors connectors.Manager
+	options    worker.Options
 }
 
 type Worker struct {
@@ -48,7 +48,7 @@ func NewWorkerPool(
 	workflows,
 	activities []temporal.DefinitionSet,
 	storage storage.Storage,
-	plugins plugins.Plugins,
+	connectors connectors.Manager,
 	options worker.Options,
 ) *WorkerPool {
 	workers := &WorkerPool{
@@ -59,7 +59,7 @@ func NewWorkerPool(
 		workflows:      workflows,
 		activities:     activities,
 		storage:        storage,
-		plugins:        plugins,
+		connectors:     connectors,
 		options:        options,
 	}
 
@@ -125,9 +125,9 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 		return err
 	}
 
-	err := w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	_, err := w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
-		w.logger.Errorf("failed to register plugin: %w", err)
+		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
 		// otherwise, the client will not be able to remove the failing
 		// connector from the database because of the crashes.
@@ -156,7 +156,8 @@ func (w *WorkerPool) onInsertPlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	if err := w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, false); err != nil {
+	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
+	if err != nil {
 		return err
 	}
 
@@ -197,7 +198,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 		return err
 	}
 
-	err = w.plugins.LoadPlugin(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
+	_, err = w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, true)
 	if err != nil {
 		w.logger.Errorf("failed to register plugin after update to connector %q: %w", connector.ID.String(), err)
 		return err
@@ -207,7 +208,7 @@ func (w *WorkerPool) onUpdatePlugin(ctx context.Context, connectorID models.Conn
 
 func (w *WorkerPool) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
 	w.logger.Debugf("worker got delete notification for %q", connectorID.String())
-	w.plugins.UnregisterPlugin(connectorID)
+	w.connectors.Unload(connectorID)
 
 	if err := w.RemoveWorker(connectorID.String()); err != nil {
 		return err

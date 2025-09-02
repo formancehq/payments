@@ -6,7 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -20,7 +20,7 @@ import (
 var _ = Describe("Plugin Create Webhooks", func() {
 	var (
 		act            activities.Activities
-		p              *plugins.MockPlugins
+		p              *connectors.MockManager
 		s              *storage.MockStorage
 		evts           *events.Events
 		sampleResponse models.CreateWebhooksResponse
@@ -41,7 +41,7 @@ var _ = Describe("Plugin Create Webhooks", func() {
 
 		BeforeEach(func() {
 			ctrl := gomock.NewController(GinkgoT())
-			p = plugins.NewMockPlugins(ctrl)
+			p = connectors.NewMockManager(ctrl)
 			s = storage.NewMockStorage(ctrl)
 			plugin = models.NewMockPlugin(ctrl)
 			act = activities.New(logger, nil, s, evts, p, delay)

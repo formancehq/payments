@@ -6,7 +6,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"
 	legacy_gomock "github.com/golang/mock/gomock"
@@ -26,7 +26,7 @@ var _ = Describe("Temporal Workflow Executions List", func() {
 		legacyCtrl *legacy_gomock.Controller
 		t          *activities.MockClient
 		w          *workflowservicemock.MockWorkflowServiceClient
-		p          *plugins.MockPlugins
+		p          *connectors.MockManager
 		s          *storage.MockStorage
 		evts       *events.Events
 		logger     logging.Logger
@@ -36,7 +36,7 @@ var _ = Describe("Temporal Workflow Executions List", func() {
 		ctrl = gomock.NewController(GinkgoT())
 		legacyCtrl = legacy_gomock.NewController(GinkgoT())
 
-		p = plugins.NewMockPlugins(ctrl)
+		p = connectors.NewMockManager(ctrl)
 		t = activities.NewMockClient(ctrl)
 		w = workflowservicemock.NewMockWorkflowServiceClient(legacyCtrl)
 		s = storage.NewMockStorage(ctrl)

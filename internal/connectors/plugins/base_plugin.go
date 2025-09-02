@@ -16,6 +16,10 @@ func (dp *basePlugin) Name() string {
 	return "default"
 }
 
+func (dp *basePlugin) Config() models.PluginInternalConfig {
+	return struct{}{}
+}
+
 func (dp *basePlugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	return models.InstallResponse{}, ErrNotImplemented
 }

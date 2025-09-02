@@ -82,6 +82,10 @@ func (p *Plugin) Name() string {
 	return p.name
 }
 
+func (p *Plugin) Config() models.PluginInternalConfig {
+	return p.config
+}
+
 func (p *Plugin) Install(ctx context.Context, req models.InstallRequest) (models.InstallResponse, error) {
 	return models.InstallResponse{
 		Workflow: workflow(),

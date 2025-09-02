@@ -8,9 +8,9 @@ import (
 	"github.com/formancehq/go-libs/v3/httpserver"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
+	"github.com/formancehq/payments/internal/connectors"
 	"github.com/formancehq/payments/internal/connectors/engine"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
-	"github.com/formancehq/payments/internal/connectors/engine/plugins"
 	"github.com/formancehq/payments/internal/connectors/engine/workflow"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/storage"
@@ -51,20 +51,20 @@ func NewModule(
 		fx.Provide(func(publisher message.Publisher) *events.Events {
 			return events.New(publisher, stackURL)
 		}),
-		fx.Provide(func(logger logging.Logger) plugins.Plugins {
-			return plugins.New(logger, debug)
+		fx.Provide(func(logger logging.Logger) connectors.Manager {
+			return connectors.NewManager(logger, debug)
 		}),
-		fx.Provide(func(temporalClient client.Client, plugins plugins.Plugins, logger logging.Logger) workflow.Workflow {
-			return workflow.New(temporalClient, temporalNamespace, plugins, stack, stackURL, logger)
+		fx.Provide(func(temporalClient client.Client, manager connectors.Manager, logger logging.Logger) workflow.Workflow {
+			return workflow.New(temporalClient, temporalNamespace, manager, stack, stackURL, logger)
 		}),
 		fx.Provide(func(
 			logger logging.Logger,
 			temporalClient client.Client,
 			storage storage.Storage,
 			events *events.Events,
-			plugins plugins.Plugins,
+			connectors connectors.Manager,
 		) activities.Activities {
-			return activities.New(logger, temporalClient, storage, events, plugins, temporalRateLimitingRetryDelay)
+			return activities.New(logger, temporalClient, storage, events, connectors, temporalRateLimitingRetryDelay)
 		}),
 		fx.Provide(
 			fx.Annotate(func(
@@ -73,10 +73,10 @@ func NewModule(
 				workflows,
 				activities []temporal.DefinitionSet,
 				storage storage.Storage,
-				plugins plugins.Plugins,
+				connectors connectors.Manager,
 				options worker.Options,
 			) *engine.WorkerPool {
-				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, plugins, options)
+				return engine.NewWorkerPool(logger, stack, temporalClient, workflows, activities, storage, connectors, options)
 			}, fx.ParamTags(``, ``, `group:"workflows"`, `group:"activities"`, ``)),
 		),
 		fx.Invoke(func(lc fx.Lifecycle, workers *engine.WorkerPool) {

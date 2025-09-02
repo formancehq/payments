@@ -27,6 +27,7 @@ type Plugin struct {
 	logger logging.Logger
 
 	client              client.Client
+	config              Config
 	supportedWebhooks   map[client.EventCategory]supportedWebhook
 	webhookSharedSecret string
 }
@@ -44,6 +45,7 @@ func New(connectorID models.ConnectorID, name string, logger logging.Logger, raw
 		logger:              logger,
 		client:              client,
 		webhookSharedSecret: config.WebhookSharedSecret,
+		config:              config,
 	}
 
 	p.initWebhookConfig()
@@ -53,6 +55,10 @@ func New(connectorID models.ConnectorID, name string, logger logging.Logger, raw
 
 func (p *Plugin) Name() string {
 	return p.name
+}
+
+func (p *Plugin) Config() models.PluginInternalConfig {
+	return p.config
 }
 
 func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {

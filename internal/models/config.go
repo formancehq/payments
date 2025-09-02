@@ -12,6 +12,11 @@ const (
 	defaultPageSize      = 25
 )
 
+// since the json unmarshaller is case-insensitive this generic interface will be used to receive back the unmarshaled struct from a plugin
+// then we can remarshal the payload and enforce the case we expect (eg. clientID vs clientId) rather than blindly trusting the raw user input
+type PluginInternalConfig interface{}
+
+// Config is the generic configuration that all connectors share
 type Config struct {
 	Name          string        `json:"name" validate:"required,gte=3,lte=500"`
 	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=30000000000,lte=86400000000000"` // gte=30s lte=1d in ns

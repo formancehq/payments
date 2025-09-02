@@ -30,7 +30,7 @@ func (w Workflow) runInstallConnector(
 			return fmt.Errorf("failed to delete connector: %w", err)
 		}
 
-		w.plugins.UnregisterPlugin(installConnector.ConnectorID)
+		w.connectors.Unload(installConnector.ConnectorID)
 
 		return errInstall
 	}

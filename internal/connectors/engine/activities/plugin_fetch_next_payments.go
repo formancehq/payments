@@ -15,7 +15,7 @@ type FetchNextPaymentsRequest struct {
 }
 
 func (a Activities) PluginFetchNextPayments(ctx context.Context, request FetchNextPaymentsRequest) (*models.FetchNextPaymentsResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

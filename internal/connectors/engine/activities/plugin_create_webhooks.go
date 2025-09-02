@@ -13,7 +13,7 @@ type CreateWebhooksRequest struct {
 }
 
 func (a Activities) PluginCreateWebhooks(ctx context.Context, request CreateWebhooksRequest) (*models.CreateWebhooksResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}

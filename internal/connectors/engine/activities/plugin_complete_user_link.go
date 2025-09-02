@@ -13,7 +13,7 @@ type CompleteUserLinkRequest struct {
 }
 
 func (a Activities) PluginCompleteUserLink(ctx context.Context, request CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
-	plugin, err := a.plugins.Get(request.ConnectorID)
+	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
 		return nil, a.temporalPluginError(ctx, err)
 	}
