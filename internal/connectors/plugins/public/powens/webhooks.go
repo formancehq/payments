@@ -248,7 +248,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
-					ErrorType:    models.ConnectionDisconnectedErrorTypeNonRecoverable,
+					ErrorType:    models.ConnectionDisconnectedErrorTypeTemporaryError,
 					At:           time.Now().UTC(),
 					Reason:       pointer.For("non recoverable error: website unavailable"),
 				},
