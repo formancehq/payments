@@ -27,6 +27,10 @@ func combineConfigs(baseConfig models.Config, pluginConfig models.PluginInternal
 		return nil, err
 	}
 
+	if pluginMap == nil {
+		pluginMap = make(map[string]interface{}, len(baseMap))
+	}
+
 	// Merge maps (fields from baseConfig take precedence)
 	for key, value := range baseMap {
 		pluginMap[key] = value

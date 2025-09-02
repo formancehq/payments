@@ -127,7 +127,7 @@ func (w *WorkerPool) onStartPlugin(connector models.Connector) error {
 
 	_, err := w.connectors.Load(connector.ID, connector.Provider, connector.Name, config, connector.Config, false)
 	if err != nil {
-		w.logger.Errorf("failed to register plugin: %w", err)
+		w.logger.Errorf("failed to register plugin: %s", err.Error())
 		// We don't want to crash the pod if the plugin registration fails,
 		// otherwise, the client will not be able to remove the failing
 		// connector from the database because of the crashes.

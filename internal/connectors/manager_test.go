@@ -20,7 +20,6 @@ func TestManager_Load(t *testing.T) {
 	t.Parallel()
 
 	logger := logging.NewDefaultLogger(io.Discard, false, false, false)
-	manager := NewManager(logger, false)
 
 	tests := map[string]struct {
 		provider    string
@@ -50,6 +49,7 @@ func TestManager_Load(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			manager := NewManager(logger, false)
 			connectorID := models.ConnectorID{Reference: uuid.New(), Provider: tt.provider}
 			_, err := manager.Load(connectorID, tt.provider, name, tt.config, tt.rawConfig, false)
 			if tt.expectError {
