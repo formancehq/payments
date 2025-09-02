@@ -1,0 +1,1 @@
+ALTER TABLE psu_bank_bridge_connections  ADD COLUMN IF NOT EXISTS updated_at timestamp without time zone;

@@ -221,10 +221,12 @@ func craftUpdatedConnection(
 	updatedStatus models.ConnectionStatus,
 	updatedError *string,
 ) models.PSUBankBridgeConnection {
+	now := workflow.Now(ctx)
 	updatedConnection := models.PSUBankBridgeConnection{
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
-		CreatedAt:    workflow.Now(ctx),
+		CreatedAt:    now,
+		UpdatedAt:    now,
 		Status:       updatedStatus,
 		Error:        updatedError,
 	}

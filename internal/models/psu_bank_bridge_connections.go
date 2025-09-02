@@ -157,6 +157,8 @@ type PSUBankBridgeConnection struct {
 	DataUpdatedAt time.Time `json:"dataUpdatedAt"`
 	// Status of the connection
 	Status ConnectionStatus `json:"status"`
+	// BankBridge Updated At
+	UpdatedAt time.Time `json:"updatedAt"`
 
 	// Optional
 	// AccessToken is optional for some banking bridges, like Powens, where we
@@ -233,6 +235,7 @@ func FromPSPPsuBankBridgeConnection(from PSPPsuBankBridgeConnection, connectorID
 		ConnectionID:  from.ConnectionID,
 		ConnectorID:   connectorID,
 		CreatedAt:     from.CreatedAt,
+		UpdatedAt:     from.CreatedAt,
 		DataUpdatedAt: time.Time{},
 		AccessToken:   from.AccessToken,
 		Metadata:      from.Metadata,
