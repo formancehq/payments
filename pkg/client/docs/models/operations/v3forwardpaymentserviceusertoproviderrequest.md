@@ -1,4 +1,4 @@
-# V3ForwardPaymentServiceUserToBankBridgeRequest
+# V3ForwardPaymentServiceUserToProviderRequest
 
 
 ## Fields

@@ -43,8 +43,8 @@ type PaymentServiceUser struct {
 	Address        *Address          `json:"address"`
 	Metadata       map[string]string `json:"metadata"`
 
-	BankAccountIDs        []uuid.UUID `json:"bankAccountIDs"`
-	BankBridgeConnections []uuid.UUID `json:"bankBridgeConnections"`
+	BankAccountIDs         []uuid.UUID `json:"bankAccountIDs"`
+	OpenBankingConnections []uuid.UUID `json:"openBankingConnections"`
 }
 
 func (psu PaymentServiceUser) MarshalJSON() ([]byte, error) {

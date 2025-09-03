@@ -10,7 +10,7 @@ import (
 )
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var from models.BankBridgeFromPayload
+	var from models.OpenBankingProviderPSUFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -39,7 +39,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 func toPSPAccounts(
 	accounts []models.PSPAccount,
 	pagedAccounts []client.Account,
-	from models.BankBridgeFromPayload,
+	from models.OpenBankingProviderPSUFromPayload,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
 		raw, err := json.Marshal(account)
@@ -55,12 +55,12 @@ func toPSPAccounts(
 			Raw:       raw,
 		}
 
-		if from.PSUBankBridge != nil {
-			acc.Metadata[models.ObjectPSUIDMetadataKey] = from.PSUBankBridge.PsuID.String()
+		if from.OpenBankingProviderPSU != nil {
+			acc.Metadata[models.ObjectPSUIDMetadataKey] = from.OpenBankingProviderPSU.PsuID.String()
 		}
 
-		if from.PSUBankBridgeConnection != nil {
-			acc.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUBankBridgeConnection.ConnectionID
+		if from.PSUOpenBankingConnection != nil {
+			acc.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUOpenBankingConnection.ConnectionID
 		}
 
 		accounts = append(accounts, acc)

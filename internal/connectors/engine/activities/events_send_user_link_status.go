@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendUserLinkStatus(ctx context.Context, userLinkStatus models.UserLinkSessionFinished) error {
-	return a.events.Publish(ctx, a.events.NewEventBankBridgeUserLinkStatus(userLinkStatus))
+	return a.events.Publish(ctx, a.events.NewEventOpenBankingUserLinkStatus(userLinkStatus))
 }
 
 var EventsSendUserLinkStatusActivity = Activities{}.EventsSendUserLinkStatus

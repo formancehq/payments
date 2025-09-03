@@ -9,10 +9,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error) {
-	ps, err := s.storage.PSUBankBridgeConnectionsList(ctx, psuID, connectorID, query)
+func (s *Service) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListPsuOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.PSUOpenBankingConnection], error) {
+	ps, err := s.storage.PSUOpenBankingConnectionsList(ctx, psuID, connectorID, query)
 	if err != nil {
-		return nil, newStorageError(err, "cannot list psu bank bridge connections")
+		return nil, newStorageError(err, "cannot list psu open banking connections")
 	}
 
 	return ps, nil

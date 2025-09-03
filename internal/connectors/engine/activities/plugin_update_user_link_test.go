@@ -62,12 +62,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},
 					},
-					Connection: &models.PSUBankBridgeConnection{
+					Connection: &models.PSUOpenBankingConnection{
 						ConnectionID: "test-connection-id",
 					},
 					ClientRedirectURL:   pointer.For("https://client.com/update-callback"),
@@ -139,12 +139,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "minimal_provider",
 						},
 					},
-					Connection: &models.PSUBankBridgeConnection{
+					Connection: &models.PSUOpenBankingConnection{
 						ConnectionID: "minimal-connection-id",
 					},
 					CallBackState:  "minimal-callback-state",
@@ -168,12 +168,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "nil_fields_provider",
 						},
 					},
-					Connection: &models.PSUBankBridgeConnection{
+					Connection: &models.PSUOpenBankingConnection{
 						ConnectionID: "nil-fields-connection-id",
 					},
 					// ClientRedirectURL and FormanceRedirectURL are nil

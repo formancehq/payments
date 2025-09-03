@@ -8719,9 +8719,9 @@ func (s *V3) DeletePaymentServiceUserConnector(ctx context.Context, paymentServi
 
 }
 
-// ForwardPaymentServiceUserToBankBridge - Register/forward a payment service user on/to a connector
-func (s *V3) ForwardPaymentServiceUserToBankBridge(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3ForwardPaymentServiceUserToBankBridgeResponse, error) {
-	request := operations.V3ForwardPaymentServiceUserToBankBridgeRequest{
+// ForwardPaymentServiceUserToProvider - Register/forward a payment service user on/to a connector
+func (s *V3) ForwardPaymentServiceUserToProvider(ctx context.Context, paymentServiceUserID string, connectorID string, opts ...operations.Option) (*operations.V3ForwardPaymentServiceUserToProviderResponse, error) {
+	request := operations.V3ForwardPaymentServiceUserToProviderRequest{
 		PaymentServiceUserID: paymentServiceUserID,
 		ConnectorID:          connectorID,
 	}
@@ -8752,7 +8752,7 @@ func (s *V3) ForwardPaymentServiceUserToBankBridge(ctx context.Context, paymentS
 	hookCtx := hooks.HookContext{
 		BaseURL:        baseURL,
 		Context:        ctx,
-		OperationID:    "v3ForwardPaymentServiceUserToBankBridge",
+		OperationID:    "v3ForwardPaymentServiceUserToProvider",
 		OAuth2Scopes:   nil,
 		SecuritySource: s.sdkConfiguration.Security,
 	}
@@ -8872,7 +8872,7 @@ func (s *V3) ForwardPaymentServiceUserToBankBridge(ctx context.Context, paymentS
 		}
 	}
 
-	res := &operations.V3ForwardPaymentServiceUserToBankBridgeResponse{
+	res := &operations.V3ForwardPaymentServiceUserToProviderResponse{
 		HTTPMeta: components.HTTPMetadata{
 			Request:  req,
 			Response: httpRes,

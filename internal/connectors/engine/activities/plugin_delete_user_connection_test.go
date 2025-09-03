@@ -73,15 +73,15 @@ var _ = Describe("Plugin Delete User Connection", func() {
 							"source": "test",
 						},
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},
 						Metadata: map[string]string{
-							"bridge_id": "test-bridge-123",
+							"open_banking_provider_psu_id": "test-ob-123",
 						},
 					},
-					Connection: &models.PSPPsuBankBridgeConnection{
+					Connection: &models.PSPPsuOpenBankingConnection{
 						ConnectionID: "external-connection-123",
 						CreatedAt:    time.Now(),
 						Metadata: map[string]string{
@@ -154,12 +154,12 @@ var _ = Describe("Plugin Delete User Connection", func() {
 						Name:      "Minimal User",
 						CreatedAt: time.Now(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "minimal_provider",
 						},
 					},
-					Connection: &models.PSPPsuBankBridgeConnection{
+					Connection: &models.PSPPsuOpenBankingConnection{
 						ConnectionID: "minimal-connection-123",
 						CreatedAt:    time.Now(),
 					},
@@ -184,13 +184,13 @@ var _ = Describe("Plugin Delete User Connection", func() {
 						CreatedAt: time.Now(),
 						// ContactDetails and Address are nil
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "nil_fields_provider",
 						},
 						// Metadata is nil
 					},
-					Connection: &models.PSPPsuBankBridgeConnection{
+					Connection: &models.PSPPsuOpenBankingConnection{
 						ConnectionID: "nil-fields-connection-123",
 						CreatedAt:    time.Now(),
 						// Metadata is nil

@@ -11,9 +11,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-func bankBridgesRedirect(backend backend.Backend) http.HandlerFunc {
+func openBankingRedirect(backend backend.Backend) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, span := otel.Tracer().Start(r.Context(), "v3_bankBridgesRedirectURI")
+		ctx, span := otel.Tracer().Start(r.Context(), "v3_openBankingRedirectURI")
 		defer span.End()
 
 		span.SetAttributes(attribute.String("connectorID", connectorID(r)))

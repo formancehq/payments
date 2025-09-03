@@ -8,13 +8,13 @@ import (
 )
 
 type V3PaymentServiceUserLinkAttempt struct {
-	ID                string                                     `json:"id"`
-	PsuID             string                                     `json:"psuID"`
-	ConnectorID       string                                     `json:"connectorID"`
-	CreatedAt         time.Time                                  `json:"createdAt"`
-	Status            V3PSUBankBridgeConnectionAttemptStatusEnum `json:"status"`
-	ClientRedirectURL string                                     `json:"clientRedirectURL"`
-	Error             *string                                    `json:"error,omitempty"`
+	ID                string                                      `json:"id"`
+	PsuID             string                                      `json:"psuID"`
+	ConnectorID       string                                      `json:"connectorID"`
+	CreatedAt         time.Time                                   `json:"createdAt"`
+	Status            V3PSUOpenBankingConnectionAttemptStatusEnum `json:"status"`
+	ClientRedirectURL string                                      `json:"clientRedirectURL"`
+	Error             *string                                     `json:"error,omitempty"`
 }
 
 func (v V3PaymentServiceUserLinkAttempt) MarshalJSON() ([]byte, error) {
@@ -56,9 +56,9 @@ func (o *V3PaymentServiceUserLinkAttempt) GetCreatedAt() time.Time {
 	return o.CreatedAt
 }
 
-func (o *V3PaymentServiceUserLinkAttempt) GetStatus() V3PSUBankBridgeConnectionAttemptStatusEnum {
+func (o *V3PaymentServiceUserLinkAttempt) GetStatus() V3PSUOpenBankingConnectionAttemptStatusEnum {
 	if o == nil {
-		return V3PSUBankBridgeConnectionAttemptStatusEnum("")
+		return V3PSUOpenBankingConnectionAttemptStatusEnum("")
 	}
 	return o.Status
 }

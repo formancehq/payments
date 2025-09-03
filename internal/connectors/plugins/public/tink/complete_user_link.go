@@ -81,7 +81,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 
 	return models.CompleteUserLinkResponse{
 		Success: &models.UserLinkSuccessResponse{
-			Connections: []models.PSPPsuBankBridgeConnection{
+			Connections: []models.PSPPsuOpenBankingConnection{
 				{
 					CreatedAt:    time.Now().UTC(),
 					ConnectionID: req.HTTPCallInformation.QueryValues[CredentialIDQueryParamID][0],

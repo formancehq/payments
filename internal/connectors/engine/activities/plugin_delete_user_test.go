@@ -73,12 +73,12 @@ var _ = Describe("Plugin Delete User", func() {
 							"source": "test",
 						},
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},
 						Metadata: map[string]string{
-							"bridge_id": "test-bridge-123",
+							"open_banking_provider_psu_id": "test-ob-123",
 						},
 					},
 				},
@@ -147,7 +147,7 @@ var _ = Describe("Plugin Delete User", func() {
 						Name:      "Minimal User",
 						CreatedAt: time.Now(),
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "minimal_provider",
 						},
@@ -173,7 +173,7 @@ var _ = Describe("Plugin Delete User", func() {
 						CreatedAt: time.Now(),
 						// ContactDetails and Address are nil
 					},
-					PSUBankBridge: &models.PSUBankBridge{
+					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
 						ConnectorID: models.ConnectorID{
 							Provider: "nil_fields_provider",
 						},

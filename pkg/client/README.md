@@ -224,7 +224,7 @@ func main() {
 * [DeletePaymentServiceUser](docs/sdks/v3/README.md#deletepaymentserviceuser) - Delete a payment service user by ID
 * [ListPaymentServiceUserConnections](docs/sdks/v3/README.md#listpaymentserviceuserconnections) - List all connections for a payment service user
 * [DeletePaymentServiceUserConnector](docs/sdks/v3/README.md#deletepaymentserviceuserconnector) - Remove a payment service user from a connector, the PSU will still exist in Formance
-* [ForwardPaymentServiceUserToBankBridge](docs/sdks/v3/README.md#forwardpaymentserviceusertobankbridge) - Register/forward a payment service user on/to a connector
+* [ForwardPaymentServiceUserToProvider](docs/sdks/v3/README.md#forwardpaymentserviceusertoprovider) - Register/forward a payment service user on/to a connector
 * [CreateLinkForPaymentServiceUser](docs/sdks/v3/README.md#createlinkforpaymentserviceuser) - Create an authentication link for a payment service user on a connector, for oauth flow
 * [ListPaymentServiceUserConnectionsFromConnectorID](docs/sdks/v3/README.md#listpaymentserviceuserconnectionsfromconnectorid) - List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
 * [ListPaymentServiceUserLinkAttemptsFromConnectorID](docs/sdks/v3/README.md#listpaymentserviceuserlinkattemptsfromconnectorid) - List all link attempts for a payment service user on a connector.

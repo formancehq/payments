@@ -11,7 +11,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Success() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectionID_Success() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
 
@@ -77,9 +77,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Suc
 	// Mock account deletion
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.accountID).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
-		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+		FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
 			ConnectionID: connectionID,
 		},
 	})
@@ -89,7 +89,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Suc
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Success() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_Success() {
 	accountID := models.AccountID{
 		Reference:   "test-account",
 		ConnectorID: s.connectorID,
@@ -101,9 +101,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Succes
 	// Mock account deletion
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, accountID).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: uuid.New(),
-		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
+		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
 	})
@@ -113,7 +113,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Succes
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Success() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectorID_Success() {
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
 		Provider:  "test",
@@ -164,9 +164,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Succ
 	// Mock account deletion
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.accountID).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
-		FromConnectorID: &DeleteBankBridgeConnectionDataFromConnectorID{
+		FromConnectorID: &DeleteOpenBankingConnectionDataFromConnectorID{
 			ConnectorID: connectorID,
 		},
 	})
@@ -176,7 +176,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Succ
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_Success() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromPSUID_Success() {
 	psuID := uuid.New()
 
 	// Mock payments list with PSU ID filter
@@ -221,7 +221,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_Success() 
 	// Mock account deletion
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, s.accountID).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
 	})
 
@@ -230,7 +230,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_Success() 
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_StoragePaymentsDeleteFromAccountID_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_StoragePaymentsDeleteFromAccountID_Error() {
 	accountID := models.AccountID{
 		Reference:   "test-account",
 		ConnectorID: s.connectorID,
@@ -240,9 +240,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: uuid.New(),
-		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
+		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
 	})
@@ -253,7 +253,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 	s.ErrorContains(err, "deleting payments from account ID")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_StorageAccountsDelete_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_StorageAccountsDelete_Error() {
 	accountID := models.AccountID{
 		Reference:   "test-account",
 		ConnectorID: s.connectorID,
@@ -264,9 +264,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: uuid.New(),
-		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
+		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
 	})
@@ -277,7 +277,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 	s.ErrorContains(err, "deleting account")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_StoragePaymentsList_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectionID_StoragePaymentsList_Error() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
 
@@ -285,9 +285,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Sto
 		(*bunpaginate.Cursor[models.Payment])(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
-		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+		FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
 			ConnectionID: connectionID,
 		},
 	})
@@ -298,7 +298,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Sto
 	s.ErrorContains(err, "deleting payments")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_StorageAccountsList_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectionID_StorageAccountsList_Error() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
 
@@ -316,9 +316,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Sto
 		(*bunpaginate.Cursor[models.Account])(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
-		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+		FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
 			ConnectionID: connectionID,
 		},
 	})
@@ -329,7 +329,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Sto
 	s.ErrorContains(err, "deleting accounts")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_StoragePaymentsList_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectorID_StoragePaymentsList_Error() {
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
 		Provider:  "test",
@@ -340,9 +340,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Stor
 		(*bunpaginate.Cursor[models.Payment])(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
-		FromConnectorID: &DeleteBankBridgeConnectionDataFromConnectorID{
+		FromConnectorID: &DeleteOpenBankingConnectionDataFromConnectorID{
 			ConnectorID: connectorID,
 		},
 	})
@@ -353,14 +353,14 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Stor
 	s.ErrorContains(err, "deleting payments")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_StoragePaymentsList_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromPSUID_StoragePaymentsList_Error() {
 	psuID := uuid.New()
 
 	s.env.OnActivity(activities.StoragePaymentsListActivity, mock.Anything, mock.Anything).Once().Return(
 		(*bunpaginate.Cursor[models.Payment])(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
 	})
 
@@ -370,7 +370,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_StoragePay
 	s.ErrorContains(err, "deleting payments")
 }
 
-func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_StorageAccountsList_Error() {
+func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromPSUID_StorageAccountsList_Error() {
 	psuID := uuid.New()
 
 	// Mock successful payments deletion
@@ -387,7 +387,7 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_StorageAcc
 		(*bunpaginate.Cursor[models.Account])(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
+	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
 		PSUID: psuID,
 	})
 

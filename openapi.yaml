@@ -1885,8 +1885,8 @@ paths:
       tags:
         - payments.v3
       summary: Register/forward a payment service user on/to a connector
-      operationId: v3ForwardPaymentServiceUserToBankBridge
-      x-speakeasy-name-override: ForwardPaymentServiceUserToBankBridge
+      operationId: v3ForwardPaymentServiceUserToProvider
+      x-speakeasy-name-override: ForwardPaymentServiceUserToProvider
       parameters:
         - $ref: '#/components/parameters/V3PaymentServiceUserID'
         - $ref: '#/components/parameters/V3ConnectorID'
@@ -5336,7 +5336,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/V3PSUBankBridgeConnectionAttemptStatusEnum'
+          $ref: '#/components/schemas/V3PSUOpenBankingConnectionAttemptStatusEnum'
         clientRedirectURL:
           type: string
           format: url
@@ -5399,7 +5399,7 @@ components:
       enum:
         - ACTIVE
         - ERROR
-    V3PSUBankBridgeConnectionAttemptStatusEnum:
+    V3PSUOpenBankingConnectionAttemptStatusEnum:
       type: string
       enum:
         - pending

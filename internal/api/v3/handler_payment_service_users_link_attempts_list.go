@@ -35,12 +35,12 @@ func paymentServiceUsersLinkAttemptList(backend backend.Backend) http.HandlerFun
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListPSUBankBridgeConnectionAttemptsQuery](r, func() (*storage.ListPSUBankBridgeConnectionAttemptsQuery, error) {
-			options, err := getPagination(span, r, storage.PSUBankBridgeConnectionAttemptsQuery{})
+		query, err := bunpaginate.Extract[storage.ListPSUOpenBankingConnectionAttemptsQuery](r, func() (*storage.ListPSUOpenBankingConnectionAttemptsQuery, error) {
+			options, err := getPagination(span, r, storage.PSUOpenBankingConnectionAttemptsQuery{})
 			if err != nil {
 				return nil, err
 			}
-			return pointer.For(storage.NewListPSUBankBridgeConnectionAttemptsQuery(*options)), nil
+			return pointer.For(storage.NewListPSUOpenBankingConnectionAttemptsQuery(*options)), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)

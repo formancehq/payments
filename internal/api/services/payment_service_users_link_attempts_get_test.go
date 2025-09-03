@@ -51,7 +51,7 @@ func TestPSUUserLinkAttemptsGet(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), id).Return(&models.PaymentServiceUser{}, nil)
 			store.EXPECT().ConnectorsGet(gomock.Any(), models.ConnectorID{}).Return(&models.Connector{}, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsGet(gomock.Any(), id).Return(&models.PSUBankBridgeConnectionAttempt{}, test.err)
+			store.EXPECT().PSUOpenBankingConnectionAttemptsGet(gomock.Any(), id).Return(&models.PSUOpenBankingConnectionAttempt{}, test.err)
 			attempt, err := s.PaymentServiceUsersLinkAttemptsGet(context.Background(), id, models.ConnectorID{}, id)
 			if test.expectedError == nil {
 				require.NotNil(t, attempt)

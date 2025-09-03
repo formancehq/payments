@@ -129,18 +129,18 @@ func (mr *MockClientMockRecorder) ExchangePublicToken(ctx, req any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExchangePublicToken", reflect.TypeOf((*MockClient)(nil).ExchangePublicToken), ctx, req)
 }
 
-// FormanceBankBridgeRedirect mocks base method.
-func (m *MockClient) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error {
+// FormanceOpenBankingRedirect mocks base method.
+func (m *MockClient) FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FormanceBankBridgeRedirect", ctx, req)
+	ret := m.ctrl.Call(m, "FormanceOpenBankingRedirect", ctx, req)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// FormanceBankBridgeRedirect indicates an expected call of FormanceBankBridgeRedirect.
-func (mr *MockClientMockRecorder) FormanceBankBridgeRedirect(ctx, req any) *gomock.Call {
+// FormanceOpenBankingRedirect indicates an expected call of FormanceOpenBankingRedirect.
+func (mr *MockClientMockRecorder) FormanceOpenBankingRedirect(ctx, req any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormanceBankBridgeRedirect", reflect.TypeOf((*MockClient)(nil).FormanceBankBridgeRedirect), ctx, req)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FormanceOpenBankingRedirect", reflect.TypeOf((*MockClient)(nil).FormanceOpenBankingRedirect), ctx, req)
 }
 
 // GetWebhookVerificationKey mocks base method.

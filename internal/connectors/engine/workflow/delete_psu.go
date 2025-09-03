@@ -51,16 +51,16 @@ func (w Workflow) deletePSU(
 		return err
 	}
 
-	// First, let's delete the user from all the banking bridges he is on.
-	queryBB := storage.NewListPSUBankBridgesQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PSUBankBridgesQuery{}).
+	// First, let's delete the user from all the open banking he is on.
+	queryBB := storage.NewListOpenBankingProviderPSUQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.OpenBankingProviderPSUQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
 				query.Match("psu_id", deleteUser.PsuID.String()),
 			),
 	)
 	for {
-		psuBankBridges, err := activities.StoragePSUBankBridgesList(infiniteRetryContext(ctx), queryBB)
+		psuBankBridges, err := activities.StorageOpenBankingProviderPSUsList(infiniteRetryContext(ctx), queryBB)
 		if err != nil {
 			return err
 		}
@@ -70,8 +70,8 @@ func (w Workflow) deletePSU(
 				infiniteRetryContext(ctx),
 				psuBankBridge.ConnectorID,
 				models.DeleteUserRequest{
-					PaymentServiceUser: models.ToPSPPaymentServiceUser(psu),
-					PSUBankBridge:      &psuBankBridge,
+					PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
+					OpenBankingProviderPSU: &psuBankBridge,
 				},
 			)
 			if err != nil {
@@ -100,8 +100,8 @@ func (w Workflow) deletePSU(
 				},
 			},
 		),
-		RunDeleteBankBridgeConnectionData,
-		DeleteBankBridgeConnectionData{
+		RunDeleteOpenBankingConnectionData,
+		DeleteOpenBankingConnectionData{
 			PSUID: deleteUser.PsuID,
 		},
 	).Get(ctx, nil); err != nil {

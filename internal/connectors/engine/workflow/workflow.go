@@ -161,12 +161,12 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runCompleteUserLink,
 		}).
 		Append(temporalworker.Definition{
-			Name: RunFetchBankBridgeData,
-			Func: w.runFetchBankBridgeData,
+			Name: RunFetchOpenBankingData,
+			Func: w.runFetchOpenBankingData,
 		}).
 		Append(temporalworker.Definition{
-			Name: RunDeleteBankBridgeConnectionData,
-			Func: w.runDeleteBankBridgeConnectionData,
+			Name: RunDeleteOpenBankingConnectionData,
+			Func: w.runDeleteOpenBankingConnectionData,
 		})
 }
 

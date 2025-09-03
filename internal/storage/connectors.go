@@ -210,14 +210,14 @@ func NewListConnectorsQuery(opts bunpaginate.PaginatedQueryOptions[ConnectorQuer
 
 func (s *store) connectorsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "provider":
+		switch key {
+		case "provider":
 			v, ok := value.(string)
 			if !ok {
 				return "", nil, fmt.Errorf("expected string type for provider, got %T: %w", value, ErrValidation)
 			}
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{strings.ToLower(models.ToV3Provider(v))}, nil
-		case key == "name", key == "id":
+		case "name", "id":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		default:
 			return "", nil, fmt.Errorf("unknown key '%s' when building query: %w", key, ErrValidation)

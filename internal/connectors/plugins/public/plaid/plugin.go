@@ -14,7 +14,7 @@ import (
 const ProviderName = "plaid"
 
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypeBankingBridge, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	registry.RegisterPlugin(ProviderName, models.PluginTypeOpenBanking, func(connectorID models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, connectorID, rm)
 	}, capabilities, Config{})
 }

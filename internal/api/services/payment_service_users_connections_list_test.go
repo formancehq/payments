@@ -36,12 +36,12 @@ func TestPSUConnectionsList(t *testing.T) {
 		{
 			name:          "storage error not found",
 			err:           storage.ErrNotFound,
-			expectedError: newStorageError(storage.ErrNotFound, "cannot list psu bank bridge connections"),
+			expectedError: newStorageError(storage.ErrNotFound, "cannot list psu open banking connections"),
 		},
 		{
 			name:          "other error",
 			err:           fmt.Errorf("error"),
-			expectedError: newStorageError(fmt.Errorf("error"), "cannot list psu bank bridge connections"),
+			expectedError: newStorageError(fmt.Errorf("error"), "cannot list psu open banking connections"),
 		},
 	}
 
@@ -53,8 +53,8 @@ func TestPSUConnectionsList(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			query := storage.ListPsuBankBridgeConnectionsQuery{}
-			store.EXPECT().PSUBankBridgeConnectionsList(gomock.Any(), id, &connectorID, query).Return(nil, test.err)
+			query := storage.ListPsuOpenBankingConnectionsQuery{}
+			store.EXPECT().PSUOpenBankingConnectionsList(gomock.Any(), id, &connectorID, query).Return(nil, test.err)
 			_, err := s.PaymentServiceUsersConnectionsList(context.Background(), id, &connectorID, query)
 			if test.expectedError == nil {
 				require.NoError(t, err)

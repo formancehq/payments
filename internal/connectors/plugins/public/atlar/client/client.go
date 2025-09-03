@@ -79,8 +79,8 @@ func wrapSDKErr(err error, atlarErr any) error {
 	}
 
 	var code int
-	switch {
-	case atlarErr == nil:
+	switch atlarErr {
+	case nil:
 		var atlarError *runtime.APIError
 		if !errors.As(err, &atlarError) {
 			return err
