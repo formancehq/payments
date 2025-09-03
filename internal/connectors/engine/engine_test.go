@@ -81,6 +81,7 @@ var _ = Describe("Engine Tests", func() {
 	Context("on start", func() {
 		It("should fail when unable to fetch connectors from storage", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(nil, expectedErr)
 			err := eng.OnStart(ctx)
 			Expect(err).NotTo(BeNil())
@@ -88,6 +89,7 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should do nothing if no connectors are present", func(ctx SpecContext) {
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{}, nil)
 			err := eng.OnStart(ctx)
 			Expect(err).To(BeNil())
@@ -98,6 +100,7 @@ var _ = Describe("Engine Tests", func() {
 			conf := json.RawMessage(`{}`)
 			connector := models.Connector{Config: conf}
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil)
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: []models.Connector{connector}}, nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
 				workflow.RunInstallConnector,
@@ -114,6 +117,7 @@ var _ = Describe("Engine Tests", func() {
 				{Config: conf},
 				{Config: conf},
 			}
+			store.EXPECT().ListenConnectorsChanges(gomock.Any(), gomock.Any()).Return(nil)
 			store.EXPECT().ConnectorsList(gomock.Any(), gomock.Any()).Return(&bunpaginate.Cursor[models.Connector]{Data: connectors}, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), false).Return(conf, nil).MinTimes(len(connectors))
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixConnectorInstall, defaultTaskQueue),
