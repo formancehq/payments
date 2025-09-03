@@ -288,7 +288,7 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 
 	if response.DataReadyToFetch.ConnectionID != nil {
 		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-			infiniteRetryContext(ctx),
+			maximumAttemptsRetryContext(ctx, 8),
 			handleWebhooks.ConnectorID,
 			*response.DataReadyToFetch.ConnectionID,
 		)
@@ -411,7 +411,7 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 	response models.WebhookResponse,
 ) error {
 	_, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-		infiniteRetryContext(ctx),
+		maximumAttemptsRetryContext(ctx, 8),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionPendingDisconnect.ConnectionID,
 	)
@@ -497,7 +497,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 	response models.WebhookResponse,
 ) error {
 	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-		infiniteRetryContext(ctx),
+		maximumAttemptsRetryContext(ctx, 8),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionDisconnected.ConnectionID,
 	)
@@ -553,7 +553,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 	response models.WebhookResponse,
 ) error {
 	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
-		infiniteRetryContext(ctx),
+		maximumAttemptsRetryContext(ctx, 8),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionReconnected.ConnectionID,
 	)
