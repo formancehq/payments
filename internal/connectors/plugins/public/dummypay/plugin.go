@@ -25,7 +25,6 @@ type Plugin struct {
 	config Config
 	logger logging.Logger
 	client client.Client
-	config Config
 }
 
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {

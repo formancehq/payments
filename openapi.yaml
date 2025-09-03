@@ -5806,7 +5806,7 @@ components:
           type: string
         pageSize:
           type: integer
-          default: "25"
+          default: 25
         pollingPeriod:
           type: string
           default: 2m
