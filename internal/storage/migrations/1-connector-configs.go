@@ -64,7 +64,7 @@ func transformV2AdyenConfigToV3(v2Config json.RawMessage) (json.RawMessage, erro
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3AdyenConfig: v3Config,
@@ -91,7 +91,7 @@ func transformV2AtlarConfigToV3(v2Config json.RawMessage) (json.RawMessage, erro
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      int(v2.PageSize),
 		},
 		v3AtlarConfig: v3Config,
@@ -121,7 +121,7 @@ func transformV2BankingCircleConfigToV3(v2Config json.RawMessage) (json.RawMessa
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3BankingCircleConfig: v3Config,
@@ -148,7 +148,7 @@ func transformV2CurrencyCloudConfigToV3(v2Config json.RawMessage) (json.RawMessa
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3CurrencyCloudConfig: v3Config,
@@ -174,7 +174,7 @@ func transformV2GenericConfigToV3(v2Config json.RawMessage) (json.RawMessage, er
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3GenericConfig: v3Config,
@@ -201,7 +201,7 @@ func transformV2MangopayConfigToV3(v2Config json.RawMessage) (json.RawMessage, e
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3MangopayConfig: v3Config,
@@ -228,7 +228,7 @@ func transformV2ModulrConfigToV3(v2Config json.RawMessage) (json.RawMessage, err
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      v2.PageSize,
 		},
 		v3ModulrConfig: v3Config,
@@ -255,7 +255,7 @@ func transformV2MoneycorpConfigToV3(v2Config json.RawMessage) (json.RawMessage, 
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3MoneycorpConfig: v3Config,
@@ -280,7 +280,7 @@ func transformV2StripeConfigToV3(v2Config json.RawMessage) (json.RawMessage, err
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      int(v2.PageSize),
 		},
 		v3StripeConfig: v3Config,
@@ -305,7 +305,7 @@ func transformV2WiseConfigToV3(v2Config json.RawMessage) (json.RawMessage, error
 	return json.Marshal(res{
 		v3DefaultConfig: v3DefaultConfig{
 			Name:          v2.Name,
-			PollingPeriod: v2.PollingPeriod.String(),
+			PollingPeriod: v2.PollingPeriod.Duration.String(),
 			PageSize:      defaultPageSize,
 		},
 		v3WiseConfig: v3Config,

@@ -42,11 +42,11 @@ func (c *client) GetAccounts(
 	data := reverseAccounts(itr.AccountList().Data)
 	results = append(results, data...)
 	if len(results) == 0 {
-		return results, timeline, itr.AccountList().HasMore, wrapSDKErr(itr.Err())
+		return results, timeline, itr.AccountList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 	}
 
 	timeline.LatestID = results[len(results)-1].ID
-	return results, timeline, itr.AccountList().HasMore, wrapSDKErr(itr.Err())
+	return results, timeline, itr.AccountList().ListMeta.HasMore, wrapSDKErr(itr.Err())
 }
 
 // Stripe now returns data in reverse chronological order no matter which params we provide so we need to reverse the slice

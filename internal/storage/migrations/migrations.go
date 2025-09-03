@@ -284,10 +284,10 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			},
 		},
 		migrations.Migration{
-			Name: "rename bank bridges open banking",
+			Name: "rename bank bridges to open banking",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					logger.Info("running rename bank bridges open banking migration...")
+					logger.Info("running rename bank bridges to open banking migration...")
 					_, err := tx.ExecContext(ctx, renameBankBridgesOpenBanking)
 					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
 					return err

@@ -58,7 +58,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
 		}, nil,
 	)
 
-	// Mock open banking PSU retrieval
+	// Mock open banking provider PSU retrieval
 	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingPSU, nil)
 
 	// Mock plugin delete user connection (multiple calls for retries)
@@ -192,7 +192,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StorageOpenBankingProviderPSUGe
 		}, nil,
 	)
 
-	// Mock open banking PSU retrieval error
+	// Mock open banking provider PSU retrieval error
 	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(
 		nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
