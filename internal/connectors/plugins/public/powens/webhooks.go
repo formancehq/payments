@@ -149,7 +149,7 @@ func (p *Plugin) handleUserDeleted(ctx context.Context, req models.TranslateWebh
 	return []models.WebhookResponse{
 		{
 			UserDisconnected: &models.PSPUserDisconnected{
-				UserID: strconv.Itoa(webhook.UserID),
+				PSPUserID: strconv.Itoa(webhook.UserID),
 			},
 		},
 	}, nil
@@ -193,6 +193,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 				},
@@ -210,6 +211,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 					Reason:       reason,
@@ -220,6 +222,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 					Reason:       pointer.For("temporary error: validation in progress"),
@@ -230,6 +233,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 					Reason:       pointer.For("temporary error: website unavailable or rate limiting"),
@@ -240,6 +244,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 					Reason:       pointer.For("powens internal error"),
@@ -250,6 +255,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 					Reason:       pointer.For("other errors"),
