@@ -213,6 +213,32 @@ func getPIStatusFromPayment(status models.PaymentStatus) models.PaymentInitiatio
 	}
 }
 
+func craftUpdatedConnection(
+	ctx workflow.Context,
+	connectionID string,
+	connectorID models.ConnectorID,
+	connection *models.PSUBankBridgeConnection,
+	updatedStatus models.ConnectionStatus,
+	updatedError *string,
+) models.PSUBankBridgeConnection {
+	updatedConnection := models.PSUBankBridgeConnection{
+		ConnectionID: connectionID,
+		ConnectorID:  connectorID,
+		CreatedAt:    workflow.Now(ctx),
+		Status:       updatedStatus,
+		Error:        updatedError,
+	}
+
+	if connection != nil {
+		updatedConnection.CreatedAt = connection.CreatedAt
+		updatedConnection.AccessToken = connection.AccessToken
+		updatedConnection.Metadata = connection.Metadata
+		updatedConnection.DataUpdatedAt = connection.DataUpdatedAt
+	}
+
+	return updatedConnection
+}
+
 func (w Workflow) getDefaultTaskQueue() string {
 	return fmt.Sprintf("%s-default", w.stack)
 }
