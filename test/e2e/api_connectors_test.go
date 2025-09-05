@@ -552,11 +552,13 @@ func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {
 		})
 
 		return &components.V3DummypayConfig{
-			Name:          fmt.Sprintf("connector-%s", id.String()),
-			PollingPeriod: pointer.For("30s"),
-			PageSize:      pointer.For(int64(30)),
-			Provider:      pointer.For("Dummypay"),
-			Directory:     dir,
+			Directory:           dir,
+			LinkFlowError:       pointer.For(false),
+			Name:                fmt.Sprintf("connector-%s", id.String()),
+			PageSize:            pointer.For(int64(30)),
+			PollingPeriod:       pointer.For("30s"),
+			Provider:            pointer.For("Dummypay"),
+			UpdateLinkFlowError: pointer.For(false),
 		}
 	}
 }

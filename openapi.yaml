@@ -5800,6 +5800,8 @@ components:
       properties:
         directory:
           type: string
+        linkFlowError:
+          type: boolean
         name:
           type: string
         pageSize:
@@ -5811,6 +5813,8 @@ components:
         provider:
           type: string
           default: Dummypay
+        updateLinkFlowError:
+          type: boolean
     V3GenericConfig:
       type: object
       required:

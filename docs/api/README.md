@@ -6930,10 +6930,12 @@ xor
 ```json
 {
   "directory": "string",
+  "linkFlowError": true,
   "name": "string",
   "pageSize": 25,
   "pollingPeriod": "2m",
-  "provider": "Dummypay"
+  "provider": "Dummypay",
+  "updateLinkFlowError": true
 }
 
 ```
@@ -6943,10 +6945,12 @@ xor
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
 |directory|string|true|none|none|
+|linkFlowError|boolean|false|none|none|
 |name|string|true|none|none|
 |pageSize|integer|false|none|none|
 |pollingPeriod|string|false|none|none|
 |provider|string|false|none|none|
+|updateLinkFlowError|boolean|false|none|none|
 
 <h2 id="tocS_V3GenericConfig">V3GenericConfig</h2>
 <!-- backwards compatibility -->

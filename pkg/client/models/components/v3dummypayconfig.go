@@ -7,11 +7,13 @@ import (
 )
 
 type V3DummypayConfig struct {
-	Directory     string  `json:"directory"`
-	Name          string  `json:"name"`
-	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
-	Provider      *string `default:"Dummypay" json:"provider"`
+	Directory           string  `json:"directory"`
+	LinkFlowError       *bool   `json:"linkFlowError,omitempty"`
+	Name                string  `json:"name"`
+	PageSize            *int64  `default:"25" json:"pageSize"`
+	PollingPeriod       *string `default:"2m" json:"pollingPeriod"`
+	Provider            *string `default:"Dummypay" json:"provider"`
+	UpdateLinkFlowError *bool   `json:"updateLinkFlowError,omitempty"`
 }
 
 func (v V3DummypayConfig) MarshalJSON() ([]byte, error) {
@@ -30,6 +32,13 @@ func (o *V3DummypayConfig) GetDirectory() string {
 		return ""
 	}
 	return o.Directory
+}
+
+func (o *V3DummypayConfig) GetLinkFlowError() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.LinkFlowError
 }
 
 func (o *V3DummypayConfig) GetName() string {
@@ -58,4 +67,11 @@ func (o *V3DummypayConfig) GetProvider() *string {
 		return nil
 	}
 	return o.Provider
+}
+
+func (o *V3DummypayConfig) GetUpdateLinkFlowError() *bool {
+	if o == nil {
+		return nil
+	}
+	return o.UpdateLinkFlowError
 }

@@ -23,7 +23,7 @@ func newServer() *cobra.Command {
 	}
 	commonFlags(cmd)
 
-	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
+	cmd.Flags().String(StackPublicURLFlag, "", "Stack public url")
 
 	return cmd
 }
@@ -52,7 +52,7 @@ func runServer() func(cmd *cobra.Command, args []string) error {
 func serverOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
-	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
+	stackPublicURL, _ := cmd.Flags().GetString(StackPublicURLFlag)
 	return fx.Options(
 		auth.FXModuleFromFlags(cmd),
 		api.NewModule(listen, service.IsDebug(cmd)),

@@ -10,6 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/google/go-cmp/cmp"
 	"github.com/invopop/jsonschema"
 	"github.com/nats-io/nats.go"
@@ -143,6 +144,44 @@ func Event(eventName string, matchers ...PayloadMatcher) types.GomegaMatcher {
 	return &EventMatcher{
 		matchers:  matchers,
 		eventName: eventName,
+	}
+}
+
+type LinkAttemptStatusMatcher struct {
+	status components.V3PSUBankBridgeConnectionAttemptStatusEnum
+	err    error
+}
+
+func (m *LinkAttemptStatusMatcher) Match(actual any) (success bool, err error) {
+	attempts, ok := actual.([]components.V3PaymentServiceUserLinkAttempt)
+	if !ok {
+		return false, fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if len(attempts) != 1 {
+		return false, fmt.Errorf("expected 1 link attempt, got %d", len(attempts))
+	}
+
+	if attempts[0].Status != m.status {
+		return false, fmt.Errorf("expected link attempt to have status %s, got %s", m.status, attempts[0].Status)
+	}
+
+	return true, nil
+}
+
+func (m *LinkAttemptStatusMatcher) FailureMessage(_ any) (message string) {
+	return fmt.Sprintf("link attempt do not match expectations: %s", m.err)
+}
+
+func (m *LinkAttemptStatusMatcher) NegatedFailureMessage(_ any) (message string) {
+	return "link attempt should not match"
+}
+
+var _ types.GomegaMatcher = (*LinkAttemptStatusMatcher)(nil)
+
+func HaveLinkAttemptStatus(status components.V3PSUBankBridgeConnectionAttemptStatusEnum) types.GomegaMatcher {
+	return &LinkAttemptStatusMatcher{
+		status: status,
 	}
 }
 
