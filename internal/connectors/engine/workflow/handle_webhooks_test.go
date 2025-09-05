@@ -569,6 +569,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success()
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
 						At:           at,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						Reason:       &reason,
 					},
 				},
@@ -704,6 +705,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePS
 				{
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						At:           time.Now(),
 					},
 				},
@@ -755,6 +757,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePS
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
 						At:           at,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						Reason:       &reason,
 					},
 				},

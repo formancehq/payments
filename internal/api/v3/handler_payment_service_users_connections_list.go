@@ -29,6 +29,8 @@ type bankBridgeConnection struct {
 	DataUpdatedAt time.Time `json:"dataUpdatedAt"`
 	// Status of the connection
 	Status models.ConnectionStatus `json:"status"`
+	// Date of the last update of the connection
+	UpdatedAt time.Time `json:"updatedAt"`
 
 	// Optional
 	// Error message in case of failure
@@ -79,6 +81,7 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 				CreatedAt:     connection.CreatedAt,
 				DataUpdatedAt: connection.DataUpdatedAt,
 				Status:        connection.Status,
+				UpdatedAt:     connection.UpdatedAt,
 				Error:         connection.Error,
 				Metadata:      connection.Metadata,
 			})
@@ -144,6 +147,7 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 				CreatedAt:     connection.CreatedAt,
 				DataUpdatedAt: connection.DataUpdatedAt,
 				Status:        connection.Status,
+				UpdatedAt:     connection.UpdatedAt,
 				Error:         connection.Error,
 				Metadata:      connection.Metadata,
 			})

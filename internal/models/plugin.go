@@ -148,10 +148,19 @@ func (u UserConnectionPendingDisconnect) IdempotencyKey() string {
 	return IdempotencyKey(u)
 }
 
+type ConnectionDisconnectedErrorType string
+
+const (
+	ConnectionDisconnectedErrorTypeTemporaryError   ConnectionDisconnectedErrorType = "TEMPORARY_ERROR"
+	ConnectionDisconnectedErrorTypeNonRecoverable   ConnectionDisconnectedErrorType = "NON_RECOVERABLE"
+	ConnectionDisconnectedErrorTypeUserActionNeeded ConnectionDisconnectedErrorType = "USER_ACTION_NEEDED"
+)
+
 type PSPUserConnectionDisconnected struct {
 	PSPUserID    string
 	ConnectionID string
 	At           time.Time
+	ErrorType    ConnectionDisconnectedErrorType
 	Reason       *string
 }
 
@@ -177,6 +186,7 @@ type UserConnectionDisconnected struct {
 	PsuID        uuid.UUID
 	ConnectorID  ConnectorID
 	ConnectionID string
+	ErrorType    ConnectionDisconnectedErrorType
 	At           time.Time
 	Reason       *string
 }

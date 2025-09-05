@@ -61,6 +61,7 @@ var (
 		CreatedAt:     now.Add(-45 * time.Minute).UTC().Time,
 		DataUpdatedAt: now.Add(-15 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusActive,
+		UpdatedAt:     now.Add(-15 * time.Minute).UTC().Time,
 		AccessToken: &models.Token{
 			Token:     "conn_token_123",
 			ExpiresAt: now.Add(45 * time.Minute).UTC().Time,
@@ -108,6 +109,7 @@ var (
 		CreatedAt:     now.Add(-40 * time.Minute).UTC().Time,
 		DataUpdatedAt: now.Add(-10 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusActive,
+		UpdatedAt:     now.Add(-10 * time.Minute).UTC().Time,
 		AccessToken: &models.Token{
 			Token:     "conn_token_456",
 			ExpiresAt: now.Add(40 * time.Minute).UTC().Time,
@@ -122,6 +124,7 @@ var (
 		ConnectionID:  "conn_789",
 		CreatedAt:     now.Add(-35 * time.Minute).UTC().Time,
 		DataUpdatedAt: now.Add(-5 * time.Minute).UTC().Time,
+		UpdatedAt:     now.Add(-5 * time.Minute).UTC().Time,
 		Status:        models.ConnectionStatusError,
 		Error:         pointer.For("Connection failed"),
 		Metadata: map[string]string{
@@ -478,6 +481,7 @@ func TestPSUBankBridgeConnectionsUpsert(t *testing.T) {
 			ConnectionID:  defaultPSUBankBridgeConnection.ConnectionID,
 			CreatedAt:     now.Add(-35 * time.Minute).UTC().Time,
 			DataUpdatedAt: now.Add(-8 * time.Minute).UTC().Time,
+			UpdatedAt:     now.Add(-8 * time.Minute).UTC().Time,
 			Status:        models.ConnectionStatusError,
 			AccessToken: &models.Token{
 				Token:     "conn_token_changed",
@@ -495,6 +499,7 @@ func TestPSUBankBridgeConnectionsUpsert(t *testing.T) {
 		require.NoError(t, err)
 		// Should update the connection
 		require.Equal(t, connection.Status, actual.Status)
+		require.Equal(t, connection.UpdatedAt, actual.UpdatedAt)
 		require.Equal(t, connection.AccessToken.Token, actual.AccessToken.Token)
 		require.Equal(t, connection.Error, actual.Error)
 		require.Equal(t, connection.Metadata, actual.Metadata)
@@ -763,6 +768,7 @@ func comparePSUBankBridgeConnections(t *testing.T, expected, actual models.PSUBa
 	require.Equal(t, expected.ConnectionID, actual.ConnectionID)
 	require.Equal(t, expected.CreatedAt, actual.CreatedAt)
 	require.Equal(t, expected.DataUpdatedAt, actual.DataUpdatedAt)
+	require.Equal(t, expected.UpdatedAt, actual.UpdatedAt)
 	require.Equal(t, expected.Status, actual.Status)
 	require.Equal(t, expected.Error, actual.Error)
 	require.Equal(t, expected.Metadata, actual.Metadata)
