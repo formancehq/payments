@@ -247,6 +247,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					ErrorType:    models.ConnectionDisconnectedErrorTypeTemporaryError,
 					At:           time.Now().UTC(),
