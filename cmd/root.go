@@ -18,7 +18,7 @@ const (
 	ConfigEncryptionKeyFlag                      = "config-encryption-key"
 	ListenFlag                                   = "listen"
 	StackFlag                                    = "stack"
-	stackPublicURLFlag                           = "stack-public-url"
+	StackPublicURLFlag                           = "stack-public-url"
 	temporalMaxConcurrentWorkflowTaskPollersFlag = "temporal-max-concurrent-workflow-task-pollers"
 	temporalMaxConcurrentActivityTaskPollersFlag = "temporal-max-concurrent-activity-task-pollers"
 	temporalMaxSlotsPerPollerFlag                = "temporal-max-slots-per-poller"

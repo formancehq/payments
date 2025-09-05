@@ -28,7 +28,7 @@ func newWorker() *cobra.Command {
 	cmd.Flags().Int(temporalMaxConcurrentActivityTaskPollersFlag, 4, "Max concurrent activity task pollers")
 	cmd.Flags().Int(temporalMaxSlotsPerPollerFlag, 10, "Max slot count per poller")
 	cmd.Flags().Int(temporalMaxLocalActivitySlotsFlag, 50, "Max local activity slots")
-	cmd.Flags().String(stackPublicURLFlag, "", "Stack public url")
+	cmd.Flags().String(StackPublicURLFlag, "", "Stack public url")
 	cmd.Flags().Duration(temporalRateLimitingRetryDelay, 5*time.Second, "Additional delay before a rate limited request is retried by Temporal workers")
 	return cmd
 }
@@ -57,7 +57,7 @@ func runWorker() func(cmd *cobra.Command, args []string) error {
 func workerOptions(cmd *cobra.Command) (fx.Option, error) {
 	listen, _ := cmd.Flags().GetString(ListenFlag)
 	stack, _ := cmd.Flags().GetString(StackFlag)
-	stackPublicURL, _ := cmd.Flags().GetString(stackPublicURLFlag)
+	stackPublicURL, _ := cmd.Flags().GetString(StackPublicURLFlag)
 	temporalNamespace, _ := cmd.Flags().GetString(temporal.TemporalNamespaceFlag)
 	temporalRateLimitingRetryDelay, _ := cmd.Flags().GetDuration(temporalRateLimitingRetryDelay)
 	temporalMaxConcurrentWorkflowTaskPollers, _ := cmd.Flags().GetInt(temporalMaxConcurrentWorkflowTaskPollersFlag)

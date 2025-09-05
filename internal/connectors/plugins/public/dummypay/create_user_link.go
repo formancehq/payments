@@ -34,6 +34,8 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	}
 
 	query := url.Query()
+	query.Set(models.NoRedirectQueryParamID, "true")
+	query.Set(models.StateQueryParamID, req.CallBackState)
 	query.Set(client.UserIDQueryParamID, req.PaymentServiceUser.ID.String())
 	if p.config.CreateLinkFlowError {
 		query.Set(client.StatusQueryParamID, string(client.LinkStatusError))

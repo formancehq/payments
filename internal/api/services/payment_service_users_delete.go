@@ -8,6 +8,11 @@ import (
 )
 
 func (s *Service) PaymentServiceUsersDelete(ctx context.Context, psuID uuid.UUID) (models.Task, error) {
+	_, err := s.storage.PaymentServiceUsersGet(ctx, psuID)
+	if err != nil {
+		return models.Task{}, newStorageError(err, "cannot get payment service user")
+	}
+
 	task, err := s.engine.DeletePaymentServiceUser(ctx, psuID)
 	if err != nil {
 		return models.Task{}, handleEngineErrors(err)
