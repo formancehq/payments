@@ -10,6 +10,7 @@ import (
 
 	"github.com/formancehq/go-libs/v3/publish"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/formancehq/payments/pkg/client/models/components"
 	"github.com/google/go-cmp/cmp"
 	"github.com/invopop/jsonschema"
 	"github.com/nats-io/nats.go"
@@ -145,6 +146,146 @@ func Event(eventName string, matchers ...PayloadMatcher) types.GomegaMatcher {
 		eventName: eventName,
 	}
 }
+
+type LinkAttemptsLengthMatcher struct {
+	length   int
+	matchers []PayloadMatcher
+	err      error
+}
+
+func (m *LinkAttemptsLengthMatcher) Match(actual any) (success bool, err error) {
+	attempts, ok := actual.([]components.V3PaymentServiceUserLinkAttempt)
+	if !ok {
+		return false, fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if len(attempts) != m.length {
+		m.err = fmt.Errorf("expected %d link attempts, got %d", m.length, len(attempts))
+		return false, nil
+	}
+
+	for _, attempt := range attempts {
+		for _, matcher := range m.matchers {
+			if m.err = matcher.Match(attempt); m.err != nil {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
+func (m *LinkAttemptsLengthMatcher) FailureMessage(_ any) (message string) {
+	return fmt.Sprintf("link attempt do not match expectations: %s", m.err)
+}
+
+func (m *LinkAttemptsLengthMatcher) NegatedFailureMessage(_ any) (message string) {
+	return "link attempt should not match"
+}
+
+var _ types.GomegaMatcher = (*LinkAttemptsLengthMatcher)(nil)
+
+func HaveLinkAttemptsLengthMatcher(length int, matchers ...PayloadMatcher) types.GomegaMatcher {
+	return &LinkAttemptsLengthMatcher{
+		length:   length,
+		matchers: matchers,
+	}
+}
+
+type LinkAttemptStatusMatcher struct {
+	status components.V3PSUBankBridgeConnectionAttemptStatusEnum
+}
+
+func (t *LinkAttemptStatusMatcher) Match(actual any) error {
+	attempt, ok := actual.(components.V3PaymentServiceUserLinkAttempt)
+	if !ok {
+		return fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if attempt.Status != t.status {
+		return fmt.Errorf("expected link attempt to have status %s, got %s", t.status, attempt.Status)
+	}
+
+	return nil
+}
+
+func HaveLinkAttemptStatus(status components.V3PSUBankBridgeConnectionAttemptStatusEnum) PayloadMatcher {
+	return &LinkAttemptStatusMatcher{
+		status: status,
+	}
+}
+
+var _ PayloadMatcher = (*LinkAttemptStatusMatcher)(nil)
+
+type UserConnectionsLengthMatcher struct {
+	length   int
+	matchers []PayloadMatcher
+	err      error
+}
+
+func (m *UserConnectionsLengthMatcher) Match(actual any) (success bool, err error) {
+	attempts, ok := actual.([]components.V3PaymentServiceUserConnection)
+	if !ok {
+		return false, fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if len(attempts) != m.length {
+		m.err = fmt.Errorf("expected %d connections, got %d", m.length, len(attempts))
+		return false, nil
+	}
+
+	for _, attempt := range attempts {
+		for _, matcher := range m.matchers {
+			if m.err = matcher.Match(attempt); m.err != nil {
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
+func (m *UserConnectionsLengthMatcher) FailureMessage(_ any) (message string) {
+	return fmt.Sprintf("connections do not match expectations: %s", m.err)
+}
+
+func (m *UserConnectionsLengthMatcher) NegatedFailureMessage(_ any) (message string) {
+	return "connections should not match"
+}
+
+var _ types.GomegaMatcher = (*UserConnectionsLengthMatcher)(nil)
+
+func HaveUserConnectionsLengthMatcher(length int, matchers ...PayloadMatcher) types.GomegaMatcher {
+	return &UserConnectionsLengthMatcher{
+		length:   length,
+		matchers: matchers,
+	}
+}
+
+type UserConnectionStatusMatcher struct {
+	status components.V3ConnectionStatusEnum
+}
+
+func (t *UserConnectionStatusMatcher) Match(actual any) error {
+	connection, ok := actual.(components.V3PaymentServiceUserConnection)
+	if !ok {
+		return fmt.Errorf("unexpected type %t", actual)
+	}
+
+	if connection.Status != t.status {
+		return fmt.Errorf("expected connection to have status %s, got %s", t.status, connection.Status)
+	}
+
+	return nil
+}
+
+func HaveUserConnectionStatus(status components.V3ConnectionStatusEnum) PayloadMatcher {
+	return &UserConnectionStatusMatcher{
+		status: status,
+	}
+}
+
+var _ PayloadMatcher = (*UserConnectionStatusMatcher)(nil)
 
 type TaskMatcher struct {
 	status   models.TaskStatus

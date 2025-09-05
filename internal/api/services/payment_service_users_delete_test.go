@@ -27,37 +27,52 @@ func TestPSUDelete(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		err           error
+		engineErr     error
+		storageErr    error
 		expectedError error
 		typedError    bool
 	}{
 		{
 			name:          "success",
-			err:           nil,
+			engineErr:     nil,
+			storageErr:    nil,
 			expectedError: nil,
 		},
 		{
 			name:          "validation error",
-			err:           engine.ErrValidation,
+			engineErr:     engine.ErrValidation,
 			expectedError: ErrValidation,
 			typedError:    true,
 		},
 		{
 			name:          "not found error",
-			err:           engine.ErrNotFound,
+			engineErr:     engine.ErrNotFound,
 			expectedError: ErrNotFound,
 			typedError:    true,
 		},
 		{
-			name:          "other error",
-			err:           fmt.Errorf("error"),
+			name:          "engine other error",
+			engineErr:     fmt.Errorf("error"),
 			expectedError: fmt.Errorf("error"),
+		},
+		{
+			name:          "storage not found error",
+			storageErr:    storage.ErrNotFound,
+			expectedError: newStorageError(storage.ErrNotFound, "cannot get payment service user"),
+		},
+		{
+			name:          "other storage error",
+			storageErr:    fmt.Errorf("error"),
+			expectedError: newStorageError(fmt.Errorf("error"), "cannot get payment service user"),
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			eng.EXPECT().DeletePaymentServiceUser(gomock.Any(), id).Return(models.Task{}, test.err)
+			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), id).Return(&models.PaymentServiceUser{}, test.storageErr)
+			if test.storageErr == nil {
+				eng.EXPECT().DeletePaymentServiceUser(gomock.Any(), id).Return(models.Task{}, test.engineErr)
+			}
 			_, err := s.PaymentServiceUsersDelete(context.Background(), id)
 			if test.expectedError == nil {
 				require.NoError(t, err)

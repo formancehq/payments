@@ -256,4 +256,31 @@ var _ = Context("Payment API Payment Service Users", Serial, func() {
 			))))
 		})
 	})
+
+	When("deleting a payment service user", func() {
+		var (
+			psuID string
+		)
+
+		BeforeEach(func() {
+			createResponse, err := app.GetValue().SDK().Payments.V3.CreatePaymentServiceUser(ctx, v3CreateRequest)
+			Expect(err).To(BeNil())
+			psuID = createResponse.GetV3CreatePaymentServiceUserResponse().Data
+		})
+
+		It("should be ok", func() {
+			resp, err := app.GetValue().SDK().Payments.V3.DeletePaymentServiceUser(ctx, psuID)
+			Expect(err).To(BeNil())
+			Expect(resp.GetV3PaymentServiceUserDeleteResponse().Data).NotTo(BeNil())
+			taskID, err := models.TaskIDFromString(resp.GetV3PaymentServiceUserDeleteResponse().Data.TaskID)
+			Expect(err).To(BeNil())
+			Expect(taskID.Reference).To(ContainSubstring("delete-user"))
+		})
+
+		It("should fail if payment service user does not exists", func() {
+			_, err := app.GetValue().SDK().Payments.V3.DeletePaymentServiceUser(ctx, uuid.New().String())
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("cannot get payment service user"))
+		})
+	})
 })
