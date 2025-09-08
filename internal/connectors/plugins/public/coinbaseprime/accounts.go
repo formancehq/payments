@@ -3,19 +3,13 @@ package coinbaseprime
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
 type accountsState struct {
-	// TODO: accountsState will be used to know at what point we're at when
-	// fetching the PSP accounts.
-	// This struct will be stored as a raw json, you're free to put whatever
-	// you want.
-	// Example:
-	// LastPage int `json:"lastPage"`
-	// LastIDCreated int64 `json:"lastIDCreated"`
+	LastPage int `json:"lastPage"`
 }
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
@@ -26,33 +20,36 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		}
 	}
 
-	newState := accountsState{
-		// TODO: fill new state with old state value
+	// Fetch a single SDK page based on state
+	page := oldState.LastPage
+	pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
 	}
 
-	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	needMore := false
-	hasMore := false
-	for /* TODO: range over pages or others */ page := 0; ; page++ {
-		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
-		if err != nil {
-			return models.FetchNextAccountsResponse{}, err
+	accounts := make([]models.PSPAccount, 0, len(pagedAccounts))
+	for _, a := range pagedAccounts {
+		raw, _ := json.Marshal(a)
+		var namePtr *string
+		if a.Name != "" {
+			n := a.Name
+			namePtr = &n
 		}
-
-        // TODO: transfer PSP object into formance object
-        accounts = append(accounts, models.PSPAccount{})
-
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
-		if !needMore || !hasMore {
-			break
-		}
+		accounts = append(accounts, models.PSPAccount{
+			Reference: a.ID,
+			CreatedAt: time.Now(),
+			Name:      namePtr,
+			Metadata:  a.Metadata,
+			Raw:       raw,
+		})
 	}
 
-	if !needMore {
-		accounts = accounts[:req.PageSize]
+	hasMore := len(pagedAccounts) == req.PageSize
+	newState := accountsState{LastPage: page}
+	if hasMore {
+		newState.LastPage = page + 1
 	}
 
-	// TODO: don't forget to update your state accordingly
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
