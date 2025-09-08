@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/formancehq/payments/internal/models"
 )
@@ -64,9 +63,9 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		return models.CompleteUserLinkResponse{}, err
 	}
 
-	connectionIDs, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
+	_, okConnectionIDs := req.HTTPCallInformation.QueryValues[ConnectionIDsQueryParamID]
 	errors, okError := req.HTTPCallInformation.QueryValues[ErrorQueryParamID]
-	connectionID, okConnectionID := req.HTTPCallInformation.QueryValues[ConnectionIDQueryParamID]
+	_, okConnectionID := req.HTTPCallInformation.QueryValues[ConnectionIDQueryParamID]
 
 	switch {
 	case okError:
@@ -76,30 +75,16 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 			},
 		}, nil
 
-	case okConnectionIDs:
-		connections := make([]models.PSPPsuOpenBankingConnection, len(connectionIDs))
-		for i, connectionID := range connectionIDs {
-			connections[i] = models.PSPPsuOpenBankingConnection{
-				ConnectionID: connectionID,
-				CreatedAt:    time.Now().UTC(),
-			}
-		}
-
+	case okConnectionIDs, okConnectionID:
+		// Here, we don't need to return the connections as they will be created
+		// directly by the webhooks.
+		// Handling the creation of the connections through the webhooks instead
+		// allows us to handle the creation only at one place, and will prevent
+		// the need to handle that the user exited the authentication flow just
+		// before the redirect.
 		return models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
-				Connections: connections,
-			},
-		}, nil
-
-	case okConnectionID:
-		return models.CompleteUserLinkResponse{
-			Success: &models.UserLinkSuccessResponse{
-				Connections: []models.PSPPsuOpenBankingConnection{
-					{
-						ConnectionID: connectionID[0],
-						CreatedAt:    time.Now().UTC(),
-					},
-				},
+				Connections: []models.PSPPsuOpenBankingConnection{},
 			},
 		}, nil
 

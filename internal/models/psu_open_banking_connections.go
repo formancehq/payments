@@ -157,6 +157,8 @@ type PSUOpenBankingConnection struct {
 	DataUpdatedAt time.Time `json:"dataUpdatedAt"`
 	// Status of the connection
 	Status ConnectionStatus `json:"status"`
+	// BankBridge Updated At
+	UpdatedAt time.Time `json:"updatedAt"`
 
 	// Optional
 	// AccessToken is optional for some provider, like Powens, where we
@@ -173,6 +175,7 @@ func (psu PSUOpenBankingConnection) MarshalJSON() ([]byte, error) {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
 		CreatedAt    time.Time         `json:"createdAt"`
+		UpdatedAt    time.Time         `json:"updatedAt"`
 		Status       string            `json:"status"`
 		AccessToken  *Token            `json:"accessToken"`
 		Metadata     map[string]string `json:"metadata"`
@@ -181,6 +184,7 @@ func (psu PSUOpenBankingConnection) MarshalJSON() ([]byte, error) {
 		ConnectionID: psu.ConnectionID,
 		ConnectorID:  psu.ConnectorID.String(),
 		CreatedAt:    psu.CreatedAt,
+		UpdatedAt:    psu.UpdatedAt,
 		Status:       string(psu.Status),
 		AccessToken:  psu.AccessToken,
 		Metadata:     psu.Metadata,
@@ -193,6 +197,7 @@ func (psu *PSUOpenBankingConnection) UnmarshalJSON(data []byte) error {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
 		CreatedAt    time.Time         `json:"createdAt"`
+		UpdatedAt    time.Time         `json:"updatedAt"`
 		Status       string            `json:"status"`
 		AccessToken  *Token            `json:"accessToken"`
 		Metadata     map[string]string `json:"metadata"`
@@ -211,6 +216,7 @@ func (psu *PSUOpenBankingConnection) UnmarshalJSON(data []byte) error {
 	psu.ConnectionID = aux.ConnectionID
 	psu.ConnectorID = connectorID
 	psu.CreatedAt = aux.CreatedAt
+	psu.UpdatedAt = aux.UpdatedAt
 	psu.Status = ConnectionStatus(aux.Status)
 	psu.AccessToken = aux.AccessToken
 	psu.Metadata = aux.Metadata
@@ -233,6 +239,7 @@ func FromPSPPsuOpenBankingConnection(from PSPPsuOpenBankingConnection, connector
 		ConnectionID:  from.ConnectionID,
 		ConnectorID:   connectorID,
 		CreatedAt:     from.CreatedAt,
+		UpdatedAt:     from.CreatedAt,
 		DataUpdatedAt: time.Time{},
 		AccessToken:   from.AccessToken,
 		Metadata:      from.Metadata,

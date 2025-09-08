@@ -456,7 +456,7 @@ func (w Workflow) handleUserDisconnectedWebhook(
 ) error {
 	openBanking, err := activities.StorageOpenBankingProviderPSUsGetByPSPUserID(
 		infiniteRetryContext(ctx),
-		response.UserDisconnected.UserID,
+		response.UserDisconnected.PSPUserID,
 		handleWebhooks.ConnectorID,
 	)
 	if err != nil {
@@ -502,16 +502,37 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 		response.UserConnectionDisconnected.ConnectionID,
 	)
 	if err != nil {
-		return fmt.Errorf("getting open banking connection: %w", err)
+		if response.UserConnectionDisconnected.PSPUserID == "" {
+			// Nothing more to do, we're missing crucial information in order to continue
+			return fmt.Errorf("getting open banking connection: %w", err)
+		}
+
+		// Let's try to fetch the psu via the bank bridge
+		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+			infiniteRetryContext(ctx),
+			response.UserConnectionDisconnected.PSPUserID,
+			handleWebhooks.ConnectorID,
+		)
+		if errGetBankBridge != nil {
+			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		}
+
+		psuID = bb.PsuID
 	}
 
-	connection.Status = models.ConnectionStatusError
-	connection.Error = response.UserConnectionDisconnected.Reason
+	updatedConnection := craftUpdatedConnection(
+		ctx,
+		response.UserConnectionDisconnected.ConnectionID,
+		handleWebhooks.ConnectorID,
+		connection,
+		models.ConnectionStatusError,
+		response.UserConnectionDisconnected.Reason,
+	)
 
 	err = activities.StoragePSUOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
-		*connection,
+		updatedConnection,
 	)
 	if err != nil {
 		return fmt.Errorf("storing open banking connection: %w", err)
@@ -522,6 +543,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 			PsuID:        psuID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			ConnectionID: response.UserConnectionDisconnected.ConnectionID,
+			ErrorType:    response.UserConnectionDisconnected.ErrorType,
 			At:           response.UserConnectionDisconnected.At,
 			Reason:       response.UserConnectionDisconnected.Reason,
 		},
@@ -558,16 +580,37 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 		response.UserConnectionReconnected.ConnectionID,
 	)
 	if err != nil {
-		return fmt.Errorf("getting open banking connection: %w", err)
+		if response.UserConnectionReconnected.PSPUserID == "" {
+			// Nothing more to do, we're missing crucial information in order to continue
+			return fmt.Errorf("getting open banking connection: %w", err)
+		}
+
+		// Let's try to fetch the psu via the bank bridge
+		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+			infiniteRetryContext(ctx),
+			response.UserConnectionReconnected.PSPUserID,
+			handleWebhooks.ConnectorID,
+		)
+		if errGetBankBridge != nil {
+			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		}
+
+		psuID = bb.PsuID
 	}
 
-	connection.Status = models.ConnectionStatusActive
-	connection.Error = nil
+	updatedConnection := craftUpdatedConnection(
+		ctx,
+		response.UserConnectionReconnected.ConnectionID,
+		handleWebhooks.ConnectorID,
+		connection,
+		models.ConnectionStatusActive,
+		nil,
+	)
 
 	err = activities.StoragePSUOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
-		*connection,
+		updatedConnection,
 	)
 	if err != nil {
 		return fmt.Errorf("storing open banking connection: %w", err)

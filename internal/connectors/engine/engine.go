@@ -1587,6 +1587,14 @@ func (e *engine) OnStop(ctx context.Context) {
 }
 
 func (e *engine) OnStart(ctx context.Context) error {
+	if err := e.storage.ListenConnectorsChanges(ctx, storage.HandlerConnectorsChanges{
+		storage.ConnectorChangesInsert: e.onInsertPlugin,
+		storage.ConnectorChangesUpdate: e.onUpdatePlugin,
+		storage.ConnectorChangesDelete: e.onDeletePlugin,
+	}); err != nil {
+		return fmt.Errorf("failed to start engine connector changes listener: %w", err)
+	}
+
 	query := storage.NewListConnectorsQuery(
 		bunpaginate.NewPaginatedQueryOptions(storage.ConnectorQuery{}).
 			WithPageSize(100),
@@ -1613,6 +1621,75 @@ func (e *engine) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func (w *engine) onInsertPlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	w.logger.Debugf("api got insert notification for %q", connectorID.String())
+	connector, err := w.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		return err
+	}
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	_, err = w.connectors.Load(
+		connector.ID,
+		connector.Provider,
+		connector.Name,
+		config,
+		connector.Config,
+		false)
+	if err != nil {
+		return err
+	}
+
+	// No need to launch the install workflow here
+
+	return nil
+}
+
+func (e *engine) onUpdatePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	e.logger.Debugf("api got update notification for %q", connectorID.String())
+	connector, err := e.storage.ConnectorsGet(ctx, connectorID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return e.onDeletePlugin(ctx, connectorID)
+		}
+		return err
+	}
+
+	if connector.ScheduledForDeletion {
+		// if we're deleting the plugin no other changes matter
+		return nil
+	}
+
+	config := models.DefaultConfig()
+	if err := json.Unmarshal(connector.Config, &config); err != nil {
+		return err
+	}
+
+	_, err = e.connectors.Load(
+		connector.ID,
+		connector.Provider,
+		connector.Name,
+		config,
+		connector.Config,
+		true,
+	)
+	if err != nil {
+		e.logger.Errorf("failed to register plugin after update to connector %q: %v", connector.ID.String(), err)
+		return err
+	}
+	return nil
+}
+
+func (e *engine) onDeletePlugin(ctx context.Context, connectorID models.ConnectorID) error {
+	e.logger.Debugf("api got delete notification for %q", connectorID.String())
+	e.connectors.Unload(connectorID)
 	return nil
 }
 

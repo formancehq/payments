@@ -328,6 +328,7 @@ func (p *Plugin) handleRefreshFinished(ctx context.Context, req models.Translate
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 					ConnectionID: refreshFinishedWebhook.CredentialsID,
+					ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 					At:           time.Unix(0, refreshFinishedWebhook.Finished*int64(time.Millisecond)),
 					Reason:       &reason,
 				},

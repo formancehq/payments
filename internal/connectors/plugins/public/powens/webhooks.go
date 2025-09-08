@@ -149,7 +149,7 @@ func (p *Plugin) handleUserDeleted(ctx context.Context, req models.TranslateWebh
 	return []models.WebhookResponse{
 		{
 			UserDisconnected: &models.PSPUserDisconnected{
-				UserID: strconv.Itoa(webhook.UserID),
+				PSPUserID: strconv.Itoa(webhook.UserID),
 			},
 		},
 	}, nil
@@ -193,6 +193,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
 				},
@@ -210,8 +211,10 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 					Reason:       reason,
 				},
 			},
@@ -220,19 +223,35 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 					Reason:       pointer.For("temporary error: validation in progress"),
 				},
 			},
 		}, nil
-	case "websiteUnavailable", "rateLimiting":
+	case "rateLimiting":
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
 					At:           time.Now().UTC(),
-					Reason:       pointer.For("temporary error: website unavailable or rate limiting"),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeTemporaryError,
+					Reason:       pointer.For("temporary error: rate limiting"),
+				},
+			},
+		}, nil
+	case "websiteUnavailable":
+		return []models.WebhookResponse{
+			{
+				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
+					ConnectionID: strconv.Itoa(webhook.Connection.ID),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeTemporaryError,
+					At:           time.Now().UTC(),
+					Reason:       pointer.For("non recoverable error: website unavailable"),
 				},
 			},
 		}, nil
@@ -240,9 +259,11 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeNonRecoverable,
 					At:           time.Now().UTC(),
-					Reason:       pointer.For("powens internal error"),
+					Reason:       pointer.For("powens internal error: please contact support"),
 				},
 			},
 		}, nil
@@ -250,9 +271,11 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		return []models.WebhookResponse{
 			{
 				UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
+					ErrorType:    models.ConnectionDisconnectedErrorTypeNonRecoverable,
 					At:           time.Now().UTC(),
-					Reason:       pointer.For("other errors"),
+					Reason:       pointer.For("other errors: please contact support"),
 				},
 			},
 		}, nil
@@ -269,6 +292,7 @@ func (p *Plugin) handleConnectionDeleted(ctx context.Context, req models.Transla
 		{
 			UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 				ConnectionID: strconv.Itoa(webhook.ConnectionID),
+				ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 				At:           time.Now().UTC(),
 			},
 		},

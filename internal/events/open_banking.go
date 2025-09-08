@@ -96,6 +96,7 @@ type OpenBankingUserConnectionDisconnected struct {
 	PsuID        uuid.UUID `json:"psuID"`
 	ConnectorID  string    `json:"connectorID"`
 	ConnectionID string    `json:"connectionID"`
+	ErrorType    string    `json:"errorType"`
 	At           time.Time `json:"at"`
 	Reason       *string   `json:"reason,omitempty"`
 }
@@ -105,6 +106,7 @@ func (e Events) NewEventOpenBankingUserConnectionDisconnected(userDisconnected m
 		PsuID:        userDisconnected.PsuID,
 		ConnectorID:  userDisconnected.ConnectorID.String(),
 		ConnectionID: userDisconnected.ConnectionID,
+		ErrorType:    string(userDisconnected.ErrorType),
 		At:           userDisconnected.At,
 		Reason:       userDisconnected.Reason,
 	}

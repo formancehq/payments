@@ -3,7 +3,6 @@ package powens
 import (
 	"encoding/base64"
 	"encoding/json"
-	"time"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
 	"github.com/formancehq/payments/internal/models"
@@ -150,11 +149,7 @@ var _ = Describe("Powens *Plugin Complete User Link", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Success).ToNot(BeNil())
 			Expect(resp.Error).To(BeNil())
-			Expect(resp.Success.Connections).To(HaveLen(2))
-			Expect(resp.Success.Connections[0].ConnectionID).To(Equal("conn-1"))
-			Expect(resp.Success.Connections[1].ConnectionID).To(Equal("conn-2"))
-			Expect(resp.Success.Connections[0].CreatedAt).To(BeTemporally("~", time.Now().UTC(), 2*time.Second))
-			Expect(resp.Success.Connections[1].CreatedAt).To(BeTemporally("~", time.Now().UTC(), 2*time.Second))
+			Expect(resp.Success.Connections).To(HaveLen(0))
 		})
 
 		It("should complete user link with error", func(ctx SpecContext) {

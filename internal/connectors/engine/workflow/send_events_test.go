@@ -132,6 +132,7 @@ var (
 		PsuID:        uuid.New(),
 		ConnectorID:  connectorID,
 		ConnectionID: "test-connection-id",
+		ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 		At:           time.Now().UTC(),
 		Reason:       pointer.For("test-reason"),
 	}

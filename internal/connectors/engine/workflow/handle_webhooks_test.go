@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -568,6 +569,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success()
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
 						At:           at,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						Reason:       &reason,
 					},
 				},
@@ -576,7 +578,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success()
 	})
 	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StoragePSUOpenBankingConnectionsGetFromConnectionIDResult, error) {
 		return &activities.StoragePSUOpenBankingConnectionsGetFromConnectionIDResult{
-			Connection: &models.PSUOpenBankingConnection{
+			Connection: &models.OpenBankingConnection{
 				ConnectionID: connectionID,
 				ConnectorID:  s.connectorID,
 				Status:       models.ConnectionStatusActive,
@@ -620,6 +622,80 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success()
 	s.NoError(err)
 }
 
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success_Without_Connection_Created() {
+	connectionID := "test-connection-id"
+	pspUserID := "test-psp-user-id"
+	psuID := uuid.New()
+	reason := "test reason"
+	at := time.Now()
+
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
+						PSPUserID:    pspUserID,
+						ConnectionID: connectionID,
+						At:           at,
+						Reason:       &reason,
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StoragePSUBankBridgeConnectionsGetFromConnectionIDResult, error) {
+		return nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
+	})
+	s.env.OnActivity(activities.StoragePSUBankBridgesGetByPSPUserIDActivity, mock.Anything, pspUserID, s.connectorID).Return(&models.PSUBankBridge{
+		PsuID:       psuID,
+		ConnectorID: s.connectorID,
+		PSPUserID:   &pspUserID,
+	}, nil)
+	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, id uuid.UUID, from models.PSUBankBridgeConnection) error {
+		s.Equal(id, psuID)
+		s.Equal(from.ConnectionID, connectionID)
+		s.Equal(from.ConnectorID, s.connectorID)
+		s.Equal(from.Status, models.ConnectionStatusError)
+		s.Equal(from.Error, pointer.For("test reason"))
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.UserConnectionDisconnected)
+		s.Equal(psuID, req.UserConnectionDisconnected.PsuID)
+		s.Equal(s.connectorID, req.UserConnectionDisconnected.ConnectorID)
+		s.Equal(connectionID, req.UserConnectionDisconnected.ConnectionID)
+		s.Equal(&reason, req.UserConnectionDisconnected.Reason)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePSUBankBridgeConnectionsGetFromConnectionID_Error() {
 func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePSUOpenBankingConnectionsGetFromConnectionID_Error() {
 	connectionID := "test-connection-id"
 
@@ -630,6 +706,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePS
 				{
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						At:           time.Now(),
 					},
 				},
@@ -681,6 +758,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePS
 					UserConnectionDisconnected: &models.PSPUserConnectionDisconnected{
 						ConnectionID: connectionID,
 						At:           at,
+						ErrorType:    models.ConnectionDisconnectedErrorTypeUserActionNeeded,
 						Reason:       &reason,
 					},
 				},
@@ -758,6 +836,75 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_Success() 
 		}, nil
 	})
 	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.UserConnectionReconnected)
+		s.Equal(psuID, req.UserConnectionReconnected.PsuID)
+		s.Equal(s.connectorID, req.UserConnectionReconnected.ConnectorID)
+		s.Equal(connectionID, req.UserConnectionReconnected.ConnectionID)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_Success_Without_Connection_Created() {
+	connectionID := "test-connection-id"
+	pspUserID := "test-psp-user-id"
+	psuID := uuid.New()
+	at := time.Now()
+
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					UserConnectionReconnected: &models.PSPUserConnectionReconnected{
+						PSPUserID:    pspUserID,
+						ConnectionID: connectionID,
+						At:           at,
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StoragePSUBankBridgeConnectionsGetFromConnectionIDResult, error) {
+		return nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
+	})
+	s.env.OnActivity(activities.StoragePSUBankBridgesGetByPSPUserIDActivity, mock.Anything, pspUserID, s.connectorID).Return(&models.PSUBankBridge{
+		PsuID:       psuID,
+		ConnectorID: s.connectorID,
+		PSPUserID:   &pspUserID,
+	}, nil)
+	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, id uuid.UUID, from models.PSUBankBridgeConnection) error {
+		s.Equal(id, psuID)
+		s.Equal(from.ConnectionID, connectionID)
+		s.Equal(from.ConnectorID, s.connectorID)
+		s.Equal(from.Status, models.ConnectionStatusActive)
+		return nil
+	})
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
 		s.NotNil(req.UserConnectionReconnected)
 		s.Equal(psuID, req.UserConnectionReconnected.PsuID)

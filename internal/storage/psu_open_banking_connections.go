@@ -357,6 +357,7 @@ type psuOpenBankingConnections struct {
 	CreatedAt     time.Time               `bun:"created_at,type:timestamp without time zone,notnull"`
 	DataUpdatedAt time.Time               `bun:"data_updated_at,type:timestamp without time zone,notnull"`
 	Status        models.ConnectionStatus `bun:"status,type:text,notnull"`
+	UpdatedAt     time.Time               `bun:"updated_at,type:timestamp without time zone,notnull"`
 
 	// Optional fields
 	Error    *string           `bun:"error,type:text,nullzero"`
@@ -396,6 +397,7 @@ func (s *store) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.
 		Set("metadata = EXCLUDED.metadata").
 		Set("status = EXCLUDED.status").
 		Set("error = EXCLUDED.error").
+		Set("updated_at = EXCLUDED.updated_at").
 		Exec(ctx)
 	if err != nil {
 		return e("upserting open banking connection", err)
@@ -664,6 +666,7 @@ func fromPsuOpenBankingConnectionsModels(from models.PSUOpenBankingConnection, p
 		CreatedAt:     time.New(from.CreatedAt),
 		DataUpdatedAt: time.New(from.DataUpdatedAt),
 		Status:        from.Status,
+		UpdatedAt:     time.New(from.UpdatedAt),
 		Error:         from.Error,
 		Metadata:      from.Metadata,
 	}, token
@@ -676,6 +679,7 @@ func toPsuOpenBankingConnectionsModels(from psuOpenBankingConnections) models.PS
 		CreatedAt:     from.CreatedAt.Time,
 		DataUpdatedAt: from.DataUpdatedAt.Time,
 		Status:        from.Status,
+		UpdatedAt:     from.UpdatedAt.Time,
 		Error:         from.Error,
 		AccessToken:   toTokenModels(from.AccessToken, from.ExpiresAt),
 		Metadata:      from.Metadata,
