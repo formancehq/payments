@@ -25,7 +25,8 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 	var sdkBalances []*client.Balance
 	var err error
 	if kind == "wallet" {
-		sdkBalances, err = p.client.GetWalletBalance(ctx, from.Reference)
+		portfolioID := from.Metadata["spec.coinbase.com/portfolio_id"]
+		sdkBalances, err = p.client.GetWalletBalance(ctx, portfolioID, from.Reference)
 	} else {
 		sdkBalances, err = p.client.GetAccountBalances(ctx, from.Reference)
 	}

@@ -33,10 +33,13 @@ func (c *client) GetAccountBalances(ctx context.Context, accountRef string) ([]*
 	return out, nil
 }
 
-func (c *client) GetWalletBalance(ctx context.Context, walletId string) ([]*Balance, error) {
+func (c *client) GetWalletBalance(ctx context.Context, portfolioId string, walletId string) ([]*Balance, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "get_wallet_balance")
 	svc := cbbalances.NewBalancesService(c.sdk)
-	res, err := svc.GetWalletBalance(ctx, &cbbalances.GetWalletBalanceRequest{Id: walletId})
+	res, err := svc.GetWalletBalance(ctx, &cbbalances.GetWalletBalanceRequest{
+		PortfolioId: portfolioId,
+		Id:          walletId,
+	})
 	if err != nil {
 		return nil, err
 	}

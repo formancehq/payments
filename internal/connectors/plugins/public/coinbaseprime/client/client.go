@@ -15,7 +15,7 @@ import (
 type Client interface {
 	GetAccounts(ctx context.Context, page int, pageSize int) ([]*Account, error)
 	GetAccountBalances(ctx context.Context, accountRef string) ([]*Balance, error)
-	GetWalletBalance(ctx context.Context, walletId string) ([]*Balance, error)
+	GetWalletBalance(ctx context.Context, portfolioId string, walletId string) ([]*Balance, error)
 	GetPortfolioTransactions(ctx context.Context, portfolioId string, page, pageSize int) ([]*Transaction, error)
 	GetWalletTransactions(ctx context.Context, portfolioId string, walletId string, page, pageSize int) ([]*Transaction, error)
 	GetExternalAccounts(ctx context.Context, page int, pageSize int) ([]*ExternalAccount, error)
