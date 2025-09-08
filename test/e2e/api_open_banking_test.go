@@ -247,7 +247,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			uninstallConnector(ctx, app.GetValue(), connectorID)
 		})
 
-		It("should fail", func() {
+		It("the link flow should be in error and the attempt should be updated to exited, no connection should be created", func() {
 			resp, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
 				ctx,
 				psuID,

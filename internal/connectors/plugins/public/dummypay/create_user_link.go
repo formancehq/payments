@@ -23,7 +23,7 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 	return nil
 }
 
-func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
+func (p *Plugin) createUserLink(_ context.Context, req models.CreateUserLinkRequest) (models.CreateUserLinkResponse, error) {
 	if err := validateCreateUserLinkRequest(req); err != nil {
 		return models.CreateUserLinkResponse{}, err
 	}

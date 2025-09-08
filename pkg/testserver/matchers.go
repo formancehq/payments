@@ -109,7 +109,7 @@ type EventMatcher struct {
 func (e *EventMatcher) Match(actual any) (success bool, err error) {
 	msg, ok := actual.(*nats.Msg)
 	if !ok {
-		return false, fmt.Errorf("expected type %t", actual)
+		return false, fmt.Errorf("expected type %T", actual)
 	}
 
 	ev := publish.EventMessage{}
@@ -156,7 +156,7 @@ type LinkAttemptsLengthMatcher struct {
 func (m *LinkAttemptsLengthMatcher) Match(actual any) (success bool, err error) {
 	attempts, ok := actual.([]components.V3PaymentServiceUserLinkAttempt)
 	if !ok {
-		return false, fmt.Errorf("unexpected type %t", actual)
+		return false, fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if len(attempts) != m.length {
@@ -199,7 +199,7 @@ type LinkAttemptStatusMatcher struct {
 func (t *LinkAttemptStatusMatcher) Match(actual any) error {
 	attempt, ok := actual.(components.V3PaymentServiceUserLinkAttempt)
 	if !ok {
-		return fmt.Errorf("unexpected type %t", actual)
+		return fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if attempt.Status != t.status {
@@ -226,7 +226,7 @@ type UserConnectionsLengthMatcher struct {
 func (m *UserConnectionsLengthMatcher) Match(actual any) (success bool, err error) {
 	attempts, ok := actual.([]components.V3PaymentServiceUserConnection)
 	if !ok {
-		return false, fmt.Errorf("unexpected type %t", actual)
+		return false, fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if len(attempts) != m.length {
@@ -269,7 +269,7 @@ type UserConnectionStatusMatcher struct {
 func (t *UserConnectionStatusMatcher) Match(actual any) error {
 	connection, ok := actual.(components.V3PaymentServiceUserConnection)
 	if !ok {
-		return fmt.Errorf("unexpected type %t", actual)
+		return fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if connection.Status != t.status {
@@ -296,7 +296,7 @@ type TaskMatcher struct {
 func (t *TaskMatcher) Match(actual any) (success bool, err error) {
 	task, ok := actual.(models.Task)
 	if !ok {
-		return false, fmt.Errorf("unexpected type %t", actual)
+		return false, fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if task.Status != t.status {
@@ -336,7 +336,7 @@ type TaskErrorMatcher struct {
 func (m TaskErrorMatcher) Match(actual interface{}) error {
 	task, ok := actual.(models.Task)
 	if !ok {
-		return fmt.Errorf("unexpected type %t", actual)
+		return fmt.Errorf("unexpected type %T", actual)
 	}
 
 	if task.Error == nil {

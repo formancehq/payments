@@ -13,7 +13,8 @@ type CompleteLink struct {
 
 func (c *client) CompleteLink(ctx context.Context, userID string, connectionID string) error {
 	completeLink := CompleteLink{
-		UserID: userID,
+		UserID:       userID,
+		ConnectionID: connectionID,
 	}
 
 	b, err := json.Marshal(&completeLink)
