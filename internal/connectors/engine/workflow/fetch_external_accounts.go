@@ -68,7 +68,6 @@ func (w Workflow) fetchExternalAccounts(
 			externalAccountsResponse.ExternalAccounts,
 			models.ACCOUNT_TYPE_EXTERNAL,
 			fetchNextExternalAccount.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

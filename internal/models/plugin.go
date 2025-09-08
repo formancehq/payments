@@ -236,6 +236,7 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 }
 
 type BankBridgeFromPayload struct {
+	PSUID                   uuid.UUID
 	PSUBankBridge           *PSUBankBridge
 	PSUBankBridgeConnection *PSUBankBridgeConnection
 	FromPayload             json.RawMessage

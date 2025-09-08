@@ -13,11 +13,10 @@ import (
 )
 
 type FetchNextAccounts struct {
-	Config             models.Config      `json:"config"`
-	ConnectorID        models.ConnectorID `json:"connectorID"`
-	FromPayload        *FromPayload       `json:"fromPayload"`
-	Periodically       bool               `json:"periodically"`
-	AdditionalMetadata map[string]string  `json:"additionalMetadata"`
+	Config       models.Config      `json:"config"`
+	ConnectorID  models.ConnectorID `json:"connectorID"`
+	FromPayload  *FromPayload       `json:"fromPayload"`
+	Periodically bool               `json:"periodically"`
 }
 
 func (w Workflow) runFetchNextAccounts(
@@ -69,7 +68,6 @@ func (w Workflow) fetchAccounts(
 			accountsResponse.Accounts,
 			models.ACCOUNT_TYPE_INTERNAL,
 			fetchNextAccount.ConnectorID,
-			fetchNextAccount.AdditionalMetadata,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

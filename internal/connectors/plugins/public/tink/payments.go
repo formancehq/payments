@@ -135,16 +135,13 @@ func toPSPPayments(
 			Status:                      status,
 			SourceAccountReference:      sourceReference,
 			DestinationAccountReference: destinationReference,
+			PsuID:                       &from.PSUID,
 			Metadata:                    make(map[string]string),
 			Raw:                         raw,
 		}
 
-		if from.PSUBankBridge != nil {
-			p.Metadata[models.ObjectPSUIDMetadataKey] = from.PSUBankBridge.PsuID.String()
-		}
-
 		if from.PSUBankBridgeConnection != nil {
-			p.Metadata[models.ObjectConnectionIDMetadataKey] = from.PSUBankBridgeConnection.ConnectionID
+			p.OpenBankingConnectionID = &from.PSUBankBridgeConnection.ConnectionID
 		}
 
 		payments = append(payments, p)

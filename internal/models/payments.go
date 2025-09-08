@@ -7,6 +7,7 @@ import (
 	"time"
 
 	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	"github.com/google/uuid"
 
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
@@ -46,6 +47,11 @@ type PSPPayment struct {
 	SourceAccountReference *string
 	// Optional, can be filled for payins and transfers for example.
 	DestinationAccountReference *string
+
+	// Optional, can be filled if the payment is related to an open banking connector
+	PsuID *uuid.UUID
+	// Optional, can be filled if the payment is related to an open banking connector
+	OpenBankingConnectionID *string
 
 	// Additional metadata
 	Metadata map[string]string
@@ -128,6 +134,10 @@ type Payment struct {
 	SourceAccountID *AccountID `json:"sourceAccountID"`
 	// Optional, can be filled for payins and transfers for example.
 	DestinationAccountID *AccountID `json:"destinationAccountID"`
+	// Optional, can be filled if the payment is related to an open banking connector
+	PsuID *uuid.UUID `json:"psuID"`
+	// Optional, can be filled if the payment is related to an open banking connector
+	OpenBankingConnectionID *string `json:"openBankingConnectionID"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -138,21 +148,23 @@ type Payment struct {
 
 func (p Payment) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID                   string              `json:"id"`
-		ConnectorID          string              `json:"connectorID"`
-		Provider             string              `json:"provider"`
-		Reference            string              `json:"reference"`
-		CreatedAt            time.Time           `json:"createdAt"`
-		Type                 PaymentType         `json:"type"`
-		InitialAmount        *big.Int            `json:"initialAmount"`
-		Amount               *big.Int            `json:"amount"`
-		Asset                string              `json:"asset"`
-		Scheme               PaymentScheme       `json:"scheme"`
-		Status               PaymentStatus       `json:"status"`
-		SourceAccountID      *string             `json:"sourceAccountID"`
-		DestinationAccountID *string             `json:"destinationAccountID"`
-		Metadata             map[string]string   `json:"metadata"`
-		Adjustments          []PaymentAdjustment `json:"adjustments"`
+		ID                      string              `json:"id"`
+		ConnectorID             string              `json:"connectorID"`
+		Provider                string              `json:"provider"`
+		Reference               string              `json:"reference"`
+		CreatedAt               time.Time           `json:"createdAt"`
+		Type                    PaymentType         `json:"type"`
+		InitialAmount           *big.Int            `json:"initialAmount"`
+		Amount                  *big.Int            `json:"amount"`
+		Asset                   string              `json:"asset"`
+		Scheme                  PaymentScheme       `json:"scheme"`
+		Status                  PaymentStatus       `json:"status"`
+		SourceAccountID         *string             `json:"sourceAccountID"`
+		DestinationAccountID    *string             `json:"destinationAccountID"`
+		PsuID                   *string             `json:"psuID,omitempty"`
+		OpenBankingConnectionID *string             `json:"openBankingConnectionID,omitempty"`
+		Metadata                map[string]string   `json:"metadata"`
+		Adjustments             []PaymentAdjustment `json:"adjustments"`
 	}{
 		ID:            p.ID.String(),
 		ConnectorID:   p.ConnectorID.String(),
@@ -177,28 +189,37 @@ func (p Payment) MarshalJSON() ([]byte, error) {
 			}
 			return pointer.For(p.DestinationAccountID.String())
 		}(),
-		Metadata:    p.Metadata,
-		Adjustments: p.Adjustments,
+		PsuID: func() *string {
+			if p.PsuID == nil {
+				return nil
+			}
+			return pointer.For(p.PsuID.String())
+		}(),
+		OpenBankingConnectionID: p.OpenBankingConnectionID,
+		Metadata:                p.Metadata,
+		Adjustments:             p.Adjustments,
 	})
 }
 
 func (c *Payment) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID                   string              `json:"id"`
-		ConnectorID          string              `json:"connectorID"`
-		Provider             string              `json:"provider"`
-		Reference            string              `json:"reference"`
-		CreatedAt            time.Time           `json:"createdAt"`
-		Type                 PaymentType         `json:"type"`
-		InitialAmount        *big.Int            `json:"initialAmount"`
-		Amount               *big.Int            `json:"amount"`
-		Asset                string              `json:"asset"`
-		Scheme               PaymentScheme       `json:"scheme"`
-		Status               PaymentStatus       `json:"status"`
-		SourceAccountID      *string             `json:"sourceAccountID"`
-		DestinationAccountID *string             `json:"destinationAccountID"`
-		Metadata             map[string]string   `json:"metadata"`
-		Adjustments          []PaymentAdjustment `json:"adjustments"`
+		ID                      string              `json:"id"`
+		ConnectorID             string              `json:"connectorID"`
+		Provider                string              `json:"provider"`
+		Reference               string              `json:"reference"`
+		CreatedAt               time.Time           `json:"createdAt"`
+		Type                    PaymentType         `json:"type"`
+		InitialAmount           *big.Int            `json:"initialAmount"`
+		Amount                  *big.Int            `json:"amount"`
+		Asset                   string              `json:"asset"`
+		Scheme                  PaymentScheme       `json:"scheme"`
+		Status                  PaymentStatus       `json:"status"`
+		SourceAccountID         *string             `json:"sourceAccountID"`
+		DestinationAccountID    *string             `json:"destinationAccountID"`
+		PsuID                   *string             `json:"psuID,omitempty"`
+		OpenBankingConnectionID *string             `json:"openBankingConnectionID,omitempty"`
+		Metadata                map[string]string   `json:"metadata"`
+		Adjustments             []PaymentAdjustment `json:"adjustments"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -231,6 +252,18 @@ func (c *Payment) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		destinationAccountID = &id
+	}
+
+	if aux.PsuID != nil {
+		psuID, err := uuid.Parse(*aux.PsuID)
+		if err != nil {
+			return err
+		}
+		c.PsuID = &psuID
+	}
+
+	if aux.OpenBankingConnectionID != nil {
+		c.OpenBankingConnectionID = aux.OpenBankingConnectionID
 	}
 
 	c.ID = id
@@ -296,7 +329,14 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment,
 				ConnectorID: connectorID,
 			}
 		}(),
-		Metadata: from.Metadata,
+		PsuID: func() *uuid.UUID {
+			if from.PsuID == nil {
+				return nil
+			}
+			return from.PsuID
+		}(),
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
+		Metadata:                from.Metadata,
 	}
 
 	if p.Status == PAYMENT_STATUS_AUTHORISATION {
@@ -309,16 +349,12 @@ func FromPSPPaymentToPayment(from PSPPayment, connectorID ConnectorID) (Payment,
 	return p, nil
 }
 
-func FromPSPPayments(from []PSPPayment, connectorID ConnectorID, additionalMetadata map[string]string) ([]Payment, error) {
+func FromPSPPayments(from []PSPPayment, connectorID ConnectorID) ([]Payment, error) {
 	payments := make([]Payment, 0, len(from))
 	for _, p := range from {
 		payment, err := FromPSPPaymentToPayment(p, connectorID)
 		if err != nil {
 			return nil, err
-		}
-
-		for k, v := range additionalMetadata {
-			payment.Metadata[k] = v
 		}
 
 		payments = append(payments, payment)

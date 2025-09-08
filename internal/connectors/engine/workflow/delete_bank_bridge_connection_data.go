@@ -3,11 +3,8 @@ package workflow
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
@@ -79,21 +76,19 @@ func (w Workflow) deleteBankBridgeConnectionData(
 	ctx workflow.Context,
 	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteBankBridgePaymentsFromConnectionID(
 		ctx,
-		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
-		},
+		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteBankBridgeAccountsFromConnectionID(
 		ctx,
-		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
-		},
+		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -106,23 +101,19 @@ func (w Workflow) deleteBankBridgeConnectorIDData(
 	ctx workflow.Context,
 	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteBankBridgePaymentsFromPSUIDAndConnectorID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-			"connector_id":                deleteBankBridgeConnectionData.FromConnectorID.ConnectorID.String(),
-		},
+		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteBankBridgeAccountsFromPSUIDAndConnectorID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-			"connector_id":                deleteBankBridgeConnectionData.FromConnectorID.ConnectorID.String(),
-		},
+		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -135,21 +126,17 @@ func (w Workflow) deleteBankBridgePSUData(
 	ctx workflow.Context,
 	deleteBankBridgeConnectionData DeleteBankBridgeConnectionData,
 ) error {
-	err := w.deleteBankBridgePayments(
+	err := w.deleteBankBridgePaymentsFromPSUID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-		},
+		deleteBankBridgeConnectionData.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteBankBridgeAccounts(
+	err = w.deleteBankBridgeAccountsFromPSUID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteBankBridgeConnectionData.PSUID.String(),
-		},
+		deleteBankBridgeConnectionData.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -158,125 +145,104 @@ func (w Workflow) deleteBankBridgePSUData(
 	return nil
 }
 
-func (w Workflow) deleteBankBridgePayments(
+func (w Workflow) deleteBankBridgePaymentsFromPSUID(
 	ctx workflow.Context,
-	filteredMetadata map[string]string,
+	psuID uuid.UUID,
 ) error {
-	var q query.Builder
-	matches := []query.Builder{}
-	for key, value := range filteredMetadata {
-		matches = append(matches, query.Match(fmt.Sprintf("metadata[%s]", key), value))
-	}
-	if len(matches) > 1 {
-		q = query.And(matches...)
-	} else {
-		q = matches[0]
-	}
-
-	query := storage.NewListPaymentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentQuery{}).
-			WithPageSize(50).
-			WithQueryBuilder(q),
+	err := activities.StoragePaymentsDeleteFromPSUID(
+		infiniteRetryContext(ctx),
+		psuID,
 	)
-
-	for {
-		cursor, err := activities.StoragePaymentsList(
-			infiniteRetryContext(ctx),
-			query,
-		)
-		if err != nil {
-			return err
-		}
-
-		wg := workflow.NewWaitGroup(ctx)
-
-		for _, payment := range cursor.Data {
-			payment := payment
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := activities.StoragePaymentsDelete(
-					infiniteRetryContext(ctx),
-					payment.ID,
-				); err != nil {
-					workflow.GetLogger(ctx).Error("failed to delete payment", "payment_id", payment.ID, "error", err)
-				}
-			})
-		}
-
-		wg.Wait(ctx)
-
-		if !cursor.HasMore {
-			break
-		}
-
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &query)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
 	}
 
 	return nil
 }
 
-func (w Workflow) deleteBankBridgeAccounts(
+func (w Workflow) deleteBankBridgePaymentsFromPSUIDAndConnectorID(
 	ctx workflow.Context,
-	filteredMetadata map[string]string,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
 ) error {
-	var q query.Builder
-	matches := []query.Builder{}
-	for key, value := range filteredMetadata {
-		matches = append(matches, query.Match(fmt.Sprintf("metadata[%s]", key), value))
-	}
-	if len(matches) > 1 {
-		q = query.And(matches...)
-	} else {
-		q = matches[0]
-	}
-
-	query := storage.NewListAccountsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
-			WithPageSize(50).
-			WithQueryBuilder(q),
+	err := activities.StoragePaymentsDeleteFromPSUIDAndConnectorID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
 	)
 
-	for {
-		cursor, err := activities.StorageAccountsList(
-			infiniteRetryContext(ctx),
-			query,
-		)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
+	}
 
-		wg := workflow.NewWaitGroup(ctx)
+	return nil
+}
 
-		for _, account := range cursor.Data {
-			account := account
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+func (w Workflow) deleteBankBridgePaymentsFromConnectionID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectionID string,
+) error {
+	err := activities.StoragePaymentsDeleteFromConnectionID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectionID,
+	)
 
-				if err := activities.StorageAccountsDelete(
-					infiniteRetryContext(ctx),
-					account.ID,
-				); err != nil {
-					workflow.GetLogger(ctx).Error("failed to delete account", "account_id", account.ID, "error", err)
-				}
-			})
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
+	}
 
-		wg.Wait(ctx)
+	return nil
+}
 
-		if !cursor.HasMore {
-			break
-		}
+func (w Workflow) deleteBankBridgeAccountsFromPSUID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+) error {
+	err := activities.StorageAccountsDeleteFromPSUID(
+		infiniteRetryContext(ctx),
+		psuID,
+	)
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
+	}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &query)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+func (w Workflow) deleteBankBridgeAccountsFromPSUIDAndConnectorID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
+) error {
+	err := activities.StorageAccountsDeleteFromPSUIDAndConnectorID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
+	}
+
+	return nil
+}
+
+func (w Workflow) deleteBankBridgeAccountsFromConnectionID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectionID string,
+) error {
+
+	err := activities.StorageAccountsDeleteFromConnectionID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectionID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
 	}
 
 	return nil

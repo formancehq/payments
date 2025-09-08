@@ -140,6 +140,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StorageAccountsDeleteFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
+			Name: "StorageAccountsDeleteFromPSUID",
+			Func: a.StorageAccountsDeleteFromPSUID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageAccountsDeleteFromPSUIDAndConnectorID",
+			Func: a.StorageAccountsDeleteFromPSUIDAndConnectorID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StorageAccountsDeleteFromConnectionID",
+			Func: a.StorageAccountsDeleteFromConnectionID,
+		}).
+		Append(temporalworker.Definition{
 			Name: "StoragePaymentsStore",
 			Func: a.StoragePaymentsStore,
 		}).
@@ -166,6 +178,18 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: "StoragePaymentsDeleteFromAccountID",
 			Func: a.StoragePaymentsDeleteFromAccountID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromPSUID",
+			Func: a.StoragePaymentsDeleteFromPSUID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromPSUIDAndConnectorID",
+			Func: a.StoragePaymentsDeleteFromPSUIDAndConnectorID,
+		}).
+		Append(temporalworker.Definition{
+			Name: "StoragePaymentsDeleteFromConnectionID",
+			Func: a.StoragePaymentsDeleteFromConnectionID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "StorageStatesGet",

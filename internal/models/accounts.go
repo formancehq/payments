@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/utils/assets"
+	"github.com/google/uuid"
 )
 
 // Internal struct used by the plugins
@@ -21,6 +23,10 @@ type PSPAccount struct {
 	// Optional, if provided the default asset of the account
 	// in minor currencies unit.
 	DefaultAsset *string
+	// Optional, can be filled if the account is related to an open banking connector
+	PsuID *uuid.UUID
+	// Optional, can be filled if the account is related to an open banking connector
+	OpenBankingConnectionID *string
 
 	// Additional metadata
 	Metadata map[string]string
@@ -69,6 +75,10 @@ type Account struct {
 	// Optional, if provided the default asset of the account
 	// in minor currencies unit.
 	DefaultAsset *string `json:"defaultAsset"`
+	// Optional, can be filled if the account is related to an open banking connector
+	PsuID *uuid.UUID `json:"psuID"`
+	// Optional, can be filled if the account is related to an open banking connector
+	OpenBankingConnectionID *string `json:"openBankingConnectionID"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
@@ -79,16 +89,18 @@ type Account struct {
 
 func (a Account) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
-		ID           string            `json:"id"`
-		ConnectorID  string            `json:"connectorID"`
-		Provider     string            `json:"provider"`
-		Reference    string            `json:"reference"`
-		CreatedAt    time.Time         `json:"createdAt"`
-		Type         AccountType       `json:"type"`
-		Name         *string           `json:"name"`
-		DefaultAsset *string           `json:"defaultAsset"`
-		Metadata     map[string]string `json:"metadata"`
-		Raw          json.RawMessage   `json:"raw"`
+		ID                      string            `json:"id"`
+		ConnectorID             string            `json:"connectorID"`
+		Provider                string            `json:"provider"`
+		Reference               string            `json:"reference"`
+		CreatedAt               time.Time         `json:"createdAt"`
+		Type                    AccountType       `json:"type"`
+		Name                    *string           `json:"name"`
+		DefaultAsset            *string           `json:"defaultAsset"`
+		PsuID                   *string           `json:"psuID,omitempty"`
+		OpenBankingConnectionID *string           `json:"openBankingConnectionID,omitempty"`
+		Metadata                map[string]string `json:"metadata"`
+		Raw                     json.RawMessage   `json:"raw"`
 	}{
 		ID:           a.ID.String(),
 		ConnectorID:  a.ConnectorID.String(),
@@ -98,8 +110,15 @@ func (a Account) MarshalJSON() ([]byte, error) {
 		Type:         a.Type,
 		Name:         a.Name,
 		DefaultAsset: a.DefaultAsset,
-		Metadata:     a.Metadata,
-		Raw:          a.Raw,
+		PsuID: func() *string {
+			if a.PsuID == nil {
+				return nil
+			}
+			return pointer.For(a.PsuID.String())
+		}(),
+		OpenBankingConnectionID: a.OpenBankingConnectionID,
+		Metadata:                a.Metadata,
+		Raw:                     a.Raw,
 	})
 }
 
@@ -109,15 +128,17 @@ func (a *Account) IdempotencyKey() string {
 
 func (a *Account) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID           string            `json:"id"`
-		ConnectorID  string            `json:"connectorID"`
-		Reference    string            `json:"reference"`
-		CreatedAt    time.Time         `json:"createdAt"`
-		Type         AccountType       `json:"type"`
-		Name         *string           `json:"name"`
-		DefaultAsset *string           `json:"defaultAsset"`
-		Metadata     map[string]string `json:"metadata"`
-		Raw          json.RawMessage   `json:"raw"`
+		ID                      string            `json:"id"`
+		ConnectorID             string            `json:"connectorID"`
+		Reference               string            `json:"reference"`
+		CreatedAt               time.Time         `json:"createdAt"`
+		Type                    AccountType       `json:"type"`
+		Name                    *string           `json:"name"`
+		DefaultAsset            *string           `json:"defaultAsset"`
+		PsuID                   *string           `json:"psuID,omitempty"`
+		OpenBankingConnectionID *string           `json:"openBankingConnectionID,omitempty"`
+		Metadata                map[string]string `json:"metadata"`
+		Raw                     json.RawMessage   `json:"raw"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -132,6 +153,18 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 	connectorID, err := ConnectorIDFromString(aux.ConnectorID)
 	if err != nil {
 		return err
+	}
+
+	if aux.PsuID != nil {
+		psuID, err := uuid.Parse(*aux.PsuID)
+		if err != nil {
+			return err
+		}
+		a.PsuID = &psuID
+	}
+
+	if aux.OpenBankingConnectionID != nil {
+		a.OpenBankingConnectionID = aux.OpenBankingConnectionID
 	}
 
 	a.ID = id
@@ -168,7 +201,7 @@ func FromPSPAccount(from PSPAccount, accountType AccountType, connectorID Connec
 	}, nil
 }
 
-func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID, additionalMetadata map[string]string) ([]Account, error) {
+func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID ConnectorID) ([]Account, error) {
 	accounts := make([]Account, 0, len(from))
 	for _, a := range from {
 		account, err := FromPSPAccount(a, accountType, connectorID)
@@ -178,10 +211,6 @@ func FromPSPAccounts(from []PSPAccount, accountType AccountType, connectorID Con
 
 		if account.Metadata == nil {
 			account.Metadata = make(map[string]string)
-		}
-
-		for k, v := range additionalMetadata {
-			account.Metadata[k] = v
 		}
 
 		accounts = append(accounts, account)
@@ -194,11 +223,13 @@ func ToPSPAccount(from *Account) *PSPAccount {
 		return nil
 	}
 	return &PSPAccount{
-		Reference:    from.Reference,
-		CreatedAt:    from.CreatedAt,
-		Name:         from.Name,
-		DefaultAsset: from.DefaultAsset,
-		Metadata:     from.Metadata,
-		Raw:          from.Raw,
+		Reference:               from.Reference,
+		CreatedAt:               from.CreatedAt,
+		Name:                    from.Name,
+		DefaultAsset:            from.DefaultAsset,
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
+		Metadata:                from.Metadata,
+		Raw:                     from.Raw,
 	}
 }

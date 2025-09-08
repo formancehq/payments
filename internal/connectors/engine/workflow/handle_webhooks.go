@@ -196,11 +196,11 @@ func (w Workflow) handleBankBridgeAccountWebhook(
 			return fmt.Errorf("getting bank bridge: %w", err)
 		}
 
-		account.Metadata[models.ObjectPSUIDMetadataKey] = bridge.PsuID.String()
+		account.PsuID = &bridge.PsuID
 	}
 
 	if response.BankBridgeAccount.BankBridgeConnectionID != nil {
-		account.Metadata[models.ObjectConnectionIDMetadataKey] = *response.BankBridgeAccount.BankBridgeConnectionID
+		account.OpenBankingConnectionID = response.BankBridgeAccount.BankBridgeConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -243,11 +243,11 @@ func (w Workflow) handleBankBridgePaymentWebhook(
 			return fmt.Errorf("getting bank bridge: %w", err)
 		}
 
-		payment.Metadata[models.ObjectPSUIDMetadataKey] = bridge.PsuID.String()
+		payment.PsuID = &bridge.PsuID
 	}
 
 	if response.BankBridgePayment.BankBridgeConnectionID != nil {
-		payment.Metadata[models.ObjectConnectionIDMetadataKey] = *response.BankBridgePayment.BankBridgeConnectionID
+		payment.OpenBankingConnectionID = response.BankBridgePayment.BankBridgeConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -302,6 +302,7 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	}
 
 	payload, err := json.Marshal(&models.BankBridgeFromPayload{
+		PSUID:                   psuID,
 		PSUBankBridge:           ba,
 		PSUBankBridgeConnection: conn,
 		FromPayload:             response.DataReadyToFetch.FromPayload,
@@ -666,7 +667,6 @@ func (w Workflow) runStoreWebhookTranslation(
 			[]models.PSPAccount{*storeWebhookTranslation.Account},
 			models.ACCOUNT_TYPE_INTERNAL,
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
@@ -694,7 +694,6 @@ func (w Workflow) runStoreWebhookTranslation(
 			[]models.PSPAccount{*storeWebhookTranslation.ExternalAccount},
 			models.ACCOUNT_TYPE_EXTERNAL,
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
@@ -721,7 +720,6 @@ func (w Workflow) runStoreWebhookTranslation(
 		payments, err := models.FromPSPPayments(
 			[]models.PSPPayment{*storeWebhookTranslation.Payment},
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

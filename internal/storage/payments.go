@@ -11,6 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
@@ -33,8 +34,10 @@ type payment struct {
 
 	// Optional fields
 	// c.f.: https://bun.uptrace.dev/guide/models.html#nulls
-	SourceAccountID      *models.AccountID `bun:"source_account_id,type:character varying,nullzero"`
-	DestinationAccountID *models.AccountID `bun:"destination_account_id,type:character varying,nullzero"`
+	SourceAccountID         *models.AccountID `bun:"source_account_id,type:character varying,nullzero"`
+	DestinationAccountID    *models.AccountID `bun:"destination_account_id,type:character varying,nullzero"`
+	PsuID                   *uuid.UUID        `bun:"psu_id,type:uuid,nullzero"`
+	OpenBankingConnectionID *string           `bun:"open_banking_connection_id,type:character varying,nullzero"`
 
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
@@ -323,6 +326,35 @@ func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID model
 	return e("failed to delete payments", err)
 }
 
+func (s *store) PaymentsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("psu_id = ?", psuID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
+func (s *store) PaymentsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("connector_id = ?", connectorID).
+		Where("psu_id = ?", psuID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
+func (s *store) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, openBankingConnectionID string) error {
+	_, err := s.db.NewDelete().
+		Model((*payment)(nil)).
+		Where("psu_id = ?", psuID).
+		Where("open_banking_connection_id = ?", openBankingConnectionID).
+		Exec(ctx)
+
+	return e("failed to delete payments", err)
+}
+
 type PaymentQuery struct{}
 
 type ListPaymentsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PaymentQuery]]
@@ -346,7 +378,9 @@ func (s *store) paymentsQueryContext(qb query.Builder) (string, []any, error) {
 			key == "scheme",
 			key == "status",
 			key == "source_account_id",
-			key == "destination_account_id":
+			key == "destination_account_id",
+			key == "psu_id",
+			key == "open_banking_connection_id":
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
@@ -429,36 +463,40 @@ func (s *store) PaymentsList(ctx context.Context, q ListPaymentsQuery) (*bunpagi
 
 func fromPaymentModels(from models.Payment) payment {
 	return payment{
-		ID:                   from.ID,
-		ConnectorID:          from.ConnectorID,
-		Reference:            from.Reference,
-		CreatedAt:            time.New(from.CreatedAt),
-		Type:                 from.Type,
-		InitialAmount:        from.InitialAmount,
-		Amount:               from.Amount,
-		Asset:                from.Asset,
-		Scheme:               from.Scheme,
-		SourceAccountID:      from.SourceAccountID,
-		DestinationAccountID: from.DestinationAccountID,
-		Metadata:             from.Metadata,
+		ID:                      from.ID,
+		ConnectorID:             from.ConnectorID,
+		Reference:               from.Reference,
+		CreatedAt:               time.New(from.CreatedAt),
+		Type:                    from.Type,
+		InitialAmount:           from.InitialAmount,
+		Amount:                  from.Amount,
+		Asset:                   from.Asset,
+		Scheme:                  from.Scheme,
+		SourceAccountID:         from.SourceAccountID,
+		DestinationAccountID:    from.DestinationAccountID,
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
+		Metadata:                from.Metadata,
 	}
 }
 
 func toPaymentModels(payment payment, status models.PaymentStatus) models.Payment {
 	return models.Payment{
-		ID:                   payment.ID,
-		ConnectorID:          payment.ConnectorID,
-		InitialAmount:        payment.InitialAmount,
-		Reference:            payment.Reference,
-		CreatedAt:            payment.CreatedAt.Time,
-		Type:                 payment.Type,
-		Amount:               payment.Amount,
-		Asset:                payment.Asset,
-		Scheme:               payment.Scheme,
-		Status:               status,
-		SourceAccountID:      payment.SourceAccountID,
-		DestinationAccountID: payment.DestinationAccountID,
-		Metadata:             payment.Metadata,
+		ID:                      payment.ID,
+		ConnectorID:             payment.ConnectorID,
+		InitialAmount:           payment.InitialAmount,
+		Reference:               payment.Reference,
+		CreatedAt:               payment.CreatedAt.Time,
+		Type:                    payment.Type,
+		Amount:                  payment.Amount,
+		Asset:                   payment.Asset,
+		Scheme:                  payment.Scheme,
+		Status:                  status,
+		SourceAccountID:         payment.SourceAccountID,
+		DestinationAccountID:    payment.DestinationAccountID,
+		PsuID:                   payment.PsuID,
+		OpenBankingConnectionID: payment.OpenBankingConnectionID,
+		Metadata:                payment.Metadata,
 	}
 }
 
