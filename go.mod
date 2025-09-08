@@ -12,6 +12,7 @@ require (
 	github.com/ThreeDotsLabs/watermill v1.5.1
 	github.com/adyen/adyen-go-api-library/v7 v7.3.1
 	github.com/bombsimon/logrusr/v3 v3.1.0
+	github.com/coinbase-samples/prime-sdk-go v0.5.3
 	github.com/emvi/iso-639-1 v1.1.1
 	github.com/formancehq/go-libs/v3 v3.2.2-0.20250926152552-b3d2e302d3df
 	github.com/formancehq/payments/genericclient v0.0.0-00010101000000-000000000000
@@ -94,7 +95,12 @@ require (
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
+<<<<<<< HEAD
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
+=======
+	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
+	github.com/coinbase-samples/core-go v0.2.1 // indirect
+>>>>>>> a3225c1e (feat: coinbase connector main capabilities)
 	github.com/containerd/continuity v0.4.3 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.4.0 // indirect
@@ -137,6 +143,7 @@ require (
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/schema v1.4.1 // indirect
 	github.com/gorilla/securecookie v1.1.2 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
@@ -196,7 +203,12 @@ require (
 	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rs/cors v1.11.1 // indirect
 	github.com/shirou/gopsutil/v4 v4.25.5 // indirect
+<<<<<<< HEAD
 	github.com/spf13/pflag v1.0.10 // indirect
+=======
+	github.com/shopspring/decimal v1.4.0 // indirect
+	github.com/spf13/pflag v1.0.7 // indirect
+>>>>>>> a3225c1e (feat: coinbase connector main capabilities)
 	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tklauser/go-sysconf v0.3.15 // indirect
 	github.com/tklauser/numcpus v0.10.0 // indirect

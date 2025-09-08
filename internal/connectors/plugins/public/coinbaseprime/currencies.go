@@ -2,14 +2,17 @@ package coinbaseprime
 
 import "github.com/formancehq/go-libs/v3/currency"
 
-var (
-    // TODO: the next line tells that the connector is supporting all currencies.
-    // If you only want to support specific currencies, you will have to remove
-    // this line and set the map yourselves
-    // Example:
-    // supportedCurrenciesWithDecimal = map[string]int{
-    // 	"EUR": currency.ISO4217Currencies["EUR"], //  Euro
-    // 	"DKK": currency.ISO4217Currencies["DKK"],
-    // }
-    supportedCurrenciesWithDecimal = currency.ISO4217Currencies
-)
+var supportedCurrenciesWithDecimal map[string]int
+
+func init() {
+	// Clone ISO 4217 mapping for fiat
+	supportedCurrenciesWithDecimal = make(map[string]int, len(currency.ISO4217Currencies)+8)
+	for k, v := range currency.ISO4217Currencies {
+		supportedCurrenciesWithDecimal[k] = v
+	}
+	// Add common crypto/stable overrides
+	supportedCurrenciesWithDecimal["BTC"] = 8
+	supportedCurrenciesWithDecimal["ETH"] = 8
+	supportedCurrenciesWithDecimal["SOL"] = 9
+	supportedCurrenciesWithDecimal["USDC"] = 6
+}
