@@ -30,7 +30,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/golang-lru/v2 v2.0.7
 	github.com/invopop/jsonschema v0.13.0
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.7.6
 	github.com/jackc/pgxlisten v0.0.0-20250802141604-12b92425684c
 	github.com/lib/pq v1.10.9
 	github.com/nats-io/nats.go v1.43.0
