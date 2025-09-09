@@ -178,7 +178,7 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 					Name: string(client.WebhookEventTypeConnectionSynced),
 				},
 				Webhook: models.PSPWebhook{
-					Body: []byte(`{"connection_id": "123", "transactions": [{"id": "1"}, {"id": "2"}]}`),
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "accounts": [{"id": 1, "transactions": [{"id": 1}, {"id": 2}]}]}}`),
 				},
 			}
 

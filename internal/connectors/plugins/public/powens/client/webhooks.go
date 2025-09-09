@@ -143,70 +143,6 @@ type AccountFetchedWebhook struct {
 	Connection Connection `json:"connection"`
 }
 
-type AccountSyncedWebhook struct {
-	BankAccountID int       `json:"id"`
-	ConnectionID  int       `json:"id_connection"`
-	UserID        int       `json:"id_user"`
-	Name          string    `json:"name"`
-	LastUpdate    time.Time `json:"last_update"`
-	Currency      Currency  `json:"currency"`
-
-	Transactions []Transaction `json:"transactions"`
-}
-
-func (w AccountSyncedWebhook) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
-		BankAccountID int           `json:"id"`
-		ConnectionID  int           `json:"id_connection"`
-		UserID        int           `json:"id_user"`
-		Name          string        `json:"name"`
-		LastUpdate    string        `json:"last_update"`
-		Currency      Currency      `json:"currency"`
-		Transactions  []Transaction `json:"transactions"`
-	}{
-		BankAccountID: w.BankAccountID,
-		ConnectionID:  w.ConnectionID,
-		UserID:        w.UserID,
-		Name:          w.Name,
-		LastUpdate:    w.LastUpdate.Format(time.DateTime),
-		Currency:      w.Currency,
-		Transactions:  w.Transactions,
-	})
-}
-
-func (w *AccountSyncedWebhook) UnmarshalJSON(data []byte) error {
-	type accountSyncedWebhook struct {
-		BankAccountID int           `json:"id"`
-		ConnectionID  int           `json:"id_connection"`
-		UserID        int           `json:"id_user"`
-		Name          string        `json:"name"`
-		LastUpdate    string        `json:"last_update"`
-		Currency      Currency      `json:"currency"`
-		Transactions  []Transaction `json:"transactions"`
-	}
-
-	var aux accountSyncedWebhook
-	if err := json.Unmarshal(data, &aux); err != nil {
-		return err
-	}
-
-	lastUpdate, err := time.Parse(time.DateTime, aux.LastUpdate)
-	if err != nil {
-		return err
-	}
-
-	*w = AccountSyncedWebhook{
-		BankAccountID: aux.BankAccountID,
-		ConnectionID:  aux.ConnectionID,
-		UserID:        aux.UserID,
-		Name:          aux.Name,
-		LastUpdate:    lastUpdate,
-		Currency:      aux.Currency,
-		Transactions:  aux.Transactions,
-	}
-	return nil
-}
-
 type ConnectionDeletedWebhook struct {
 	ConnectionID int `json:"id"`
 }
@@ -225,31 +161,36 @@ type ConnectionSyncedConnection struct {
 	ErrorMessage string    `json:"error_message"`
 	LastUpdate   time.Time `json:"last_update"`
 	Active       bool      `json:"active"`
+
+	Accounts []BankAccount `json:"accounts"`
 }
 
 func (c ConnectionSyncedConnection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		ID           int    `json:"id"`
-		State        string `json:"state"`
-		ErrorMessage string `json:"error_message"`
-		LastUpdate   string `json:"last_update"`
-		Active       bool   `json:"active"`
+		ID           int           `json:"id"`
+		State        string        `json:"state"`
+		ErrorMessage string        `json:"error_message"`
+		LastUpdate   string        `json:"last_update"`
+		Active       bool          `json:"active"`
+		Accounts     []BankAccount `json:"accounts"`
 	}{
 		ID:           c.ID,
 		State:        c.State,
 		ErrorMessage: c.ErrorMessage,
 		LastUpdate:   c.LastUpdate.Format(time.DateTime),
 		Active:       c.Active,
+		Accounts:     c.Accounts,
 	})
 }
 
 func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 	type connectionSyncedConnection struct {
-		ID           int    `json:"id"`
-		State        string `json:"state"`
-		ErrorMessage string `json:"error_message"`
-		LastUpdate   string `json:"last_update"`
-		Active       bool   `json:"active"`
+		ID           int           `json:"id"`
+		State        string        `json:"state"`
+		ErrorMessage string        `json:"error_message"`
+		LastUpdate   string        `json:"last_update"`
+		Active       bool          `json:"active"`
+		Accounts     []BankAccount `json:"accounts"`
 	}
 
 	var aux connectionSyncedConnection
@@ -272,6 +213,7 @@ func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 		ErrorMessage: aux.ErrorMessage,
 		LastUpdate:   lastUpdate,
 		Active:       aux.Active,
+		Accounts:     aux.Accounts,
 	}
 	return nil
 }
