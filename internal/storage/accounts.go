@@ -43,7 +43,8 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 	toInsert := make([]account, 0, len(accounts))
 	for _, a := range accounts {
-		toInsert = append(toInsert, fromAccountModels(a))
+		acc := fromAccountModels(a)
+		toInsert = append(toInsert, acc)
 	}
 
 	_, err := s.db.NewInsert().
