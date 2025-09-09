@@ -186,5 +186,20 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			Expect(err).To(BeNil())
 			Expect(resp.Webhooks).To(HaveLen(1))
 		})
+
+		It("should trim connection synced webhook successfully even with empty transactions", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "accounts": [{"id": 1}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+		})
 	})
 })

@@ -206,7 +206,7 @@ func (p *Plugin) trimConnectionSynced(_ context.Context, req models.TrimWebhookR
 				},
 			}
 
-			accountSyncedWebhook := client.BankAccount{
+			ba := client.BankAccount{
 				ID:           acc.ID,
 				ConnectionID: acc.ConnectionID,
 				UserID:       acc.UserID,
@@ -218,26 +218,24 @@ func (p *Plugin) trimConnectionSynced(_ context.Context, req models.TrimWebhookR
 
 			limit := index + webhookAccountSyncedTransactionsLimit
 			for ; index < len(acc.Transactions) && index < limit; index++ {
-				accountSyncedWebhook.Transactions = append(accountSyncedWebhook.Transactions, acc.Transactions[index])
+				ba.Transactions = append(ba.Transactions, acc.Transactions[index])
 			}
 
-			if len(accountSyncedWebhook.Transactions) > 0 {
-				connectionSyncedWebhook.Connection.Accounts = append(connectionSyncedWebhook.Connection.Accounts, accountSyncedWebhook)
+			connectionSyncedWebhook.Connection.Accounts = append(connectionSyncedWebhook.Connection.Accounts, ba)
 
-				body, err := json.Marshal(connectionSyncedWebhook)
-				if err != nil {
-					return models.TrimWebhookResponse{}, err
-				}
-
-				w := models.PSPWebhook{
-					BasicAuth:   req.Webhook.BasicAuth,
-					QueryValues: req.Webhook.QueryValues,
-					Headers:     req.Webhook.Headers,
-					Body:        body,
-				}
-
-				webhooks = append(webhooks, w)
+			body, err := json.Marshal(connectionSyncedWebhook)
+			if err != nil {
+				return models.TrimWebhookResponse{}, err
 			}
+
+			w := models.PSPWebhook{
+				BasicAuth:   req.Webhook.BasicAuth,
+				QueryValues: req.Webhook.QueryValues,
+				Headers:     req.Webhook.Headers,
+				Body:        body,
+			}
+
+			webhooks = append(webhooks, w)
 
 			if index >= len(acc.Transactions) {
 				break
@@ -292,6 +290,11 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 			})
 		}
 
+		at := time.Now().UTC()
+		if !webhook.Connection.LastUpdate.IsZero() {
+			at = webhook.Connection.LastUpdate
+		}
+
 		// We have to put first the user connection reconnected webhook in order
 		// to be sure that the connection is created before the payments and
 		// accounts are ingested.
@@ -300,7 +303,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
 					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
-					At:           time.Now().UTC(),
+					At:           at,
 				},
 			},
 		}
