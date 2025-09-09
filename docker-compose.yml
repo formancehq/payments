@@ -30,7 +30,7 @@ services:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   payments-migrate:
-    image: golang:1.23.4-alpine
+    image: golang:1.25.1-alpine
     command: go run ./ migrate up
     depends_on:
       postgres:
@@ -42,7 +42,7 @@ services:
       POSTGRES_URI: postgres://payments:payments@postgres:${POSTGRES_PORT:-5432}/payments?sslmode=disable
 
   temporal:
-    image: temporalio/auto-setup:1.25.0
+    image: temporalio/auto-setup:1.28.1
     depends_on:
       postgres:
         condition: service_healthy
@@ -74,12 +74,12 @@ services:
     environment:
       - TEMPORAL_ADDRESS=temporal:7233
       - TEMPORAL_CORS_ORIGINS=http://localhost:3000
-    image: temporalio/ui:2.26.2
+    image: temporalio/ui:2.40.0
     ports:
       - 8081:8080
 
   payments:
-    image: golang:1.23.4-alpine
+    image: golang:1.25.1-alpine
     command: go run ./ server
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -108,7 +108,7 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
 
   payments-worker:
-    image: golang:1.23.4-alpine
+    image: golang:1.25.1-alpine
     command: go run ./ worker
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
