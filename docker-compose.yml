@@ -30,7 +30,7 @@ services:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   payments-migrate:
-    image: golang:1.25.1-alpine
+    image: golang:1.24.7-alpine
     command: go run ./ migrate up
     depends_on:
       postgres:
@@ -79,7 +79,7 @@ services:
       - 8081:8080
 
   payments:
-    image: golang:1.25.1-alpine
+    image: golang:1.24.7-alpine
     command: go run ./ server
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
@@ -108,7 +108,7 @@ services:
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
 
   payments-worker:
-    image: golang:1.25.1-alpine
+    image: golang:1.24.7-alpine
     command: go run ./ worker
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://127.0.0.1:8080/_healthcheck" ]
