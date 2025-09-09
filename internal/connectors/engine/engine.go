@@ -822,7 +822,7 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	_, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
 	switch {
 	case err == nil:
-		err := fmt.Errorf("user already exists on this connector")
+		err := fmt.Errorf("user already exists on this connector: %w", ErrValidation)
 		otel.RecordError(span, err)
 		return err
 	case err != nil && !errors.Is(err, storage.ErrNotFound):
@@ -844,6 +844,9 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return fmt.Errorf("connector %w", ErrNotFound)
+		}
 		return err
 	}
 
@@ -1020,6 +1023,9 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return "", "", fmt.Errorf("connector %w", ErrNotFound)
+		}
 		return "", "", err
 	}
 
@@ -1110,6 +1116,9 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	plugin, err := e.connectors.Get(connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
+		if errors.Is(err, connectors.ErrNotFound) {
+			return "", "", fmt.Errorf("connector %w", ErrNotFound)
+		}
 		return "", "", err
 	}
 

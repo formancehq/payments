@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	StateQueryParamID      = "state"
 	NoRedirectQueryParamID = "noRedirect"
 
 	ObjectConnectionIDMetadataKey = "object_connection_id"
