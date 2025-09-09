@@ -45,7 +45,7 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Configs).To(HaveLen(5))
+			Expect(resp.Configs).To(HaveLen(3))
 		})
 
 		It("should return an error - client create webhook auth error", func(ctx SpecContext) {

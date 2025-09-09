@@ -45,15 +45,6 @@ func (p *Plugin) initWebhookConfig() {
 			urlPath:        "/connection-deleted",
 			handleFunction: p.handleConnectionDeleted,
 		},
-		client.WebhookEventTypeAccountsFetched: {
-			urlPath:        "/accounts-fetched",
-			handleFunction: p.handleAccountsFetched,
-		},
-		client.WebhookEventTypeAccountSynced: {
-			urlPath:        "/account-synced",
-			trimFunction:   p.trimAccountsSynced,
-			handleFunction: p.handleAccountSynced,
-		},
 	}
 }
 
@@ -165,31 +156,6 @@ func (p *Plugin) trimConnectionSynced(_ context.Context, req models.TrimWebhookR
 		return models.TrimWebhookResponse{}, err
 	}
 
-	switch webhook.Connection.State {
-	case "null", "":
-	default:
-		// We have a connection in error, we need to trim the webhooks to keep
-		// only the necessary fields
-		webhook.Connection.Accounts = nil
-
-		body, err := json.Marshal(webhook)
-		if err != nil {
-			return models.TrimWebhookResponse{}, err
-		}
-
-		return models.TrimWebhookResponse{
-			Webhooks: []models.PSPWebhook{
-				{
-					BasicAuth:   req.Webhook.BasicAuth,
-					QueryValues: req.Webhook.QueryValues,
-					Headers:     req.Webhook.Headers,
-					Body:        body,
-				},
-			},
-		}, nil
-	}
-
-	// We have a connection that is not in error, we need to split the webhooks
 	webhooks := make([]models.PSPWebhook, 0)
 	for _, account := range webhook.Connection.Accounts {
 		acc := account
@@ -413,24 +379,6 @@ func (p *Plugin) handleConnectionDeleted(ctx context.Context, req models.Transla
 			},
 		},
 	}, nil
-}
-
-// Nothing to do for accounts fetched webhook since we go through the connection
-// synced webhook now.
-func (p *Plugin) handleAccountsFetched(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return []models.WebhookResponse{}, nil
-}
-
-// Nothing to do for account synced webhook since we go through the connection
-// synced webhook now.
-func (p *Plugin) trimAccountsSynced(_ context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
-	return models.TrimWebhookResponse{}, nil
-}
-
-// Nothing to do for account synced webhook since we go through the connection
-// synced webhook now.
-func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	return []models.WebhookResponse{}, nil
 }
 
 func translateBankAccountToPSPAccount(account client.BankAccount) (models.PSPAccount, error) {
