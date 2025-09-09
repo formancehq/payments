@@ -45,15 +45,6 @@ func (p *Plugin) initWebhookConfig() {
 			urlPath:        "/connection-deleted",
 			handleFunction: p.handleConnectionDeleted,
 		},
-		client.WebhookEventTypeAccountsFetched: {
-			urlPath:        "/accounts-fetched",
-			handleFunction: p.handleAccountsFetched,
-		},
-		client.WebhookEventTypeAccountSynced: {
-			urlPath:        "/account-synced",
-			trimFunction:   p.trimAccountsSynced,
-			handleFunction: p.handleAccountSynced,
-		},
 	}
 }
 
@@ -165,20 +156,61 @@ func (p *Plugin) trimConnectionSynced(_ context.Context, req models.TrimWebhookR
 		return models.TrimWebhookResponse{}, err
 	}
 
-	body, err := json.Marshal(webhook)
-	if err != nil {
-		return models.TrimWebhookResponse{}, err
-	}
+	webhooks := make([]models.PSPWebhook, 0)
+	for _, account := range webhook.Connection.Accounts {
+		acc := account
+		index := 0
+		for {
+			connectionSyncedWebhook := client.ConnectionSyncedWebhook{
+				User: webhook.User,
+				Connection: client.ConnectionSyncedConnection{
+					ID:           webhook.Connection.ID,
+					State:        webhook.Connection.State,
+					ErrorMessage: webhook.Connection.ErrorMessage,
+					LastUpdate:   webhook.Connection.LastUpdate,
+					Active:       webhook.Connection.Active,
+				},
+			}
 
-	return models.TrimWebhookResponse{
-		Webhooks: []models.PSPWebhook{
-			{
+			ba := client.BankAccount{
+				ID:           acc.ID,
+				ConnectionID: acc.ConnectionID,
+				UserID:       acc.UserID,
+				OriginalName: acc.OriginalName,
+				LastUpdate:   acc.LastUpdate,
+				Currency:     acc.Currency,
+				Transactions: make([]client.Transaction, 0, webhookAccountSyncedTransactionsLimit),
+			}
+
+			limit := index + webhookAccountSyncedTransactionsLimit
+			for ; index < len(acc.Transactions) && index < limit; index++ {
+				ba.Transactions = append(ba.Transactions, acc.Transactions[index])
+			}
+
+			connectionSyncedWebhook.Connection.Accounts = append(connectionSyncedWebhook.Connection.Accounts, ba)
+
+			body, err := json.Marshal(connectionSyncedWebhook)
+			if err != nil {
+				return models.TrimWebhookResponse{}, err
+			}
+
+			w := models.PSPWebhook{
 				BasicAuth:   req.Webhook.BasicAuth,
 				QueryValues: req.Webhook.QueryValues,
 				Headers:     req.Webhook.Headers,
 				Body:        body,
-			},
-		},
+			}
+
+			webhooks = append(webhooks, w)
+
+			if index >= len(acc.Transactions) {
+				break
+			}
+		}
+	}
+
+	return models.TrimWebhookResponse{
+		Webhooks: webhooks,
 	}, nil
 }
 
@@ -190,15 +222,65 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 
 	switch webhook.Connection.State {
 	case "null", "":
-		return []models.WebhookResponse{
+		// There is only one account in the webhook since we trimmed it before
+		account := webhook.Connection.Accounts[0]
+
+		pspAccount, err := translateBankAccountToPSPAccount(account)
+		if err != nil {
+			return nil, err
+		}
+
+		accountsResponse := models.WebhookResponse{
+			BankBridgeAccount: &models.PSPBankBridgeAccount{
+				PSPAccount:             pspAccount,
+				BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
+				BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
+			},
+		}
+
+		transactionResponses := make([]models.WebhookResponse, 0, len(account.Transactions))
+		for _, transaction := range account.Transactions {
+			payment, err := translateTransactionToPSPPayment(transaction, account.Currency.ID, account.Currency.Precision)
+			if err != nil {
+				return nil, err
+			}
+
+			bankBridgePayment := models.PSPBankBridgePayment{
+				PSPPayment:             payment,
+				BankBridgeUserID:       pointer.For(strconv.Itoa(account.UserID)),
+				BankBridgeConnectionID: pointer.For(strconv.Itoa(account.ConnectionID)),
+			}
+
+			transactionResponses = append(transactionResponses, models.WebhookResponse{
+				BankBridgePayment: &bankBridgePayment,
+			})
+		}
+
+		at := time.Now().UTC()
+		if !webhook.Connection.LastUpdate.IsZero() {
+			at = webhook.Connection.LastUpdate
+		}
+
+		// We have to put first the user connection reconnected webhook in order
+		// to be sure that the connection is created before the payments and
+		// accounts are ingested.
+		res := []models.WebhookResponse{
 			{
 				UserConnectionReconnected: &models.PSPUserConnectionReconnected{
 					PSPUserID:    strconv.Itoa(webhook.User.ID),
 					ConnectionID: strconv.Itoa(webhook.Connection.ID),
-					At:           time.Now().UTC(),
+					At:           at,
 				},
 			},
-		}, nil
+		}
+
+		// Then create the accounts
+		res = append(res, accountsResponse)
+		// And finally the transactions related to the connection and the account
+		res = append(res, transactionResponses...)
+
+		return res, nil
+
 	case "SCARequired", "webauthRequired", "additionalInformationNeeded",
 		"decoupled", "actionNeeded", "wrongpass", "passwordExpired":
 		var reason *string
@@ -299,124 +381,30 @@ func (p *Plugin) handleConnectionDeleted(ctx context.Context, req models.Transla
 	}, nil
 }
 
-func (p *Plugin) handleAccountsFetched(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	var webhook client.AccountFetchedWebhook
-	if err := json.Unmarshal(req.Webhook.Body, &webhook); err != nil {
-		return nil, err
+func translateBankAccountToPSPAccount(account client.BankAccount) (models.PSPAccount, error) {
+	acc := account
+	// We don't need the transactions in the raw payload of the account
+	acc.Transactions = nil
+	raw, err := json.Marshal(acc)
+	if err != nil {
+		return models.PSPAccount{}, err
 	}
 
-	resp := make([]models.WebhookResponse, 0, len(webhook.Connection.Accounts))
-	for _, account := range webhook.Connection.Accounts {
-		raw, err := json.Marshal(account)
-		if err != nil {
-			return nil, err
-		}
-
-		pspAccount := models.PSPAccount{
-			Reference:    strconv.Itoa(account.ID),
-			CreatedAt:    time.Now().UTC(),
-			Name:         &account.OriginalName,
-			DefaultAsset: pointer.For(currency.FormatAssetWithPrecision(account.Currency.ID, account.Currency.Precision)),
-			Raw:          raw,
-		}
-
-		if account.Error != "" {
-			pspAccount.Metadata = map[string]string{
-				"error": account.Error,
-			}
-		}
-
-		resp = append(resp, models.WebhookResponse{
-			BankBridgeAccount: &models.PSPBankBridgeAccount{
-				PSPAccount:             pspAccount,
-				BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
-				BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
-			},
-		})
+	res := models.PSPAccount{
+		Reference:    strconv.Itoa(account.ID),
+		CreatedAt:    time.Now().UTC(),
+		Name:         &account.OriginalName,
+		DefaultAsset: pointer.For(currency.FormatAssetWithPrecision(account.Currency.ID, account.Currency.Precision)),
+		Raw:          raw,
 	}
 
-	return resp, nil
-}
-
-func (p *Plugin) trimAccountsSynced(_ context.Context, req models.TrimWebhookRequest) (models.TrimWebhookResponse, error) {
-	if len(req.Webhook.Body) == 0 {
-		return models.TrimWebhookResponse{}, fmt.Errorf("missing powens accounts synced webhook body: %w", models.ErrValidation)
-	}
-
-	var webhook client.AccountSyncedWebhook
-	if err := json.Unmarshal(req.Webhook.Body, &webhook); err != nil {
-		return models.TrimWebhookResponse{}, err
-	}
-
-	webhooks := make([]models.PSPWebhook, 0, len(webhook.Transactions))
-	index := 0
-	for {
-		accountSyncedWebhook := client.AccountSyncedWebhook{
-			BankAccountID: webhook.BankAccountID,
-			ConnectionID:  webhook.ConnectionID,
-			UserID:        webhook.UserID,
-			Name:          webhook.Name,
-			LastUpdate:    webhook.LastUpdate,
-			Currency:      webhook.Currency,
-			Transactions:  make([]client.Transaction, 0, webhookAccountSyncedTransactionsLimit),
-		}
-
-		limit := index + webhookAccountSyncedTransactionsLimit
-		for ; index < len(webhook.Transactions) && index < limit; index++ {
-			accountSyncedWebhook.Transactions = append(accountSyncedWebhook.Transactions, webhook.Transactions[index])
-		}
-
-		if len(accountSyncedWebhook.Transactions) > 0 {
-			body, err := json.Marshal(accountSyncedWebhook)
-			if err != nil {
-				return models.TrimWebhookResponse{}, err
-			}
-
-			w := models.PSPWebhook{
-				BasicAuth:   req.Webhook.BasicAuth,
-				QueryValues: req.Webhook.QueryValues,
-				Headers:     req.Webhook.Headers,
-				Body:        body,
-			}
-
-			webhooks = append(webhooks, w)
-		}
-
-		if index >= len(webhook.Transactions) {
-			break
+	if account.Error != "" {
+		res.Metadata = map[string]string{
+			"error": account.Error,
 		}
 	}
 
-	return models.TrimWebhookResponse{
-		Webhooks: webhooks,
-	}, nil
-}
-
-func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWebhookRequest) ([]models.WebhookResponse, error) {
-	var webhook client.AccountSyncedWebhook
-	if err := json.Unmarshal(req.Webhook.Body, &webhook); err != nil {
-		return nil, err
-	}
-
-	responses := make([]models.WebhookResponse, 0, len(webhook.Transactions))
-	for _, transaction := range webhook.Transactions {
-		payment, err := translateTransactionToPSPPayment(transaction, webhook.Currency.ID, webhook.Currency.Precision)
-		if err != nil {
-			return nil, err
-		}
-
-		bankBridgePayment := models.PSPBankBridgePayment{
-			PSPPayment:             payment,
-			BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.UserID)),
-			BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.ConnectionID)),
-		}
-
-		responses = append(responses, models.WebhookResponse{
-			BankBridgePayment: &bankBridgePayment,
-		})
-	}
-
-	return responses, nil
+	return res, nil
 }
 
 func translateTransactionToPSPPayment(transaction client.Transaction, curr string, precision int) (models.PSPPayment, error) {
