@@ -1,3 +1,2 @@
-/pkg/ @formancehq/frontend
-
 * @formancehq/backend
+/pkg/ @formancehq/frontend @formancehq/backend
