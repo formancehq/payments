@@ -24,7 +24,7 @@ type Storage interface {
 	AccountsDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error
 	AccountsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error
-	AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, openBankingConnectionID string) error
+	AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error
 	AccountsDelete(ctx context.Context, id models.AccountID) error
 
 	// Balances
@@ -73,7 +73,7 @@ type Storage interface {
 	PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error
 	PaymentsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error
 	PaymentsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error
-	PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, openBankingConnectionID string) error
+	PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error
 	PaymentsDelete(ctx context.Context, id models.PaymentID) error
 
 	// Payment Initiations

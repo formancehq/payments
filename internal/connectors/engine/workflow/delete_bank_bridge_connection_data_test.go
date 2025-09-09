@@ -12,14 +12,19 @@ import (
 
 func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Success() {
 	connectionID := "test-connection-id"
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "test",
+	}
 	psuID := uuid.New()
 
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectionID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectionID).Once().Return(nil)
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectorID, connectionID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectorID, connectionID).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
 		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+			PSUID:        psuID,
+			ConnectorID:  connectorID,
 			ConnectionID: connectionID,
 		},
 	})
@@ -42,7 +47,6 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Succes
 	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, accountID).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: uuid.New(),
 		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
@@ -64,8 +68,8 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Succ
 	s.env.OnActivity(activities.StorageAccountsDeleteFromPSUIDAndConnectorIDActivity, mock.Anything, psuID, connectorID).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
 		FromConnectorID: &DeleteBankBridgeConnectionDataFromConnectorID{
+			PSUID:       psuID,
 			ConnectorID: connectorID,
 		},
 	})
@@ -82,7 +86,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_Success() 
 	s.env.OnActivity(activities.StorageAccountsDeleteFromPSUIDActivity, mock.Anything, psuID).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
+		FromPSUID: &DeleteBankBridgeConnectionDataFromPSUID{
+			PSUID: psuID,
+		},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -101,7 +107,6 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: uuid.New(),
 		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
@@ -125,7 +130,6 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: uuid.New(),
 		FromAccountID: &DeleteBankBridgeConnectionDataFromAccountID{
 			AccountID: accountID,
 		},
@@ -139,15 +143,20 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromAccountID_Storag
 
 func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_DeletePayments_Error() {
 	connectionID := "test-connection-id"
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "test",
+	}
 	psuID := uuid.New()
 
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectionID).Once().Return(
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectorID, connectionID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
 		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+			PSUID:        psuID,
+			ConnectorID:  connectorID,
 			ConnectionID: connectionID,
 		},
 	})
@@ -160,16 +169,21 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_Del
 
 func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectionID_DeleteAccounts_Error() {
 	connectionID := "test-connection-id"
+	connectorID := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "test",
+	}
 	psuID := uuid.New()
 
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectionID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectionID).Once().Return(
+	s.env.OnActivity(activities.StoragePaymentsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectorID, connectionID).Once().Return(nil)
+	s.env.OnActivity(activities.StorageAccountsDeleteFromConnectionIDActivity, mock.Anything, psuID, connectorID, connectionID).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
 		FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+			PSUID:        psuID,
+			ConnectorID:  connectorID,
 			ConnectionID: connectionID,
 		},
 	})
@@ -192,8 +206,8 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromConnectorID_Dele
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
 		FromConnectorID: &DeleteBankBridgeConnectionDataFromConnectorID{
+			PSUID:       psuID,
 			ConnectorID: connectorID,
 		},
 	})
@@ -212,7 +226,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_DeletePaym
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
+		FromPSUID: &DeleteBankBridgeConnectionDataFromPSUID{
+			PSUID: psuID,
+		},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())
@@ -230,7 +246,9 @@ func (s *UnitTestSuite) Test_DeleteBankBridgeConnectionData_FromPSUID_DeleteAcco
 	)
 
 	s.env.ExecuteWorkflow(RunDeleteBankBridgeConnectionData, DeleteBankBridgeConnectionData{
-		PSUID: psuID,
+		FromPSUID: &DeleteBankBridgeConnectionDataFromPSUID{
+			PSUID: psuID,
+		},
 	})
 
 	s.True(s.env.IsWorkflowCompleted())

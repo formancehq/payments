@@ -86,8 +86,8 @@ func (w Workflow) deletePSUConnector(
 		),
 		RunDeleteBankBridgeConnectionData,
 		DeleteBankBridgeConnectionData{
-			PSUID: deletePSUConnector.PsuID,
 			FromConnectorID: &DeleteBankBridgeConnectionDataFromConnectorID{
+				PSUID:       deletePSUConnector.PsuID,
 				ConnectorID: deletePSUConnector.ConnectorID,
 			},
 		},

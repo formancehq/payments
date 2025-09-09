@@ -260,10 +260,14 @@ func (c *Payment) UnmarshalJSON(data []byte) error {
 			return err
 		}
 		c.PsuID = &psuID
+	} else {
+		c.PsuID = nil
 	}
 
 	if aux.OpenBankingConnectionID != nil {
 		c.OpenBankingConnectionID = aux.OpenBankingConnectionID
+	} else {
+		c.OpenBankingConnectionID = nil
 	}
 
 	c.ID = id

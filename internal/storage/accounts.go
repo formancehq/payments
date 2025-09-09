@@ -98,7 +98,7 @@ func (s *store) AccountsDeleteFromConnectorIDAndPSUID(ctx context.Context, conne
 	return e("failed to delete account", err)
 }
 
-func (s *store) AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, openBankingConnectionID string) error {
+func (s *store) AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
 	_, err := s.db.NewDelete().
 		Model((*account)(nil)).
 		Where("psu_id = ?", psuID).

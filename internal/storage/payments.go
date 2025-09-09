@@ -345,7 +345,7 @@ func (s *store) PaymentsDeleteFromConnectorIDAndPSUID(ctx context.Context, conne
 	return e("failed to delete payments", err)
 }
 
-func (s *store) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, openBankingConnectionID string) error {
+func (s *store) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
 	_, err := s.db.NewDelete().
 		Model((*payment)(nil)).
 		Where("psu_id = ?", psuID).

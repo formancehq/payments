@@ -10,14 +10,15 @@ import (
 )
 
 type DeleteBankBridgeConnectionData struct {
-	PSUID uuid.UUID
-
 	FromConnectionID *DeleteBankBridgeConnectionDataFromConnectionID
 	FromAccountID    *DeleteBankBridgeConnectionDataFromAccountID
 	FromConnectorID  *DeleteBankBridgeConnectionDataFromConnectorID
+	FromPSUID        *DeleteBankBridgeConnectionDataFromPSUID
 }
 
 type DeleteBankBridgeConnectionDataFromConnectionID struct {
+	PSUID        uuid.UUID
+	ConnectorID  models.ConnectorID
 	ConnectionID string
 }
 
@@ -26,7 +27,12 @@ type DeleteBankBridgeConnectionDataFromAccountID struct {
 }
 
 type DeleteBankBridgeConnectionDataFromConnectorID struct {
+	PSUID       uuid.UUID
 	ConnectorID models.ConnectorID
+}
+
+type DeleteBankBridgeConnectionDataFromPSUID struct {
+	PSUID uuid.UUID
 }
 
 func (w Workflow) runDeleteBankBridgeConnectionData(
@@ -43,9 +49,11 @@ func (w Workflow) runDeleteBankBridgeConnectionData(
 	case deleteBankBridgeConnectionData.FromConnectorID != nil:
 		// Delete all data related to the connector
 		return w.deleteBankBridgeConnectorIDData(ctx, deleteBankBridgeConnectionData)
-	default:
+	case deleteBankBridgeConnectionData.FromPSUID != nil:
 		// Delete all data related to the psu
 		return w.deleteBankBridgePSUData(ctx, deleteBankBridgeConnectionData)
+	default:
+		return fmt.Errorf("invalid delete bank bridge connection data")
 	}
 }
 
@@ -78,7 +86,8 @@ func (w Workflow) deleteBankBridgeConnectionData(
 ) error {
 	err := w.deleteBankBridgePaymentsFromConnectionID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.ConnectorID,
 		deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
@@ -87,7 +96,8 @@ func (w Workflow) deleteBankBridgeConnectionData(
 
 	err = w.deleteBankBridgeAccountsFromConnectionID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.PSUID,
+		deleteBankBridgeConnectionData.FromConnectionID.ConnectorID,
 		deleteBankBridgeConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
@@ -103,7 +113,7 @@ func (w Workflow) deleteBankBridgeConnectorIDData(
 ) error {
 	err := w.deleteBankBridgePaymentsFromPSUIDAndConnectorID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectorID.PSUID,
 		deleteBankBridgeConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
@@ -112,7 +122,7 @@ func (w Workflow) deleteBankBridgeConnectorIDData(
 
 	err = w.deleteBankBridgeAccountsFromPSUIDAndConnectorID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromConnectorID.PSUID,
 		deleteBankBridgeConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
@@ -128,7 +138,7 @@ func (w Workflow) deleteBankBridgePSUData(
 ) error {
 	err := w.deleteBankBridgePaymentsFromPSUID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromPSUID.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
@@ -136,7 +146,7 @@ func (w Workflow) deleteBankBridgePSUData(
 
 	err = w.deleteBankBridgeAccountsFromPSUID(
 		ctx,
-		deleteBankBridgeConnectionData.PSUID,
+		deleteBankBridgeConnectionData.FromPSUID.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -181,11 +191,13 @@ func (w Workflow) deleteBankBridgePaymentsFromPSUIDAndConnectorID(
 func (w Workflow) deleteBankBridgePaymentsFromConnectionID(
 	ctx workflow.Context,
 	psuID uuid.UUID,
+	connectorID models.ConnectorID,
 	connectionID string,
 ) error {
 	err := activities.StoragePaymentsDeleteFromConnectionID(
 		infiniteRetryContext(ctx),
 		psuID,
+		connectorID,
 		connectionID,
 	)
 
@@ -232,12 +244,14 @@ func (w Workflow) deleteBankBridgeAccountsFromPSUIDAndConnectorID(
 func (w Workflow) deleteBankBridgeAccountsFromConnectionID(
 	ctx workflow.Context,
 	psuID uuid.UUID,
+	connectorID models.ConnectorID,
 	connectionID string,
 ) error {
 
 	err := activities.StorageAccountsDeleteFromConnectionID(
 		infiniteRetryContext(ctx),
 		psuID,
+		connectorID,
 		connectionID,
 	)
 
