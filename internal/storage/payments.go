@@ -349,6 +349,7 @@ func (s *store) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, p
 	_, err := s.db.NewDelete().
 		Model((*payment)(nil)).
 		Where("psu_id = ?", psuID).
+		Where("connector_id = ?", connectorID).
 		Where("open_banking_connection_id = ?", openBankingConnectionID).
 		Exec(ctx)
 
