@@ -16,7 +16,7 @@ import (
 	"github.com/uptrace/bun"
 )
 
-type psuOpenBankingConnectionAttempt struct {
+type openBankingConnectionAttempt struct {
 	bun.BaseModel `bun:"table:open_banking_connection_attempts"`
 
 	// Mandatory fields
@@ -35,7 +35,7 @@ type psuOpenBankingConnectionAttempt struct {
 }
 
 func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.OpenBankingConnectionAttempt) error {
-	attempt, err := fromPsuOpenBankingConnectionAttemptsModels(from)
+	attempt, err := fromOpenBankingConnectionAttemptsModels(from)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from mo
 
 func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, errMsg *string) error {
 	_, err := s.db.NewUpdate().
-		Model((*psuOpenBankingConnectionAttempt)(nil)).
+		Model((*openBankingConnectionAttempt)(nil)).
 		Set("status = ?", status).
 		Set("error = ?", errMsg).
 		Where("id = ?", id).
@@ -71,7 +71,7 @@ func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, i
 }
 
 func (s *store) OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
-	attempt := psuOpenBankingConnectionAttempt{}
+	attempt := openBankingConnectionAttempt{}
 	err := s.db.NewSelect().
 		Model(&attempt).
 		Where("id = ?", id).
@@ -80,7 +80,7 @@ func (s *store) OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UU
 		return nil, e("getting open banking connection attempt", err)
 	}
 
-	return toPsuOpenBankingConnectionAttemptsModels(attempt)
+	return toOpenBankingConnectionAttemptsModels(attempt)
 }
 
 type PSUOpenBankingConnectionAttemptsQuery struct{}
@@ -127,7 +127,7 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PSUOpenBankingConnectionAttemptsQuery], psuOpenBankingConnectionAttempt](s, ctx,
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PSUOpenBankingConnectionAttemptsQuery], openBankingConnectionAttempt](s, ctx,
 		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PSUOpenBankingConnectionAttemptsQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
@@ -143,14 +143,14 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch psu open banking connection attempts", err)
+		return nil, e("failed to fetch open banking connection attempts", err)
 	}
 
 	psuOpenBankingConnectionAttemptsModels := make([]models.OpenBankingConnectionAttempt, len(cursor.Data))
 	for i, attempt := range cursor.Data {
-		res, err := toPsuOpenBankingConnectionAttemptsModels(attempt)
+		res, err := toOpenBankingConnectionAttemptsModels(attempt)
 		if err != nil {
-			return nil, e("failed to fetch psu open banking connection attempts", err)
+			return nil, e("failed to fetch open banking connection attempts", err)
 		}
 		psuOpenBankingConnectionAttemptsModels[i] = *res
 	}
@@ -164,8 +164,8 @@ func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uui
 	}, nil
 }
 
-type openBankingProviderPSUs struct {
-	bun.BaseModel `bun:"table:open_banking_provider_psus,alias:open_banking_provider_psus"`
+type openBankingForwardedUser struct {
+	bun.BaseModel `bun:"table:open_banking_forwarded_users,alias:open_banking_forwarded_users"`
 
 	// Mandatory fields
 	PsuID       uuid.UUID          `bun:"psu_id,pk,type:uuid,notnull"`
@@ -180,8 +180,8 @@ type openBankingProviderPSUs struct {
 	ExpiresAt   *time.Time `bun:"expires_at,type:timestamp without time zone,nullzero,scanonly"`
 }
 
-func (s *store) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingProviderPSU) error {
-	openBanking, token := fromPsuOpenBankingModels(from, psuID)
+func (s *store) OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingForwardedUser) error {
+	openBanking, token := fromOpenBankingForwardedUserModels(from, psuID)
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -199,7 +199,7 @@ func (s *store) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUI
 			Set("expires_at = EXCLUDED.expires_at").
 			Exec(ctx)
 		if err != nil {
-			return e("upserting open banking provider psu access token", err)
+			return e("upserting open banking forwarded user access token", err)
 		}
 	}
 
@@ -211,66 +211,66 @@ func (s *store) OpenBankingProviderPSUUpsert(ctx context.Context, psuID uuid.UUI
 		Set("metadata = EXCLUDED.metadata").
 		Exec(ctx)
 	if err != nil {
-		return e("upserting open banking provider psu", err)
+		return e("upserting open banking forwarded user", err)
 	}
 
 	return e("failed to commit transactions", tx.Commit())
 }
 
-func (s *store) OpenBankingProviderPSUGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
-	openBanking := openBankingProviderPSUs{}
+func (s *store) OpenBankingForwardedUserGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
+	openBanking := openBankingForwardedUser{}
 	err := s.db.NewSelect().
 		Model(&openBanking).
-		Column("open_banking_provider_psus.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
-		Join("LEFT JOIN psu_open_banking_access_tokens ON open_banking_provider_psus.psu_id = psu_open_banking_access_tokens.psu_id AND open_banking_provider_psus.connector_id = psu_open_banking_access_tokens.connector_id").
-		Where("open_banking_provider_psus.psu_id = ?", psuID).
-		Where("open_banking_provider_psus.connector_id = ?", connectorID).
+		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id").
+		Where("open_banking_forwarded_users.psu_id = ?", psuID).
+		Where("open_banking_forwarded_users.connector_id = ?", connectorID).
 		Scan(ctx)
 
 	if err != nil {
-		return nil, e("getting open banking provider psu", err)
+		return nil, e("getting open banking forwarded user", err)
 	}
 
-	return toPsuOpenBankingModels(openBanking), nil
+	return toOpenBankingForwardedUserModels(openBanking), nil
 }
 
-func (s *store) OpenBankingProviderPSUGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingProviderPSU, error) {
-	openBankingPSU := openBankingProviderPSUs{}
+func (s *store) OpenBankingForwardedUserGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
+	openBankingPSU := openBankingForwardedUser{}
 
 	err := s.db.NewSelect().
 		Model(&openBankingPSU).
-		Column("open_banking_provider_psus.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
-		Join("LEFT JOIN psu_open_banking_access_tokens ON open_banking_provider_psus.psu_id = psu_open_banking_access_tokens.psu_id AND open_banking_provider_psus.connector_id = psu_open_banking_access_tokens.connector_id").
-		Where("open_banking_provider_psus.psp_user_id = ?", pspUserID).
-		Where("open_banking_provider_psus.connector_id = ?", connectorID).
+		Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id").
+		Where("open_banking_forwarded_users.psp_user_id = ?", pspUserID).
+		Where("open_banking_forwarded_users.connector_id = ?", connectorID).
 		Scan(ctx)
 
 	if err != nil {
-		return nil, e("getting open banking provider PSU", err)
+		return nil, e("getting open banking forwarded user", err)
 	}
 
-	return toPsuOpenBankingModels(openBankingPSU), nil
+	return toOpenBankingForwardedUserModels(openBankingPSU), nil
 }
 
-func (s *store) OpenBankingProviderPSUDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
+func (s *store) OpenBankingForwardedUserDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error {
 	_, err := s.db.NewDelete().
-		Model((*openBankingProviderPSUs)(nil)).
+		Model((*openBankingForwardedUser)(nil)).
 		Where("psu_id = ?", psuID).
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
 	if err != nil {
-		return e("deleting open banking provider psu", err)
+		return e("deleting open banking forwarded user", err)
 	}
 
 	return nil
 }
 
-type OpenBankingProviderPSUQuery struct{}
+type OpenBankingForwardedUserQuery struct{}
 
-type ListOpenBankingProviderPSUQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingProviderPSUQuery]]
+type ListOpenBankingForwardedUserQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]]
 
-func NewListOpenBankingProviderPSUQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingProviderPSUQuery]) ListOpenBankingProviderPSUQuery {
-	return ListOpenBankingProviderPSUQuery{
+func NewListOpenBankingForwardedUserQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]) ListOpenBankingForwardedUserQuery {
+	return ListOpenBankingForwardedUserQuery{
 		Order:    bunpaginate.OrderAsc,
 		PageSize: opts.PageSize,
 		Options:  opts,
@@ -284,14 +284,14 @@ func (s *store) psuOpenBankingQueryContext(qb query.Builder) (string, []any, err
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
-			return fmt.Sprintf("open_banking_provider_psus.%s = ?", key), []any{value}, nil
+			return fmt.Sprintf("open_banking_forwarded_users.%s = ?", key), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'metadata' column can only be used with $match: %w", ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
-			key := "open_banking_provider_psus.metadata"
+			key := "open_banking_forwarded_users.metadata"
 			return key + " @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
@@ -301,7 +301,7 @@ func (s *store) psuOpenBankingQueryContext(qb query.Builder) (string, []any, err
 	}))
 }
 
-func (s *store) OpenBankingProviderPSUList(ctx context.Context, query ListOpenBankingProviderPSUQuery) (*bunpaginate.Cursor[models.OpenBankingProviderPSU], error) {
+func (s *store) OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*bunpaginate.Cursor[models.OpenBankingForwardedUser], error) {
 	var (
 		where string
 		args  []any
@@ -314,31 +314,31 @@ func (s *store) OpenBankingProviderPSUList(ctx context.Context, query ListOpenBa
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingProviderPSUQuery], openBankingProviderPSUs](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingProviderPSUQuery]])(&query),
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery], openBankingForwardedUser](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingForwardedUserQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
 			}
 
 			query = query.
-				Column("open_banking_provider_psus.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
-				Join("LEFT JOIN psu_open_banking_access_tokens ON open_banking_provider_psus.psu_id = psu_open_banking_access_tokens.psu_id AND open_banking_provider_psus.connector_id = psu_open_banking_access_tokens.connector_id")
+				Column("open_banking_forwarded_users.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+				Join("LEFT JOIN open_banking_access_tokens ON open_banking_forwarded_users.psu_id = open_banking_access_tokens.psu_id AND open_banking_forwarded_users.connector_id = open_banking_access_tokens.connector_id")
 
 			return query
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch open banking provider psu", err)
+		return nil, e("failed to fetch open banking forwarded user", err)
 	}
 
-	psuOpenBankingModels := make([]models.OpenBankingProviderPSU, len(cursor.Data))
+	psuOpenBankingModels := make([]models.OpenBankingForwardedUser, len(cursor.Data))
 	for i, p := range cursor.Data {
-		bb := toPsuOpenBankingModels(p)
+		bb := toOpenBankingForwardedUserModels(p)
 		psuOpenBankingModels[i] = *bb
 	}
 
-	return &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
+	return &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -347,8 +347,8 @@ func (s *store) OpenBankingProviderPSUList(ctx context.Context, query ListOpenBa
 	}, nil
 }
 
-type psuOpenBankingConnections struct {
-	bun.BaseModel `bun:"table:psu_open_banking_connections"`
+type openBankingConnections struct {
+	bun.BaseModel `bun:"table:open_banking_connections"`
 
 	// Mandatory fields
 	PsuID         uuid.UUID               `bun:"psu_id,pk,type:uuid,notnull"`
@@ -368,8 +368,8 @@ type psuOpenBankingConnections struct {
 	ExpiresAt   *time.Time `bun:"expires_at,type:timestamp without time zone,nullzero,scanonly"`
 }
 
-func (s *store) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
-	connection, token := fromPsuOpenBankingConnectionsModels(from, psuID)
+func (s *store) OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
+	connection, token := fromOpenBankingConnectionsModels(from, psuID)
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -406,9 +406,9 @@ func (s *store) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.
 	return e("failed to commit transactions", tx.Commit())
 }
 
-func (s *store) PSUOpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt libtime.Time) error {
+func (s *store) OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt libtime.Time) error {
 	_, err := s.db.NewUpdate().
-		Model((*psuOpenBankingConnections)(nil)).
+		Model((*openBankingConnections)(nil)).
 		Set("data_updated_at = ?", updatedAt).
 		Where("psu_id = ?", psuID).
 		Where("connector_id = ?", connectorID).
@@ -421,42 +421,42 @@ func (s *store) PSUOpenBankingConnectionsUpdateLastDataUpdate(ctx context.Contex
 	return nil
 }
 
-func (s *store) PSUOpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, error) {
-	connection := psuOpenBankingConnections{}
+func (s *store) OpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, error) {
+	connection := openBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Column("psu_open_banking_connections.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
-		Join("LEFT JOIN psu_open_banking_access_tokens ON psu_open_banking_connections.psu_id = psu_open_banking_access_tokens.psu_id AND psu_open_banking_connections.connector_id = psu_open_banking_access_tokens.connector_id AND psu_open_banking_connections.connection_id = psu_open_banking_access_tokens.connection_id").
-		Where("psu_open_banking_connections.psu_id = ?", psuID).
-		Where("psu_open_banking_connections.connector_id = ?", connectorID).
-		Where("psu_open_banking_connections.connection_id = ?", connectionID).
+		Column("open_banking_connections.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Join("LEFT JOIN open_banking_access_tokens ON open_banking_connections.psu_id = open_banking_access_tokens.psu_id AND open_banking_connections.connector_id = open_banking_access_tokens.connector_id AND open_banking_connections.connection_id = open_banking_access_tokens.connection_id").
+		Where("open_banking_connections.psu_id = ?", psuID).
+		Where("open_banking_connections.connector_id = ?", connectorID).
+		Where("open_banking_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
 		return nil, e("getting open banking connection", err)
 	}
 
-	return pointer.For(toPsuOpenBankingConnectionsModels(connection)), nil
+	return pointer.For(toOpenBankingConnectionsModels(connection)), nil
 }
 
-func (s *store) PSUOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
-	connection := psuOpenBankingConnections{}
+func (s *store) OpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
+	connection := openBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
-		Column("psu_open_banking_connections.*", "psu_open_banking_access_tokens.access_token", "psu_open_banking_access_tokens.expires_at").
-		Join("LEFT JOIN psu_open_banking_access_tokens ON psu_open_banking_connections.psu_id = psu_open_banking_access_tokens.psu_id AND psu_open_banking_connections.connector_id = psu_open_banking_access_tokens.connector_id AND psu_open_banking_connections.connection_id = psu_open_banking_access_tokens.connection_id").
-		Where("psu_open_banking_connections.connector_id = ?", connectorID).
-		Where("psu_open_banking_connections.connection_id = ?", connectionID).
+		Column("open_banking_connections.*", "open_banking_access_tokens.access_token", "open_banking_access_tokens.expires_at").
+		Join("LEFT JOIN open_banking_access_tokens ON open_banking_connections.psu_id = open_banking_access_tokens.psu_id AND open_banking_connections.connector_id = open_banking_access_tokens.connector_id AND open_banking_connections.connection_id = open_banking_access_tokens.connection_id").
+		Where("open_banking_connections.connector_id = ?", connectorID).
+		Where("open_banking_connections.connection_id = ?", connectionID).
 		Scan(ctx)
 	if err != nil {
 		return nil, uuid.Nil, e("getting open banking connection", err)
 	}
 
-	return pointer.For(toPsuOpenBankingConnectionsModels(connection)), connection.PsuID, nil
+	return pointer.For(toOpenBankingConnectionsModels(connection)), connection.PsuID, nil
 }
 
-func (s *store) PSUOpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+func (s *store) OpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
 	_, err := s.db.NewDelete().
-		Model((*psuOpenBankingConnections)(nil)).
+		Model((*openBankingConnections)(nil)).
 		Where("psu_id = ?", psuID).
 		Where("connector_id = ?", connectorID).
 		Where("connection_id = ?", connectionID).
@@ -468,19 +468,19 @@ func (s *store) PSUOpenBankingConnectionsDelete(ctx context.Context, psuID uuid.
 	return nil
 }
 
-type PsuOpenBankingConnectionsQuery struct{}
+type OpenBankingConnectionsQuery struct{}
 
-type ListPsuOpenBankingConnectionsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PsuOpenBankingConnectionsQuery]]
+type ListOpenBankingConnectionsQuery bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]]
 
-func NewListPsuOpenBankingConnectionsQuery(opts bunpaginate.PaginatedQueryOptions[PsuOpenBankingConnectionsQuery]) ListPsuOpenBankingConnectionsQuery {
-	return ListPsuOpenBankingConnectionsQuery{
+func NewListOpenBankingConnectionsQuery(opts bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]) ListOpenBankingConnectionsQuery {
+	return ListOpenBankingConnectionsQuery{
 		PageSize: opts.PageSize,
 		Order:    bunpaginate.OrderAsc,
 		Options:  opts,
 	}
 }
 
-func (s *store) psuOpenBankingConnectionsQueryContext(qb query.Builder) (string, []any, error) {
+func (s *store) openBankingConnectionsQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
 		switch {
 		case key == "connection_id", key == "status":
@@ -504,21 +504,21 @@ func (s *store) psuOpenBankingConnectionsQueryContext(qb query.Builder) (string,
 	}))
 }
 
-func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
+func (s *store) OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
 	var (
 		where string
 		args  []any
 		err   error
 	)
 	if query.Options.QueryBuilder != nil {
-		where, args, err = s.psuOpenBankingConnectionsQueryContext(query.Options.QueryBuilder)
+		where, args, err = s.openBankingConnectionsQueryContext(query.Options.QueryBuilder)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[PsuOpenBankingConnectionsQuery], psuOpenBankingConnections](s, ctx,
-		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[PsuOpenBankingConnectionsQuery]])(&query),
+	cursor, err := paginateWithOffset[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery], openBankingConnections](s, ctx,
+		(*bunpaginate.OffsetPaginatedQuery[bunpaginate.PaginatedQueryOptions[OpenBankingConnectionsQuery]])(&query),
 		func(query *bun.SelectQuery) *bun.SelectQuery {
 			if where != "" {
 				query = query.Where(where, args...)
@@ -536,15 +536,15 @@ func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UU
 		},
 	)
 	if err != nil {
-		return nil, e("failed to fetch psu open banking connections", err)
+		return nil, e("failed to fetch open banking connections", err)
 	}
 
-	psuOpenBankingConnections := make([]psuOpenBankingConnections, len(cursor.Data))
-	copy(psuOpenBankingConnections, cursor.Data)
+	openBankingConnections := make([]openBankingConnections, len(cursor.Data))
+	copy(openBankingConnections, cursor.Data)
 
-	psuOpenBankingConnectionsModels := make([]models.OpenBankingConnection, len(psuOpenBankingConnections))
-	for i, connection := range psuOpenBankingConnections {
-		psuOpenBankingConnectionsModels[i] = toPsuOpenBankingConnectionsModels(connection)
+	openBankingConnectionsModels := make([]models.OpenBankingConnection, len(openBankingConnections))
+	for i, connection := range openBankingConnections {
+		openBankingConnectionsModels[i] = toOpenBankingConnectionsModels(connection)
 	}
 
 	return &bunpaginate.Cursor[models.OpenBankingConnection]{
@@ -552,12 +552,12 @@ func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UU
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
 		Next:     cursor.Next,
-		Data:     psuOpenBankingConnectionsModels,
+		Data:     openBankingConnectionsModels,
 	}, nil
 }
 
-type psuOpenBankingAccessTokens struct {
-	bun.BaseModel `bun:"table:psu_open_banking_access_tokens"`
+type openBankingAccessTokens struct {
+	bun.BaseModel `bun:"table:open_banking_access_tokens"`
 
 	// Mandatory fields
 	PSUID        uuid.UUID          `bun:"psu_id,type:uuid,notnull"`
@@ -567,7 +567,7 @@ type psuOpenBankingAccessTokens struct {
 	ExpiresAt    time.Time          `bun:"expires_at,type:timestamp without time zone,notnull"`
 }
 
-func fromPsuOpenBankingConnectionAttemptsModels(from models.OpenBankingConnectionAttempt) (psuOpenBankingConnectionAttempt, error) {
+func fromOpenBankingConnectionAttemptsModels(from models.OpenBankingConnectionAttempt) (openBankingConnectionAttempt, error) {
 	var token *string
 	var expiresAt *time.Time
 	if from.TemporaryToken != nil {
@@ -578,10 +578,10 @@ func fromPsuOpenBankingConnectionAttemptsModels(from models.OpenBankingConnectio
 
 	state, err := json.Marshal(from.State)
 	if err != nil {
-		return psuOpenBankingConnectionAttempt{}, err
+		return openBankingConnectionAttempt{}, err
 	}
 
-	return psuOpenBankingConnectionAttempt{
+	return openBankingConnectionAttempt{
 		ID:                from.ID,
 		PsuID:             from.PsuID,
 		ConnectorID:       from.ConnectorID,
@@ -595,7 +595,7 @@ func fromPsuOpenBankingConnectionAttemptsModels(from models.OpenBankingConnectio
 	}, nil
 }
 
-func toPsuOpenBankingConnectionAttemptsModels(from psuOpenBankingConnectionAttempt) (*models.OpenBankingConnectionAttempt, error) {
+func toOpenBankingConnectionAttemptsModels(from openBankingConnectionAttempt) (*models.OpenBankingConnectionAttempt, error) {
 	state := models.CallbackState{}
 	if err := json.Unmarshal(from.State, &state); err != nil {
 		return nil, err
@@ -614,12 +614,12 @@ func toPsuOpenBankingConnectionAttemptsModels(from psuOpenBankingConnectionAttem
 	}, nil
 }
 
-func fromPsuOpenBankingModels(from models.OpenBankingProviderPSU, psuID uuid.UUID) (openBankingProviderPSUs, *psuOpenBankingAccessTokens) {
-	var token *psuOpenBankingAccessTokens
+func fromOpenBankingForwardedUserModels(from models.OpenBankingForwardedUser, psuID uuid.UUID) (openBankingForwardedUser, *openBankingAccessTokens) {
+	var token *openBankingAccessTokens
 	if from.AccessToken != nil {
 		accessToken, expiresAt := fromTokenModels(*from.AccessToken)
 
-		token = &psuOpenBankingAccessTokens{
+		token = &openBankingAccessTokens{
 			PSUID:       psuID,
 			ConnectorID: from.ConnectorID,
 			AccessToken: accessToken,
@@ -627,7 +627,7 @@ func fromPsuOpenBankingModels(from models.OpenBankingProviderPSU, psuID uuid.UUI
 		}
 	}
 
-	return openBankingProviderPSUs{
+	return openBankingForwardedUser{
 		PsuID:       psuID,
 		PSPUserID:   from.PSPUserID,
 		ConnectorID: from.ConnectorID,
@@ -635,8 +635,8 @@ func fromPsuOpenBankingModels(from models.OpenBankingProviderPSU, psuID uuid.UUI
 	}, token
 }
 
-func toPsuOpenBankingModels(from openBankingProviderPSUs) *models.OpenBankingProviderPSU {
-	return &models.OpenBankingProviderPSU{
+func toOpenBankingForwardedUserModels(from openBankingForwardedUser) *models.OpenBankingForwardedUser {
+	return &models.OpenBankingForwardedUser{
 		PsuID:       from.PsuID,
 		ConnectorID: from.ConnectorID,
 		PSPUserID:   from.PSPUserID,
@@ -645,12 +645,12 @@ func toPsuOpenBankingModels(from openBankingProviderPSUs) *models.OpenBankingPro
 	}
 }
 
-func fromPsuOpenBankingConnectionsModels(from models.OpenBankingConnection, psuID uuid.UUID) (psuOpenBankingConnections, *psuOpenBankingAccessTokens) {
-	var token *psuOpenBankingAccessTokens
+func fromOpenBankingConnectionsModels(from models.OpenBankingConnection, psuID uuid.UUID) (openBankingConnections, *openBankingAccessTokens) {
+	var token *openBankingAccessTokens
 	if from.AccessToken != nil {
 		accessToken, expiresAt := fromTokenModels(*from.AccessToken)
 
-		token = &psuOpenBankingAccessTokens{
+		token = &openBankingAccessTokens{
 			PSUID:        psuID,
 			ConnectorID:  from.ConnectorID,
 			ConnectionID: &from.ConnectionID,
@@ -659,7 +659,7 @@ func fromPsuOpenBankingConnectionsModels(from models.OpenBankingConnection, psuI
 		}
 	}
 
-	return psuOpenBankingConnections{
+	return openBankingConnections{
 		PsuID:         psuID,
 		ConnectorID:   from.ConnectorID,
 		ConnectionID:  from.ConnectionID,
@@ -672,7 +672,7 @@ func fromPsuOpenBankingConnectionsModels(from models.OpenBankingConnection, psuI
 	}, token
 }
 
-func toPsuOpenBankingConnectionsModels(from psuOpenBankingConnections) models.OpenBankingConnection {
+func toOpenBankingConnectionsModels(from openBankingConnections) models.OpenBankingConnection {
 	return models.OpenBankingConnection{
 		ConnectorID:   from.ConnectorID,
 		ConnectionID:  from.ConnectionID,

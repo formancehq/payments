@@ -44,7 +44,7 @@ var (
 		},
 	}
 
-	defaultPSUBankBridge = models.OpenBankingProviderPSU{
+	defaultOpenBankingForwardedUser = models.OpenBankingForwardedUser{
 		ConnectorID: defaultConnector.ID,
 		AccessToken: &models.Token{
 			Token:     "access_token_123",
@@ -55,7 +55,7 @@ var (
 		},
 	}
 
-	bankBridgeConn = models.OpenBankingConnection{
+	obConn = models.OpenBankingConnection{
 		ConnectorID:   defaultConnector.ID,
 		ConnectionID:  "conn_123",
 		CreatedAt:     now.Add(-45 * time.Minute).UTC().Time,
@@ -71,7 +71,7 @@ var (
 		},
 	}
 
-	defaultPSUBankBridge2 = models.OpenBankingProviderPSU{
+	defaultOpenBankingForwardedUser2 = models.OpenBankingForwardedUser{
 		ConnectorID: defaultConnector2.ID,
 		AccessToken: &models.Token{
 			Token:     "access_token_123",
@@ -79,7 +79,7 @@ var (
 		},
 	}
 
-	defaultPSUBankBridgeWithPSPUserID = models.OpenBankingProviderPSU{
+	defaultOpenBankingForwardedUserWithPSPUserID = models.OpenBankingForwardedUser{
 		ConnectorID: defaultConnector.ID,
 		PSPUserID:   pointer.For("psp_user_123"),
 		AccessToken: &models.Token{
@@ -91,7 +91,7 @@ var (
 		},
 	}
 
-	defaultPSUBankBridgeWithPSPUserID2 = models.OpenBankingProviderPSU{
+	defaultOpenBankingForwardedUserWithPSPUserID2 = models.OpenBankingForwardedUser{
 		ConnectorID: defaultConnector2.ID,
 		PSPUserID:   pointer.For("psp_user_456"),
 		AccessToken: &models.Token{
@@ -137,12 +137,12 @@ func createOpenBankingConnectionAttempt(t *testing.T, ctx context.Context, stora
 	require.NoError(t, storage.OpenBankingConnectionAttemptsUpsert(ctx, attempt))
 }
 
-func createPSUBankBridge(t *testing.T, ctx context.Context, storage Storage, psuID uuid.UUID, forwardedUser models.OpenBankingProviderPSU) {
-	require.NoError(t, storage.OpenBankingProviderPSUUpsert(ctx, psuID, forwardedUser))
+func createOpenBankingForwardedUser(t *testing.T, ctx context.Context, storage Storage, psuID uuid.UUID, forwardedUser models.OpenBankingForwardedUser) {
+	require.NoError(t, storage.OpenBankingForwardedUserUpsert(ctx, psuID, forwardedUser))
 }
 
 func createOpenBankingConnection(t *testing.T, ctx context.Context, storage Storage, psuID uuid.UUID, connection models.OpenBankingConnection) {
-	require.NoError(t, storage.PSUOpenBankingConnectionsUpsert(ctx, psuID, connection))
+	require.NoError(t, storage.OpenBankingConnectionsUpsert(ctx, psuID, connection))
 }
 
 func TestOpenBankingConnectionAttemptsUpsert(t *testing.T) {
@@ -328,7 +328,7 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 	})
 }
 
-func TestPSUBankBridgesUpsert(t *testing.T) {
+func TestOpenBankingForwardedUserUpsert(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -337,11 +337,11 @@ func TestPSUBankBridgesUpsert(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUser)
 
 	t.Run("upsert with same psu and connector", func(t *testing.T) {
-		bankBridge := models.OpenBankingProviderPSU{
-			ConnectorID: defaultPSUBankBridge.ConnectorID,
+		obForwardedUser := models.OpenBankingForwardedUser{
+			ConnectorID: defaultOpenBankingForwardedUser.ConnectorID,
 			AccessToken: &models.Token{
 				Token:     "access_token_changed",
 				ExpiresAt: now.Add(30 * time.Minute).UTC().Time,
@@ -351,17 +351,17 @@ func TestPSUBankBridgesUpsert(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, store.OpenBankingProviderPSUUpsert(ctx, defaultPSU2.ID, bankBridge))
+		require.NoError(t, store.OpenBankingForwardedUserUpsert(ctx, defaultPSU2.ID, obForwardedUser))
 
-		actual, err := store.OpenBankingProviderPSUGet(ctx, defaultPSU2.ID, defaultPSUBankBridge.ConnectorID)
+		actual, err := store.OpenBankingForwardedUserGet(ctx, defaultPSU2.ID, defaultOpenBankingForwardedUser.ConnectorID)
 		require.NoError(t, err)
-		// Should update the bank bridge
-		require.Equal(t, bankBridge.AccessToken.Token, actual.AccessToken.Token)
-		require.Equal(t, bankBridge.Metadata, actual.Metadata)
+		// Should update the forwarded user
+		require.Equal(t, obForwardedUser.AccessToken.Token, actual.AccessToken.Token)
+		require.Equal(t, obForwardedUser.Metadata, actual.Metadata)
 	})
 }
 
-func TestOpenBankingProviderPSUGet(t *testing.T) {
+func TestOpenBankingForwardedUserGet(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -370,23 +370,23 @@ func TestOpenBankingProviderPSUGet(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge)
-	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, bankBridgeConn)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUser)
+	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, obConn)
 
-	t.Run("get bank bridge with connections", func(t *testing.T) {
-		actual, err := store.OpenBankingProviderPSUGet(ctx, defaultPSU2.ID, defaultPSUBankBridge.ConnectorID)
+	t.Run("get forwarded user with connections", func(t *testing.T) {
+		actual, err := store.OpenBankingForwardedUserGet(ctx, defaultPSU2.ID, defaultOpenBankingForwardedUser.ConnectorID)
 		require.NoError(t, err)
-		compareOpenBankingProviderPSU(t, defaultPSUBankBridge, *actual)
+		compareOpenBankingForwardedUser(t, defaultOpenBankingForwardedUser, *actual)
 	})
 
-	t.Run("get non-existent bank bridge", func(t *testing.T) {
-		actual, err := store.OpenBankingProviderPSUGet(ctx, uuid.New(), defaultPSUBankBridge.ConnectorID)
+	t.Run("get non-existent forwarded user", func(t *testing.T) {
+		actual, err := store.OpenBankingForwardedUserGet(ctx, uuid.New(), defaultOpenBankingForwardedUser.ConnectorID)
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
 }
 
-func TestOpenBankingProviderPSUDelete(t *testing.T) {
+func TestOpenBankingForwardedUserDelete(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -395,22 +395,22 @@ func TestOpenBankingProviderPSUDelete(t *testing.T) {
 
 	upsertConnector(t, ctx, store, defaultConnector)
 	createPSU(t, ctx, store, defaultPSU2)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUser)
 
-	t.Run("delete existing bank bridge", func(t *testing.T) {
-		require.NoError(t, store.OpenBankingProviderPSUDelete(ctx, defaultPSU2.ID, defaultPSUBankBridge.ConnectorID))
+	t.Run("delete existing forwarded user", func(t *testing.T) {
+		require.NoError(t, store.OpenBankingForwardedUserDelete(ctx, defaultPSU2.ID, defaultOpenBankingForwardedUser.ConnectorID))
 
-		actual, err := store.OpenBankingProviderPSUGet(ctx, defaultPSU2.ID, defaultPSUBankBridge.ConnectorID)
+		actual, err := store.OpenBankingForwardedUserGet(ctx, defaultPSU2.ID, defaultOpenBankingForwardedUser.ConnectorID)
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
 
-	t.Run("delete non-existent bank bridge", func(t *testing.T) {
-		require.NoError(t, store.OpenBankingProviderPSUDelete(ctx, uuid.New(), defaultPSUBankBridge.ConnectorID))
+	t.Run("delete non-existent forwarded user", func(t *testing.T) {
+		require.NoError(t, store.OpenBankingForwardedUserDelete(ctx, uuid.New(), defaultOpenBankingForwardedUser.ConnectorID))
 	})
 }
 
-func TestOpenBankingProviderPSUList(t *testing.T) {
+func TestOpenBankingForwardedUserList(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -420,44 +420,44 @@ func TestOpenBankingProviderPSUList(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
 	createPSU(t, ctx, store, defaultPSU2)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridge2)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUser)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUser2)
 
-	t.Run("list bank bridges by connector_id", func(t *testing.T) {
-		q := NewListOpenBankingProviderPSUQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingProviderPSUQuery{}).
+	t.Run("list forwarded users by connector_id", func(t *testing.T) {
+		q := NewListOpenBankingForwardedUserQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
-				WithQueryBuilder(query.Match("connector_id", defaultPSUBankBridge.ConnectorID.String())),
+				WithQueryBuilder(query.Match("connector_id", defaultOpenBankingForwardedUser.ConnectorID.String())),
 		)
 
-		cursor, err := store.OpenBankingProviderPSUList(ctx, q)
+		cursor, err := store.OpenBankingForwardedUserList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
 		require.NotNil(t, cursor.Data[0].AccessToken)
 	})
 
-	t.Run("list bank bridges by psu_id", func(t *testing.T) {
-		q := NewListOpenBankingProviderPSUQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingProviderPSUQuery{}).
+	t.Run("list forwarded users by psu_id", func(t *testing.T) {
+		q := NewListOpenBankingForwardedUserQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("psu_id", defaultPSU2.ID.String())),
 		)
 
-		cursor, err := store.OpenBankingProviderPSUList(ctx, q)
+		cursor, err := store.OpenBankingForwardedUserList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		require.False(t, cursor.HasMore)
 	})
 
-	t.Run("list bank bridges by metadata", func(t *testing.T) {
-		q := NewListOpenBankingProviderPSUQuery(
-			bunpaginate.NewPaginatedQueryOptions(OpenBankingProviderPSUQuery{}).
+	t.Run("list forwarded users by metadata", func(t *testing.T) {
+		q := NewListOpenBankingForwardedUserQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingForwardedUserQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[foo]", "bar")),
 		)
 
-		cursor, err := store.OpenBankingProviderPSUList(ctx, q)
+		cursor, err := store.OpenBankingForwardedUserList(ctx, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
@@ -493,9 +493,9 @@ func TestPSUOpenBankingConnectionsUpsert(t *testing.T) {
 			},
 		}
 
-		require.NoError(t, store.PSUOpenBankingConnectionsUpsert(ctx, defaultPSU2.ID, connection))
+		require.NoError(t, store.OpenBankingConnectionsUpsert(ctx, defaultPSU2.ID, connection))
 
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, connection.ConnectorID, connection.ConnectionID)
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, connection.ConnectorID, connection.ConnectionID)
 		require.NoError(t, err)
 		// Should update the connection
 		require.Equal(t, connection.Status, actual.Status)
@@ -519,9 +519,9 @@ func TestOpenBankingConnectionsUpdateLastDataUpdate(t *testing.T) {
 
 	t.Run("update last data update", func(t *testing.T) {
 		newUpdatedAt := now.Add(-5 * time.Minute).UTC().Time
-		require.NoError(t, store.PSUOpenBankingConnectionsUpdateLastDataUpdate(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID, newUpdatedAt))
+		require.NoError(t, store.OpenBankingConnectionsUpdateLastDataUpdate(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID, newUpdatedAt))
 
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
 		require.NoError(t, err)
 		require.Equal(t, newUpdatedAt, actual.DataUpdatedAt)
 	})
@@ -540,19 +540,19 @@ func TestPSUOpenBankingConnectionsGet(t *testing.T) {
 	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection2)
 
 	t.Run("get connection with all fields", func(t *testing.T) {
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
 		require.NoError(t, err)
 		compareOpenBankingConnections(t, defaultOpenBankingConnection, *actual)
 	})
 
 	t.Run("get connection with error", func(t *testing.T) {
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection2.ConnectorID, defaultOpenBankingConnection2.ConnectionID)
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection2.ConnectorID, defaultOpenBankingConnection2.ConnectionID)
 		require.NoError(t, err)
 		compareOpenBankingConnections(t, defaultOpenBankingConnection2, *actual)
 	})
 
 	t.Run("get non-existent connection", func(t *testing.T) {
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, "non_existent")
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, "non_existent")
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
@@ -570,15 +570,15 @@ func TestOpenBankingConnectionsDelete(t *testing.T) {
 	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 
 	t.Run("delete existing connection", func(t *testing.T) {
-		require.NoError(t, store.PSUOpenBankingConnectionsDelete(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID))
+		require.NoError(t, store.OpenBankingConnectionsDelete(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID))
 
-		actual, err := store.PSUOpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
+		actual, err := store.OpenBankingConnectionsGet(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
 
 	t.Run("delete non-existent connection", func(t *testing.T) {
-		require.NoError(t, store.PSUOpenBankingConnectionsDelete(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, "non_existent"))
+		require.NoError(t, store.OpenBankingConnectionsDelete(ctx, defaultPSU2.ID, defaultOpenBankingConnection.ConnectorID, "non_existent"))
 	})
 }
 
@@ -594,14 +594,14 @@ func TestPSUOpenBankingConnectionsGetFromConnectionID(t *testing.T) {
 	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 
 	t.Run("get connection by connection ID", func(t *testing.T) {
-		actual, actualPsuID, err := store.PSUOpenBankingConnectionsGetFromConnectionID(ctx, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
+		actual, actualPsuID, err := store.OpenBankingConnectionsGetFromConnectionID(ctx, defaultOpenBankingConnection.ConnectorID, defaultOpenBankingConnection.ConnectionID)
 		require.NoError(t, err)
 		require.Equal(t, defaultPSU2.ID, actualPsuID)
 		compareOpenBankingConnections(t, defaultOpenBankingConnection, *actual)
 	})
 
 	t.Run("get non-existent connection by connection ID", func(t *testing.T) {
-		actual, actualPsuID, err := store.PSUOpenBankingConnectionsGetFromConnectionID(ctx, defaultOpenBankingConnection.ConnectorID, "non_existent")
+		actual, actualPsuID, err := store.OpenBankingConnectionsGetFromConnectionID(ctx, defaultOpenBankingConnection.ConnectorID, "non_existent")
 		require.Error(t, err)
 		require.Equal(t, uuid.Nil, actualPsuID)
 		require.Nil(t, actual)
@@ -621,13 +621,13 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection2)
 
 	t.Run("list connections by connection_id", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("connection_id", defaultOpenBankingConnection.ConnectionID)),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
@@ -635,13 +635,13 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 	})
 
 	t.Run("list connections by status", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", string(models.ConnectionStatusError))),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
@@ -649,13 +649,13 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 	})
 
 	t.Run("list connections by metadata", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("metadata[conn_foo2]", "conn_bar2")),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 1)
 		require.False(t, cursor.HasMore)
@@ -663,43 +663,43 @@ func TestOpenBankingConnectionsList(t *testing.T) {
 	})
 
 	t.Run("list connections with connector filter", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, &defaultOpenBankingConnection.ConnectorID, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, &defaultOpenBankingConnection.ConnectorID, q)
 		require.NoError(t, err)
 		require.Len(t, cursor.Data, 2)
 		require.False(t, cursor.HasMore)
 	})
 
 	t.Run("wrong query operator", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("connection_id", "test")),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
 	})
 
 	t.Run("unknown query key", func(t *testing.T) {
-		q := NewListPsuOpenBankingConnectionsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PsuOpenBankingConnectionsQuery{}).
+		q := NewListOpenBankingConnectionsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test")),
 		)
 
-		cursor, err := store.PSUOpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
+		cursor, err := store.OpenBankingConnectionsList(ctx, defaultPSU2.ID, nil, q)
 		require.Error(t, err)
 		require.Nil(t, cursor)
 	})
 }
 
-func TestOpenBankingProviderPSUGetByPSPUserID(t *testing.T) {
+func TestOpenBankingForwardedUserGetByPSPUserID(t *testing.T) {
 	t.Parallel()
 
 	ctx := logging.TestingContext()
@@ -709,23 +709,23 @@ func TestOpenBankingProviderPSUGetByPSPUserID(t *testing.T) {
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertConnector(t, ctx, store, defaultConnector2)
 	createPSU(t, ctx, store, defaultPSU2)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridgeWithPSPUserID)
-	createPSUBankBridge(t, ctx, store, defaultPSU2.ID, defaultPSUBankBridgeWithPSPUserID2)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUserWithPSPUserID)
+	createOpenBankingForwardedUser(t, ctx, store, defaultPSU2.ID, defaultOpenBankingForwardedUserWithPSPUserID2)
 
-	t.Run("get bank bridge by PSPUserID with first connector", func(t *testing.T) {
-		actual, err := store.OpenBankingProviderPSUGetByPSPUserID(ctx, *defaultPSUBankBridgeWithPSPUserID.PSPUserID, defaultPSUBankBridgeWithPSPUserID.ConnectorID)
+	t.Run("get forwarded user by PSPUserID with first connector", func(t *testing.T) {
+		actual, err := store.OpenBankingForwardedUserGetByPSPUserID(ctx, *defaultOpenBankingForwardedUserWithPSPUserID.PSPUserID, defaultOpenBankingForwardedUserWithPSPUserID.ConnectorID)
 		require.NoError(t, err)
-		compareOpenBankingProviderPSU(t, defaultPSUBankBridgeWithPSPUserID, *actual)
+		compareOpenBankingForwardedUser(t, defaultOpenBankingForwardedUserWithPSPUserID, *actual)
 	})
 
-	t.Run("get bank bridge by PSPUserID with second connector", func(t *testing.T) {
-		actual, err := store.OpenBankingProviderPSUGetByPSPUserID(ctx, *defaultPSUBankBridgeWithPSPUserID2.PSPUserID, defaultPSUBankBridgeWithPSPUserID2.ConnectorID)
+	t.Run("get forwarded user by PSPUserID with second connector", func(t *testing.T) {
+		actual, err := store.OpenBankingForwardedUserGetByPSPUserID(ctx, *defaultOpenBankingForwardedUserWithPSPUserID2.PSPUserID, defaultOpenBankingForwardedUserWithPSPUserID2.ConnectorID)
 		require.NoError(t, err)
-		compareOpenBankingProviderPSU(t, defaultPSUBankBridgeWithPSPUserID2, *actual)
+		compareOpenBankingForwardedUser(t, defaultOpenBankingForwardedUserWithPSPUserID2, *actual)
 	})
 
-	t.Run("get non-existent bank bridge by PSPUserID", func(t *testing.T) {
-		actual, err := store.OpenBankingProviderPSUGetByPSPUserID(ctx, "non_existent", defaultPSUBankBridgeWithPSPUserID.ConnectorID)
+	t.Run("get non-existent forwarded user by PSPUserID", func(t *testing.T) {
+		actual, err := store.OpenBankingForwardedUserGetByPSPUserID(ctx, "non_existent", defaultOpenBankingForwardedUserWithPSPUserID.ConnectorID)
 		require.Error(t, err)
 		require.Nil(t, actual)
 	})
@@ -750,7 +750,7 @@ func compareOpenBankingConnectionAttempts(t *testing.T, expected, actual models.
 	}
 }
 
-func compareOpenBankingProviderPSU(t *testing.T, expected, actual models.OpenBankingProviderPSU) {
+func compareOpenBankingForwardedUser(t *testing.T, expected, actual models.OpenBankingForwardedUser) {
 	require.Equal(t, expected.ConnectorID, actual.ConnectorID)
 	require.Equal(t, expected.Metadata, actual.Metadata)
 
