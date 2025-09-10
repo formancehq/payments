@@ -40,8 +40,8 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 		},
 	}
 
-	obProviderPSUs := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	obForwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -67,8 +67,8 @@ func (s *UnitTestSuite) Test_DeletePSU_Success() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock open banking provider psu list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(obProviderPSUs, nil)
+	// Mock open banking forwarded user list
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(obForwardedUsers, nil)
 
 	// Mock plugin delete user (called for each provider)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
@@ -121,7 +121,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersGet_Error() {
 	s.ErrorContains(err, "user not found")
 }
 
-func (s *UnitTestSuite) Test_DeletePSU_StoragePSUBankBridgesList_Error() {
+func (s *UnitTestSuite) Test_DeletePSU_StorageOpenBankingForwardedUserList_Error() {
 	taskID := models.TaskID{
 		Reference:   "delete-psu-task",
 		ConnectorID: s.connectorID,
@@ -137,8 +137,8 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePSUBankBridgesList_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridges list error
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(
+	// Mock forwarded user list error
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(
 		nil, temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("database error")),
 	)
 
@@ -170,8 +170,8 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	forwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -188,8 +188,8 @@ func (s *UnitTestSuite) Test_DeletePSU_PluginDeleteUser_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	// Mock forwarded users list
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(forwardedUsers, nil)
 
 	// Mock plugin delete user error
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
@@ -224,8 +224,8 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	forwardedUsers := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -242,8 +242,8 @@ func (s *UnitTestSuite) Test_DeletePSU_ChildWorkflow_Error() {
 	// Mock PSU retrieval
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
-	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	// Mock forwarded users list
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(forwardedUsers, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
@@ -281,8 +281,8 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -300,7 +300,7 @@ func (s *UnitTestSuite) Test_DeletePSU_StoragePaymentServiceUsersDelete_Error() 
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
@@ -368,8 +368,8 @@ func (s *UnitTestSuite) Test_DeletePSU_UpdateTaskSuccess_Error() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -387,7 +387,7 @@ func (s *UnitTestSuite) Test_DeletePSU_UpdateTaskSuccess_Error() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)
@@ -427,8 +427,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleBankBridges() {
 	}
 
 	// Multiple bank bridges in a single page
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -464,7 +464,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMultipleBankBridges() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user (called for each provider - 3 total)
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Return(&models.DeleteUserResponse{}, nil)
@@ -505,8 +505,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoBankBridges() {
 	}
 
 	// Empty bank bridges list
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data:    []models.OpenBankingProviderPSU{},
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data:    []models.OpenBankingForwardedUser{},
 		HasMore: false,
 	}
 
@@ -514,7 +514,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithNoBankBridges() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock child workflow execution
 	s.env.OnWorkflow(RunDeleteOpenBankingConnectionData, mock.Anything, mock.Anything).Return(nil)
@@ -549,8 +549,8 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 		CreatedAt: s.env.Now().UTC(),
 	}
 
-	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingProviderPSU]{
-		Data: []models.OpenBankingProviderPSU{
+	psuBankBridges := &bunpaginate.Cursor[models.OpenBankingForwardedUser]{
+		Data: []models.OpenBankingForwardedUser{
 			{
 				ConnectorID: s.connectorID,
 				AccessToken: &models.Token{
@@ -565,7 +565,7 @@ func (s *UnitTestSuite) Test_DeletePSU_WithMinimalPSU() {
 	s.env.OnActivity(activities.StoragePaymentServiceUsersGetActivity, mock.Anything, psuID).Once().Return(psu, nil)
 
 	// Mock PSU bank bridges list
-	s.env.OnActivity(activities.StorageOpenBankingProviderPSUsListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersListActivity, mock.Anything, mock.Anything).Once().Return(psuBankBridges, nil)
 
 	// Mock plugin delete user
 	s.env.OnActivity(activities.PluginDeleteUserActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(&models.DeleteUserResponse{}, nil)

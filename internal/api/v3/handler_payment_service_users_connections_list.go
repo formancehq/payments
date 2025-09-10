@@ -52,13 +52,13 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListPsuOpenBankingConnectionsQuery](r, func() (*storage.ListPsuOpenBankingConnectionsQuery, error) {
-			options, err := getPagination(span, r, storage.PsuOpenBankingConnectionsQuery{})
+		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
 			}
 
-			return pointer.For(storage.NewListPsuOpenBankingConnectionsQuery(*options)), nil
+			return pointer.For(storage.NewListOpenBankingConnectionsQuery(*options)), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)
@@ -118,13 +118,13 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListPsuOpenBankingConnectionsQuery](r, func() (*storage.ListPsuOpenBankingConnectionsQuery, error) {
-			options, err := getPagination(span, r, storage.PsuOpenBankingConnectionsQuery{})
+		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
 			}
 
-			return pointer.For(storage.NewListPsuOpenBankingConnectionsQuery(*options)), nil
+			return pointer.For(storage.NewListOpenBankingConnectionsQuery(*options)), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)

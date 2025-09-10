@@ -47,7 +47,7 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 		It("should return an error - missing open banking connections", func(ctx SpecContext) {
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				Connection: &models.PSUOpenBankingConnection{
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "test",
 				},
 			}
@@ -60,9 +60,9 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 
 		It("should return an error - missing auth token", func(ctx SpecContext) {
 			req := models.UpdateUserLinkRequest{
-				PaymentServiceUser:     &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
-				Connection: &models.PSUOpenBankingConnection{
+				PaymentServiceUser:       &models.PSPPaymentServiceUser{},
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "test",
 				},
 			}
@@ -76,12 +76,12 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 		It("should return an error - missing callBackState", func(ctx SpecContext) {
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
 				},
-				Connection: &models.PSUOpenBankingConnection{
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "test",
 				},
 			}
@@ -95,12 +95,12 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 		It("should return an error - missing formanceRedirectURL", func(ctx SpecContext) {
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
 				},
-				Connection: &models.PSUOpenBankingConnection{
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "test",
 				},
 				CallBackState: "state-123",
@@ -116,12 +116,12 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
 				},
-				Connection: &models.PSUOpenBankingConnection{
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
 				CallBackState:       "state-123",
@@ -155,12 +155,12 @@ var _ = Describe("Powens *Plugin Update User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.UpdateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
 				},
-				Connection: &models.PSUOpenBankingConnection{
+				Connection: &models.OpenBankingConnection{
 					ConnectionID: "conn-123",
 				},
 				CallBackState:       "state-123",

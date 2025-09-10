@@ -64,10 +64,10 @@ var _ = Describe("API v3 Payment Service Users Link Attempts Get", func() {
 				"attemptID", attemptID.String(),
 				"paymentServiceUserID", uuid.New().String(),
 				"connectorID", connectorID.String())
-			attempt := &models.PSUOpenBankingConnectionAttempt{
+			attempt := &models.OpenBankingConnectionAttempt{
 				ID:     attemptID,
 				PsuID:  uuid.New(),
-				Status: models.PSUOpenBankingConnectionAttemptStatusPending,
+				Status: models.OpenBankingConnectionAttemptStatusPending,
 			}
 			m.EXPECT().PaymentServiceUsersLinkAttemptsGet(gomock.Any(), gomock.Any(), gomock.Any(), attemptID).Return(attempt, nil)
 			handlerFn(w, req)

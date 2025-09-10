@@ -8,12 +8,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionsStore(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
+func (a Activities) StorageOpenBankingConnectionsStore(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
 	return temporalStorageError(a.storage.OpenBankingConnectionsUpsert(ctx, psuID, from))
 }
 
-var StoragePSUOpenBankingConnectionsStoreActivity = Activities{}.StoragePSUOpenBankingConnectionsStore
+var StorageOpenBankingConnectionsStoreActivity = Activities{}.StorageOpenBankingConnectionsStore
 
-func StoragePSUOpenBankingConnectionsStore(ctx workflow.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
-	return executeActivity(ctx, StoragePSUOpenBankingConnectionsStoreActivity, nil, psuID, from)
+func StorageOpenBankingConnectionsStore(ctx workflow.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
+	return executeActivity(ctx, StorageOpenBankingConnectionsStoreActivity, nil, psuID, from)
 }

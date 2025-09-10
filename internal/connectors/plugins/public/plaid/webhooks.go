@@ -171,14 +171,14 @@ func (p *Plugin) handleSessionFinishedWebhook(ctx context.Context, req models.Tr
 		return nil, fmt.Errorf("invalid attemptID: %w", models.ErrInvalidRequest)
 	}
 
-	status := models.PSUOpenBankingConnectionAttemptStatusPending
+	status := models.OpenBankingConnectionAttemptStatusPending
 	var errMsg *string
 	switch strings.ToLower(webhook.GetStatus()) {
 	case "success":
-		status = models.PSUOpenBankingConnectionAttemptStatusCompleted
+		status = models.OpenBankingConnectionAttemptStatusCompleted
 	case "exited":
 		errMsg = pointer.For("exited")
-		status = models.PSUOpenBankingConnectionAttemptStatusExited
+		status = models.OpenBankingConnectionAttemptStatusExited
 	}
 
 	for _, publicToken := range webhook.GetPublicTokens() {

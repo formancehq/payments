@@ -50,14 +50,14 @@ type CreateUserResponse struct {
 }
 
 type CreateUserLinkRequest struct {
-	AttemptID              string
-	PaymentServiceUser     *PSPPaymentServiceUser
-	OpenBankingProviderPSU *OpenBankingProviderPSU
-	ApplicationName        string
-	ClientRedirectURL      *string
-	FormanceRedirectURL    *string
-	CallBackState          string
-	WebhookBaseURL         string
+	AttemptID                string
+	PaymentServiceUser       *PSPPaymentServiceUser
+	OpenBankingForwardedUser *OpenBankingForwardedUser
+	ApplicationName          string
+	ClientRedirectURL        *string
+	FormanceRedirectURL      *string
+	CallBackState            string
+	WebhookBaseURL           string
 }
 
 type CreateUserLinkResponse struct {
@@ -71,15 +71,15 @@ type CreateUserLinkResponse struct {
 }
 
 type UpdateUserLinkRequest struct {
-	AttemptID              string
-	PaymentServiceUser     *PSPPaymentServiceUser
-	OpenBankingProviderPSU *OpenBankingProviderPSU
-	Connection             *PSUOpenBankingConnection
-	ApplicationName        string
-	ClientRedirectURL      *string
-	FormanceRedirectURL    *string
-	CallBackState          string
-	WebhookBaseURL         string
+	AttemptID                string
+	PaymentServiceUser       *PSPPaymentServiceUser
+	OpenBankingForwardedUser *OpenBankingForwardedUser
+	Connection               *OpenBankingConnection
+	ApplicationName          string
+	ClientRedirectURL        *string
+	FormanceRedirectURL      *string
+	CallBackState            string
+	WebhookBaseURL           string
 }
 
 type UpdateUserLinkResponse struct {
@@ -93,7 +93,7 @@ type UpdateUserLinkResponse struct {
 
 type CompleteUpdateUserLinkRequest struct {
 	HTTPCallInformation HTTPCallInformation
-	RelatedAttempt      *PSUOpenBankingConnectionAttempt
+	RelatedAttempt      *OpenBankingConnectionAttempt
 }
 
 type CompleteUpdateUserLinkResponse struct {
@@ -103,7 +103,7 @@ type CompleteUpdateUserLinkResponse struct {
 
 type CompleteUserLinkRequest struct {
 	HTTPCallInformation HTTPCallInformation
-	RelatedAttempt      *PSUOpenBankingConnectionAttempt
+	RelatedAttempt      *OpenBankingConnectionAttempt
 }
 
 type CompleteUserLinkResponse struct {
@@ -112,7 +112,7 @@ type CompleteUserLinkResponse struct {
 }
 
 type UserLinkSuccessResponse struct {
-	Connections []PSPPsuOpenBankingConnection
+	Connections []PSPOpenBankingConnection
 }
 
 type UserLinkErrorResponse struct {
@@ -120,15 +120,15 @@ type UserLinkErrorResponse struct {
 }
 
 type DeleteUserConnectionRequest struct {
-	PaymentServiceUser     *PSPPaymentServiceUser
-	OpenBankingProviderPSU *OpenBankingProviderPSU
-	Connection             *PSPPsuOpenBankingConnection
+	PaymentServiceUser       *PSPPaymentServiceUser
+	OpenBankingForwardedUser *OpenBankingForwardedUser
+	Connection               *PSPOpenBankingConnection
 }
 type DeleteUserConnectionResponse struct{}
 
 type DeleteUserRequest struct {
-	PaymentServiceUser     *PSPPaymentServiceUser
-	OpenBankingProviderPSU *OpenBankingProviderPSU
+	PaymentServiceUser       *PSPPaymentServiceUser
+	OpenBankingForwardedUser *OpenBankingForwardedUser
 }
 type DeleteUserResponse struct{}
 

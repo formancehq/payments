@@ -58,8 +58,8 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 
 		It("should return an error - missing auth token", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
-				PaymentServiceUser:     &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
+				PaymentServiceUser:       &models.PSPPaymentServiceUser{},
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
@@ -71,7 +71,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 		It("should return an error - missing callBackState", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -87,7 +87,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 		It("should return an error - missing formanceRedirectURL", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -105,7 +105,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -141,7 +141,7 @@ var _ = Describe("Powens *Plugin Create User Link", func() {
 			redirectURL := "https://formance.com/callback"
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{},
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},

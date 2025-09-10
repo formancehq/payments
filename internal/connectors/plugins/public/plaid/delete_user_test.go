@@ -39,7 +39,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should return an error - missing open banking connections metadata", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.DeleteUser(ctx, req)
@@ -50,7 +50,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should return an error - missing user token", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{},
 				},
 			}
@@ -63,7 +63,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should delete user successfully", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -79,7 +79,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should return an error - client delete user error", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},

@@ -6,8 +6,8 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -73,12 +73,12 @@ var _ = Describe("Plugin Delete User", func() {
 							"source": "test",
 						},
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},
 						Metadata: map[string]string{
-							"open_banking_provider_psu_id": "test-ob-123",
+							"open_banking_forwarded_user_id": "test-ob-123",
 						},
 					},
 				},
@@ -147,7 +147,7 @@ var _ = Describe("Plugin Delete User", func() {
 						Name:      "Minimal User",
 						CreatedAt: time.Now(),
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "minimal_provider",
 						},
@@ -173,7 +173,7 @@ var _ = Describe("Plugin Delete User", func() {
 						CreatedAt: time.Now(),
 						// ContactDetails and Address are nil
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "nil_fields_provider",
 						},

@@ -91,7 +91,7 @@ func (w Workflow) runFetchOpenBankingData(
 
 	now := workflow.Now(ctx)
 
-	err := activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate(
+	err := activities.StorageOpenBankingConnectionsLastUpdatedAtUpdate(
 		infiniteRetryContext(ctx),
 		fetchOpenBankingData.PsuID,
 		fetchOpenBankingData.ConnectorID,

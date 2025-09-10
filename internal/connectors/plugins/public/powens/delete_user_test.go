@@ -33,13 +33,13 @@ var _ = Describe("Powens *Plugin Delete User", func() {
 
 			resp, err := plg.DeleteUser(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("open banking provider psu is required"))
+			Expect(err.Error()).To(ContainSubstring("open banking forwarded user is required"))
 			Expect(resp).To(Equal(models.DeleteUserResponse{}))
 		})
 
 		It("should return an error - missing auth token", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.DeleteUser(ctx, req)
@@ -50,7 +50,7 @@ var _ = Describe("Powens *Plugin Delete User", func() {
 
 		It("should delete user successfully", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},
@@ -68,7 +68,7 @@ var _ = Describe("Powens *Plugin Delete User", func() {
 
 		It("should return an error - client delete user error", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					AccessToken: &models.Token{
 						Token: "auth-token-123",
 					},

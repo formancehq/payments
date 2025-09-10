@@ -6,8 +6,8 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -62,12 +62,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},
 					},
-					Connection: &models.PSUOpenBankingConnection{
+					Connection: &models.OpenBankingConnection{
 						ConnectionID: "test-connection-id",
 					},
 					ClientRedirectURL:   pointer.For("https://client.com/update-callback"),
@@ -139,12 +139,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "minimal_provider",
 						},
 					},
-					Connection: &models.PSUOpenBankingConnection{
+					Connection: &models.OpenBankingConnection{
 						ConnectionID: "minimal-connection-id",
 					},
 					CallBackState:  "minimal-callback-state",
@@ -168,12 +168,12 @@ var _ = Describe("Plugin Update User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "nil_fields_provider",
 						},
 					},
-					Connection: &models.PSUOpenBankingConnection{
+					Connection: &models.OpenBankingConnection{
 						ConnectionID: "nil-fields-connection-id",
 					},
 					// ClientRedirectURL and FormanceRedirectURL are nil

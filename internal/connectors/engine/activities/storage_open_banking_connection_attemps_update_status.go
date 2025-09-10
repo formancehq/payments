@@ -8,12 +8,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, error *string) error {
+func (a Activities) StorageOpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, error *string) error {
 	return temporalStorageError(a.storage.OpenBankingConnectionAttemptsUpdateStatus(ctx, id, status, error))
 }
 
-var StoragePSUOpenBankingConnectionAttemptsUpdateStatusActivity = Activities{}.StoragePSUOpenBankingConnectionAttemptsUpdateStatus
+var StorageOpenBankingConnectionAttemptsUpdateStatusActivity = Activities{}.StorageOpenBankingConnectionAttemptsUpdateStatus
 
-func StoragePSUOpenBankingConnectionAttemptsUpdateStatus(ctx workflow.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, error *string) error {
-	return executeActivity(ctx, StoragePSUOpenBankingConnectionAttemptsUpdateStatusActivity, nil, id, status, error)
+func StorageOpenBankingConnectionAttemptsUpdateStatus(ctx workflow.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, error *string) error {
+	return executeActivity(ctx, StorageOpenBankingConnectionAttemptsUpdateStatusActivity, nil, id, status, error)
 }

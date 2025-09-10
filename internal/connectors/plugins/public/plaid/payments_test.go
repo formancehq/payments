@@ -53,8 +53,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should return an error - list transactions error", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -83,8 +83,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should fetch payments successfully - no state", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -126,8 +126,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should fetch payments successfully - with state", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -173,8 +173,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should handle removed transactions", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -210,8 +210,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should handle empty transactions response", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -258,8 +258,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should handle invalid base webhook payload", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",
@@ -282,8 +282,8 @@ var _ = Describe("Plaid *Plugin Payments", func() {
 		})
 
 		It("should handle invalid state", func(ctx SpecContext) {
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
 						Provider:  "plaid-test",

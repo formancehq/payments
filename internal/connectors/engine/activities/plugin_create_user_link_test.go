@@ -6,8 +6,8 @@ import (
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -62,7 +62,7 @@ var _ = Describe("Plugin Create User Link", func() {
 					PaymentServiceUser: &models.PSPPaymentServiceUser{
 						ID: uuid.New(),
 					},
-					OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+					OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 						ConnectorID: models.ConnectorID{
 							Provider: "some_provider",
 						},

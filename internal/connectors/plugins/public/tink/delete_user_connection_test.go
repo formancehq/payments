@@ -38,7 +38,7 @@ var _ = Describe("Tink *Plugin Delete User Connection", func() {
 					ID:   userID,
 					Name: "Test User",
 				},
-				Connection: &models.PSPPsuOpenBankingConnection{
+				Connection: &models.PSPOpenBankingConnection{
 					ConnectionID: connectionID,
 				},
 			}
@@ -65,7 +65,7 @@ var _ = Describe("Tink *Plugin Delete User Connection", func() {
 					ID:   userID,
 					Name: "Test User",
 				},
-				Connection: &models.PSPPsuOpenBankingConnection{
+				Connection: &models.PSPOpenBankingConnection{
 					ConnectionID: connectionID,
 				},
 			}
@@ -105,7 +105,7 @@ var _ = Describe("Tink *Plugin Delete User Connection", func() {
 					ID:   userID,
 					Name: "",
 				},
-				Connection: &models.PSPPsuOpenBankingConnection{
+				Connection: &models.PSPOpenBankingConnection{
 					ConnectionID: "connection_123",
 				},
 			}
@@ -141,7 +141,7 @@ var _ = Describe("Tink *Plugin Delete User Connection", func() {
 					ID:   userID,
 					Name: "Test User",
 				},
-				Connection: &models.PSPPsuOpenBankingConnection{
+				Connection: &models.PSPOpenBankingConnection{
 					ConnectionID: "",
 				},
 			}

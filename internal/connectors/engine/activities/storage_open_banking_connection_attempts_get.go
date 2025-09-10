@@ -8,7 +8,7 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionAttemptsGet(ctx context.Context, attemptID uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
+func (a Activities) StorageOpenBankingConnectionAttemptsGet(ctx context.Context, attemptID uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
 	attempt, err := a.storage.OpenBankingConnectionAttemptsGet(ctx, attemptID)
 	if err != nil {
 		return nil, temporalStorageError(err)
@@ -17,11 +17,11 @@ func (a Activities) StoragePSUOpenBankingConnectionAttemptsGet(ctx context.Conte
 	return attempt, nil
 }
 
-var StoragePSUOpenBankingConnectionAttemptsGetActivity = Activities{}.StoragePSUOpenBankingConnectionAttemptsGet
+var StorageOpenBankingConnectionAttemptsGetActivity = Activities{}.StorageOpenBankingConnectionAttemptsGet
 
-func StoragePSUOpenBankingConnectionAttemptsGet(ctx workflow.Context, attemptID uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
+func StorageOpenBankingConnectionAttemptsGet(ctx workflow.Context, attemptID uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
 	var ret *models.OpenBankingConnectionAttempt
-	err := executeActivity(ctx, StoragePSUOpenBankingConnectionAttemptsGetActivity, &ret, attemptID)
+	err := executeActivity(ctx, StorageOpenBankingConnectionAttemptsGetActivity, &ret, attemptID)
 	if err != nil {
 		return nil, err
 	}

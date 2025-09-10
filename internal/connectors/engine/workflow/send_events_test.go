@@ -148,7 +148,7 @@ var (
 		PsuID:       uuid.New(),
 		ConnectorID: connectorID,
 		AttemptID:   uuid.New(),
-		Status:      models.PSUOpenBankingConnectionAttemptStatusCompleted,
+		Status:      models.OpenBankingConnectionAttemptStatusCompleted,
 		Error:       nil,
 	}
 

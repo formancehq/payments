@@ -15,11 +15,11 @@ func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
 		return fmt.Errorf("payment service user is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.OpenBankingProviderPSU == nil {
+	if req.OpenBankingForwardedUser == nil {
 		return fmt.Errorf("open banking connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.OpenBankingProviderPSU.AccessToken == nil {
+	if req.OpenBankingForwardedUser.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -48,7 +48,7 @@ func (p *Plugin) updateUserLink(ctx context.Context, req models.UpdateUserLinkRe
 	}
 
 	temporaryCodeResponse, err := p.client.CreateTemporaryCode(ctx, client.CreateTemporaryLinkRequest{
-		AccessToken: req.OpenBankingProviderPSU.AccessToken.Token,
+		AccessToken: req.OpenBankingForwardedUser.AccessToken.Token,
 	})
 	if err != nil {
 		return models.UpdateUserLinkResponse{}, err

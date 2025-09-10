@@ -8,15 +8,15 @@ import (
 )
 
 func validateDeleteUserRequest(req models.DeleteUserRequest) error {
-	if req.OpenBankingProviderPSU == nil {
+	if req.OpenBankingForwardedUser == nil {
 		return fmt.Errorf("open banking connections are required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.OpenBankingProviderPSU.Metadata == nil {
+	if req.OpenBankingForwardedUser.Metadata == nil {
 		return fmt.Errorf("open banking connections metadata are required: %w", models.ErrInvalidRequest)
 	}
 
-	if _, ok := req.OpenBankingProviderPSU.Metadata[UserTokenMetadataKey]; !ok {
+	if _, ok := req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey]; !ok {
 		return fmt.Errorf("missing user token: %w", models.ErrInvalidRequest)
 	}
 
@@ -28,7 +28,7 @@ func (p *Plugin) deleteUser(ctx context.Context, req models.DeleteUserRequest) (
 		return models.DeleteUserResponse{}, err
 	}
 
-	err := p.client.DeleteUser(ctx, req.OpenBankingProviderPSU.Metadata[UserTokenMetadataKey])
+	err := p.client.DeleteUser(ctx, req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey])
 	if err != nil {
 		return models.DeleteUserResponse{}, fmt.Errorf("failed to delete user: %w", err)
 	}

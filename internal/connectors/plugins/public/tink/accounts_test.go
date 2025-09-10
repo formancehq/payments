@@ -49,7 +49,7 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload using only FromPayload to avoid issues
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -92,8 +92,8 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 			webhookPayloadBytes, err := json.Marshal(webhookPayload)
 			Expect(err).To(BeNil())
 
-			// Create the open banking provider psu from payload
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			// Create the open banking forwarded user from payload
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -147,8 +147,8 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 			webhookPayloadBytes, err := json.Marshal(webhookPayload)
 			Expect(err).To(BeNil())
 
-			// Create the from payload without open banking provider psu
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			// Create the from payload without open banking forwarded user
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -196,11 +196,11 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 				},
 			}
 
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					PsuID: psuID,
 				},
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectionID: connectionID,
 				},
 			}

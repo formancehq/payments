@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (s *Service) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUOpenBankingConnectionAttempt], error) {
+func (s *Service) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	_, err := s.storage.PaymentServiceUsersGet(ctx, psuID)
 	if err != nil {
 		return nil, newStorageError(err, "cannot get payment service user")
@@ -20,7 +20,7 @@ func (s *Service) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID
 		return nil, newStorageError(err, "cannot get connector")
 	}
 
-	attempts, err := s.storage.PSUOpenBankingConnectionAttemptsList(ctx, psuID, connectorID, query)
+	attempts, err := s.storage.OpenBankingConnectionAttemptsList(ctx, psuID, connectorID, query)
 	if err != nil {
 		return nil, newStorageError(err, "cannot list payment service users link attempts")
 	}

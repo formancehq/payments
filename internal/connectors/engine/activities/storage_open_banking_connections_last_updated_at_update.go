@@ -9,12 +9,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
+func (a Activities) StorageOpenBankingConnectionsLastUpdatedAtUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
 	return temporalStorageError(a.storage.OpenBankingConnectionsUpdateLastDataUpdate(ctx, psuID, connectorID, connectionID, updatedAt))
 }
 
-var StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity = Activities{}.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate
+var StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity = Activities{}.StorageOpenBankingConnectionsLastUpdatedAtUpdate
 
-func StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate(ctx workflow.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
-	return executeActivity(ctx, StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, nil, psuID, connectorID, connectionID, updatedAt)
+func StorageOpenBankingConnectionsLastUpdatedAtUpdate(ctx workflow.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
+	return executeActivity(ctx, StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, nil, psuID, connectorID, connectionID, updatedAt)
 }

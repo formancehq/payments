@@ -405,14 +405,14 @@ func (p *Plugin) handleAccountSynced(ctx context.Context, req models.TranslateWe
 			return nil, err
 		}
 
-		bankBridgePayment := models.PSPOpenBankingPayment{
+		openBankingPayment := models.PSPOpenBankingPayment{
 			PSPPayment:              payment,
 			OpenBankingUserID:       pointer.For(strconv.Itoa(webhook.UserID)),
 			OpenBankingConnectionID: pointer.For(strconv.Itoa(webhook.ConnectionID)),
 		}
 
 		responses = append(responses, models.WebhookResponse{
-			OpenBankingPayment: &bankBridgePayment,
+			OpenBankingPayment: &openBankingPayment,
 		})
 	}
 

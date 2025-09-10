@@ -52,7 +52,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload using only FromPayload to avoid issues
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -133,7 +133,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -209,7 +209,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -259,7 +259,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -325,7 +325,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -421,11 +421,11 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.OpenBankingProviderPSUFromPayload{
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					PsuID: psuID,
 				},
-				PSUOpenBankingConnection: &models.PSUOpenBankingConnection{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectionID: connectionID,
 				},
 			}
@@ -501,7 +501,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 					},
 				}
 
-				fromPayload := models.OpenBankingProviderPSUFromPayload{}
+				fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 				payments := make([]models.PSPPayment, 0)
 				result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -543,7 +543,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.OpenBankingProviderPSUFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -583,7 +583,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.OpenBankingProviderPSUFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -592,7 +592,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(result).To(HaveLen(0))
 		})
 
-		It("should handle missing open banking provider psu metadata", func(ctx SpecContext) {
+		It("should handle missing open banking forwarded user metadata", func(ctx SpecContext) {
 			accountID := "test_account_id"
 
 			clientTransaction := client.Transaction{
@@ -623,7 +623,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.OpenBankingProviderPSUFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)

@@ -52,26 +52,26 @@ func (w Workflow) deletePSU(
 	}
 
 	// First, let's delete the user from all the open banking he is on.
-	queryBB := storage.NewListOpenBankingProviderPSUQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.OpenBankingProviderPSUQuery{}).
+	queryBB := storage.NewListOpenBankingForwardedUserQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.OpenBankingForwardedUserQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
 				query.Match("psu_id", deleteUser.PsuID.String()),
 			),
 	)
 	for {
-		psuBankBridges, err := activities.StorageOpenBankingProviderPSUsList(infiniteRetryContext(ctx), queryBB)
+		forwardedUsers, err := activities.StorageOpenBankingForwardedUsersList(infiniteRetryContext(ctx), queryBB)
 		if err != nil {
 			return err
 		}
 
-		for _, psuBankBridge := range psuBankBridges.Data {
+		for _, forwardedUser := range forwardedUsers.Data {
 			_, err = activities.PluginDeleteUser(
 				infiniteRetryContext(ctx),
-				psuBankBridge.ConnectorID,
+				forwardedUser.ConnectorID,
 				models.DeleteUserRequest{
-					PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
-					OpenBankingProviderPSU: &psuBankBridge,
+					PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+					OpenBankingForwardedUser: &forwardedUser,
 				},
 			)
 			if err != nil {
@@ -79,11 +79,11 @@ func (w Workflow) deletePSU(
 			}
 		}
 
-		if !psuBankBridges.HasMore {
+		if !forwardedUsers.HasMore {
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(psuBankBridges.Next, &queryBB)
+		err = bunpaginate.UnmarshalCursor(forwardedUsers.Next, &queryBB)
 		if err != nil {
 			return err
 		}

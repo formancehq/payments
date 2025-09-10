@@ -24,7 +24,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_Success() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
@@ -60,7 +60,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_WithFromPayload_Success() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
@@ -94,7 +94,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextAccounts_Error() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
@@ -128,7 +128,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextPayments_Error() {
 	)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
@@ -160,7 +160,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_StoragePSUOpenBankingConnectio
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp with error
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
@@ -192,7 +192,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunSendEvents_Error() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow with error
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
@@ -231,7 +231,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_BothChildWorkflows_Error() {
 	)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)

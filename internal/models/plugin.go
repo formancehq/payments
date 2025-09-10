@@ -208,7 +208,7 @@ func (u UserConnectionReconnected) IdempotencyKey() string {
 
 type PSPUserLinkSessionFinished struct {
 	AttemptID uuid.UUID
-	Status    PSUOpenBankingConnectionAttemptStatus
+	Status    OpenBankingConnectionAttemptStatus
 	Error     *string
 }
 
@@ -216,7 +216,7 @@ type UserLinkSessionFinished struct {
 	PsuID       uuid.UUID
 	ConnectorID ConnectorID
 	AttemptID   uuid.UUID
-	Status      PSUOpenBankingConnectionAttemptStatus
+	Status      OpenBankingConnectionAttemptStatus
 	Error       *string
 }
 
@@ -235,8 +235,8 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 	return IdempotencyKey(u)
 }
 
-type OpenBankingProviderPSUFromPayload struct {
-	OpenBankingProviderPSU   *OpenBankingProviderPSU
-	PSUOpenBankingConnection *PSUOpenBankingConnection
+type OpenBankingForwardedUserFromPayload struct {
+	OpenBankingForwardedUser *OpenBankingForwardedUser
+	OpenBankingConnection    *OpenBankingConnection
 	FromPayload              json.RawMessage
 }

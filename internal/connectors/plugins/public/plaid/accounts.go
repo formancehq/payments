@@ -13,7 +13,7 @@ import (
 )
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var from models.OpenBankingProviderPSUFromPayload
+	var from models.OpenBankingForwardedUserFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -25,7 +25,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	resp, err := p.client.ListAccounts(
 		ctx,
-		from.PSUOpenBankingConnection.AccessToken.Token,
+		from.OpenBankingConnection.AccessToken.Token,
 	)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -33,7 +33,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, len(resp.Accounts))
 	for _, account := range resp.Accounts {
-		accounts = append(accounts, translatePlaidAccountToPSPAccount(account, from.PSUOpenBankingConnection.ConnectionID))
+		accounts = append(accounts, translatePlaidAccountToPSPAccount(account, from.OpenBankingConnection.ConnectionID))
 	}
 
 	return models.FetchNextAccountsResponse{

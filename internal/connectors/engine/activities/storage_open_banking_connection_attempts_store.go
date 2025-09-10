@@ -7,12 +7,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionAttemptsStore(ctx context.Context, from models.OpenBankingConnectionAttempt) error {
+func (a Activities) StorageOpenBankingConnectionAttemptsStore(ctx context.Context, from models.OpenBankingConnectionAttempt) error {
 	return temporalStorageError(a.storage.OpenBankingConnectionAttemptsUpsert(ctx, from))
 }
 
-var StoragePSUOpenBankingConnectionAttemptsStoreActivity = Activities{}.StoragePSUOpenBankingConnectionAttemptsStore
+var StorageOpenBankingConnectionAttemptsStoreActivity = Activities{}.StorageOpenBankingConnectionAttemptsStore
 
-func StoragePSUOpenBankingConnectionAttemptsStore(ctx workflow.Context, from models.OpenBankingConnectionAttempt) error {
-	return executeActivity(ctx, StoragePSUOpenBankingConnectionAttemptsStoreActivity, nil, from)
+func StorageOpenBankingConnectionAttemptsStore(ctx workflow.Context, from models.OpenBankingConnectionAttempt) error {
+	return executeActivity(ctx, StorageOpenBankingConnectionAttemptsStoreActivity, nil, from)
 }

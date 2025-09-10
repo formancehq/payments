@@ -109,7 +109,7 @@ func (a *OpenBankingConnectionAttempt) UnmarshalJSON(data []byte) error {
 }
 
 // Represents a psu forwarded to an open banking provider
-type OpenBankingProviderPSU struct {
+type OpenBankingForwardedUser struct {
 	// ID of the psu
 	PsuID uuid.UUID `json:"psuID"`
 	// ID of the connector

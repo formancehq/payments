@@ -189,8 +189,8 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL:      &redirectURL,
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{},
+				ClientRedirectURL:        &redirectURL,
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
@@ -216,7 +216,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{},
 				},
 			}
@@ -244,7 +244,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -274,7 +274,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -310,7 +310,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 				ClientRedirectURL: &redirectURL,
 				WebhookBaseURL:    webhookURL,
 				AttemptID:         attemptID.String(),
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -362,7 +362,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				OpenBankingProviderPSU: &models.OpenBankingProviderPSU{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},

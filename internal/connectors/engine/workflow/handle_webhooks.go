@@ -187,7 +187,7 @@ func (w Workflow) handleOpenBankingAccountWebhook(
 	}
 
 	if response.OpenBankingAccount.OpenBankingUserID != nil {
-		openBankingPSU, err := activities.StorageOpenBankingProviderPSUsGetByPSPUserID(
+		openBankingPSU, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			*response.OpenBankingAccount.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
@@ -234,7 +234,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	}
 
 	if response.OpenBankingPayment.OpenBankingUserID != nil {
-		openBankingPSU, err := activities.StorageOpenBankingProviderPSUsGetByPSPUserID(
+		openBankingPSU, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			*response.OpenBankingPayment.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
@@ -268,12 +268,12 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		return fmt.Errorf("getting connector: %w", err)
 	}
 
-	var conn *models.PSUOpenBankingConnection
-	var obProviderPSU *models.OpenBankingProviderPSU
+	var conn *models.OpenBankingConnection
+	var obForwardedUser *models.OpenBankingForwardedUser
 	var psuID uuid.UUID
 	var connectionID string
 	if response.DataReadyToFetch.PSUID != nil {
-		openBankingProviderPSU, err := activities.StorageOpenBankingProviderPSUsGet(
+		openBankingForwardedUser, err := activities.StorageOpenBankingForwardedUsersGet(
 			infiniteRetryContext(ctx),
 			*response.DataReadyToFetch.PSUID,
 			handleWebhooks.ConnectorID,
@@ -282,12 +282,12 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			return fmt.Errorf("getting open banking: %w", err)
 		}
 
-		obProviderPSU = openBankingProviderPSU
-		psuID = obProviderPSU.PsuID
+		obForwardedUser = openBankingForwardedUser
+		psuID = obForwardedUser.PsuID
 	}
 
 	if response.DataReadyToFetch.ConnectionID != nil {
-		connection, psu, err := activities.StoragePSUOpenBankingConnectionsGetFromConnectionID(
+		connection, psu, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 			infiniteRetryContext(ctx),
 			handleWebhooks.ConnectorID,
 			*response.DataReadyToFetch.ConnectionID,
@@ -301,9 +301,9 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		psuID = psu
 	}
 
-	payload, err := json.Marshal(&models.OpenBankingProviderPSUFromPayload{
-		OpenBankingProviderPSU:   obProviderPSU,
-		PSUOpenBankingConnection: conn,
+	payload, err := json.Marshal(&models.OpenBankingForwardedUserFromPayload{
+		OpenBankingForwardedUser: obForwardedUser,
+		OpenBankingConnection:    conn,
 		FromPayload:              response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
@@ -357,7 +357,7 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 	ctx workflow.Context,
 	response models.WebhookResponse,
 ) error {
-	attempt, err := activities.StoragePSUOpenBankingConnectionAttemptsGet(
+	attempt, err := activities.StorageOpenBankingConnectionAttemptsGet(
 		infiniteRetryContext(ctx),
 		response.UserLinkSessionFinished.AttemptID,
 	)
@@ -365,7 +365,7 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 		return fmt.Errorf("getting open banking connection attempt: %w", err)
 	}
 
-	err = activities.StoragePSUOpenBankingConnectionAttemptsUpdateStatus(
+	err = activities.StorageOpenBankingConnectionAttemptsUpdateStatus(
 		infiniteRetryContext(ctx),
 		response.UserLinkSessionFinished.AttemptID,
 		response.UserLinkSessionFinished.Status,
@@ -410,7 +410,7 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	_, psuID, err := activities.StoragePSUOpenBankingConnectionsGetFromConnectionID(
+	_, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionPendingDisconnect.ConnectionID,
@@ -454,7 +454,7 @@ func (w Workflow) handleUserDisconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	openBanking, err := activities.StorageOpenBankingProviderPSUsGetByPSPUserID(
+	openBanking, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 		infiniteRetryContext(ctx),
 		response.UserDisconnected.PSPUserID,
 		handleWebhooks.ConnectorID,
@@ -496,7 +496,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	connection, psuID, err := activities.StoragePSUOpenBankingConnectionsGetFromConnectionID(
+	connection, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionDisconnected.ConnectionID,
@@ -507,17 +507,17 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 			return fmt.Errorf("getting open banking connection: %w", err)
 		}
 
-		// Let's try to fetch the psu via the bank bridge
-		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+		// Let's try to fetch the psu via the forwarded user
+		user, errGetUser := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			response.UserConnectionDisconnected.PSPUserID,
 			handleWebhooks.ConnectorID,
 		)
-		if errGetBankBridge != nil {
-			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		if errGetUser != nil {
+			return fmt.Errorf("error getting connection: %w and getting forwarded user by pspuserID: %w", err, errGetUser)
 		}
 
-		psuID = bb.PsuID
+		psuID = user.PsuID
 	}
 
 	updatedConnection := craftUpdatedConnection(
@@ -529,7 +529,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 		response.UserConnectionDisconnected.Reason,
 	)
 
-	err = activities.StoragePSUOpenBankingConnectionsStore(
+	err = activities.StorageOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
 		updatedConnection,
@@ -574,7 +574,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	connection, psuID, err := activities.StoragePSUOpenBankingConnectionsGetFromConnectionID(
+	connection, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionReconnected.ConnectionID,
@@ -585,17 +585,17 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 			return fmt.Errorf("getting open banking connection: %w", err)
 		}
 
-		// Let's try to fetch the psu via the bank bridge
-		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+		// Let's try to fetch the ob forwarded user
+		user, errGetUser := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			response.UserConnectionReconnected.PSPUserID,
 			handleWebhooks.ConnectorID,
 		)
-		if errGetBankBridge != nil {
-			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		if errGetUser != nil {
+			return fmt.Errorf("error getting connection: %w and getting forwarded user by psuId: %w", err, errGetUser)
 		}
 
-		psuID = bb.PsuID
+		psuID = user.PsuID
 	}
 
 	updatedConnection := craftUpdatedConnection(
@@ -607,7 +607,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 		nil,
 	)
 
-	err = activities.StoragePSUOpenBankingConnectionsStore(
+	err = activities.StorageOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
 		updatedConnection,

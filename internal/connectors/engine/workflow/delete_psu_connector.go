@@ -52,7 +52,7 @@ func (w Workflow) deletePSUConnector(
 		return err
 	}
 
-	openBankingProviderPSU, err := activities.StorageOpenBankingProviderPSUsGet(
+	openBankingForwardedUser, err := activities.StorageOpenBankingForwardedUsersGet(
 		infiniteRetryContext(ctx),
 		deletePSUConnector.PsuID,
 		deletePSUConnector.ConnectorID,
@@ -65,8 +65,8 @@ func (w Workflow) deletePSUConnector(
 		infiniteRetryContext(ctx),
 		deletePSUConnector.ConnectorID,
 		models.DeleteUserRequest{
-			PaymentServiceUser:     models.ToPSPPaymentServiceUser(psu),
-			OpenBankingProviderPSU: openBankingProviderPSU,
+			PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+			OpenBankingForwardedUser: openBankingForwardedUser,
 		},
 	)
 	if err != nil {
@@ -95,7 +95,7 @@ func (w Workflow) deletePSUConnector(
 		return err
 	}
 
-	if err := activities.StorageOpenBankingProviderPSUsDelete(
+	if err := activities.StorageOpenBankingForwardedUsersDelete(
 		infiniteRetryContext(ctx),
 		deletePSUConnector.PsuID,
 		deletePSUConnector.ConnectorID,

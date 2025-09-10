@@ -25,7 +25,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	var from models.OpenBankingProviderPSUFromPayload
+	var from models.OpenBankingForwardedUserFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextPaymentsResponse{}, err
 	}
@@ -41,7 +41,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 	resp, err := p.client.ListTransactions(
 		ctx,
-		from.PSUOpenBankingConnection.AccessToken.Token,
+		from.OpenBankingConnection.AccessToken.Token,
 		oldState.LastCursor,
 		req.PageSize,
 	)
@@ -53,7 +53,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	paymentsToDelete := make([]models.PSPPaymentsToDelete, 0, req.PageSize)
 
 	for _, transaction := range resp.Added {
-		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUOpenBankingConnection.ConnectionID)
+		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -61,7 +61,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	for _, transaction := range resp.Modified {
-		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUOpenBankingConnection.ConnectionID)
+		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}

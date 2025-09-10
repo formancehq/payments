@@ -9,11 +9,11 @@ import (
 )
 
 func (a Activities) StorageOpenBankingForwardedUsersGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
-	openBankingProviderPSU, err := a.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
+	openBankingForwardedUser, err := a.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
-	return openBankingProviderPSU, nil
+	return openBankingForwardedUser, nil
 }
 
 var StorageOpenBankingForwardedUsersGetActivity = Activities{}.StorageOpenBankingForwardedUsersGet

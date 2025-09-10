@@ -8,26 +8,26 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type StoragePSUOpenBankingConnectionsGetFromConnectionIDResult struct {
+type StorageOpenBankingConnectionsGetFromConnectionIDResult struct {
 	Connection *models.OpenBankingConnection
 	PSUID      uuid.UUID
 }
 
-func (a Activities) StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*StoragePSUOpenBankingConnectionsGetFromConnectionIDResult, error) {
+func (a Activities) StorageOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
 	connection, psuID, err := a.storage.OpenBankingConnectionsGetFromConnectionID(ctx, connectorID, connectionID)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
-	return &StoragePSUOpenBankingConnectionsGetFromConnectionIDResult{
+	return &StorageOpenBankingConnectionsGetFromConnectionIDResult{
 		Connection: connection,
 		PSUID:      psuID,
 	}, nil
 }
 
-var StoragePSUOpenBankingConnectionsGetFromConnectionIDActivity = Activities{}.StoragePSUOpenBankingConnectionsGetFromConnectionID
+var StorageOpenBankingConnectionsGetFromConnectionIDActivity = Activities{}.StorageOpenBankingConnectionsGetFromConnectionID
 
-func StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx workflow.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
-	var result StoragePSUOpenBankingConnectionsGetFromConnectionIDResult
-	err := executeActivity(ctx, StoragePSUOpenBankingConnectionsGetFromConnectionIDActivity, &result, connectorID, connectionID)
+func StorageOpenBankingConnectionsGetFromConnectionID(ctx workflow.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
+	var result StorageOpenBankingConnectionsGetFromConnectionIDResult
+	err := executeActivity(ctx, StorageOpenBankingConnectionsGetFromConnectionIDActivity, &result, connectorID, connectionID)
 	return result.Connection, result.PSUID, err
 }

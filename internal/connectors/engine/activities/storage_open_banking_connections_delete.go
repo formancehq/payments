@@ -8,12 +8,12 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-func (a Activities) StoragePSUOpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+func (a Activities) StorageOpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
 	return a.storage.OpenBankingConnectionsDelete(ctx, psuID, connectorID, connectionID)
 }
 
-var StoragePSUOpenBankingConnectionsDeleteActivity = Activities{}.StoragePSUOpenBankingConnectionsDelete
+var StorageOpenBankingConnectionsDeleteActivity = Activities{}.StorageOpenBankingConnectionsDelete
 
-func StoragePSUOpenBankingConnectionsDelete(ctx workflow.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
-	return executeActivity(ctx, StoragePSUOpenBankingConnectionsDeleteActivity, nil, psuID, connectorID, connectionID)
+func StorageOpenBankingConnectionsDelete(ctx workflow.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+	return executeActivity(ctx, StorageOpenBankingConnectionsDeleteActivity, nil, psuID, connectorID, connectionID)
 }
