@@ -197,6 +197,7 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 			}
 
 			fromPayload := models.BankBridgeFromPayload{
+				PSUID: psuID,
 				PSUBankBridge: &models.PSUBankBridge{
 					PsuID: psuID,
 				},
@@ -214,15 +215,19 @@ var _ = Describe("Tink *Plugin Accounts", func() {
 			// Check first account
 			Expect(result[0].Reference).To(Equal("account1"))
 			Expect(*result[0].Name).To(Equal("Account 1"))
-			Expect(result[0].Metadata[models.ObjectPSUIDMetadataKey]).To(Equal(psuID.String()))
-			Expect(result[0].Metadata[models.ObjectConnectionIDMetadataKey]).To(Equal(connectionID))
+			Expect(result[0].PsuID).To(Not(BeNil()))
+			Expect(*result[0].PsuID).To(Equal(psuID))
+			Expect(result[0].OpenBankingConnectionID).To(Not(BeNil()))
+			Expect(*result[0].OpenBankingConnectionID).To(Equal(connectionID))
 			Expect(result[0].Raw).ToNot(BeNil())
 
 			// Check second account
 			Expect(result[1].Reference).To(Equal("account2"))
 			Expect(*result[1].Name).To(Equal("Account 2"))
-			Expect(result[1].Metadata[models.ObjectPSUIDMetadataKey]).To(Equal(psuID.String()))
-			Expect(result[1].Metadata[models.ObjectConnectionIDMetadataKey]).To(Equal(connectionID))
+			Expect(result[1].PsuID).To(Not(BeNil()))
+			Expect(*result[1].PsuID).To(Equal(psuID))
+			Expect(result[1].OpenBankingConnectionID).To(Not(BeNil()))
+			Expect(*result[1].OpenBankingConnectionID).To(Equal(connectionID))
 			Expect(result[1].Raw).ToNot(BeNil())
 		})
 

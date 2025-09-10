@@ -1,0 +1,19 @@
+package activities
+
+import (
+	"context"
+
+	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
+	"go.temporal.io/sdk/workflow"
+)
+
+func (a Activities) StoragePaymentsDeleteFromConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+	return temporalStorageError(a.storage.PaymentsDeleteFromOpenBankingConnectionID(ctx, psuID, connectorID, connectionID))
+}
+
+var StoragePaymentsDeleteFromConnectionIDActivity = Activities{}.StoragePaymentsDeleteFromConnectionID
+
+func StoragePaymentsDeleteFromConnectionID(ctx workflow.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
+	return executeActivity(ctx, StoragePaymentsDeleteFromConnectionIDActivity, nil, psuID, connectorID, connectionID)
+}

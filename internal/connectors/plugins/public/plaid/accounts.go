@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
@@ -33,7 +34,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 
 	accounts := make([]models.PSPAccount, 0, len(resp.Accounts))
 	for _, account := range resp.Accounts {
-		accounts = append(accounts, translatePlaidAccountToPSPAccount(account, from.PSUBankBridgeConnection.ConnectionID))
+		accounts = append(accounts, translatePlaidAccountToPSPAccount(account, from.PSUID, from.PSUBankBridgeConnection.ConnectionID))
 	}
 
 	return models.FetchNextAccountsResponse{
@@ -41,20 +42,21 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	}, nil
 }
 
-func translatePlaidAccountToPSPAccount(account plaid.AccountBase, connectionID string) models.PSPAccount {
+func translatePlaidAccountToPSPAccount(account plaid.AccountBase, psuID uuid.UUID, connectionID string) models.PSPAccount {
 	raw, err := json.Marshal(account)
 	if err != nil {
 		return models.PSPAccount{}
 	}
 
 	return models.PSPAccount{
-		Reference:    account.AccountId,
-		CreatedAt:    time.Now().UTC(),
-		Name:         &account.Name,
-		DefaultAsset: pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Balances.GetIsoCurrencyCode())),
+		Reference:               account.AccountId,
+		CreatedAt:               time.Now().UTC(),
+		Name:                    &account.Name,
+		DefaultAsset:            pointer.For(currency.FormatAsset(supportedCurrenciesWithDecimal, account.Balances.GetIsoCurrencyCode())),
+		PsuID:                   &psuID,
+		OpenBankingConnectionID: &connectionID,
 		Metadata: map[string]string{
-			"accountType":                        string(account.Type),
-			models.ObjectConnectionIDMetadataKey: connectionID,
+			"accountType": string(account.Type),
 		},
 		Raw: raw,
 	}

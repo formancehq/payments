@@ -13,11 +13,10 @@ import (
 )
 
 type FetchNextPayments struct {
-	Config             models.Config      `json:"config"`
-	ConnectorID        models.ConnectorID `json:"connectorID"`
-	FromPayload        *FromPayload       `json:"fromPayload"`
-	Periodically       bool               `json:"periodically"`
-	AdditionalMetadata map[string]string  `json:"additionalMetadata"`
+	Config       models.Config      `json:"config"`
+	ConnectorID  models.ConnectorID `json:"connectorID"`
+	FromPayload  *FromPayload       `json:"fromPayload"`
+	Periodically bool               `json:"periodically"`
 }
 
 func (w Workflow) runFetchNextPayments(
@@ -68,7 +67,6 @@ func (w Workflow) fetchNextPayments(
 		payments, err := models.FromPSPPayments(
 			paymentsResponse.Payments,
 			fetchNextPayments.ConnectorID,
-			fetchNextPayments.AdditionalMetadata,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

@@ -79,6 +79,7 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 
 		It("should fetch accounts successfully", func(ctx SpecContext) {
 			fromPayload := models.BankBridgeFromPayload{
+				PSUID: uuid.New(),
 				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
 					ConnectorID: models.ConnectorID{
 						Reference: uuid.New(),
@@ -109,7 +110,10 @@ var _ = Describe("Plaid *Plugin Accounts", func() {
 			Expect(resp.Accounts[0].Name).ToNot(BeNil())
 			Expect(*resp.Accounts[0].Name).To(Equal("Account 0"))
 			Expect(resp.Accounts[0].Metadata["accountType"]).To(Equal("depository"))
-			Expect(resp.Accounts[0].Metadata[models.ObjectConnectionIDMetadataKey]).To(Equal("test-connection"))
+			Expect(resp.Accounts[0].OpenBankingConnectionID).To(Not(BeNil()))
+			Expect(*resp.Accounts[0].OpenBankingConnectionID).To(Equal("test-connection"))
+			Expect(resp.Accounts[0].PsuID).To(Not(BeNil()))
+			Expect(*resp.Accounts[0].PsuID).To(Equal(fromPayload.PSUID))
 		})
 
 		It("should handle empty accounts response", func(ctx SpecContext) {

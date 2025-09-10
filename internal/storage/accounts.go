@@ -9,6 +9,7 @@ import (
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/uptrace/bun"
 )
 
@@ -25,8 +26,10 @@ type account struct {
 
 	// Optional fields
 	// c.f.: https://bun.uptrace.dev/guide/models.html#nulls
-	DefaultAsset *string `bun:"default_asset,type:text,nullzero"`
-	Name         *string `bun:"name,type:text,nullzero"`
+	DefaultAsset            *string    `bun:"default_asset,type:text,nullzero"`
+	Name                    *string    `bun:"name,type:text,nullzero"`
+	PsuID                   *uuid.UUID `bun:"psu_id,type:uuid,nullzero"`
+	OpenBankingConnectionID *string    `bun:"open_banking_connection_id,type:character varying,nullzero"`
 
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
@@ -40,7 +43,8 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 	toInsert := make([]account, 0, len(accounts))
 	for _, a := range accounts {
-		toInsert = append(toInsert, fromAccountModels(a))
+		acc := fromAccountModels(a)
+		toInsert = append(toInsert, acc)
 	}
 
 	_, err := s.db.NewInsert().
@@ -70,6 +74,36 @@ func (s *store) AccountsDeleteFromConnectorID(ctx context.Context, connectorID m
 	_, err := s.db.NewDelete().
 		Model((*account)(nil)).
 		Where("connector_id = ?", connectorID).
+		Exec(ctx)
+
+	return e("failed to delete account", err)
+}
+
+func (s *store) AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error {
+	_, err := s.db.NewDelete().
+		Model((*account)(nil)).
+		Where("psu_id = ?", psuID).
+		Exec(ctx)
+
+	return e("failed to delete account", err)
+}
+
+func (s *store) AccountsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error {
+	_, err := s.db.NewDelete().
+		Model((*account)(nil)).
+		Where("connector_id = ?", connectorID).
+		Where("psu_id = ?", psuID).
+		Exec(ctx)
+
+	return e("failed to delete account", err)
+}
+
+func (s *store) AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
+	_, err := s.db.NewDelete().
+		Model((*account)(nil)).
+		Where("psu_id = ?", psuID).
+		Where("connector_id = ?", connectorID).
+		Where("open_banking_connection_id = ?", openBankingConnectionID).
 		Exec(ctx)
 
 	return e("failed to delete account", err)
@@ -105,7 +139,9 @@ func (s *store) accountsQueryContext(qb query.Builder) (string, []any, error) {
 			key == "connector_id",
 			key == "type",
 			key == "default_asset",
-			key == "name":
+			key == "name",
+			key == "psu_id",
+			key == "open_banking_connection_id":
 			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
@@ -169,28 +205,32 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 
 func fromAccountModels(from models.Account) account {
 	return account{
-		ID:           from.ID,
-		ConnectorID:  from.ConnectorID,
-		CreatedAt:    time.New(from.CreatedAt),
-		Reference:    from.Reference,
-		Type:         string(from.Type),
-		DefaultAsset: from.DefaultAsset,
-		Name:         from.Name,
-		Metadata:     from.Metadata,
-		Raw:          from.Raw,
+		ID:                      from.ID,
+		ConnectorID:             from.ConnectorID,
+		CreatedAt:               time.New(from.CreatedAt),
+		Reference:               from.Reference,
+		Type:                    string(from.Type),
+		DefaultAsset:            from.DefaultAsset,
+		Name:                    from.Name,
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
+		Metadata:                from.Metadata,
+		Raw:                     from.Raw,
 	}
 }
 
 func toAccountModels(from account) models.Account {
 	return models.Account{
-		ID:           from.ID,
-		ConnectorID:  from.ConnectorID,
-		Reference:    from.Reference,
-		CreatedAt:    from.CreatedAt.Time,
-		Type:         models.AccountType(from.Type),
-		Name:         from.Name,
-		DefaultAsset: from.DefaultAsset,
-		Metadata:     from.Metadata,
-		Raw:          from.Raw,
+		ID:                      from.ID,
+		ConnectorID:             from.ConnectorID,
+		Reference:               from.Reference,
+		CreatedAt:               from.CreatedAt.Time,
+		Type:                    models.AccountType(from.Type),
+		Name:                    from.Name,
+		DefaultAsset:            from.DefaultAsset,
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
+		Metadata:                from.Metadata,
+		Raw:                     from.Raw,
 	}
 }

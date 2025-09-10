@@ -167,7 +167,7 @@ func TestFromPSPAccounts(t *testing.T) {
 		},
 	}
 
-	accounts, err := models.FromPSPAccounts(pspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID, nil)
+	accounts, err := models.FromPSPAccounts(pspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
 
 	// Then
 	require.NoError(t, err)
@@ -181,7 +181,7 @@ func TestFromPSPAccounts(t *testing.T) {
 		Raw:       json.RawMessage(`{}`),
 	})
 
-	_, err = models.FromPSPAccounts(invalidPspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID, nil)
+	_, err = models.FromPSPAccounts(invalidPspAccounts, models.ACCOUNT_TYPE_INTERNAL, connectorID)
 
 	// Then
 	assert.Error(t, err)
