@@ -10,7 +10,7 @@ import (
 )
 
 func (a Activities) StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error {
-	return temporalStorageError(a.storage.PSUOpenBankingConnectionsUpdateLastDataUpdate(ctx, psuID, connectorID, connectionID, updatedAt))
+	return temporalStorageError(a.storage.OpenBankingConnectionsUpdateLastDataUpdate(ctx, psuID, connectorID, connectionID, updatedAt))
 }
 
 var StoragePSUOpenBankingConnectionsLastUpdatedAtUpdateActivity = Activities{}.StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate

@@ -14,17 +14,17 @@ const (
 	ObjectPSUIDMetadataKey        = "object_psu_id"
 )
 
-type PSUOpenBankingConnectionAttemptStatus string
+type OpenBankingConnectionAttemptStatus string
 
 const (
-	PSUOpenBankingConnectionAttemptStatusPending   PSUOpenBankingConnectionAttemptStatus = "pending"
-	PSUOpenBankingConnectionAttemptStatusCompleted PSUOpenBankingConnectionAttemptStatus = "completed"
-	PSUOpenBankingConnectionAttemptStatusExited    PSUOpenBankingConnectionAttemptStatus = "exited"
+	OpenBankingConnectionAttemptStatusPending   OpenBankingConnectionAttemptStatus = "pending"
+	OpenBankingConnectionAttemptStatusCompleted OpenBankingConnectionAttemptStatus = "completed"
+	OpenBankingConnectionAttemptStatusExited    OpenBankingConnectionAttemptStatus = "exited"
 )
 
 // When a user tries to create a connection via an link, we will create an attempt
 // in order to save some crucial information.
-type PSUOpenBankingConnectionAttempt struct {
+type OpenBankingConnectionAttempt struct {
 	// ID of the attempt
 	ID uuid.UUID `json:"id"`
 	// ID of the psu
@@ -34,7 +34,7 @@ type PSUOpenBankingConnectionAttempt struct {
 	// Creation date of the attempt
 	CreatedAt time.Time `json:"createdAt"`
 	// Status of the attempt
-	Status PSUOpenBankingConnectionAttemptStatus `json:"status"`
+	Status OpenBankingConnectionAttemptStatus `json:"status"`
 	// State given to the url in order to be able to verify that the callback
 	// is valid.
 	State CallbackState `json:"state"`
@@ -49,7 +49,7 @@ type PSUOpenBankingConnectionAttempt struct {
 	Error *string `json:"error"`
 }
 
-func (a PSUOpenBankingConnectionAttempt) MarshalJSON() ([]byte, error) {
+func (a OpenBankingConnectionAttempt) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                uuid.UUID     `json:"id"`
 		PsuID             uuid.UUID     `json:"psuID"`
@@ -73,7 +73,7 @@ func (a PSUOpenBankingConnectionAttempt) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (a *PSUOpenBankingConnectionAttempt) UnmarshalJSON(data []byte) error {
+func (a *OpenBankingConnectionAttempt) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                uuid.UUID     `json:"id"`
 		PsuID             uuid.UUID     `json:"psuID"`
@@ -99,7 +99,7 @@ func (a *PSUOpenBankingConnectionAttempt) UnmarshalJSON(data []byte) error {
 	a.PsuID = aux.PsuID
 	a.ConnectorID = connectorID
 	a.CreatedAt = aux.CreatedAt
-	a.Status = PSUOpenBankingConnectionAttemptStatus(aux.Status)
+	a.Status = OpenBankingConnectionAttemptStatus(aux.Status)
 	a.State = aux.State
 	a.ClientRedirectURL = aux.ClientRedirectURL
 	a.TemporaryToken = aux.TemporaryToken
@@ -132,7 +132,7 @@ const (
 	ConnectionStatusError  ConnectionStatus = "ERROR"
 )
 
-type PSPPsuOpenBankingConnection struct {
+type PSPOpenBankingConnection struct {
 	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Creation date of the connection
@@ -146,7 +146,7 @@ type PSPPsuOpenBankingConnection struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-type PSUOpenBankingConnection struct {
+type OpenBankingConnection struct {
 	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Connector ID
@@ -170,7 +170,7 @@ type PSUOpenBankingConnection struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-func (psu PSUOpenBankingConnection) MarshalJSON() ([]byte, error) {
+func (connection OpenBankingConnection) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
@@ -181,18 +181,18 @@ func (psu PSUOpenBankingConnection) MarshalJSON() ([]byte, error) {
 		Metadata     map[string]string `json:"metadata"`
 		Error        *string           `json:"error,omitempty"`
 	}{
-		ConnectionID: psu.ConnectionID,
-		ConnectorID:  psu.ConnectorID.String(),
-		CreatedAt:    psu.CreatedAt,
-		UpdatedAt:    psu.UpdatedAt,
-		Status:       string(psu.Status),
-		AccessToken:  psu.AccessToken,
-		Metadata:     psu.Metadata,
-		Error:        psu.Error,
+		ConnectionID: connection.ConnectionID,
+		ConnectorID:  connection.ConnectorID.String(),
+		CreatedAt:    connection.CreatedAt,
+		UpdatedAt:    connection.UpdatedAt,
+		Status:       string(connection.Status),
+		AccessToken:  connection.AccessToken,
+		Metadata:     connection.Metadata,
+		Error:        connection.Error,
 	})
 }
 
-func (psu *PSUOpenBankingConnection) UnmarshalJSON(data []byte) error {
+func (connection *OpenBankingConnection) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ConnectionID string            `json:"connectionID"`
 		ConnectorID  string            `json:"connectorID"`
@@ -213,20 +213,20 @@ func (psu *PSUOpenBankingConnection) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	psu.ConnectionID = aux.ConnectionID
-	psu.ConnectorID = connectorID
-	psu.CreatedAt = aux.CreatedAt
-	psu.UpdatedAt = aux.UpdatedAt
-	psu.Status = ConnectionStatus(aux.Status)
-	psu.AccessToken = aux.AccessToken
-	psu.Metadata = aux.Metadata
-	psu.Error = aux.Error
+	connection.ConnectionID = aux.ConnectionID
+	connection.ConnectorID = connectorID
+	connection.CreatedAt = aux.CreatedAt
+	connection.UpdatedAt = aux.UpdatedAt
+	connection.Status = ConnectionStatus(aux.Status)
+	connection.AccessToken = aux.AccessToken
+	connection.Metadata = aux.Metadata
+	connection.Error = aux.Error
 
 	return nil
 }
 
-func ToPSPPsuOpenBankingConnection(from PSUOpenBankingConnection) PSPPsuOpenBankingConnection {
-	return PSPPsuOpenBankingConnection{
+func ToPSPOpenBankingConnection(from OpenBankingConnection) PSPOpenBankingConnection {
+	return PSPOpenBankingConnection{
 		ConnectionID: from.ConnectionID,
 		CreatedAt:    from.CreatedAt,
 		AccessToken:  from.AccessToken,
@@ -234,8 +234,8 @@ func ToPSPPsuOpenBankingConnection(from PSUOpenBankingConnection) PSPPsuOpenBank
 	}
 }
 
-func FromPSPPsuOpenBankingConnection(from PSPPsuOpenBankingConnection, connectorID ConnectorID) PSUOpenBankingConnection {
-	return PSUOpenBankingConnection{
+func FromPSPOpenBankingConnection(from PSPOpenBankingConnection, connectorID ConnectorID) OpenBankingConnection {
+	return OpenBankingConnection{
 		ConnectionID:  from.ConnectionID,
 		ConnectorID:   connectorID,
 		CreatedAt:     from.CreatedAt,

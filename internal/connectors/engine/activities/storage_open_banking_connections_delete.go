@@ -9,7 +9,7 @@ import (
 )
 
 func (a Activities) StoragePSUOpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error {
-	return a.storage.PSUOpenBankingConnectionsDelete(ctx, psuID, connectorID, connectionID)
+	return a.storage.OpenBankingConnectionsDelete(ctx, psuID, connectorID, connectionID)
 }
 
 var StoragePSUOpenBankingConnectionsDeleteActivity = Activities{}.StoragePSUOpenBankingConnectionsDelete

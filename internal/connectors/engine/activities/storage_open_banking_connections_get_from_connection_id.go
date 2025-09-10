@@ -9,12 +9,12 @@ import (
 )
 
 type StoragePSUOpenBankingConnectionsGetFromConnectionIDResult struct {
-	Connection *models.PSUOpenBankingConnection
+	Connection *models.OpenBankingConnection
 	PSUID      uuid.UUID
 }
 
 func (a Activities) StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*StoragePSUOpenBankingConnectionsGetFromConnectionIDResult, error) {
-	connection, psuID, err := a.storage.PSUOpenBankingConnectionsGetFromConnectionID(ctx, connectorID, connectionID)
+	connection, psuID, err := a.storage.OpenBankingConnectionsGetFromConnectionID(ctx, connectorID, connectionID)
 	if err != nil {
 		return nil, temporalStorageError(err)
 	}
@@ -26,7 +26,7 @@ func (a Activities) StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx cont
 
 var StoragePSUOpenBankingConnectionsGetFromConnectionIDActivity = Activities{}.StoragePSUOpenBankingConnectionsGetFromConnectionID
 
-func StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx workflow.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUOpenBankingConnection, uuid.UUID, error) {
+func StoragePSUOpenBankingConnectionsGetFromConnectionID(ctx workflow.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
 	var result StoragePSUOpenBankingConnectionsGetFromConnectionIDResult
 	err := executeActivity(ctx, StoragePSUOpenBankingConnectionsGetFromConnectionIDActivity, &result, connectorID, connectionID)
 	return result.Connection, result.PSUID, err

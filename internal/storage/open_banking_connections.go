@@ -20,12 +20,12 @@ type psuOpenBankingConnectionAttempt struct {
 	bun.BaseModel `bun:"table:open_banking_connection_attempts"`
 
 	// Mandatory fields
-	ID          uuid.UUID                                    `bun:"id,pk,type:uuid,notnull"`
-	PsuID       uuid.UUID                                    `bun:"psu_id,type:uuid,notnull"`
-	ConnectorID models.ConnectorID                           `bun:"connector_id,type:character varying,notnull"`
-	CreatedAt   time.Time                                    `bun:"created_at,type:timestamp without time zone,notnull"`
-	Status      models.PSUOpenBankingConnectionAttemptStatus `bun:"status,type:text,notnull"`
-	State       json.RawMessage                              `bun:"state,type:jsonb,nullzero"`
+	ID          uuid.UUID                                 `bun:"id,pk,type:uuid,notnull"`
+	PsuID       uuid.UUID                                 `bun:"psu_id,type:uuid,notnull"`
+	ConnectorID models.ConnectorID                        `bun:"connector_id,type:character varying,notnull"`
+	CreatedAt   time.Time                                 `bun:"created_at,type:timestamp without time zone,notnull"`
+	Status      models.OpenBankingConnectionAttemptStatus `bun:"status,type:text,notnull"`
+	State       json.RawMessage                           `bun:"state,type:jsonb,nullzero"`
 
 	// Optional fields
 	ClientRedirectURL *string    `bun:"client_redirect_url,type:text,nullzero"`
@@ -34,7 +34,7 @@ type psuOpenBankingConnectionAttempt struct {
 	Error             *string    `bun:"error,type:text,nullzero"`
 }
 
-func (s *store) PSUOpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.PSUOpenBankingConnectionAttempt) error {
+func (s *store) OpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.OpenBankingConnectionAttempt) error {
 	attempt, err := fromPsuOpenBankingConnectionAttemptsModels(from)
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func (s *store) PSUOpenBankingConnectionAttemptsUpsert(ctx context.Context, from
 	return nil
 }
 
-func (s *store) PSUOpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.PSUOpenBankingConnectionAttemptStatus, errMsg *string) error {
+func (s *store) OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, errMsg *string) error {
 	_, err := s.db.NewUpdate().
 		Model((*psuOpenBankingConnectionAttempt)(nil)).
 		Set("status = ?", status).
@@ -70,7 +70,7 @@ func (s *store) PSUOpenBankingConnectionAttemptsUpdateStatus(ctx context.Context
 	return nil
 }
 
-func (s *store) PSUOpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUOpenBankingConnectionAttempt, error) {
+func (s *store) OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
 	attempt := psuOpenBankingConnectionAttempt{}
 	err := s.db.NewSelect().
 		Model(&attempt).
@@ -114,7 +114,7 @@ func (s *store) psuOpenBankingConnectionAttemptsQueryContext(qb query.Builder) (
 	}))
 }
 
-func (s *store) PSUOpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUOpenBankingConnectionAttempt], error) {
+func (s *store) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	var (
 		where string
 		args  []any
@@ -146,7 +146,7 @@ func (s *store) PSUOpenBankingConnectionAttemptsList(ctx context.Context, psuID 
 		return nil, e("failed to fetch psu open banking connection attempts", err)
 	}
 
-	psuOpenBankingConnectionAttemptsModels := make([]models.PSUOpenBankingConnectionAttempt, len(cursor.Data))
+	psuOpenBankingConnectionAttemptsModels := make([]models.OpenBankingConnectionAttempt, len(cursor.Data))
 	for i, attempt := range cursor.Data {
 		res, err := toPsuOpenBankingConnectionAttemptsModels(attempt)
 		if err != nil {
@@ -155,7 +155,7 @@ func (s *store) PSUOpenBankingConnectionAttemptsList(ctx context.Context, psuID 
 		psuOpenBankingConnectionAttemptsModels[i] = *res
 	}
 
-	return &bunpaginate.Cursor[models.PSUOpenBankingConnectionAttempt]{
+	return &bunpaginate.Cursor[models.OpenBankingConnectionAttempt]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -368,7 +368,7 @@ type psuOpenBankingConnections struct {
 	ExpiresAt   *time.Time `bun:"expires_at,type:timestamp without time zone,nullzero,scanonly"`
 }
 
-func (s *store) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUOpenBankingConnection) error {
+func (s *store) PSUOpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error {
 	connection, token := fromPsuOpenBankingConnectionsModels(from, psuID)
 
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
@@ -421,7 +421,7 @@ func (s *store) PSUOpenBankingConnectionsUpdateLastDataUpdate(ctx context.Contex
 	return nil
 }
 
-func (s *store) PSUOpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.PSUOpenBankingConnection, error) {
+func (s *store) PSUOpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, error) {
 	connection := psuOpenBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
@@ -438,7 +438,7 @@ func (s *store) PSUOpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUI
 	return pointer.For(toPsuOpenBankingConnectionsModels(connection)), nil
 }
 
-func (s *store) PSUOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUOpenBankingConnection, uuid.UUID, error) {
+func (s *store) PSUOpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error) {
 	connection := psuOpenBankingConnections{}
 	err := s.db.NewSelect().
 		Model(&connection).
@@ -504,7 +504,7 @@ func (s *store) psuOpenBankingConnectionsQueryContext(qb query.Builder) (string,
 	}))
 }
 
-func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.PSUOpenBankingConnection], error) {
+func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
 	var (
 		where string
 		args  []any
@@ -542,12 +542,12 @@ func (s *store) PSUOpenBankingConnectionsList(ctx context.Context, psuID uuid.UU
 	psuOpenBankingConnections := make([]psuOpenBankingConnections, len(cursor.Data))
 	copy(psuOpenBankingConnections, cursor.Data)
 
-	psuOpenBankingConnectionsModels := make([]models.PSUOpenBankingConnection, len(psuOpenBankingConnections))
+	psuOpenBankingConnectionsModels := make([]models.OpenBankingConnection, len(psuOpenBankingConnections))
 	for i, connection := range psuOpenBankingConnections {
 		psuOpenBankingConnectionsModels[i] = toPsuOpenBankingConnectionsModels(connection)
 	}
 
-	return &bunpaginate.Cursor[models.PSUOpenBankingConnection]{
+	return &bunpaginate.Cursor[models.OpenBankingConnection]{
 		PageSize: cursor.PageSize,
 		HasMore:  cursor.HasMore,
 		Previous: cursor.Previous,
@@ -567,7 +567,7 @@ type psuOpenBankingAccessTokens struct {
 	ExpiresAt    time.Time          `bun:"expires_at,type:timestamp without time zone,notnull"`
 }
 
-func fromPsuOpenBankingConnectionAttemptsModels(from models.PSUOpenBankingConnectionAttempt) (psuOpenBankingConnectionAttempt, error) {
+func fromPsuOpenBankingConnectionAttemptsModels(from models.OpenBankingConnectionAttempt) (psuOpenBankingConnectionAttempt, error) {
 	var token *string
 	var expiresAt *time.Time
 	if from.TemporaryToken != nil {
@@ -595,13 +595,13 @@ func fromPsuOpenBankingConnectionAttemptsModels(from models.PSUOpenBankingConnec
 	}, nil
 }
 
-func toPsuOpenBankingConnectionAttemptsModels(from psuOpenBankingConnectionAttempt) (*models.PSUOpenBankingConnectionAttempt, error) {
+func toPsuOpenBankingConnectionAttemptsModels(from psuOpenBankingConnectionAttempt) (*models.OpenBankingConnectionAttempt, error) {
 	state := models.CallbackState{}
 	if err := json.Unmarshal(from.State, &state); err != nil {
 		return nil, err
 	}
 
-	return &models.PSUOpenBankingConnectionAttempt{
+	return &models.OpenBankingConnectionAttempt{
 		ID:                from.ID,
 		PsuID:             from.PsuID,
 		ConnectorID:       from.ConnectorID,
@@ -645,7 +645,7 @@ func toPsuOpenBankingModels(from openBankingProviderPSUs) *models.OpenBankingPro
 	}
 }
 
-func fromPsuOpenBankingConnectionsModels(from models.PSUOpenBankingConnection, psuID uuid.UUID) (psuOpenBankingConnections, *psuOpenBankingAccessTokens) {
+func fromPsuOpenBankingConnectionsModels(from models.OpenBankingConnection, psuID uuid.UUID) (psuOpenBankingConnections, *psuOpenBankingAccessTokens) {
 	var token *psuOpenBankingAccessTokens
 	if from.AccessToken != nil {
 		accessToken, expiresAt := fromTokenModels(*from.AccessToken)
@@ -672,8 +672,8 @@ func fromPsuOpenBankingConnectionsModels(from models.PSUOpenBankingConnection, p
 	}, token
 }
 
-func toPsuOpenBankingConnectionsModels(from psuOpenBankingConnections) models.PSUOpenBankingConnection {
-	return models.PSUOpenBankingConnection{
+func toPsuOpenBankingConnectionsModels(from psuOpenBankingConnections) models.OpenBankingConnection {
+	return models.OpenBankingConnection{
 		ConnectorID:   from.ConnectorID,
 		ConnectionID:  from.ConnectionID,
 		CreatedAt:     from.CreatedAt.Time,
