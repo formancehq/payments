@@ -187,20 +187,20 @@ func (w Workflow) handleOpenBankingAccountWebhook(
 	}
 
 	if response.OpenBankingAccount.OpenBankingUserID != nil {
-		openBankingPSU, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
+		forwardedUser, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			*response.OpenBankingAccount.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting open banking: %w", err)
+			return fmt.Errorf("getting open banking forwarded user: %w", err)
 		}
 
-		account.Metadata[models.ObjectPSUIDMetadataKey] = openBankingPSU.PsuID.String()
+		account.PsuID = &forwardedUser.PsuID
 	}
 
 	if response.OpenBankingAccount.OpenBankingConnectionID != nil {
-		account.Metadata[models.ObjectConnectionIDMetadataKey] = *response.OpenBankingAccount.OpenBankingConnectionID
+		account.OpenBankingConnectionID = response.OpenBankingAccount.OpenBankingConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -234,20 +234,20 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	}
 
 	if response.OpenBankingPayment.OpenBankingUserID != nil {
-		openBankingPSU, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
+		forwardedUser, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			*response.OpenBankingPayment.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting open banking: %w", err)
+			return fmt.Errorf("getting open banking forwardedUser: %w", err)
 		}
 
-		payment.Metadata[models.ObjectPSUIDMetadataKey] = openBankingPSU.PsuID.String()
+		payment.PsuID = &forwardedUser.PsuID
 	}
 
 	if response.OpenBankingPayment.OpenBankingConnectionID != nil {
-		payment.Metadata[models.ObjectConnectionIDMetadataKey] = *response.OpenBankingPayment.OpenBankingConnectionID
+		payment.OpenBankingConnectionID = response.OpenBankingPayment.OpenBankingConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -302,9 +302,10 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	}
 
 	payload, err := json.Marshal(&models.OpenBankingForwardedUserFromPayload{
-		OpenBankingForwardedUser: obForwardedUser,
-		OpenBankingConnection:    conn,
-		FromPayload:              response.DataReadyToFetch.FromPayload,
+		PSUID:                   psuID,
+		OpenBankingForwardedUser:           obForwardedUser,
+		OpenBankingConnection: conn,
+		FromPayload:             response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling open banking from payload: %w", err)
@@ -666,7 +667,6 @@ func (w Workflow) runStoreWebhookTranslation(
 			[]models.PSPAccount{*storeWebhookTranslation.Account},
 			models.ACCOUNT_TYPE_INTERNAL,
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
@@ -694,7 +694,6 @@ func (w Workflow) runStoreWebhookTranslation(
 			[]models.PSPAccount{*storeWebhookTranslation.ExternalAccount},
 			models.ACCOUNT_TYPE_EXTERNAL,
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(
@@ -721,7 +720,6 @@ func (w Workflow) runStoreWebhookTranslation(
 		payments, err := models.FromPSPPayments(
 			[]models.PSPPayment{*storeWebhookTranslation.Payment},
 			storeWebhookTranslation.ConnectorID,
-			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

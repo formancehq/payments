@@ -22,11 +22,6 @@ func (w Workflow) runFetchOpenBankingData(
 	ctx workflow.Context,
 	fetchOpenBankingData FetchOpenBankingData,
 ) error {
-	additionalMetadata := map[string]string{
-		models.ObjectConnectionIDMetadataKey: fetchOpenBankingData.ConnectionID,
-		models.ObjectPSUIDMetadataKey:        fetchOpenBankingData.PsuID.String(),
-	}
-
 	wg := workflow.NewWaitGroup(ctx)
 
 	wg.Add(1)
@@ -46,11 +41,10 @@ func (w Workflow) runFetchOpenBankingData(
 			),
 			RunFetchNextAccounts,
 			FetchNextAccounts{
-				Config:             fetchOpenBankingData.Config,
-				ConnectorID:        fetchOpenBankingData.ConnectorID,
-				FromPayload:        fetchOpenBankingData.FromPayload,
-				Periodically:       false,
-				AdditionalMetadata: additionalMetadata,
+				Config:       fetchOpenBankingData.Config,
+				ConnectorID:  fetchOpenBankingData.ConnectorID,
+				FromPayload:  fetchOpenBankingData.FromPayload,
+				Periodically: false,
 			},
 			[]models.ConnectorTaskTree{},
 		).Get(ctx, nil); err != nil {
@@ -75,11 +69,10 @@ func (w Workflow) runFetchOpenBankingData(
 			),
 			RunFetchNextPayments,
 			FetchNextPayments{
-				Config:             fetchOpenBankingData.Config,
-				ConnectorID:        fetchOpenBankingData.ConnectorID,
-				FromPayload:        fetchOpenBankingData.FromPayload,
-				Periodically:       false,
-				AdditionalMetadata: additionalMetadata,
+				Config:       fetchOpenBankingData.Config,
+				ConnectorID:  fetchOpenBankingData.ConnectorID,
+				FromPayload:  fetchOpenBankingData.FromPayload,
+				Periodically: false,
 			},
 			[]models.ConnectorTaskTree{},
 		).Get(ctx, nil); err != nil {

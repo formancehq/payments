@@ -236,6 +236,7 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 }
 
 type OpenBankingForwardedUserFromPayload struct {
+	PSUID                   uuid.UUID
 	OpenBankingForwardedUser *OpenBankingForwardedUser
 	OpenBankingConnection    *OpenBankingConnection
 	FromPayload              json.RawMessage

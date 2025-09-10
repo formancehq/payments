@@ -72,6 +72,48 @@ func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorID(ctx, connectorI
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorID), ctx, connectorID)
 }
 
+// AccountsDeleteFromConnectorIDAndPSUID mocks base method.
+func (m *MockStorage) AccountsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsDeleteFromConnectorIDAndPSUID", ctx, connectorID, psuID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AccountsDeleteFromConnectorIDAndPSUID indicates an expected call of AccountsDeleteFromConnectorIDAndPSUID.
+func (mr *MockStorageMockRecorder) AccountsDeleteFromConnectorIDAndPSUID(ctx, connectorID, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromConnectorIDAndPSUID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromConnectorIDAndPSUID), ctx, connectorID, psuID)
+}
+
+// AccountsDeleteFromOpenBankingConnectionID mocks base method.
+func (m *MockStorage) AccountsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsDeleteFromOpenBankingConnectionID", ctx, psuID, connectorID, openBankingConnectionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AccountsDeleteFromOpenBankingConnectionID indicates an expected call of AccountsDeleteFromOpenBankingConnectionID.
+func (mr *MockStorageMockRecorder) AccountsDeleteFromOpenBankingConnectionID(ctx, psuID, connectorID, openBankingConnectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromOpenBankingConnectionID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromOpenBankingConnectionID), ctx, psuID, connectorID, openBankingConnectionID)
+}
+
+// AccountsDeleteFromPSUID mocks base method.
+func (m *MockStorage) AccountsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AccountsDeleteFromPSUID", ctx, psuID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AccountsDeleteFromPSUID indicates an expected call of AccountsDeleteFromPSUID.
+func (mr *MockStorageMockRecorder) AccountsDeleteFromPSUID(ctx, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsDeleteFromPSUID", reflect.TypeOf((*MockStorage)(nil).AccountsDeleteFromPSUID), ctx, psuID)
+}
+
 // AccountsGet mocks base method.
 func (m *MockStorage) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
 	m.ctrl.T.Helper()
@@ -1189,6 +1231,48 @@ func (m *MockStorage) PaymentsDeleteFromConnectorID(ctx context.Context, connect
 func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorID), ctx, connectorID)
+}
+
+// PaymentsDeleteFromConnectorIDAndPSUID mocks base method.
+func (m *MockStorage) PaymentsDeleteFromConnectorIDAndPSUID(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromConnectorIDAndPSUID", ctx, connectorID, psuID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDeleteFromConnectorIDAndPSUID indicates an expected call of PaymentsDeleteFromConnectorIDAndPSUID.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromConnectorIDAndPSUID(ctx, connectorID, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromConnectorIDAndPSUID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromConnectorIDAndPSUID), ctx, connectorID, psuID)
+}
+
+// PaymentsDeleteFromOpenBankingConnectionID mocks base method.
+func (m *MockStorage) PaymentsDeleteFromOpenBankingConnectionID(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, openBankingConnectionID string) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromOpenBankingConnectionID", ctx, psuID, connectorID, openBankingConnectionID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDeleteFromOpenBankingConnectionID indicates an expected call of PaymentsDeleteFromOpenBankingConnectionID.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromOpenBankingConnectionID(ctx, psuID, connectorID, openBankingConnectionID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromOpenBankingConnectionID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromOpenBankingConnectionID), ctx, psuID, connectorID, openBankingConnectionID)
+}
+
+// PaymentsDeleteFromPSUID mocks base method.
+func (m *MockStorage) PaymentsDeleteFromPSUID(ctx context.Context, psuID uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PaymentsDeleteFromPSUID", ctx, psuID)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PaymentsDeleteFromPSUID indicates an expected call of PaymentsDeleteFromPSUID.
+func (mr *MockStorageMockRecorder) PaymentsDeleteFromPSUID(ctx, psuID any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PaymentsDeleteFromPSUID", reflect.TypeOf((*MockStorage)(nil).PaymentsDeleteFromPSUID), ctx, psuID)
 }
 
 // PaymentsDeleteFromReference mocks base method.

@@ -45,7 +45,7 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 
 			resp, err := plg.CreateWebhooks(ctx, req)
 			Expect(err).To(BeNil())
-			Expect(resp.Configs).To(HaveLen(5))
+			Expect(resp.Configs).To(HaveLen(3))
 		})
 
 		It("should return an error - client create webhook auth error", func(ctx SpecContext) {
@@ -178,7 +178,22 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 					Name: string(client.WebhookEventTypeConnectionSynced),
 				},
 				Webhook: models.PSPWebhook{
-					Body: []byte(`{"connection_id": "123", "transactions": [{"id": "1"}, {"id": "2"}]}`),
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "accounts": [{"id": 1, "transactions": [{"id": 1}, {"id": 2}]}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+		})
+
+		It("should trim connection synced webhook successfully even with empty transactions", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "accounts": [{"id": 1}]}}`),
 				},
 			}
 

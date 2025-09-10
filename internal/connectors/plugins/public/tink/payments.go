@@ -135,16 +135,13 @@ func toPSPPayments(
 			Status:                      status,
 			SourceAccountReference:      sourceReference,
 			DestinationAccountReference: destinationReference,
+			PsuID:                       &from.PSUID,
 			Metadata:                    make(map[string]string),
 			Raw:                         raw,
 		}
 
-		if from.OpenBankingForwardedUser != nil {
-			p.Metadata[models.ObjectPSUIDMetadataKey] = from.OpenBankingForwardedUser.PsuID.String()
-		}
-
 		if from.OpenBankingConnection != nil {
-			p.Metadata[models.ObjectConnectionIDMetadataKey] = from.OpenBankingConnection.ConnectionID
+			p.OpenBankingConnectionID = &from.OpenBankingConnection.ConnectionID
 		}
 
 		payments = append(payments, p)

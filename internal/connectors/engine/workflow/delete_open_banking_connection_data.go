@@ -3,24 +3,22 @@ package workflow
 import (
 	"fmt"
 
-	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
-	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/storage"
 	"github.com/google/uuid"
 	"go.temporal.io/sdk/workflow"
 )
 
 type DeleteOpenBankingConnectionData struct {
-	PSUID uuid.UUID
-
 	FromConnectionID *DeleteOpenBankingConnectionDataFromConnectionID
 	FromAccountID    *DeleteOpenBankingConnectionDataFromAccountID
 	FromConnectorID  *DeleteOpenBankingConnectionDataFromConnectorID
+	FromPSUID        *DeleteOpenBankingConnectionDataFromPSUID
 }
 
 type DeleteOpenBankingConnectionDataFromConnectionID struct {
+	PSUID        uuid.UUID
+	ConnectorID  models.ConnectorID
 	ConnectionID string
 }
 
@@ -29,7 +27,12 @@ type DeleteOpenBankingConnectionDataFromAccountID struct {
 }
 
 type DeleteOpenBankingConnectionDataFromConnectorID struct {
+	PSUID       uuid.UUID
 	ConnectorID models.ConnectorID
+}
+
+type DeleteOpenBankingConnectionDataFromPSUID struct {
+	PSUID uuid.UUID
 }
 
 func (w Workflow) runDeleteOpenBankingConnectionData(
@@ -46,9 +49,11 @@ func (w Workflow) runDeleteOpenBankingConnectionData(
 	case deleteOpenBankingConnectionData.FromConnectorID != nil:
 		// Delete all data related to the connector
 		return w.deleteOpenBankingConnectorIDData(ctx, deleteOpenBankingConnectionData)
-	default:
+	case deleteOpenBankingConnectionData.FromPSUID != nil:
 		// Delete all data related to the psu
 		return w.deleteOpenBankingPSUData(ctx, deleteOpenBankingConnectionData)
+	default:
+		return fmt.Errorf("invalid delete open banking connection data")
 	}
 }
 
@@ -79,21 +84,21 @@ func (w Workflow) deleteOpenBankingConnectionData(
 	ctx workflow.Context,
 	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteOpenBankingPayments(
+	err := w.deleteOpenBankingPaymentsFromConnectionID(
 		ctx,
-		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
-		},
+		deleteOpenBankingConnectionData.FromConnectionID.PSUID,
+		deleteOpenBankingConnectionData.FromConnectionID.ConnectorID,
+		deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteOpenBankingAccounts(
+	err = w.deleteOpenBankingAccountsFromConnectionID(
 		ctx,
-		map[string]string{
-			models.ObjectConnectionIDMetadataKey: deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
-		},
+		deleteOpenBankingConnectionData.FromConnectionID.PSUID,
+		deleteOpenBankingConnectionData.FromConnectionID.ConnectorID,
+		deleteOpenBankingConnectionData.FromConnectionID.ConnectionID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -106,23 +111,19 @@ func (w Workflow) deleteOpenBankingConnectorIDData(
 	ctx workflow.Context,
 	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteOpenBankingPayments(
+	err := w.deleteOpenBankingPaymentsFromPSUIDAndConnectorID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
-			"connector_id":                deleteOpenBankingConnectionData.FromConnectorID.ConnectorID.String(),
-		},
+		deleteOpenBankingConnectionData.FromConnectorID.PSUID,
+		deleteOpenBankingConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteOpenBankingAccounts(
+	err = w.deleteOpenBankingAccountsFromPSUIDAndConnectorID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
-			"connector_id":                deleteOpenBankingConnectionData.FromConnectorID.ConnectorID.String(),
-		},
+		deleteOpenBankingConnectionData.FromConnectorID.PSUID,
+		deleteOpenBankingConnectionData.FromConnectorID.ConnectorID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -135,21 +136,17 @@ func (w Workflow) deleteOpenBankingPSUData(
 	ctx workflow.Context,
 	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
 ) error {
-	err := w.deleteOpenBankingPayments(
+	err := w.deleteOpenBankingPaymentsFromPSUID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
-		},
+		deleteOpenBankingConnectionData.FromPSUID.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting payments: %w", err)
 	}
 
-	err = w.deleteOpenBankingAccounts(
+	err = w.deleteOpenBankingAccountsFromPSUID(
 		ctx,
-		map[string]string{
-			models.ObjectPSUIDMetadataKey: deleteOpenBankingConnectionData.PSUID.String(),
-		},
+		deleteOpenBankingConnectionData.FromPSUID.PSUID,
 	)
 	if err != nil {
 		return fmt.Errorf("deleting accounts: %w", err)
@@ -158,125 +155,108 @@ func (w Workflow) deleteOpenBankingPSUData(
 	return nil
 }
 
-func (w Workflow) deleteOpenBankingPayments(
+func (w Workflow) deleteOpenBankingPaymentsFromPSUID(
 	ctx workflow.Context,
-	filteredMetadata map[string]string,
+	psuID uuid.UUID,
 ) error {
-	var q query.Builder
-	matches := []query.Builder{}
-	for key, value := range filteredMetadata {
-		matches = append(matches, query.Match(fmt.Sprintf("metadata[%s]", key), value))
-	}
-	if len(matches) > 1 {
-		q = query.And(matches...)
-	} else {
-		q = matches[0]
-	}
-
-	query := storage.NewListPaymentsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PaymentQuery{}).
-			WithPageSize(50).
-			WithQueryBuilder(q),
+	err := activities.StoragePaymentsDeleteFromPSUID(
+		infiniteRetryContext(ctx),
+		psuID,
 	)
-
-	for {
-		cursor, err := activities.StoragePaymentsList(
-			infiniteRetryContext(ctx),
-			query,
-		)
-		if err != nil {
-			return err
-		}
-
-		wg := workflow.NewWaitGroup(ctx)
-
-		for _, payment := range cursor.Data {
-			payment := payment
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := activities.StoragePaymentsDelete(
-					infiniteRetryContext(ctx),
-					payment.ID,
-				); err != nil {
-					workflow.GetLogger(ctx).Error("failed to delete payment", "payment_id", payment.ID, "error", err)
-				}
-			})
-		}
-
-		wg.Wait(ctx)
-
-		if !cursor.HasMore {
-			break
-		}
-
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &query)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
 	}
 
 	return nil
 }
 
-func (w Workflow) deleteOpenBankingAccounts(
+func (w Workflow) deleteOpenBankingPaymentsFromPSUIDAndConnectorID(
 	ctx workflow.Context,
-	filteredMetadata map[string]string,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
 ) error {
-	var q query.Builder
-	matches := []query.Builder{}
-	for key, value := range filteredMetadata {
-		matches = append(matches, query.Match(fmt.Sprintf("metadata[%s]", key), value))
-	}
-	if len(matches) > 1 {
-		q = query.And(matches...)
-	} else {
-		q = matches[0]
-	}
-
-	query := storage.NewListAccountsQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.AccountQuery{}).
-			WithPageSize(50).
-			WithQueryBuilder(q),
+	err := activities.StoragePaymentsDeleteFromPSUIDAndConnectorID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
 	)
 
-	for {
-		cursor, err := activities.StorageAccountsList(
-			infiniteRetryContext(ctx),
-			query,
-		)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
+	}
 
-		wg := workflow.NewWaitGroup(ctx)
+	return nil
+}
 
-		for _, account := range cursor.Data {
-			account := account
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+func (w Workflow) deleteOpenBankingPaymentsFromConnectionID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
+	connectionID string,
+) error {
+	err := activities.StoragePaymentsDeleteFromConnectionID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
+		connectionID,
+	)
 
-				if err := activities.StorageAccountsDelete(
-					infiniteRetryContext(ctx),
-					account.ID,
-				); err != nil {
-					workflow.GetLogger(ctx).Error("failed to delete account", "account_id", account.ID, "error", err)
-				}
-			})
-		}
+	if err != nil {
+		return fmt.Errorf("deleting payments: %w", err)
+	}
 
-		wg.Wait(ctx)
+	return nil
+}
 
-		if !cursor.HasMore {
-			break
-		}
+func (w Workflow) deleteOpenBankingAccountsFromPSUID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+) error {
+	err := activities.StorageAccountsDeleteFromPSUID(
+		infiniteRetryContext(ctx),
+		psuID,
+	)
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
+	}
 
-		err = bunpaginate.UnmarshalCursor(cursor.Next, &query)
-		if err != nil {
-			return err
-		}
+	return nil
+}
+
+func (w Workflow) deleteOpenBankingAccountsFromPSUIDAndConnectorID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
+) error {
+	err := activities.StorageAccountsDeleteFromPSUIDAndConnectorID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
+	}
+
+	return nil
+}
+
+func (w Workflow) deleteOpenBankingAccountsFromConnectionID(
+	ctx workflow.Context,
+	psuID uuid.UUID,
+	connectorID models.ConnectorID,
+	connectionID string,
+) error {
+
+	err := activities.StorageAccountsDeleteFromConnectionID(
+		infiniteRetryContext(ctx),
+		psuID,
+		connectorID,
+		connectionID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("deleting accounts: %w", err)
 	}
 
 	return nil

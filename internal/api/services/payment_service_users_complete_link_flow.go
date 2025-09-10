@@ -8,7 +8,7 @@ import (
 )
 
 func (s *Service) PaymentServiceUsersCompleteLinkFlow(ctx context.Context, connectorID models.ConnectorID, httpCallInformation models.HTTPCallInformation) (string, error) {
-	states, ok := httpCallInformation.QueryValues["state"]
+	states, ok := httpCallInformation.QueryValues[models.StateQueryParamID]
 	if !ok || len(states) != 1 {
 		return "", fmt.Errorf("state is missing")
 	}

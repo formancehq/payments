@@ -8,10 +8,8 @@ import (
 )
 
 const (
+	StateQueryParamID      = "state"
 	NoRedirectQueryParamID = "noRedirect"
-
-	ObjectConnectionIDMetadataKey = "object_connection_id"
-	ObjectPSUIDMetadataKey        = "object_psu_id"
 )
 
 type OpenBankingConnectionAttemptStatus string

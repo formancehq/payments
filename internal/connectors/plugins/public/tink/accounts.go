@@ -52,15 +52,12 @@ func toPSPAccounts(
 			CreatedAt: time.Now().UTC(),
 			Name:      &account.Name,
 			Metadata:  make(map[string]string),
+			PsuID:     &from.PSUID,
 			Raw:       raw,
 		}
 
-		if from.OpenBankingForwardedUser != nil {
-			acc.Metadata[models.ObjectPSUIDMetadataKey] = from.OpenBankingForwardedUser.PsuID.String()
-		}
-
 		if from.OpenBankingConnection != nil {
-			acc.Metadata[models.ObjectConnectionIDMetadataKey] = from.OpenBankingConnection.ConnectionID
+			acc.OpenBankingConnectionID = &from.OpenBankingConnection.ConnectionID
 		}
 
 		accounts = append(accounts, acc)

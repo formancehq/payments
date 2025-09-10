@@ -102,7 +102,9 @@ func (w Workflow) deletePSU(
 		),
 		RunDeleteOpenBankingConnectionData,
 		DeleteOpenBankingConnectionData{
-			PSUID: deleteUser.PsuID,
+			FromPSUID: &DeleteOpenBankingConnectionDataFromPSUID{
+				PSUID: deleteUser.PsuID,
+			},
 		},
 	).Get(ctx, nil); err != nil {
 		return err

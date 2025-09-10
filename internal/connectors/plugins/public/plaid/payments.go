@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
+	"github.com/google/uuid"
 	"github.com/plaid/plaid-go/v34/plaid"
 )
 
@@ -53,7 +54,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	paymentsToDelete := make([]models.PSPPaymentsToDelete, 0, req.PageSize)
 
 	for _, transaction := range resp.Added {
-		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.OpenBankingConnection.ConnectionID)
+		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUID, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -61,7 +62,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}
 
 	for _, transaction := range resp.Modified {
-		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.OpenBankingConnection.ConnectionID)
+		payment, err := translatePlaidPaymentToPSPPayment(transaction, from.PSUID, from.OpenBankingConnection.ConnectionID)
 		if err != nil {
 			return models.FetchNextPaymentsResponse{}, err
 		}
@@ -88,7 +89,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 	}, nil
 }
 
-func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, connectionID string) (models.PSPPayment, error) {
+func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid.UUID, connectionID string) (models.PSPPayment, error) {
 	var sourceAccountReference *string
 	var destinationAccountReference *string
 	var paymentType models.PaymentType
@@ -157,10 +158,9 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, connection
 		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 		SourceAccountReference:      sourceAccountReference,
 		DestinationAccountReference: destinationAccountReference,
-		Metadata: map[string]string{
-			models.ObjectConnectionIDMetadataKey: connectionID,
-		},
-		Raw: raw,
+		PsuID:                       &psuID,
+		OpenBankingConnectionID:     &connectionID,
+		Raw:                         raw,
 	}
 
 	return payment, nil

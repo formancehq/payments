@@ -43,7 +43,10 @@ var bankBridgePSPUserId string
 //go:embed 20-psu-bank-bridges-connection-updated-at.sql
 var psuBankBridgeConnectionUpdatedAt string
 
-//go:embed 21-rename-bank-bridges-open-banking.sql
+//go:embed 21-psu-connection-payments-accounts.sql
+var psuConnectionPaymentsAccounts string
+
+//go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
 
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
@@ -293,6 +296,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running psu bank bridge connection updated at migration...")
 					_, err := tx.ExecContext(ctx, psuBankBridgeConnectionUpdatedAt)
 					logger.WithField("error", err).Info("finished running psu bank bridge connection updated at migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "psu connection payments accounts",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running psu connection payments accounts migration...")
+					_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
+					logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
 					return err
 				})
 			},

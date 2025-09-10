@@ -422,6 +422,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			}
 
 			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				PSUID: psuID,
 				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					PsuID: psuID,
 				},
@@ -443,8 +444,10 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(result[0].Scheme).To(Equal(models.PAYMENT_SCHEME_OTHER))
 			Expect(*result[0].DestinationAccountReference).To(Equal(accountID))
 			Expect(result[0].SourceAccountReference).To(BeNil())
-			Expect(result[0].Metadata[models.ObjectPSUIDMetadataKey]).To(Equal(psuID.String()))
-			Expect(result[0].Metadata[models.ObjectConnectionIDMetadataKey]).To(Equal(connectionID))
+			Expect(result[0].PsuID).To(Not(BeNil()))
+			Expect(*result[0].PsuID).To(Equal(psuID))
+			Expect(result[0].OpenBankingConnectionID).To(Not(BeNil()))
+			Expect(*result[0].OpenBankingConnectionID).To(Equal(connectionID))
 			Expect(result[0].Raw).ToNot(BeNil())
 
 			// Check second payment (negative amount - PAYOUT)
@@ -454,8 +457,10 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(result[1].Scheme).To(Equal(models.PAYMENT_SCHEME_OTHER))
 			Expect(*result[1].SourceAccountReference).To(Equal(accountID))
 			Expect(result[1].DestinationAccountReference).To(BeNil())
-			Expect(result[1].Metadata[models.ObjectPSUIDMetadataKey]).To(Equal(psuID.String()))
-			Expect(result[1].Metadata[models.ObjectConnectionIDMetadataKey]).To(Equal(connectionID))
+			Expect(result[1].PsuID).To(Not(BeNil()))
+			Expect(*result[1].PsuID).To(Equal(psuID))
+			Expect(result[1].OpenBankingConnectionID).To(Not(BeNil()))
+			Expect(*result[1].OpenBankingConnectionID).To(Equal(connectionID))
 			Expect(result[1].Raw).ToNot(BeNil())
 		})
 

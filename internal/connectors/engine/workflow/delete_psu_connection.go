@@ -93,8 +93,9 @@ func (w Workflow) deletePSUConnection(
 		),
 		RunDeleteOpenBankingConnectionData,
 		DeleteOpenBankingConnectionData{
-			PSUID: deletePSUConnection.PsuID,
 			FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
+				PSUID:        deletePSUConnection.PsuID,
+				ConnectorID:  deletePSUConnection.ConnectorID,
 				ConnectionID: deletePSUConnection.ConnectionID,
 			},
 		},
