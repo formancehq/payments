@@ -34,8 +34,9 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 			ID:   p.Id,
 			Name: p.Name,
 			Metadata: map[string]string{
-				"spec.coinbase.com/type":         "portfolio",
-				"spec.coinbase.com/portfolio_id": p.Id,
+				"spec.coinbase.com/type":             "portfolio",
+				"spec.coinbase.com/portfolio_id":     p.Id,
+				"spec.formance.com/generic_provider": "coinbase",
 			},
 		})
 
@@ -47,9 +48,10 @@ func (c *client) GetAccounts(ctx context.Context, page int, pageSize int) ([]*Ac
 					ID:   w.Id,
 					Name: w.Name,
 					Metadata: map[string]string{
-						"spec.coinbase.com/type":         "wallet",
-						"spec.coinbase.com/portfolio_id": p.Id,
-						"spec.coinbase.com/wallet_type":  string(w.Type),
+						"spec.coinbase.com/type":             "wallet",
+						"spec.coinbase.com/portfolio_id":     p.Id,
+						"spec.coinbase.com/wallet_type":      string(w.Type),
+						"spec.formance.com/generic_provider": "coinbase",
 					},
 				})
 			}
