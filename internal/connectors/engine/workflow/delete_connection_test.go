@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
+func (s *UnitTestSuite) Test_DeleteConnection_Success() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -37,7 +37,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
 		},
 	}
 
-	openBankingPSU := &models.OpenBankingForwardedUser{
+	openBankingForwardedUser := &models.OpenBankingForwardedUser{
 		ConnectorID: s.connectorID,
 		AccessToken: &models.Token{
 			Token: "auth-token",
@@ -59,7 +59,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
 	)
 
 	// Mock open banking forwarded user retrieval
-	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingPSU, nil)
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersGetActivity, mock.Anything, psuID, s.connectorID).Once().Return(openBankingForwardedUser, nil)
 
 	// Mock plugin delete user connection (multiple calls for retries)
 	s.env.OnActivity(activities.PluginDeleteUserConnectionActivity, mock.Anything, mock.Anything).Return(&models.DeleteUserConnectionResponse{}, nil)
@@ -74,7 +74,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -86,7 +86,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePaymentServiceUsersGet_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_StoragePaymentServiceUsersGet_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -103,7 +103,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePaymentServiceUsersGet_E
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -116,7 +116,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePaymentServiceUsersGet_E
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnectionsGetFromConnectionID_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingConnectionsGetFromConnectionID_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -141,7 +141,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -154,7 +154,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_StorageOpenBankingForwardedUserGet_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingForwardedUserGet_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -201,7 +201,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StorageOpenBankingForwardedUser
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -214,7 +214,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StorageOpenBankingForwardedUser
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_PluginDeleteUserConnection_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_PluginDeleteUserConnection_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -274,7 +274,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_PluginDeleteUserConnection_Erro
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -287,7 +287,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_PluginDeleteUserConnection_Erro
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_ChildWorkflow_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_ChildWorkflow_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -350,7 +350,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_ChildWorkflow_Error() {
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -363,7 +363,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_ChildWorkflow_Error() {
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnectionDelete_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_StorageOpenBankingConnectionDelete_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -429,7 +429,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Return(nil)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -442,7 +442,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_StoragePSUOpenBankingConnection
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_TaskErrorUpdate_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_TaskErrorUpdate_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -460,7 +460,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_TaskErrorUpdate_Error() {
 		temporal.NewNonRetryableApplicationError("task-update-error", "task-update-error", errors.New("task-update-error")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,
@@ -473,7 +473,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_TaskErrorUpdate_Error() {
 	s.ErrorContains(err, "task-update-error")
 }
 
-func (s *UnitTestSuite) Test_DeletePSUConnection_TaskSuccessUpdate_Error() {
+func (s *UnitTestSuite) Test_DeleteConnection_TaskSuccessUpdate_Error() {
 	taskID := models.TaskID{
 		Reference:   "test-task",
 		ConnectorID: s.connectorID,
@@ -538,7 +538,7 @@ func (s *UnitTestSuite) Test_DeletePSUConnection_TaskSuccessUpdate_Error() {
 		temporal.NewNonRetryableApplicationError("task-update-error", "task-update-error", errors.New("task-update-error")),
 	)
 
-	s.env.ExecuteWorkflow(RunDeletePSUConnection, DeletePSUConnection{
+	s.env.ExecuteWorkflow(RunDeleteConnection, DeleteConnection{
 		TaskID:       taskID,
 		ConnectorID:  s.connectorID,
 		PsuID:        psuID,

@@ -823,8 +823,8 @@ var _ = Describe("Engine Tests", func() {
 			expectedErr := fmt.Errorf("workflow error")
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("delete-user-connection", defaultTaskQueue),
-				workflow.RunDeletePSUConnection,
-				gomock.AssignableToTypeOf(workflow.DeletePSUConnection{}),
+				workflow.RunDeleteConnection,
+				gomock.AssignableToTypeOf(workflow.DeleteConnection{}),
 			).Return(nil, expectedErr)
 			_, err := eng.DeletePaymentServiceUserConnection(ctx, connectorID, psuID, connectionID)
 			Expect(err).NotTo(BeNil())
@@ -834,8 +834,8 @@ var _ = Describe("Engine Tests", func() {
 		It("should successfully delete payment service user connection and return task", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("delete-user-connection", defaultTaskQueue),
-				workflow.RunDeletePSUConnection,
-				gomock.AssignableToTypeOf(workflow.DeletePSUConnection{}),
+				workflow.RunDeleteConnection,
+				gomock.AssignableToTypeOf(workflow.DeleteConnection{}),
 			).Return(nil, nil)
 			task, err := eng.DeletePaymentServiceUserConnection(ctx, connectorID, psuID, connectionID)
 			Expect(err).To(BeNil())

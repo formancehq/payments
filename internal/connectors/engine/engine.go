@@ -1000,8 +1000,8 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 				workflow.SearchAttributeStack: e.stack,
 			},
 		},
-		workflow.RunDeletePSUConnection,
-		workflow.DeletePSUConnection{
+		workflow.RunDeleteConnection,
+		workflow.DeleteConnection{
 			TaskID:       task.ID,
 			ConnectorID:  connectorID,
 			PsuID:        psuID,

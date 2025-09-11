@@ -155,7 +155,7 @@ type OpenBankingConnection struct {
 	DataUpdatedAt time.Time `json:"dataUpdatedAt"`
 	// Status of the connection
 	Status ConnectionStatus `json:"status"`
-	// BankBridge Updated At
+	// Provider's Updated At
 	UpdatedAt time.Time `json:"updatedAt"`
 
 	// Optional

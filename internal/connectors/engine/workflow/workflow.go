@@ -153,8 +153,8 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 			Func: w.runDeletePSUConnector,
 		}).
 		Append(temporalworker.Definition{
-			Name: RunDeletePSUConnection,
-			Func: w.runDeletePSUConnection,
+			Name: RunDeleteConnection,
+			Func: w.runDeleteConnection,
 		}).
 		Append(temporalworker.Definition{
 			Name: RunCompleteUserLink,
