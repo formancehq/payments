@@ -51,27 +51,27 @@ func (w Workflow) deletePSU(
 		return err
 	}
 
-	// First, let's delete the user from all the banking bridges he is on.
-	queryBB := storage.NewListPSUBankBridgesQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.PSUBankBridgesQuery{}).
+	// First, let's delete the user from all the open banking he is on.
+	queryBB := storage.NewListOpenBankingForwardedUserQuery(
+		bunpaginate.NewPaginatedQueryOptions(storage.OpenBankingForwardedUserQuery{}).
 			WithPageSize(100).
 			WithQueryBuilder(
 				query.Match("psu_id", deleteUser.PsuID.String()),
 			),
 	)
 	for {
-		psuBankBridges, err := activities.StoragePSUBankBridgesList(infiniteRetryContext(ctx), queryBB)
+		forwardedUsers, err := activities.StorageOpenBankingForwardedUsersList(infiniteRetryContext(ctx), queryBB)
 		if err != nil {
 			return err
 		}
 
-		for _, psuBankBridge := range psuBankBridges.Data {
+		for _, forwardedUser := range forwardedUsers.Data {
 			_, err = activities.PluginDeleteUser(
 				infiniteRetryContext(ctx),
-				psuBankBridge.ConnectorID,
+				forwardedUser.ConnectorID,
 				models.DeleteUserRequest{
-					PaymentServiceUser: models.ToPSPPaymentServiceUser(psu),
-					PSUBankBridge:      &psuBankBridge,
+					PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+					OpenBankingForwardedUser: &forwardedUser,
 				},
 			)
 			if err != nil {
@@ -79,11 +79,11 @@ func (w Workflow) deletePSU(
 			}
 		}
 
-		if !psuBankBridges.HasMore {
+		if !forwardedUsers.HasMore {
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(psuBankBridges.Next, &queryBB)
+		err = bunpaginate.UnmarshalCursor(forwardedUsers.Next, &queryBB)
 		if err != nil {
 			return err
 		}
@@ -100,9 +100,9 @@ func (w Workflow) deletePSU(
 				},
 			},
 		),
-		RunDeleteBankBridgeConnectionData,
-		DeleteBankBridgeConnectionData{
-			FromPSUID: &DeleteBankBridgeConnectionDataFromPSUID{
+		RunDeleteOpenBankingConnectionData,
+		DeleteOpenBankingConnectionData{
+			FromPSUID: &DeleteOpenBankingConnectionDataFromPSUID{
 				PSUID: deleteUser.PsuID,
 			},
 		},

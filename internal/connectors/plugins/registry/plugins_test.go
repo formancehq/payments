@@ -47,7 +47,7 @@ var _ = Describe("Register Plugin", func() {
 	})
 
 	Context("population of plugin configuration", func() {
-		RegisterPlugin(name, models.PluginTypeBankingBridge, fn, capabilities, conf)
+		RegisterPlugin(name, models.PluginTypeOpenBanking, fn, capabilities, conf)
 		RegisterPlugin(DummyPSPName, models.PluginTypePSP, fn, capabilities, conf)
 		It("can parse a required string", func(ctx SpecContext) {
 			configs := GetConfigs(false)
@@ -134,7 +134,7 @@ var _ = Describe("Register Plugin", func() {
 		It("returns the right plugin type", func(ctx SpecContext) {
 			pluginType, err := GetPluginType(name)
 			Expect(err).To(BeNil())
-			Expect(pluginType).To(Equal(models.PluginTypeBankingBridge))
+			Expect(pluginType).To(Equal(models.PluginTypeOpenBanking))
 
 			pluginType, err = GetPluginType(DummyPSPName)
 			Expect(err).To(BeNil())

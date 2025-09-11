@@ -19,7 +19,7 @@ func (w Workflow) runTerminateWorkflows(
 	ctx workflow.Context,
 	terminateWorkflows TerminateWorkflows,
 ) error {
-	var nextPageToken []byte = terminateWorkflows.NextPageToken
+	var nextPageToken = terminateWorkflows.NextPageToken
 
 	for {
 		resp, err := activities.TemporalWorkflowExecutionsList(

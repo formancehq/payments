@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendUserConnectionDataSynced(ctx context.Context, userConnectionDataSynced models.UserConnectionDataSynced) error {
-	return a.events.Publish(ctx, a.events.NewEventBankBridgeUserConnectionDataSynced(userConnectionDataSynced))
+	return a.events.Publish(ctx, a.events.NewEventOpenBankingUserConnectionDataSynced(userConnectionDataSynced))
 }
 
 var EventsSendUserConnectionDataSyncedActivity = Activities{}.EventsSendUserConnectionDataSynced

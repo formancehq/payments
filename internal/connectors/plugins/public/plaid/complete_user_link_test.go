@@ -40,7 +40,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - missing temporary token", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 				},
 			}
@@ -53,7 +53,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - missing link token", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",
@@ -72,7 +72,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - link token mismatch", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",
@@ -93,7 +93,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - missing query values", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",
@@ -109,7 +109,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - missing public token", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",
@@ -130,7 +130,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should complete user link successfully", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",
@@ -165,7 +165,7 @@ var _ = Describe("Plaid *Plugin Complete User Link", func() {
 
 		It("should return an error - client exchange public token error", func(ctx SpecContext) {
 			req := models.CompleteUserLinkRequest{
-				RelatedAttempt: &models.PSUBankBridgeConnectionAttempt{
+				RelatedAttempt: &models.OpenBankingConnectionAttempt{
 					ID: uuid.New(),
 					TemporaryToken: &models.Token{
 						Token: "temp-token-123",

@@ -192,14 +192,14 @@ func NewListPoolsQuery(opts bunpaginate.PaginatedQueryOptions[PoolQuery]) ListPo
 func (s *store) poolsQueryContext(qb query.Builder) (string, string, []any, error) {
 	join := ""
 	where, args, err := qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "name", key == "id":
+		switch key {
+		case "name", "id":
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 
 			return fmt.Sprintf("%s = ?", key), []any{value}, nil
-		case key == "account_id":
+		case "account_id":
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}

@@ -819,7 +819,7 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 	ctx, span := otel.Tracer().Start(ctx, "engine.ForwardPaymentServiceUser")
 	defer span.End()
 
-	_, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
+	_, err := e.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	switch {
 	case err == nil:
 		err := fmt.Errorf("user already exists on this connector: %w", ErrValidation)
@@ -858,14 +858,14 @@ func (e *engine) ForwardPaymentServiceUser(ctx context.Context, psuID uuid.UUID,
 		return handlePluginErrors(err)
 	}
 
-	bankBridge := models.PSUBankBridge{
+	openBankingForwardedUser := models.OpenBankingForwardedUser{
 		ConnectorID: connectorID,
 		AccessToken: resp.PermanentToken,
 		PSPUserID:   resp.PSPUserID,
 		Metadata:    resp.Metadata,
 	}
 
-	err = e.storage.PSUBankBridgesUpsert(detachedCtx, psuID, bankBridge)
+	err = e.storage.OpenBankingForwardedUserUpsert(detachedCtx, psuID, openBankingForwardedUser)
 	if err != nil {
 		otel.RecordError(span, err)
 		return err
@@ -1000,8 +1000,8 @@ func (e *engine) DeletePaymentServiceUserConnection(ctx context.Context, connect
 				workflow.SearchAttributeStack: e.stack,
 			},
 		},
-		workflow.RunDeletePSUConnection,
-		workflow.DeletePSUConnection{
+		workflow.RunDeleteConnection,
+		workflow.DeleteConnection{
 			TaskID:       task.ID,
 			ConnectorID:  connectorID,
 			PsuID:        psuID,
@@ -1035,7 +1035,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 		return "", "", err
 	}
 
-	bankBridge, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
+	openBankingForwardedUser, err := e.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
@@ -1046,12 +1046,12 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 		id = *idempotencyKey
 	}
 
-	attempt := models.PSUBankBridgeConnectionAttempt{
+	attempt := models.OpenBankingConnectionAttempt{
 		ID:          id,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   time.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 		State: models.CallbackState{
 			Randomized: uuid.New().String(),
 			AttemptID:  id,
@@ -1063,7 +1063,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	err = e.storage.PSUBankBridgeConnectionAttemptsUpsert(
+	err = e.storage.OpenBankingConnectionAttemptsUpsert(
 		detachedCtx,
 		attempt,
 	)
@@ -1083,14 +1083,14 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	}
 
 	resp, err := plugin.CreateUserLink(detachedCtx, models.CreateUserLinkRequest{
-		ApplicationName:     applicationName,
-		AttemptID:           attempt.ID.String(),
-		PaymentServiceUser:  models.ToPSPPaymentServiceUser(psu),
-		PSUBankBridge:       bankBridge,
-		ClientRedirectURL:   ClientRedirectURL,
-		FormanceRedirectURL: &formanceRedirectURL,
-		CallBackState:       attempt.State.String(),
-		WebhookBaseURL:      webhookBaseURL,
+		ApplicationName:          applicationName,
+		AttemptID:                attempt.ID.String(),
+		PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+		OpenBankingForwardedUser: openBankingForwardedUser,
+		ClientRedirectURL:        ClientRedirectURL,
+		FormanceRedirectURL:      &formanceRedirectURL,
+		CallBackState:            attempt.State.String(),
+		WebhookBaseURL:           webhookBaseURL,
 	})
 	if err != nil {
 		otel.RecordError(span, err)
@@ -1098,7 +1098,7 @@ func (e *engine) CreatePaymentServiceUserLink(ctx context.Context, applicationNa
 	}
 
 	attempt.TemporaryToken = resp.TemporaryLinkToken
-	err = e.storage.PSUBankBridgeConnectionAttemptsUpsert(
+	err = e.storage.OpenBankingConnectionAttemptsUpsert(
 		detachedCtx,
 		attempt,
 	)
@@ -1128,13 +1128,13 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 		return "", "", err
 	}
 
-	bankBridge, err := e.storage.PSUBankBridgesGet(ctx, psuID, connectorID)
+	openBankingForwardedUser, err := e.storage.OpenBankingForwardedUserGet(ctx, psuID, connectorID)
 	if err != nil {
 		otel.RecordError(span, err)
 		return "", "", err
 	}
 
-	connection, _, err := e.storage.PSUBankBridgeConnectionsGetFromConnectionID(
+	connection, _, err := e.storage.OpenBankingConnectionsGetFromConnectionID(
 		ctx,
 		connectorID,
 		connectionID,
@@ -1148,12 +1148,12 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 		id = *idempotencyKey
 	}
 
-	attempt := models.PSUBankBridgeConnectionAttempt{
+	attempt := models.OpenBankingConnectionAttempt{
 		ID:          id,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   time.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 		State: models.CallbackState{
 			Randomized: uuid.New().String(),
 			AttemptID:  id,
@@ -1165,7 +1165,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	e.wg.Add(1)
 	defer e.wg.Done()
 
-	err = e.storage.PSUBankBridgeConnectionAttemptsUpsert(
+	err = e.storage.OpenBankingConnectionAttemptsUpsert(
 		detachedCtx,
 		attempt,
 	)
@@ -1185,15 +1185,15 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	}
 
 	resp, err := plugin.UpdateUserLink(detachedCtx, models.UpdateUserLinkRequest{
-		AttemptID:           attempt.ID.String(),
-		PaymentServiceUser:  models.ToPSPPaymentServiceUser(psu),
-		PSUBankBridge:       bankBridge,
-		Connection:          connection,
-		ApplicationName:     applicationName,
-		ClientRedirectURL:   ClientRedirectURL,
-		FormanceRedirectURL: &formanceRedirectURL,
-		CallBackState:       attempt.State.String(),
-		WebhookBaseURL:      webhookBaseURL,
+		AttemptID:                attempt.ID.String(),
+		PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+		OpenBankingForwardedUser: openBankingForwardedUser,
+		Connection:               connection,
+		ApplicationName:          applicationName,
+		ClientRedirectURL:        ClientRedirectURL,
+		FormanceRedirectURL:      &formanceRedirectURL,
+		CallBackState:            attempt.State.String(),
+		WebhookBaseURL:           webhookBaseURL,
 	})
 	if err != nil {
 		otel.RecordError(span, err)
@@ -1201,7 +1201,7 @@ func (e *engine) UpdatePaymentServiceUserLink(ctx context.Context, applicationNa
 	}
 
 	attempt.TemporaryToken = resp.TemporaryLinkToken
-	err = e.storage.PSUBankBridgeConnectionAttemptsUpsert(
+	err = e.storage.OpenBankingConnectionAttemptsUpsert(
 		detachedCtx,
 		attempt,
 	)

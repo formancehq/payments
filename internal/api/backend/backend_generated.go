@@ -534,10 +534,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersConnectionsDelete(ctx, con
 }
 
 // PaymentServiceUsersConnectionsList mocks base method.
-func (m *MockBackend) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error) {
+func (m *MockBackend) PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersConnectionsList", ctx, psuID, connectorID, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridgeConnection])
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnection])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -653,10 +653,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersGet(ctx, id any) *gomock.C
 }
 
 // PaymentServiceUsersLinkAttemptsGet mocks base method.
-func (m *MockBackend) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error) {
+func (m *MockBackend) PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsGet", ctx, psuID, connectorID, id)
-	ret0, _ := ret[0].(*models.PSUBankBridgeConnectionAttempt)
+	ret0, _ := ret[0].(*models.OpenBankingConnectionAttempt)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -668,10 +668,10 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsGet(ctx, psuID
 }
 
 // PaymentServiceUsersLinkAttemptsList mocks base method.
-func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error) {
+func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsList", ctx, psuID, connectorID, query)
-	ret0, _ := ret[0].(*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt])
+	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnectionAttempt])
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

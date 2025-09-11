@@ -19,15 +19,15 @@ func (s *UnitTestSuite) Test_CompleteUserLink_Success() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
-	connections := []models.PSPPsuBankBridgeConnection{
+	connections := []models.PSPOpenBankingConnection{
 		{
 			ConnectionID: "conn-1",
 			CreatedAt:    s.env.Now().UTC(),
@@ -61,7 +61,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_Success() {
 		Body: []byte("test body"),
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
@@ -69,8 +69,8 @@ func (s *UnitTestSuite) Test_CompleteUserLink_Success() {
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsStoreActivity, mock.Anything, psuID, mock.Anything).Times(2).Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsStoreActivity, mock.Anything, psuID, mock.Anything).Times(2).Return(nil)
 
 	s.env.ExecuteWorkflow(RunCompleteUserLink, CompleteUserLink{
 		HTTPCallInformation: httpCallInfo,
@@ -83,7 +83,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAttemptsGet_Error() {
+func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUOpenBankingConnectionAttemptsGet_Error() {
 	attemptID := uuid.New()
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
@@ -96,7 +96,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(
 		nil,
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("attempt not found")),
 	)
@@ -121,12 +121,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginCompleteUserLink_Error() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -135,7 +135,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginCompleteUserLink_Error() {
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(
 		nil,
 		temporal.NewNonRetryableApplicationError("test", "PLUGIN", errors.New("plugin error")),
@@ -161,12 +161,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorResponse() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -175,7 +175,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorResponse() {
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Error: &models.UserLinkErrorResponse{
@@ -183,7 +183,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorResponse() {
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCompleteUserLink, CompleteUserLink{
 		HTTPCallInformation: httpCallInfo,
@@ -204,12 +204,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_UnexpectedResponse() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -218,14 +218,14 @@ func (s *UnitTestSuite) Test_CompleteUserLink_UnexpectedResponse() {
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Success: nil,
 			Error:   nil,
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCompleteUserLink, CompleteUserLink{
 		HTTPCallInformation: httpCallInfo,
@@ -238,7 +238,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_UnexpectedResponse() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAttemptsStore_Error_OnFailure() {
+func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUOpenBankingConnectionAttemptsStore_Error_OnFailure() {
 	attemptID := uuid.New()
 	psuID := uuid.New()
 	connectorID := models.ConnectorID{
@@ -246,12 +246,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -260,7 +260,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Error: &models.UserLinkErrorResponse{
@@ -268,7 +268,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("storage error")),
 	)
 
@@ -284,7 +284,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 	s.ErrorContains(err, "storage error")
 }
 
-func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAttemptsStore_Error_OnSuccess() {
+func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUOpenBankingConnectionAttemptsStore_Error_OnSuccess() {
 	attemptID := uuid.New()
 	psuID := uuid.New()
 	connectorID := models.ConnectorID{
@@ -292,15 +292,15 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
-	connections := []models.PSPPsuBankBridgeConnection{
+	connections := []models.PSPOpenBankingConnection{
 		{
 			ConnectionID: "conn-1",
 			CreatedAt:    s.env.Now().UTC(),
@@ -316,7 +316,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
@@ -324,7 +324,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("storage error")),
 	)
 
@@ -340,7 +340,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionAtte
 	s.ErrorContains(err, "storage error")
 }
 
-func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionsStore_Error() {
+func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUOpenBankingConnectionsStore_Error() {
 	attemptID := uuid.New()
 	psuID := uuid.New()
 	connectorID := models.ConnectorID{
@@ -348,15 +348,15 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionsSto
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
-	connections := []models.PSPPsuBankBridgeConnection{
+	connections := []models.PSPOpenBankingConnection{
 		{
 			ConnectionID: "conn-1",
 			CreatedAt:    s.env.Now().UTC(),
@@ -372,7 +372,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionsSto
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
@@ -380,8 +380,8 @@ func (s *UnitTestSuite) Test_CompleteUserLink_StoragePSUBankBridgeConnectionsSto
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsStoreActivity, mock.Anything, psuID, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsStoreActivity, mock.Anything, psuID, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("test", "STORAGE", errors.New("connection storage error")),
 	)
 
@@ -405,12 +405,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_EmptyConnections() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -419,15 +419,15 @@ func (s *UnitTestSuite) Test_CompleteUserLink_EmptyConnections() {
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
-				Connections: []models.PSPPsuBankBridgeConnection{},
+				Connections: []models.PSPOpenBankingConnection{},
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCompleteUserLink, CompleteUserLink{
 		HTTPCallInformation: httpCallInfo,
@@ -448,12 +448,12 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorWithEmptyError() {
 		Provider:  "test",
 	}
 
-	attempt := &models.PSUBankBridgeConnectionAttempt{
+	attempt := &models.OpenBankingConnectionAttempt{
 		ID:          attemptID,
 		PsuID:       psuID,
 		ConnectorID: connectorID,
 		CreatedAt:   s.env.Now().UTC(),
-		Status:      models.PSUBankBridgeConnectionAttemptStatusPending,
+		Status:      models.OpenBankingConnectionAttemptStatusPending,
 	}
 
 	httpCallInfo := models.HTTPCallInformation{
@@ -462,7 +462,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorWithEmptyError() {
 		},
 	}
 
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsGetActivity, mock.Anything, attemptID).Once().Return(attempt, nil)
 	s.env.OnActivity(activities.PluginCompleteUserLinkActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.CompleteUserLinkRequest) (*models.CompleteUserLinkResponse, error) {
 		return &models.CompleteUserLinkResponse{
 			Error: &models.UserLinkErrorResponse{
@@ -470,7 +470,7 @@ func (s *UnitTestSuite) Test_CompleteUserLink_PluginErrorWithEmptyError() {
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionAttemptsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCompleteUserLink, CompleteUserLink{
 		HTTPCallInformation: httpCallInfo,

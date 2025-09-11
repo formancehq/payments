@@ -84,7 +84,7 @@ func (p *Plugin) completeUserLink(_ context.Context, req models.CompleteUserLink
 		// before the redirect.
 		return models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
-				Connections: []models.PSPPsuBankBridgeConnection{},
+				Connections: []models.PSPOpenBankingConnection{},
 			},
 		}, nil
 

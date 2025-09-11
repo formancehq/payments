@@ -22,7 +22,7 @@ type Client interface {
 	BaseWebhookTranslation(body []byte) (BaseWebhooks, error)
 	DeleteItem(ctx context.Context, req DeleteItemRequest) error
 	DeleteUser(ctx context.Context, userToken string) error
-	FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error
+	FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error
 	ListAccounts(ctx context.Context, accessToken string) (plaid.AccountsGetResponse, error)
 	ListTransactions(ctx context.Context, accessToken string, cursor string, pageSize int) (plaid.TransactionsSyncResponse, error)
 	TranslateItemAddResultWebhook(body []byte) (plaid.ItemAddResultWebhook, error)

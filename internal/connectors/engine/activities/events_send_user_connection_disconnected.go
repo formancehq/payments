@@ -8,7 +8,7 @@ import (
 )
 
 func (a Activities) EventsSendUserConnectionDisconnected(ctx context.Context, userConnectionDisconnected models.UserConnectionDisconnected) error {
-	return a.events.Publish(ctx, a.events.NewEventBankBridgeUserConnectionDisconnected(userConnectionDisconnected))
+	return a.events.Publish(ctx, a.events.NewEventOpenBankingUserConnectionDisconnected(userConnectionDisconnected))
 }
 
 var EventsSendUserConnectionDisconnectedActivity = Activities{}.EventsSendUserConnectionDisconnected

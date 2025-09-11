@@ -15,7 +15,7 @@ import (
 	"go.uber.org/mock/gomock"
 )
 
-var _ = Describe("API v3 Bank Bridges Redirect", func() {
+var _ = Describe("API v3 Open Banking Redirect", func() {
 	var (
 		handlerFn http.HandlerFunc
 		connID    models.ConnectorID
@@ -25,7 +25,7 @@ var _ = Describe("API v3 Bank Bridges Redirect", func() {
 		connID = models.ConnectorID{Reference: uuid.New(), Provider: "psp"}
 	})
 
-	Context("bank bridges redirect", func() {
+	Context("open banking redirect", func() {
 		var (
 			w *httptest.ResponseRecorder
 			m *backend.MockBackend
@@ -35,7 +35,7 @@ var _ = Describe("API v3 Bank Bridges Redirect", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = bankBridgesRedirect(m)
+			handlerFn = openBankingRedirect(m)
 		})
 
 		It("should return a bad request error when connector ID is invalid", func(ctx SpecContext) {

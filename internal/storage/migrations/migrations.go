@@ -46,6 +46,9 @@ var psuBankBridgeConnectionUpdatedAt string
 //go:embed 21-psu-connection-payments-accounts.sql
 var psuConnectionPaymentsAccounts string
 
+//go:embed 22-rename-bank-bridges-open-banking.sql
+var renameBankBridgesOpenBanking string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -262,6 +265,8 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				})
 			},
 		},
+
+		// Bank bridges was the former name of OpenBanking
 		migrations.Migration{
 			Name: "bank bridges connections",
 			Up: func(ctx context.Context, db bun.IDB) error {
@@ -302,6 +307,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running psu connection payments accounts migration...")
 					_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
 					logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "rename bank bridges to open banking",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running rename bank bridges to open banking migration...")
+					_, err := tx.ExecContext(ctx, renameBankBridgesOpenBanking)
+					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
 					return err
 				})
 			},

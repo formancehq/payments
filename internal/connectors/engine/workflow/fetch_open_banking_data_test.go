@@ -10,7 +10,7 @@ import (
 	"go.temporal.io/sdk/temporal"
 )
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_Success() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_Success() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -24,12 +24,12 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_Success() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -42,7 +42,7 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_WithFromPayload_Success() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_WithFromPayload_Success() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -60,12 +60,12 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_WithFromPayload_Success() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -78,7 +78,7 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_WithFromPayload_Success() {
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextAccounts_Error() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextAccounts_Error() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -94,12 +94,12 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextAccounts_Error() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -112,7 +112,7 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextAccounts_Error() {
 	s.NoError(err) // Errors in child workflows are logged but don't fail the parent workflow
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextPayments_Error() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextPayments_Error() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -128,12 +128,12 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextPayments_Error() {
 	)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -146,7 +146,7 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunFetchNextPayments_Error() {
 	s.NoError(err) // Errors in child workflows are logged but don't fail the parent workflow
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate_Error() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_StoragePSUOpenBankingConnectionsLastUpdatedAtUpdate_Error() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -160,11 +160,11 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_StoragePSUBankBridgeConnections
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp with error
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -175,10 +175,10 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_StoragePSUBankBridgeConnections
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.Error(err)
-	s.ErrorContains(err, "updating bank bridge connection last updated at")
+	s.ErrorContains(err, "updating open banking connection last updated at")
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_RunSendEvents_Error() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_RunSendEvents_Error() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -192,14 +192,14 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunSendEvents_Error() {
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow with error
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(
 		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
@@ -213,7 +213,7 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_RunSendEvents_Error() {
 	s.ErrorContains(err, "sending events")
 }
 
-func (s *UnitTestSuite) Test_FetchBankBridgeData_BothChildWorkflows_Error() {
+func (s *UnitTestSuite) Test_FetchOpenBankingData_BothChildWorkflows_Error() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
 	connectorID := models.ConnectorID{
@@ -231,12 +231,12 @@ func (s *UnitTestSuite) Test_FetchBankBridgeData_BothChildWorkflows_Error() {
 	)
 
 	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
 
 	// Mock send events workflow
 	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
 
-	s.env.ExecuteWorkflow(RunFetchBankBridgeData, FetchBankBridgeData{
+	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
 		PsuID:        psuID,
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,

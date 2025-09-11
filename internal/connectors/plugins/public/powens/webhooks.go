@@ -231,10 +231,10 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		}
 
 		accountsResponse := models.WebhookResponse{
-			BankBridgeAccount: &models.PSPBankBridgeAccount{
-				PSPAccount:             pspAccount,
-				BankBridgeUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
-				BankBridgeConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
+			OpenBankingAccount: &models.PSPOpenBankingAccount{
+				PSPAccount:              pspAccount,
+				OpenBankingUserID:       pointer.For(strconv.Itoa(webhook.User.ID)),
+				OpenBankingConnectionID: pointer.For(strconv.Itoa(webhook.Connection.ID)),
 			},
 		}
 
@@ -245,14 +245,14 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 				return nil, err
 			}
 
-			bankBridgePayment := models.PSPBankBridgePayment{
-				PSPPayment:             payment,
-				BankBridgeUserID:       pointer.For(strconv.Itoa(account.UserID)),
-				BankBridgeConnectionID: pointer.For(strconv.Itoa(account.ConnectionID)),
+			obPayment := models.PSPOpenBankingPayment{
+				PSPPayment:              payment,
+				OpenBankingUserID:       pointer.For(strconv.Itoa(account.UserID)),
+				OpenBankingConnectionID: pointer.For(strconv.Itoa(account.ConnectionID)),
 			}
 
 			transactionResponses = append(transactionResponses, models.WebhookResponse{
-				BankBridgePayment: &bankBridgePayment,
+				OpenBankingPayment: &obPayment,
 			})
 		}
 

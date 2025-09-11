@@ -41,15 +41,15 @@ func validateCreateUserLinkRequest(req models.CreateUserLinkRequest) error {
 		return fmt.Errorf("missing redirect URI: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge == nil {
-		return fmt.Errorf("missing bank bridge connections: %w", models.ErrInvalidRequest)
+	if req.OpenBankingForwardedUser == nil {
+		return fmt.Errorf("missing open banking connections: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge.Metadata == nil {
-		return fmt.Errorf("missing bank bridge connections metadata: %w", models.ErrInvalidRequest)
+	if req.OpenBankingForwardedUser.Metadata == nil {
+		return fmt.Errorf("missing open banking connections metadata: %w", models.ErrInvalidRequest)
 	}
 
-	if _, ok := req.PSUBankBridge.Metadata[UserTokenMetadataKey]; !ok {
+	if _, ok := req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey]; !ok {
 		return fmt.Errorf("missing user token: %w", models.ErrInvalidRequest)
 	}
 
@@ -87,7 +87,7 @@ func (p *Plugin) createUserLink(ctx context.Context, req models.CreateUserLinkRe
 	resp, err := p.client.CreateLinkToken(ctx, client.CreateLinkTokenRequest{
 		ApplicationName: req.ApplicationName,
 		UserID:          req.PaymentServiceUser.ID.String(),
-		UserToken:       req.PSUBankBridge.Metadata[UserTokenMetadataKey],
+		UserToken:       req.OpenBankingForwardedUser.Metadata[UserTokenMetadataKey],
 		Language:        language,
 		CountryCode:     *req.PaymentServiceUser.Address.Country,
 		RedirectURI:     *req.ClientRedirectURL,

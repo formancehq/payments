@@ -372,52 +372,52 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePoolsRemoveAccountsFromConnectorID,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgesStore",
-			Func: a.StoragePSUBankBridgesStore,
+			Name: "StorageOpenBankingForwardedUsersStore",
+			Func: a.StorageOpenBankingForwardedUsersStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgesGet",
-			Func: a.StoragePSUBankBridgesGet,
+			Name: "StorageOpenBankingForwardedUsersGet",
+			Func: a.StorageOpenBankingForwardedUsersGet,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgesGetByPSPUserID",
-			Func: a.StoragePSUBankBridgesGetByPSPUserID,
+			Name: "StorageOpenBankingForwardedUsersGetByPSPUserID",
+			Func: a.StorageOpenBankingForwardedUsersGetByPSPUserID,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgesDelete",
-			Func: a.StoragePSUBankBridgesDelete,
+			Name: "StorageOpenBankingForwardedUsersDelete",
+			Func: a.StorageOpenBankingForwardedUsersDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgesList",
-			Func: a.StoragePSUBankBridgesList,
+			Name: "StorageOpenBankingForwardedUsersList",
+			Func: a.StorageOpenBankingForwardedUsersList,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionsStore",
-			Func: a.StoragePSUBankBridgeConnectionsStore,
+			Name: "StorageOpenBankingConnectionsStore",
+			Func: a.StorageOpenBankingConnectionsStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate",
-			Func: a.StoragePSUBankBridgeConnectionsLastUpdatedAtUpdate,
+			Name: "StorageOpenBankingConnectionsLastUpdatedAtUpdate",
+			Func: a.StorageOpenBankingConnectionsLastUpdatedAtUpdate,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionDelete",
-			Func: a.StoragePSUBankBridgeConnectionDelete,
+			Name: "StorageOpenBankingConnectionsDelete",
+			Func: a.StorageOpenBankingConnectionsDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionAttemptsStore",
-			Func: a.StoragePSUBankBridgeConnectionAttemptsStore,
+			Name: "StorageOpenBankingConnectionAttemptsStore",
+			Func: a.StorageOpenBankingConnectionAttemptsStore,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionAttemptsUpdateStatus",
-			Func: a.StoragePSUBankBridgeConnectionAttemptsUpdateStatus,
+			Name: "StorageOpenBankingConnectionAttemptsUpdateStatus",
+			Func: a.StorageOpenBankingConnectionAttemptsUpdateStatus,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionAttemptsGet",
-			Func: a.StoragePSUBankBridgeConnectionAttemptsGet,
+			Name: "StorageOpenBankingConnectionAttemptsGet",
+			Func: a.StorageOpenBankingConnectionAttemptsGet,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StoragePSUBankBridgeConnectionsGetFromConnectionID",
-			Func: a.StoragePSUBankBridgeConnectionsGetFromConnectionID,
+			Name: "StorageOpenBankingConnectionsGetFromConnectionID",
+			Func: a.StorageOpenBankingConnectionsGetFromConnectionID,
 		}).
 		Append(temporalworker.Definition{
 			Name: "EventsSendAccount",

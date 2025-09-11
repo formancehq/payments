@@ -52,7 +52,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload using only FromPayload to avoid issues
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -110,7 +110,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(payment.Type).To(Equal(models.PAYMENT_TYPE_PAYIN))
 			Expect(payment.Status).To(Equal(models.PAYMENT_STATUS_SUCCEEDED))
 			Expect(payment.Scheme).To(Equal(models.PAYMENT_SCHEME_OTHER))
-			Expect(payment.Metadata).To(HaveLen(0)) // No PSU bank bridge metadata
+			Expect(payment.Metadata).To(HaveLen(0)) // No ob provider psu metadata
 			Expect(payment.Raw).ToNot(BeNil())
 		})
 
@@ -133,7 +133,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -209,7 +209,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -259,7 +259,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -325,7 +325,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(err).To(BeNil())
 
 			// Create the from payload
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				FromPayload: webhookPayloadBytes,
 			}
 			fromPayloadBytes, err := json.Marshal(fromPayload)
@@ -421,12 +421,12 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.BankBridgeFromPayload{
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
 				PSUID: psuID,
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					PsuID: psuID,
 				},
-				PSUBankBridgeConnection: &models.PSUBankBridgeConnection{
+				OpenBankingConnection: &models.OpenBankingConnection{
 					ConnectionID: connectionID,
 				},
 			}
@@ -506,7 +506,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 					},
 				}
 
-				fromPayload := models.BankBridgeFromPayload{}
+				fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 				payments := make([]models.PSPPayment, 0)
 				result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -548,7 +548,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.BankBridgeFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -588,7 +588,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.BankBridgeFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)
@@ -597,7 +597,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 			Expect(result).To(HaveLen(0))
 		})
 
-		It("should handle missing PSU bank bridge metadata", func(ctx SpecContext) {
+		It("should handle missing open banking forwarded user metadata", func(ctx SpecContext) {
 			accountID := "test_account_id"
 
 			clientTransaction := client.Transaction{
@@ -628,7 +628,7 @@ var _ = Describe("Tink *Plugin Payments", func() {
 				},
 			}
 
-			fromPayload := models.BankBridgeFromPayload{}
+			fromPayload := models.OpenBankingForwardedUserFromPayload{}
 
 			payments := make([]models.PSPPayment, 0)
 			result, err := toPSPPayments(payments, []client.Transaction{clientTransaction}, fromPayload)

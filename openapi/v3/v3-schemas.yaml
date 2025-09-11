@@ -1420,7 +1420,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/V3PSUBankBridgeConnectionAttemptStatusEnum'
+          $ref: '#/components/schemas/V3OpenBankingConnectionAttemptStatusEnum'
         clientRedirectURL:
           type: string
           format: url
@@ -1491,7 +1491,7 @@ components:
         - ACTIVE
         - ERROR
 
-    V3PSUBankBridgeConnectionAttemptStatusEnum:
+    V3OpenBankingConnectionAttemptStatusEnum:
       type: string
       enum:
         - pending

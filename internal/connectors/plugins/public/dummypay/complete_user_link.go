@@ -58,7 +58,7 @@ func (p *Plugin) completeUserLink(ctx context.Context, req models.CompleteUserLi
 
 		return models.CompleteUserLinkResponse{
 			Success: &models.UserLinkSuccessResponse{
-				Connections: []models.PSPPsuBankBridgeConnection{
+				Connections: []models.PSPOpenBankingConnection{
 					{
 						CreatedAt:    time.Now().UTC(),
 						ConnectionID: connectionID,

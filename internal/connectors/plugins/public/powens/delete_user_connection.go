@@ -17,11 +17,11 @@ func validateDeleteUserConnectionRequest(req models.DeleteUserConnectionRequest)
 		return fmt.Errorf("connection id is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge == nil {
-		return fmt.Errorf("bank bridge is required: %w", models.ErrInvalidRequest)
+	if req.OpenBankingForwardedUser == nil {
+		return fmt.Errorf("open banking forwarded user is required: %w", models.ErrInvalidRequest)
 	}
 
-	if req.PSUBankBridge.AccessToken == nil {
+	if req.OpenBankingForwardedUser.AccessToken == nil {
 		return fmt.Errorf("auth token is required: %w", models.ErrInvalidRequest)
 	}
 
@@ -34,7 +34,7 @@ func (p *Plugin) deleteUserConnection(ctx context.Context, req models.DeleteUser
 	}
 
 	err := p.client.DeleteUserConnection(ctx, client.DeleteUserConnectionRequest{
-		AccessToken:  req.PSUBankBridge.AccessToken.Token,
+		AccessToken:  req.OpenBankingForwardedUser.AccessToken.Token,
 		ConnectionID: req.Connection.ConnectionID,
 	})
 	if err != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
-	var from models.BankBridgeFromPayload
+	var from models.OpenBankingForwardedUserFromPayload
 	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
 		return models.FetchNextAccountsResponse{}, err
 	}
@@ -39,7 +39,7 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 func toPSPAccounts(
 	accounts []models.PSPAccount,
 	pagedAccounts []client.Account,
-	from models.BankBridgeFromPayload,
+	from models.OpenBankingForwardedUserFromPayload,
 ) ([]models.PSPAccount, error) {
 	for _, account := range pagedAccounts {
 		raw, err := json.Marshal(account)
@@ -56,8 +56,8 @@ func toPSPAccounts(
 			Raw:       raw,
 		}
 
-		if from.PSUBankBridgeConnection != nil {
-			acc.OpenBankingConnectionID = &from.PSUBankBridgeConnection.ConnectionID
+		if from.OpenBankingConnection != nil {
+			acc.OpenBankingConnectionID = &from.OpenBankingConnection.ConnectionID
 		}
 
 		accounts = append(accounts, acc)

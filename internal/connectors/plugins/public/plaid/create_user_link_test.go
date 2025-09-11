@@ -148,7 +148,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
-		It("should return an error - missing bank bridge connections", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections", func(ctx SpecContext) {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
@@ -169,11 +169,11 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("missing bank bridge connections"))
+			Expect(err.Error()).To(ContainSubstring("missing open banking connections"))
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
-		It("should return an error - missing bank bridge connections metadata", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections metadata", func(ctx SpecContext) {
 			locale := "en-US"
 			country := "US"
 			redirectURL := "https://example.com/callback"
@@ -189,13 +189,13 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 						Country: &country,
 					},
 				},
-				ClientRedirectURL: &redirectURL,
-				PSUBankBridge:     &models.PSUBankBridge{},
+				ClientRedirectURL:        &redirectURL,
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("missing bank bridge connections metadata"))
+			Expect(err.Error()).To(ContainSubstring("missing open banking connections metadata"))
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
@@ -216,7 +216,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{},
 				},
 			}
@@ -244,7 +244,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -274,7 +274,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -310,7 +310,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 				ClientRedirectURL: &redirectURL,
 				WebhookBaseURL:    webhookURL,
 				AttemptID:         attemptID.String(),
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -362,7 +362,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 					},
 				},
 				ClientRedirectURL: &redirectURL,
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},

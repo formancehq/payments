@@ -9,22 +9,22 @@ import (
 	"go.temporal.io/sdk/workflow"
 )
 
-type DeletePSUConnection struct {
+type DeleteConnection struct {
 	TaskID       models.TaskID
 	ConnectorID  models.ConnectorID
 	PsuID        uuid.UUID
 	ConnectionID string
 }
 
-func (w Workflow) runDeletePSUConnection(
+func (w Workflow) runDeleteConnection(
 	ctx workflow.Context,
-	deletePSUConnection DeletePSUConnection,
+	deleteConnection DeleteConnection,
 ) error {
-	if err := w.deletePSUConnection(ctx, deletePSUConnection); err != nil {
+	if err := w.deleteConnection(ctx, deleteConnection); err != nil {
 		errUpdateTask := w.updateTasksError(
 			ctx,
-			deletePSUConnection.TaskID,
-			&deletePSUConnection.ConnectorID,
+			deleteConnection.TaskID,
+			&deleteConnection.ConnectorID,
 			err,
 		)
 		if errUpdateTask != nil {
@@ -36,15 +36,15 @@ func (w Workflow) runDeletePSUConnection(
 
 	return w.updateTaskSuccess(
 		ctx,
-		deletePSUConnection.TaskID,
-		&deletePSUConnection.ConnectorID,
-		deletePSUConnection.PsuID.String(),
+		deleteConnection.TaskID,
+		&deleteConnection.ConnectorID,
+		deleteConnection.PsuID.String(),
 	)
 }
 
-func (w Workflow) deletePSUConnection(
+func (w Workflow) deleteConnection(
 	ctx workflow.Context,
-	deletePSUConnection DeletePSUConnection,
+	deletePSUConnection DeleteConnection,
 ) error {
 	psu, err := activities.StoragePaymentServiceUsersGet(
 		infiniteRetryContext(ctx),
@@ -54,7 +54,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	connection, _, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+	connection, _, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.ConnectorID,
 		deletePSUConnection.ConnectionID,
@@ -63,7 +63,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	psuBankBridge, err := activities.StoragePSUBankBridgesGet(
+	openBankingForwardedUser, err := activities.StorageOpenBankingForwardedUsersGet(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.PsuID,
 		deletePSUConnection.ConnectorID,
@@ -73,9 +73,9 @@ func (w Workflow) deletePSUConnection(
 	}
 
 	if _, err := activities.PluginDeleteUserConnection(infiniteRetryContext(ctx), deletePSUConnection.ConnectorID, models.DeleteUserConnectionRequest{
-		PaymentServiceUser: models.ToPSPPaymentServiceUser(psu),
-		PSUBankBridge:      psuBankBridge,
-		Connection:         pointer.For(models.ToPSPPsuBankBridgeConnection(*connection)),
+		PaymentServiceUser:       models.ToPSPPaymentServiceUser(psu),
+		OpenBankingForwardedUser: openBankingForwardedUser,
+		Connection:               pointer.For(models.ToPSPOpenBankingConnection(*connection)),
 	}); err != nil {
 		return err
 	}
@@ -91,9 +91,9 @@ func (w Workflow) deletePSUConnection(
 				},
 			},
 		),
-		RunDeleteBankBridgeConnectionData,
-		DeleteBankBridgeConnectionData{
-			FromConnectionID: &DeleteBankBridgeConnectionDataFromConnectionID{
+		RunDeleteOpenBankingConnectionData,
+		DeleteOpenBankingConnectionData{
+			FromConnectionID: &DeleteOpenBankingConnectionDataFromConnectionID{
 				PSUID:        deletePSUConnection.PsuID,
 				ConnectorID:  deletePSUConnection.ConnectorID,
 				ConnectionID: deletePSUConnection.ConnectionID,
@@ -103,7 +103,7 @@ func (w Workflow) deletePSUConnection(
 		return err
 	}
 
-	if err := activities.StoragePSUBankBridgeConnectionDelete(
+	if err := activities.StorageOpenBankingConnectionsDelete(
 		infiniteRetryContext(ctx),
 		deletePSUConnection.PsuID,
 		deletePSUConnection.ConnectorID,
@@ -115,4 +115,4 @@ func (w Workflow) deletePSUConnection(
 	return nil
 }
 
-const RunDeletePSUConnection = "DeletePSUConnection"
+const RunDeleteConnection = "DeleteConnection"

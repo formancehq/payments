@@ -217,12 +217,12 @@ func craftUpdatedConnection(
 	ctx workflow.Context,
 	connectionID string,
 	connectorID models.ConnectorID,
-	connection *models.PSUBankBridgeConnection,
+	connection *models.OpenBankingConnection,
 	updatedStatus models.ConnectionStatus,
 	updatedError *string,
-) models.PSUBankBridgeConnection {
+) models.OpenBankingConnection {
 	now := workflow.Now(ctx)
-	updatedConnection := models.PSUBankBridgeConnection{
+	updatedConnection := models.OpenBankingConnection{
 		ConnectionID: connectionID,
 		ConnectorID:  connectorID,
 		CreatedAt:    now,

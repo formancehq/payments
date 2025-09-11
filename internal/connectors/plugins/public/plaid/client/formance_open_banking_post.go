@@ -15,14 +15,14 @@ const (
 	StateQueryParamID       = "state"
 )
 
-type FormanceBankBridgeRedirectRequest struct {
+type FormanceOpenBankingRedirectRequest struct {
 	LinkToken   string
 	PublicToken string
 	AttemptID   uuid.UUID
 }
 
-func (c *client) FormanceBankBridgeRedirect(ctx context.Context, req FormanceBankBridgeRedirectRequest) error {
-	endpoint, err := url.JoinPath(c.formanceStackEndpoint, "connectors", "bank-bridges", c.connectorID.String(), "redirect")
+func (c *client) FormanceOpenBankingRedirect(ctx context.Context, req FormanceOpenBankingRedirectRequest) error {
+	endpoint, err := url.JoinPath(c.formanceStackEndpoint, "connectors", "open-banking", c.connectorID.String(), "redirect")
 	if err != nil {
 		return err
 	}

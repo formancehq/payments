@@ -23,7 +23,7 @@ var _ = Describe("API v3 Payment Service Users Forward", func() {
 		connectorID = models.ConnectorID{Reference: uuid.New(), Provider: "test"}
 	})
 
-	Context("forward psu to bank bridge", func() {
+	Context("forward psu to provider", func() {
 		var (
 			w *httptest.ResponseRecorder
 			m *backend.MockBackend
@@ -32,7 +32,7 @@ var _ = Describe("API v3 Payment Service Users Forward", func() {
 			w = httptest.NewRecorder()
 			ctrl := gomock.NewController(GinkgoT())
 			m = backend.NewMockBackend(ctrl)
-			handlerFn = paymentServiceUsersForwardToBankBridge(m)
+			handlerFn = paymentServiceUsersForwardToProvider(m)
 		})
 
 		It("should return an invalid ID error when psu ID is invalid", func(ctx SpecContext) {

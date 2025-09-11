@@ -56,61 +56,61 @@ func (w Workflow) runHandleWebhooks(
 			// there is new data to fetch from the connector.
 			// Let's launch the related workflow to fetch the data.
 			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling bank bridge webhook: %w", err)
+				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
 
 		case response.UserLinkSessionFinished != nil:
-			// BankBridge specific webhook. A user has finished the link flow
+			// OpenBanking specific webhook. A user has finished the link flow
 			// and has a valid connection to his bank. We need to update the
-			// bank bridge status to active and send an event to the user.
+			// open banking status to active and send an event to the user.
 			if err := w.handleUserLinkSessionFinishedWebhook(ctx, response); err != nil {
 				return fmt.Errorf("handling user link session finished webhook: %w", err)
 			}
 
 		case response.UserDisconnected != nil:
-			// BankBridge specific webhook. A user has disconnected was totally
-			// disconnected from the bank bridge connector. We need to update
-			// the bank bridge status to disconnected and send an event to the
+			// OpenBanking specific webhook. A user has disconnected was totally
+			// disconnected from the open banking connector. We need to update
+			// the open banking status to disconnected and send an event to the
 			// user.
 			if err := w.handleUserDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user disconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionDisconnected != nil:
-			// BankBridge specific webhook. A user has disconnected from his
-			// bank. We need to update the bank bridge status to disconnected
+			// OpenBanking specific webhook. A user has disconnected from his
+			// bank. We need to update the open banking status to disconnected
 			// and send an event to the user.
 			if err := w.handleUserConnectionDisconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user disconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionReconnected != nil:
-			// BankBridge specific webhook. A user has reconnected to his bank.
-			// We need to update the bank bridge status to active and send an
+			// OpenBanking specific webhook. A user has reconnected to his bank.
+			// We need to update the open banking status to active and send an
 			// event to the user.
 			if err := w.handleUserConnectionReconnectedWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user reconnected webhook: %w", err)
 			}
 
 		case response.UserConnectionPendingDisconnect != nil:
-			// BankBridge specific webhook. A user is nearly disconnected from
+			// OpenBanking specific webhook. A user is nearly disconnected from
 			// his bank. We need to send an event to the user to warn him.
 			if err := w.handleUserPendingDisconnectWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling user pending disconnect webhook: %w", err)
 			}
 
-		case response.BankBridgeAccount != nil:
-			// BankBridge specific webhook. A new account has been found in the
+		case response.OpenBankingAccount != nil:
+			// OpenBanking specific webhook. A new account has been found in the
 			// bank. We need to store the account in the database.
-			if err := w.handleBankBridgeAccountWebhook(ctx, i, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling bank bridge account webhook: %w", err)
+			if err := w.handleOpenBankingAccountWebhook(ctx, i, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling open banking account webhook: %w", err)
 			}
 
-		case response.BankBridgePayment != nil:
-			// BankBridge specific webhook. A new payment has been found in the
+		case response.OpenBankingPayment != nil:
+			// OpenBanking specific webhook. A new payment has been found in the
 			// bank. We need to store the payment in the database.
-			if err := w.handleBankBridgePaymentWebhook(ctx, i, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling bank bridge payment webhook: %w", err)
+			if err := w.handleOpenBankingPaymentWebhook(ctx, i, handleWebhooks, response); err != nil {
+				return fmt.Errorf("handling open banking payment webhook: %w", err)
 			}
 
 		default:
@@ -167,40 +167,40 @@ func (w Workflow) handleDataToStoreWebhook(
 	return nil
 }
 
-func (w Workflow) handleBankBridgeAccountWebhook(
+func (w Workflow) handleOpenBankingAccountWebhook(
 	ctx workflow.Context,
 	index int,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
 	account := models.PSPAccount{
-		Reference:    response.BankBridgeAccount.Reference,
-		CreatedAt:    response.BankBridgeAccount.CreatedAt,
-		Name:         response.BankBridgeAccount.Name,
-		DefaultAsset: response.BankBridgeAccount.DefaultAsset,
-		Metadata:     response.BankBridgeAccount.Metadata,
-		Raw:          response.BankBridgeAccount.Raw,
+		Reference:    response.OpenBankingAccount.Reference,
+		CreatedAt:    response.OpenBankingAccount.CreatedAt,
+		Name:         response.OpenBankingAccount.Name,
+		DefaultAsset: response.OpenBankingAccount.DefaultAsset,
+		Metadata:     response.OpenBankingAccount.Metadata,
+		Raw:          response.OpenBankingAccount.Raw,
 	}
 
 	if account.Metadata == nil {
 		account.Metadata = make(map[string]string)
 	}
 
-	if response.BankBridgeAccount.BankBridgeUserID != nil {
-		bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+	if response.OpenBankingAccount.OpenBankingUserID != nil {
+		forwardedUser, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
-			*response.BankBridgeAccount.BankBridgeUserID,
+			*response.OpenBankingAccount.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting bank bridge: %w", err)
+			return fmt.Errorf("getting open banking forwarded user: %w", err)
 		}
 
-		account.PsuID = &bridge.PsuID
+		account.PsuID = &forwardedUser.PsuID
 	}
 
-	if response.BankBridgeAccount.BankBridgeConnectionID != nil {
-		account.OpenBankingConnectionID = response.BankBridgeAccount.BankBridgeConnectionID
+	if response.OpenBankingAccount.OpenBankingConnectionID != nil {
+		account.OpenBankingConnectionID = response.OpenBankingAccount.OpenBankingConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -208,46 +208,46 @@ func (w Workflow) handleBankBridgeAccountWebhook(
 	})
 }
 
-func (w Workflow) handleBankBridgePaymentWebhook(
+func (w Workflow) handleOpenBankingPaymentWebhook(
 	ctx workflow.Context,
 	index int,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
 	payment := models.PSPPayment{
-		ParentReference:             response.BankBridgePayment.ParentReference,
-		Reference:                   response.BankBridgePayment.Reference,
-		CreatedAt:                   response.BankBridgePayment.CreatedAt,
-		Type:                        response.BankBridgePayment.Type,
-		Amount:                      response.BankBridgePayment.Amount,
-		Asset:                       response.BankBridgePayment.Asset,
-		Scheme:                      response.BankBridgePayment.Scheme,
-		Status:                      response.BankBridgePayment.Status,
-		SourceAccountReference:      response.BankBridgePayment.SourceAccountReference,
-		DestinationAccountReference: response.BankBridgePayment.DestinationAccountReference,
-		Metadata:                    response.BankBridgePayment.Metadata,
-		Raw:                         response.BankBridgePayment.Raw,
+		ParentReference:             response.OpenBankingPayment.ParentReference,
+		Reference:                   response.OpenBankingPayment.Reference,
+		CreatedAt:                   response.OpenBankingPayment.CreatedAt,
+		Type:                        response.OpenBankingPayment.Type,
+		Amount:                      response.OpenBankingPayment.Amount,
+		Asset:                       response.OpenBankingPayment.Asset,
+		Scheme:                      response.OpenBankingPayment.Scheme,
+		Status:                      response.OpenBankingPayment.Status,
+		SourceAccountReference:      response.OpenBankingPayment.SourceAccountReference,
+		DestinationAccountReference: response.OpenBankingPayment.DestinationAccountReference,
+		Metadata:                    response.OpenBankingPayment.Metadata,
+		Raw:                         response.OpenBankingPayment.Raw,
 	}
 
 	if payment.Metadata == nil {
 		payment.Metadata = make(map[string]string)
 	}
 
-	if response.BankBridgePayment.BankBridgeUserID != nil {
-		bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+	if response.OpenBankingPayment.OpenBankingUserID != nil {
+		forwardedUser, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
-			*response.BankBridgePayment.BankBridgeUserID,
+			*response.OpenBankingPayment.OpenBankingUserID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting bank bridge: %w", err)
+			return fmt.Errorf("getting open banking forwardedUser: %w", err)
 		}
 
-		payment.PsuID = &bridge.PsuID
+		payment.PsuID = &forwardedUser.PsuID
 	}
 
-	if response.BankBridgePayment.BankBridgeConnectionID != nil {
-		payment.OpenBankingConnectionID = response.BankBridgePayment.BankBridgeConnectionID
+	if response.OpenBankingPayment.OpenBankingConnectionID != nil {
+		payment.OpenBankingConnectionID = response.OpenBankingPayment.OpenBankingConnectionID
 	}
 
 	return w.handleDataToStoreWebhook(ctx, index, handleWebhooks, models.WebhookResponse{
@@ -268,32 +268,32 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		return fmt.Errorf("getting connector: %w", err)
 	}
 
-	var conn *models.PSUBankBridgeConnection
-	var ba *models.PSUBankBridge
+	var conn *models.OpenBankingConnection
+	var obForwardedUser *models.OpenBankingForwardedUser
 	var psuID uuid.UUID
 	var connectionID string
 	if response.DataReadyToFetch.PSUID != nil {
-		bankBridge, err := activities.StoragePSUBankBridgesGet(
+		openBankingForwardedUser, err := activities.StorageOpenBankingForwardedUsersGet(
 			infiniteRetryContext(ctx),
 			*response.DataReadyToFetch.PSUID,
 			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting bank bridge: %w", err)
+			return fmt.Errorf("getting open banking: %w", err)
 		}
 
-		ba = bankBridge
-		psuID = bankBridge.PsuID
+		obForwardedUser = openBankingForwardedUser
+		psuID = obForwardedUser.PsuID
 	}
 
 	if response.DataReadyToFetch.ConnectionID != nil {
-		connection, psu, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+		connection, psu, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 			infiniteRetryContext(ctx),
 			handleWebhooks.ConnectorID,
 			*response.DataReadyToFetch.ConnectionID,
 		)
 		if err != nil {
-			return fmt.Errorf("getting bank bridge connection: %w", err)
+			return fmt.Errorf("getting open banking connection: %w", err)
 		}
 
 		conn = connection
@@ -301,14 +301,14 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 		psuID = psu
 	}
 
-	payload, err := json.Marshal(&models.BankBridgeFromPayload{
+	payload, err := json.Marshal(&models.OpenBankingForwardedUserFromPayload{
 		PSUID:                   psuID,
-		PSUBankBridge:           ba,
-		PSUBankBridgeConnection: conn,
+		OpenBankingForwardedUser:           obForwardedUser,
+		OpenBankingConnection: conn,
 		FromPayload:             response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
-		return fmt.Errorf("marshalling bank bridge from payload: %w", err)
+		return fmt.Errorf("marshalling open banking from payload: %w", err)
 	}
 
 	config := models.DefaultConfig()
@@ -338,8 +338,8 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 				},
 			},
 		),
-		RunFetchBankBridgeData,
-		FetchBankBridgeData{
+		RunFetchOpenBankingData,
+		FetchOpenBankingData{
 			PsuID:        psuID,
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
@@ -358,22 +358,22 @@ func (w Workflow) handleUserLinkSessionFinishedWebhook(
 	ctx workflow.Context,
 	response models.WebhookResponse,
 ) error {
-	attempt, err := activities.StoragePSUBankBridgeConnectionAttemptsGet(
+	attempt, err := activities.StorageOpenBankingConnectionAttemptsGet(
 		infiniteRetryContext(ctx),
 		response.UserLinkSessionFinished.AttemptID,
 	)
 	if err != nil {
-		return fmt.Errorf("getting bank bridge connection attempt: %w", err)
+		return fmt.Errorf("getting open banking connection attempt: %w", err)
 	}
 
-	err = activities.StoragePSUBankBridgeConnectionAttemptsUpdateStatus(
+	err = activities.StorageOpenBankingConnectionAttemptsUpdateStatus(
 		infiniteRetryContext(ctx),
 		response.UserLinkSessionFinished.AttemptID,
 		response.UserLinkSessionFinished.Status,
 		response.UserLinkSessionFinished.Error,
 	)
 	if err != nil {
-		return fmt.Errorf("updating bank bridge connection attempt status: %w", err)
+		return fmt.Errorf("updating open banking connection attempt status: %w", err)
 	}
 
 	sendEvent := SendEvents{
@@ -411,13 +411,13 @@ func (w Workflow) handleUserPendingDisconnectWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	_, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+	_, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionPendingDisconnect.ConnectionID,
 	)
 	if err != nil {
-		return fmt.Errorf("getting bank bridge connection: %w", err)
+		return fmt.Errorf("getting open banking connection: %w", err)
 	}
 
 	sendEvent := SendEvents{
@@ -455,18 +455,18 @@ func (w Workflow) handleUserDisconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	bridge, err := activities.StoragePSUBankBridgesGetByPSPUserID(
+	openBanking, err := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 		infiniteRetryContext(ctx),
 		response.UserDisconnected.PSPUserID,
 		handleWebhooks.ConnectorID,
 	)
 	if err != nil {
-		return fmt.Errorf("getting bank bridge: %w", err)
+		return fmt.Errorf("getting open banking: %w", err)
 	}
 
 	sendEvent := SendEvents{
 		UserDisconnected: &models.UserDisconnected{
-			PsuID:       bridge.PsuID,
+			PsuID:       openBanking.PsuID,
 			ConnectorID: handleWebhooks.ConnectorID,
 			At:          workflow.Now(ctx),
 		},
@@ -497,7 +497,7 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+	connection, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionDisconnected.ConnectionID,
@@ -505,20 +505,20 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 	if err != nil {
 		if response.UserConnectionDisconnected.PSPUserID == "" {
 			// Nothing more to do, we're missing crucial information in order to continue
-			return fmt.Errorf("getting bank bridge connection: %w", err)
+			return fmt.Errorf("getting open banking connection: %w", err)
 		}
 
-		// Let's try to fetch the psu via the bank bridge
-		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+		// Let's try to fetch the psu via the forwarded user
+		user, errGetUser := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			response.UserConnectionDisconnected.PSPUserID,
 			handleWebhooks.ConnectorID,
 		)
-		if errGetBankBridge != nil {
-			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		if errGetUser != nil {
+			return fmt.Errorf("error getting connection: %w and getting forwarded user by pspuserID: %w", err, errGetUser)
 		}
 
-		psuID = bb.PsuID
+		psuID = user.PsuID
 	}
 
 	updatedConnection := craftUpdatedConnection(
@@ -530,13 +530,13 @@ func (w Workflow) handleUserConnectionDisconnectedWebhook(
 		response.UserConnectionDisconnected.Reason,
 	)
 
-	err = activities.StoragePSUBankBridgeConnectionsStore(
+	err = activities.StorageOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
 		updatedConnection,
 	)
 	if err != nil {
-		return fmt.Errorf("storing bank bridge connection: %w", err)
+		return fmt.Errorf("storing open banking connection: %w", err)
 	}
 
 	sendEvent := SendEvents{
@@ -575,7 +575,7 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	connection, psuID, err := activities.StoragePSUBankBridgeConnectionsGetFromConnectionID(
+	connection, psuID, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 		infiniteRetryContext(ctx),
 		handleWebhooks.ConnectorID,
 		response.UserConnectionReconnected.ConnectionID,
@@ -583,20 +583,20 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 	if err != nil {
 		if response.UserConnectionReconnected.PSPUserID == "" {
 			// Nothing more to do, we're missing crucial information in order to continue
-			return fmt.Errorf("getting bank bridge connection: %w", err)
+			return fmt.Errorf("getting open banking connection: %w", err)
 		}
 
-		// Let's try to fetch the psu via the bank bridge
-		bb, errGetBankBridge := activities.StoragePSUBankBridgesGetByPSPUserID(
+		// Let's try to fetch the ob forwarded user
+		user, errGetUser := activities.StorageOpenBankingForwardedUsersGetByPSPUserID(
 			infiniteRetryContext(ctx),
 			response.UserConnectionReconnected.PSPUserID,
 			handleWebhooks.ConnectorID,
 		)
-		if errGetBankBridge != nil {
-			return fmt.Errorf("error getting connection: %w and getting bank bridge by pspuserID: %w", err, errGetBankBridge)
+		if errGetUser != nil {
+			return fmt.Errorf("error getting connection: %w and getting forwarded user by psuId: %w", err, errGetUser)
 		}
 
-		psuID = bb.PsuID
+		psuID = user.PsuID
 	}
 
 	updatedConnection := craftUpdatedConnection(
@@ -608,13 +608,13 @@ func (w Workflow) handleUserConnectionReconnectedWebhook(
 		nil,
 	)
 
-	err = activities.StoragePSUBankBridgeConnectionsStore(
+	err = activities.StorageOpenBankingConnectionsStore(
 		infiniteRetryContext(ctx),
 		psuID,
 		updatedConnection,
 	)
 	if err != nil {
-		return fmt.Errorf("storing bank bridge connection: %w", err)
+		return fmt.Errorf("storing open banking connection: %w", err)
 	}
 
 	sendEvent := SendEvents{

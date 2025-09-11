@@ -28,29 +28,29 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 			ctrl.Finish()
 		})
 
-		It("should return an error - missing bank bridge connections", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{}
 
 			resp, err := plg.DeleteUser(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("bank bridge connections are required"))
+			Expect(err.Error()).To(ContainSubstring("open banking connections are required"))
 			Expect(resp).To(Equal(models.DeleteUserResponse{}))
 		})
 
-		It("should return an error - missing bank bridge connections metadata", func(ctx SpecContext) {
+		It("should return an error - missing open banking connections metadata", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				PSUBankBridge: &models.PSUBankBridge{},
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{},
 			}
 
 			resp, err := plg.DeleteUser(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("bank bridge connections metadata are required"))
+			Expect(err.Error()).To(ContainSubstring("open banking connections metadata are required"))
 			Expect(resp).To(Equal(models.DeleteUserResponse{}))
 		})
 
 		It("should return an error - missing user token", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{},
 				},
 			}
@@ -63,7 +63,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should delete user successfully", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},
@@ -79,7 +79,7 @@ var _ = Describe("Plaid *Plugin Delete User", func() {
 
 		It("should return an error - client delete user error", func(ctx SpecContext) {
 			req := models.DeleteUserRequest{
-				PSUBankBridge: &models.PSUBankBridge{
+				OpenBankingForwardedUser: &models.OpenBankingForwardedUser{
 					Metadata: map[string]string{
 						UserTokenMetadataKey: "user-token-123",
 					},

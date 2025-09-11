@@ -82,9 +82,8 @@ func NewListInstancesQuery(opts bunpaginate.PaginatedQueryOptions[InstanceQuery]
 
 func (s *store) instancesQueryContext(qb query.Builder) (string, []any, error) {
 	return qb.Build(query.ContextFn(func(key, operator string, value any) (string, []any, error) {
-		switch {
-		case key == "schedule_id",
-			key == "connector_id":
+		switch key {
+		case "schedule_id", "connector_id":
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'connector_id' column can only be used with $match: %w", ErrValidation)
 			}

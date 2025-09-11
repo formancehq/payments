@@ -47,7 +47,7 @@
 * [DeletePaymentServiceUser](#deletepaymentserviceuser) - Delete a payment service user by ID
 * [ListPaymentServiceUserConnections](#listpaymentserviceuserconnections) - List all connections for a payment service user
 * [DeletePaymentServiceUserConnector](#deletepaymentserviceuserconnector) - Remove a payment service user from a connector, the PSU will still exist in Formance
-* [ForwardPaymentServiceUserToBankBridge](#forwardpaymentserviceusertobankbridge) - Register/forward a payment service user on/to a connector
+* [ForwardPaymentServiceUserToProvider](#forwardpaymentserviceusertoprovider) - Register/forward a payment service user on/to a connector
 * [CreateLinkForPaymentServiceUser](#createlinkforpaymentserviceuser) - Create an authentication link for a payment service user on a connector, for oauth flow
 * [ListPaymentServiceUserConnectionsFromConnectorID](#listpaymentserviceuserconnectionsfromconnectorid) - List enabled connections for a payment service user on a connector (i.e. the various banks PSUser has enabled on the connector)
 * [ListPaymentServiceUserLinkAttemptsFromConnectorID](#listpaymentserviceuserlinkattemptsfromconnectorid) - List all link attempts for a payment service user on a connector.
@@ -2139,7 +2139,7 @@ func main() {
 | ------------------ | ------------------ | ------------------ |
 | sdkerrors.SDKError | 4XX, 5XX           | \*/\*              |
 
-## ForwardPaymentServiceUserToBankBridge
+## ForwardPaymentServiceUserToProvider
 
 Register/forward a payment service user on/to a connector
 
@@ -2163,7 +2163,7 @@ func main() {
         client.WithSecurity(os.Getenv("FORMANCE_AUTHORIZATION")),
     )
 
-    res, err := s.Payments.V3.ForwardPaymentServiceUserToBankBridge(ctx, "<id>", "<id>")
+    res, err := s.Payments.V3.ForwardPaymentServiceUserToProvider(ctx, "<id>", "<id>")
     if err != nil {
         log.Fatal(err)
     }
@@ -2184,7 +2184,7 @@ func main() {
 
 ### Response
 
-**[*operations.V3ForwardPaymentServiceUserToBankBridgeResponse](../../models/operations/v3forwardpaymentserviceusertobankbridgeresponse.md), error**
+**[*operations.V3ForwardPaymentServiceUserToProviderResponse](../../models/operations/v3forwardpaymentserviceusertoproviderresponse.md), error**
 
 ### Errors
 

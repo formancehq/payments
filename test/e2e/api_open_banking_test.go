@@ -94,7 +94,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("should be ok", func() {
-			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				connectorID,
@@ -104,7 +104,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("should fail if psu is already forwarded to the connector", func() {
-			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				connectorID,
@@ -112,7 +112,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			Expect(err).To(BeNil())
 			Expect(forwardResponse.GetHTTPMeta().Response.StatusCode).To(Equal(http.StatusNoContent))
 
-			_, err = app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			_, err = app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				connectorID,
@@ -126,7 +126,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 				Reference: uuid.New(),
 				Provider:  "fake",
 			}
-			_, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			_, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				fakeConnectorID.String(),
@@ -154,7 +154,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			connectorID, err = installV3Connector(ctx, app.GetValue(), conf, id)
 			Expect(err).To(BeNil())
 
-			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				connectorID,
@@ -203,7 +203,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			Expect(statusCode).To(Equal(http.StatusNoContent))
 
 			attemptPoller := pollAttempts(ctx, app, psuID, connectorID, GinkgoT())
-			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3PSUBankBridgeConnectionAttemptStatusEnumCompleted)}...))
+			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3OpenBankingConnectionAttemptStatusEnumCompleted)}...))
 
 			connectionPoller := pollConnection(ctx, app, psuID, GinkgoT())
 			Eventually(connectionPoller()).WithTimeout(10 * time.Second).Should(HaveUserConnectionsLengthMatcher(1, []PayloadMatcher{HaveUserConnectionStatus(components.V3ConnectionStatusEnumActive)}...))
@@ -234,7 +234,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			connectorID, err = installV3Connector(ctx, app.GetValue(), conf, id)
 			Expect(err).To(BeNil())
 
-			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToBankBridge(
+			forwardResponse, err := app.GetValue().SDK().Payments.V3.ForwardPaymentServiceUserToProvider(
 				ctx,
 				psuID,
 				connectorID,
@@ -283,7 +283,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			Expect(statusCode).To(Equal(http.StatusNoContent))
 
 			attemptPoller := pollAttempts(ctx, app, psuID, connectorID, GinkgoT())
-			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3PSUBankBridgeConnectionAttemptStatusEnumExited)}...))
+			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3OpenBankingConnectionAttemptStatusEnumExited)}...))
 
 			connectionPoller := pollConnection(ctx, app, psuID, GinkgoT())
 			Eventually(connectionPoller()).WithTimeout(10 * time.Second).Should(HaveUserConnectionsLengthMatcher(0))

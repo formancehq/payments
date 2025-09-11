@@ -626,22 +626,22 @@ var _ = Describe("Engine Tests", func() {
 		})
 
 		It("should return error when user already exists on connector", func(ctx SpecContext) {
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(&models.PSUBankBridge{}, nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(&models.OpenBankingForwardedUser{}, nil)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
 			Expect(err.Error()).To(ContainSubstring("user already exists on this connector"))
 		})
 
-		It("should return error when storage returns misc error from bank bridge fetch", func(ctx SpecContext) {
+		It("should return error when storage returns misc error from open banking fetch", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage error")
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, expectedErr)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
 
 		It("should return error when payment service user not found", func(ctx SpecContext) {
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(nil, storage.ErrNotFound)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
@@ -650,7 +650,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when plugin not found", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin not found")
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			manager.EXPECT().Get(connectorID).Return(nil, expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
@@ -660,7 +660,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when plugin CreateUser fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin error")
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
@@ -672,7 +672,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return validation error when plugin CreateUser returns validation error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("plugin error: %w", models.ErrInvalidRequest)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
@@ -682,26 +682,26 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(engine.ErrValidation))
 		})
 
-		It("should return error when bank bridge upsert fails", func(ctx SpecContext) {
+		It("should return error when open banking forwarded user upsert fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("upsert error")
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, nil)
-			store.EXPECT().PSUBankBridgesUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.PSUBankBridge{})).Return(expectedErr)
+			store.EXPECT().OpenBankingForwardedUserUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.OpenBankingForwardedUser{})).Return(expectedErr)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
 		})
 
 		It("should successfully forward payment service user", func(ctx SpecContext) {
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			plugin.EXPECT().CreateUser(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserRequest{})).Return(models.CreateUserResponse{}, nil)
-			store.EXPECT().PSUBankBridgesUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.PSUBankBridge{})).Return(nil)
+			store.EXPECT().OpenBankingForwardedUserUpsert(gomock.Any(), psuID, gomock.AssignableToTypeOf(models.OpenBankingForwardedUser{})).Return(nil)
 			err := eng.ForwardPaymentServiceUser(ctx, psuID, connectorID)
 			Expect(err).To(BeNil())
 		})
@@ -823,8 +823,8 @@ var _ = Describe("Engine Tests", func() {
 			expectedErr := fmt.Errorf("workflow error")
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("delete-user-connection", defaultTaskQueue),
-				workflow.RunDeletePSUConnection,
-				gomock.AssignableToTypeOf(workflow.DeletePSUConnection{}),
+				workflow.RunDeleteConnection,
+				gomock.AssignableToTypeOf(workflow.DeleteConnection{}),
 			).Return(nil, expectedErr)
 			_, err := eng.DeletePaymentServiceUserConnection(ctx, connectorID, psuID, connectionID)
 			Expect(err).NotTo(BeNil())
@@ -834,8 +834,8 @@ var _ = Describe("Engine Tests", func() {
 		It("should successfully delete payment service user connection and return task", func(ctx SpecContext) {
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions("delete-user-connection", defaultTaskQueue),
-				workflow.RunDeletePSUConnection,
-				gomock.AssignableToTypeOf(workflow.DeletePSUConnection{}),
+				workflow.RunDeleteConnection,
+				gomock.AssignableToTypeOf(workflow.DeleteConnection{}),
 			).Return(nil, nil)
 			task, err := eng.DeletePaymentServiceUserConnection(ctx, connectorID, psuID, connectionID)
 			Expect(err).To(BeNil())
@@ -849,12 +849,12 @@ var _ = Describe("Engine Tests", func() {
 
 	Context("create payment service user link", func() {
 		var (
-			psuID             uuid.UUID
-			connectorID       models.ConnectorID
-			psu               *models.PaymentServiceUser
-			bankBridge        *models.PSUBankBridge
-			idempotencyKey    *uuid.UUID
-			clientRedirectURL *string
+			psuID                    uuid.UUID
+			connectorID              models.ConnectorID
+			psu                      *models.PaymentServiceUser
+			openBankingForwardedUser *models.OpenBankingForwardedUser
+			idempotencyKey           *uuid.UUID
+			clientRedirectURL        *string
 		)
 
 		BeforeEach(func() {
@@ -864,7 +864,7 @@ var _ = Describe("Engine Tests", func() {
 				ID:   psuID,
 				Name: "Test User",
 			}
-			bankBridge = &models.PSUBankBridge{
+			openBankingForwardedUser = &models.OpenBankingForwardedUser{
 				ConnectorID: connectorID,
 			}
 			redirectURL := "https://example.com/redirect"
@@ -888,11 +888,11 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(storage.ErrNotFound))
 		})
 
-		It("should return error when bank bridge not found", func(ctx SpecContext) {
+		It("should return error when open banking forwarded user not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(storage.ErrNotFound))
@@ -903,8 +903,8 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(expectedErr)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(expectedErr)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -915,8 +915,8 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			plugin.EXPECT().CreateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserLinkRequest{})).Return(models.CreateUserLinkResponse{}, expectedErr)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
@@ -927,8 +927,8 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			plugin.EXPECT().CreateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserLinkRequest{})).Return(models.CreateUserLinkResponse{}, models.ErrInvalidRequest)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
@@ -940,12 +940,12 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
 			// First call to create the attempt should succeed
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			plugin.EXPECT().CreateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserLinkRequest{})).Return(models.CreateUserLinkResponse{Link: "https://example.com/link"}, nil)
 			// Second call to update the attempt with temporary token should fail
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(expectedErr)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(expectedErr)
 			_, _, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -955,12 +955,12 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
 			// First call to create the attempt
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			plugin.EXPECT().CreateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.CreateUserLinkRequest{})).Return(models.CreateUserLinkResponse{Link: "https://example.com/link"}, nil)
 			// Second call to update the attempt with temporary token
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			attemptID, link, err := eng.CreatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, idempotencyKey, clientRedirectURL)
 			Expect(err).To(BeNil())
 			Expect(attemptID).NotTo(BeEmpty())
@@ -970,14 +970,14 @@ var _ = Describe("Engine Tests", func() {
 
 	Context("update payment service user link", func() {
 		var (
-			psuID             uuid.UUID
-			connectorID       models.ConnectorID
-			connectionID      string
-			psu               *models.PaymentServiceUser
-			bankBridge        *models.PSUBankBridge
-			connection        *models.PSUBankBridgeConnection
-			idempotencyKey    *uuid.UUID
-			clientRedirectURL *string
+			psuID                    uuid.UUID
+			connectorID              models.ConnectorID
+			connectionID             string
+			psu                      *models.PaymentServiceUser
+			openBankingForwardedUser *models.OpenBankingForwardedUser
+			connection               *models.OpenBankingConnection
+			idempotencyKey           *uuid.UUID
+			clientRedirectURL        *string
 		)
 
 		BeforeEach(func() {
@@ -988,10 +988,10 @@ var _ = Describe("Engine Tests", func() {
 				ID:   psuID,
 				Name: "Test User",
 			}
-			bankBridge = &models.PSUBankBridge{
+			openBankingForwardedUser = &models.OpenBankingForwardedUser{
 				ConnectorID: connectorID,
 			}
-			connection = &models.PSUBankBridgeConnection{
+			connection = &models.OpenBankingConnection{
 				ConnectionID: connectionID,
 				ConnectorID:  connectorID,
 			}
@@ -1016,11 +1016,11 @@ var _ = Describe("Engine Tests", func() {
 			Expect(err).To(MatchError(storage.ErrNotFound))
 		})
 
-		It("should return error when bank bridge not found", func(ctx SpecContext) {
+		It("should return error when open banking forwarded user not found", func(ctx SpecContext) {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(nil, storage.ErrNotFound)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(storage.ErrNotFound))
@@ -1030,8 +1030,8 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(nil, uuid.Nil, storage.ErrNotFound)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(nil, uuid.Nil, storage.ErrNotFound)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(storage.ErrNotFound))
@@ -1042,9 +1042,9 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(expectedErr)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(expectedErr)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
 			Expect(err).To(MatchError(expectedErr))
@@ -1055,9 +1055,9 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil)
 			plugin.EXPECT().UpdateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.UpdateUserLinkRequest{})).Return(models.UpdateUserLinkResponse{}, expectedErr)
 			_, _, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).NotTo(BeNil())
@@ -1068,9 +1068,9 @@ var _ = Describe("Engine Tests", func() {
 			plugin := models.NewMockPlugin(gomock.NewController(GinkgoT()))
 			manager.EXPECT().Get(connectorID).Return(plugin, nil)
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), psuID).Return(psu, nil)
-			store.EXPECT().PSUBankBridgesGet(gomock.Any(), psuID, connectorID).Return(bankBridge, nil)
-			store.EXPECT().PSUBankBridgeConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.PSUBankBridgeConnectionAttempt{})).Return(nil).MinTimes(2)
+			store.EXPECT().OpenBankingForwardedUserGet(gomock.Any(), psuID, connectorID).Return(openBankingForwardedUser, nil)
+			store.EXPECT().OpenBankingConnectionsGetFromConnectionID(gomock.Any(), connectorID, connectionID).Return(connection, psuID, nil)
+			store.EXPECT().OpenBankingConnectionAttemptsUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.OpenBankingConnectionAttempt{})).Return(nil).MinTimes(2)
 			plugin.EXPECT().UpdateUserLink(gomock.Any(), gomock.AssignableToTypeOf(models.UpdateUserLinkRequest{})).Return(models.UpdateUserLinkResponse{Link: "https://example.com/update-link"}, nil)
 			attemptID, link, err := eng.UpdatePaymentServiceUserLink(ctx, "Test", psuID, connectorID, connectionID, idempotencyKey, clientRedirectURL)
 			Expect(err).To(BeNil())

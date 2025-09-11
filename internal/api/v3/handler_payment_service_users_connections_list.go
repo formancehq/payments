@@ -18,8 +18,8 @@ import (
 // Custom response type for the connection because we don't want to expose the
 // access token. We still need them in the models object because of temporal,
 // that's why we need to create a custom response type.
-type bankBridgeConnection struct {
-	// ID of the connection, given by the banking bridge
+type openBankingConnection struct {
+	// ID of the connection, given by the provider
 	ConnectionID string `json:"connectionID"`
 	// Connector ID
 	ConnectorID string `json:"connectorID"`
@@ -52,13 +52,13 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListPsuBankBridgeConnectionsQuery](r, func() (*storage.ListPsuBankBridgeConnectionsQuery, error) {
-			options, err := getPagination(span, r, storage.PsuBankBridgeConnectionsQuery{})
+		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
 			}
 
-			return pointer.For(storage.NewListPsuBankBridgeConnectionsQuery(*options)), nil
+			return pointer.For(storage.NewListOpenBankingConnectionsQuery(*options)), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)
@@ -73,9 +73,9 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			return
 		}
 
-		connections := make([]bankBridgeConnection, 0, len(cursor.Data))
+		connections := make([]openBankingConnection, 0, len(cursor.Data))
 		for _, connection := range cursor.Data {
-			connections = append(connections, bankBridgeConnection{
+			connections = append(connections, openBankingConnection{
 				ConnectionID:  connection.ConnectionID,
 				ConnectorID:   connection.ConnectorID.String(),
 				CreatedAt:     connection.CreatedAt,
@@ -87,7 +87,7 @@ func paymentServiceUsersConnectionsListAll(backend backend.Backend) http.Handler
 			})
 		}
 
-		api.RenderCursor(w, bunpaginate.Cursor[bankBridgeConnection]{
+		api.RenderCursor(w, bunpaginate.Cursor[openBankingConnection]{
 			PageSize: cursor.PageSize,
 			HasMore:  cursor.HasMore,
 			Previous: cursor.Previous,
@@ -118,13 +118,13 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			return
 		}
 
-		query, err := bunpaginate.Extract[storage.ListPsuBankBridgeConnectionsQuery](r, func() (*storage.ListPsuBankBridgeConnectionsQuery, error) {
-			options, err := getPagination(span, r, storage.PsuBankBridgeConnectionsQuery{})
+		query, err := bunpaginate.Extract[storage.ListOpenBankingConnectionsQuery](r, func() (*storage.ListOpenBankingConnectionsQuery, error) {
+			options, err := getPagination(span, r, storage.OpenBankingConnectionsQuery{})
 			if err != nil {
 				return nil, err
 			}
 
-			return pointer.For(storage.NewListPsuBankBridgeConnectionsQuery(*options)), nil
+			return pointer.For(storage.NewListOpenBankingConnectionsQuery(*options)), nil
 		})
 		if err != nil {
 			otel.RecordError(span, err)
@@ -139,9 +139,9 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			return
 		}
 
-		connections := make([]bankBridgeConnection, 0, len(cursor.Data))
+		connections := make([]openBankingConnection, 0, len(cursor.Data))
 		for _, connection := range cursor.Data {
-			connections = append(connections, bankBridgeConnection{
+			connections = append(connections, openBankingConnection{
 				ConnectionID:  connection.ConnectionID,
 				ConnectorID:   connection.ConnectorID.String(),
 				CreatedAt:     connection.CreatedAt,
@@ -153,7 +153,7 @@ func paymentServiceUsersConnectionsListFromConnectorID(backend backend.Backend) 
 			})
 		}
 
-		api.RenderCursor(w, bunpaginate.Cursor[bankBridgeConnection]{
+		api.RenderCursor(w, bunpaginate.Cursor[openBankingConnection]{
 			PageSize: cursor.PageSize,
 			HasMore:  cursor.HasMore,
 			Previous: cursor.Previous,

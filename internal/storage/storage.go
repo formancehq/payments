@@ -122,22 +122,22 @@ type Storage interface {
 	PoolsRemoveAccountsFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
 	PoolsList(ctx context.Context, q ListPoolsQuery) (*bunpaginate.Cursor[models.Pool], error)
 
-	// PSU Bank Bridges
-	PSUBankBridgeConnectionAttemptsUpsert(ctx context.Context, from models.PSUBankBridgeConnectionAttempt) error
-	PSUBankBridgeConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.PSUBankBridgeConnectionAttemptStatus, errMsg *string) error
-	PSUBankBridgeConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUBankBridgeConnectionAttemptsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnectionAttempt], error)
-	PSUBankBridgeConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.PSUBankBridgeConnectionAttempt, error)
-	PSUBankBridgesUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridge) error
-	PSUBankBridgesGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.PSUBankBridge, error)
-	PSUBankBridgesGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.PSUBankBridge, error)
-	PSUBankBridgesDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
-	PSUBankBridgesList(ctx context.Context, query ListPSUBankBridgesQuery) (*bunpaginate.Cursor[models.PSUBankBridge], error)
-	PSUBankBridgeConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.PSUBankBridgeConnection) error
-	PSUBankBridgeConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error
-	PSUBankBridgeConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, error)
-	PSUBankBridgeConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error
-	PSUBankBridgeConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.PSUBankBridgeConnection, uuid.UUID, error)
-	PSUBankBridgeConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListPsuBankBridgeConnectionsQuery) (*bunpaginate.Cursor[models.PSUBankBridgeConnection], error)
+	// Open Banking
+	OpenBankingConnectionAttemptsUpsert(ctx context.Context, from models.OpenBankingConnectionAttempt) error
+	OpenBankingConnectionAttemptsUpdateStatus(ctx context.Context, id uuid.UUID, status models.OpenBankingConnectionAttemptStatus, errMsg *string) error
+	OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error)
+	OpenBankingConnectionAttemptsGet(ctx context.Context, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error)
+	OpenBankingForwardedUserUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingForwardedUser) error
+	OpenBankingForwardedUserGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error)
+	OpenBankingForwardedUserGetByPSPUserID(ctx context.Context, pspUserID string, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error)
+	OpenBankingForwardedUserDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) error
+	OpenBankingForwardedUserList(ctx context.Context, query ListOpenBankingForwardedUserQuery) (*bunpaginate.Cursor[models.OpenBankingForwardedUser], error)
+	OpenBankingConnectionsUpsert(ctx context.Context, psuID uuid.UUID, from models.OpenBankingConnection) error
+	OpenBankingConnectionsUpdateLastDataUpdate(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, updatedAt time.Time) error
+	OpenBankingConnectionsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, error)
+	OpenBankingConnectionsDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string) error
+	OpenBankingConnectionsGetFromConnectionID(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*models.OpenBankingConnection, uuid.UUID, error)
+	OpenBankingConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error)
 
 	// Schedules
 	SchedulesUpsert(ctx context.Context, schedule models.Schedule) error

@@ -59,11 +59,12 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			SourceAccountNumberID: sourceAccountNumberID,
 			FulfillmentMethod:     fulfillmentMethod,
 		}
-		if fulfillmentMethod == thirdPartyFulfillmentMethod {
+		switch fulfillmentMethod {
+		case thirdPartyFulfillmentMethod:
 			check.ThirdParty = &client.ThirdParty{
 				CheckNumber: models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCheckNumberMetadataKey),
 			}
-		} else if fulfillmentMethod == physicalCheckFulfillmentMethod {
+		case physicalCheckFulfillmentMethod:
 			check.PhysicalCheck = &client.PhysicalCheck{
 				MailingAddress: client.MailingAddress{
 					City:       models.ExtractNamespacedMetadata(pi.Metadata, client.IncreaseCityMetadataKey),
@@ -76,7 +77,7 @@ func (p *Plugin) createPayout(ctx context.Context, pi models.PSPPaymentInitiatio
 			if pi.DestinationAccount.Name != nil {
 				check.PhysicalCheck.RecipientName = *pi.DestinationAccount.Name
 			}
-		} else {
+		default:
 			return nil, fmt.Errorf("invalid fulfillmentMethod %s", fulfillmentMethod)
 		}
 		resp, err := p.client.InitiateCheckTransferPayout(

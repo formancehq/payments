@@ -14,14 +14,14 @@ type PluginType int
 
 const (
 	PluginTypePSP PluginType = iota
-	PluginTypeBankingBridge
+	PluginTypeOpenBanking
 	PluginTypeBoth
 )
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
 type Plugin interface {
 	PSPPlugin
-	BankingBridgePlugin
+	OpenBankingPlugin
 
 	// Common methods
 	Name() string
@@ -97,10 +97,10 @@ type WebhookResponse struct {
 	PaymentToDelete *PSPPaymentsToDelete
 	PaymentToCancel *PSPPaymentsToCancel
 
-	BankBridgeAccount *PSPBankBridgeAccount
-	BankBridgePayment *PSPBankBridgePayment
+	OpenBankingAccount *PSPOpenBankingAccount
+	OpenBankingPayment *PSPOpenBankingPayment
 
-	// Webhooks related to banking bridges
+	// Webhooks related to open banking
 	UserLinkSessionFinished         *PSPUserLinkSessionFinished
 	DataReadyToFetch                *PSPDataReadyToFetch
 	UserDisconnected                *PSPUserDisconnected
@@ -208,7 +208,7 @@ func (u UserConnectionReconnected) IdempotencyKey() string {
 
 type PSPUserLinkSessionFinished struct {
 	AttemptID uuid.UUID
-	Status    PSUBankBridgeConnectionAttemptStatus
+	Status    OpenBankingConnectionAttemptStatus
 	Error     *string
 }
 
@@ -216,7 +216,7 @@ type UserLinkSessionFinished struct {
 	PsuID       uuid.UUID
 	ConnectorID ConnectorID
 	AttemptID   uuid.UUID
-	Status      PSUBankBridgeConnectionAttemptStatus
+	Status      OpenBankingConnectionAttemptStatus
 	Error       *string
 }
 
@@ -235,9 +235,9 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 	return IdempotencyKey(u)
 }
 
-type BankBridgeFromPayload struct {
+type OpenBankingForwardedUserFromPayload struct {
 	PSUID                   uuid.UUID
-	PSUBankBridge           *PSUBankBridge
-	PSUBankBridgeConnection *PSUBankBridgeConnection
-	FromPayload             json.RawMessage
+	OpenBankingForwardedUser *OpenBankingForwardedUser
+	OpenBankingConnection    *OpenBankingConnection
+	FromPayload              json.RawMessage
 }

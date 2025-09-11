@@ -2575,7 +2575,7 @@ None ( Scopes: payments:write )
 
 ## Register/forward a payment service user on/to a connector
 
-<a id="opIdv3ForwardPaymentServiceUserToBankBridge"></a>
+<a id="opIdv3ForwardPaymentServiceUserToProvider"></a>
 
 > Code samples
 
@@ -5960,7 +5960,7 @@ None ( Scopes: payments:read )
 |psuID|string|true|none|none|
 |connectorID|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|status|[V3PSUBankBridgeConnectionAttemptStatusEnum](#schemav3psubankbridgeconnectionattemptstatusenum)|true|none|none|
+|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|none|
 |clientRedirectURL|string(url)|true|none|none|
 |error|string¦null|false|none|none|
 
@@ -6127,12 +6127,12 @@ None ( Scopes: payments:read )
 |*anonymous*|ACTIVE|
 |*anonymous*|ERROR|
 
-<h2 id="tocS_V3PSUBankBridgeConnectionAttemptStatusEnum">V3PSUBankBridgeConnectionAttemptStatusEnum</h2>
+<h2 id="tocS_V3OpenBankingConnectionAttemptStatusEnum">V3OpenBankingConnectionAttemptStatusEnum</h2>
 <!-- backwards compatibility -->
-<a id="schemav3psubankbridgeconnectionattemptstatusenum"></a>
-<a id="schema_V3PSUBankBridgeConnectionAttemptStatusEnum"></a>
-<a id="tocSv3psubankbridgeconnectionattemptstatusenum"></a>
-<a id="tocsv3psubankbridgeconnectionattemptstatusenum"></a>
+<a id="schemav3openbankingconnectionattemptstatusenum"></a>
+<a id="schema_V3OpenBankingConnectionAttemptStatusEnum"></a>
+<a id="tocSv3openbankingconnectionattemptstatusenum"></a>
+<a id="tocsv3openbankingconnectionattemptstatusenum"></a>
 
 ```json
 "pending"

@@ -48,7 +48,7 @@ var _ = Describe("API v3 Payment Service Users Connections List", func() {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String())
 			expectedErr := errors.New("psu connections list error")
 			m.EXPECT().PaymentServiceUsersConnectionsList(gomock.Any(), psuID, nil, gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PSUBankBridgeConnection]{}, expectedErr,
+				&bunpaginate.Cursor[models.OpenBankingConnection]{}, expectedErr,
 			)
 			handlerFn(w, req)
 
@@ -57,7 +57,7 @@ var _ = Describe("API v3 Payment Service Users Connections List", func() {
 
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "paymentServiceUserID", psuID.String())
-			cursor := &bunpaginate.Cursor[models.PSUBankBridgeConnection]{}
+			cursor := &bunpaginate.Cursor[models.OpenBankingConnection]{}
 			m.EXPECT().PaymentServiceUsersConnectionsList(gomock.Any(), psuID, nil, gomock.Any()).Return(cursor, nil)
 			handlerFn(w, req)
 
@@ -95,7 +95,7 @@ var _ = Describe("API v3 Payment Service Users Connections List", func() {
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connectorID.String(), "paymentServiceUserID", psuID.String())
 			expectedErr := errors.New("psu connections list error")
 			m.EXPECT().PaymentServiceUsersConnectionsList(gomock.Any(), psuID, &connectorID, gomock.Any()).Return(
-				&bunpaginate.Cursor[models.PSUBankBridgeConnection]{}, expectedErr,
+				&bunpaginate.Cursor[models.OpenBankingConnection]{}, expectedErr,
 			)
 			handlerFn(w, req)
 
@@ -104,7 +104,7 @@ var _ = Describe("API v3 Payment Service Users Connections List", func() {
 
 		It("should return a cursor object", func(ctx SpecContext) {
 			req := prepareQueryRequest(http.MethodGet, "connectorID", connectorID.String(), "paymentServiceUserID", psuID.String())
-			cursor := &bunpaginate.Cursor[models.PSUBankBridgeConnection]{}
+			cursor := &bunpaginate.Cursor[models.OpenBankingConnection]{}
 			m.EXPECT().PaymentServiceUsersConnectionsList(gomock.Any(), psuID, &connectorID, gomock.Any()).Return(cursor, nil)
 			handlerFn(w, req)
 

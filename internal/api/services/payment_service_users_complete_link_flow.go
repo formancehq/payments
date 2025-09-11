@@ -18,7 +18,7 @@ func (s *Service) PaymentServiceUsersCompleteLinkFlow(ctx context.Context, conne
 		return "", fmt.Errorf("failed to parse state: %w", err)
 	}
 
-	attempt, err := s.storage.PSUBankBridgeConnectionAttemptsGet(ctx, state.AttemptID)
+	attempt, err := s.storage.OpenBankingConnectionAttemptsGet(ctx, state.AttemptID)
 	if err != nil {
 		return "", newStorageError(err, "failed to get attempt")
 	}

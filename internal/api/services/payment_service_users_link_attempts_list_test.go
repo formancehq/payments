@@ -53,10 +53,10 @@ func TestPSUUserLinkAttemptsList(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			query := storage.ListPSUBankBridgeConnectionAttemptsQuery{}
+			query := storage.ListOpenBankingConnectionAttemptsQuery{}
 			store.EXPECT().PaymentServiceUsersGet(gomock.Any(), id).Return(&models.PaymentServiceUser{}, nil)
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(&models.Connector{}, nil)
-			store.EXPECT().PSUBankBridgeConnectionAttemptsList(gomock.Any(), id, connectorID, query).Return(nil, test.err)
+			store.EXPECT().OpenBankingConnectionAttemptsList(gomock.Any(), id, connectorID, query).Return(nil, test.err)
 			_, err := s.PaymentServiceUsersLinkAttemptsList(context.Background(), id, connectorID, query)
 			if test.expectedError == nil {
 				require.NoError(t, err)
