@@ -274,8 +274,8 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 	createOpenBankingConnectionAttempt(t, ctx, store, defaultOpenBankingConnectionAttempt2)
 
 	t.Run("list attempts by id", func(t *testing.T) {
-		q := NewListPSUOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PSUOpenBankingConnectionAttemptsQuery{}).
+		q := NewListOpenBankingConnectionAttemptsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("id", defaultOpenBankingConnectionAttempt.ID.String())),
 		)
@@ -290,8 +290,8 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 	})
 
 	t.Run("list attempts by status", func(t *testing.T) {
-		q := NewListPSUOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PSUOpenBankingConnectionAttemptsQuery{}).
+		q := NewListOpenBankingConnectionAttemptsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("status", string(models.OpenBankingConnectionAttemptStatusCompleted))),
 		)
@@ -304,8 +304,8 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 	})
 
 	t.Run("wrong query operator", func(t *testing.T) {
-		q := NewListPSUOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PSUOpenBankingConnectionAttemptsQuery{}).
+		q := NewListOpenBankingConnectionAttemptsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Lt("id", "test")),
 		)
@@ -316,8 +316,8 @@ func TestOpenBankingConnectionAttemptsList(t *testing.T) {
 	})
 
 	t.Run("unknown query key", func(t *testing.T) {
-		q := NewListPSUOpenBankingConnectionAttemptsQuery(
-			bunpaginate.NewPaginatedQueryOptions(PSUOpenBankingConnectionAttemptsQuery{}).
+		q := NewListOpenBankingConnectionAttemptsQuery(
+			bunpaginate.NewPaginatedQueryOptions(OpenBankingConnectionAttemptsQuery{}).
 				WithPageSize(15).
 				WithQueryBuilder(query.Match("unknown", "test")),
 		)

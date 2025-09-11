@@ -668,7 +668,7 @@ func (mr *MockBackendMockRecorder) PaymentServiceUsersLinkAttemptsGet(ctx, psuID
 }
 
 // PaymentServiceUsersLinkAttemptsList mocks base method.
-func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
+func (m *MockBackend) PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "PaymentServiceUsersLinkAttemptsList", ctx, psuID, connectorID, query)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnectionAttempt])

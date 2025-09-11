@@ -78,7 +78,7 @@ type Backend interface {
 	PaymentServiceUsersConnectorDelete(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (models.Task, error)
 	PaymentServiceUsersConnectionsList(ctx context.Context, psuID uuid.UUID, connectorID *models.ConnectorID, query storage.ListOpenBankingConnectionsQuery) (*bunpaginate.Cursor[models.OpenBankingConnection], error)
 	PaymentServiceUsersConnectionsDelete(ctx context.Context, connectorID models.ConnectorID, psuID uuid.UUID, connectionID string) (models.Task, error)
-	PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error)
+	PaymentServiceUsersLinkAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query storage.ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error)
 	PaymentServiceUsersLinkAttemptsGet(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, id uuid.UUID) (*models.OpenBankingConnectionAttempt, error)
 	PaymentServiceUsersCreateLink(ctx context.Context, ApplicationName string, psuID uuid.UUID, connectorID models.ConnectorID, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)
 	PaymentServiceUsersUpdateLink(ctx context.Context, applicationName string, psuID uuid.UUID, connectorID models.ConnectorID, connectionID string, idempotencyKey *uuid.UUID, ClientRedirectURL *string) (string, string, error)

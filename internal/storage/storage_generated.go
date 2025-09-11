@@ -620,7 +620,7 @@ func (mr *MockStorageMockRecorder) OpenBankingConnectionAttemptsGet(ctx, id any)
 }
 
 // OpenBankingConnectionAttemptsList mocks base method.
-func (m *MockStorage) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListPSUOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
+func (m *MockStorage) OpenBankingConnectionAttemptsList(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID, query ListOpenBankingConnectionAttemptsQuery) (*bunpaginate.Cursor[models.OpenBankingConnectionAttempt], error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "OpenBankingConnectionAttemptsList", ctx, psuID, connectorID, query)
 	ret0, _ := ret[0].(*bunpaginate.Cursor[models.OpenBankingConnectionAttempt])
