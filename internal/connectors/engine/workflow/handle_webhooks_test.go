@@ -652,7 +652,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success_W
 		ConnectorID: s.connectorID,
 		PSPUserID:   &pspUserID,
 	}, nil)
-	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, id uuid.UUID, from models.OpenBankingConnection) error {
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsStoreActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, id uuid.UUID, from models.OpenBankingConnection) error {
 		s.Equal(id, psuID)
 		s.Equal(from.ConnectionID, connectionID)
 		s.Equal(from.ConnectorID, s.connectorID)
@@ -695,7 +695,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_Success_W
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePSUOpenBankingConnectionsGetFromConnectionID_Error() {
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StorageOpenBankingConnectionsGetFromConnectionID_Error() {
 	connectionID := "test-connection-id"
 
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -743,7 +743,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePS
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StoragePSUOpenBankingConnectionsStore_Error() {
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionDisconnected_StorageOpenBankingConnectionsStore_Error() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
 	reason := "test reason"
@@ -938,7 +938,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_Success_Wi
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StoragePSUOpenBankingConnectionsGetFromConnectionID_Error() {
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StorageOpenBankingConnectionsGetFromConnectionID_Error() {
 	connectionID := "test-connection-id"
 
 	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
@@ -985,7 +985,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StoragePSU
 	s.ErrorContains(err, "error-test")
 }
 
-func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StoragePSUOpenBankingConnectionsStore_Error() {
+func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionReconnected_StorageOpenBankingConnectionsStore_Error() {
 	connectionID := "test-connection-id"
 	psuID := uuid.New()
 	at := time.Now()
