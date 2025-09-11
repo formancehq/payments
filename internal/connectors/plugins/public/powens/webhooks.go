@@ -240,7 +240,7 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 
 		transactionResponses := make([]models.WebhookResponse, 0, len(account.Transactions))
 		for _, transaction := range account.Transactions {
-			payment, err := translateTransactionToPSPPayment(transaction, account.Currency.ID, account.Currency.Precision)
+			payment, err := translateTransactionToPSPPayment(transaction, pspAccount.Reference, account.Currency.ID, account.Currency.Precision)
 			if err != nil {
 				return nil, err
 			}
@@ -407,7 +407,7 @@ func translateBankAccountToPSPAccount(account client.BankAccount) (models.PSPAcc
 	return res, nil
 }
 
-func translateTransactionToPSPPayment(transaction client.Transaction, curr string, precision int) (models.PSPPayment, error) {
+func translateTransactionToPSPPayment(transaction client.Transaction, accountReference string, curr string, precision int) (models.PSPPayment, error) {
 	paymentType := models.PAYMENT_TYPE_PAYIN
 	if transaction.Value < 0 {
 		paymentType = models.PAYMENT_TYPE_PAYOUT
@@ -425,7 +425,7 @@ func translateTransactionToPSPPayment(transaction client.Transaction, curr strin
 		return models.PSPPayment{}, err
 	}
 
-	return models.PSPPayment{
+	p := models.PSPPayment{
 		Reference: strconv.Itoa(transaction.ID),
 		CreatedAt: transaction.Date,
 		Type:      paymentType,
@@ -434,5 +434,14 @@ func translateTransactionToPSPPayment(transaction client.Transaction, curr strin
 		Scheme:    models.PAYMENT_SCHEME_OTHER,
 		Status:    models.PAYMENT_STATUS_SUCCEEDED,
 		Raw:       raw,
-	}, nil
+	}
+
+	switch paymentType {
+	case models.PAYMENT_TYPE_PAYIN:
+		p.DestinationAccountReference = &accountReference
+	case models.PAYMENT_TYPE_PAYOUT:
+		p.SourceAccountReference = &accountReference
+	}
+
+	return p, nil
 }
