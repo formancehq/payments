@@ -203,7 +203,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			Expect(statusCode).To(Equal(http.StatusNoContent))
 
 			attemptPoller := pollAttempts(ctx, app, psuID, connectorID, GinkgoT())
-			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3PSUOpenBankingConnectionAttemptStatusEnumCompleted)}...))
+			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3OpenBankingConnectionAttemptStatusEnumCompleted)}...))
 
 			connectionPoller := pollConnection(ctx, app, psuID, GinkgoT())
 			Eventually(connectionPoller()).WithTimeout(10 * time.Second).Should(HaveUserConnectionsLengthMatcher(1, []PayloadMatcher{HaveUserConnectionStatus(components.V3ConnectionStatusEnumActive)}...))
@@ -283,7 +283,7 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 			Expect(statusCode).To(Equal(http.StatusNoContent))
 
 			attemptPoller := pollAttempts(ctx, app, psuID, connectorID, GinkgoT())
-			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3PSUOpenBankingConnectionAttemptStatusEnumExited)}...))
+			Eventually(attemptPoller()).WithTimeout(10 * time.Second).Should(HaveLinkAttemptsLengthMatcher(1, []PayloadMatcher{HaveLinkAttemptStatus(components.V3OpenBankingConnectionAttemptStatusEnumExited)}...))
 
 			connectionPoller := pollConnection(ctx, app, psuID, GinkgoT())
 			Eventually(connectionPoller()).WithTimeout(10 * time.Second).Should(HaveUserConnectionsLengthMatcher(0))

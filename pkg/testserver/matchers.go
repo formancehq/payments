@@ -193,7 +193,7 @@ func HaveLinkAttemptsLengthMatcher(length int, matchers ...PayloadMatcher) types
 }
 
 type LinkAttemptStatusMatcher struct {
-	status components.V3PSUOpenBankingConnectionAttemptStatusEnum
+	status components.V3OpenBankingConnectionAttemptStatusEnum
 }
 
 func (t *LinkAttemptStatusMatcher) Match(actual any) error {
@@ -209,7 +209,7 @@ func (t *LinkAttemptStatusMatcher) Match(actual any) error {
 	return nil
 }
 
-func HaveLinkAttemptStatus(status components.V3PSUOpenBankingConnectionAttemptStatusEnum) PayloadMatcher {
+func HaveLinkAttemptStatus(status components.V3OpenBankingConnectionAttemptStatusEnum) PayloadMatcher {
 	return &LinkAttemptStatusMatcher{
 		status: status,
 	}

@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: b8ba6e1277e8de44263c10084ee135cf
+  docChecksum: 1b279e480d776e792ce044e9201cea96
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -167,6 +167,7 @@ generatedFiles:
   - /models/components/v3mangopayconfig.go
   - /models/components/v3modulrconfig.go
   - /models/components/v3moneycorpconfig.go
+  - /models/components/v3openbankingconnectionattemptstatusenum.go
   - /models/components/v3payment.go
   - /models/components/v3paymentadjustment.go
   - /models/components/v3paymentinitiation.go
@@ -198,7 +199,6 @@ generatedFiles:
   - /models/components/v3poolbalancesresponse.go
   - /models/components/v3poolscursorresponse.go
   - /models/components/v3powensconfig.go
-  - /models/components/v3psuopenbankingconnectionattemptstatusenum.go
   - /models/components/v3qontoconfig.go
   - /models/components/v3resetconnectorresponse.go
   - /models/components/v3retrypaymentinitiationresponse.go
@@ -500,6 +500,7 @@ generatedFiles:
   - docs/models/components/v3mangopayconfig.md
   - docs/models/components/v3modulrconfig.md
   - docs/models/components/v3moneycorpconfig.md
+  - docs/models/components/v3openbankingconnectionattemptstatusenum.md
   - docs/models/components/v3payment.md
   - docs/models/components/v3paymentadjustment.md
   - docs/models/components/v3paymentadjustmentraw.md
@@ -543,7 +544,6 @@ generatedFiles:
   - docs/models/components/v3poolscursorresponse.md
   - docs/models/components/v3poolscursorresponsecursor.md
   - docs/models/components/v3powensconfig.md
-  - docs/models/components/v3psuopenbankingconnectionattemptstatusenum.md
   - docs/models/components/v3qontoconfig.md
   - docs/models/components/v3resetconnectorresponse.md
   - docs/models/components/v3retrypaymentinitiationresponse.md

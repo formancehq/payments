@@ -5960,7 +5960,7 @@ None ( Scopes: payments:read )
 |psuID|string|true|none|none|
 |connectorID|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
-|status|[V3PSUOpenBankingConnectionAttemptStatusEnum](#schemav3psuopenbankingconnectionattemptstatusenum)|true|none|none|
+|status|[V3OpenBankingConnectionAttemptStatusEnum](#schemav3openbankingconnectionattemptstatusenum)|true|none|none|
 |clientRedirectURL|string(url)|true|none|none|
 |error|string¦null|false|none|none|
 
@@ -6127,12 +6127,12 @@ None ( Scopes: payments:read )
 |*anonymous*|ACTIVE|
 |*anonymous*|ERROR|
 
-<h2 id="tocS_V3PSUOpenBankingConnectionAttemptStatusEnum">V3PSUOpenBankingConnectionAttemptStatusEnum</h2>
+<h2 id="tocS_V3OpenBankingConnectionAttemptStatusEnum">V3OpenBankingConnectionAttemptStatusEnum</h2>
 <!-- backwards compatibility -->
-<a id="schemav3psuopenbankingconnectionattemptstatusenum"></a>
-<a id="schema_V3PSUOpenBankingConnectionAttemptStatusEnum"></a>
-<a id="tocSv3psuopenbankingconnectionattemptstatusenum"></a>
-<a id="tocsv3psuopenbankingconnectionattemptstatusenum"></a>
+<a id="schemav3openbankingconnectionattemptstatusenum"></a>
+<a id="schema_V3OpenBankingConnectionAttemptStatusEnum"></a>
+<a id="tocSv3openbankingconnectionattemptstatusenum"></a>
+<a id="tocsv3openbankingconnectionattemptstatusenum"></a>
 
 ```json
 "pending"
