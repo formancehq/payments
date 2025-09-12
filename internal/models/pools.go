@@ -13,6 +13,7 @@ type Pool struct {
 	CreatedAt time.Time `json:"createdAt"`
 
 	PoolAccounts []AccountID `json:"poolAccounts"`
+	Query        *string    `json:"query,omitempty"`
 }
 
 func (p Pool) MarshalJSON() ([]byte, error) {
@@ -21,6 +22,7 @@ func (p Pool) MarshalJSON() ([]byte, error) {
 		Name         string    `json:"name"`
 		CreatedAt    time.Time `json:"createdAt"`
 		PoolAccounts []string  `json:"poolAccounts"`
+		Query        *string   `json:"query,omitempty"`
 	}
 
 	aux.ID = p.ID.String()
@@ -31,6 +33,7 @@ func (p Pool) MarshalJSON() ([]byte, error) {
 	for i := range p.PoolAccounts {
 		aux.PoolAccounts[i] = p.PoolAccounts[i].String()
 	}
+	aux.Query = p.Query
 
 	return json.Marshal(aux)
 }
@@ -41,6 +44,7 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 		Name         string    `json:"name"`
 		CreatedAt    time.Time `json:"createdAt"`
 		PoolAccounts []string  `json:"poolAccounts"`
+		Query        *string   `json:"query"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -65,6 +69,7 @@ func (p *Pool) UnmarshalJSON(data []byte) error {
 	p.Name = aux.Name
 	p.CreatedAt = aux.CreatedAt
 	p.PoolAccounts = poolAccounts
+	p.Query = aux.Query
 
 	return nil
 }
@@ -77,9 +82,11 @@ func (p *Pool) IdempotencyKey() string {
 	var ik = struct {
 		ID              string
 		RelatedAccounts []string
+		Query           *string
 	}{
 		ID:              p.ID.String(),
 		RelatedAccounts: relatedAccounts,
+		Query:           p.Query,
 	}
 	return IdempotencyKey(ik)
 }

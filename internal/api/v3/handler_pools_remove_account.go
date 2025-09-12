@@ -24,6 +24,12 @@ func poolsRemoveAccount(backend backend.Backend) http.HandlerFunc {
 			return
 		}
 
+		// Forbid removing accounts from dynamic pools (query-based)
+		if p, err := backend.PoolsGet(ctx, id); err == nil && p != nil && p.Query != nil {
+			api.BadRequest(w, ErrValidation, models.ErrValidation)
+			return
+		}
+
 		span.SetAttributes(attribute.String("accountID", accountID(r)))
 		accountID, err := models.AccountIDFromString(accountID(r))
 		if err != nil {
