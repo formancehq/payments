@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"encoding/json"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -20,6 +21,8 @@ type pool struct {
 	ID        uuid.UUID `bun:"id,pk,type:uuid,notnull"`
 	Name      string    `bun:"name,type:text,notnull"`
 	CreatedAt time.Time `bun:"created_at,type:timestamp without time zone,notnull"`
+
+	Query json.RawMessage `bun:"query,type:jsonb,nullzero"`
 
 	PoolAccounts []*poolAccounts `bun:"rel:has-many,join:id=pool_id"`
 }
@@ -84,6 +87,36 @@ func (s *store) PoolsGet(ctx context.Context, id uuid.UUID) (*models.Pool, error
 		Scan(ctx)
 	if err != nil {
 		return nil, e("get pool: %w", err)
+	}
+
+	// If dynamic pool (query set), resolve matching accounts at read time
+	if len(pool.Query) > 0 {
+		qb, err := query.ParseJSON(string(pool.Query))
+		if err != nil {
+			return nil, e("parse pool query: %w", err)
+		}
+		where, args, err := s.accountsQueryContext(qb)
+		if err != nil {
+			return nil, e("build accounts query for pool: %w", err)
+		}
+
+		var accs []account
+		q := s.db.NewSelect().Model(&accs)
+		if where != "" {
+			q = q.Where(where, args...)
+		}
+		if err := q.Scan(ctx); err != nil {
+			return nil, e("scan dynamic pool accounts: %w", err)
+		}
+		pool.PoolAccounts = make([]*poolAccounts, 0, len(accs))
+		for i := range accs {
+			acc := accs[i]
+			pool.PoolAccounts = append(pool.PoolAccounts, &poolAccounts{
+				PoolID:      pool.ID,
+				AccountID:   acc.ID,
+				ConnectorID: acc.ConnectorID,
+			})
+		}
 	}
 
 	return pointer.For(toPoolModel(pool)), nil
@@ -272,6 +305,9 @@ func fromPoolModel(from models.Pool) (pool, []poolAccounts) {
 		Name:      from.Name,
 		CreatedAt: time.New(from.CreatedAt),
 	}
+	if from.Query != nil {
+		p.Query = json.RawMessage(*from.Query)
+	}
 
 	var accounts []poolAccounts
 	for i := range from.PoolAccounts {
@@ -291,10 +327,17 @@ func toPoolModel(from pool) models.Pool {
 		accounts = append(accounts, from.PoolAccounts[i].AccountID)
 	}
 
+	var queryString *string
+	if len(from.Query) > 0 {
+		qs := string(from.Query)
+		queryString = &qs
+	}
+
 	return models.Pool{
 		ID:           from.ID,
 		Name:         from.Name,
 		CreatedAt:    from.CreatedAt.Time,
 		PoolAccounts: accounts,
+		Query:        queryString,
 	}
 }

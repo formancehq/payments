@@ -48,6 +48,8 @@ var psuConnectionPaymentsAccounts string
 
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
+//go:embed 23-pools-query.sql
+var poolsQuery string
 
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
@@ -318,6 +320,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running rename bank bridges to open banking migration...")
 					_, err := tx.ExecContext(ctx, renameBankBridgesOpenBanking)
 					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "pools query column",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running pools query column migration...")
+					_, err := tx.ExecContext(ctx, poolsQuery)
+					logger.WithField("error", err).Info("finished running pools query column migration")
 					return err
 				})
 			},
