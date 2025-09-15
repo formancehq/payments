@@ -5,7 +5,8 @@ import (
 	"time"
 )
 
-type Connector struct {
+// simplified view without private info
+type ConnectorBase struct {
 	// Unique ID of the connector
 	ID ConnectorID `json:"id"`
 	// Name given by the user to the connector
@@ -14,6 +15,11 @@ type Connector struct {
 	CreatedAt time.Time `json:"createdAt"`
 	// Provider type
 	Provider string `json:"provider"`
+}
+
+type Connector struct {
+	ConnectorBase
+
 	// ScheduledForDeletion indicates if the connector is scheduled for deletion
 	ScheduledForDeletion bool `json:"scheduledForDeletion"`
 
@@ -23,6 +29,15 @@ type Connector struct {
 
 func (c *Connector) IdempotencyKey() string {
 	return IdempotencyKey(c.ID)
+}
+
+func (c *Connector) Base() *ConnectorBase {
+	return &ConnectorBase{
+		ID:        c.ID,
+		Name:      c.Name,
+		CreatedAt: c.CreatedAt,
+		Provider:  c.Provider,
+	}
 }
 
 func (c Connector) MarshalJSON() ([]byte, error) {

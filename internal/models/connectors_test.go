@@ -21,7 +21,9 @@ func TestConnectorIdempotencyKey(t *testing.T) {
 	}
 
 	connector := models.Connector{
-		ID: id,
+		ConnectorBase: models.ConnectorBase{
+			ID: id,
+		},
 	}
 
 	key := connector.IdempotencyKey()
@@ -38,10 +40,12 @@ func TestConnectorMarshalJSON(t *testing.T) {
 	}
 
 	connector := models.Connector{
-		ID:                   id,
-		Name:                 "Test Connector",
-		CreatedAt:            now,
-		Provider:             "stripe",
+		ConnectorBase: models.ConnectorBase{
+			ID:        id,
+			Name:      "Test Connector",
+			CreatedAt: now,
+			Provider:  "stripe",
+		},
 		Config:               json.RawMessage(`{"apiKey": "test_key"}`),
 		ScheduledForDeletion: false,
 	}

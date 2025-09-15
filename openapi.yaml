@@ -4093,6 +4093,8 @@ components:
         connectorID:
           type: string
           format: byte
+        connector:
+          $ref: '#/components/schemas/V3ConnectorBase'
         provider:
           type: string
         reference:
@@ -4490,6 +4492,20 @@ components:
           type: boolean
         config:
           type: object
+    V3ConnectorBase:
+      type: object
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        provider:
+          type: string
     V3Schedule:
       type: object
       required:

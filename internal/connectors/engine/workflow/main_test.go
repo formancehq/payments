@@ -293,10 +293,12 @@ func (s *UnitTestSuite) addData() {
 	}
 
 	s.connector = models.Connector{
-		ID:                   s.connectorID,
-		Name:                 "test",
-		CreatedAt:            now,
-		Provider:             "test",
+		ConnectorBase: models.ConnectorBase{
+			ID:        s.connectorID,
+			Name:      "test",
+			CreatedAt: now,
+			Provider:  "test",
+		},
 		ScheduledForDeletion: false,
 		Config:               []byte(`{"name": "test", "pollingPeriod": "2m", "pageSize": 25}`),
 	}

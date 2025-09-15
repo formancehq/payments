@@ -46,10 +46,12 @@ var _ = Describe("API v2 Connectors List", func() {
 				&bunpaginate.Cursor[models.Connector]{
 					Data: []models.Connector{
 						{
-							ID:                   models.ConnectorID{},
-							Name:                 "test",
-							CreatedAt:            time.Now().UTC(),
-							Provider:             "test",
+							ConnectorBase: models.ConnectorBase{
+								ID:        models.ConnectorID{},
+								Name:      "test",
+								CreatedAt: time.Now().UTC(),
+								Provider:  "test",
+							},
 							ScheduledForDeletion: false,
 							Config:               []byte("{}"),
 						},

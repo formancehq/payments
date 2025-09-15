@@ -34,6 +34,8 @@ type account struct {
 	// Optional fields with default
 	// c.f. https://bun.uptrace.dev/guide/models.html#default
 	Metadata map[string]string `bun:"metadata,type:jsonb,nullzero,notnull,default:'{}'"`
+
+	Connector *connector `bun:"rel:belongs-to,join:connector_id=id,alt:connector_"`
 }
 
 func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) error {
@@ -60,7 +62,8 @@ func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.A
 
 	err := s.db.NewSelect().
 		Model(&account).
-		Where("id = ?", id).
+		Where("account.id = ?", id).
+		Relation("Connector").
 		Scan(ctx)
 	if err != nil {
 		return nil, e("failed to get account", err)
@@ -142,14 +145,14 @@ func (s *store) accountsQueryContext(qb query.Builder) (string, []any, error) {
 			key == "name",
 			key == "psu_id",
 			key == "open_banking_connection_id":
-			return fmt.Sprintf("%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
+			return fmt.Sprintf("account.%s %s ?", key, query.DefaultComparisonOperatorsMapping[operator]), []any{value}, nil
 		case metadataRegex.Match([]byte(key)):
 			if operator != "$match" {
 				return "", nil, fmt.Errorf("'%s' column can only be used with $match: %w", key, ErrValidation)
 			}
 			match := metadataRegex.FindAllStringSubmatch(key, 3)
 
-			key := "metadata"
+			key := "account.metadata"
 			return key + " @> ?", []any{map[string]any{
 				match[0][1]: value,
 			}}, nil
@@ -178,9 +181,10 @@ func (s *store) AccountsList(ctx context.Context, q ListAccountsQuery) (*bunpagi
 			if where != "" {
 				query = query.Where(where, args...)
 			}
+			query = query.Relation("Connector")
 
 			// TODO(polo): sorter ?
-			query = query.Order("created_at DESC", "sort_id DESC")
+			query = query.Order("account.created_at DESC", "account.sort_id DESC")
 
 			return query
 		},
@@ -220,9 +224,14 @@ func fromAccountModels(from models.Account) account {
 }
 
 func toAccountModels(from account) models.Account {
+	var c models.ConnectorBase
+	if from.Connector != nil {
+		c = toConnectorBaseModels(*from.Connector)
+	}
 	return models.Account{
 		ID:                      from.ID,
 		ConnectorID:             from.ConnectorID,
+		Connector:               &c,
 		Reference:               from.Reference,
 		CreatedAt:               from.CreatedAt.Time,
 		Type:                    models.AccountType(from.Type),

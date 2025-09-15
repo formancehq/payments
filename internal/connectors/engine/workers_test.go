@@ -41,8 +41,8 @@ var _ = Describe("Worker Tests", func() {
 			connID2 := models.ConnectorID{Reference: uuid.New(), Provider: "provider2"}
 
 			conns = []models.Connector{
-				{ID: connID1, Name: "abc-connector", Provider: connID1.Provider, CreatedAt: time.Now().Add(-time.Minute), Config: json.RawMessage(`{}`)},
-				{ID: connID2, Name: "efg-connector", Provider: connID2.Provider, CreatedAt: time.Now(), Config: json.RawMessage(`{}`)},
+				{ConnectorBase: models.ConnectorBase{ID: connID1, Name: "abc-connector", Provider: connID1.Provider, CreatedAt: time.Now().Add(-time.Minute)}, Config: json.RawMessage(`{}`)},
+				{ConnectorBase: models.ConnectorBase{ID: connID2, Name: "efg-connector", Provider: connID2.Provider, CreatedAt: time.Now()}, Config: json.RawMessage(`{}`)},
 			}
 
 		})

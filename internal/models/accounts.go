@@ -59,7 +59,8 @@ type Account struct {
 	// Unique Account ID generated from account information
 	ID AccountID `json:"id"`
 	// Related Connector ID
-	ConnectorID ConnectorID `json:"connectorID"`
+	ConnectorID ConnectorID    `json:"connectorID"`
+	Connector   *ConnectorBase `json:"connector"`
 
 	// PSP reference of the account. Should be unique.
 	Reference string `json:"reference"`
