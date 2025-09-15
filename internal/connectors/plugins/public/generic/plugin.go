@@ -3,6 +3,7 @@ package generic
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/payments/internal/connectors/plugins"
@@ -91,6 +92,40 @@ func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
+}
+
+func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
+	if p.client == nil {
+		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.createPayout(ctx, req.PaymentInitiation)
+	if err != nil {
+		return models.CreatePayoutResponse{}, err
+	}
+
+	return models.CreatePayoutResponse{
+		Payment: &payment,
+	}, nil
+}
+
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	return models.ReversePayoutResponse{}, fmt.Errorf("payout reversal not supported by generic connector")
+}
+
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	if p.client == nil {
+		return models.PollPayoutStatusResponse{}, plugins.ErrNotYetInstalled
+	}
+
+	payment, err := p.pollPayoutStatus(ctx, req.PayoutID)
+	if err != nil {
+		return models.PollPayoutStatusResponse{}, err
+	}
+
+	return models.PollPayoutStatusResponse{
+		Payment: &payment,
+	}, nil
 }
 
 var _ models.Plugin = &Plugin{}

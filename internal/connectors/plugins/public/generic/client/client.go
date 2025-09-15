@@ -18,6 +18,8 @@ type Client interface {
 	GetBalances(ctx context.Context, accountID string) (*genericclient.Balances, error)
 	ListBeneficiaries(ctx context.Context, page, pageSize int64, createdAtFrom time.Time) ([]genericclient.Beneficiary, error)
 	ListTransactions(ctx context.Context, page, pageSize int64, updatedAtFrom time.Time) ([]genericclient.Transaction, error)
+	CreatePayout(ctx context.Context, request *PayoutRequest) (*PayoutResponse, error)
+	GetPayoutStatus(ctx context.Context, payoutId string) (*PayoutResponse, error)
 }
 
 type apiTransport struct {
