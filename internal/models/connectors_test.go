@@ -30,6 +30,110 @@ func TestConnectorIdempotencyKey(t *testing.T) {
 	assert.Equal(t, models.IdempotencyKey(id), key)
 }
 
+func TestConnectorBaseMarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	id := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}
+
+	connector := models.ConnectorBase{
+		ID:        id,
+		Name:      "Test Connector",
+		CreatedAt: now,
+		Provider:  "stripe",
+	}
+
+	data, err := json.Marshal(connector)
+	// Then
+	require.NoError(t, err)
+
+	var jsonMap map[string]interface{}
+	err = json.Unmarshal(data, &jsonMap)
+	// Then
+	require.NoError(t, err)
+
+	assert.Equal(t, id.String(), jsonMap["id"])
+	assert.Equal(t, id.Reference.String(), jsonMap["reference"])
+	assert.Equal(t, "Test Connector", jsonMap["name"])
+	assert.Equal(t, "stripe", jsonMap["provider"])
+}
+
+func TestConnectorBaseUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	id := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+	}
+
+	t.Run("valid JSON", func(t *testing.T) {
+		t.Parallel()
+		// Given
+
+		encodedID := id.String()
+
+		jsonData := `{
+			"id": "` + encodedID + `",
+			"reference": "00000000-0000-0000-0000-000000000001",
+			"name": "Test Connector",
+			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
+			"provider": "stripe"
+		}`
+
+		var connector models.ConnectorBase
+
+		err := json.Unmarshal([]byte(jsonData), &connector)
+
+		// Then
+		require.NoError(t, err)
+
+		assert.Equal(t, id.String(), connector.ID.String())
+		assert.Equal(t, "Test Connector", connector.Name)
+		assert.Equal(t, now.Format(time.RFC3339), connector.CreatedAt.Format(time.RFC3339))
+		assert.Equal(t, "stripe", connector.Provider)
+	})
+
+	t.Run("invalid JSON", func(t *testing.T) {
+		t.Parallel()
+		// Given
+
+		jsonData := `{invalid json}`
+
+		var connector models.ConnectorBase
+
+		err := json.Unmarshal([]byte(jsonData), &connector)
+
+		// Then
+		require.Error(t, err)
+	})
+
+	t.Run("invalid ID", func(t *testing.T) {
+		t.Parallel()
+		// Given
+
+		jsonData := `{
+			"id": "invalid-id",
+			"reference": "00000000-0000-0000-0000-000000000001",
+			"name": "Test Connector",
+			"createdAt": "` + now.Format(time.RFC3339Nano) + `",
+			"provider": "stripe",
+			"config": "eyJhcGlLZXkiOiAidGVzdF9rZXkifQ==",
+			"scheduledForDeletion": false
+		}`
+
+		var connector models.ConnectorBase
+
+		err := json.Unmarshal([]byte(jsonData), &connector)
+
+		// Then
+		require.Error(t, err)
+	})
+}
+
 func TestConnectorMarshalJSON(t *testing.T) {
 	t.Parallel()
 

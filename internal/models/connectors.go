@@ -17,6 +17,47 @@ type ConnectorBase struct {
 	Provider string `json:"provider"`
 }
 
+func (c ConnectorBase) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		ID        string    `json:"id"`
+		Reference string    `json:"reference"`
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"createdAt"`
+		Provider  string    `json:"provider"`
+	}{
+		ID:        c.ID.String(),
+		Reference: c.ID.Reference.String(),
+		Name:      c.Name,
+		CreatedAt: c.CreatedAt,
+		Provider:  ToV3Provider(c.Provider),
+	})
+}
+
+func (c *ConnectorBase) UnmarshalJSON(data []byte) error {
+	var aux struct {
+		ID        string    `json:"id"`
+		Reference string    `json:"reference"`
+		Name      string    `json:"name"`
+		CreatedAt time.Time `json:"createdAt"`
+		Provider  string    `json:"provider"`
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	id, err := ConnectorIDFromString(aux.ID)
+	if err != nil {
+		return err
+	}
+
+	c.ID = id
+	c.Name = aux.Name
+	c.CreatedAt = aux.CreatedAt
+	c.Provider = aux.Provider
+	return nil
+}
+
 type Connector struct {
 	ConnectorBase
 
@@ -62,28 +103,22 @@ func (c Connector) MarshalJSON() ([]byte, error) {
 
 func (c *Connector) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		ID                   string          `json:"id"`
-		Reference            string          `json:"reference"`
-		Name                 string          `json:"name"`
-		CreatedAt            time.Time       `json:"createdAt"`
-		Provider             string          `json:"provider"`
 		Config               json.RawMessage `json:"config"`
 		ScheduledForDeletion bool            `json:"scheduledForDeletion"`
 	}
-
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
 
-	id, err := ConnectorIDFromString(aux.ID)
-	if err != nil {
+	var base ConnectorBase
+	if err := json.Unmarshal(data, &base); err != nil {
 		return err
 	}
 
-	c.ID = id
-	c.Name = aux.Name
-	c.CreatedAt = aux.CreatedAt
-	c.Provider = aux.Provider
+	c.ID = base.ID
+	c.Name = base.Name
+	c.CreatedAt = base.CreatedAt
+	c.Provider = base.Provider
 	c.Config = aux.Config
 	c.ScheduledForDeletion = aux.ScheduledForDeletion
 

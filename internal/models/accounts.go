@@ -92,6 +92,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		ID                      string            `json:"id"`
 		ConnectorID             string            `json:"connectorID"`
+		Connector               *ConnectorBase    `json:"connector"`
 		Provider                string            `json:"provider"`
 		Reference               string            `json:"reference"`
 		CreatedAt               time.Time         `json:"createdAt"`
@@ -105,6 +106,7 @@ func (a Account) MarshalJSON() ([]byte, error) {
 	}{
 		ID:           a.ID.String(),
 		ConnectorID:  a.ConnectorID.String(),
+		Connector:    a.Connector,
 		Provider:     ToV3Provider(a.ConnectorID.Provider),
 		Reference:    a.Reference,
 		CreatedAt:    a.CreatedAt,
@@ -131,6 +133,7 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 	var aux struct {
 		ID                      string            `json:"id"`
 		ConnectorID             string            `json:"connectorID"`
+		Connector               *ConnectorBase    `json:"connector"`
 		Reference               string            `json:"reference"`
 		CreatedAt               time.Time         `json:"createdAt"`
 		Type                    AccountType       `json:"type"`
@@ -170,6 +173,7 @@ func (a *Account) UnmarshalJSON(data []byte) error {
 
 	a.ID = id
 	a.ConnectorID = connectorID
+	a.Connector = aux.Connector
 	a.Reference = aux.Reference
 	a.CreatedAt = aux.CreatedAt
 	a.Type = aux.Type
