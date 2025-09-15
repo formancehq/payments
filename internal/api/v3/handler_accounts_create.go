@@ -70,14 +70,14 @@ func accountsCreate(backend backend.Backend, validator *validation.Validator) ht
 			Raw:          raw,
 		}
 
-		err = backend.AccountsCreate(ctx, account)
+		out, err := backend.AccountsCreate(ctx, account)
 		if err != nil {
 			otel.RecordError(span, err)
 			handleServiceErrors(w, r, err)
 			return
 		}
 
-		api.Created(w, account)
+		api.Created(w, *out)
 	}
 }
 
