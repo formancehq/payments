@@ -224,14 +224,9 @@ func fromAccountModels(from models.Account) account {
 }
 
 func toAccountModels(from account) models.Account {
-	var c models.ConnectorBase
-	if from.Connector != nil {
-		c = toConnectorBaseModels(*from.Connector)
-	}
-	return models.Account{
+	acc := models.Account{
 		ID:                      from.ID,
 		ConnectorID:             from.ConnectorID,
-		Connector:               &c,
 		Reference:               from.Reference,
 		CreatedAt:               from.CreatedAt.Time,
 		Type:                    models.AccountType(from.Type),
@@ -242,4 +237,10 @@ func toAccountModels(from account) models.Account {
 		Metadata:                from.Metadata,
 		Raw:                     from.Raw,
 	}
+
+	if from.Connector != nil {
+		c := toConnectorBaseModels(*from.Connector)
+		acc.Connector = &c
+	}
+	return acc
 }
