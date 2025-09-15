@@ -143,26 +143,27 @@ var _ = Describe("Generic Plugin", func() {
 	})
 
 	Context("create payout", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail because not yet installed", func(ctx SpecContext) {
 			req := models.CreatePayoutRequest{}
 			_, err := plg.CreatePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
 	Context("reverse payout", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail because not supported", func(ctx SpecContext) {
 			req := models.ReversePayoutRequest{}
 			_, err := plg.ReversePayout(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(ContainSubstring("payout reversal not supported"))
 		})
 	})
 
 	Context("poll payout status", func() {
-		It("should fail because not implemented", func(ctx SpecContext) {
+		It("should fail because not yet installed", func(ctx SpecContext) {
 			req := models.PollPayoutStatusRequest{}
 			_, err := plg.PollPayoutStatus(ctx, req)
-			Expect(err).To(MatchError(plugins.ErrNotImplemented))
+			Expect(err).To(MatchError(plugins.ErrNotYetInstalled))
 		})
 	})
 
