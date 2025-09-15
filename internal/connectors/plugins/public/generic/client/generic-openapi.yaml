@@ -62,12 +62,46 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /payouts:
+    post:
+      summary: Create payout
+      operationId: createPayout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayoutRequest'
+      responses:
+        201:
+          $ref: '#/components/responses/PayoutResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /payouts/{payoutId}:
+    get:
+      summary: Get payout status
+      operationId: getPayoutStatus
+      parameters:
+        - $ref: '#/components/parameters/PayoutId'
+      responses:
+        200:
+          $ref: '#/components/responses/PayoutResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
 # ---------------------- COMPONENTS ----------------------
 components:
   # ---------------------- PARAMETERS ----------------------
   parameters:
     AccountId:
       name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+    PayoutId:
+      name: payoutId
       in: path
       required: true
       schema:
@@ -159,6 +193,13 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/Transaction'
+
+    PayoutResponse:
+      description: Payout response
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Payout'
 
   # ---------------------- SCHEMAS ----------------------
   schemas:
@@ -296,3 +337,77 @@ components:
         - PENDING
         - SUCCEEDED
         - FAILED
+
+    PayoutRequest:
+      type: object
+      required:
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+      properties:
+        idempotencyKey:
+          type: string
+          description: Unique identifier for the payout request
+        amount:
+          type: string
+          description: Payout amount
+        currency:
+          type: string
+          description: Currency code (ISO 4217)
+        sourceAccountId:
+          type: string
+          description: Source account identifier
+        destinationAccountId:
+          type: string
+          description: Destination account identifier
+        description:
+          type: string
+          description: Payout description
+        metadata:
+          $ref: '#/components/schemas/Metadata'
+
+    Payout:
+      type: object
+      required:
+        - id
+        - idempotencyKey
+        - amount
+        - currency
+        - sourceAccountId
+        - destinationAccountId
+        - status
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: Payout identifier
+        idempotencyKey:
+          type: string
+          description: Unique identifier for the payout request
+        amount:
+          type: string
+          description: Payout amount
+        currency:
+          type: string
+          description: Currency code (ISO 4217)
+        sourceAccountId:
+          type: string
+          description: Source account identifier
+        destinationAccountId:
+          type: string
+          description: Destination account identifier
+        description:
+          type: string
+          description: Payout description
+        status:
+          $ref: '#/components/schemas/TransactionStatus'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        metadata:
+          $ref: '#/components/schemas/Metadata'
