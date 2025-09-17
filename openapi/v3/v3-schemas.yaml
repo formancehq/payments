@@ -1570,7 +1570,6 @@ components:
       type: object
       required:
         - name
-        - accountIDs
       properties:
         name:
           type: string
@@ -1578,6 +1577,9 @@ components:
           type: array
           items:
             type: string
+        query:
+          type: string
+          description: JSON query builder to dynamically include accounts. Mutually exclusive with accountIDs.
 
     V3CreatePoolResponse:
       type: object
@@ -1654,6 +1656,9 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/V3AccountID'
+        query:
+          type: string
+          description: JSON query defining dynamic membership for the pool.
 
     V3PoolBalances:
       type: array
