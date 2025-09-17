@@ -22,7 +22,7 @@ type ErrConnectorCapabilityNotSupported struct {
 }
 
 func (e *ErrConnectorCapabilityNotSupported) Error() string {
-	return fmt.Sprintf("%s capability is not supported by the provider %s. Check here the supported features: https://docs.formance.com/payments/connectors/#supported-processors", e.Capability, e.Provider)
+	return fmt.Sprintf("%s capability is not supported by the provider %s. Check here the supported features: https://docs.formance.com/modules/connectivity/capabilities", e.Capability, e.Provider)
 }
 
 // handleWorkflowError processes Temporal workflow errors and wraps validation errors

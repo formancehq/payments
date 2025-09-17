@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 1b279e480d776e792ce044e9201cea96
+  docChecksum: 6af4917cd448510cb9cf66eb17bf6b0a
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -122,6 +122,7 @@ generatedFiles:
   - /models/components/v3columnconfig.go
   - /models/components/v3connectionstatusenum.go
   - /models/components/v3connector.go
+  - /models/components/v3connectorbase.go
   - /models/components/v3connectorconfig.go
   - /models/components/v3connectorconfigsresponse.go
   - /models/components/v3connectorscheduleinstancescursorresponse.go
@@ -448,6 +449,7 @@ generatedFiles:
   - docs/models/components/v3columnconfig.md
   - docs/models/components/v3connectionstatusenum.md
   - docs/models/components/v3connector.md
+  - docs/models/components/v3connectorbase.md
   - docs/models/components/v3connectorconfig.md
   - docs/models/components/v3connectorconfigsresponse.md
   - docs/models/components/v3connectorconfigsresponsedata.md

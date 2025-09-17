@@ -88,6 +88,13 @@ Accept: application/json
   "data": {
     "id": "string",
     "connectorID": "string",
+    "connector": {
+      "id": "string",
+      "reference": "string",
+      "name": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "provider": "string"
+    },
     "provider": "string",
     "reference": "string",
     "createdAt": "2019-08-24T14:15:22Z",
@@ -165,6 +172,13 @@ Accept: application/json
       {
         "id": "string",
         "connectorID": "string",
+        "connector": {
+          "id": "string",
+          "reference": "string",
+          "name": "string",
+          "createdAt": "2019-08-24T14:15:22Z",
+          "provider": "string"
+        },
         "provider": "string",
         "reference": "string",
         "createdAt": "2019-08-24T14:15:22Z",
@@ -224,6 +238,13 @@ Accept: application/json
   "data": {
     "id": "string",
     "connectorID": "string",
+    "connector": {
+      "id": "string",
+      "reference": "string",
+      "name": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "provider": "string"
+    },
     "provider": "string",
     "reference": "string",
     "createdAt": "2019-08-24T14:15:22Z",
@@ -3587,6 +3608,13 @@ None ( Scopes: payments:read )
       {
         "id": "string",
         "connectorID": "string",
+        "connector": {
+          "id": "string",
+          "reference": "string",
+          "name": "string",
+          "createdAt": "2019-08-24T14:15:22Z",
+          "provider": "string"
+        },
         "provider": "string",
         "reference": "string",
         "createdAt": "2019-08-24T14:15:22Z",
@@ -3628,6 +3656,13 @@ None ( Scopes: payments:read )
   "data": {
     "id": "string",
     "connectorID": "string",
+    "connector": {
+      "id": "string",
+      "reference": "string",
+      "name": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "provider": "string"
+    },
     "provider": "string",
     "reference": "string",
     "createdAt": "2019-08-24T14:15:22Z",
@@ -3697,6 +3732,13 @@ None ( Scopes: payments:read )
   "data": {
     "id": "string",
     "connectorID": "string",
+    "connector": {
+      "id": "string",
+      "reference": "string",
+      "name": "string",
+      "createdAt": "2019-08-24T14:15:22Z",
+      "provider": "string"
+    },
     "provider": "string",
     "reference": "string",
     "createdAt": "2019-08-24T14:15:22Z",
@@ -3730,6 +3772,13 @@ None ( Scopes: payments:read )
 {
   "id": "string",
   "connectorID": "string",
+  "connector": {
+    "id": "string",
+    "reference": "string",
+    "name": "string",
+    "createdAt": "2019-08-24T14:15:22Z",
+    "provider": "string"
+  },
   "provider": "string",
   "reference": "string",
   "createdAt": "2019-08-24T14:15:22Z",
@@ -3751,6 +3800,7 @@ None ( Scopes: payments:read )
 |---|---|---|---|---|
 |id|string|true|none|none|
 |connectorID|string(byte)|true|none|none|
+|connector|[V3ConnectorBase](#schemav3connectorbase)|false|none|none|
 |provider|string|true|none|none|
 |reference|string|true|none|none|
 |createdAt|string(date-time)|true|none|none|
@@ -4497,6 +4547,34 @@ None ( Scopes: payments:read )
 |provider|string|true|none|none|
 |scheduledForDeletion|boolean|true|none|none|
 |config|object|true|none|none|
+
+<h2 id="tocS_V3ConnectorBase">V3ConnectorBase</h2>
+<!-- backwards compatibility -->
+<a id="schemav3connectorbase"></a>
+<a id="schema_V3ConnectorBase"></a>
+<a id="tocSv3connectorbase"></a>
+<a id="tocsv3connectorbase"></a>
+
+```json
+{
+  "id": "string",
+  "reference": "string",
+  "name": "string",
+  "createdAt": "2019-08-24T14:15:22Z",
+  "provider": "string"
+}
+
+```
+
+### Properties
+
+|Name|Type|Required|Restrictions|Description|
+|---|---|---|---|---|
+|id|string|false|none|none|
+|reference|string|false|none|none|
+|name|string|false|none|none|
+|createdAt|string(date-time)|false|none|none|
+|provider|string|false|none|none|
 
 <h2 id="tocS_V3Schedule">V3Schedule</h2>
 <!-- backwards compatibility -->

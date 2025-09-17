@@ -360,7 +360,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should return error when workflow cannot be started", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
-				&models.Connector{ID: connID}, nil,
+				&models.Connector{ConnectorBase: models.ConnectorBase{ID: connID}}, nil,
 			)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			expectedErr := fmt.Errorf("workflow failed")
@@ -376,7 +376,7 @@ var _ = Describe("Engine Tests", func() {
 
 		It("should launch workflow and return task", func(ctx SpecContext) {
 			store.EXPECT().ConnectorsGet(gomock.Any(), connID).Return(
-				&models.Connector{ID: connID}, nil,
+				&models.Connector{ConnectorBase: models.ConnectorBase{ID: connID}}, nil,
 			)
 			store.EXPECT().TasksUpsert(gomock.Any(), gomock.AssignableToTypeOf(models.Task{})).Return(nil)
 			cl.EXPECT().ExecuteWorkflow(gomock.Any(), WithWorkflowOptions(engine.IDPrefixBankAccountCreate, defaultTaskQueue),
@@ -416,7 +416,9 @@ var _ = Describe("Engine Tests", func() {
 			expectedConfig.Name = connectorName
 
 			connector := &models.Connector{
-				ID:     connectorID,
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
 				Config: json.RawMessage(`{"name":"original-name"}`),
 			}
 
@@ -431,7 +433,9 @@ var _ = Describe("Engine Tests", func() {
 		It("should return exact error when plugin registry fails with misc error", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("hi")
 			connector := &models.Connector{
-				ID: connectorID,
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(
@@ -446,7 +450,9 @@ var _ = Describe("Engine Tests", func() {
 		It("should return error when storage fails", func(ctx SpecContext) {
 			expectedErr := fmt.Errorf("storage err")
 			connector := &models.Connector{
-				ID: connectorID,
+				ConnectorBase: models.ConnectorBase{
+					ID: connectorID,
+				},
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(json.RawMessage(`{}`), nil)
@@ -460,20 +466,24 @@ var _ = Describe("Engine Tests", func() {
 			newName := "new-name"
 			inputJson := json.RawMessage(fmt.Sprintf(`{"name":"%s","pollingPeriod":"2m","pageSize":25}`, newName))
 			connector := &models.Connector{
-				ID:        connectorID,
-				CreatedAt: time.Now().UTC(),
-				Provider:  connectorID.Provider,
-				Config:    json.RawMessage(`{"name":"original-name"}`),
+				ConnectorBase: models.ConnectorBase{
+					ID:        connectorID,
+					CreatedAt: time.Now().UTC(),
+					Provider:  connectorID.Provider,
+				},
+				Config: json.RawMessage(`{"name":"original-name"}`),
 			}
 			store.EXPECT().ConnectorsGet(gomock.Any(), connectorID).Return(connector, nil)
 			manager.EXPECT().Load(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any(), true).Return(inputJson, nil)
 
 			expectedConnector := models.Connector{
-				ID:        connectorID,
-				Name:      newName,
-				CreatedAt: connector.CreatedAt,
-				Provider:  connector.Provider,
-				Config:    inputJson,
+				ConnectorBase: models.ConnectorBase{
+					ID:        connectorID,
+					Name:      newName,
+					CreatedAt: connector.CreatedAt,
+					Provider:  connector.Provider,
+				},
+				Config: inputJson,
 			}
 			store.EXPECT().ConnectorsConfigUpdate(gomock.Any(), expectedConnector).Return(nil)
 			err := eng.UpdateConnector(ctx, connectorID, inputJson)

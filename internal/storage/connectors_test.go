@@ -19,36 +19,42 @@ import (
 var (
 	now              = time.Now()
 	defaultConnector = models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
+		ConnectorBase: models.ConnectorBase{
+			ID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  "default",
+			},
+			Name:      "default",
+			CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
 			Provider:  "default",
 		},
-		Name:      "default",
-		CreatedAt: now.Add(-60 * time.Minute).UTC().Time,
-		Provider:  "default",
-		Config:    []byte(`{}`),
+		Config: []byte(`{}`),
 	}
 
 	defaultConnector2 = models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
+		ConnectorBase: models.ConnectorBase{
+			ID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  "default2",
+			},
+			Name:      "default2",
+			CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
 			Provider:  "default2",
 		},
-		Name:      "default2",
-		CreatedAt: now.Add(-45 * time.Minute).UTC().Time,
-		Provider:  "default2",
-		Config:    []byte(`{}`),
+		Config: []byte(`{}`),
 	}
 
 	defaultConnector3 = models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
+		ConnectorBase: models.ConnectorBase{
+			ID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  "default",
+			},
+			Name:      "default3",
+			CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
 			Provider:  "default",
 		},
-		Name:      "default3",
-		CreatedAt: now.Add(-30 * time.Minute).UTC().Time,
-		Provider:  "default",
-		Config:    []byte(`{}`),
+		Config: []byte(`{}`),
 	}
 )
 
@@ -68,11 +74,13 @@ func TestConnectorsInstall(t *testing.T) {
 
 	t.Run("same id upsert", func(t *testing.T) {
 		c := models.Connector{
-			ID:        defaultConnector.ID,
-			Name:      "test changed",
-			CreatedAt: time.Now().UTC().Time,
-			Provider:  "test",
-			Config:    []byte(`{}`),
+			ConnectorBase: models.ConnectorBase{
+				ID:        defaultConnector.ID,
+				Name:      "test changed",
+				CreatedAt: time.Now().UTC().Time,
+				Provider:  "test",
+			},
+			Config: []byte(`{}`),
 		}
 
 		require.NoError(t, store.ConnectorsInstall(ctx, c))
@@ -85,14 +93,16 @@ func TestConnectorsInstall(t *testing.T) {
 
 	t.Run("unique same upsert", func(t *testing.T) {
 		c := models.Connector{
-			ID: models.ConnectorID{
-				Reference: uuid.New(),
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test",
+				},
+				Name:      "default",
+				CreatedAt: now.Add(-23 * time.Minute).UTC().Time,
 				Provider:  "test",
 			},
-			Name:      "default",
-			CreatedAt: now.Add(-23 * time.Minute).UTC().Time,
-			Provider:  "test",
-			Config:    []byte(`{}`),
+			Config: []byte(`{}`),
 		}
 
 		require.Error(t, store.ConnectorsInstall(ctx, c))
@@ -141,8 +151,10 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 	t.Run("same id upsert", func(t *testing.T) {
 		config := json.RawMessage(`{"val":"new"}`)
 		c := models.Connector{
-			ID:     defaultConnector.ID,
-			Name:   "new name",
+			ConnectorBase: models.ConnectorBase{
+				ID:   defaultConnector.ID,
+				Name: "new name",
+			},
 			Config: config,
 		}
 
@@ -165,9 +177,11 @@ func TestConnectorsConfigUpdate(t *testing.T) {
 
 	t.Run("connector doesn't exist yet", func(t *testing.T) {
 		c := models.Connector{
-			ID: models.ConnectorID{
-				Reference: uuid.New(),
-				Provider:  "test",
+			ConnectorBase: models.ConnectorBase{
+				ID: models.ConnectorID{
+					Reference: uuid.New(),
+					Provider:  "test",
+				},
 			},
 			Config: []byte(`{}`),
 		}

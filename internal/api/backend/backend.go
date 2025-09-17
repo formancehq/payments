@@ -15,7 +15,7 @@ import (
 //go:generate mockgen -source backend.go -destination backend_generated.go -package backend . Backend
 type Backend interface {
 	// Accounts
-	AccountsCreate(ctx context.Context, account models.Account) error
+	AccountsCreate(ctx context.Context, account models.Account) (*models.Account, error)
 	AccountsList(ctx context.Context, query storage.ListAccountsQuery) (*bunpaginate.Cursor[models.Account], error)
 	AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error)
 
