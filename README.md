@@ -23,4 +23,3 @@ Because it is a framework, it is extensible. Please follow the guide below if yo
 
 Please follow [this guide](./CONTRIBUTING.md) if you want to contribute.
 
-![Frame 1 (2)](https://user-images.githubusercontent.com/1770991/134163361-d86c5728-6075-4510-8de7-06df1f6ed740.png)
