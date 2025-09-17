@@ -7,35 +7,35 @@ This guide demonstrates the process of building a basic connector for a hypothet
 ## Table of Contents
 
 - [How to build a connector](#how-to-build-a-connector)
-	- [Table of Contents](#table-of-contents)
-	- [Understanding the Plugin interface](#understanding-the-plugin-interface)
-	- [Building a connector](#building-a-connector)
-		- [Set up the project](#set-up-the-project)
-		- [Define connector capabilities](#define-connector-capabilities)
-		- [Define connector configuration](#define-connector-configuration)
-		- [Define the Connector Struct](#define-the-connector-struct)
-		- [Implement Plugin interface methods](#implement-plugin-interface-methods)
-		- [Implement installation logic](#implement-installation-logic)
-		- [Implement uninstallation logic](#implement-uninstallation-logic)
-		- [Connect to the PSP and fetch data](#connect-to-the-psp-and-fetch-data)
-		- [Implement state management](#implement-state-management)
-		- [Set up state persistence](#set-up-state-persistence)
-		- [Handle child tasks](#handle-child-tasks)
-	- [Launching a new connector](#launching-a-new-connector)
-		- [Additional Connector Configuration](#additional-connector-configuration)
-	- [Special Implementation details](#special-implementation-details)
-		- [Metadata](#metadata)
-			- [Use namespaces for metadata](#use-namespaces-for-metadata)
-			- [Extracting Metadata values from Metadata](#extracting-metadata-values-from-metadata)
-			- [Save extra data in Metadata](#save-extra-data-in-metadata)
-		- [Asset and Amount Handling](#asset-and-amount-handling)
-			- [Asset Format](#asset-format)
-			- [Amount Handling](#amount-handling)
-			- [Asset and Amount handling examples](#asset-and-amount-handling-examples)
-		- [Important Considerations](#important-considerations)
-		- [Setting up Pre-commit Checks](#setting-up-pre-commit-checks)
-		- [Troubleshooting](#troubleshooting)
-		- [Review Checklist](#review-checklist)
+  - [Table of Contents](#table-of-contents)
+  - [Understanding the Plugin interface](#understanding-the-plugin-interface)
+  - [Building a connector](#building-a-connector)
+    - [Set up the project](#set-up-the-project)
+    - [Define connector capabilities](#define-connector-capabilities)
+    - [Define connector configuration](#define-connector-configuration)
+    - [Define the Connector Struct](#define-the-connector-struct)
+    - [Implement Plugin interface methods](#implement-plugin-interface-methods)
+    - [Implement installation logic](#implement-installation-logic)
+    - [Implement uninstallation logic](#implement-uninstallation-logic)
+    - [Connect to the PSP and fetch data](#connect-to-the-psp-and-fetch-data)
+    - [Implement state management](#implement-state-management)
+    - [Set up state persistence](#set-up-state-persistence)
+    - [Handle child tasks](#handle-child-tasks)
+  - [Launching a new connector](#launching-a-new-connector)
+    - [Additional Connector Configuration](#additional-connector-configuration)
+  - [Special Implementation details](#special-implementation-details)
+    - [Metadata](#metadata)
+      - [Use namespaces for metadata](#use-namespaces-for-metadata)
+      - [Extracting Metadata values from Metadata](#extracting-metadata-values-from-metadata)
+      - [Save extra data in Metadata](#save-extra-data-in-metadata)
+    - [Asset and Amount Handling](#asset-and-amount-handling)
+      - [Asset Format](#asset-format)
+      - [Amount Handling](#amount-handling)
+      - [Asset and Amount handling examples](#asset-and-amount-handling-examples)
+    - [Important Considerations](#important-considerations)
+    - [Setting up Pre-commit Checks](#setting-up-pre-commit-checks)
+    - [Troubleshooting](#troubleshooting)
+    - [Review Checklist](#review-checklist)
 
 ## Understanding the Plugin interface
 
@@ -65,7 +65,7 @@ type Plugin interface {
 | Method                         | Description                                                                                                                                                                                                                         |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Name()                         | Returns the name of the plugin, which is used to register the connector in the connector registry                                                                                                                                   |
-| Config()                       | Returns the configuration of the plugin                                                                                                                                     |
+| Config()                       | Returns the configuration of the plugin                                                                                                                                                                                             |
 | Install(...)                   | Activates the connector, sets up the required configuration and start Data synchronization with the PSP                                                                                                                             |
 | Uninstall(...)                 | Deactivates the connector, cleans up any resources created during installation, such as webhooks or cache data                                                                                                                      |
 | FetchNextAccounts(...)         | Retrieves the next set of account data from the PSP for synchronization                                                                                                                                                             |
@@ -228,7 +228,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 
 ### Implement Plugin interface methods
 
-In the `plugin.go` file, add the methods required for the [Plugin interface](https://www.notion.so/Build-a-Connector-158066a5ef3280538d23c2fa239fa78a?pvs=21).
+In the `plugin.go` file, add the methods required for the [Plugin interface](#understanding-the-plugin-interface).
 
 For now, return ErrNotImplemented for all methods except Name:
 
@@ -740,13 +740,13 @@ In a real-world scenario, you'd want to build a connector that fetches data from
 To make this process easier, we've dockerized the Connectivity Service which allows you to run it directly from your local environment. You can bring up the project by calling docker from within the project's home directory:
 
 ```sh
-$ earthly -P +compile-plugins --local_save=true
+$ just compile-plugins
 $ docker compose up
 ```
 
-You'll then have access to all [API endpoints](https://docs.formance.com/api#tag/Payments) via the default port of `:8080`
+You'll then have access to all [API endpoints](https://docs.formance.com/api-reference/paymentsv3/) via the default port of `:8080`
 
-The [Connector installation endpoint](https://docs.formance.com/api#tag/Payments/operation/installConnector) is particularly helpful for testing the `FetchAccounts` and `FetchBalances` methods which are triggered periodically once a connector is installed.
+The [Connector installation endpoint](https://docs.formance.com/api-reference/paymentsv3/install-a-connector) is particularly helpful for testing the `FetchAccounts` and `FetchBalances` methods which are triggered periodically once a connector is installed.
 
 Although the DummyPay connector is not useful outside of our integration test use-case, to demonstrate what installing a DummyPay connector would look like, let's send a POST request with the configuration payload as defined in [config.go](https://github.com/formancehq/payments/blob/main/internal/connectors/plugins/public/dummypay/config.go).
 
@@ -959,11 +959,12 @@ func (p *Plugin) fetchBalances(balance *psp.Balance) (*models.PSPBalance, error)
 4. Validate asset formats and currency support early in your implementation.
 5. Handle precision loss carefully when converting between formats.
 
-
 ### Setting up Pre-commit Checks
+
 Pre-commit checks for the repository is done using Just.
 
 To set up the Justfile dependencies, follow these steps:
+
 1. Install just: https://github.com/casey/just
 2. Install yq: https://github.com/mikefarah/yq
 3. Install speakeasy: https://www.speakeasy.com/docs/speakeasy-reference/cli/getting-started
@@ -988,6 +989,7 @@ get_checksum_url() {
 ```
 
 Then, run the following commands:
+
 ```bash
 # run this command to make it executable.
 chmod +x ./speakeasy.sh
@@ -998,18 +1000,22 @@ chmod +x ./speakeasy.sh
 5. Run `just pre-commit` to handle linting, documentation generation and other pre-commit steps.
 
 ### Troubleshooting
+
 1. If there are permission issues with the `just` command, try using the correct root access.
 2. Some steps might fail, in this case, you can go ahead to run them individually.
-   
+
    For example the following lines in [`Justfile`](./Justfile)
-	```bash
-	@npx openapi-merge-cli --config {{justfile_directory()}}/openapi/openapi-merge.json
-	@yq -oy {{justfile_directory()}}/openapi.json > openapi.yaml
-	@rm {{justfile_directory()}}/openapi.json
-	```
-	can be ran separately.
+
+   ```bash
+   @npx openapi-merge-cli --config {{justfile_directory()}}/openapi/openapi-merge.json
+   @yq -oy {{justfile_directory()}}/openapi.json > openapi.yaml
+   @rm {{justfile_directory()}}/openapi.json
+   ```
+
+   can be ran separately.
 
 ### Review Checklist
+
 - [ ] Validate that the PSP API endpoint corresponds to the connector integration made.
 - [ ] Validate that the PSP API authentication strategy matches with the connector integration.
 - [ ] Validate that the PSP API request body corresponds to the connector integration.
