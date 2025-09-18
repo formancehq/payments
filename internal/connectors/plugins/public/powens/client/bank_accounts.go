@@ -21,6 +21,7 @@ type BankAccount struct {
 	Error        string    `json:"error"`
 	LastUpdate   time.Time `json:"last_update"`
 
+	Balance      float64       `json:"balance"`
 	Transactions []Transaction `json:"transactions"`
 }
 
@@ -34,6 +35,7 @@ func (b BankAccount) MarshalJSON() ([]byte, error) {
 		Error        string   `json:"error"`
 		LastUpdate   string   `json:"last_update"`
 
+		Balance      float64       `json:"balance"`
 		Transactions []Transaction `json:"transactions"`
 	}{
 		ID:           b.ID,
@@ -44,6 +46,7 @@ func (b BankAccount) MarshalJSON() ([]byte, error) {
 		Error:        b.Error,
 		LastUpdate:   b.LastUpdate.Format(time.DateTime),
 
+		Balance:      b.Balance,
 		Transactions: b.Transactions,
 	})
 }
@@ -58,6 +61,7 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 		Error        string   `json:"error"`
 		LastUpdate   string   `json:"last_update"`
 
+		Balance      float64       `json:"balance"`
 		Transactions []Transaction `json:"transactions"`
 	}
 
@@ -83,6 +87,7 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 		OriginalName: ba.OriginalName,
 		Error:        ba.Error,
 		LastUpdate:   lastUpdate,
+		Balance:      ba.Balance,
 		Transactions: ba.Transactions,
 	}
 

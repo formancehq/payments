@@ -152,6 +152,7 @@ func (w Workflow) handleDataToStoreWebhook(
 			Payment:         response.Payment,
 			PaymentToDelete: response.PaymentToDelete,
 			PaymentToCancel: response.PaymentToCancel,
+			Balance:         response.Balance,
 		},
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
@@ -302,10 +303,10 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	}
 
 	payload, err := json.Marshal(&models.OpenBankingForwardedUserFromPayload{
-		PSUID:                   psuID,
-		OpenBankingForwardedUser:           obForwardedUser,
-		OpenBankingConnection: conn,
-		FromPayload:             response.DataReadyToFetch.FromPayload,
+		PSUID:                    psuID,
+		OpenBankingForwardedUser: obForwardedUser,
+		OpenBankingConnection:    conn,
+		FromPayload:              response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling open banking from payload: %w", err)
@@ -655,6 +656,7 @@ type StoreWebhookTranslation struct {
 	Payment         *models.PSPPayment
 	PaymentToDelete *models.PSPPaymentsToDelete
 	PaymentToCancel *models.PSPPaymentsToCancel
+	Balance         *models.PSPBalance
 }
 
 func (w Workflow) runStoreWebhookTranslation(
@@ -686,6 +688,50 @@ func (w Workflow) runStoreWebhookTranslation(
 
 		sendEvent = &SendEvents{
 			Account: pointer.For(accounts[0]),
+		}
+	}
+
+	if storeWebhookTranslation.Balance != nil {
+		var psuId *uuid.UUID
+		var openBankingConnectionID *string
+
+		acc, err := activities.StorageAccountsGet(
+			infiniteRetryContext(ctx),
+			models.AccountID{
+				Reference:   storeWebhookTranslation.Balance.AccountReference,
+				ConnectorID: storeWebhookTranslation.ConnectorID,
+			},
+		)
+		// there might be cases where the account is not found, should we accept and continue?
+		if err != nil && acc != nil {
+			psuId = acc.PsuID
+			openBankingConnectionID = acc.OpenBankingConnectionID
+		}
+
+		balance, err := models.FromPSPBalance(
+			*storeWebhookTranslation.Balance,
+			storeWebhookTranslation.ConnectorID,
+			psuId,
+			openBankingConnectionID,
+		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate balances",
+				ErrValidation,
+				err,
+			)
+		}
+
+		err = activities.StorageBalancesStore(
+			infiniteRetryContext(ctx),
+			[]models.Balance{balance},
+		)
+		if err != nil {
+			return fmt.Errorf("storing next balances: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Balance: pointer.For(balance),
 		}
 	}
 

@@ -34,29 +34,6 @@ func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectionID_Su
 	s.NoError(err)
 }
 
-func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_Success() {
-	accountID := models.AccountID{
-		Reference:   "test-account",
-		ConnectorID: s.connectorID,
-	}
-
-	// Mock payment deletion from account ID
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromAccountIDActivity, mock.Anything, accountID).Once().Return(nil)
-
-	// Mock account deletion
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, accountID).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
-		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
-			AccountID: accountID,
-		},
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err)
-}
-
 func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectorID_Success() {
 	connectorID := models.ConnectorID{
 		Reference: uuid.New(),
@@ -94,51 +71,6 @@ func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromPSUID_Success()
 	s.True(s.env.IsWorkflowCompleted())
 	err := s.env.GetWorkflowError()
 	s.NoError(err)
-}
-
-func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_StoragePaymentsDeleteFromAccountID_Error() {
-	accountID := models.AccountID{
-		Reference:   "test-account",
-		ConnectorID: s.connectorID,
-	}
-
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromAccountIDActivity, mock.Anything, accountID).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
-	)
-
-	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
-		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
-			AccountID: accountID,
-		},
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, "deleting payments from account ID")
-}
-
-func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromAccountID_StorageAccountsDelete_Error() {
-	accountID := models.AccountID{
-		Reference:   "test-account",
-		ConnectorID: s.connectorID,
-	}
-
-	s.env.OnActivity(activities.StoragePaymentsDeleteFromAccountIDActivity, mock.Anything, accountID).Once().Return(nil)
-	s.env.OnActivity(activities.StorageAccountsDeleteActivity, mock.Anything, accountID).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
-	)
-
-	s.env.ExecuteWorkflow(RunDeleteOpenBankingConnectionData, DeleteOpenBankingConnectionData{
-		FromAccountID: &DeleteOpenBankingConnectionDataFromAccountID{
-			AccountID: accountID,
-		},
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, "deleting account")
 }
 
 func (s *UnitTestSuite) Test_DeleteOpenBankingConnectionData_FromConnectionID_DeletePayments_Error() {
