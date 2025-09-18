@@ -261,6 +261,21 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 			at = webhook.Connection.LastUpdate
 		}
 
+		amountString := strconv.FormatFloat(account.Balance, 'f', -1, 64)
+		amount, err := currency.GetAmountWithPrecisionFromString(amountString, account.Currency.Precision)
+		if err != nil {
+			return nil, err
+		}
+
+		balanceResponse := models.WebhookResponse{
+			Balance: &models.PSPBalance{
+				AccountReference: pspAccount.Reference,
+				CreatedAt:        at,
+				Asset:            *pspAccount.DefaultAsset,
+				Amount:           amount,
+			},
+		}
+
 		// We have to put first the user connection reconnected webhook in order
 		// to be sure that the connection is created before the payments and
 		// accounts are ingested.
@@ -278,6 +293,8 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		res = append(res, accountsResponse)
 		// And finally the transactions related to the connection and the account
 		res = append(res, transactionResponses...)
+		// Finally, push the latest balance for the account
+		res = append(res, balanceResponse)
 
 		return res, nil
 

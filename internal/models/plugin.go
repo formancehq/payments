@@ -96,6 +96,7 @@ type WebhookResponse struct {
 	Payment         *PSPPayment
 	PaymentToDelete *PSPPaymentsToDelete
 	PaymentToCancel *PSPPaymentsToCancel
+	Balance         *PSPBalance
 
 	OpenBankingAccount *PSPOpenBankingAccount
 	OpenBankingPayment *PSPOpenBankingPayment
@@ -236,7 +237,7 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 }
 
 type OpenBankingForwardedUserFromPayload struct {
-	PSUID                   uuid.UUID
+	PSUID                    uuid.UUID
 	OpenBankingForwardedUser *OpenBankingForwardedUser
 	OpenBankingConnection    *OpenBankingConnection
 	FromPayload              json.RawMessage

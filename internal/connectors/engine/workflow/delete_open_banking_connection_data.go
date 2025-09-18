@@ -11,7 +11,6 @@ import (
 
 type DeleteOpenBankingConnectionData struct {
 	FromConnectionID *DeleteOpenBankingConnectionDataFromConnectionID
-	FromAccountID    *DeleteOpenBankingConnectionDataFromAccountID
 	FromConnectorID  *DeleteOpenBankingConnectionDataFromConnectorID
 	FromPSUID        *DeleteOpenBankingConnectionDataFromPSUID
 }
@@ -43,9 +42,6 @@ func (w Workflow) runDeleteOpenBankingConnectionData(
 	case deleteOpenBankingConnectionData.FromConnectionID != nil:
 		// Delete all data related to the connection
 		return w.deleteOpenBankingConnectionData(ctx, deleteOpenBankingConnectionData)
-	case deleteOpenBankingConnectionData.FromAccountID != nil:
-		// Delete only the account and payments related to this account
-		return w.deleteOpenBankingConnectionAccountIDData(ctx, deleteOpenBankingConnectionData)
 	case deleteOpenBankingConnectionData.FromConnectorID != nil:
 		// Delete all data related to the connector
 		return w.deleteOpenBankingConnectorIDData(ctx, deleteOpenBankingConnectionData)
@@ -55,29 +51,6 @@ func (w Workflow) runDeleteOpenBankingConnectionData(
 	default:
 		return fmt.Errorf("invalid delete open banking connection data")
 	}
-}
-
-func (w Workflow) deleteOpenBankingConnectionAccountIDData(
-	ctx workflow.Context,
-	deleteOpenBankingConnectionData DeleteOpenBankingConnectionData,
-) error {
-	err := activities.StoragePaymentsDeleteFromAccountID(
-		infiniteRetryContext(ctx),
-		deleteOpenBankingConnectionData.FromAccountID.AccountID,
-	)
-	if err != nil {
-		return fmt.Errorf("deleting payments from account ID: %w", err)
-	}
-
-	err = activities.StorageAccountsDelete(
-		infiniteRetryContext(ctx),
-		deleteOpenBankingConnectionData.FromAccountID.AccountID,
-	)
-	if err != nil {
-		return fmt.Errorf("deleting account: %w", err)
-	}
-
-	return nil
 }
 
 func (w Workflow) deleteOpenBankingConnectionData(

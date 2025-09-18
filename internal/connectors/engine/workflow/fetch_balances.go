@@ -67,6 +67,8 @@ func (w Workflow) fetchBalances(
 		balances, err := models.FromPSPBalances(
 			balancesResponse.Balances,
 			fetchNextBalances.ConnectorID,
+			nil,
+			nil,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

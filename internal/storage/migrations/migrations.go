@@ -49,6 +49,9 @@ var psuConnectionPaymentsAccounts string
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
 
+//go:embed 23-add-balances-foreign-key.sql
+var addBalancesForeignKey string
+
 func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, encryptionKey string) {
 	migrator.RegisterMigrations(
 		migrations.Migration{
@@ -318,6 +321,17 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.Info("running rename bank bridges to open banking migration...")
 					_, err := tx.ExecContext(ctx, renameBankBridgesOpenBanking)
 					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
+					return err
+				})
+			},
+		},
+		migrations.Migration{
+			Name: "add connection and psu foreign keys on balances",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+					logger.Info("running add balances foreign key migration...")
+					_, err := tx.ExecContext(ctx, addBalancesForeignKey)
+					logger.WithField("error", err).Info("finished running add balances foreign key migration")
 					return err
 				})
 			},

@@ -276,10 +276,6 @@ func (a Activities) DefinitionSet() temporalworker.DefinitionSet {
 			Func: a.StoragePaymentServiceUsersDelete,
 		}).
 		Append(temporalworker.Definition{
-			Name: "StorageBalancesDelete",
-			Func: a.StorageBalancesDelete,
-		}).
-		Append(temporalworker.Definition{
 			Name: "StorageBalancesStore",
 			Func: a.StorageBalancesStore,
 		}).
