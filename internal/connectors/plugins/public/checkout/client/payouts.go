@@ -46,7 +46,7 @@ func (c *client) InitiatePayout(ctx context.Context, pr *PayoutRequest) (*Payout
 		Amount:    pr.Amount,
 		Currency:  common.Currency(pr.Currency),
 		Reference: pr.Reference,
-		ProcessingChannelId: c.processingChannelId,
+		ProcessingChannelId: c.processingChannelID,
 		BillingDescriptor:   billing,
 	}
 

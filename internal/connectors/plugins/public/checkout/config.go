@@ -11,11 +11,11 @@ import (
 type Config struct {
 	// This is the config a user will pass when installing this connector.
 	// Authentication criteria for connecting to your connector should be provided here. Example:
-	Environment string `json:"environment" validate:"required"`
-	OAuthClientID   string `json:"oauthClientID" validate:"required"`
-	OAuthClientSecret   string `json:"oauthClientSecret" validate:"required"`
+	IsSandbox  bool   `json:"isSandbox" validate:""`
+	ClientID   string `json:"clientID" validate:"required"`
+	ClientSecret   string `json:"clientSecret" validate:"required"`
 	EntityID   string `json:"entityId" validate:"required"`
-	ProcessingChannelId string `json:"processingChannelId" validate:"required"`
+	ProcessingChannelID string `json:"processingChannelId" validate:"required"`
 }
 
 func unmarshalAndValidateConfig(payload json.RawMessage) (Config, error) {

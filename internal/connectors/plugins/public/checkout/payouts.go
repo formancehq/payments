@@ -46,7 +46,9 @@ func mapStatus(from *client.PayoutResponse) models.PaymentStatus {
 	switch from.Status {
 	case "Pending":
 		return models.PAYMENT_STATUS_PENDING
-	case "Captured", "Authorized", "Active":
+	case "Captured":
+		return models.PAYMENT_STATUS_CAPTURE
+	case "Authorized", "Active":
 		return models.PAYMENT_STATUS_SUCCEEDED
 	case "Declined", "Failed", "Voided":
 		return models.PAYMENT_STATUS_FAILED

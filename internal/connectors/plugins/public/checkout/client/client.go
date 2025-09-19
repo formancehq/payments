@@ -30,10 +30,10 @@ type client struct {
 	httpClient 		 	*http.Client
 	apiBase			 	string
 	apiAuthUrl		 	string
-	oauthClientID		string
-	oauthClientSecret	string
+	clientID		string
+	clientSecret	string
 	entityID 		 	string
-	processingChannelId string
+	processingChannelID string
 }
 
 type acceptHeaderTransport struct {
@@ -50,19 +50,19 @@ func (t *acceptHeaderTransport) RoundTrip(req *http.Request) (*http.Response, er
 }
 
 func New(
-	env string,
-	oauthClientID string,
-	oauthClientSecret string,
+	isSandbox bool,
+	clientID string,
+	clientSecret string,
 	entityID string,
-	processingChannelId string,
-) *client {
+	processingChannelID string,
+) (*client, error) {
 	var environment configuration.Environment
-	switch strings.ToLower(strings.TrimSpace(env)) {
-		case "sandbox":
+	switch isSandbox {
+		case true:
 			environment = configuration.Sandbox()
 		default:
 			environment = configuration.Production()
-	} 
+	}
 
 	apiBase := environment.BaseUri()
 	apiAuthUrl := environment.AuthorizationUri()
@@ -76,13 +76,13 @@ func New(
 
 	sdk, err := checkout.Builder().
 		OAuth().
-		WithClientCredentials(strings.TrimSpace(oauthClientID), strings.TrimSpace(oauthClientSecret)).
+		WithClientCredentials(strings.TrimSpace(clientID), strings.TrimSpace(clientSecret)).
 		WithEnvironment(environment).
 		WithHttpClient(httpClient).
 		WithScopes(getOAuthScopes()).
 		Build()
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	return &client{
@@ -90,11 +90,11 @@ func New(
 		httpClient: 		 httpClient,
 		apiBase: 			 apiBase,
 		apiAuthUrl:			 apiAuthUrl,
-		oauthClientID: 		 oauthClientID,
-		oauthClientSecret: 	 oauthClientSecret,
+		clientID: 		 	 clientID,
+		clientSecret: 	 	 clientSecret,
 		entityID: 			 entityID,
-		processingChannelId: processingChannelId,
-	}
+		processingChannelID: processingChannelID,
+	}, nil
 }
 
 func getOAuthScopes() []string {
@@ -110,7 +110,7 @@ func (c *client) getAccessToken(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.SetBasicAuth(strings.TrimSpace(c.oauthClientID), strings.TrimSpace(c.oauthClientSecret))
+	req.SetBasicAuth(strings.TrimSpace(c.clientID), strings.TrimSpace(c.clientSecret))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient.Do(req)

@@ -8,10 +8,10 @@ import (
 
 type V3CheckoutConfig struct {
 	EntityID            string  `json:"entityId"`
-	Environment         string  `json:"environment"`
+	IsSandbox           bool    `json:"isSandbox"`
 	Name                string  `json:"name"`
-	OauthClientID       string  `json:"oauthClientID"`
-	OauthClientSecret   string  `json:"oauthClientSecret"`
+	ClientID       		string  `json:"clientID"`
+	ClientSecret   		string  `json:"clientSecret"`
 	PageSize            *int64  `default:"25" json:"pageSize"`
 	PollingPeriod       *string `default:"2m" json:"pollingPeriod"`
 	ProcessingChannelID string  `json:"processingChannelId"`
@@ -50,18 +50,18 @@ func (o *V3CheckoutConfig) GetName() string {
 	return o.Name
 }
 
-func (o *V3CheckoutConfig) GetOauthClientID() string {
+func (o *V3CheckoutConfig) GetClientID() string {
 	if o == nil {
 		return ""
 	}
-	return o.OauthClientID
+	return o.ClientID
 }
 
-func (o *V3CheckoutConfig) GetOauthClientSecret() string {
+func (o *V3CheckoutConfig) GetClientSecret() string {
 	if o == nil {
 		return ""
 	}
-	return o.OauthClientSecret
+	return o.ClientSecret
 }
 
 func (o *V3CheckoutConfig) GetPageSize() *int64 {

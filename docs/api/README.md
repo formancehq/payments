@@ -25,10 +25,10 @@ Accept: application/json
 
 <h3 id="get-server-info-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|Server information|None|
-|default|Default|none|None|
+| Status  | Meaning                                                 | Description        | Schema |
+| ------- | ------------------------------------------------------- | ------------------ | ------ |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | Server information | None   |
+| default | Default                                                 | none               | None   |
 
 <h3 id="get-server-info-responseschema">Response Schema</h3>
 
@@ -75,9 +75,9 @@ Accept: application/json
 <h3 id="create-a-formance-account-object.-this-object-will-not-be-forwarded-to-the-connector.-it-is-only-used-for-internal-purposes.
 -parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[V3CreateAccountRequest](#schemav3createaccountrequest)|false|none|
+| Name | In   | Type                                                    | Required | Description |
+| ---- | ---- | ------------------------------------------------------- | -------- | ----------- |
+| body | body | [V3CreateAccountRequest](#schemav3createaccountrequest) | false    | none        |
 
 > Example responses
 
@@ -106,10 +106,10 @@ Accept: application/json
 <h3 id="create-a-formance-account-object.-this-object-will-not-be-forwarded-to-the-connector.-it-is-only-used-for-internal-purposes.
 -responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreateAccountResponse](#schemav3createaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                      | Description | Schema                                                    |
+| ------- | ------------------------------------------------------------ | ----------- | --------------------------------------------------------- |
+| 201     | [Created](https://tools.ietf.org/html/rfc7231#section-6.3.2) | Created     | [V3CreateAccountResponse](#schemav3createaccountresponse) |
+| default | Default                                                      | Error       | [V3ErrorResponse](#schemav3errorresponse)                 |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -140,11 +140,11 @@ Accept: application/json
 
 <h3 id="list-all-accounts-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -184,10 +184,10 @@ Accept: application/json
 
 <h3 id="list-all-accounts-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3AccountsCursorResponse](#schemav3accountscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                      |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3AccountsCursorResponse](#schemav3accountscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -211,9 +211,9 @@ Accept: application/json
 
 <h3 id="get-an-account-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|accountID|path|string|true|The account ID|
+| Name      | In   | Type   | Required | Description    |
+| --------- | ---- | ------ | -------- | -------------- |
+| accountID | path | string | true     | The account ID |
 
 > Example responses
 
@@ -241,10 +241,10 @@ Accept: application/json
 
 <h3 id="get-an-account-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetAccountResponse](#schemav3getaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                              |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetAccountResponse](#schemav3getaccountresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -268,14 +268,14 @@ Accept: application/json
 
 <h3 id="get-account-balances-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|accountID|path|string|true|The account ID|
-|asset|query|string|false|The asset to filter by|
-|fromTimestamp|query|string(date-time)|false|The start of the time range to filter by|
-|toTimestamp|query|string(date-time)|false|The end of the time range to filter by|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+| Name          | In    | Type              | Required | Description                                                                                                                                                                                                             |
+| ------------- | ----- | ----------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| accountID     | path  | string            | true     | The account ID                                                                                                                                                                                                          |
+| asset         | query | string            | false    | The asset to filter by                                                                                                                                                                                                  |
+| fromTimestamp | query | string(date-time) | false    | The start of the time range to filter by                                                                                                                                                                                |
+| toTimestamp   | query | string(date-time) | false    | The end of the time range to filter by                                                                                                                                                                                  |
+| pageSize      | query | integer(int64)    | false    | The number of items to return                                                                                                                                                                                           |
+| cursor        | query | string            | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
 
 #### Detailed descriptions
 
@@ -307,10 +307,10 @@ Accept: application/json
 
 <h3 id="get-account-balances-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3BalancesCursorResponse](#schemav3balancescursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                      |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3BalancesCursorResponse](#schemav3balancescursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -352,9 +352,9 @@ Accept: application/json
 <h3 id="create-a-formance-bank-account-object.-this-object-will-not-be-forwarded-to-the-connector-until-you-called-the-forwardbankaccount-method.
 -parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[V3CreateBankAccountRequest](#schemav3createbankaccountrequest)|false|none|
+| Name | In   | Type                                                            | Required | Description |
+| ---- | ---- | --------------------------------------------------------------- | -------- | ----------- |
+| body | body | [V3CreateBankAccountRequest](#schemav3createbankaccountrequest) | false    | none        |
 
 > Example responses
 
@@ -369,10 +369,10 @@ Accept: application/json
 <h3 id="create-a-formance-bank-account-object.-this-object-will-not-be-forwarded-to-the-connector-until-you-called-the-forwardbankaccount-method.
 -responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreateBankAccountResponse](#schemav3createbankaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                      | Description | Schema                                                            |
+| ------- | ------------------------------------------------------------ | ----------- | ----------------------------------------------------------------- |
+| 201     | [Created](https://tools.ietf.org/html/rfc7231#section-6.3.2) | Created     | [V3CreateBankAccountResponse](#schemav3createbankaccountresponse) |
+| default | Default                                                      | Error       | [V3ErrorResponse](#schemav3errorresponse)                         |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -403,11 +403,11 @@ Accept: application/json
 
 <h3 id="list-all-bank-accounts-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -451,10 +451,10 @@ Accept: application/json
 
 <h3 id="list-all-bank-accounts-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3BankAccountsCursorResponse](#schemav3bankaccountscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                              |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3BankAccountsCursorResponse](#schemav3bankaccountscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -478,9 +478,9 @@ Accept: application/json
 
 <h3 id="get-a-bank-account-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|bankAccountID|path|string|true|The bank account ID|
+| Name          | In   | Type   | Required | Description         |
+| ------------- | ---- | ------ | -------- | ------------------- |
+| bankAccountID | path | string | true     | The bank account ID |
 
 > Example responses
 
@@ -512,10 +512,10 @@ Accept: application/json
 
 <h3 id="get-a-bank-account-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetBankAccountResponse](#schemav3getbankaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                      |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetBankAccountResponse](#schemav3getbankaccountresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                   |
 
 <aside class="success">
 This operation does not require authentication
@@ -550,10 +550,10 @@ Accept: application/json
 
 <h3 id="update-a-bank-account's-metadata-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|bankAccountID|path|string|true|The bank account ID|
-|body|body|[V3UpdateBankAccountMetadataRequest](#schemav3updatebankaccountmetadatarequest)|false|none|
+| Name          | In   | Type                                                                            | Required | Description         |
+| ------------- | ---- | ------------------------------------------------------------------------------- | -------- | ------------------- |
+| bankAccountID | path | string                                                                          | true     | The bank account ID |
+| body          | body | [V3UpdateBankAccountMetadataRequest](#schemav3updatebankaccountmetadatarequest) | false    | none                |
 
 > Example responses
 
@@ -569,10 +569,10 @@ Accept: application/json
 
 <h3 id="update-a-bank-account's-metadata-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="success">
 This operation does not require authentication
@@ -604,10 +604,10 @@ Accept: application/json
 
 <h3 id="forward-a-bank-account-to-a-psp-for-creation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|bankAccountID|path|string|true|The bank account ID|
-|body|body|[V3ForwardBankAccountRequest](#schemav3forwardbankaccountrequest)|false|none|
+| Name          | In   | Type                                                              | Required | Description         |
+| ------------- | ---- | ----------------------------------------------------------------- | -------- | ------------------- |
+| bankAccountID | path | string                                                            | true     | The bank account ID |
+| body          | body | [V3ForwardBankAccountRequest](#schemav3forwardbankaccountrequest) | false    | none                |
 
 > Example responses
 
@@ -623,10 +623,10 @@ Accept: application/json
 
 <h3 id="forward-a-bank-account-to-a-psp-for-creation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ForwardBankAccountResponse](#schemav3forwardbankaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                              |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3ForwardBankAccountResponse](#schemav3forwardbankaccountresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                           |
 
 <aside class="success">
 This operation does not require authentication
@@ -656,11 +656,11 @@ Accept: application/json
 
 <h3 id="list-all-connectors-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -694,10 +694,10 @@ Accept: application/json
 
 <h3 id="list-all-connectors-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorsCursorResponse](#schemav3connectorscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                          |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3ConnectorsCursorResponse](#schemav3connectorscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -738,10 +738,10 @@ Accept: application/json
 
 <h3 id="install-a-connector-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connector|path|string|true|The connector to filter by|
-|body|body|[V3ConnectorConfig](#schemav3connectorconfig)|false|none|
+| Name      | In   | Type                                          | Required | Description                |
+| --------- | ---- | --------------------------------------------- | -------- | -------------------------- |
+| connector | path | string                                        | true     | The connector to filter by |
+| body      | body | [V3ConnectorConfig](#schemav3connectorconfig) | false    | none                       |
 
 > Example responses
 
@@ -755,10 +755,10 @@ Accept: application/json
 
 <h3 id="install-a-connector-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3InstallConnectorResponse](#schemav3installconnectorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                          |
+| ------- | ------------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3InstallConnectorResponse](#schemav3installconnectorresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -817,10 +817,10 @@ Accept: application/json
 
 <h3 id="list-all-connector-configurations-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorConfigsResponse](#schemav3connectorconfigsresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                          |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3ConnectorConfigsResponse](#schemav3connectorconfigsresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -844,9 +844,9 @@ Accept: application/json
 
 <h3 id="uninstall-a-connector-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
+| Name        | In   | Type   | Required | Description      |
+| ----------- | ---- | ------ | -------- | ---------------- |
+| connectorID | path | string | true     | The connector ID |
 
 > Example responses
 
@@ -862,10 +862,10 @@ Accept: application/json
 
 <h3 id="uninstall-a-connector-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3UninstallConnectorResponse](#schemav3uninstallconnectorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                              |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3UninstallConnectorResponse](#schemav3uninstallconnectorresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -889,9 +889,9 @@ Accept: application/json
 
 <h3 id="get-a-connector-configuration-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
+| Name        | In   | Type   | Required | Description      |
+| ----------- | ---- | ------ | -------- | ---------------- |
+| connectorID | path | string | true     | The connector ID |
 
 > Example responses
 
@@ -915,10 +915,10 @@ Accept: application/json
 
 <h3 id="get-a-connector-configuration-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetConnectorConfigResponse](#schemav3getconnectorconfigresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                              |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetConnectorConfigResponse](#schemav3getconnectorconfigresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -960,17 +960,17 @@ Update connector config
 
 <h3 id="update-the-config-of-a-connector-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
-|body|body|[V3ConnectorConfig](#schemav3connectorconfig)|false|none|
+| Name        | In   | Type                                          | Required | Description      |
+| ----------- | ---- | --------------------------------------------- | -------- | ---------------- |
+| connectorID | path | string                                        | true     | The connector ID |
+| body        | body | [V3ConnectorConfig](#schemav3connectorconfig) | false    | none             |
 
 <h3 id="update-the-config-of-a-connector-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|none|None|
-|default|Default|none|None|
+| Status  | Meaning                                                         | Description | Schema |
+| ------- | --------------------------------------------------------------- | ----------- | ------ |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | none        | None   |
+| default | Default                                                         | none        | None   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -994,9 +994,9 @@ Accept: application/json
 
 <h3 id="reset-a-connector.-be-aware-that-this-will-delete-all-data-and-stop-all-existing-tasks-like-payment-initiations-and-bank-account-creations.-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
+| Name        | In   | Type   | Required | Description      |
+| ----------- | ---- | ------ | -------- | ---------------- |
+| connectorID | path | string | true     | The connector ID |
 
 > Example responses
 
@@ -1010,10 +1010,10 @@ Accept: application/json
 
 <h3 id="reset-a-connector.-be-aware-that-this-will-delete-all-data-and-stop-all-existing-tasks-like-payment-initiations-and-bank-account-creations.-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ResetConnectorResponse](#schemav3resetconnectorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                      |
+| ------- | ------------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3ResetConnectorResponse](#schemav3resetconnectorresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1044,12 +1044,12 @@ Accept: application/json
 
 <h3 id="list-all-connector-schedules-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name        | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| ----------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| connectorID | path  | string                                  | true     | The connector ID                                                                                                                                                                                                        |
+| pageSize    | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor      | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body        | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -1079,10 +1079,10 @@ Accept: application/json
 
 <h3 id="list-all-connector-schedules-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorSchedulesCursorResponse](#schemav3connectorschedulescursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                          |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3ConnectorSchedulesCursorResponse](#schemav3connectorschedulescursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1106,10 +1106,10 @@ Accept: application/json
 
 <h3 id="get-a-connector-schedule-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
-|scheduleID|path|string|true|The schedule ID|
+| Name        | In   | Type   | Required | Description      |
+| ----------- | ---- | ------ | -------- | ---------------- |
+| connectorID | path | string | true     | The connector ID |
+| scheduleID  | path | string | true     | The schedule ID  |
 
 > Example responses
 
@@ -1127,10 +1127,10 @@ Accept: application/json
 
 <h3 id="get-a-connector-schedule-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorScheduleResponse](#schemav3connectorscheduleresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                            |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3ConnectorScheduleResponse](#schemav3connectorscheduleresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                         |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1154,12 +1154,12 @@ Accept: application/json
 
 <h3 id="list-all-connector-schedule-instances-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|connectorID|path|string|true|The connector ID|
-|scheduleID|path|string|true|The schedule ID|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
+| Name        | In    | Type           | Required | Description                                                                                                                                                                                                             |
+| ----------- | ----- | -------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| connectorID | path  | string         | true     | The connector ID                                                                                                                                                                                                        |
+| scheduleID  | path  | string         | true     | The schedule ID                                                                                                                                                                                                         |
+| pageSize    | query | integer(int64) | false    | The number of items to return                                                                                                                                                                                           |
+| cursor      | query | string         | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
 
 #### Detailed descriptions
 
@@ -1194,10 +1194,10 @@ Accept: application/json
 
 <h3 id="list-all-connector-schedule-instances-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3ConnectorScheduleInstancesCursorResponse](#schemav3connectorscheduleinstancescursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                                          |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3ConnectorScheduleInstancesCursorResponse](#schemav3connectorscheduleinstancescursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1257,9 +1257,9 @@ Accept: application/json
 <h3 id="create-a-formance-payment-object.-this-object-will-not-be-forwarded-to-the-connector.-it-is-only-used-for-internal-purposes.
 -parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[V3CreatePaymentRequest](#schemav3createpaymentrequest)|false|none|
+| Name | In   | Type                                                    | Required | Description |
+| ---- | ---- | ------------------------------------------------------- | -------- | ----------- |
+| body | body | [V3CreatePaymentRequest](#schemav3createpaymentrequest) | false    | none        |
 
 > Example responses
 
@@ -1307,10 +1307,10 @@ Accept: application/json
 <h3 id="create-a-formance-payment-object.-this-object-will-not-be-forwarded-to-the-connector.-it-is-only-used-for-internal-purposes.
 -responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreatePaymentResponse](#schemav3createpaymentresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                      | Description | Schema                                                    |
+| ------- | ------------------------------------------------------------ | ----------- | --------------------------------------------------------- |
+| 201     | [Created](https://tools.ietf.org/html/rfc7231#section-6.3.2) | Created     | [V3CreatePaymentResponse](#schemav3createpaymentresponse) |
+| default | Default                                                      | Error       | [V3ErrorResponse](#schemav3errorresponse)                 |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1341,11 +1341,11 @@ Accept: application/json
 
 <h3 id="list-all-payments-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -1404,10 +1404,10 @@ Accept: application/json
 
 <h3 id="list-all-payments-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentsCursorResponse](#schemav3paymentscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                      |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PaymentsCursorResponse](#schemav3paymentscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1431,9 +1431,9 @@ Accept: application/json
 
 <h3 id="get-a-payment-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentID|path|string|true|The payment ID|
+| Name      | In   | Type   | Required | Description    |
+| --------- | ---- | ------ | -------- | -------------- |
+| paymentID | path | string | true     | The payment ID |
 
 > Example responses
 
@@ -1480,10 +1480,10 @@ Accept: application/json
 
 <h3 id="get-a-payment-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetPaymentResponse](#schemav3getpaymentresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                              |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetPaymentResponse](#schemav3getpaymentresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1519,10 +1519,10 @@ Accept: application/json
 
 <h3 id="update-a-payment's-metadata-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentID|path|string|true|The payment ID|
-|body|body|[V3UpdatePaymentMetadataRequest](#schemav3updatepaymentmetadatarequest)|false|none|
+| Name      | In   | Type                                                                    | Required | Description    |
+| --------- | ---- | ----------------------------------------------------------------------- | -------- | -------------- |
+| paymentID | path | string                                                                  | true     | The payment ID |
+| body      | body | [V3UpdatePaymentMetadataRequest](#schemav3updatepaymentmetadatarequest) | false    | none           |
 
 > Example responses
 
@@ -1538,10 +1538,10 @@ Accept: application/json
 
 <h3 id="update-a-payment's-metadata-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1586,10 +1586,10 @@ Accept: application/json
 
 <h3 id="initiate-a-payment-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|noValidation|query|boolean|false|If set to true, the request will not have to be validated. This is useful if we want to directly forward the request to the PSP.|
-|body|body|[V3InitiatePaymentRequest](#schemav3initiatepaymentrequest)|false|none|
+| Name         | In    | Type                                                        | Required | Description                                                                                                                      |
+| ------------ | ----- | ----------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| noValidation | query | boolean                                                     | false    | If set to true, the request will not have to be validated. This is useful if we want to directly forward the request to the PSP. |
+| body         | body  | [V3InitiatePaymentRequest](#schemav3initiatepaymentrequest) | false    | none                                                                                                                             |
 
 #### Detailed descriptions
 
@@ -1610,10 +1610,10 @@ Accept: application/json
 
 <h3 id="initiate-a-payment-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3InitiatePaymentResponse](#schemav3initiatepaymentresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                        |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3InitiatePaymentResponse](#schemav3initiatepaymentresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                     |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1644,11 +1644,11 @@ Accept: application/json
 
 <h3 id="list-all-payment-initiations-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -1693,10 +1693,10 @@ Accept: application/json
 
 <h3 id="list-all-payment-initiations-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentInitiationsCursorResponse](#schemav3paymentinitiationscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                          |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PaymentInitiationsCursorResponse](#schemav3paymentinitiationscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1720,9 +1720,9 @@ Accept: application/json
 
 <h3 id="delete-a-payment-initiation-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
+| Name                | In   | Type   | Required | Description               |
+| ------------------- | ---- | ------ | -------- | ------------------------- |
+| paymentInitiationID | path | string | true     | The payment initiation ID |
 
 > Example responses
 
@@ -1738,10 +1738,10 @@ Accept: application/json
 
 <h3 id="delete-a-payment-initiation-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1765,9 +1765,9 @@ Accept: application/json
 
 <h3 id="get-a-payment-initiation-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
+| Name                | In   | Type   | Required | Description               |
+| ------------------- | ---- | ------ | -------- | ------------------------- |
+| paymentInitiationID | path | string | true     | The payment initiation ID |
 
 > Example responses
 
@@ -1800,10 +1800,10 @@ Accept: application/json
 
 <h3 id="get-a-payment-initiation-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetPaymentInitiationResponse](#schemav3getpaymentinitiationresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                  |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetPaymentInitiationResponse](#schemav3getpaymentinitiationresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                               |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1827,9 +1827,9 @@ Accept: application/json
 
 <h3 id="retry-a-payment-initiation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
+| Name                | In   | Type   | Required | Description               |
+| ------------------- | ---- | ------ | -------- | ------------------------- |
+| paymentInitiationID | path | string | true     | The payment initiation ID |
 
 > Example responses
 
@@ -1845,10 +1845,10 @@ Accept: application/json
 
 <h3 id="retry-a-payment-initiation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3RetryPaymentInitiationResponse](#schemav3retrypaymentinitiationresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                                      |
+| ------- | ------------------------------------------------------------- | ----------- | --------------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3RetryPaymentInitiationResponse](#schemav3retrypaymentinitiationresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1872,9 +1872,9 @@ Accept: application/json
 
 <h3 id="approve-a-payment-initiation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
+| Name                | In   | Type   | Required | Description               |
+| ------------------- | ---- | ------ | -------- | ------------------------- |
+| paymentInitiationID | path | string | true     | The payment initiation ID |
 
 > Example responses
 
@@ -1890,10 +1890,10 @@ Accept: application/json
 
 <h3 id="approve-a-payment-initiation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ApprovePaymentInitiationResponse](#schemav3approvepaymentinitiationresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                                          |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3ApprovePaymentInitiationResponse](#schemav3approvepaymentinitiationresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1917,9 +1917,9 @@ Accept: application/json
 
 <h3 id="reject-a-payment-initiation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
+| Name                | In   | Type   | Required | Description               |
+| ------------------- | ---- | ------ | -------- | ------------------------- |
+| paymentInitiationID | path | string | true     | The payment initiation ID |
 
 > Example responses
 
@@ -1935,10 +1935,10 @@ Accept: application/json
 
 <h3 id="reject-a-payment-initiation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -1978,10 +1978,10 @@ Accept: application/json
 
 <h3 id="reverse-a-payment-initiation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
-|body|body|[V3ReversePaymentInitiationRequest](#schemav3reversepaymentinitiationrequest)|false|none|
+| Name                | In   | Type                                                                          | Required | Description               |
+| ------------------- | ---- | ----------------------------------------------------------------------------- | -------- | ------------------------- |
+| paymentInitiationID | path | string                                                                        | true     | The payment initiation ID |
+| body                | body | [V3ReversePaymentInitiationRequest](#schemav3reversepaymentinitiationrequest) | false    | none                      |
 
 > Example responses
 
@@ -1998,10 +1998,10 @@ Accept: application/json
 
 <h3 id="reverse-a-payment-initiation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ReversePaymentInitiationResponse](#schemav3reversepaymentinitiationresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                                          |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3ReversePaymentInitiationResponse](#schemav3reversepaymentinitiationresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2032,12 +2032,12 @@ Accept: application/json
 
 <h3 id="list-all-payment-initiation-adjustments-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name                | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| ------------------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| paymentInitiationID | path  | string                                  | true     | The payment initiation ID                                                                                                                                                                                               |
+| pageSize            | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor              | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body                | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -2074,10 +2074,10 @@ Accept: application/json
 
 <h3 id="list-all-payment-initiation-adjustments-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentInitiationAdjustmentsCursorResponse](#schemav3paymentinitiationadjustmentscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                                              |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PaymentInitiationAdjustmentsCursorResponse](#schemav3paymentinitiationadjustmentscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                                           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2108,12 +2108,12 @@ Accept: application/json
 
 <h3 id="list-all-payments-related-to-a-payment-initiation-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentInitiationID|path|string|true|The payment initiation ID|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name                | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| ------------------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| paymentInitiationID | path  | string                                  | true     | The payment initiation ID                                                                                                                                                                                               |
+| pageSize            | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor              | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body                | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -2172,10 +2172,10 @@ Accept: application/json
 
 <h3 id="list-all-payments-related-to-a-payment-initiation-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentInitiationRelatedPaymentsCursorResponse](#schemav3paymentinitiationrelatedpaymentscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                                                      |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PaymentInitiationRelatedPaymentsCursorResponse](#schemav3paymentinitiationrelatedpaymentscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                                                   |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2215,9 +2215,7 @@ Accept: application/json
     "postalCode": "string",
     "country": "string"
   },
-  "bankAccountIDs": [
-    "string"
-  ],
+  "bankAccountIDs": ["string"],
   "metadata": {
     "property1": "string",
     "property2": "string"
@@ -2227,9 +2225,9 @@ Accept: application/json
 
 <h3 id="create-a-formance-payment-service-user-object-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[V3CreatePaymentServiceUserRequest](#schemav3createpaymentserviceuserrequest)|false|none|
+| Name | In   | Type                                                                          | Required | Description |
+| ---- | ---- | ----------------------------------------------------------------------------- | -------- | ----------- |
+| body | body | [V3CreatePaymentServiceUserRequest](#schemav3createpaymentserviceuserrequest) | false    | none        |
 
 > Example responses
 
@@ -2243,10 +2241,10 @@ Accept: application/json
 
 <h3 id="create-a-formance-payment-service-user-object-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreatePaymentServiceUserResponse](#schemav3createpaymentserviceuserresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                      | Description | Schema                                                                          |
+| ------- | ------------------------------------------------------------ | ----------- | ------------------------------------------------------------------------------- |
+| 201     | [Created](https://tools.ietf.org/html/rfc7231#section-6.3.2) | Created     | [V3CreatePaymentServiceUserResponse](#schemav3createpaymentserviceuserresponse) |
+| default | Default                                                      | Error       | [V3ErrorResponse](#schemav3errorresponse)                                       |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2277,11 +2275,11 @@ Accept: application/json
 
 <h3 id="list-all-payment-service-users-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -2315,9 +2313,7 @@ Accept: application/json
           "postalCode": "string",
           "country": "string"
         },
-        "bankAccountIDs": [
-          "string"
-        ],
+        "bankAccountIDs": ["string"],
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -2330,10 +2326,10 @@ Accept: application/json
 
 <h3 id="list-all-payment-service-users-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PaymentServiceUsersCursorResponse](#schemav3paymentserviceuserscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                            |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PaymentServiceUsersCursorResponse](#schemav3paymentserviceuserscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                         |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2357,9 +2353,9 @@ Accept: application/json
 
 <h3 id="get-a-payment-service-user-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentServiceUserID|path|string|true|The payment service user ID|
+| Name                 | In   | Type   | Required | Description                 |
+| -------------------- | ---- | ------ | -------- | --------------------------- |
+| paymentServiceUserID | path | string | true     | The payment service user ID |
 
 > Example responses
 
@@ -2383,9 +2379,7 @@ Accept: application/json
       "postalCode": "string",
       "country": "string"
     },
-    "bankAccountIDs": [
-      "string"
-    ],
+    "bankAccountIDs": ["string"],
     "metadata": {
       "property1": "string",
       "property2": "string"
@@ -2396,10 +2390,10 @@ Accept: application/json
 
 <h3 id="get-a-payment-service-user-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetPaymentServiceUserResponse](#schemav3getpaymentserviceuserresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                                    |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetPaymentServiceUserResponse](#schemav3getpaymentserviceuserresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)                                 |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2423,10 +2417,10 @@ Accept: application/json
 
 <h3 id="add-a-bank-account-to-a-payment-service-user-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentServiceUserID|path|string|true|The payment service user ID|
-|bankAccountID|path|string|true|The bank account ID|
+| Name                 | In   | Type   | Required | Description                 |
+| -------------------- | ---- | ------ | -------- | --------------------------- |
+| paymentServiceUserID | path | string | true     | The payment service user ID |
+| bankAccountID        | path | string | true     | The bank account ID         |
 
 > Example responses
 
@@ -2442,10 +2436,10 @@ Accept: application/json
 
 <h3 id="add-a-bank-account-to-a-payment-service-user-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2478,11 +2472,11 @@ Accept: application/json
 
 <h3 id="forward-a-payment-service-user's-bank-account-to-a-connector-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|paymentServiceUserID|path|string|true|The payment service user ID|
-|bankAccountID|path|string|true|The bank account ID|
-|body|body|[V3ForwardPaymentServiceUserBankAccountRequest](#schemav3forwardpaymentserviceuserbankaccountrequest)|false|none|
+| Name                 | In   | Type                                                                                                  | Required | Description                 |
+| -------------------- | ---- | ----------------------------------------------------------------------------------------------------- | -------- | --------------------------- |
+| paymentServiceUserID | path | string                                                                                                | true     | The payment service user ID |
+| bankAccountID        | path | string                                                                                                | true     | The bank account ID         |
+| body                 | body | [V3ForwardPaymentServiceUserBankAccountRequest](#schemav3forwardpaymentserviceuserbankaccountrequest) | false    | none                        |
 
 > Example responses
 
@@ -2498,10 +2492,10 @@ Accept: application/json
 
 <h3 id="forward-a-payment-service-user's-bank-account-to-a-connector-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|202|[Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3)|Accepted|[V3ForwardPaymentServiceUserBankAccountResponse](#schemav3forwardpaymentserviceuserbankaccountresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                       | Description | Schema                                                                                                  |
+| ------- | ------------------------------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------- |
+| 202     | [Accepted](https://tools.ietf.org/html/rfc7231#section-6.3.3) | Accepted    | [V3ForwardPaymentServiceUserBankAccountResponse](#schemav3forwardpaymentserviceuserbankaccountresponse) |
+| default | Default                                                       | Error       | [V3ErrorResponse](#schemav3errorresponse)                                                               |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2529,17 +2523,15 @@ Accept: application/json
 ```json
 {
   "name": "string",
-  "accountIDs": [
-    "string"
-  ]
+  "accountIDs": ["string"]
 }
 ```
 
 <h3 id="create-a-formance-pool-object-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|body|body|[V3CreatePoolRequest](#schemav3createpoolrequest)|false|none|
+| Name | In   | Type                                              | Required | Description |
+| ---- | ---- | ------------------------------------------------- | -------- | ----------- |
+| body | body | [V3CreatePoolRequest](#schemav3createpoolrequest) | false    | none        |
 
 > Example responses
 
@@ -2553,10 +2545,10 @@ Accept: application/json
 
 <h3 id="create-a-formance-pool-object-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|201|[Created](https://tools.ietf.org/html/rfc7231#section-6.3.2)|Created|[V3CreatePoolResponse](#schemav3createpoolresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                      | Description | Schema                                              |
+| ------- | ------------------------------------------------------------ | ----------- | --------------------------------------------------- |
+| 201     | [Created](https://tools.ietf.org/html/rfc7231#section-6.3.2) | Created     | [V3CreatePoolResponse](#schemav3createpoolresponse) |
+| default | Default                                                      | Error       | [V3ErrorResponse](#schemav3errorresponse)           |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2587,11 +2579,11 @@ Accept: application/json
 
 <h3 id="list-all-pools-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|pageSize|query|integer(int64)|false|The number of items to return|
-|cursor|query|string|false|Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set.|
-|body|body|[V3QueryBuilder](#schemav3querybuilder)|false|none|
+| Name     | In    | Type                                    | Required | Description                                                                                                                                                                                                             |
+| -------- | ----- | --------------------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pageSize | query | integer(int64)                          | false    | The number of items to return                                                                                                                                                                                           |
+| cursor   | query | string                                  | false    | Parameter used in pagination requests. Set to the value of next for the next page of results. Set to the value of previous for the previous page of results. No other parameters can be set when this parameter is set. |
+| body     | body  | [V3QueryBuilder](#schemav3querybuilder) | false    | none                                                                                                                                                                                                                    |
 
 #### Detailed descriptions
 
@@ -2613,9 +2605,7 @@ Accept: application/json
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
-        "poolAccounts": [
-          "string"
-        ]
+        "poolAccounts": ["string"]
       }
     ]
   }
@@ -2624,10 +2614,10 @@ Accept: application/json
 
 <h3 id="list-all-pools-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PoolsCursorResponse](#schemav3poolscursorresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                |
+| ------- | ------------------------------------------------------- | ----------- | ----------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PoolsCursorResponse](#schemav3poolscursorresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)             |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2651,9 +2641,9 @@ Accept: application/json
 
 <h3 id="get-a-pool-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
+| Name   | In   | Type   | Required | Description |
+| ------ | ---- | ------ | -------- | ----------- |
+| poolID | path | string | true     | The pool ID |
 
 > Example responses
 
@@ -2665,19 +2655,17 @@ Accept: application/json
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "poolAccounts": [
-      "string"
-    ]
+    "poolAccounts": ["string"]
   }
 }
 ```
 
 <h3 id="get-a-pool-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetPoolResponse](#schemav3getpoolresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                        |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetPoolResponse](#schemav3getpoolresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)     |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2701,9 +2689,9 @@ Accept: application/json
 
 <h3 id="delete-a-pool-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
+| Name   | In   | Type   | Required | Description |
+| ------ | ---- | ------ | -------- | ----------- |
+| poolID | path | string | true     | The pool ID |
 
 > Example responses
 
@@ -2719,10 +2707,10 @@ Accept: application/json
 
 <h3 id="delete-a-pool-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2746,10 +2734,10 @@ Accept: application/json
 
 <h3 id="get-historical-pool-balances-from-a-particular-point-in-time-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
-|at|query|string(date-time)|false|The time to filter by|
+| Name   | In    | Type              | Required | Description           |
+| ------ | ----- | ----------------- | -------- | --------------------- |
+| poolID | path  | string            | true     | The pool ID           |
+| at     | query | string(date-time) | false    | The time to filter by |
 
 > Example responses
 
@@ -2768,10 +2756,10 @@ Accept: application/json
 
 <h3 id="get-historical-pool-balances-from-a-particular-point-in-time-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PoolBalancesResponse](#schemav3poolbalancesresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                  |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PoolBalancesResponse](#schemav3poolbalancesresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)               |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2795,9 +2783,9 @@ Accept: application/json
 
 <h3 id="get-latest-pool-balances-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
+| Name   | In   | Type   | Required | Description |
+| ------ | ---- | ------ | -------- | ----------- |
+| poolID | path | string | true     | The pool ID |
 
 > Example responses
 
@@ -2816,10 +2804,10 @@ Accept: application/json
 
 <h3 id="get-latest-pool-balances-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3PoolBalancesResponse](#schemav3poolbalancesresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                                  |
+| ------- | ------------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3PoolBalancesResponse](#schemav3poolbalancesresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)               |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2843,10 +2831,10 @@ Accept: application/json
 
 <h3 id="add-an-account-to-a-pool-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
-|accountID|path|string|true|The account ID|
+| Name      | In   | Type   | Required | Description    |
+| --------- | ---- | ------ | -------- | -------------- |
+| poolID    | path | string | true     | The pool ID    |
+| accountID | path | string | true     | The account ID |
 
 > Example responses
 
@@ -2862,10 +2850,10 @@ Accept: application/json
 
 <h3 id="add-an-account-to-a-pool-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2889,10 +2877,10 @@ Accept: application/json
 
 <h3 id="remove-an-account-from-a-pool-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|poolID|path|string|true|The pool ID|
-|accountID|path|string|true|The account ID|
+| Name      | In   | Type   | Required | Description    |
+| --------- | ---- | ------ | -------- | -------------- |
+| poolID    | path | string | true     | The pool ID    |
+| accountID | path | string | true     | The account ID |
 
 > Example responses
 
@@ -2908,10 +2896,10 @@ Accept: application/json
 
 <h3 id="remove-an-account-from-a-pool-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|204|[No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5)|No Content|None|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                         | Description | Schema                                    |
+| ------- | --------------------------------------------------------------- | ----------- | ----------------------------------------- |
+| 204     | [No Content](https://tools.ietf.org/html/rfc7231#section-6.3.5) | No Content  | None                                      |
+| default | Default                                                         | Error       | [V3ErrorResponse](#schemav3errorresponse) |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2935,9 +2923,9 @@ Accept: application/json
 
 <h3 id="get-a-task-and-its-result-by-id-parameters">Parameters</h3>
 
-|Name|In|Type|Required|Description|
-|---|---|---|---|---|
-|taskID|path|string|true|The task ID|
+| Name   | In   | Type   | Required | Description |
+| ------ | ---- | ------ | -------- | ----------- |
+| taskID | path | string | true     | The task ID |
 
 > Example responses
 
@@ -2959,10 +2947,10 @@ Accept: application/json
 
 <h3 id="get-a-task-and-its-result-by-id-responses">Responses</h3>
 
-|Status|Meaning|Description|Schema|
-|---|---|---|---|
-|200|[OK](https://tools.ietf.org/html/rfc7231#section-6.3.1)|OK|[V3GetTaskResponse](#schemav3gettaskresponse)|
-|default|Default|Error|[V3ErrorResponse](#schemav3errorresponse)|
+| Status  | Meaning                                                 | Description | Schema                                        |
+| ------- | ------------------------------------------------------- | ----------- | --------------------------------------------- |
+| 200     | [OK](https://tools.ietf.org/html/rfc7231#section-6.3.1) | OK          | [V3GetTaskResponse](#schemav3gettaskresponse) |
+| default | Default                                                 | Error       | [V3ErrorResponse](#schemav3errorresponse)     |
 
 <aside class="warning">
 To perform this operation, you must be authenticated by means of one of the following methods:
@@ -2980,14 +2968,13 @@ None ( Scopes: payments:read )
 
 ```json
 "string"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 <h2 id="tocS_V3AccountsCursorResponse">V3AccountsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3022,19 +3009,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Account](#schemav3account)]|true|none|none|
+| Name       | Type                            | Required | Restrictions | Description |
+| ---------- | ------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                          | true     | none         | none        |
+| » pageSize | integer(int64)                  | true     | none         | none        |
+| » hasMore  | boolean                         | true     | none         | none        |
+| » previous | string                          | false    | none         | none        |
+| » next     | string                          | false    | none         | none        |
+| » data     | [[V3Account](#schemav3account)] | true     | none         | none        |
 
 <h2 id="tocS_V3GetAccountResponse">V3GetAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -3061,14 +3047,13 @@ None ( Scopes: payments:read )
     "raw": {}
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Account](#schemav3account)|true|none|none|
+| Name | Type                          | Required | Restrictions | Description |
+| ---- | ----------------------------- | -------- | ------------ | ----------- |
+| data | [V3Account](#schemav3account) | true     | none         | none        |
 
 <h2 id="tocS_V3CreateAccountRequest">V3CreateAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -3090,20 +3075,19 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|reference|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|accountName|string|true|none|none|
-|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|none|
-|defaultAsset|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name         | Type                                          | Required | Restrictions | Description |
+| ------------ | --------------------------------------------- | -------- | ------------ | ----------- |
+| reference    | string                                        | true     | none         | none        |
+| connectorID  | string(byte)                                  | true     | none         | none        |
+| createdAt    | string(date-time)                             | true     | none         | none        |
+| accountName  | string                                        | true     | none         | none        |
+| type         | [V3AccountTypeEnum](#schemav3accounttypeenum) | true     | none         | none        |
+| defaultAsset | string¦null                                   | false    | none         | none        |
+| metadata     | [V3Metadata](#schemav3metadata)               | false    | none         | none        |
 
 <h2 id="tocS_V3CreateAccountResponse">V3CreateAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -3130,14 +3114,13 @@ None ( Scopes: payments:read )
     "raw": {}
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Account](#schemav3account)|true|none|none|
+| Name | Type                          | Required | Restrictions | Description |
+| ---- | ----------------------------- | -------- | ------------ | ----------- |
+| data | [V3Account](#schemav3account) | true     | none         | none        |
 
 <h2 id="tocS_V3Account">V3Account</h2>
 <!-- backwards compatibility -->
@@ -3162,23 +3145,22 @@ None ( Scopes: payments:read )
   },
   "raw": {}
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3AccountTypeEnum](#schemav3accounttypeenum)|true|none|none|
-|name|string¦null|false|none|none|
-|defaultAsset|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|raw|object|true|none|none|
+| Name         | Type                                          | Required | Restrictions | Description |
+| ------------ | --------------------------------------------- | -------- | ------------ | ----------- |
+| id           | string                                        | true     | none         | none        |
+| connectorID  | string(byte)                                  | true     | none         | none        |
+| provider     | string                                        | true     | none         | none        |
+| reference    | string                                        | true     | none         | none        |
+| createdAt    | string(date-time)                             | true     | none         | none        |
+| type         | [V3AccountTypeEnum](#schemav3accounttypeenum) | true     | none         | none        |
+| name         | string¦null                                   | false    | none         | none        |
+| defaultAsset | string¦null                                   | false    | none         | none        |
+| metadata     | [V3Metadata](#schemav3metadata)               | false    | none         | none        |
+| raw          | object                                        | true     | none         | none        |
 
 <h2 id="tocS_V3AccountTypeEnum">V3AccountTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -3189,22 +3171,21 @@ None ( Scopes: payments:read )
 
 ```json
 "UNKNOWN"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|UNKNOWN|
-|*anonymous*|INTERNAL|
-|*anonymous*|EXTERNAL|
+| Property    | Value    |
+| ----------- | -------- |
+| _anonymous_ | UNKNOWN  |
+| _anonymous_ | INTERNAL |
+| _anonymous_ | EXTERNAL |
 
 <h2 id="tocS_V3BalancesCursorResponse">V3BalancesCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3231,19 +3212,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Balance](#schemav3balance)]|true|none|none|
+| Name       | Type                            | Required | Restrictions | Description |
+| ---------- | ------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                          | true     | none         | none        |
+| » pageSize | integer(int64)                  | true     | none         | none        |
+| » hasMore  | boolean                         | true     | none         | none        |
+| » previous | string                          | false    | none         | none        |
+| » next     | string                          | false    | none         | none        |
+| » data     | [[V3Balance](#schemav3balance)] | true     | none         | none        |
 
 <h2 id="tocS_V3Balance">V3Balance</h2>
 <!-- backwards compatibility -->
@@ -3260,18 +3240,17 @@ None ( Scopes: payments:read )
   "asset": "string",
   "balance": 0
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|accountID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|lastUpdatedAt|string(date-time)|true|none|none|
-|asset|string|true|none|none|
-|balance|integer(bigint)|true|none|none|
+| Name          | Type              | Required | Restrictions | Description |
+| ------------- | ----------------- | -------- | ------------ | ----------- |
+| accountID     | string            | true     | none         | none        |
+| createdAt     | string(date-time) | true     | none         | none        |
+| lastUpdatedAt | string(date-time) | true     | none         | none        |
+| asset         | string            | true     | none         | none        |
+| balance       | integer(bigint)   | true     | none         | none        |
 
 <h2 id="tocS_V3CreateBankAccountRequest">V3CreateBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -3292,19 +3271,18 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|name|string|true|none|none|
-|accountNumber|string|false|none|none|
-|iban|string|false|none|none|
-|swiftBicCode|string|false|none|none|
-|country|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name          | Type                            | Required | Restrictions | Description |
+| ------------- | ------------------------------- | -------- | ------------ | ----------- |
+| name          | string                          | true     | none         | none        |
+| accountNumber | string                          | false    | none         | none        |
+| iban          | string                          | false    | none         | none        |
+| swiftBicCode  | string                          | false    | none         | none        |
+| country       | string                          | false    | none         | none        |
+| metadata      | [V3Metadata](#schemav3metadata) | false    | none         | none        |
 
 <h2 id="tocS_V3CreateBankAccountResponse">V3CreateBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -3317,14 +3295,13 @@ None ( Scopes: payments:read )
 {
   "data": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|string|true|none|The ID of the created bank account|
+| Name | Type   | Required | Restrictions | Description                        |
+| ---- | ------ | -------- | ------------ | ---------------------------------- |
+| data | string | true     | none         | The ID of the created bank account |
 
 <h2 id="tocS_V3UpdateBankAccountMetadataRequest">V3UpdateBankAccountMetadataRequest</h2>
 <!-- backwards compatibility -->
@@ -3340,14 +3317,13 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|metadata|[V3Metadata](#schemav3metadata)|true|none|none|
+| Name     | Type                            | Required | Restrictions | Description |
+| -------- | ------------------------------- | -------- | ------------ | ----------- |
+| metadata | [V3Metadata](#schemav3metadata) | true     | none         | none        |
 
 <h2 id="tocS_V3ForwardBankAccountRequest">V3ForwardBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -3360,14 +3336,13 @@ None ( Scopes: payments:read )
 {
   "connectorID": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|connectorID|string(byte)|true|none|none|
+| Name        | Type         | Required | Restrictions | Description |
+| ----------- | ------------ | -------- | ------------ | ----------- |
+| connectorID | string(byte) | true     | none         | none        |
 
 <h2 id="tocS_V3ForwardBankAccountResponse">V3ForwardBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -3382,15 +3357,14 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
+| Name     | Type   | Required | Restrictions | Description                                                                                                                                                                                                                            |
+| -------- | ------ | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data     | object | true     | none         | none                                                                                                                                                                                                                                   |
+| » taskID | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID. |
 
 <h2 id="tocS_V3BankAccountsCursorResponse">V3BankAccountsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3429,19 +3403,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3BankAccount](#schemav3bankaccount)]|true|none|none|
+| Name       | Type                                    | Required | Restrictions | Description |
+| ---------- | --------------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                                  | true     | none         | none        |
+| » pageSize | integer(int64)                          | true     | none         | none        |
+| » hasMore  | boolean                                 | true     | none         | none        |
+| » previous | string                                  | false    | none         | none        |
+| » next     | string                                  | false    | none         | none        |
+| » data     | [[V3BankAccount](#schemav3bankaccount)] | true     | none         | none        |
 
 <h2 id="tocS_V3GetBankAccountResponse">V3GetBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -3472,14 +3445,13 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3BankAccount](#schemav3bankaccount)|true|none|none|
+| Name | Type                                  | Required | Restrictions | Description |
+| ---- | ------------------------------------- | -------- | ------------ | ----------- |
+| data | [V3BankAccount](#schemav3bankaccount) | true     | none         | none        |
 
 <h2 id="tocS_V3BankAccount">V3BankAccount</h2>
 <!-- backwards compatibility -->
@@ -3508,22 +3480,21 @@ None ( Scopes: payments:read )
     }
   ]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|name|string|true|none|none|
-|accountNumber|string¦null|false|none|none|
-|iban|string¦null|false|none|none|
-|swiftBicCode|string¦null|false|none|none|
-|country|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|relatedAccounts|[[V3BankAccountRelatedAccount](#schemav3bankaccountrelatedaccount)]|false|none|none|
+| Name            | Type                                                                | Required | Restrictions | Description |
+| --------------- | ------------------------------------------------------------------- | -------- | ------------ | ----------- |
+| id              | string                                                              | true     | none         | none        |
+| createdAt       | string(date-time)                                                   | true     | none         | none        |
+| name            | string                                                              | true     | none         | none        |
+| accountNumber   | string¦null                                                         | false    | none         | none        |
+| iban            | string¦null                                                         | false    | none         | none        |
+| swiftBicCode    | string¦null                                                         | false    | none         | none        |
+| country         | string¦null                                                         | false    | none         | none        |
+| metadata        | [V3Metadata](#schemav3metadata)                                     | false    | none         | none        |
+| relatedAccounts | [[V3BankAccountRelatedAccount](#schemav3bankaccountrelatedaccount)] | false    | none         | none        |
 
 <h2 id="tocS_V3BankAccountRelatedAccount">V3BankAccountRelatedAccount</h2>
 <!-- backwards compatibility -->
@@ -3537,15 +3508,14 @@ None ( Scopes: payments:read )
   "accountID": "string",
   "createdAt": "2019-08-24T14:15:22Z"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|accountID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
+| Name      | Type              | Required | Restrictions | Description |
+| --------- | ----------------- | -------- | ------------ | ----------- |
+| accountID | string            | true     | none         | none        |
+| createdAt | string(date-time) | true     | none         | none        |
 
 <h2 id="tocS_V3InstallConnectorRequest">V3InstallConnectorRequest</h2>
 <!-- backwards compatibility -->
@@ -3566,12 +3536,11 @@ None ( Scopes: payments:read )
   "webhookPassword": "string",
   "webhookUsername": "string"
 }
-
 ```
 
 ### Properties
 
-*None*
+_None_
 
 <h2 id="tocS_V3InstallConnectorResponse">V3InstallConnectorResponse</h2>
 <!-- backwards compatibility -->
@@ -3584,14 +3553,13 @@ None ( Scopes: payments:read )
 {
   "data": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|string|true|none|The ID of the created connector|
+| Name | Type   | Required | Restrictions | Description                     |
+| ---- | ------ | -------- | ------------ | ------------------------------- |
+| data | string | true     | none         | The ID of the created connector |
 
 <h2 id="tocS_V3UninstallConnectorResponse">V3UninstallConnectorResponse</h2>
 <!-- backwards compatibility -->
@@ -3606,15 +3574,14 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results.|
+| Name     | Type   | Required | Restrictions | Description                                                                                                                                                                                              |
+| -------- | ------ | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data     | object | true     | none         | none                                                                                                                                                                                                     |
+| » taskID | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to uninstall the connector. You can use the task API to check the status of the task and get the results. |
 
 <h2 id="tocS_V3ResetConnectorResponse">V3ResetConnectorResponse</h2>
 <!-- backwards compatibility -->
@@ -3627,14 +3594,13 @@ None ( Scopes: payments:read )
 {
   "data": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the results.|
+| Name | Type   | Required | Restrictions | Description                                                                                                                                                                                          |
+| ---- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to reset the connector. You can use the task API to check the status of the task and get the results. |
 
 <h2 id="tocS_V3ConnectorConfigsResponse">V3ConnectorConfigsResponse</h2>
 <!-- backwards compatibility -->
@@ -3672,19 +3638,18 @@ None ( Scopes: payments:read )
     }
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» **additionalProperties**|object|false|none|none|
-|»» **additionalProperties**|object|false|none|none|
-|»»» dataType|string|true|none|none|
-|»»» required|boolean|true|none|none|
-|»»» defaultValue|string|false|none|none|
+| Name                        | Type    | Required | Restrictions | Description |
+| --------------------------- | ------- | -------- | ------------ | ----------- |
+| data                        | object  | true     | none         | none        |
+| » **additionalProperties**  | object  | false    | none         | none        |
+| »» **additionalProperties** | object  | false    | none         | none        |
+| »»» dataType                | string  | true     | none         | none        |
+| »»» required                | boolean | true     | none         | none        |
+| »»» defaultValue            | string  | false    | none         | none        |
 
 <h2 id="tocS_V3GetConnectorConfigResponse">V3GetConnectorConfigResponse</h2>
 <!-- backwards compatibility -->
@@ -3707,14 +3672,13 @@ None ( Scopes: payments:read )
     "webhookUsername": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3ConnectorConfig](#schemav3connectorconfig)|true|none|none|
+| Name | Type                                          | Required | Restrictions | Description |
+| ---- | --------------------------------------------- | -------- | ------------ | ----------- |
+| data | [V3ConnectorConfig](#schemav3connectorconfig) | true     | none         | none        |
 
 <h2 id="tocS_V3UpdateConnectorRequest">V3UpdateConnectorRequest</h2>
 <!-- backwards compatibility -->
@@ -3735,12 +3699,11 @@ None ( Scopes: payments:read )
   "webhookPassword": "string",
   "webhookUsername": "string"
 }
-
 ```
 
 ### Properties
 
-*None*
+_None_
 
 <h2 id="tocS_V3ConnectorsCursorResponse">V3ConnectorsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3769,19 +3732,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Connector](#schemav3connector)]|true|none|none|
+| Name       | Type                                | Required | Restrictions | Description |
+| ---------- | ----------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                              | true     | none         | none        |
+| » pageSize | integer(int64)                      | true     | none         | none        |
+| » hasMore  | boolean                             | true     | none         | none        |
+| » previous | string                              | false    | none         | none        |
+| » next     | string                              | false    | none         | none        |
+| » data     | [[V3Connector](#schemav3connector)] | true     | none         | none        |
 
 <h2 id="tocS_V3ConnectorSchedulesCursorResponse">V3ConnectorSchedulesCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3806,19 +3768,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Schedule](#schemav3schedule)]|true|none|none|
+| Name       | Type                              | Required | Restrictions | Description |
+| ---------- | --------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                            | true     | none         | none        |
+| » pageSize | integer(int64)                    | true     | none         | none        |
+| » hasMore  | boolean                           | true     | none         | none        |
+| » previous | string                            | false    | none         | none        |
+| » next     | string                            | false    | none         | none        |
+| » data     | [[V3Schedule](#schemav3schedule)] | true     | none         | none        |
 
 <h2 id="tocS_V3ConnectorScheduleResponse">V3ConnectorScheduleResponse</h2>
 <!-- backwards compatibility -->
@@ -3835,14 +3796,13 @@ None ( Scopes: payments:read )
     "createdAt": "2019-08-24T14:15:22Z"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Schedule](#schemav3schedule)|true|none|none|
+| Name | Type                            | Required | Restrictions | Description |
+| ---- | ------------------------------- | -------- | ------------ | ----------- |
+| data | [V3Schedule](#schemav3schedule) | true     | none         | none        |
 
 <h2 id="tocS_V3ConnectorScheduleInstancesCursorResponse">V3ConnectorScheduleInstancesCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -3872,19 +3832,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Instance](#schemav3instance)]|true|none|none|
+| Name       | Type                              | Required | Restrictions | Description |
+| ---------- | --------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                            | true     | none         | none        |
+| » pageSize | integer(int64)                    | true     | none         | none        |
+| » hasMore  | boolean                           | true     | none         | none        |
+| » previous | string                            | false    | none         | none        |
+| » next     | string                            | false    | none         | none        |
+| » data     | [[V3Instance](#schemav3instance)] | true     | none         | none        |
 
 <h2 id="tocS_V3Connector">V3Connector</h2>
 <!-- backwards compatibility -->
@@ -3903,20 +3862,19 @@ None ( Scopes: payments:read )
   "scheduledForDeletion": true,
   "config": {}
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|reference|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|provider|string|true|none|none|
-|scheduledForDeletion|boolean|true|none|none|
-|config|object|true|none|none|
+| Name                 | Type              | Required | Restrictions | Description |
+| -------------------- | ----------------- | -------- | ------------ | ----------- |
+| id                   | string            | true     | none         | none        |
+| reference            | string            | true     | none         | none        |
+| name                 | string            | true     | none         | none        |
+| createdAt            | string(date-time) | true     | none         | none        |
+| provider             | string            | true     | none         | none        |
+| scheduledForDeletion | boolean           | true     | none         | none        |
+| config               | object            | true     | none         | none        |
 
 <h2 id="tocS_V3Schedule">V3Schedule</h2>
 <!-- backwards compatibility -->
@@ -3931,16 +3889,15 @@ None ( Scopes: payments:read )
   "connectorID": "string",
   "createdAt": "2019-08-24T14:15:22Z"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
+| Name        | Type              | Required | Restrictions | Description |
+| ----------- | ----------------- | -------- | ------------ | ----------- |
+| id          | string            | true     | none         | none        |
+| connectorID | string(byte)      | true     | none         | none        |
+| createdAt   | string(date-time) | true     | none         | none        |
 
 <h2 id="tocS_V3Instance">V3Instance</h2>
 <!-- backwards compatibility -->
@@ -3960,21 +3917,20 @@ None ( Scopes: payments:read )
   "terminatedAt": "2019-08-24T14:15:22Z",
   "error": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|scheduleID|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|terminated|boolean|true|none|none|
-|terminatedAt|string(date-time)|false|none|none|
-|error|string¦null|false|none|none|
+| Name         | Type              | Required | Restrictions | Description |
+| ------------ | ----------------- | -------- | ------------ | ----------- |
+| id           | string            | true     | none         | none        |
+| connectorID  | string(byte)      | true     | none         | none        |
+| scheduleID   | string            | true     | none         | none        |
+| createdAt    | string(date-time) | true     | none         | none        |
+| updatedAt    | string(date-time) | true     | none         | none        |
+| terminated   | boolean           | true     | none         | none        |
+| terminatedAt | string(date-time) | false    | none         | none        |
+| error        | string¦null       | false    | none         | none        |
 
 <h2 id="tocS_V3CreatePaymentRequest">V3CreatePaymentRequest</h2>
 <!-- backwards compatibility -->
@@ -4013,25 +3969,24 @@ None ( Scopes: payments:read )
     }
   ]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|reference|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|none|
-|initialAmount|integer(bigint)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|scheme|string|true|none|none|
-|sourceAccountID|string(byte)|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|adjustments|[[V3CreatePaymentAdjustmentRequest](#schemav3createpaymentadjustmentrequest)]|false|none|none|
+| Name                 | Type                                                                          | Required | Restrictions | Description |
+| -------------------- | ----------------------------------------------------------------------------- | -------- | ------------ | ----------- |
+| reference            | string                                                                        | true     | none         | none        |
+| connectorID          | string(byte)                                                                  | true     | none         | none        |
+| createdAt            | string(date-time)                                                             | true     | none         | none        |
+| type                 | [V3PaymentTypeEnum](#schemav3paymenttypeenum)                                 | true     | none         | none        |
+| initialAmount        | integer(bigint)                                                               | true     | none         | none        |
+| amount               | integer(bigint)                                                               | true     | none         | none        |
+| asset                | string                                                                        | true     | none         | none        |
+| scheme               | string                                                                        | true     | none         | none        |
+| sourceAccountID      | string(byte)                                                                  | false    | none         | none        |
+| destinationAccountID | string(byte)                                                                  | false    | none         | none        |
+| metadata             | [V3Metadata](#schemav3metadata)                                               | false    | none         | none        |
+| adjustments          | [[V3CreatePaymentAdjustmentRequest](#schemav3createpaymentadjustmentrequest)] | false    | none         | none        |
 
 <h2 id="tocS_V3CreatePaymentAdjustmentRequest">V3CreatePaymentAdjustmentRequest</h2>
 <!-- backwards compatibility -->
@@ -4052,19 +4007,18 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name      | Type                                              | Required | Restrictions | Description |
+| --------- | ------------------------------------------------- | -------- | ------------ | ----------- |
+| reference | string                                            | true     | none         | none        |
+| createdAt | string(date-time)                                 | true     | none         | none        |
+| status    | [V3PaymentStatusEnum](#schemav3paymentstatusenum) | true     | none         | none        |
+| amount    | integer(bigint)                                   | false    | none         | none        |
+| asset     | string                                            | false    | none         | none        |
+| metadata  | [V3Metadata](#schemav3metadata)                   | false    | none         | none        |
 
 <h2 id="tocS_V3CreatePaymentResponse">V3CreatePaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -4110,14 +4064,13 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Payment](#schemav3payment)|true|none|none|
+| Name | Type                          | Required | Restrictions | Description |
+| ---- | ----------------------------- | -------- | ------------ | ----------- |
+| data | [V3Payment](#schemav3payment) | true     | none         | none        |
 
 <h2 id="tocS_V3UpdatePaymentMetadataRequest">V3UpdatePaymentMetadataRequest</h2>
 <!-- backwards compatibility -->
@@ -4133,14 +4086,13 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|metadata|[V3Metadata](#schemav3metadata)|true|none|none|
+| Name     | Type                            | Required | Restrictions | Description |
+| -------- | ------------------------------- | -------- | ------------ | ----------- |
+| metadata | [V3Metadata](#schemav3metadata) | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentsCursorResponse">V3PaymentsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -4194,19 +4146,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Payment](#schemav3payment)]|true|none|none|
+| Name       | Type                            | Required | Restrictions | Description |
+| ---------- | ------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                          | true     | none         | none        |
+| » pageSize | integer(int64)                  | true     | none         | none        |
+| » hasMore  | boolean                         | true     | none         | none        |
+| » previous | string                          | false    | none         | none        |
+| » next     | string                          | false    | none         | none        |
+| » data     | [[V3Payment](#schemav3payment)] | true     | none         | none        |
 
 <h2 id="tocS_V3GetPaymentResponse">V3GetPaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -4252,14 +4203,13 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Payment](#schemav3payment)|true|none|none|
+| Name | Type                          | Required | Restrictions | Description |
+| ---- | ----------------------------- | -------- | ------------ | ----------- |
+| data | [V3Payment](#schemav3payment) | true     | none         | none        |
 
 <h2 id="tocS_V3Payment">V3Payment</h2>
 <!-- backwards compatibility -->
@@ -4303,28 +4253,27 @@ None ( Scopes: payments:read )
     }
   ]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|type|[V3PaymentTypeEnum](#schemav3paymenttypeenum)|true|none|none|
-|initialAmount|integer(bigint)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|scheme|string|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|sourceAccountID|string(byte)¦null|false|none|none|
-|destinationAccountID|string(byte)¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|adjustments|[[V3PaymentAdjustment](#schemav3paymentadjustment)]¦null|false|none|none|
+| Name                 | Type                                                     | Required | Restrictions | Description |
+| -------------------- | -------------------------------------------------------- | -------- | ------------ | ----------- |
+| id                   | string                                                   | true     | none         | none        |
+| connectorID          | string(byte)                                             | true     | none         | none        |
+| provider             | string                                                   | true     | none         | none        |
+| reference            | string                                                   | true     | none         | none        |
+| createdAt            | string(date-time)                                        | true     | none         | none        |
+| type                 | [V3PaymentTypeEnum](#schemav3paymenttypeenum)            | true     | none         | none        |
+| initialAmount        | integer(bigint)                                          | true     | none         | none        |
+| amount               | integer(bigint)                                          | true     | none         | none        |
+| asset                | string                                                   | true     | none         | none        |
+| scheme               | string                                                   | true     | none         | none        |
+| status               | [V3PaymentStatusEnum](#schemav3paymentstatusenum)        | true     | none         | none        |
+| sourceAccountID      | string(byte)¦null                                        | false    | none         | none        |
+| destinationAccountID | string(byte)¦null                                        | false    | none         | none        |
+| metadata             | [V3Metadata](#schemav3metadata)                          | false    | none         | none        |
+| adjustments          | [[V3PaymentAdjustment](#schemav3paymentadjustment)]¦null | false    | none         | none        |
 
 <h2 id="tocS_V3PaymentAdjustment">V3PaymentAdjustment</h2>
 <!-- backwards compatibility -->
@@ -4347,21 +4296,20 @@ None ( Scopes: payments:read )
   },
   "raw": {}
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentStatusEnum](#schemav3paymentstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
-|raw|object|true|none|none|
+| Name      | Type                                              | Required | Restrictions | Description |
+| --------- | ------------------------------------------------- | -------- | ------------ | ----------- |
+| id        | string                                            | true     | none         | none        |
+| reference | string                                            | true     | none         | none        |
+| createdAt | string(date-time)                                 | true     | none         | none        |
+| status    | [V3PaymentStatusEnum](#schemav3paymentstatusenum) | true     | none         | none        |
+| amount    | integer(bigint)                                   | false    | none         | none        |
+| asset     | string                                            | false    | none         | none        |
+| metadata  | [V3Metadata](#schemav3metadata)                   | false    | none         | none        |
+| raw       | object                                            | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentTypeEnum">V3PaymentTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -4372,24 +4320,23 @@ None ( Scopes: payments:read )
 
 ```json
 "UNKNOWN"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|UNKNOWN|
-|*anonymous*|PAY-IN|
-|*anonymous*|PAYOUT|
-|*anonymous*|TRANSFER|
-|*anonymous*|OTHER|
+| Property    | Value    |
+| ----------- | -------- |
+| _anonymous_ | UNKNOWN  |
+| _anonymous_ | PAY-IN   |
+| _anonymous_ | PAYOUT   |
+| _anonymous_ | TRANSFER |
+| _anonymous_ | OTHER    |
 
 <h2 id="tocS_V3PaymentStatusEnum">V3PaymentStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -4400,36 +4347,35 @@ None ( Scopes: payments:read )
 
 ```json
 "UNKNOWN"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|UNKNOWN|
-|*anonymous*|PENDING|
-|*anonymous*|SUCCEEDED|
-|*anonymous*|CANCELLED|
-|*anonymous*|FAILED|
-|*anonymous*|EXPIRED|
-|*anonymous*|REFUNDED|
-|*anonymous*|REFUNDED_FAILURE|
-|*anonymous*|REFUND_REVERSED|
-|*anonymous*|DISPUTE|
-|*anonymous*|DISPUTE_WON|
-|*anonymous*|DISPUTE_LOST|
-|*anonymous*|AMOUNT_ADJUSTEMENT|
-|*anonymous*|AUTHORISATION|
-|*anonymous*|CAPTURE|
-|*anonymous*|CAPTURE_FAILED|
-|*anonymous*|OTHER|
+| Property    | Value              |
+| ----------- | ------------------ |
+| _anonymous_ | UNKNOWN            |
+| _anonymous_ | PENDING            |
+| _anonymous_ | SUCCEEDED          |
+| _anonymous_ | CANCELLED          |
+| _anonymous_ | FAILED             |
+| _anonymous_ | EXPIRED            |
+| _anonymous_ | REFUNDED           |
+| _anonymous_ | REFUNDED_FAILURE   |
+| _anonymous_ | REFUND_REVERSED    |
+| _anonymous_ | DISPUTE            |
+| _anonymous_ | DISPUTE_WON        |
+| _anonymous_ | DISPUTE_LOST       |
+| _anonymous_ | AMOUNT_ADJUSTEMENT |
+| _anonymous_ | AUTHORISATION      |
+| _anonymous_ | CAPTURE            |
+| _anonymous_ | CAPTURE_FAILED     |
+| _anonymous_ | OTHER              |
 
 <h2 id="tocS_V3InitiatePaymentRequest">V3InitiatePaymentRequest</h2>
 <!-- backwards compatibility -->
@@ -4454,23 +4400,22 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|reference|string|true|none|none|
-|scheduledAt|string(date-time)|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|description|string|true|none|none|
-|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|sourceAccountID|string(byte)¦null|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name                 | Type                                                              | Required | Restrictions | Description |
+| -------------------- | ----------------------------------------------------------------- | -------- | ------------ | ----------- |
+| reference            | string                                                            | true     | none         | none        |
+| scheduledAt          | string(date-time)                                                 | true     | none         | none        |
+| connectorID          | string(byte)                                                      | true     | none         | none        |
+| description          | string                                                            | true     | none         | none        |
+| type                 | [V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum) | true     | none         | none        |
+| amount               | integer(bigint)                                                   | true     | none         | none        |
+| asset                | string                                                            | true     | none         | none        |
+| sourceAccountID      | string(byte)¦null                                                 | false    | none         | none        |
+| destinationAccountID | string(byte)                                                      | false    | none         | none        |
+| metadata             | [V3Metadata](#schemav3metadata)                                   | false    | none         | none        |
 
 <h2 id="tocS_V3InitiatePaymentResponse">V3InitiatePaymentResponse</h2>
 <!-- backwards compatibility -->
@@ -4486,16 +4431,15 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» paymentInitiationID|string|false|none|Related payment initiation object ID created.|
-|» taskID|string|false|none|Will be filled if the noValidation query parameter is set to true. Since this call is asynchronous, the response will contain the ID of the task that was created to create the payment on the PSP. You can use the task API to check the status of the task and get the resulting payment ID|
+| Name                  | Type   | Required | Restrictions | Description                                                                                                                                                                                                                                                                                   |
+| --------------------- | ------ | -------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data                  | object | true     | none         | none                                                                                                                                                                                                                                                                                          |
+| » paymentInitiationID | string | false    | none         | Related payment initiation object ID created.                                                                                                                                                                                                                                                 |
+| » taskID              | string | false    | none         | Will be filled if the noValidation query parameter is set to true. Since this call is asynchronous, the response will contain the ID of the task that was created to create the payment on the PSP. You can use the task API to check the status of the task and get the resulting payment ID |
 
 <h2 id="tocS_V3RetryPaymentInitiationResponse">V3RetryPaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -4510,15 +4454,14 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID.|
+| Name     | Type   | Required | Restrictions | Description                                                                                                                                                                                                                           |
+| -------- | ------ | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data     | object | true     | none         | none                                                                                                                                                                                                                                  |
+| » taskID | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to retry the payment initiation to the PSP. You can use the task API to check the status of the task and get the resulting payment ID. |
 
 <h2 id="tocS_V3ApprovePaymentInitiationResponse">V3ApprovePaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -4533,15 +4476,14 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.|
+| Name     | Type   | Required | Restrictions | Description                                                                                                                                                                                                                  |
+| -------- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data     | object | true     | none         | none                                                                                                                                                                                                                         |
+| » taskID | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to approve the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID. |
 
 <h2 id="tocS_V3ReversePaymentInitiationRequest">V3ReversePaymentInitiationRequest</h2>
 <!-- backwards compatibility -->
@@ -4561,18 +4503,17 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|reference|string|true|none|none|
-|description|string|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name        | Type                            | Required | Restrictions | Description |
+| ----------- | ------------------------------- | -------- | ------------ | ----------- |
+| reference   | string                          | true     | none         | none        |
+| description | string                          | true     | none         | none        |
+| amount      | integer(bigint)                 | true     | none         | none        |
+| asset       | string                          | true     | none         | none        |
+| metadata    | [V3Metadata](#schemav3metadata) | false    | none         | none        |
 
 <h2 id="tocS_V3ReversePaymentInitiationResponse">V3ReversePaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -4588,16 +4529,15 @@ None ( Scopes: payments:read )
     "paymentInitiationReversalID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|false|none|Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID.|
-|» paymentInitiationReversalID|string|false|none|Related payment initiation reversal object ID created.|
+| Name                          | Type   | Required | Restrictions | Description                                                                                                                                                                                                                  |
+| ----------------------------- | ------ | -------- | ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data                          | object | true     | none         | none                                                                                                                                                                                                                         |
+| » taskID                      | string | false    | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to reverse the payment initiation. You can use the task API to check the status of the task and get the resulting payment ID. |
+| » paymentInitiationReversalID | string | false    | none         | Related payment initiation reversal object ID created.                                                                                                                                                                       |
 
 <h2 id="tocS_V3PaymentInitiationsCursorResponse">V3PaymentInitiationsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -4637,19 +4577,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3PaymentInitiation](#schemav3paymentinitiation)]|true|none|none|
+| Name       | Type                                                | Required | Restrictions | Description |
+| ---------- | --------------------------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                                              | true     | none         | none        |
+| » pageSize | integer(int64)                                      | true     | none         | none        |
+| » hasMore  | boolean                                             | true     | none         | none        |
+| » previous | string                                              | false    | none         | none        |
+| » next     | string                                              | false    | none         | none        |
+| » data     | [[V3PaymentInitiation](#schemav3paymentinitiation)] | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentInitiationAdjustmentsCursorResponse">V3PaymentInitiationAdjustmentsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -4681,19 +4620,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3PaymentInitiationAdjustment](#schemav3paymentinitiationadjustment)]|true|none|none|
+| Name       | Type                                                                    | Required | Restrictions | Description |
+| ---------- | ----------------------------------------------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                                                                  | true     | none         | none        |
+| » pageSize | integer(int64)                                                          | true     | none         | none        |
+| » hasMore  | boolean                                                                 | true     | none         | none        |
+| » previous | string                                                                  | false    | none         | none        |
+| » next     | string                                                                  | false    | none         | none        |
+| » data     | [[V3PaymentInitiationAdjustment](#schemav3paymentinitiationadjustment)] | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentInitiationRelatedPaymentsCursorResponse">V3PaymentInitiationRelatedPaymentsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -4747,19 +4685,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Payment](#schemav3payment)]|true|none|none|
+| Name       | Type                            | Required | Restrictions | Description |
+| ---------- | ------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                          | true     | none         | none        |
+| » pageSize | integer(int64)                  | true     | none         | none        |
+| » hasMore  | boolean                         | true     | none         | none        |
+| » previous | string                          | false    | none         | none        |
+| » next     | string                          | false    | none         | none        |
+| » data     | [[V3Payment](#schemav3payment)] | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentInitiation">V3PaymentInitiation</h2>
 <!-- backwards compatibility -->
@@ -4789,28 +4726,27 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|connectorID|string(byte)|true|none|none|
-|provider|string|true|none|none|
-|reference|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|scheduledAt|string(date-time)|true|none|none|
-|description|string|true|none|none|
-|type|[V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)|true|none|none|
-|amount|integer(bigint)|true|none|none|
-|asset|string|true|none|none|
-|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
-|sourceAccountID|string(byte)|false|none|none|
-|destinationAccountID|string(byte)|false|none|none|
-|error|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name                 | Type                                                                  | Required | Restrictions | Description |
+| -------------------- | --------------------------------------------------------------------- | -------- | ------------ | ----------- |
+| id                   | string                                                                | true     | none         | none        |
+| connectorID          | string(byte)                                                          | true     | none         | none        |
+| provider             | string                                                                | true     | none         | none        |
+| reference            | string                                                                | true     | none         | none        |
+| createdAt            | string(date-time)                                                     | true     | none         | none        |
+| scheduledAt          | string(date-time)                                                     | true     | none         | none        |
+| description          | string                                                                | true     | none         | none        |
+| type                 | [V3PaymentInitiationTypeEnum](#schemav3paymentinitiationtypeenum)     | true     | none         | none        |
+| amount               | integer(bigint)                                                       | true     | none         | none        |
+| asset                | string                                                                | true     | none         | none        |
+| status               | [V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum) | true     | none         | none        |
+| sourceAccountID      | string(byte)                                                          | false    | none         | none        |
+| destinationAccountID | string(byte)                                                          | false    | none         | none        |
+| error                | string¦null                                                           | false    | none         | none        |
+| metadata             | [V3Metadata](#schemav3metadata)                                       | false    | none         | none        |
 
 <h2 id="tocS_V3PaymentInitiationAdjustment">V3PaymentInitiationAdjustment</h2>
 <!-- backwards compatibility -->
@@ -4832,20 +4768,19 @@ None ( Scopes: payments:read )
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|status|[V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum)|true|none|none|
-|amount|integer(bigint)|false|none|none|
-|asset|string|false|none|none|
-|error|string¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name      | Type                                                                  | Required | Restrictions | Description |
+| --------- | --------------------------------------------------------------------- | -------- | ------------ | ----------- |
+| id        | string                                                                | true     | none         | none        |
+| createdAt | string(date-time)                                                     | true     | none         | none        |
+| status    | [V3PaymentInitiationStatusEnum](#schemav3paymentinitiationstatusenum) | true     | none         | none        |
+| amount    | integer(bigint)                                                       | false    | none         | none        |
+| asset     | string                                                                | false    | none         | none        |
+| error     | string¦null                                                           | false    | none         | none        |
+| metadata  | [V3Metadata](#schemav3metadata)                                       | false    | none         | none        |
 
 <h2 id="tocS_V3GetPaymentInitiationResponse">V3GetPaymentInitiationResponse</h2>
 <!-- backwards compatibility -->
@@ -4877,14 +4812,13 @@ None ( Scopes: payments:read )
     }
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3PaymentInitiation](#schemav3paymentinitiation)|true|none|none|
+| Name | Type                                              | Required | Restrictions | Description |
+| ---- | ------------------------------------------------- | -------- | ------------ | ----------- |
+| data | [V3PaymentInitiation](#schemav3paymentinitiation) | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentInitiationStatusEnum">V3PaymentInitiationStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -4895,29 +4829,28 @@ None ( Scopes: payments:read )
 
 ```json
 "UNKNOWN"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|UNKNOWN|
-|*anonymous*|WAITING_FOR_VALIDATION|
-|*anonymous*|SCHEDULED_FOR_PROCESSING|
-|*anonymous*|PROCESSING|
-|*anonymous*|PROCESSED|
-|*anonymous*|FAILED|
-|*anonymous*|REJECTED|
-|*anonymous*|REVERSE_PROCESSING|
-|*anonymous*|REVERSE_FAILED|
-|*anonymous*|REVERSED|
+| Property    | Value                    |
+| ----------- | ------------------------ |
+| _anonymous_ | UNKNOWN                  |
+| _anonymous_ | WAITING_FOR_VALIDATION   |
+| _anonymous_ | SCHEDULED_FOR_PROCESSING |
+| _anonymous_ | PROCESSING               |
+| _anonymous_ | PROCESSED                |
+| _anonymous_ | FAILED                   |
+| _anonymous_ | REJECTED                 |
+| _anonymous_ | REVERSE_PROCESSING       |
+| _anonymous_ | REVERSE_FAILED           |
+| _anonymous_ | REVERSED                 |
 
 <h2 id="tocS_V3PaymentInitiationTypeEnum">V3PaymentInitiationTypeEnum</h2>
 <!-- backwards compatibility -->
@@ -4928,22 +4861,21 @@ None ( Scopes: payments:read )
 
 ```json
 "UNKNOWN"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|UNKNOWN|
-|*anonymous*|TRANSFER|
-|*anonymous*|PAYOUT|
+| Property    | Value    |
+| ----------- | -------- |
+| _anonymous_ | UNKNOWN  |
+| _anonymous_ | TRANSFER |
+| _anonymous_ | PAYOUT   |
 
 <h2 id="tocS_V3CreatePaymentServiceUserRequest">V3CreatePaymentServiceUserRequest</h2>
 <!-- backwards compatibility -->
@@ -4967,26 +4899,23 @@ None ( Scopes: payments:read )
     "postalCode": "string",
     "country": "string"
   },
-  "bankAccountIDs": [
-    "string"
-  ],
+  "bankAccountIDs": ["string"],
   "metadata": {
     "property1": "string",
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|name|string|true|none|none|
-|contactDetails|[V3ContactDetailsRequest](#schemav3contactdetailsrequest)|false|none|none|
-|address|[V3AddressRequest](#schemav3addressrequest)|false|none|none|
-|bankAccountIDs|[string]¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name           | Type                                                      | Required | Restrictions | Description |
+| -------------- | --------------------------------------------------------- | -------- | ------------ | ----------- |
+| name           | string                                                    | true     | none         | none        |
+| contactDetails | [V3ContactDetailsRequest](#schemav3contactdetailsrequest) | false    | none         | none        |
+| address        | [V3AddressRequest](#schemav3addressrequest)               | false    | none         | none        |
+| bankAccountIDs | [string]¦null                                             | false    | none         | none        |
+| metadata       | [V3Metadata](#schemav3metadata)                           | false    | none         | none        |
 
 <h2 id="tocS_V3AddressRequest">V3AddressRequest</h2>
 <!-- backwards compatibility -->
@@ -5004,19 +4933,18 @@ None ( Scopes: payments:read )
   "postalCode": "string",
   "country": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|streetNumber|string|false|none|none|
-|streetName|string|false|none|none|
-|city|string|false|none|none|
-|region|string|false|none|none|
-|postalCode|string|false|none|none|
-|country|string|false|none|none|
+| Name         | Type   | Required | Restrictions | Description |
+| ------------ | ------ | -------- | ------------ | ----------- |
+| streetNumber | string | false    | none         | none        |
+| streetName   | string | false    | none         | none        |
+| city         | string | false    | none         | none        |
+| region       | string | false    | none         | none        |
+| postalCode   | string | false    | none         | none        |
+| country      | string | false    | none         | none        |
 
 <h2 id="tocS_V3ContactDetailsRequest">V3ContactDetailsRequest</h2>
 <!-- backwards compatibility -->
@@ -5030,15 +4958,14 @@ None ( Scopes: payments:read )
   "email": "string",
   "phoneNumber": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|email|string|false|none|none|
-|phoneNumber|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| email       | string | false    | none         | none        |
+| phoneNumber | string | false    | none         | none        |
 
 <h2 id="tocS_V3CreatePaymentServiceUserResponse">V3CreatePaymentServiceUserResponse</h2>
 <!-- backwards compatibility -->
@@ -5051,14 +4978,13 @@ None ( Scopes: payments:read )
 {
   "data": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|string|true|none|The ID of the created payment service user|
+| Name | Type   | Required | Restrictions | Description                                |
+| ---- | ------ | -------- | ------------ | ------------------------------------------ |
+| data | string | true     | none         | The ID of the created payment service user |
 
 <h2 id="tocS_V3PaymentServiceUsersCursorResponse">V3PaymentServiceUsersCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -5091,9 +5017,7 @@ None ( Scopes: payments:read )
           "postalCode": "string",
           "country": "string"
         },
-        "bankAccountIDs": [
-          "string"
-        ],
+        "bankAccountIDs": ["string"],
         "metadata": {
           "property1": "string",
           "property2": "string"
@@ -5102,19 +5026,18 @@ None ( Scopes: payments:read )
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3PaymentServiceUser](#schemav3paymentserviceuser)]|true|none|none|
+| Name       | Type                                                  | Required | Restrictions | Description |
+| ---------- | ----------------------------------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                                                | true     | none         | none        |
+| » pageSize | integer(int64)                                        | true     | none         | none        |
+| » hasMore  | boolean                                               | true     | none         | none        |
+| » previous | string                                                | false    | none         | none        |
+| » next     | string                                                | false    | none         | none        |
+| » data     | [[V3PaymentServiceUser](#schemav3paymentserviceuser)] | true     | none         | none        |
 
 <h2 id="tocS_V3PaymentServiceUser">V3PaymentServiceUser</h2>
 <!-- backwards compatibility -->
@@ -5140,28 +5063,25 @@ None ( Scopes: payments:read )
     "postalCode": "string",
     "country": "string"
   },
-  "bankAccountIDs": [
-    "string"
-  ],
+  "bankAccountIDs": ["string"],
   "metadata": {
     "property1": "string",
     "property2": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|contactDetails|[V3ContactDetails](#schemav3contactdetails)|false|none|none|
-|address|[V3Address](#schemav3address)|false|none|none|
-|bankAccountIDs|[string]¦null|false|none|none|
-|metadata|[V3Metadata](#schemav3metadata)|false|none|none|
+| Name           | Type                                        | Required | Restrictions | Description |
+| -------------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| id             | string                                      | true     | none         | none        |
+| name           | string                                      | true     | none         | none        |
+| createdAt      | string(date-time)                           | true     | none         | none        |
+| contactDetails | [V3ContactDetails](#schemav3contactdetails) | false    | none         | none        |
+| address        | [V3Address](#schemav3address)               | false    | none         | none        |
+| bankAccountIDs | [string]¦null                               | false    | none         | none        |
+| metadata       | [V3Metadata](#schemav3metadata)             | false    | none         | none        |
 
 <h2 id="tocS_V3ContactDetails">V3ContactDetails</h2>
 <!-- backwards compatibility -->
@@ -5175,15 +5095,14 @@ None ( Scopes: payments:read )
   "email": "string",
   "phoneNumber": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|email|string|false|none|none|
-|phoneNumber|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| email       | string | false    | none         | none        |
+| phoneNumber | string | false    | none         | none        |
 
 <h2 id="tocS_V3Address">V3Address</h2>
 <!-- backwards compatibility -->
@@ -5201,19 +5120,18 @@ None ( Scopes: payments:read )
   "postalCode": "string",
   "country": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|streetNumber|string|false|none|none|
-|streetName|string|false|none|none|
-|city|string|false|none|none|
-|region|string|false|none|none|
-|postalCode|string|false|none|none|
-|country|string|false|none|none|
+| Name         | Type   | Required | Restrictions | Description |
+| ------------ | ------ | -------- | ------------ | ----------- |
+| streetNumber | string | false    | none         | none        |
+| streetName   | string | false    | none         | none        |
+| city         | string | false    | none         | none        |
+| region       | string | false    | none         | none        |
+| postalCode   | string | false    | none         | none        |
+| country      | string | false    | none         | none        |
 
 <h2 id="tocS_V3GetPaymentServiceUserResponse">V3GetPaymentServiceUserResponse</h2>
 <!-- backwards compatibility -->
@@ -5240,23 +5158,20 @@ None ( Scopes: payments:read )
       "postalCode": "string",
       "country": "string"
     },
-    "bankAccountIDs": [
-      "string"
-    ],
+    "bankAccountIDs": ["string"],
     "metadata": {
       "property1": "string",
       "property2": "string"
     }
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3PaymentServiceUser](#schemav3paymentserviceuser)|true|none|none|
+| Name | Type                                                | Required | Restrictions | Description |
+| ---- | --------------------------------------------------- | -------- | ------------ | ----------- |
+| data | [V3PaymentServiceUser](#schemav3paymentserviceuser) | true     | none         | none        |
 
 <h2 id="tocS_V3ForwardPaymentServiceUserBankAccountRequest">V3ForwardPaymentServiceUserBankAccountRequest</h2>
 <!-- backwards compatibility -->
@@ -5269,14 +5184,13 @@ None ( Scopes: payments:read )
 {
   "connectorID": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|connectorID|string(byte)|true|none|none|
+| Name        | Type         | Required | Restrictions | Description |
+| ----------- | ------------ | -------- | ------------ | ----------- |
+| connectorID | string(byte) | true     | none         | none        |
 
 <h2 id="tocS_V3ForwardPaymentServiceUserBankAccountResponse">V3ForwardPaymentServiceUserBankAccountResponse</h2>
 <!-- backwards compatibility -->
@@ -5291,15 +5205,14 @@ None ( Scopes: payments:read )
     "taskID": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|object|true|none|none|
-|» taskID|string|true|none|Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID.|
+| Name     | Type   | Required | Restrictions | Description                                                                                                                                                                                                                            |
+| -------- | ------ | -------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| data     | object | true     | none         | none                                                                                                                                                                                                                                   |
+| » taskID | string | true     | none         | Since this call is asynchronous, the response will contain the ID of the task that was created to forward the bank account to the PSP. You can use the task API to check the status of the task and get the resulting bank account ID. |
 
 <h2 id="tocS_V3CreatePoolRequest">V3CreatePoolRequest</h2>
 <!-- backwards compatibility -->
@@ -5311,19 +5224,16 @@ None ( Scopes: payments:read )
 ```json
 {
   "name": "string",
-  "accountIDs": [
-    "string"
-  ]
+  "accountIDs": ["string"]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|name|string|true|none|none|
-|accountIDs|[string]|true|none|none|
+| Name       | Type     | Required | Restrictions | Description |
+| ---------- | -------- | -------- | ------------ | ----------- |
+| name       | string   | true     | none         | none        |
+| accountIDs | [string] | true     | none         | none        |
 
 <h2 id="tocS_V3CreatePoolResponse">V3CreatePoolResponse</h2>
 <!-- backwards compatibility -->
@@ -5336,14 +5246,13 @@ None ( Scopes: payments:read )
 {
   "data": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|string|true|none|The ID of the created pool|
+| Name | Type   | Required | Restrictions | Description                |
+| ---- | ------ | -------- | ------------ | -------------------------- |
+| data | string | true     | none         | The ID of the created pool |
 
 <h2 id="tocS_V3PoolsCursorResponse">V3PoolsCursorResponse</h2>
 <!-- backwards compatibility -->
@@ -5364,26 +5273,23 @@ None ( Scopes: payments:read )
         "id": "string",
         "name": "string",
         "createdAt": "2019-08-24T14:15:22Z",
-        "poolAccounts": [
-          "string"
-        ]
+        "poolAccounts": ["string"]
       }
     ]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|cursor|object|true|none|none|
-|» pageSize|integer(int64)|true|none|none|
-|» hasMore|boolean|true|none|none|
-|» previous|string|false|none|none|
-|» next|string|false|none|none|
-|» data|[[V3Pool](#schemav3pool)]|true|none|none|
+| Name       | Type                      | Required | Restrictions | Description |
+| ---------- | ------------------------- | -------- | ------------ | ----------- |
+| cursor     | object                    | true     | none         | none        |
+| » pageSize | integer(int64)            | true     | none         | none        |
+| » hasMore  | boolean                   | true     | none         | none        |
+| » previous | string                    | false    | none         | none        |
+| » next     | string                    | false    | none         | none        |
+| » data     | [[V3Pool](#schemav3pool)] | true     | none         | none        |
 
 <h2 id="tocS_V3GetPoolResponse">V3GetPoolResponse</h2>
 <!-- backwards compatibility -->
@@ -5398,19 +5304,16 @@ None ( Scopes: payments:read )
     "id": "string",
     "name": "string",
     "createdAt": "2019-08-24T14:15:22Z",
-    "poolAccounts": [
-      "string"
-    ]
+    "poolAccounts": ["string"]
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Pool](#schemav3pool)|true|none|none|
+| Name | Type                    | Required | Restrictions | Description |
+| ---- | ----------------------- | -------- | ------------ | ----------- |
+| data | [V3Pool](#schemav3pool) | true     | none         | none        |
 
 <h2 id="tocS_V3PoolBalancesResponse">V3PoolBalancesResponse</h2>
 <!-- backwards compatibility -->
@@ -5428,14 +5331,13 @@ None ( Scopes: payments:read )
     }
   ]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3PoolBalances](#schemav3poolbalances)|true|none|none|
+| Name | Type                                    | Required | Restrictions | Description |
+| ---- | --------------------------------------- | -------- | ------------ | ----------- |
+| data | [V3PoolBalances](#schemav3poolbalances) | true     | none         | none        |
 
 <h2 id="tocS_V3Pool">V3Pool</h2>
 <!-- backwards compatibility -->
@@ -5449,21 +5351,18 @@ None ( Scopes: payments:read )
   "id": "string",
   "name": "string",
   "createdAt": "2019-08-24T14:15:22Z",
-  "poolAccounts": [
-    "string"
-  ]
+  "poolAccounts": ["string"]
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|name|string|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|poolAccounts|[[V3AccountID](#schemav3accountid)]|true|none|none|
+| Name         | Type                                | Required | Restrictions | Description |
+| ------------ | ----------------------------------- | -------- | ------------ | ----------- |
+| id           | string                              | true     | none         | none        |
+| name         | string                              | true     | none         | none        |
+| createdAt    | string(date-time)                   | true     | none         | none        |
+| poolAccounts | [[V3AccountID](#schemav3accountid)] | true     | none         | none        |
 
 <h2 id="tocS_V3PoolBalances">V3PoolBalances</h2>
 <!-- backwards compatibility -->
@@ -5479,14 +5378,13 @@ None ( Scopes: payments:read )
     "amount": 0
   }
 ]
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[[V3PoolBalance](#schemav3poolbalance)]|false|none|none|
+| Name        | Type                                    | Required | Restrictions | Description |
+| ----------- | --------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [[V3PoolBalance](#schemav3poolbalance)] | false    | none         | none        |
 
 <h2 id="tocS_V3PoolBalance">V3PoolBalance</h2>
 <!-- backwards compatibility -->
@@ -5500,15 +5398,14 @@ None ( Scopes: payments:read )
   "asset": "string",
   "amount": 0
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|asset|string|true|none|none|
-|amount|integer(bigint)|true|none|none|
+| Name   | Type            | Required | Restrictions | Description |
+| ------ | --------------- | -------- | ------------ | ----------- |
+| asset  | string          | true     | none         | none        |
+| amount | integer(bigint) | true     | none         | none        |
 
 <h2 id="tocS_V3GetTaskResponse">V3GetTaskResponse</h2>
 <!-- backwards compatibility -->
@@ -5529,14 +5426,13 @@ None ( Scopes: payments:read )
     "error": "string"
   }
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|data|[V3Task](#schemav3task)|true|none|none|
+| Name | Type                    | Required | Restrictions | Description |
+| ---- | ----------------------- | -------- | ------------ | ----------- |
+| data | [V3Task](#schemav3task) | true     | none         | none        |
 
 <h2 id="tocS_V3Task">V3Task</h2>
 <!-- backwards compatibility -->
@@ -5555,20 +5451,19 @@ None ( Scopes: payments:read )
   "createdObjectID": "string",
   "error": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|id|string|true|none|none|
-|status|[V3TaskStatusEnum](#schemav3taskstatusenum)|true|none|none|
-|createdAt|string(date-time)|true|none|none|
-|updatedAt|string(date-time)|true|none|none|
-|connectorID|string(byte)|false|none|none|
-|createdObjectID|string|false|none|none|
-|error|string¦null|false|none|none|
+| Name            | Type                                        | Required | Restrictions | Description |
+| --------------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| id              | string                                      | true     | none         | none        |
+| status          | [V3TaskStatusEnum](#schemav3taskstatusenum) | true     | none         | none        |
+| createdAt       | string(date-time)                           | true     | none         | none        |
+| updatedAt       | string(date-time)                           | true     | none         | none        |
+| connectorID     | string(byte)                                | false    | none         | none        |
+| createdObjectID | string                                      | false    | none         | none        |
+| error           | string¦null                                 | false    | none         | none        |
 
 <h2 id="tocS_V3TaskStatusEnum">V3TaskStatusEnum</h2>
 <!-- backwards compatibility -->
@@ -5579,22 +5474,21 @@ None ( Scopes: payments:read )
 
 ```json
 "PROCESSING"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|PROCESSING|
-|*anonymous*|SUCCEEDED|
-|*anonymous*|FAILED|
+| Property    | Value      |
+| ----------- | ---------- |
+| _anonymous_ | PROCESSING |
+| _anonymous_ | SUCCEEDED  |
+| _anonymous_ | FAILED     |
 
 <h2 id="tocS_V3QueryBuilder">V3QueryBuilder</h2>
 <!-- backwards compatibility -->
@@ -5605,12 +5499,11 @@ None ( Scopes: payments:read )
 
 ```json
 {}
-
 ```
 
 ### Properties
 
-*None*
+_None_
 
 <h2 id="tocS_V3Metadata">V3Metadata</h2>
 <!-- backwards compatibility -->
@@ -5624,14 +5517,13 @@ None ( Scopes: payments:read )
   "property1": "string",
   "property2": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|**additionalProperties**|string|false|none|none|
+| Name                     | Type   | Required | Restrictions | Description |
+| ------------------------ | ------ | -------- | ------------ | ----------- |
+| **additionalProperties** | string | false    | none         | none        |
 
 <h2 id="tocS_V3ErrorResponse">V3ErrorResponse</h2>
 <!-- backwards compatibility -->
@@ -5646,16 +5538,15 @@ None ( Scopes: payments:read )
   "errorMessage": "[VALIDATION] missing required config field: pollingPeriod",
   "details": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|errorCode|[V3ErrorsEnum](#schemav3errorsenum)|true|none|none|
-|errorMessage|string|true|none|none|
-|details|string|false|none|none|
+| Name         | Type                                | Required | Restrictions | Description |
+| ------------ | ----------------------------------- | -------- | ------------ | ----------- |
+| errorCode    | [V3ErrorsEnum](#schemav3errorsenum) | true     | none         | none        |
+| errorMessage | string                              | true     | none         | none        |
+| details      | string                              | false    | none         | none        |
 
 <h2 id="tocS_V3ErrorsEnum">V3ErrorsEnum</h2>
 <!-- backwards compatibility -->
@@ -5666,25 +5557,24 @@ None ( Scopes: payments:read )
 
 ```json
 "VALIDATION"
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|string|false|none|none|
+| Name        | Type   | Required | Restrictions | Description |
+| ----------- | ------ | -------- | ------------ | ----------- |
+| _anonymous_ | string | false    | none         | none        |
 
 #### Enumerated Values
 
-|Property|Value|
-|---|---|
-|*anonymous*|INTERNAL|
-|*anonymous*|VALIDATION|
-|*anonymous*|INVALID_ID|
-|*anonymous*|MISSING_OR_INVALID_BODY|
-|*anonymous*|CONFLICT|
-|*anonymous*|NOT_FOUND|
+| Property    | Value                   |
+| ----------- | ----------------------- |
+| _anonymous_ | INTERNAL                |
+| _anonymous_ | VALIDATION              |
+| _anonymous_ | INVALID_ID              |
+| _anonymous_ | MISSING_OR_INVALID_BODY |
+| _anonymous_ | CONFLICT                |
+| _anonymous_ | NOT_FOUND               |
 
 <h2 id="tocS_V3ConnectorConfig">V3ConnectorConfig</h2>
 <!-- backwards compatibility -->
@@ -5705,112 +5595,111 @@ None ( Scopes: payments:read )
   "webhookPassword": "string",
   "webhookUsername": "string"
 }
-
 ```
 
 ### Properties
 
 oneOf
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3AdyenConfig](#schemav3adyenconfig)|false|none|none|
+| Name        | Type                                  | Required | Restrictions | Description |
+| ----------- | ------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3AdyenConfig](#schemav3adyenconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3AtlarConfig](#schemav3atlarconfig)|false|none|none|
+| Name        | Type                                  | Required | Restrictions | Description |
+| ----------- | ------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3AtlarConfig](#schemav3atlarconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3BankingcircleConfig](#schemav3bankingcircleconfig)|false|none|none|
+| Name        | Type                                                  | Required | Restrictions | Description |
+| ----------- | ----------------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3BankingcircleConfig](#schemav3bankingcircleconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3CheckoutConfig](#schemav3checkoutconfig)|false|none|none|
+| Name        | Type                                        | Required | Restrictions | Description |
+| ----------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3CheckoutConfig](#schemav3checkoutconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3ColumnConfig](#schemav3columnconfig)|false|none|none|
+| Name        | Type                                    | Required | Restrictions | Description |
+| ----------- | --------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3ColumnConfig](#schemav3columnconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3CurrencycloudConfig](#schemav3currencycloudconfig)|false|none|none|
+| Name        | Type                                                  | Required | Restrictions | Description |
+| ----------- | ----------------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3CurrencycloudConfig](#schemav3currencycloudconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3DummypayConfig](#schemav3dummypayconfig)|false|none|none|
+| Name        | Type                                        | Required | Restrictions | Description |
+| ----------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3DummypayConfig](#schemav3dummypayconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3GenericConfig](#schemav3genericconfig)|false|none|none|
+| Name        | Type                                      | Required | Restrictions | Description |
+| ----------- | ----------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3GenericConfig](#schemav3genericconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3IncreaseConfig](#schemav3increaseconfig)|false|none|none|
+| Name        | Type                                        | Required | Restrictions | Description |
+| ----------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3IncreaseConfig](#schemav3increaseconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3MangopayConfig](#schemav3mangopayconfig)|false|none|none|
+| Name        | Type                                        | Required | Restrictions | Description |
+| ----------- | ------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3MangopayConfig](#schemav3mangopayconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3ModulrConfig](#schemav3modulrconfig)|false|none|none|
+| Name        | Type                                    | Required | Restrictions | Description |
+| ----------- | --------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3ModulrConfig](#schemav3modulrconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3MoneycorpConfig](#schemav3moneycorpconfig)|false|none|none|
+| Name        | Type                                          | Required | Restrictions | Description |
+| ----------- | --------------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3MoneycorpConfig](#schemav3moneycorpconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3PlaidConfig](#schemav3plaidconfig)|false|none|none|
+| Name        | Type                                  | Required | Restrictions | Description |
+| ----------- | ------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3PlaidConfig](#schemav3plaidconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3PowensConfig](#schemav3powensconfig)|false|none|none|
+| Name        | Type                                    | Required | Restrictions | Description |
+| ----------- | --------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3PowensConfig](#schemav3powensconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3QontoConfig](#schemav3qontoconfig)|false|none|none|
+| Name        | Type                                  | Required | Restrictions | Description |
+| ----------- | ------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3QontoConfig](#schemav3qontoconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3StripeConfig](#schemav3stripeconfig)|false|none|none|
+| Name        | Type                                    | Required | Restrictions | Description |
+| ----------- | --------------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3StripeConfig](#schemav3stripeconfig) | false    | none         | none        |
 
 xor
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|*anonymous*|[V3WiseConfig](#schemav3wiseconfig)|false|none|none|
+| Name        | Type                                | Required | Restrictions | Description |
+| ----------- | ----------------------------------- | -------- | ------------ | ----------- |
+| _anonymous_ | [V3WiseConfig](#schemav3wiseconfig) | false    | none         | none        |
 
 <h2 id="tocS_V3AdyenConfig">V3AdyenConfig</h2>
 <!-- backwards compatibility -->
@@ -5831,22 +5720,21 @@ xor
   "webhookPassword": "string",
   "webhookUsername": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|companyID|string|true|none|none|
-|liveEndpointPrefix|string|false|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|webhookPassword|string|false|none|none|
-|webhookUsername|string|false|none|none|
+| Name               | Type    | Required | Restrictions | Description |
+| ------------------ | ------- | -------- | ------------ | ----------- |
+| apiKey             | string  | true     | none         | none        |
+| companyID          | string  | true     | none         | none        |
+| liveEndpointPrefix | string  | false    | none         | none        |
+| name               | string  | true     | none         | none        |
+| pageSize           | integer | false    | none         | none        |
+| pollingPeriod      | string  | false    | none         | none        |
+| provider           | string  | false    | none         | none        |
+| webhookPassword    | string  | false    | none         | none        |
+| webhookUsername    | string  | false    | none         | none        |
 
 <h2 id="tocS_V3AtlarConfig">V3AtlarConfig</h2>
 <!-- backwards compatibility -->
@@ -5865,20 +5753,19 @@ xor
   "provider": "Atlar",
   "secret": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|accessKey|string|true|none|none|
-|baseUrl|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|secret|string|true|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| accessKey     | string  | true     | none         | none        |
+| baseUrl       | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
+| secret        | string  | true     | none         | none        |
 
 <h2 id="tocS_V3BankingcircleConfig">V3BankingcircleConfig</h2>
 <!-- backwards compatibility -->
@@ -5900,23 +5787,22 @@ xor
   "userCertificateKey": "string",
   "username": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|authorizationEndpoint|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|password|string|true|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|userCertificate|string|true|none|none|
-|userCertificateKey|string|true|none|none|
-|username|string|true|none|none|
+| Name                  | Type    | Required | Restrictions | Description |
+| --------------------- | ------- | -------- | ------------ | ----------- |
+| authorizationEndpoint | string  | true     | none         | none        |
+| endpoint              | string  | true     | none         | none        |
+| name                  | string  | true     | none         | none        |
+| pageSize              | integer | false    | none         | none        |
+| password              | string  | true     | none         | none        |
+| pollingPeriod         | string  | false    | none         | none        |
+| provider              | string  | false    | none         | none        |
+| userCertificate       | string  | true     | none         | none        |
+| userCertificateKey    | string  | true     | none         | none        |
+| username              | string  | true     | none         | none        |
 
 <h2 id="tocS_V3CheckoutConfig">V3CheckoutConfig</h2>
 <!-- backwards compatibility -->
@@ -5928,31 +5814,30 @@ xor
 ```json
 {
   "entityId": "string",
-  "environment": "string",
+  "isSandbox": "boolean",
   "name": "string",
-  "oauthClientID": "string",
-  "oauthClientSecret": "string",
+  "clientID": "string",
+  "clientSecret": "string",
   "pageSize": "25",
   "pollingPeriod": "2m",
   "processingChannelId": "string",
   "provider": "Checkout"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|entityId|string|true|none|none|
-|environment|string|true|none|none|
-|name|string|true|none|none|
-|oauthClientID|string|true|none|none|
-|oauthClientSecret|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|processingChannelId|string|true|none|none|
-|provider|string|false|none|none|
+| Name                | Type    | Required | Restrictions | Description |
+| ------------------- | ------- | -------- | ------------ | ----------- |
+| entityId            | string  | true     | none         | none        |
+| environment         | string  | true     | none         | none        |
+| name                | string  | true     | none         | none        |
+| clientID            | string  | true     | none         | none        |
+| clientSecret        | string  | true     | none         | none        |
+| pageSize            | integer | false    | none         | none        |
+| pollingPeriod       | string  | false    | none         | none        |
+| processingChannelId | string  | true     | none         | none        |
+| provider            | string  | false    | none         | none        |
 
 <h2 id="tocS_V3ColumnConfig">V3ColumnConfig</h2>
 <!-- backwards compatibility -->
@@ -5970,19 +5855,18 @@ xor
   "pollingPeriod": "2m",
   "provider": "Column"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3CurrencycloudConfig">V3CurrencycloudConfig</h2>
 <!-- backwards compatibility -->
@@ -6001,20 +5885,19 @@ xor
   "pollingPeriod": "2m",
   "provider": "Currencycloud"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|endpoint|string|true|none|none|
-|loginID|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| loginID       | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3DummypayConfig">V3DummypayConfig</h2>
 <!-- backwards compatibility -->
@@ -6031,18 +5914,17 @@ xor
   "pollingPeriod": "2m",
   "provider": "Dummypay"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|directory|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| directory     | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3GenericConfig">V3GenericConfig</h2>
 <!-- backwards compatibility -->
@@ -6060,19 +5942,18 @@ xor
   "pollingPeriod": "2m",
   "provider": "Generic"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3IncreaseConfig">V3IncreaseConfig</h2>
 <!-- backwards compatibility -->
@@ -6091,20 +5972,19 @@ xor
   "provider": "Increase",
   "webhookSharedSecret": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|webhookSharedSecret|string|true|none|none|
+| Name                | Type    | Required | Restrictions | Description |
+| ------------------- | ------- | -------- | ------------ | ----------- |
+| apiKey              | string  | true     | none         | none        |
+| endpoint            | string  | true     | none         | none        |
+| name                | string  | true     | none         | none        |
+| pageSize            | integer | false    | none         | none        |
+| pollingPeriod       | string  | false    | none         | none        |
+| provider            | string  | false    | none         | none        |
+| webhookSharedSecret | string  | true     | none         | none        |
 
 <h2 id="tocS_V3MangopayConfig">V3MangopayConfig</h2>
 <!-- backwards compatibility -->
@@ -6123,20 +6003,19 @@ xor
   "pollingPeriod": "2m",
   "provider": "Mangopay"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|clientID|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| clientID      | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3ModulrConfig">V3ModulrConfig</h2>
 <!-- backwards compatibility -->
@@ -6155,20 +6034,19 @@ xor
   "pollingPeriod": "2m",
   "provider": "Modulr"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|apiSecret|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| apiSecret     | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3MoneycorpConfig">V3MoneycorpConfig</h2>
 <!-- backwards compatibility -->
@@ -6187,20 +6065,19 @@ xor
   "pollingPeriod": "2m",
   "provider": "Moneycorp"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|clientID|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| clientID      | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3PlaidConfig">V3PlaidConfig</h2>
 <!-- backwards compatibility -->
@@ -6219,20 +6096,19 @@ xor
   "pollingPeriod": "2m",
   "provider": "Plaid"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|clientID|string|true|none|none|
-|clientSecret|string|true|none|none|
-|isSandbox|boolean|false|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| clientID      | string  | true     | none         | none        |
+| clientSecret  | string  | true     | none         | none        |
+| isSandbox     | boolean | false    | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3PowensConfig">V3PowensConfig</h2>
 <!-- backwards compatibility -->
@@ -6254,23 +6130,22 @@ xor
   "pollingPeriod": "2m",
   "provider": "Powens"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|clientID|string|true|none|none|
-|clientSecret|string|true|none|none|
-|configurationToken|string|true|none|none|
-|domain|string|true|none|none|
-|endpoint|string|true|none|none|
-|maxConnectionsPerLink|integer|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name                  | Type    | Required | Restrictions | Description |
+| --------------------- | ------- | -------- | ------------ | ----------- |
+| clientID              | string  | true     | none         | none        |
+| clientSecret          | string  | true     | none         | none        |
+| configurationToken    | string  | true     | none         | none        |
+| domain                | string  | true     | none         | none        |
+| endpoint              | string  | true     | none         | none        |
+| maxConnectionsPerLink | integer | true     | none         | none        |
+| name                  | string  | true     | none         | none        |
+| pageSize              | integer | false    | none         | none        |
+| pollingPeriod         | string  | false    | none         | none        |
+| provider              | string  | false    | none         | none        |
 
 <h2 id="tocS_V3QontoConfig">V3QontoConfig</h2>
 <!-- backwards compatibility -->
@@ -6290,21 +6165,20 @@ xor
   "provider": "Qonto",
   "stagingToken": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|clientID|string|true|none|none|
-|endpoint|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|stagingToken|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| clientID      | string  | true     | none         | none        |
+| endpoint      | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
+| stagingToken  | string  | false    | none         | none        |
 
 <h2 id="tocS_V3StripeConfig">V3StripeConfig</h2>
 <!-- backwards compatibility -->
@@ -6321,18 +6195,17 @@ xor
   "pollingPeriod": "2m",
   "provider": "Stripe"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
+| Name          | Type    | Required | Restrictions | Description |
+| ------------- | ------- | -------- | ------------ | ----------- |
+| apiKey        | string  | true     | none         | none        |
+| name          | string  | true     | none         | none        |
+| pageSize      | integer | false    | none         | none        |
+| pollingPeriod | string  | false    | none         | none        |
+| provider      | string  | false    | none         | none        |
 
 <h2 id="tocS_V3WiseConfig">V3WiseConfig</h2>
 <!-- backwards compatibility -->
@@ -6350,17 +6223,15 @@ xor
   "provider": "Wise",
   "webhookPublicKey": "string"
 }
-
 ```
 
 ### Properties
 
-|Name|Type|Required|Restrictions|Description|
-|---|---|---|---|---|
-|apiKey|string|true|none|none|
-|name|string|true|none|none|
-|pageSize|integer|false|none|none|
-|pollingPeriod|string|false|none|none|
-|provider|string|false|none|none|
-|webhookPublicKey|string|true|none|none|
-
+| Name             | Type    | Required | Restrictions | Description |
+| ---------------- | ------- | -------- | ------------ | ----------- |
+| apiKey           | string  | true     | none         | none        |
+| name             | string  | true     | none         | none        |
+| pageSize         | integer | false    | none         | none        |
+| pollingPeriod    | string  | false    | none         | none        |
+| provider         | string  | false    | none         | none        |
+| webhookPublicKey | string  | true     | none         | none        |

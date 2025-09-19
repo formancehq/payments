@@ -34,13 +34,16 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 		return nil, err
 	}
 
-	cl := client.New(
-		cfg.Environment,
-		cfg.OAuthClientID,
-		cfg.OAuthClientSecret,
+	cl, errClient := client.New(
+		cfg.IsSandbox,
+		cfg.ClientID,
+		cfg.ClientSecret,
 		cfg.EntityID,
-		cfg.ProcessingChannelId,
+		cfg.ProcessingChannelID,
 	)
+	if errClient != nil {
+		return nil, errClient
+	}
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),

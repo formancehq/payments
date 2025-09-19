@@ -11,9 +11,9 @@ paths:
         - payments.v1
       responses:
         "200":
-          $ref: '#/components/responses/ServerInfo'
+          $ref: "#/components/responses/ServerInfo"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -25,12 +25,12 @@ paths:
       operationId: createPayment
       description: Create a payment
       requestBody:
-        $ref: '#/components/requestBodies/Payment'
+        $ref: "#/components/requestBodies/Payment"
       responses:
         "200":
-          $ref: '#/components/responses/Payment'
+          $ref: "#/components/responses/Payment"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -40,15 +40,15 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
-        - $ref: '#/components/parameters/Query'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Query"
       responses:
         "200":
-          $ref: '#/components/responses/Payments'
+          $ref: "#/components/responses/Payments"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -59,12 +59,12 @@ paths:
         - payments.v1
       operationId: getPayment
       parameters:
-        - $ref: '#/components/parameters/PaymentId'
+        - $ref: "#/components/parameters/PaymentId"
       responses:
         "200":
-          $ref: '#/components/responses/Payment'
+          $ref: "#/components/responses/Payment"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -75,14 +75,14 @@ paths:
         - payments.v1
       operationId: updateMetadata
       parameters:
-        - $ref: '#/components/parameters/PaymentId'
+        - $ref: "#/components/parameters/PaymentId"
       requestBody:
-        $ref: '#/components/requestBodies/UpdateMetadata'
+        $ref: "#/components/requestBodies/UpdateMetadata"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -93,15 +93,15 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
-        - $ref: '#/components/parameters/Query'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Query"
       responses:
         "200":
-          $ref: '#/components/responses/TransferInitiations'
+          $ref: "#/components/responses/TransferInitiations"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -112,12 +112,12 @@ paths:
       operationId: createTransferInitiation
       description: Create a transfer initiation
       requestBody:
-        $ref: '#/components/requestBodies/TransferInitiation'
+        $ref: "#/components/requestBodies/TransferInitiation"
       responses:
         "200":
-          $ref: '#/components/responses/TransferInitiation'
+          $ref: "#/components/responses/TransferInitiation"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -128,12 +128,12 @@ paths:
         - payments.v1
       operationId: getTransferInitiation
       parameters:
-        - $ref: '#/components/parameters/TransferId'
+        - $ref: "#/components/parameters/TransferId"
       responses:
         "200":
-          $ref: '#/components/responses/TransferInitiation'
+          $ref: "#/components/responses/TransferInitiation"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -144,12 +144,12 @@ paths:
         - payments.v1
       description: Delete a transfer initiation by its id.
       parameters:
-        - $ref: '#/components/parameters/TransferId'
+        - $ref: "#/components/parameters/TransferId"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -161,14 +161,14 @@ paths:
       operationId: updateTransferInitiationStatus
       description: Update a transfer initiation status
       parameters:
-        - $ref: '#/components/parameters/TransferId'
+        - $ref: "#/components/parameters/TransferId"
       requestBody:
-        $ref: '#/components/requestBodies/UpdateTransferInitiationStatus'
+        $ref: "#/components/requestBodies/UpdateTransferInitiationStatus"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -180,14 +180,14 @@ paths:
       operationId: reverseTransferInitiation
       description: Reverse transfer initiation
       parameters:
-        - $ref: '#/components/parameters/TransferId'
+        - $ref: "#/components/parameters/TransferId"
       requestBody:
-        $ref: '#/components/requestBodies/ReverseTransferInitiation'
+        $ref: "#/components/requestBodies/ReverseTransferInitiation"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -199,12 +199,12 @@ paths:
       operationId: retryTransferInitiation
       description: Retry a failed transfer initiation
       parameters:
-        - $ref: '#/components/parameters/TransferId'
+        - $ref: "#/components/parameters/TransferId"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -215,15 +215,15 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
-        - $ref: '#/components/parameters/Query'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Query"
       responses:
         "200":
-          $ref: '#/components/responses/Pools'
+          $ref: "#/components/responses/Pools"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -234,12 +234,12 @@ paths:
       operationId: createPool
       description: Create a Pool
       requestBody:
-        $ref: '#/components/requestBodies/Pool'
+        $ref: "#/components/requestBodies/Pool"
       responses:
         "200":
-          $ref: '#/components/responses/Pool'
+          $ref: "#/components/responses/Pool"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -250,12 +250,12 @@ paths:
         - payments.v1
       operationId: getPool
       parameters:
-        - $ref: '#/components/parameters/PoolId'
+        - $ref: "#/components/parameters/PoolId"
       responses:
         "200":
-          $ref: '#/components/responses/Pool'
+          $ref: "#/components/responses/Pool"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -266,12 +266,12 @@ paths:
         - payments.v1
       description: Delete a pool by its id.
       parameters:
-        - $ref: '#/components/parameters/PoolId'
+        - $ref: "#/components/parameters/PoolId"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -283,14 +283,14 @@ paths:
       operationId: addAccountToPool
       description: Add an account to a pool
       parameters:
-        - $ref: '#/components/parameters/PoolId'
+        - $ref: "#/components/parameters/PoolId"
       requestBody:
-        $ref: '#/components/requestBodies/AddAccountToPool'
+        $ref: "#/components/requestBodies/AddAccountToPool"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -302,13 +302,13 @@ paths:
         - payments.v1
       description: Remove an account from a pool by its id.
       parameters:
-        - $ref: '#/components/parameters/PoolId'
-        - $ref: '#/components/parameters/AccountId'
+        - $ref: "#/components/parameters/PoolId"
+        - $ref: "#/components/parameters/AccountId"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -319,7 +319,7 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PoolId'
+        - $ref: "#/components/parameters/PoolId"
         - name: at
           in: query
           description: |
@@ -330,9 +330,9 @@ paths:
             format: date-time
       responses:
         "200":
-          $ref: '#/components/responses/PoolBalances'
+          $ref: "#/components/responses/PoolBalances"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -343,12 +343,12 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PoolId'
+        - $ref: "#/components/parameters/PoolId"
       responses:
         "200":
-          $ref: '#/components/responses/PoolBalancesLatest'
+          $ref: "#/components/responses/PoolBalancesLatest"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -360,12 +360,12 @@ paths:
       operationId: createAccount
       description: Create an account
       requestBody:
-        $ref: '#/components/requestBodies/Account'
+        $ref: "#/components/requestBodies/Account"
       responses:
         "200":
-          $ref: '#/components/responses/Account'
+          $ref: "#/components/responses/Account"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -375,10 +375,10 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
-        - $ref: '#/components/parameters/Query'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Query"
       requestBody:
         content:
           application/json:
@@ -387,9 +387,9 @@ paths:
               additionalProperties: true
       responses:
         "200":
-          $ref: '#/components/responses/Accounts'
+          $ref: "#/components/responses/Accounts"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -400,12 +400,12 @@ paths:
         - payments.v1
       operationId: getAccount
       parameters:
-        - $ref: '#/components/parameters/AccountId'
+        - $ref: "#/components/parameters/AccountId"
       responses:
         "200":
-          $ref: '#/components/responses/Account'
+          $ref: "#/components/responses/Account"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -416,7 +416,7 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/AccountId'
+        - $ref: "#/components/parameters/AccountId"
         - name: limit
           in: query
           description: The maximum number of results to return per page.
@@ -450,14 +450,14 @@ paths:
           schema:
             type: string
             format: date-time
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
       responses:
         "200":
-          $ref: '#/components/responses/AccountBalances'
+          $ref: "#/components/responses/AccountBalances"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -469,12 +469,12 @@ paths:
       operationId: createBankAccount
       description: Create a bank account in Payments and on the PSP.
       requestBody:
-        $ref: '#/components/requestBodies/BankAccount'
+        $ref: "#/components/requestBodies/BankAccount"
       responses:
         "200":
-          $ref: '#/components/responses/BankAccount'
+          $ref: "#/components/responses/BankAccount"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -484,15 +484,15 @@ paths:
       tags:
         - payments.v1
       parameters:
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
-        - $ref: '#/components/parameters/Sort'
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Sort"
       description: List all bank accounts created by user on Formance.
       responses:
         "200":
-          $ref: '#/components/responses/BankAccounts'
+          $ref: "#/components/responses/BankAccounts"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -503,12 +503,12 @@ paths:
         - payments.v1
       operationId: getBankAccount
       parameters:
-        - $ref: '#/components/parameters/BankAccountId'
+        - $ref: "#/components/parameters/BankAccountId"
       responses:
         "200":
-          $ref: '#/components/responses/BankAccount'
+          $ref: "#/components/responses/BankAccount"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -519,14 +519,14 @@ paths:
         - payments.v1
       operationId: forwardBankAccount
       parameters:
-        - $ref: '#/components/parameters/BankAccountId'
+        - $ref: "#/components/parameters/BankAccountId"
       requestBody:
-        $ref: '#/components/requestBodies/ForwardBankAccount'
+        $ref: "#/components/requestBodies/ForwardBankAccount"
       responses:
         "200":
-          $ref: '#/components/responses/BankAccount'
+          $ref: "#/components/responses/BankAccount"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -537,14 +537,14 @@ paths:
         - payments.v1
       operationId: updateBankAccountMetadata
       parameters:
-        - $ref: '#/components/parameters/BankAccountId'
+        - $ref: "#/components/parameters/BankAccountId"
       requestBody:
-        $ref: '#/components/requestBodies/UpdateBankAccountMetadata'
+        $ref: "#/components/requestBodies/UpdateBankAccountMetadata"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -557,9 +557,9 @@ paths:
       description: List all installed connectors.
       responses:
         "200":
-          $ref: '#/components/responses/Connectors'
+          $ref: "#/components/responses/Connectors"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -572,9 +572,9 @@ paths:
       description: List the configs of each available connector.
       responses:
         "200":
-          $ref: '#/components/responses/ConnectorsConfigs'
+          $ref: "#/components/responses/ConnectorsConfigs"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -586,14 +586,14 @@ paths:
       operationId: installConnector
       description: Install a connector by its name and config.
       parameters:
-        - $ref: '#/components/parameters/Connector'
+        - $ref: "#/components/parameters/Connector"
       requestBody:
-        $ref: '#/components/requestBodies/ConnectorConfig'
+        $ref: "#/components/requestBodies/ConnectorConfig"
       responses:
         "201":
-          $ref: '#/components/responses/ConnectorInstalled'
+          $ref: "#/components/responses/ConnectorInstalled"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -605,12 +605,12 @@ paths:
         - payments.v1
       description: Uninstall a connector by its name.
       parameters:
-        - $ref: '#/components/parameters/Connector'
+        - $ref: "#/components/parameters/Connector"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -622,13 +622,13 @@ paths:
         - payments.v1
       description: Uninstall a connector by its name.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -641,12 +641,12 @@ paths:
         - payments.v1
       description: Read connector config
       parameters:
-        - $ref: '#/components/parameters/Connector'
+        - $ref: "#/components/parameters/Connector"
       responses:
         "200":
-          $ref: '#/components/responses/ConnectorConfig'
+          $ref: "#/components/responses/ConnectorConfig"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -658,15 +658,15 @@ paths:
         - payments.v1
       description: Update connector config
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
       requestBody:
-        $ref: '#/components/requestBodies/ConnectorConfig'
+        $ref: "#/components/requestBodies/ConnectorConfig"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -677,13 +677,13 @@ paths:
         - payments.v1
       description: Read connector config
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
       responses:
         "200":
-          $ref: '#/components/responses/ConnectorConfig'
+          $ref: "#/components/responses/ConnectorConfig"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -698,12 +698,12 @@ paths:
         Reset a connector by its name.
         It will remove the connector and ALL PAYMENTS generated with it.
       parameters:
-        - $ref: '#/components/parameters/Connector'
+        - $ref: "#/components/parameters/Connector"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -717,13 +717,13 @@ paths:
         Reset a connector by its name.
         It will remove the connector and ALL PAYMENTS generated with it.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -736,14 +736,14 @@ paths:
       operationId: listConnectorTasks
       description: List all tasks associated with this connector.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
-          $ref: '#/components/responses/Tasks'
+          $ref: "#/components/responses/Tasks"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -755,15 +755,15 @@ paths:
       operationId: listConnectorTasksV1
       description: List all tasks associated with this connector.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
-        - $ref: '#/components/parameters/PageSize'
-        - $ref: '#/components/parameters/Cursor'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
+        - $ref: "#/components/parameters/PageSize"
+        - $ref: "#/components/parameters/Cursor"
       responses:
         "200":
-          $ref: '#/components/responses/Tasks'
+          $ref: "#/components/responses/Tasks"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -776,13 +776,13 @@ paths:
       operationId: getConnectorTask
       description: Get a specific task associated to the connector.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/TaskId'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/TaskId"
       responses:
         "200":
-          $ref: '#/components/responses/Task'
+          $ref: "#/components/responses/Task"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -794,14 +794,14 @@ paths:
       operationId: getConnectorTaskV1
       description: Get a specific task associated to the connector.
       parameters:
-        - $ref: '#/components/parameters/Connector'
-        - $ref: '#/components/parameters/ConnectorID'
-        - $ref: '#/components/parameters/TaskId'
+        - $ref: "#/components/parameters/Connector"
+        - $ref: "#/components/parameters/ConnectorID"
+        - $ref: "#/components/parameters/TaskId"
       responses:
         "200":
-          $ref: '#/components/responses/Task'
+          $ref: "#/components/responses/Task"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -813,14 +813,14 @@ paths:
       operationId: connectorsTransfer
       description: Execute a transfer between two accounts.
       parameters:
-        - $ref: '#/components/parameters/Connector'
+        - $ref: "#/components/parameters/Connector"
       requestBody:
-        $ref: '#/components/requestBodies/Transfer'
+        $ref: "#/components/requestBodies/Transfer"
       responses:
         "200":
-          $ref: '#/components/responses/Transfer'
+          $ref: "#/components/responses/Transfer"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -836,20 +836,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3CreateAccountRequest'
+              $ref: "#/components/schemas/V3CreateAccountRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3CreateAccountResponse'
+                $ref: "#/components/schemas/V3CreateAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -860,26 +860,26 @@ paths:
       operationId: v3ListAccounts
       x-speakeasy-name-override: ListAccounts
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3AccountsCursorResponse'
+                $ref: "#/components/schemas/V3AccountsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -891,20 +891,20 @@ paths:
       operationId: v3GetAccount
       x-speakeasy-name-override: GetAccount
       parameters:
-        - $ref: '#/components/parameters/V3AccountID'
+        - $ref: "#/components/parameters/V3AccountID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetAccountResponse'
+                $ref: "#/components/schemas/V3GetAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -916,25 +916,25 @@ paths:
       operationId: v3GetAccountBalances
       x-speakeasy-name-override: GetAccountBalances
       parameters:
-        - $ref: '#/components/parameters/V3AccountID'
-        - $ref: '#/components/parameters/V3Asset'
-        - $ref: '#/components/parameters/V3FromTimestamp'
-        - $ref: '#/components/parameters/V3ToTimestamp'
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3AccountID"
+        - $ref: "#/components/parameters/V3Asset"
+        - $ref: "#/components/parameters/V3FromTimestamp"
+        - $ref: "#/components/parameters/V3ToTimestamp"
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3BalancesCursorResponse'
+                $ref: "#/components/schemas/V3BalancesCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -950,20 +950,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3CreateBankAccountRequest'
+              $ref: "#/components/schemas/V3CreateBankAccountRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3CreateBankAccountResponse'
+                $ref: "#/components/schemas/V3CreateBankAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -974,26 +974,26 @@ paths:
       operationId: v3ListBankAccounts
       x-speakeasy-name-override: ListBankAccounts
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3BankAccountsCursorResponse'
+                $ref: "#/components/schemas/V3BankAccountsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1005,20 +1005,20 @@ paths:
       operationId: v3GetBankAccount
       x-speakeasy-name-override: GetBankAccount
       parameters:
-        - $ref: '#/components/parameters/V3BankAccountID'
+        - $ref: "#/components/parameters/V3BankAccountID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetBankAccountResponse'
+                $ref: "#/components/schemas/V3GetBankAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
   /v3/bank-accounts/{bankAccountID}/metadata:
     patch:
       tags:
@@ -1027,12 +1027,12 @@ paths:
       operationId: v3UpdateBankAccountMetadata
       x-speakeasy-name-override: UpdateBankAccountMetadata
       parameters:
-        - $ref: '#/components/parameters/V3BankAccountID'
+        - $ref: "#/components/parameters/V3BankAccountID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3UpdateBankAccountMetadataRequest'
+              $ref: "#/components/schemas/V3UpdateBankAccountMetadataRequest"
       responses:
         "204":
           description: No Content
@@ -1041,7 +1041,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
   /v3/bank-accounts/{bankAccountID}/forward:
     post:
       tags:
@@ -1050,25 +1050,25 @@ paths:
       operationId: v3ForwardBankAccount
       x-speakeasy-name-override: ForwardBankAccount
       parameters:
-        - $ref: '#/components/parameters/V3BankAccountID'
+        - $ref: "#/components/parameters/V3BankAccountID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3ForwardBankAccountRequest'
+              $ref: "#/components/schemas/V3ForwardBankAccountRequest"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ForwardBankAccountResponse'
+                $ref: "#/components/schemas/V3ForwardBankAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
   /v3/connectors:
     get:
       tags:
@@ -1077,26 +1077,26 @@ paths:
       operationId: v3ListConnectors
       x-speakeasy-name-override: ListConnectors
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ConnectorsCursorResponse'
+                $ref: "#/components/schemas/V3ConnectorsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1108,25 +1108,25 @@ paths:
       operationId: v3InstallConnector
       x-speakeasy-name-override: InstallConnector
       parameters:
-        - $ref: '#/components/parameters/V3Connector'
+        - $ref: "#/components/parameters/V3Connector"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3InstallConnectorRequest'
+              $ref: "#/components/schemas/V3InstallConnectorRequest"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3InstallConnectorResponse'
+                $ref: "#/components/schemas/V3InstallConnectorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1143,13 +1143,13 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ConnectorConfigsResponse'
+                $ref: "#/components/schemas/V3ConnectorConfigsResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1161,20 +1161,20 @@ paths:
       operationId: v3UninstallConnector
       x-speakeasy-name-override: UninstallConnector
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: "#/components/parameters/V3ConnectorID"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3UninstallConnectorResponse'
+                $ref: "#/components/schemas/V3UninstallConnectorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1186,20 +1186,20 @@ paths:
       operationId: v3GetConnectorConfig
       x-speakeasy-name-override: GetConnectorConfig
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: "#/components/parameters/V3ConnectorID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetConnectorConfigResponse'
+                $ref: "#/components/schemas/V3GetConnectorConfigResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1210,17 +1210,17 @@ paths:
       operationId: v3UpdateConnectorConfig
       description: Update connector config
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: "#/components/parameters/V3ConnectorID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3UpdateConnectorRequest'
+              $ref: "#/components/schemas/V3UpdateConnectorRequest"
       responses:
         "204":
-          $ref: '#/components/responses/NoContent'
+          $ref: "#/components/responses/NoContent"
         default:
-          $ref: '#/components/responses/PaymentsErrorResponse'
+          $ref: "#/components/responses/PaymentsErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1232,20 +1232,20 @@ paths:
       operationId: v3ResetConnector
       x-speakeasy-name-override: ResetConnector
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
+        - $ref: "#/components/parameters/V3ConnectorID"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ResetConnectorResponse'
+                $ref: "#/components/schemas/V3ResetConnectorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1257,27 +1257,27 @@ paths:
       operationId: v3ListConnectorSchedules
       x-speakeasy-name-override: ListConnectorSchedules
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3ConnectorID"
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ConnectorSchedulesCursorResponse'
+                $ref: "#/components/schemas/V3ConnectorSchedulesCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1289,21 +1289,21 @@ paths:
       operationId: v3GetConnectorSchedule
       x-speakeasy-name-override: GetConnectorSchedule
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
-        - $ref: '#/components/parameters/V3ScheduleID'
+        - $ref: "#/components/parameters/V3ConnectorID"
+        - $ref: "#/components/parameters/V3ScheduleID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ConnectorScheduleResponse'
+                $ref: "#/components/schemas/V3ConnectorScheduleResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1315,23 +1315,23 @@ paths:
       operationId: v3ListConnectorScheduleInstances
       x-speakeasy-name-override: ListConnectorScheduleInstances
       parameters:
-        - $ref: '#/components/parameters/V3ConnectorID'
-        - $ref: '#/components/parameters/V3ScheduleID'
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3ConnectorID"
+        - $ref: "#/components/parameters/V3ScheduleID"
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ConnectorScheduleInstancesCursorResponse'
+                $ref: "#/components/schemas/V3ConnectorScheduleInstancesCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1347,20 +1347,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3CreatePaymentRequest'
+              $ref: "#/components/schemas/V3CreatePaymentRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3CreatePaymentResponse'
+                $ref: "#/components/schemas/V3CreatePaymentResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1371,26 +1371,26 @@ paths:
       operationId: v3ListPayments
       x-speakeasy-name-override: ListPayments
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PaymentsCursorResponse'
+                $ref: "#/components/schemas/V3PaymentsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1402,20 +1402,20 @@ paths:
       operationId: v3GetPayment
       x-speakeasy-name-override: GetPayment
       parameters:
-        - $ref: '#/components/parameters/V3PaymentID'
+        - $ref: "#/components/parameters/V3PaymentID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetPaymentResponse'
+                $ref: "#/components/schemas/V3GetPaymentResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1427,12 +1427,12 @@ paths:
       operationId: v3UpdatePaymentMetadata
       x-speakeasy-name-override: UpdatePaymentMetadata
       parameters:
-        - $ref: '#/components/parameters/V3PaymentID'
+        - $ref: "#/components/parameters/V3PaymentID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3UpdatePaymentMetadataRequest'
+              $ref: "#/components/schemas/V3UpdatePaymentMetadataRequest"
       responses:
         "204":
           description: No Content
@@ -1441,7 +1441,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1453,25 +1453,25 @@ paths:
       operationId: v3InitiatePayment
       x-speakeasy-name-override: InitiatePayment
       parameters:
-        - $ref: '#/components/parameters/V3NoValidation'
+        - $ref: "#/components/parameters/V3NoValidation"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3InitiatePaymentRequest'
+              $ref: "#/components/schemas/V3InitiatePaymentRequest"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3InitiatePaymentResponse'
+                $ref: "#/components/schemas/V3InitiatePaymentResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1482,26 +1482,26 @@ paths:
       operationId: v3ListPaymentInitiations
       x-speakeasy-name-override: ListPaymentInitiations
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PaymentInitiationsCursorResponse'
+                $ref: "#/components/schemas/V3PaymentInitiationsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1513,7 +1513,7 @@ paths:
       operationId: v3DeletePaymentInitiation
       x-speakeasy-name-override: DeletePaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       responses:
         "204":
           description: No Content
@@ -1522,7 +1522,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1533,20 +1533,20 @@ paths:
       operationId: v3GetPaymentInitiation
       x-speakeasy-name-override: GetPaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetPaymentInitiationResponse'
+                $ref: "#/components/schemas/V3GetPaymentInitiationResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1558,20 +1558,20 @@ paths:
       operationId: v3RetryPaymentInitiation
       x-speakeasy-name-override: RetryPaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3RetryPaymentInitiationResponse'
+                $ref: "#/components/schemas/V3RetryPaymentInitiationResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1583,20 +1583,20 @@ paths:
       operationId: v3ApprovePaymentInitiation
       x-speakeasy-name-override: ApprovePaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ApprovePaymentInitiationResponse'
+                $ref: "#/components/schemas/V3ApprovePaymentInitiationResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1608,7 +1608,7 @@ paths:
       operationId: v3RejectPaymentInitiation
       x-speakeasy-name-override: RejectPaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       responses:
         "204":
           description: No Content
@@ -1617,7 +1617,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1629,25 +1629,25 @@ paths:
       operationId: v3ReversePaymentInitiation
       x-speakeasy-name-override: ReversePaymentInitiation
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3ReversePaymentInitiationRequest'
+              $ref: "#/components/schemas/V3ReversePaymentInitiationRequest"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ReversePaymentInitiationResponse'
+                $ref: "#/components/schemas/V3ReversePaymentInitiationResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1659,27 +1659,27 @@ paths:
       operationId: v3ListPaymentInitiationAdjustments
       x-speakeasy-name-override: ListPaymentInitiationAdjustments
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PaymentInitiationAdjustmentsCursorResponse'
+                $ref: "#/components/schemas/V3PaymentInitiationAdjustmentsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1691,27 +1691,27 @@ paths:
       operationId: v3ListPaymentInitiationRelatedPayments
       x-speakeasy-name-override: ListPaymentInitiationRelatedPayments
       parameters:
-        - $ref: '#/components/parameters/V3PaymentInitiationID'
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PaymentInitiationID"
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PaymentInitiationRelatedPaymentsCursorResponse'
+                $ref: "#/components/schemas/V3PaymentInitiationRelatedPaymentsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1726,20 +1726,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3CreatePaymentServiceUserRequest'
+              $ref: "#/components/schemas/V3CreatePaymentServiceUserRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3CreatePaymentServiceUserResponse'
+                $ref: "#/components/schemas/V3CreatePaymentServiceUserResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1750,26 +1750,26 @@ paths:
       operationId: v3ListPaymentServiceUsers
       x-speakeasy-name-override: ListPaymentServiceUsers
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PaymentServiceUsersCursorResponse'
+                $ref: "#/components/schemas/V3PaymentServiceUsersCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1781,20 +1781,20 @@ paths:
       operationId: v3GetPaymentServiceUser
       x-speakeasy-name-override: GetPaymentServiceUser
       parameters:
-        - $ref: '#/components/parameters/V3PaymentServiceUserID'
+        - $ref: "#/components/parameters/V3PaymentServiceUserID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetPaymentServiceUserResponse'
+                $ref: "#/components/schemas/V3GetPaymentServiceUserResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1806,8 +1806,8 @@ paths:
       operationId: v3AddBankAccountToPaymentServiceUser
       x-speakeasy-name-override: AddBankAccountToPaymentServiceUser
       parameters:
-        - $ref: '#/components/parameters/V3PaymentServiceUserID'
-        - $ref: '#/components/parameters/V3BankAccountID'
+        - $ref: "#/components/parameters/V3PaymentServiceUserID"
+        - $ref: "#/components/parameters/V3BankAccountID"
       responses:
         "204":
           description: No Content
@@ -1816,7 +1816,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1828,26 +1828,26 @@ paths:
       operationId: v3ForwardPaymentServiceUserBankAccount
       x-speakeasy-name-override: ForwardPaymentServiceUserBankAccount
       parameters:
-        - $ref: '#/components/parameters/V3PaymentServiceUserID'
-        - $ref: '#/components/parameters/V3BankAccountID'
+        - $ref: "#/components/parameters/V3PaymentServiceUserID"
+        - $ref: "#/components/parameters/V3BankAccountID"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3ForwardPaymentServiceUserBankAccountRequest'
+              $ref: "#/components/schemas/V3ForwardPaymentServiceUserBankAccountRequest"
       responses:
         "202":
           description: Accepted
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ForwardPaymentServiceUserBankAccountResponse'
+                $ref: "#/components/schemas/V3ForwardPaymentServiceUserBankAccountResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1862,20 +1862,20 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3CreatePoolRequest'
+              $ref: "#/components/schemas/V3CreatePoolRequest"
       responses:
         "201":
           description: Created
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3CreatePoolResponse'
+                $ref: "#/components/schemas/V3CreatePoolResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1886,26 +1886,26 @@ paths:
       operationId: v3ListPools
       x-speakeasy-name-override: ListPools
       parameters:
-        - $ref: '#/components/parameters/V3PageSize'
-        - $ref: '#/components/parameters/V3Cursor'
+        - $ref: "#/components/parameters/V3PageSize"
+        - $ref: "#/components/parameters/V3Cursor"
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V3QueryBuilder'
+              $ref: "#/components/schemas/V3QueryBuilder"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PoolsCursorResponse'
+                $ref: "#/components/schemas/V3PoolsCursorResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1917,20 +1917,20 @@ paths:
       operationId: v3GetPool
       x-speakeasy-name-override: GetPool
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: "#/components/parameters/V3PoolID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetPoolResponse'
+                $ref: "#/components/schemas/V3GetPoolResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1941,7 +1941,7 @@ paths:
       operationId: v3DeletePool
       x-speakeasy-name-override: DeletePool
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: "#/components/parameters/V3PoolID"
       responses:
         "204":
           description: No Content
@@ -1950,7 +1950,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -1962,21 +1962,21 @@ paths:
       operationId: v3GetPoolBalances
       x-speakeasy-name-override: GetPoolBalances
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
-        - $ref: '#/components/parameters/V3At'
+        - $ref: "#/components/parameters/V3PoolID"
+        - $ref: "#/components/parameters/V3At"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PoolBalancesResponse'
+                $ref: "#/components/schemas/V3PoolBalancesResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -1988,20 +1988,20 @@ paths:
       operationId: v3GetPoolBalancesLatest
       x-speakeasy-name-override: GetPoolBalancesLatest
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
+        - $ref: "#/components/parameters/V3PoolID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3PoolBalancesResponse'
+                $ref: "#/components/schemas/V3PoolBalancesResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -2013,8 +2013,8 @@ paths:
       operationId: v3AddAccountToPool
       x-speakeasy-name-override: AddAccountToPool
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
-        - $ref: '#/components/parameters/V3AccountID'
+        - $ref: "#/components/parameters/V3PoolID"
+        - $ref: "#/components/parameters/V3AccountID"
       responses:
         "204":
           description: No Content
@@ -2023,7 +2023,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -2034,8 +2034,8 @@ paths:
       operationId: v3RemoveAccountFromPool
       x-speakeasy-name-override: RemoveAccountFromPool
       parameters:
-        - $ref: '#/components/parameters/V3PoolID'
-        - $ref: '#/components/parameters/V3AccountID'
+        - $ref: "#/components/parameters/V3PoolID"
+        - $ref: "#/components/parameters/V3AccountID"
       responses:
         "204":
           description: No Content
@@ -2044,7 +2044,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:write
@@ -2056,20 +2056,20 @@ paths:
       operationId: v3GetTask
       x-speakeasy-name-override: GetTask
       parameters:
-        - $ref: '#/components/parameters/V3TaskID'
+        - $ref: "#/components/parameters/V3TaskID"
       responses:
         "200":
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3GetTaskResponse'
+                $ref: "#/components/schemas/V3GetTaskResponse"
         default:
           description: Error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/V3ErrorResponse'
+                $ref: "#/components/schemas/V3ErrorResponse"
       security:
         - Authorization:
             - payments:read
@@ -2080,7 +2080,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ServerInfo'
+            $ref: "#/components/schemas/ServerInfo"
     NoContent:
       description: No content
     PaymentsErrorResponse:
@@ -2088,127 +2088,127 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PaymentsErrorResponse'
+            $ref: "#/components/schemas/PaymentsErrorResponse"
     Payments:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PaymentsCursor'
+            $ref: "#/components/schemas/PaymentsCursor"
     Payment:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PaymentResponse'
+            $ref: "#/components/schemas/PaymentResponse"
     Pools:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PoolsCursor'
+            $ref: "#/components/schemas/PoolsCursor"
     Pool:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PoolResponse'
+            $ref: "#/components/schemas/PoolResponse"
     PoolBalances:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PoolBalancesResponse'
+            $ref: "#/components/schemas/PoolBalancesResponse"
     PoolBalancesLatest:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PoolBalancesLatestResponse'
+            $ref: "#/components/schemas/PoolBalancesLatestResponse"
     TransferInitiations:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransferInitiationsCursor'
+            $ref: "#/components/schemas/TransferInitiationsCursor"
     TransferInitiation:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransferInitiationResponse'
+            $ref: "#/components/schemas/TransferInitiationResponse"
     Accounts:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AccountsCursor'
+            $ref: "#/components/schemas/AccountsCursor"
     Account:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AccountResponse'
+            $ref: "#/components/schemas/AccountResponse"
     AccountBalances:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BalancesCursor'
+            $ref: "#/components/schemas/BalancesCursor"
     ConnectorInstalled:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ConnectorResponse'
+            $ref: "#/components/schemas/ConnectorResponse"
     Connectors:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ConnectorsResponse'
+            $ref: "#/components/schemas/ConnectorsResponse"
     BankAccounts:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BankAccountsCursor'
+            $ref: "#/components/schemas/BankAccountsCursor"
     BankAccount:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BankAccountResponse'
+            $ref: "#/components/schemas/BankAccountResponse"
     ConnectorsConfigs:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ConnectorsConfigsResponse'
+            $ref: "#/components/schemas/ConnectorsConfigsResponse"
     ConnectorConfig:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ConnectorConfigResponse'
+            $ref: "#/components/schemas/ConnectorConfigResponse"
     Tasks:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TasksCursor'
+            $ref: "#/components/schemas/TasksCursor"
     Task:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TaskResponse'
+            $ref: "#/components/schemas/TaskResponse"
     Transfer:
       description: OK
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransferResponse'
+            $ref: "#/components/schemas/TransferResponse"
   schemas:
     CursorBase:
       type: object
@@ -2239,7 +2239,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2247,7 +2247,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Payment'
+                    $ref: "#/components/schemas/Payment"
     PoolsCursor:
       type: object
       required:
@@ -2255,7 +2255,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2263,7 +2263,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Pool'
+                    $ref: "#/components/schemas/Pool"
     TransferInitiationsCursor:
       type: object
       required:
@@ -2271,7 +2271,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2279,7 +2279,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/TransferInitiation'
+                    $ref: "#/components/schemas/TransferInitiation"
     BankAccountsCursor:
       type: object
       required:
@@ -2287,7 +2287,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2295,7 +2295,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/BankAccount'
+                    $ref: "#/components/schemas/BankAccount"
     AccountsCursor:
       type: object
       required:
@@ -2303,7 +2303,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2311,7 +2311,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/Account'
+                    $ref: "#/components/schemas/Account"
     BalancesCursor:
       type: object
       required:
@@ -2319,7 +2319,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2327,7 +2327,7 @@ components:
                 data:
                   type: array
                   items:
-                    $ref: '#/components/schemas/AccountBalance'
+                    $ref: "#/components/schemas/AccountBalance"
     TasksCursor:
       type: object
       required:
@@ -2335,7 +2335,7 @@ components:
       properties:
         cursor:
           allOf:
-            - $ref: '#/components/schemas/CursorBase'
+            - $ref: "#/components/schemas/CursorBase"
             - type: object
               required:
                 - data
@@ -2344,63 +2344,63 @@ components:
                   type: array
                   items:
                     oneOf:
-                      - $ref: '#/components/schemas/TaskStripe'
-                      - $ref: '#/components/schemas/TaskWise'
-                      - $ref: '#/components/schemas/TaskCurrencyCloud'
-                      - $ref: '#/components/schemas/TaskDummyPay'
-                      - $ref: '#/components/schemas/TaskModulr'
-                      - $ref: '#/components/schemas/TaskBankingCircle'
-                      - $ref: '#/components/schemas/TaskMangoPay'
-                      - $ref: '#/components/schemas/TaskMoneycorp'
+                      - $ref: "#/components/schemas/TaskStripe"
+                      - $ref: "#/components/schemas/TaskWise"
+                      - $ref: "#/components/schemas/TaskCurrencyCloud"
+                      - $ref: "#/components/schemas/TaskDummyPay"
+                      - $ref: "#/components/schemas/TaskModulr"
+                      - $ref: "#/components/schemas/TaskBankingCircle"
+                      - $ref: "#/components/schemas/TaskMangoPay"
+                      - $ref: "#/components/schemas/TaskMoneycorp"
     ConnectorConfigResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/ConnectorConfig'
+          $ref: "#/components/schemas/ConnectorConfig"
     PaymentResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/Payment'
+          $ref: "#/components/schemas/Payment"
     PoolBalancesResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/PoolBalances'
+          $ref: "#/components/schemas/PoolBalances"
     PoolBalancesLatestResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/PoolBalancesLatest'
+          $ref: "#/components/schemas/PoolBalancesLatest"
     PoolResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/Pool'
+          $ref: "#/components/schemas/Pool"
     TransferInitiationResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/TransferInitiation'
+          $ref: "#/components/schemas/TransferInitiation"
     AccountResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/Account'
+          $ref: "#/components/schemas/Account"
     ConnectorResponse:
       type: object
       required:
@@ -2428,7 +2428,7 @@ components:
               - connectorID
             properties:
               provider:
-                $ref: '#/components/schemas/Connector'
+                $ref: "#/components/schemas/Connector"
               name:
                 type: string
               connectorID:
@@ -2441,7 +2441,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/BankAccount'
+          $ref: "#/components/schemas/BankAccount"
     ConnectorsConfigsResponse:
       type: object
       required:
@@ -2470,14 +2470,14 @@ components:
       properties:
         data:
           oneOf:
-            - $ref: '#/components/schemas/TaskStripe'
-            - $ref: '#/components/schemas/TaskWise'
-            - $ref: '#/components/schemas/TaskCurrencyCloud'
-            - $ref: '#/components/schemas/TaskDummyPay'
-            - $ref: '#/components/schemas/TaskModulr'
-            - $ref: '#/components/schemas/TaskBankingCircle'
-            - $ref: '#/components/schemas/TaskMangoPay'
-            - $ref: '#/components/schemas/TaskMoneycorp'
+            - $ref: "#/components/schemas/TaskStripe"
+            - $ref: "#/components/schemas/TaskWise"
+            - $ref: "#/components/schemas/TaskCurrencyCloud"
+            - $ref: "#/components/schemas/TaskDummyPay"
+            - $ref: "#/components/schemas/TaskModulr"
+            - $ref: "#/components/schemas/TaskBankingCircle"
+            - $ref: "#/components/schemas/TaskMangoPay"
+            - $ref: "#/components/schemas/TaskMoneycorp"
     TransferResponse:
       type: object
       properties:
@@ -2516,29 +2516,29 @@ components:
       discriminator:
         propertyName: provider
         mapping:
-          Stripe: '#/components/schemas/StripeConfig'
-          Dummypay: '#/components/schemas/DummyPayConfig'
-          Wise: '#/components/schemas/WiseConfig'
-          Modulr: '#/components/schemas/ModulrConfig'
-          Currencycloud: '#/components/schemas/CurrencyCloudConfig'
-          Bankingcircle: '#/components/schemas/BankingCircleConfig'
-          Mangopay: '#/components/schemas/MangoPayConfig'
-          Moneycorp: '#/components/schemas/MoneycorpConfig'
-          Atlar: '#/components/schemas/AtlarConfig'
-          Adyen: '#/components/schemas/AdyenConfig'
-          Generic: '#/components/schemas/GenericConfig'
+          Stripe: "#/components/schemas/StripeConfig"
+          Dummypay: "#/components/schemas/DummyPayConfig"
+          Wise: "#/components/schemas/WiseConfig"
+          Modulr: "#/components/schemas/ModulrConfig"
+          Currencycloud: "#/components/schemas/CurrencyCloudConfig"
+          Bankingcircle: "#/components/schemas/BankingCircleConfig"
+          Mangopay: "#/components/schemas/MangoPayConfig"
+          Moneycorp: "#/components/schemas/MoneycorpConfig"
+          Atlar: "#/components/schemas/AtlarConfig"
+          Adyen: "#/components/schemas/AdyenConfig"
+          Generic: "#/components/schemas/GenericConfig"
       oneOf:
-        - $ref: '#/components/schemas/StripeConfig'
-        - $ref: '#/components/schemas/DummyPayConfig'
-        - $ref: '#/components/schemas/WiseConfig'
-        - $ref: '#/components/schemas/ModulrConfig'
-        - $ref: '#/components/schemas/CurrencyCloudConfig'
-        - $ref: '#/components/schemas/BankingCircleConfig'
-        - $ref: '#/components/schemas/MangoPayConfig'
-        - $ref: '#/components/schemas/MoneycorpConfig'
-        - $ref: '#/components/schemas/AtlarConfig'
-        - $ref: '#/components/schemas/AdyenConfig'
-        - $ref: '#/components/schemas/GenericConfig'
+        - $ref: "#/components/schemas/StripeConfig"
+        - $ref: "#/components/schemas/DummyPayConfig"
+        - $ref: "#/components/schemas/WiseConfig"
+        - $ref: "#/components/schemas/ModulrConfig"
+        - $ref: "#/components/schemas/CurrencyCloudConfig"
+        - $ref: "#/components/schemas/BankingCircleConfig"
+        - $ref: "#/components/schemas/MangoPayConfig"
+        - $ref: "#/components/schemas/MoneycorpConfig"
+        - $ref: "#/components/schemas/AtlarConfig"
+        - $ref: "#/components/schemas/AdyenConfig"
+        - $ref: "#/components/schemas/GenericConfig"
     StripeConfig:
       type: object
       required:
@@ -2932,7 +2932,7 @@ components:
           type: string
           example: USD
         status:
-          $ref: '#/components/schemas/TransferInitiationStatus'
+          $ref: "#/components/schemas/TransferInitiationStatus"
         error:
           type: string
           nullable: true
@@ -2945,11 +2945,11 @@ components:
           type: array
           nullable: true
           items:
-            $ref: '#/components/schemas/TransferInitiationPayments'
+            $ref: "#/components/schemas/TransferInitiationPayments"
         relatedAdjustments:
           type: array
           items:
-            $ref: '#/components/schemas/TransferInitiationAdjusments'
+            $ref: "#/components/schemas/TransferInitiationAdjusments"
     TransferInitiationAdjusments:
       type: object
       required:
@@ -2963,7 +2963,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/TransferInitiationStatus'
+          $ref: "#/components/schemas/TransferInitiationStatus"
         error:
           type: string
           nullable: true
@@ -2985,7 +2985,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: "#/components/schemas/PaymentStatus"
         error:
           type: string
           nullable: true
@@ -3021,9 +3021,9 @@ components:
         relatedAccounts:
           type: array
           items:
-            $ref: '#/components/schemas/BankAccountRelatedAccounts'
+            $ref: "#/components/schemas/BankAccountRelatedAccounts"
         metadata:
-          $ref: '#/components/schemas/BankAccountMetadata'
+          $ref: "#/components/schemas/BankAccountMetadata"
     BankAccountRelatedAccounts:
       type: object
       required:
@@ -3080,11 +3080,11 @@ components:
         connectorID:
           type: string
         provider:
-          $ref: '#/components/schemas/Connector'
+          $ref: "#/components/schemas/Connector"
         type:
-          $ref: '#/components/schemas/PaymentType'
+          $ref: "#/components/schemas/PaymentType"
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: "#/components/schemas/PaymentStatus"
         initialAmount:
           type: integer
           format: bigint
@@ -3096,7 +3096,7 @@ components:
           minimum: 0
           example: 100
         scheme:
-          $ref: '#/components/schemas/PaymentScheme'
+          $ref: "#/components/schemas/PaymentScheme"
         asset:
           type: string
           example: USD
@@ -3109,9 +3109,9 @@ components:
         adjustments:
           type: array
           items:
-            $ref: '#/components/schemas/PaymentAdjustment'
+            $ref: "#/components/schemas/PaymentAdjustment"
         metadata:
-          $ref: '#/components/schemas/PaymentMetadata'
+          $ref: "#/components/schemas/PaymentMetadata"
     PaymentAdjustment:
       type: object
       required:
@@ -3127,7 +3127,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: "#/components/schemas/PaymentStatus"
         amount:
           type: integer
           format: bigint
@@ -3168,11 +3168,11 @@ components:
         balances:
           type: array
           items:
-            $ref: '#/components/schemas/PoolBalance'
+            $ref: "#/components/schemas/PoolBalance"
     PoolBalancesLatest:
       type: array
       items:
-        $ref: '#/components/schemas/PoolBalance'
+        $ref: "#/components/schemas/PoolBalance"
     PoolBalance:
       type: object
       required:
@@ -3220,13 +3220,13 @@ components:
         accountName:
           type: string
         type:
-          $ref: '#/components/schemas/AccountType'
+          $ref: "#/components/schemas/AccountType"
         pools:
           type: array
           items:
             type: string
         metadata:
-          $ref: '#/components/schemas/AccountMetadata'
+          $ref: "#/components/schemas/AccountMetadata"
         raw:
           type: object
           nullable: true
@@ -3278,7 +3278,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/TaskStatus'
+          $ref: "#/components/schemas/TaskStatus"
         state:
           nullable: true
           type: object
@@ -3295,7 +3295,7 @@ components:
         - FAILED
     TaskStripe:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3314,7 +3314,7 @@ components:
                   type: string
     TaskWise:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3332,7 +3332,7 @@ components:
                   minimum: 0
     TaskModulr:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3348,7 +3348,7 @@ components:
                   type: string
     TaskDummyPay:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3364,7 +3364,7 @@ components:
                   type: string
     TaskCurrencyCloud:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3376,7 +3376,7 @@ components:
                   type: string
     TaskBankingCircle:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3390,7 +3390,7 @@ components:
                   type: string
     TaskMangoPay:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3406,7 +3406,7 @@ components:
                   type: string
     TaskMoneycorp:
       allOf:
-        - $ref: '#/components/schemas/TaskBase'
+        - $ref: "#/components/schemas/TaskBase"
         - type: object
           required:
             - descriptor
@@ -3454,7 +3454,7 @@ components:
         - metadata
       properties:
         metadata:
-          $ref: '#/components/schemas/BankAccountMetadata'
+          $ref: "#/components/schemas/BankAccountMetadata"
     BankAccountRequest:
       type: object
       required:
@@ -3476,7 +3476,7 @@ components:
         swiftBicCode:
           type: string
         metadata:
-          $ref: '#/components/schemas/BankAccountMetadata'
+          $ref: "#/components/schemas/BankAccountMetadata"
     AddAccountToPoolRequest:
       type: object
       required:
@@ -3512,13 +3512,13 @@ components:
           type: string
           format: date-time
         type:
-          $ref: '#/components/schemas/AccountType'
+          $ref: "#/components/schemas/AccountType"
         defaultAsset:
           type: string
         accountName:
           type: string
         metadata:
-          $ref: '#/components/schemas/AccountMetadata'
+          $ref: "#/components/schemas/AccountMetadata"
     PaymentRequest:
       type: object
       required:
@@ -3544,11 +3544,11 @@ components:
           minimum: 0
           example: 100
         type:
-          $ref: '#/components/schemas/PaymentType'
+          $ref: "#/components/schemas/PaymentType"
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: "#/components/schemas/PaymentStatus"
         scheme:
-          $ref: '#/components/schemas/PaymentScheme'
+          $ref: "#/components/schemas/PaymentScheme"
         asset:
           type: string
           example: USD
@@ -3697,10 +3697,10 @@ components:
         - errorMessage
       properties:
         errorCode:
-          $ref: '#/components/schemas/PaymentsErrorsEnum'
+          $ref: "#/components/schemas/PaymentsErrorsEnum"
         errorMessage:
           type: string
-          example: '[VALIDATION] missing reference'
+          example: "[VALIDATION] missing reference"
     PaymentsErrorsEnum:
       type: string
       enum:
@@ -3746,14 +3746,14 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Account'
+                $ref: "#/components/schemas/V3Account"
     V3GetAccountResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Account'
+          $ref: "#/components/schemas/V3Account"
     V3CreateAccountRequest:
       type: object
       required:
@@ -3774,20 +3774,20 @@ components:
         accountName:
           type: string
         type:
-          $ref: '#/components/schemas/V3AccountTypeEnum'
+          $ref: "#/components/schemas/V3AccountTypeEnum"
         defaultAsset:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3CreateAccountResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Account'
+          $ref: "#/components/schemas/V3Account"
     V3Account:
       type: object
       required:
@@ -3812,7 +3812,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: '#/components/schemas/V3AccountTypeEnum'
+          $ref: "#/components/schemas/V3AccountTypeEnum"
         name:
           type: string
           nullable: true
@@ -3820,7 +3820,7 @@ components:
           type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
         raw:
           type: object
     V3AccountTypeEnum:
@@ -3858,7 +3858,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Balance'
+                $ref: "#/components/schemas/V3Balance"
     V3Balance:
       type: object
       required:
@@ -3897,7 +3897,7 @@ components:
         country:
           type: string
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3CreateBankAccountResponse:
       type: object
       required:
@@ -3912,7 +3912,7 @@ components:
         - metadata
       properties:
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3ForwardBankAccountRequest:
       type: object
       required:
@@ -3964,14 +3964,14 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3BankAccount'
+                $ref: "#/components/schemas/V3BankAccount"
     V3GetBankAccountResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3BankAccount'
+          $ref: "#/components/schemas/V3BankAccount"
     V3BankAccount:
       type: object
       required:
@@ -3999,11 +3999,11 @@ components:
           type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
         relatedAccounts:
           type: array
           items:
-            $ref: '#/components/schemas/V3BankAccountRelatedAccount'
+            $ref: "#/components/schemas/V3BankAccountRelatedAccount"
     V3BankAccountRelatedAccount:
       type: object
       required:
@@ -4016,7 +4016,7 @@ components:
           type: string
           format: date-time
     V3InstallConnectorRequest:
-      $ref: '#/components/schemas/V3ConnectorConfig'
+      $ref: "#/components/schemas/V3ConnectorConfig"
     V3InstallConnectorResponse:
       type: object
       required:
@@ -4075,9 +4075,9 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3ConnectorConfig'
+          $ref: "#/components/schemas/V3ConnectorConfig"
     V3UpdateConnectorRequest:
-      $ref: '#/components/schemas/V3ConnectorConfig'
+      $ref: "#/components/schemas/V3ConnectorConfig"
     V3ConnectorsCursorResponse:
       type: object
       required:
@@ -4107,7 +4107,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Connector'
+                $ref: "#/components/schemas/V3Connector"
     V3ConnectorSchedulesCursorResponse:
       type: object
       required:
@@ -4137,14 +4137,14 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Schedule'
+                $ref: "#/components/schemas/V3Schedule"
     V3ConnectorScheduleResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Schedule'
+          $ref: "#/components/schemas/V3Schedule"
     V3ConnectorScheduleInstancesCursorResponse:
       type: object
       required:
@@ -4174,7 +4174,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Instance'
+                $ref: "#/components/schemas/V3Instance"
     V3Connector:
       type: object
       required:
@@ -4268,7 +4268,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: '#/components/schemas/V3PaymentTypeEnum'
+          $ref: "#/components/schemas/V3PaymentTypeEnum"
         initialAmount:
           type: integer
           format: bigint
@@ -4287,11 +4287,11 @@ components:
           type: string
           format: byte
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
         adjustments:
           type: array
           items:
-            $ref: '#/components/schemas/V3CreatePaymentAdjustmentRequest'
+            $ref: "#/components/schemas/V3CreatePaymentAdjustmentRequest"
     V3CreatePaymentAdjustmentRequest:
       type: object
       required:
@@ -4305,7 +4305,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/V3PaymentStatusEnum'
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
         amount:
           type: integer
           format: bigint
@@ -4313,21 +4313,21 @@ components:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3CreatePaymentResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Payment'
+          $ref: "#/components/schemas/V3Payment"
     V3UpdatePaymentMetadataRequest:
       type: object
       required:
         - metadata
       properties:
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3PaymentsCursorResponse:
       type: object
       required:
@@ -4357,14 +4357,14 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Payment'
+                $ref: "#/components/schemas/V3Payment"
     V3GetPaymentResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Payment'
+          $ref: "#/components/schemas/V3Payment"
     V3Payment:
       type: object
       required:
@@ -4393,7 +4393,7 @@ components:
           type: string
           format: date-time
         type:
-          $ref: '#/components/schemas/V3PaymentTypeEnum'
+          $ref: "#/components/schemas/V3PaymentTypeEnum"
         initialAmount:
           type: integer
           format: bigint
@@ -4405,7 +4405,7 @@ components:
         scheme:
           type: string
         status:
-          $ref: '#/components/schemas/V3PaymentStatusEnum'
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
         sourceAccountID:
           type: string
           format: byte
@@ -4415,12 +4415,12 @@ components:
           format: byte
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
         adjustments:
           type: array
           nullable: true
           items:
-            $ref: '#/components/schemas/V3PaymentAdjustment'
+            $ref: "#/components/schemas/V3PaymentAdjustment"
     V3PaymentAdjustment:
       type: object
       required:
@@ -4438,14 +4438,14 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/V3PaymentStatusEnum'
+          $ref: "#/components/schemas/V3PaymentStatusEnum"
         amount:
           type: integer
           format: bigint
         asset:
           type: string
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
         raw:
           type: object
     V3PaymentTypeEnum:
@@ -4501,7 +4501,7 @@ components:
           type: string
           maxLength: 10000
         type:
-          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
+          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
         amount:
           type: integer
           format: bigint
@@ -4516,7 +4516,7 @@ components:
           type: string
           format: byte
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3InitiatePaymentResponse:
       type: object
       required:
@@ -4583,7 +4583,7 @@ components:
           type: string
           pattern: ^[a-zA-Z]{3}\/[0-9]$
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3ReversePaymentInitiationResponse:
       type: object
       required:
@@ -4629,7 +4629,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3PaymentInitiation'
+                $ref: "#/components/schemas/V3PaymentInitiation"
     V3PaymentInitiationAdjustmentsCursorResponse:
       type: object
       required:
@@ -4659,7 +4659,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3PaymentInitiationAdjustment'
+                $ref: "#/components/schemas/V3PaymentInitiationAdjustment"
     V3PaymentInitiationRelatedPaymentsCursorResponse:
       type: object
       required:
@@ -4689,7 +4689,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Payment'
+                $ref: "#/components/schemas/V3Payment"
     V3PaymentInitiation:
       type: object
       required:
@@ -4723,14 +4723,14 @@ components:
         description:
           type: string
         type:
-          $ref: '#/components/schemas/V3PaymentInitiationTypeEnum'
+          $ref: "#/components/schemas/V3PaymentInitiationTypeEnum"
         amount:
           type: integer
           format: bigint
         asset:
           type: string
         status:
-          $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
+          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
         sourceAccountID:
           type: string
           format: byte
@@ -4741,7 +4741,7 @@ components:
           type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3PaymentInitiationAdjustment:
       type: object
       required:
@@ -4755,7 +4755,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/V3PaymentInitiationStatusEnum'
+          $ref: "#/components/schemas/V3PaymentInitiationStatusEnum"
         amount:
           type: integer
           format: bigint
@@ -4765,14 +4765,14 @@ components:
           type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3GetPaymentInitiationResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3PaymentInitiation'
+          $ref: "#/components/schemas/V3PaymentInitiation"
     V3PaymentInitiationStatusEnum:
       type: string
       enum:
@@ -4800,10 +4800,10 @@ components:
         name:
           type: string
         contactDetails:
-          $ref: '#/components/schemas/V3ContactDetailsRequest'
+          $ref: "#/components/schemas/V3ContactDetailsRequest"
           nullable: true
         address:
-          $ref: '#/components/schemas/V3AddressRequest'
+          $ref: "#/components/schemas/V3AddressRequest"
           nullable: true
         bankAccountIDs:
           type: array
@@ -4811,7 +4811,7 @@ components:
             type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3AddressRequest:
       type: object
       properties:
@@ -4871,7 +4871,7 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3PaymentServiceUser'
+                $ref: "#/components/schemas/V3PaymentServiceUser"
     V3PaymentServiceUser:
       type: object
       required:
@@ -4887,10 +4887,10 @@ components:
           type: string
           format: date-time
         contactDetails:
-          $ref: '#/components/schemas/V3ContactDetails'
+          $ref: "#/components/schemas/V3ContactDetails"
           nullable: true
         address:
-          $ref: '#/components/schemas/V3Address'
+          $ref: "#/components/schemas/V3Address"
           nullable: true
         bankAccountIDs:
           type: array
@@ -4898,7 +4898,7 @@ components:
             type: string
           nullable: true
         metadata:
-          $ref: '#/components/schemas/V3Metadata'
+          $ref: "#/components/schemas/V3Metadata"
     V3ContactDetails:
       type: object
       properties:
@@ -4927,7 +4927,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3PaymentServiceUser'
+          $ref: "#/components/schemas/V3PaymentServiceUser"
     V3ForwardPaymentServiceUserBankAccountRequest:
       type: object
       required:
@@ -4999,21 +4999,21 @@ components:
             data:
               type: array
               items:
-                $ref: '#/components/schemas/V3Pool'
+                $ref: "#/components/schemas/V3Pool"
     V3GetPoolResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Pool'
+          $ref: "#/components/schemas/V3Pool"
     V3PoolBalancesResponse:
       type: object
       required:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3PoolBalances'
+          $ref: "#/components/schemas/V3PoolBalances"
     V3Pool:
       type: object
       required:
@@ -5032,11 +5032,11 @@ components:
         poolAccounts:
           type: array
           items:
-            $ref: '#/components/schemas/V3AccountID'
+            $ref: "#/components/schemas/V3AccountID"
     V3PoolBalances:
       type: array
       items:
-        $ref: '#/components/schemas/V3PoolBalance'
+        $ref: "#/components/schemas/V3PoolBalance"
     V3PoolBalance:
       type: object
       required:
@@ -5054,7 +5054,7 @@ components:
         - data
       properties:
         data:
-          $ref: '#/components/schemas/V3Task'
+          $ref: "#/components/schemas/V3Task"
     V3Task:
       type: object
       required:
@@ -5066,7 +5066,7 @@ components:
         id:
           type: string
         status:
-          $ref: '#/components/schemas/V3TaskStatusEnum'
+          $ref: "#/components/schemas/V3TaskStatusEnum"
         createdAt:
           type: string
           format: date-time
@@ -5102,10 +5102,10 @@ components:
         - errorMessage
       properties:
         errorCode:
-          $ref: '#/components/schemas/V3ErrorsEnum'
+          $ref: "#/components/schemas/V3ErrorsEnum"
         errorMessage:
           type: string
-          example: '[VALIDATION] missing required config field: pollingPeriod'
+          example: "[VALIDATION] missing required config field: pollingPeriod"
         details:
           type: string
     V3ErrorsEnum:
@@ -5122,41 +5122,41 @@ components:
       discriminator:
         propertyName: provider
         mapping:
-          Adyen: '#/components/schemas/V3AdyenConfig'
-          Atlar: '#/components/schemas/V3AtlarConfig'
-          Bankingcircle: '#/components/schemas/V3BankingcircleConfig'
-          Checkout: '#/components/schemas/V3CheckoutConfig'
-          Column: '#/components/schemas/V3ColumnConfig'
-          Currencycloud: '#/components/schemas/V3CurrencycloudConfig'
-          Dummypay: '#/components/schemas/V3DummypayConfig'
-          Generic: '#/components/schemas/V3GenericConfig'
-          Increase: '#/components/schemas/V3IncreaseConfig'
-          Mangopay: '#/components/schemas/V3MangopayConfig'
-          Modulr: '#/components/schemas/V3ModulrConfig'
-          Moneycorp: '#/components/schemas/V3MoneycorpConfig'
-          Plaid: '#/components/schemas/V3PlaidConfig'
-          Powens: '#/components/schemas/V3PowensConfig'
-          Qonto: '#/components/schemas/V3QontoConfig'
-          Stripe: '#/components/schemas/V3StripeConfig'
-          Wise: '#/components/schemas/V3WiseConfig'
+          Adyen: "#/components/schemas/V3AdyenConfig"
+          Atlar: "#/components/schemas/V3AtlarConfig"
+          Bankingcircle: "#/components/schemas/V3BankingcircleConfig"
+          Checkout: "#/components/schemas/V3CheckoutConfig"
+          Column: "#/components/schemas/V3ColumnConfig"
+          Currencycloud: "#/components/schemas/V3CurrencycloudConfig"
+          Dummypay: "#/components/schemas/V3DummypayConfig"
+          Generic: "#/components/schemas/V3GenericConfig"
+          Increase: "#/components/schemas/V3IncreaseConfig"
+          Mangopay: "#/components/schemas/V3MangopayConfig"
+          Modulr: "#/components/schemas/V3ModulrConfig"
+          Moneycorp: "#/components/schemas/V3MoneycorpConfig"
+          Plaid: "#/components/schemas/V3PlaidConfig"
+          Powens: "#/components/schemas/V3PowensConfig"
+          Qonto: "#/components/schemas/V3QontoConfig"
+          Stripe: "#/components/schemas/V3StripeConfig"
+          Wise: "#/components/schemas/V3WiseConfig"
       oneOf:
-        - $ref: '#/components/schemas/V3AdyenConfig'
-        - $ref: '#/components/schemas/V3AtlarConfig'
-        - $ref: '#/components/schemas/V3BankingcircleConfig'
-        - $ref: '#/components/schemas/V3CheckoutConfig'
-        - $ref: '#/components/schemas/V3ColumnConfig'
-        - $ref: '#/components/schemas/V3CurrencycloudConfig'
-        - $ref: '#/components/schemas/V3DummypayConfig'
-        - $ref: '#/components/schemas/V3GenericConfig'
-        - $ref: '#/components/schemas/V3IncreaseConfig'
-        - $ref: '#/components/schemas/V3MangopayConfig'
-        - $ref: '#/components/schemas/V3ModulrConfig'
-        - $ref: '#/components/schemas/V3MoneycorpConfig'
-        - $ref: '#/components/schemas/V3PlaidConfig'
-        - $ref: '#/components/schemas/V3PowensConfig'
-        - $ref: '#/components/schemas/V3QontoConfig'
-        - $ref: '#/components/schemas/V3StripeConfig'
-        - $ref: '#/components/schemas/V3WiseConfig'
+        - $ref: "#/components/schemas/V3AdyenConfig"
+        - $ref: "#/components/schemas/V3AtlarConfig"
+        - $ref: "#/components/schemas/V3BankingcircleConfig"
+        - $ref: "#/components/schemas/V3CheckoutConfig"
+        - $ref: "#/components/schemas/V3ColumnConfig"
+        - $ref: "#/components/schemas/V3CurrencycloudConfig"
+        - $ref: "#/components/schemas/V3DummypayConfig"
+        - $ref: "#/components/schemas/V3GenericConfig"
+        - $ref: "#/components/schemas/V3IncreaseConfig"
+        - $ref: "#/components/schemas/V3MangopayConfig"
+        - $ref: "#/components/schemas/V3ModulrConfig"
+        - $ref: "#/components/schemas/V3MoneycorpConfig"
+        - $ref: "#/components/schemas/V3PlaidConfig"
+        - $ref: "#/components/schemas/V3PowensConfig"
+        - $ref: "#/components/schemas/V3QontoConfig"
+        - $ref: "#/components/schemas/V3StripeConfig"
+        - $ref: "#/components/schemas/V3WiseConfig"
     V3AdyenConfig:
       type: object
       required:
@@ -5248,21 +5248,21 @@ components:
       type: object
       required:
         - name
-        - environment
-        - oauthClientID
-        - oauthClientSecret
+        - isSandbox
+        - clientID
+        - clientSecret
         - entityId
         - processingChannelId
       properties:
         entityId:
           type: string
-        environment:
-          type: string
+        isSandbox:
+          type: boolean
         name:
           type: string
-        oauthClientID:
+        clientID:
           type: string
-        oauthClientSecret:
+        clientSecret:
           type: string
         pageSize:
           type: integer
@@ -5685,7 +5685,7 @@ components:
       description: The name of the connector.
       in: path
       schema:
-        $ref: '#/components/schemas/Connector'
+        $ref: "#/components/schemas/Connector"
       required: true
     TaskId:
       name: taskId
@@ -5831,76 +5831,76 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ConnectorConfig'
+            $ref: "#/components/schemas/ConnectorConfig"
     UpdateMetadata:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PaymentMetadata'
+            $ref: "#/components/schemas/PaymentMetadata"
     Payment:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PaymentRequest'
+            $ref: "#/components/schemas/PaymentRequest"
     Account:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AccountRequest'
+            $ref: "#/components/schemas/AccountRequest"
     Pool:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/PoolRequest'
+            $ref: "#/components/schemas/PoolRequest"
     AddAccountToPool:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/AddAccountToPoolRequest'
+            $ref: "#/components/schemas/AddAccountToPoolRequest"
     TransferInitiation:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransferInitiationRequest'
+            $ref: "#/components/schemas/TransferInitiationRequest"
     ForwardBankAccount:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ForwardBankAccountRequest'
+            $ref: "#/components/schemas/ForwardBankAccountRequest"
     UpdateBankAccountMetadata:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateBankAccountMetadataRequest'
+            $ref: "#/components/schemas/UpdateBankAccountMetadataRequest"
     BankAccount:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BankAccountRequest'
+            $ref: "#/components/schemas/BankAccountRequest"
     UpdateTransferInitiationStatus:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/UpdateTransferInitiationStatusRequest'
+            $ref: "#/components/schemas/UpdateTransferInitiationStatusRequest"
     ReverseTransferInitiation:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ReverseTransferInitiationRequest'
+            $ref: "#/components/schemas/ReverseTransferInitiationRequest"
     Transfer:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/TransferRequest'
+            $ref: "#/components/schemas/TransferRequest"
