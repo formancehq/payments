@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 6af4917cd448510cb9cf66eb17bf6b0a
+  docChecksum: e1a9f9c96dd6c56fe44fda428abb0c24
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -95,7 +95,7 @@ generatedFiles:
   - /models/components/taskstripe.go
   - /models/components/taskwise.go
   - /models/components/transferinitiation.go
-  - /models/components/transferinitiationadjustments.go
+  - /models/components/transferinitiationadjusments.go
   - /models/components/transferinitiationpayments.go
   - /models/components/transferinitiationrequest.go
   - /models/components/transferinitiationresponse.go
@@ -414,7 +414,7 @@ generatedFiles:
   - docs/models/components/taskwisedescriptor.md
   - docs/models/components/taskwisestate.md
   - docs/models/components/transferinitiation.md
-  - docs/models/components/transferinitiationadjustments.md
+  - docs/models/components/transferinitiationadjusments.md
   - docs/models/components/transferinitiationpayments.md
   - docs/models/components/transferinitiationrequest.md
   - docs/models/components/transferinitiationrequesttype.md
