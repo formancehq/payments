@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"encoding/base64"
 	"flag"
 	"fmt"
 	"log"
@@ -15,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
@@ -34,33 +34,24 @@ import (
 
 func main() {
 	var (
-		dsn         = getEnv("PG_DSN", "postgres://payments:payments@localhost:5432/payments?sslmode=disable")
-		intervalMS  = intFromEnv("INTERVAL_MS", 1000)
-		workers     = intFromEnv("WORKERS", 5)
-		connectorID = getEnv("CONNECTOR_ID", "test-connector")
-		asset       = getEnv("ASSET", "USD/2")
-		scheme      = getEnv("SCHEME", "test")
-		typeStr     = getEnv("TYPE", "payin")
+		dsn               = getEnv("PG_DSN", "postgres://payments:payments@localhost:5432/payments?sslmode=disable")
+		intervalMS        = intFromEnv("INTERVAL_MS", 1000)
+		workers           = intFromEnv("WORKERS", 5)
+		asset             = getEnv("ASSET", "USD/2")
+		scheme            = getEnv("SCHEME", "test")
+		typeStr           = getEnv("TYPE", "payin")
+		encryptionKey     = getEnv("CONFIG_ENCRYPTION_KEY", "mysuperencryptionkey")
+		encryptionOptions = "compress-algo=1, cipher-algo=aes256"
 	)
-
-	// Connector creation options (env defaults)
-	createConnector := getEnv("CREATE_CONNECTOR", "true") != "false"
-	connectorName := getEnv("CONNECTOR_NAME", connectorID)
-	connectorProvider := getEnv("CONNECTOR_PROVIDER", "OTHER")
-	connectorConfigB64 := getEnv("CONNECTOR_CONFIG_BASE64", "")
 
 	// Flags override env
 	flag.StringVar(&dsn, "dsn", dsn, "Postgres DSN")
 	flag.IntVar(&intervalMS, "interval-ms", intervalMS, "Delay between inserts per worker in ms")
 	flag.IntVar(&workers, "workers", workers, "Number of concurrent workers")
-	flag.StringVar(&connectorID, "connector", connectorID, "Connector ID to set on payments")
 	flag.StringVar(&asset, "asset", asset, "Asset string to set on payments (e.g. USD/2)")
 	flag.StringVar(&scheme, "scheme", scheme, "Scheme string to set on payments (e.g. card)")
 	flag.StringVar(&typeStr, "type", typeStr, "Payment type: payin|payout|transfer")
-	flag.BoolVar(&createConnector, "create-connector", createConnector, "Create/upsert connector row at startup")
-	flag.StringVar(&connectorName, "connector-name", connectorName, "Connector name for public.connectors table")
-	flag.StringVar(&connectorProvider, "connector-provider", connectorProvider, "Connector provider (text) value, e.g. STRIPE, PSP, OTHER")
-	flag.StringVar(&connectorConfigB64, "connector-config-base64", connectorConfigB64, "Base64-encoded config bytes for connector")
+	flag.StringVar(&encryptionKey, "encryption-key", encryptionKey, "DB encryption key")
 
 	// batching flags
 	var batchSizeFlag = intFromEnv("BATCH_SIZE", 500)
@@ -84,36 +75,37 @@ func main() {
 		log.Fatalf("db ping: %v", err)
 	}
 
-	log.Printf("continuous-writer starting: workers=%d interval=%dms batch=%d flush=%dms connector=%s type=%s asset=%s scheme=%s", workers, intervalMS, batchSizeFlag, flushMSFlag, connectorID, pt, asset, scheme)
-
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	// Optionally create/upsert connector entry
-	if createConnector {
-		var configBytes []byte
-		if connectorConfigB64 != "" {
-			b, err := base64.StdEncoding.DecodeString(connectorConfigB64)
-			if err != nil {
-				log.Printf("warning: invalid CONNECTOR_CONFIG_BASE64: %v", err)
-			} else {
-				configBytes = b
-			}
-		}
-		upsert := `INSERT INTO "public"."connectors" (id, name, created_at, provider, config, reference)
-		VALUES ($1, $2, now(), $3, $4, $5)
-		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, provider=EXCLUDED.provider, config=EXCLUDED.config`
-		ctxUp, cancel := context.WithTimeout(ctx, 20*time.Second)
-		connRef := uuid.New()
-		_, err := db.ExecContext(ctxUp, upsert, connectorID, connectorName, connectorProvider, configBytes, connRef)
-		cancel()
+	defaultConnectorId := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "qonto",
+	}
+	connectorID := defaultConnectorId.String()
+	upsert := `INSERT INTO "public"."connectors" (id, name, created_at, provider, reference)
+		VALUES ($1, $2, now(), $3, $4)
+		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, provider=EXCLUDED.provider`
+	//ctxUp, cancel := context.WithTimeout(ctx, 20*time.Second)
+	_, err = db.ExecContext(ctx, upsert, connectorID, "test-connector"+connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
+	//cancel()
+	if err != nil {
+		log.Printf("warning: failed to upsert connector '%s': %v", connectorID, err)
+		return
+	} else {
+		config := []byte(`{"ClientID": "asdf", "APIKey": "asdf", "Endpoint": "http://localhost:/"}`)
+		update := `UPDATE public.connectors SET config=pgp_sym_encrypt($1::TEXT, $2, $3) WHERE id=$4` //, "{}", configEncryptionKey, encryptionOptions
+		_, err = db.ExecContext(ctx, update, config, encryptionKey, encryptionOptions, connectorID)
 		if err != nil {
-			log.Printf("warning: failed to upsert connector '%s': %v", connectorID, err)
+			log.Printf("warning: failed to set config for connector '%s': %v", connectorID, err)
+			return
 		} else {
-			log.Printf("connector ensured: id=%s name=%s provider=%s", connectorID, connectorName, connectorProvider)
+			log.Printf("connector ensured: id=%s name=%s provider=%s", connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
 		}
 	}
 
+	log.Printf("continuous-writer starting: workers=%d interval=%dms batch=%d flush=%dms connector=%s type=%s asset=%s scheme=%s", workers, intervalMS, batchSizeFlag, flushMSFlag, connectorID, pt, asset, scheme)
 	interval := time.Duration(intervalMS) * time.Millisecond
 
 	// Insert payments into public.payments table (schema-qualified)
@@ -168,12 +160,12 @@ func main() {
 				amount := r.Intn(10000) + 1 // 1..10000 minor units
 				initAmount := amount
 				var sourceAcc, destAcc sql.NullString
-				if r.Intn(2) == 0 {
-					sourceAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
-				}
-				if r.Intn(2) == 0 {
-					destAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
-				}
+				//if r.Intn(2) == 0 {
+				//	sourceAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
+				//}
+				//if r.Intn(2) == 0 {
+				//	destAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
+				//}
 				buf = append(buf, row{
 					id:         id,
 					ref:        ref,
