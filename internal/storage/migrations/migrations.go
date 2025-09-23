@@ -303,12 +303,16 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		migrations.Migration{
 			Name: "psu connection payments accounts",
 			Up: func(ctx context.Context, db bun.IDB) error {
-				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					logger.Info("running psu connection payments accounts migration...")
-					_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
-					logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
-					return err
-				})
+				//return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+				//	logger.Info("running psu connection payments accounts migration...")
+				//	_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
+				//	logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
+				//	return err
+				//})
+				// Migration 21 ran in some environments, but not others -- we keep the numbering but we
+				// skip the actual migration here. Migration 23 is the replacement (we're removing the table locking on
+				// payment, accounts etc)
+				return nil
 			},
 		},
 		migrations.Migration{
@@ -320,6 +324,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
 					return err
 				})
+			},
+		},
+		migrations.Migration{
+			Name: "psu connection payments accounts async",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running psu connection payments accounts async migration...")
+				err := AddPSUConnectionPaymentsAccountsAsync(ctx, db)
+				logger.WithField("error", err).Info("finished running psu connection payments accounts async migration")
+				return err
 			},
 		},
 	)
