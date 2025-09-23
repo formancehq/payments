@@ -91,6 +91,11 @@ BEGIN
 			NOT VALID;
 	END IF;
 END$$;`,
+
+		`ALTER TABLE public.payments VALIDATE CONSTRAINT payments_open_banking_connection_id_fk`,
+		`ALTER TABLE public.payments VALIDATE CONSTRAINT payments_psu_id_fk`,
+		`ALTER TABLE public.accounts VALIDATE CONSTRAINT accounts_psu_id_fk`,
+		`ALTER TABLE public.accounts VALIDATE CONSTRAINT accounts_open_banking_connection_id_fk`,
 	}
 
 	for i, stmt := range stmts {
