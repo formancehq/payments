@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
 func (c *client) GetAccountBalances(ctx context.Context, accountID string) (*stripe.Balance, error) {
-	filters := stripe.Params{Context: metrics.OperationContext(ctx, "list_balances")}
+	filters := stripe.Params{Context: pluginsdkmetrics.OperationContext(ctx, "list_balances")}
 	if accountID != "" {
 		filters.StripeAccount = &accountID
 	}

@@ -11,7 +11,7 @@ import (
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
 	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
+	errorsutils "github.com/formancehq/payments/pkg/pluginsdk/errors"
 	"github.com/stripe/stripe-go/v79"
 )
 

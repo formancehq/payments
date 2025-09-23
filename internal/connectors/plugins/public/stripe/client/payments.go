@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -32,7 +32,7 @@ func (c *client) GetPayments(
 			if accountID != "" {
 				params.StripeAccount = &accountID
 			}
-			params.Context = metrics.OperationContext(ctx, "list_transactions_scan")
+			params.Context = pluginsdkmetrics.OperationContext(ctx, "list_transactions_scan")
 			transactionParams := &stripe.BalanceTransactionListParams{ListParams: params}
 			expandBalanceTransactionParams(transactionParams)
 			itr := c.balanceTransactionClient.List(transactionParams)
@@ -49,7 +49,7 @@ func (c *client) GetPayments(
 	}
 
 	filters := stripe.ListParams{
-		Context:      metrics.OperationContext(ctx, "list_transactions"),
+		Context:      pluginsdkmetrics.OperationContext(ctx, "list_transactions"),
 		Limit:        limit(pageSize, len(results)),
 		EndingBefore: &timeline.LatestID,
 		Single:       true, // turn off autopagination

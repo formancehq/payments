@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -20,7 +20,7 @@ type CreatePayoutRequest struct {
 func (c *client) CreatePayout(ctx context.Context, createPayoutRequest *CreatePayoutRequest) (*stripe.Payout, error) {
 	params := &stripe.PayoutParams{
 		Params: stripe.Params{
-			Context:       metrics.OperationContext(ctx, "initiate_payout"),
+			Context:       pluginsdkmetrics.OperationContext(ctx, "initiate_payout"),
 			StripeAccount: createPayoutRequest.Source,
 		},
 		Amount:      stripe.Int64(createPayoutRequest.Amount),
