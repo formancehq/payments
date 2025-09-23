@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"math"
 	"net/url"
 	"strconv"
 	"time"
@@ -261,19 +260,20 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 			at = webhook.Connection.LastUpdate
 		}
 
-		amountString := strconv.FormatFloat(account.Balance, 'f', -1, 64)
-		amount, err := currency.GetAmountWithPrecisionFromString(amountString, account.Currency.Precision)
-		if err != nil {
-			return nil, err
-		}
-
-		balanceResponse := models.WebhookResponse{
-			Balance: &models.PSPBalance{
-				AccountReference: pspAccount.Reference,
-				CreatedAt:        at,
-				Asset:            *pspAccount.DefaultAsset,
-				Amount:           amount,
-			},
+		var balanceResponse *models.WebhookResponse
+		if account.Balance.String() != "" {
+			amount, err := currency.GetAmountWithPrecisionFromString(account.Balance.String(), account.Currency.Precision)
+			if err != nil {
+				return nil, err
+			}
+			balanceResponse = &models.WebhookResponse{
+				Balance: &models.PSPBalance{
+					AccountReference: pspAccount.Reference,
+					CreatedAt:        at,
+					Asset:            *pspAccount.DefaultAsset,
+					Amount:           amount,
+				},
+			}
 		}
 
 		// We have to put first the user connection reconnected webhook in order
@@ -294,7 +294,9 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		// And finally the transactions related to the connection and the account
 		res = append(res, transactionResponses...)
 		// Finally, push the latest balance for the account
-		res = append(res, balanceResponse)
+		if balanceResponse != nil {
+			res = append(res, *balanceResponse)
+		}
 
 		return res, nil
 
@@ -425,16 +427,15 @@ func translateBankAccountToPSPAccount(account client.BankAccount) (models.PSPAcc
 }
 
 func translateTransactionToPSPPayment(transaction client.Transaction, accountReference string, curr string, precision int) (models.PSPPayment, error) {
-	paymentType := models.PAYMENT_TYPE_PAYIN
-	if transaction.Value < 0 {
-		paymentType = models.PAYMENT_TYPE_PAYOUT
-	}
 
-	amountString := strconv.FormatFloat(math.Abs(transaction.Value), 'f', -1, 64)
-
-	amount, err := currency.GetAmountWithPrecisionFromString(amountString, precision)
+	amount, err := currency.GetAmountWithPrecisionFromString(transaction.Value.String(), precision)
 	if err != nil {
 		return models.PSPPayment{}, err
+	}
+
+	paymentType := models.PAYMENT_TYPE_PAYIN
+	if amount.Sign() == -1 {
+		paymentType = models.PAYMENT_TYPE_PAYOUT
 	}
 
 	raw, err := json.Marshal(transaction)

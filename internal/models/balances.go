@@ -76,6 +76,16 @@ func (b *Balance) IdempotencyKey() string {
 }
 
 func (b Balance) MarshalJSON() ([]byte, error) {
+	var psuId string
+	if b.PsuID != nil {
+		psuId = b.PsuID.String()
+	}
+
+	var openBankingConnectionId string
+	if b.OpenBankingConnectionID != nil {
+		openBankingConnectionId = *b.OpenBankingConnectionID
+	}
+
 	return json.Marshal(&struct {
 		AccountID     string    `json:"accountID"`
 		CreatedAt     time.Time `json:"createdAt"`
@@ -92,8 +102,8 @@ func (b Balance) MarshalJSON() ([]byte, error) {
 		LastUpdatedAt:           b.LastUpdatedAt,
 		Asset:                   b.Asset,
 		Balance:                 b.Balance,
-		PsuId:                   b.PsuID.String(),
-		OpenBankingConnectionID: *b.OpenBankingConnectionID,
+		PsuId:                   psuId,
+		OpenBankingConnectionID: openBankingConnectionId,
 	})
 }
 
@@ -139,7 +149,6 @@ type AggregatedBalance struct {
 	Amount *big.Int `json:"amount"`
 }
 
-// This is where it gets weird, we could receive balance while having no accounts stored yet
 func FromPSPBalance(from PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, openBankingConnectionId *string) (Balance, error) {
 	if err := from.Validate(); err != nil {
 		return Balance{}, err
@@ -156,22 +165,6 @@ func FromPSPBalance(from PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, 
 		Balance:                 from.Amount,
 		PsuID:                   psuId,
 		OpenBankingConnectionID: openBankingConnectionId,
-	}, nil
-}
-
-func FromPSPBalanceFromAccount2(from PSPBalance, account Account) (Balance, error) {
-	if err := from.Validate(); err != nil {
-		return Balance{}, err
-	}
-
-	return Balance{
-		AccountID:               account.ID,
-		CreatedAt:               from.CreatedAt,
-		LastUpdatedAt:           from.CreatedAt,
-		Asset:                   from.Asset,
-		Balance:                 from.Amount,
-		PsuID:                   account.PsuID,
-		OpenBankingConnectionID: account.OpenBankingConnectionID,
 	}, nil
 }
 

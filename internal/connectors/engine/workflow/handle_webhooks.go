@@ -692,9 +692,6 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	if storeWebhookTranslation.Balance != nil {
-		var psuId *uuid.UUID
-		var openBankingConnectionID *string
-
 		acc, err := activities.StorageAccountsGet(
 			infiniteRetryContext(ctx),
 			models.AccountID{
@@ -702,17 +699,15 @@ func (w Workflow) runStoreWebhookTranslation(
 				ConnectorID: storeWebhookTranslation.ConnectorID,
 			},
 		)
-		// there might be cases where the account is not found, should we accept and continue?
-		if err != nil && acc != nil {
-			psuId = acc.PsuID
-			openBankingConnectionID = acc.OpenBankingConnectionID
+		if err != nil {
+			return fmt.Errorf("failed to get account: %w", err)
 		}
 
 		balance, err := models.FromPSPBalance(
 			*storeWebhookTranslation.Balance,
 			storeWebhookTranslation.ConnectorID,
-			psuId,
-			openBankingConnectionID,
+			acc.PsuID,
+			acc.OpenBankingConnectionID,
 		)
 		if err != nil {
 			return temporal.NewNonRetryableApplicationError(

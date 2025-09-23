@@ -158,20 +158,6 @@ func (mr *MockStorageMockRecorder) AccountsUpsert(ctx, accounts any) *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AccountsUpsert", reflect.TypeOf((*MockStorage)(nil).AccountsUpsert), ctx, accounts)
 }
 
-// BalancesDeleteFromConnectorID mocks base method.
-func (m *MockStorage) BalancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "BalancesDeleteFromConnectorID", ctx, connectorID)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// BalancesDeleteFromConnectorID indicates an expected call of BalancesDeleteFromConnectorID.
-func (mr *MockStorageMockRecorder) BalancesDeleteFromConnectorID(ctx, connectorID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BalancesDeleteFromConnectorID", reflect.TypeOf((*MockStorage)(nil).BalancesDeleteFromConnectorID), ctx, connectorID)
-}
-
 // BalancesGetAt mocks base method.
 func (m *MockStorage) BalancesGetAt(ctx context.Context, accountID models.AccountID, at time.Time) ([]*models.Balance, error) {
 	m.ctrl.T.Helper()

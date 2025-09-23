@@ -4,6 +4,7 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 
 	"github.com/formancehq/payments/internal/connectors/plugins/public/powens/client"
@@ -200,6 +201,28 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			resp, err := plg.TrimWebhook(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(resp.Webhooks).To(HaveLen(1))
+		})
+
+		It("should trim connection synced webhook successfully with last updated at as UTC", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user": {"id": 1}, "connection": {"id": 1, "state": "", "last_update": "2021-10-20 19:00:00", "accounts": [{"id": 1}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+
+			var webhook client.ConnectionSyncedWebhook
+			err = json.Unmarshal(resp.Webhooks[0].Body, &webhook)
+			Expect(err).To(BeNil())
+
+			Expect(webhook.Connection.LastUpdate.String()).To(Equal("2021-10-20 15:00:00 +0000 UTC"))
+
 		})
 	})
 })
