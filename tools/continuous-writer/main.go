@@ -304,19 +304,3 @@ func toPaymentType(s string) (string, error) {
 		return "", fmt.Errorf("unknown payment type: %s", s)
 	}
 }
-
-func toPaymentStatus(s string) (string, error) {
-	s = strings.ToLower(strings.TrimSpace(s))
-	switch s {
-	case "pending":
-		return "PENDING", nil
-	case "succeeded", "succeed", "success":
-		return "SUCCEEDED", nil
-	case "failed", "fail":
-		return "FAILED", nil
-	case "cancelled", "canceled":
-		return "CANCELLED", nil
-	default:
-		return "", fmt.Errorf("unknown payment status: %s", s)
-	}
-}

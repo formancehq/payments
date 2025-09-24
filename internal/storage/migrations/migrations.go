@@ -43,8 +43,7 @@ var bankBridgePSPUserId string
 //go:embed 20-psu-bank-bridges-connection-updated-at.sql
 var psuBankBridgeConnectionUpdatedAt string
 
-//go:embed 21-psu-connection-payments-accounts.sql
-var psuConnectionPaymentsAccounts string
+// 21 is not used anymore, the file is kept for historical reference (some staging env have run it)
 
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
@@ -303,15 +302,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		migrations.Migration{
 			Name: "psu connection payments accounts",
 			Up: func(ctx context.Context, db bun.IDB) error {
+				// Migration 21 ran in some environments, but not others -- we keep the numbering but we
+				// skip the actual migration here. Migration 23 is the replacement (we're removing the table locking on
+				// payment, accounts etc)
 				//return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
 				//	logger.Info("running psu connection payments accounts migration...")
 				//	_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
 				//	logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
 				//	return err
 				//})
-				// Migration 21 ran in some environments, but not others -- we keep the numbering but we
-				// skip the actual migration here. Migration 23 is the replacement (we're removing the table locking on
-				// payment, accounts etc)
 				return nil
 			},
 		},
