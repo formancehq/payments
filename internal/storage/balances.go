@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/google/uuid"
 	"math/big"
 	"time"
 
@@ -26,6 +27,10 @@ type balance struct {
 	ConnectorID   models.ConnectorID `bun:"connector_id,type:character varying,notnull"`
 	Balance       *big.Int           `bun:"balance,type:numeric,notnull"`
 	LastUpdatedAt internalTime.Time  `bun:"last_updated_at,type:timestamp without time zone,notnull"`
+
+	// Optional fields
+	PsuID                   *uuid.UUID `bun:"psu_id,type:uuid,nullzero"`
+	OpenBankingConnectionID *string    `bun:"open_banking_connection_id,type:character varying,nullzero"`
 }
 
 func (s *store) BalancesUpsert(ctx context.Context, balances []models.Balance) error {
@@ -62,7 +67,7 @@ func (s *store) insertBalances(ctx context.Context, tx bun.Tx, balance *balance)
 		Limit(1).
 		Scan(ctx)
 	if err != nil {
-		pErr := e("failed to get account", err)
+		pErr := e("failed to get balance", err)
 		if !errors.Is(pErr, ErrNotFound) {
 			return pErr
 		}
@@ -327,12 +332,15 @@ func fromBalancesModels(from []models.Balance) []balance {
 
 func fromBalanceModels(from models.Balance) balance {
 	return balance{
-		AccountID:     from.AccountID,
-		CreatedAt:     internalTime.New(from.CreatedAt),
-		Asset:         from.Asset,
-		ConnectorID:   from.AccountID.ConnectorID,
-		Balance:       from.Balance,
-		LastUpdatedAt: internalTime.New(from.LastUpdatedAt),
+		BaseModel:               bun.BaseModel{},
+		AccountID:               from.AccountID,
+		CreatedAt:               internalTime.New(from.CreatedAt),
+		Asset:                   from.Asset,
+		ConnectorID:             from.AccountID.ConnectorID,
+		Balance:                 from.Balance,
+		LastUpdatedAt:           internalTime.New(from.LastUpdatedAt),
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
 	}
 }
 
@@ -346,10 +354,12 @@ func toBalancesModels(from []balance) []models.Balance {
 
 func toBalanceModels(from balance) models.Balance {
 	return models.Balance{
-		AccountID:     from.AccountID,
-		CreatedAt:     from.CreatedAt.Time,
-		Asset:         from.Asset,
-		Balance:       from.Balance,
-		LastUpdatedAt: from.LastUpdatedAt.Time,
+		AccountID:               from.AccountID,
+		CreatedAt:               from.CreatedAt.Time,
+		LastUpdatedAt:           from.LastUpdatedAt.Time,
+		Asset:                   from.Asset,
+		Balance:                 from.Balance,
+		PsuID:                   from.PsuID,
+		OpenBankingConnectionID: from.OpenBankingConnectionID,
 	}
 }

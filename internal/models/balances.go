@@ -3,6 +3,7 @@ package models
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"math/big"
 	"time"
 
@@ -56,6 +57,9 @@ type Balance struct {
 	Asset string `json:"asset"`
 	// Balance amount.
 	Balance *big.Int `json:"balance"`
+
+	PsuID                   *uuid.UUID `json:"psuID"`
+	OpenBankingConnectionID *string    `json:"openBankingConnectionID"`
 }
 
 func (b *Balance) IdempotencyKey() string {
@@ -72,6 +76,16 @@ func (b *Balance) IdempotencyKey() string {
 }
 
 func (b Balance) MarshalJSON() ([]byte, error) {
+	var psuId string
+	if b.PsuID != nil {
+		psuId = b.PsuID.String()
+	}
+
+	var openBankingConnectionId string
+	if b.OpenBankingConnectionID != nil {
+		openBankingConnectionId = *b.OpenBankingConnectionID
+	}
+
 	return json.Marshal(&struct {
 		AccountID     string    `json:"accountID"`
 		CreatedAt     time.Time `json:"createdAt"`
@@ -79,22 +93,29 @@ func (b Balance) MarshalJSON() ([]byte, error) {
 
 		Asset   string   `json:"asset"`
 		Balance *big.Int `json:"balance"`
+
+		PsuId                   string `json:"psuID"`
+		OpenBankingConnectionID string `json:"openBankingConnectionID"`
 	}{
-		AccountID:     b.AccountID.String(),
-		CreatedAt:     b.CreatedAt,
-		LastUpdatedAt: b.LastUpdatedAt,
-		Asset:         b.Asset,
-		Balance:       b.Balance,
+		AccountID:               b.AccountID.String(),
+		CreatedAt:               b.CreatedAt,
+		LastUpdatedAt:           b.LastUpdatedAt,
+		Asset:                   b.Asset,
+		Balance:                 b.Balance,
+		PsuId:                   psuId,
+		OpenBankingConnectionID: openBankingConnectionId,
 	})
 }
 
 func (b *Balance) UnmarshalJSON(data []byte) error {
 	var aux struct {
-		AccountID     string    `json:"accountID"`
-		CreatedAt     time.Time `json:"createdAt"`
-		LastUpdatedAt time.Time `json:"lastUpdatedAt"`
-		Asset         string    `json:"asset"`
-		Balance       *big.Int  `json:"balance"`
+		AccountID               string    `json:"accountID"`
+		CreatedAt               time.Time `json:"createdAt"`
+		LastUpdatedAt           time.Time `json:"lastUpdatedAt"`
+		Asset                   string    `json:"asset"`
+		Balance                 *big.Int  `json:"balance"`
+		PSUID                   string    `json:"psuID"`
+		OpenBankingConnectionID string    `json:"openBankingConnectionID"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -105,12 +126,20 @@ func (b *Balance) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
+	if aux.PSUID != "" {
+		PSUID, err := uuid.Parse(aux.PSUID)
+		if err != nil {
+			return err
+		}
+		b.PsuID = &PSUID
+	}
 
 	b.AccountID = accountID
 	b.CreatedAt = aux.CreatedAt
 	b.LastUpdatedAt = aux.LastUpdatedAt
 	b.Asset = aux.Asset
 	b.Balance = aux.Balance
+	b.OpenBankingConnectionID = &aux.OpenBankingConnectionID
 
 	return nil
 }
@@ -120,7 +149,7 @@ type AggregatedBalance struct {
 	Amount *big.Int `json:"amount"`
 }
 
-func FromPSPBalance(from PSPBalance, connectorID ConnectorID) (Balance, error) {
+func FromPSPBalance(from PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, openBankingConnectionId *string) (Balance, error) {
 	if err := from.Validate(); err != nil {
 		return Balance{}, err
 	}
@@ -130,17 +159,19 @@ func FromPSPBalance(from PSPBalance, connectorID ConnectorID) (Balance, error) {
 			Reference:   from.AccountReference,
 			ConnectorID: connectorID,
 		},
-		CreatedAt:     from.CreatedAt,
-		LastUpdatedAt: from.CreatedAt,
-		Asset:         from.Asset,
-		Balance:       from.Amount,
+		CreatedAt:               from.CreatedAt,
+		LastUpdatedAt:           from.CreatedAt,
+		Asset:                   from.Asset,
+		Balance:                 from.Amount,
+		PsuID:                   psuId,
+		OpenBankingConnectionID: openBankingConnectionId,
 	}, nil
 }
 
-func FromPSPBalances(from []PSPBalance, connectorID ConnectorID) ([]Balance, error) {
+func FromPSPBalances(from []PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, openBankingConnectionId *string) ([]Balance, error) {
 	balances := make([]Balance, 0, len(from))
 	for _, b := range from {
-		balance, err := FromPSPBalance(b, connectorID)
+		balance, err := FromPSPBalance(b, connectorID, psuId, openBankingConnectionId)
 		if err != nil {
 			return nil, err
 		}

@@ -18,24 +18,24 @@ type PaginationLinks struct {
 }
 
 type Transaction struct {
-	ID         int       `json:"id"`
-	AccountID  int       `json:"id_account"`
-	Date       time.Time `json:"date"`
-	DateTime   time.Time `json:"date_time"`
-	Value      float64   `json:"value"`
-	Type       string    `json:"type"`
-	LastUpdate time.Time `json:"last_update"`
+	ID         int         `json:"id"`
+	AccountID  int         `json:"id_account"`
+	Date       time.Time   `json:"date"`
+	DateTime   time.Time   `json:"date_time"`
+	Value      json.Number `json:"value"`
+	Type       string      `json:"type"`
+	LastUpdate time.Time   `json:"last_update"`
 }
 
 func (t Transaction) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
-		ID         int     `json:"id"`
-		AccountID  int     `json:"id_account"`
-		Date       string  `json:"date"`
-		DateTime   string  `json:"date_time"`
-		Value      float64 `json:"value"`
-		Type       string  `json:"type"`
-		LastUpdate string  `json:"last_update"`
+		ID         int         `json:"id"`
+		AccountID  int         `json:"id_account"`
+		Date       string      `json:"date"`
+		DateTime   string      `json:"date_time"`
+		Value      json.Number `json:"value"`
+		Type       string      `json:"type"`
+		LastUpdate string      `json:"last_update"`
 	}{
 		ID:         t.ID,
 		AccountID:  t.AccountID,
@@ -50,13 +50,13 @@ func (t Transaction) MarshalJSON() ([]byte, error) {
 func (t *Transaction) UnmarshalJSON(data []byte) error {
 	var err error
 	type transaction struct {
-		ID         int     `json:"id"`
-		AccountID  int     `json:"id_account"`
-		Date       string  `json:"date"`
-		DateTime   string  `json:"date_time"`
-		Value      float64 `json:"value"`
-		Type       string  `json:"type"`
-		LastUpdate string  `json:"last_update"`
+		ID         int         `json:"id"`
+		AccountID  int         `json:"id_account"`
+		Date       string      `json:"date"`
+		DateTime   string      `json:"date_time"`
+		Value      json.Number `json:"value"`
+		Type       string      `json:"type"`
+		LastUpdate string      `json:"last_update"`
 	}
 
 	var tr transaction

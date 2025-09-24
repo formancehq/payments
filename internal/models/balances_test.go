@@ -103,16 +103,20 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 		Provider:  "test",
 		Reference: uuid.New(),
 	}
+	psuId, _ := uuid.Parse("d5d4a5e1-1f02-4a5f-b9b5-518232fde991")
+	openBankingConnectionID := "21"
 
 	balance := models.Balance{
 		AccountID: models.AccountID{
 			Reference:   "acc123",
 			ConnectorID: connectorID,
 		},
-		CreatedAt:     now,
-		LastUpdatedAt: now.Add(time.Hour),
-		Asset:         "USD/2",
-		Balance:       big.NewInt(100),
+		CreatedAt:               now,
+		LastUpdatedAt:           now.Add(time.Hour),
+		Asset:                   "USD/2",
+		Balance:                 big.NewInt(100),
+		PsuID:                   &psuId,
+		OpenBankingConnectionID: &openBankingConnectionID,
 	}
 
 	data, err := json.Marshal(balance)
@@ -131,6 +135,8 @@ func TestBalanceMarshalUnmarshal(t *testing.T) {
 	assert.Equal(t, balance.LastUpdatedAt.Format(time.RFC3339Nano), unmarshaledBalance.LastUpdatedAt.Format(time.RFC3339Nano))
 	assert.Equal(t, balance.Asset, unmarshaledBalance.Asset)
 	assert.Equal(t, balance.Balance.String(), unmarshaledBalance.Balance.String())
+	assert.Equal(t, balance.PsuID.String(), unmarshaledBalance.PsuID.String())
+	assert.Equal(t, balance.OpenBankingConnectionID, unmarshaledBalance.OpenBankingConnectionID)
 
 	invalidJSON := `{
 		"accountID": "invalid-account-id",
@@ -161,7 +167,7 @@ func TestFromPSPBalance(t *testing.T) {
 		Asset:            "USD/2",
 	}
 
-	balance, err := models.FromPSPBalance(pspBalance, connectorID)
+	balance, err := models.FromPSPBalance(pspBalance, connectorID, nil, nil)
 
 	// Then
 	require.NoError(t, err)
@@ -179,7 +185,7 @@ func TestFromPSPBalance(t *testing.T) {
 		Asset:     "USD/2",
 	}
 
-	_, err = models.FromPSPBalance(invalidPSPBalance, connectorID)
+	_, err = models.FromPSPBalance(invalidPSPBalance, connectorID, nil, nil)
 
 	// Then
 	assert.Error(t, err)
@@ -210,7 +216,7 @@ func TestFromPSPBalances(t *testing.T) {
 		},
 	}
 
-	balances, err := models.FromPSPBalances(pspBalances, connectorID)
+	balances, err := models.FromPSPBalances(pspBalances, connectorID, nil, nil)
 
 	// Then
 	require.NoError(t, err)
@@ -225,9 +231,37 @@ func TestFromPSPBalances(t *testing.T) {
 		Amount:    big.NewInt(100),
 		Asset:     "USD/2",
 	})
-	_, err = models.FromPSPBalances(invalidPSPBalances, connectorID)
+	_, err = models.FromPSPBalances(invalidPSPBalances, connectorID, nil, nil)
 
 	// Then
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing account reference: validation error")
+}
+
+func TestFromPSPBalancesWithPsuIDAndConnectionID(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	connectorID := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.New(),
+	}
+	psuId, _ := uuid.Parse("d5d4a5e1-1f02-4a5f-b9b5-518232fde991")
+	openBankingConnectionID := "21"
+
+	pspBalance := models.PSPBalance{
+		AccountReference: "acc1",
+		CreatedAt:        now,
+		Amount:           big.NewInt(100),
+		Asset:            "USD/2",
+	}
+
+	balance, err := models.FromPSPBalance(pspBalance, connectorID, &psuId, &openBankingConnectionID)
+
+	// Then
+	require.NoError(t, err)
+	assert.Equal(t, "acc1", balance.AccountID.Reference)
+	assert.Equal(t, "USD/2", balance.Asset)
+	assert.Equal(t, psuId.String(), balance.PsuID.String())
+	assert.Equal(t, &openBankingConnectionID, balance.OpenBankingConnectionID)
 }

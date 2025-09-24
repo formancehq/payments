@@ -339,6 +339,15 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 				return err
 			},
 		},
+		migrations.Migration{
+			Name: "add connection and psu foreign keys on balances",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add balances foreign key migration...")
+				err := AddBalancesForeignKey(ctx, db)
+				logger.WithField("error", err).Info("finished running add balances foreign key migration")
+				return err
+			},
+		},
 	)
 }
 
