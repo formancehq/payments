@@ -12,11 +12,9 @@ import (
 // similar to migration 17-add-foreign-key-indices.
 func AddPSUConnectionPaymentsAccountsAsync(ctx context.Context, db bun.IDB) error {
 	stmts := []string{
-		// payments.psu_id column and index
 		`ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS psu_id uuid;`,
 		`CREATE INDEX CONCURRENTLY IF NOT EXISTS payments_psu_id_idx ON payments (psu_id);`,
 
-		// payments.psu_id FK to payment_service_users (NOT VALID)
 		`DO $$
 BEGIN
 	PERFORM 1 FROM pg_catalog.pg_constraint c
@@ -33,7 +31,6 @@ BEGIN
 	END IF;
 END$$;`,
 
-		// payments.open_banking_connection_id and related FK + index
 		`ALTER TABLE IF EXISTS payments ADD COLUMN IF NOT EXISTS open_banking_connection_id varchar;`,
 		`DO $$
 BEGIN
@@ -52,11 +49,9 @@ BEGIN
 END$$;`,
 		`CREATE INDEX CONCURRENTLY IF NOT EXISTS payments_psu_conn_obc_idx ON payments (psu_id, connector_id, open_banking_connection_id);`,
 
-		// accounts.psu_id column and index
 		`ALTER TABLE IF EXISTS accounts ADD COLUMN IF NOT EXISTS psu_id uuid;`,
 		`CREATE INDEX CONCURRENTLY IF NOT EXISTS accounts_psu_id_idx ON accounts (psu_id);`,
 
-		// accounts.psu_id FK to payment_service_users (NOT VALID)
 		`DO $$
 BEGIN
 	PERFORM 1 FROM pg_catalog.pg_constraint c
@@ -73,7 +68,6 @@ BEGIN
 	END IF;
 END$$;`,
 
-		// accounts.open_banking_connection_id, related index and FK
 		`ALTER TABLE IF EXISTS accounts ADD COLUMN IF NOT EXISTS open_banking_connection_id varchar;`,
 		`CREATE INDEX CONCURRENTLY IF NOT EXISTS accounts_psu_conn_obc_idx ON accounts (psu_id, connector_id, open_banking_connection_id);`,
 		`DO $$
