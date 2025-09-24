@@ -1,5 +1,10 @@
 .DS_Store
-.idea
+.idea/*
+!.idea/IntelliLang.xml
+!.idea/inspectionProfiles/**
+!.idea/codeStyles/**
+!.idea/vcs.xml
+!.idea/runConfigurations/**
 vendor
 .cloud/ressources/.terraform
 .cloud/ressources/.terraform.lock.hcl

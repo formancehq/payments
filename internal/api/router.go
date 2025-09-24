@@ -8,6 +8,7 @@ import (
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/go-libs/v3/auth"
 	"github.com/formancehq/go-libs/v3/health"
+	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/internal/api/backend"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -40,13 +41,14 @@ func NewRouter(
 	debug bool,
 	versions ...Version) *chi.Mux {
 	r := chi.NewRouter()
-	r.Use(middleware.Recoverer)
 	r.Use(func(handler http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json")
 			handler.ServeHTTP(w, r)
 		})
 	})
+	r.Use(service.OTLPMiddleware("payments", debug))
+	r.Use(middleware.Recoverer)
 	r.Get("/_healthcheck", healthController.Check)
 	r.Get("/_info", api.InfoHandler(info))
 

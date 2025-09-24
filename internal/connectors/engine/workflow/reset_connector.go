@@ -93,13 +93,15 @@ func (w Workflow) resetConnector(
 	// have some conflicts with temporal and previous workflows related to the
 	// previous connector ID.
 	newConnector := models.Connector{
-		ID: models.ConnectorID{
-			Reference: uuid.New(),
+		ConnectorBase: models.ConnectorBase{
+			ID: models.ConnectorID{
+				Reference: uuid.New(),
+				Provider:  connector.Provider,
+			},
+			Name:      connector.Name,
+			CreatedAt: workflow.Now(ctx),
 			Provider:  connector.Provider,
 		},
-		Name:                 connector.Name,
-		CreatedAt:            workflow.Now(ctx),
-		Provider:             connector.Provider,
 		ScheduledForDeletion: false,
 		Config:               connector.Config,
 	}

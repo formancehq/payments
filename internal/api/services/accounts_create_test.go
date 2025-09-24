@@ -24,12 +24,14 @@ func TestAccountsCreate(t *testing.T) {
 
 	tests := []struct {
 		name          string
+		account       *models.Account
 		err           error
 		expectedError error
 		typedError    bool
 	}{
 		{
 			name:          "success",
+			account:       &models.Account{ID: models.AccountID{Reference: "abc"}},
 			err:           nil,
 			expectedError: nil,
 		},
@@ -60,7 +62,10 @@ func TestAccountsCreate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			eng.EXPECT().CreateFormanceAccount(gomock.Any(), gomock.Any()).Return(test.err)
-			err := s.AccountsCreate(context.Background(), models.Account{})
+			if test.err == nil {
+				store.EXPECT().AccountsGet(gomock.Any(), gomock.Any()).Return(test.account, nil)
+			}
+			_, err := s.AccountsCreate(context.Background(), models.Account{})
 			if test.expectedError == nil {
 				require.NoError(t, err)
 			} else if test.typedError {

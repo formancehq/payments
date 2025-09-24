@@ -28,6 +28,8 @@ services:
     command: -p ${POSTGRES_PORT:-5432}
     volumes:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Uncomment the volume below if you want to keep the data stored when killing the container.
+      #- postgres:/var/lib/postgresql/data
 
   payments-migrate:
     image: golang:1.23.4-alpine

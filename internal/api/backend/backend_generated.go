@@ -48,11 +48,12 @@ func (m *MockBackend) EXPECT() *MockBackendMockRecorder {
 }
 
 // AccountsCreate mocks base method.
-func (m *MockBackend) AccountsCreate(ctx context.Context, account models.Account) error {
+func (m *MockBackend) AccountsCreate(ctx context.Context, account models.Account) (*models.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AccountsCreate", ctx, account)
-	ret0, _ := ret[0].(error)
-	return ret0
+	ret0, _ := ret[0].(*models.Account)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // AccountsCreate indicates an expected call of AccountsCreate.

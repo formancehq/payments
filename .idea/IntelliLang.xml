@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="LanguageInjectionConfiguration">
+    <injection language="SQL" injector-id="go">
+      <display-name>SQL DO</display-name>
+      <single-file value="true" />
+      <place><![CDATA[goStringLiteralThatMatches(" *DO $$.*")]]></place>
+    </injection>
+    <injection language="SQL" injector-id="go">
+      <display-name>SQL index</display-name>
+      <single-file value="true" />
+      <place><![CDATA[goStringLiteralThatMatches(".*(CREATE|DROP) +INDEX .*")]]></place>
+    </injection>
+  </component>
+</project>
