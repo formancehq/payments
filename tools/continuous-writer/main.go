@@ -32,10 +32,19 @@ import (
 //   TYPE: payin|payout|transfer
 //   STATUS: pending|succeeded|failed|cancelled
 
+type paymentRow struct {
+	id         string
+	ref        string
+	initAmount int
+	amount     int
+	source     any
+	dest       any
+}
+
 func main() {
 	var (
 		dsn               = getEnv("PG_DSN", "postgres://payments:payments@localhost:5432/payments?sslmode=disable")
-		intervalMS        = intFromEnv("INTERVAL_MS", 1000)
+		intervalMS        = intFromEnv("INTERVAL_MS", 100)
 		workers           = intFromEnv("WORKERS", 5)
 		asset             = getEnv("ASSET", "USD/2")
 		scheme            = getEnv("SCHEME", "test")
@@ -78,31 +87,9 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	// Optionally create/upsert connector entry
-	defaultConnectorId := models.ConnectorID{
-		Reference: uuid.New(),
-		Provider:  "qonto",
-	}
-	connectorID := defaultConnectorId.String()
-	upsert := `INSERT INTO "public"."connectors" (id, name, created_at, provider, reference)
-		VALUES ($1, $2, now(), $3, $4)
-		ON CONFLICT (id) DO UPDATE SET name=EXCLUDED.name, provider=EXCLUDED.provider`
-	//ctxUp, cancel := context.WithTimeout(ctx, 20*time.Second)
-	_, err = db.ExecContext(ctx, upsert, connectorID, "test-connector"+connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
-	//cancel()
+	connectorID, err := createConnector(err, db, ctx, encryptionKey, encryptionOptions)
 	if err != nil {
-		log.Printf("warning: failed to upsert connector '%s': %v", connectorID, err)
 		return
-	} else {
-		config := []byte(`{"ClientID": "asdf", "APIKey": "asdf", "Endpoint": "http://localhost:/"}`)
-		update := `UPDATE public.connectors SET config=pgp_sym_encrypt($1::TEXT, $2, $3) WHERE id=$4` //, "{}", configEncryptionKey, encryptionOptions
-		_, err = db.ExecContext(ctx, update, config, encryptionKey, encryptionOptions, connectorID)
-		if err != nil {
-			log.Printf("warning: failed to set config for connector '%s': %v", connectorID, err)
-			return
-		} else {
-			log.Printf("connector ensured: id=%s name=%s provider=%s", connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
-		}
 	}
 
 	log.Printf("continuous-writer starting: workers=%d interval=%dms batch=%d flush=%dms connector=%s type=%s asset=%s scheme=%s", workers, intervalMS, batchSizeFlag, flushMSFlag, connectorID, pt, asset, scheme)
@@ -119,15 +106,7 @@ func main() {
 			defer func() { done <- struct{}{} }()
 			r := rand.New(rand.NewSource(time.Now().UnixNano() + int64(worker)))
 			// buffers for batch
-			type row struct {
-				id         string
-				ref        string
-				initAmount int
-				amount     int
-				source     any
-				dest       any
-			}
-			buf := make([]row, 0, batchSize)
+			buf := make([]paymentRow, 0, batchSize)
 			flushInterval := time.Duration(flushMS) * time.Millisecond
 			lastFlush := time.Now()
 			for {
@@ -136,18 +115,11 @@ func main() {
 				case <-ctx.Done():
 					// flush remaining before exit
 					if len(buf) > 0 {
-						n := len(buf)
-						placeholders := make([]string, 0, n)
-						args := make([]any, 0, n*10)
-						for j := 0; j < n; j++ {
-							idx := j * 10
-							placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,now(),$%d,$%d,$%d,$%d,$%d,$%d,$%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
-							rw := buf[j]
-							args = append(args, rw.id, connectorID, rw.ref, pt, rw.initAmount, rw.amount, asset, scheme, rw.source, rw.dest)
-						}
-						stmt := "INSERT INTO \"public\".\"payments\" (id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id) VALUES " + strings.Join(placeholders, ",")
 						ctxIns, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-						_, _ = db.ExecContext(ctxIns, stmt, args...)
+						err = flushBatch(ctxIns, db, buf, connectorID, pt, asset, scheme)
+						if err != nil {
+							log.Printf("unable to flush remaining items, err: %v", err)
+						}
 						cancel()
 					}
 					return
@@ -159,46 +131,24 @@ func main() {
 				ref := fmt.Sprintf("loadgen-%d-%s", worker, id[:8])
 				amount := r.Intn(10000) + 1 // 1..10000 minor units
 				initAmount := amount
-				var sourceAcc, destAcc sql.NullString
-				//if r.Intn(2) == 0 {
-				//	sourceAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
-				//}
-				//if r.Intn(2) == 0 {
-				//	destAcc = sql.NullString{String: fmt.Sprintf("acc-%d", r.Intn(10)), Valid: true}
-				//}
-				buf = append(buf, row{
+				buf = append(buf, paymentRow{
 					id:         id,
 					ref:        ref,
 					initAmount: initAmount,
 					amount:     amount,
-					source:     nullOrString(sourceAcc),
-					dest:       nullOrString(destAcc),
 				})
 
 				shouldFlush := len(buf) >= batchSize || time.Since(lastFlush) >= flushInterval
 				if shouldFlush {
 					log.Printf("worker %d, bufSize bigger %t: flushTIme bigger %t", worker, len(buf) >= batchSize, time.Since(lastFlush) >= flushInterval)
-					// build statement for current buffer size n
-					n := len(buf)
-					placeholders := make([]string, 0, n)
-					args := make([]any, 0, n*10)
-					// columns: id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id
-					for j := 0; j < n; j++ {
-						idx := j * 10
-						placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,now(),$%d,$%d,$%d,$%d,$%d,$%d,$%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
-						rw := buf[j]
-						args = append(args,
-							rw.id, connectorID, rw.ref, pt, rw.initAmount, rw.amount, asset, scheme, rw.source, rw.dest,
-						)
-					}
-					stmt := "INSERT INTO \"public\".\"payments\" (id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id) VALUES " + strings.Join(placeholders, ",")
+					count := len(buf)
 					ctxIns, cancel := context.WithTimeout(ctx, 5*time.Second)
-					_, err := db.ExecContext(ctxIns, stmt, args...)
+					err := flushBatch(ctxIns, db, buf, connectorID, pt, asset, scheme)
 					cancel()
 					if err != nil {
-						log.Printf("worker %d batch insert error (n=%d): %v", worker, n, err)
+						log.Printf("worker %d batch insert error (n=%d): %v", worker, count, err)
 					} else {
-						log.Printf("inserted batch w=%d n=%d last_id=%s", worker, n, buf[n-1].id)
+						log.Printf("inserted batch w=%d n=%d last_id=%s", worker, count, buf[count-1].id)
 					}
 					buf = buf[:0]
 					lastFlush = time.Now()
@@ -206,23 +156,14 @@ func main() {
 
 				// If flush interval already elapsed, flush now without extra sleep to honor FLUSH_MS more tightly
 				if len(buf) > 0 && time.Since(lastFlush) >= flushInterval {
-					n := len(buf)
-					placeholders := make([]string, 0, n)
-					args := make([]any, 0, n*10)
-					for j := 0; j < n; j++ {
-						idx := j * 10
-						placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,now(),$%d,$%d,$%d,$%d,$%d,$%d,$%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
-						rw := buf[j]
-						args = append(args, rw.id, connectorID, rw.ref, pt, rw.initAmount, rw.amount, asset, scheme, rw.source, rw.dest)
-					}
-					stmt := "INSERT INTO \"public\".\"payments\" (id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id) VALUES " + strings.Join(placeholders, ",")
+					count := len(buf)
 					ctxIns, cancel := context.WithTimeout(ctx, 5*time.Second)
-					_, err := db.ExecContext(ctxIns, stmt, args...)
+					err := flushBatch(ctxIns, db, buf, connectorID, pt, asset, scheme)
 					cancel()
 					if err != nil {
-						log.Printf("worker %d batch insert error (pre-sleep, n=%d): %v", worker, n, err)
+						log.Printf("worker %d batch insert error (pre-sleep, n=%d): %v", worker, count, err)
 					} else if worker == 0 {
-						log.Printf("inserted batch (pre-sleep) n=%d last_id=%s", n, buf[n-1].id)
+						log.Printf("inserted batch (pre-sleep) n=%d last_id=%s", count, buf[count-1].id)
 					}
 					buf = buf[:0]
 					lastFlush = time.Now()
@@ -237,18 +178,8 @@ func main() {
 						timer.Stop()
 						// flush remaining before exit
 						if len(buf) > 0 {
-							n := len(buf)
-							placeholders := make([]string, 0, n)
-							args := make([]any, 0, n*10)
-							for j := 0; j < n; j++ {
-								idx := j * 10
-								placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,now(),$%d,$%d,$%d,$%d,$%d,$%d,$%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
-								rw := buf[j]
-								args = append(args, rw.id, connectorID, rw.ref, pt, rw.initAmount, rw.amount, asset, scheme, rw.source, rw.dest)
-							}
-							stmt := "INSERT INTO \"public\".\"payments\" (id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id) VALUES " + strings.Join(placeholders, ",")
 							ctxIns, cancel := context.WithTimeout(context.Background(), 3*time.Second)
-							_, _ = db.ExecContext(ctxIns, stmt, args...)
+							_ = flushBatch(ctxIns, db, buf, connectorID, pt, asset, scheme)
 							cancel()
 						}
 						return
@@ -266,6 +197,33 @@ func main() {
 		<-done
 	}
 	log.Println("bye")
+}
+
+func createConnector(err error, db *sql.DB, ctx context.Context, encryptionKey string, encryptionOptions string) (string, error) {
+	// Optionally create/upsert connector entry
+	defaultConnectorId := models.ConnectorID{
+		Reference: uuid.New(),
+		Provider:  "qonto",
+	}
+	connectorID := defaultConnectorId.String()
+	upsert := `INSERT INTO "public"."connectors" (id, name, created_at, provider, reference)
+		VALUES ($1, $2, now(), $3, $4)`
+	_, err = db.ExecContext(ctx, upsert, connectorID, "test-connector"+connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
+	if err != nil {
+		log.Printf("warning: failed to upsert connector '%s': %v", connectorID, err)
+		return "", err
+	} else {
+		config := []byte(`{"ClientID": "asdf", "APIKey": "asdf", "Endpoint": "http://localhost:/"}`)
+		update := `UPDATE public.connectors SET config=pgp_sym_encrypt($1::TEXT, $2, $3) WHERE id=$4` //, "{}", configEncryptionKey, encryptionOptions
+		_, err = db.ExecContext(ctx, update, config, encryptionKey, encryptionOptions, connectorID)
+		if err != nil {
+			log.Printf("warning: failed to set config for connector '%s': %v", connectorID, err)
+			return "", err
+		} else {
+			log.Printf("connector inserted: id=%s provider=%s reference=%s", connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
+		}
+	}
+	return connectorID, nil
 }
 
 func getEnv(key, def string) string {
@@ -303,4 +261,22 @@ func toPaymentType(s string) (string, error) {
 	default:
 		return "", fmt.Errorf("unknown payment type: %s", s)
 	}
+}
+
+func flushBatch(ctx context.Context, db *sql.DB, rows []paymentRow, connectorID string, pt string, asset, scheme string) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	n := len(rows)
+	placeholders := make([]string, 0, n)
+	args := make([]any, 0, n*10)
+	for j := 0; j < n; j++ {
+		idx := j * 10
+		placeholders = append(placeholders, fmt.Sprintf("($%d,$%d,$%d,now(),$%d,$%d,$%d,$%d,$%d,$%d,$%d)", idx+1, idx+2, idx+3, idx+4, idx+5, idx+6, idx+7, idx+8, idx+9, idx+10))
+		rw := rows[j]
+		args = append(args, rw.id, connectorID, rw.ref, pt, rw.initAmount, rw.amount, asset, scheme, rw.source, rw.dest)
+	}
+	stmt := "INSERT INTO \"public\".\"payments\" (id, connector_id, reference, created_at, type, initial_amount, amount, asset, scheme, source_account_id, destination_account_id) VALUES " + strings.Join(placeholders, ",")
+	_, err := db.ExecContext(ctx, stmt, args...)
+	return err
 }

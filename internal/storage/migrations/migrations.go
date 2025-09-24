@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/migrations"
@@ -329,6 +330,10 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 			Name: "psu connection payments accounts async",
 			Up: func(ctx context.Context, db bun.IDB) error {
 				logger.Info("running psu connection payments accounts async migration...")
+				// Guard: IDB must be *bun.DB, not *bun.Tx.
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration 23 must not run inside a transaction; pass a *bun.DB")
+				}
 				err := AddPSUConnectionPaymentsAccountsAsync(ctx, db)
 				logger.WithField("error", err).Info("finished running psu connection payments accounts async migration")
 				return err
