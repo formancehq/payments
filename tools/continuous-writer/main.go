@@ -87,7 +87,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	connectorID, err := createConnector(err, db, ctx, encryptionKey, encryptionOptions)
+	connectorID, err := createConnector(db, ctx, encryptionKey, encryptionOptions)
 	if err != nil {
 		return
 	}
@@ -199,7 +199,7 @@ func main() {
 	log.Println("bye")
 }
 
-func createConnector(err error, db *sql.DB, ctx context.Context, encryptionKey string, encryptionOptions string) (string, error) {
+func createConnector(db *sql.DB, ctx context.Context, encryptionKey string, encryptionOptions string) (string, error) {
 	// Optionally create/upsert connector entry
 	defaultConnectorId := models.ConnectorID{
 		Reference: uuid.New(),
@@ -208,7 +208,7 @@ func createConnector(err error, db *sql.DB, ctx context.Context, encryptionKey s
 	connectorID := defaultConnectorId.String()
 	upsert := `INSERT INTO "public"."connectors" (id, name, created_at, provider, reference)
 		VALUES ($1, $2, now(), $3, $4)`
-	_, err = db.ExecContext(ctx, upsert, connectorID, "test-connector"+connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
+	_, err := db.ExecContext(ctx, upsert, connectorID, "test-connector"+connectorID, defaultConnectorId.Provider, defaultConnectorId.Reference)
 	if err != nil {
 		log.Printf("warning: failed to upsert connector '%s': %v", connectorID, err)
 		return "", err
@@ -240,13 +240,6 @@ func intFromEnv(key string, def int) int {
 		}
 	}
 	return def
-}
-
-func nullOrString(ns sql.NullString) any {
-	if ns.Valid {
-		return ns.String
-	}
-	return nil
 }
 
 func toPaymentType(s string) (string, error) {
