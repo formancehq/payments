@@ -635,7 +635,7 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Balance_StorageAccountsGet_Error() {
 			},
 		}, nil
 	})
-	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, mock.Anything, mock.Anything).Once().Return(
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, mock.Anything).Once().Return(
 		(*models.Account)(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
 	)
 

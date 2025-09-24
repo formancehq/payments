@@ -9,7 +9,7 @@ func AddBalancesForeignKey(ctx context.Context, db bun.IDB) error {
 	// Add the new columns psuId & openBankingConnectionId
 	_, err := db.ExecContext(ctx, `
 		ALTER TABLE balances 
-		    ADD COLUMN IF NOT EXISTS psu_id uuid;
+		    ADD COLUMN psu_id uuid;
 	`)
 	if err != nil {
 		return err
@@ -17,7 +17,7 @@ func AddBalancesForeignKey(ctx context.Context, db bun.IDB) error {
 
 	_, err = db.ExecContext(ctx, `
 		ALTER TABLE balances 
-		    ADD COLUMN IF NOT EXISTS open_banking_connection_id varchar;
+		    ADD COLUMN open_banking_connection_id varchar;
 	`)
 	if err != nil {
 		return err
@@ -25,14 +25,14 @@ func AddBalancesForeignKey(ctx context.Context, db bun.IDB) error {
 
 	// Create the indices
 	_, err = db.ExecContext(ctx, `
-		CREATE INDEX IF NOT EXISTS balances_psu_id_idx 
+		CREATE INDEX CONCURRENTLY balances_psu_id_idx 
 			ON balances (psu_id);
 	`)
 	if err != nil {
 		return err
 	}
 	_, err = db.ExecContext(ctx, `
-		CREATE INDEX IF NOT EXISTS balances_open_banking_connection_id_idx 
+		CREATE INDEX CONCURRENTLY balances_open_banking_connection_id_idx 
 			ON balances (psu_id, connector_id, open_banking_connection_id);
 	`)
 	if err != nil {

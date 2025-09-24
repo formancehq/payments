@@ -237,3 +237,31 @@ func TestFromPSPBalances(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing account reference: validation error")
 }
+
+func TestFromPSPBalancesWithPsuIDAndConnectionID(t *testing.T) {
+	t.Parallel()
+
+	now := time.Now().UTC()
+	connectorID := models.ConnectorID{
+		Provider:  "test",
+		Reference: uuid.New(),
+	}
+	psuId, _ := uuid.Parse("d5d4a5e1-1f02-4a5f-b9b5-518232fde991")
+	openBankingConnectionID := "21"
+
+	pspBalance := models.PSPBalance{
+		AccountReference: "acc1",
+		CreatedAt:        now,
+		Amount:           big.NewInt(100),
+		Asset:            "USD/2",
+	}
+
+	balance, err := models.FromPSPBalance(pspBalance, connectorID, &psuId, &openBankingConnectionID)
+
+	// Then
+	require.NoError(t, err)
+	assert.Equal(t, "acc1", balance.AccountID.Reference)
+	assert.Equal(t, "USD/2", balance.Asset)
+	assert.Equal(t, psuId.String(), balance.PsuID.String())
+	assert.Equal(t, &openBankingConnectionID, balance.OpenBankingConnectionID)
+}
