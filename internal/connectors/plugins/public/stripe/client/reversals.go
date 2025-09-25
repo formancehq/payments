@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -19,7 +19,7 @@ type ReverseTransferRequest struct {
 func (c *client) ReverseTransfer(ctx context.Context, reverseTransferRequest ReverseTransferRequest) (*stripe.TransferReversal, error) {
 	params := &stripe.TransferReversalParams{
 		Params: stripe.Params{
-			Context:       metrics.OperationContext(ctx, "reverse_transfer"),
+			Context:       pluginsdkmetrics.OperationContext(ctx, "reverse_transfer"),
 			StripeAccount: reverseTransferRequest.Account,
 		},
 		ID:          stripe.String(reverseTransferRequest.StripeTransferID),
