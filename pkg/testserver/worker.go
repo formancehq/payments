@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/go-libs/v3/profiling"
 	"github.com/formancehq/go-libs/v3/service"
 	"github.com/formancehq/payments/cmd"
 	"github.com/stretchr/testify/require"
@@ -49,8 +48,6 @@ func NewWorker(t T, configuration Configuration, serverID string) *Worker {
 func (w *Worker) Start() error {
 	rootCmd := cmd.NewRootCommand()
 	args := Flags("worker", w.id, w.configuration)
-	args = append(args, "--"+profiling.ProfilerListenFlag)
-	args = append(args, ":9191")
 
 	w.logger.Logf("Starting worker with flags: %s", strings.Join(args, " "))
 	rootCmd.SetArgs(args)

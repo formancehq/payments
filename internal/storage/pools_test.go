@@ -479,4 +479,15 @@ func TestPoolsList(t *testing.T) {
 		require.NotEmpty(t, cursor.Next)
 		require.Equal(t, []models.Pool{defaultPools[1]}, cursor.Data)
 	})
+
+	t.Run("list pools with validation issues in filter", func(t *testing.T) {
+		q := NewListPoolsQuery(bunpaginate.PaginatedQueryOptions[PoolQuery]{
+			QueryBuilder: query.And(query.Match("id", "not a valid uuid")),
+			PageSize:     uint64(5),
+		})
+
+		_, err := store.PoolsList(ctx, q)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrValidation)
+	})
 }

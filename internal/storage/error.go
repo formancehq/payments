@@ -3,8 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/formancehq/go-libs/v3/platform/postgres"
 	"strings"
+
+	"github.com/formancehq/go-libs/v3/platform/postgres"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/pkg/errors"
@@ -50,6 +51,11 @@ func e(msg string, err error) error {
 		}
 
 		return ErrForeignKeyViolation
+	}
+
+	var validationErr postgres.ErrValidationFailed
+	if errors.As(err, &validationErr) {
+		return fmt.Errorf("%s: %w", validationErr.Message(), ErrValidation)
 	}
 
 	if errors.Is(err, postgres.ErrNotFound) {
