@@ -223,8 +223,13 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 	}
 
 	response := models.WebhookResponse{
-		DataReadyToFetch: &models.PSPDataReadyToFetch{
+		DataReadyToFetch: &models.PSPDataReadyToFetch{ // TODO why is the PSUID not set?
 			FromPayload: payload,
+			DataToFetch: []models.OpenBankingDataToFetch{
+				models.OpenBankingDataToFetchAccounts,
+				models.OpenBankingDataToFetchPayments,
+				models.OpenBankingDataToFetchBalances,
+			},
 		},
 	}
 
@@ -281,6 +286,11 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 			DataReadyToFetch: &models.PSPDataReadyToFetch{
 				PSUID:       &psuID,
 				FromPayload: payload,
+				DataToFetch: []models.OpenBankingDataToFetch{
+					models.OpenBankingDataToFetchAccounts,
+					models.OpenBankingDataToFetchPayments,
+					models.OpenBankingDataToFetchBalances,
+				},
 			},
 		},
 	}, nil

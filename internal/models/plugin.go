@@ -103,38 +103,27 @@ type WebhookResponse struct {
 
 	// Webhooks related to open banking
 	UserLinkSessionFinished         *PSPUserLinkSessionFinished
-	DataReadyToFetch                *PSPDataReadyToFetch // TODo remove
-	AccountsReadyToFetch            *PSPAccountsReadyToFetch
-	TransactionsReadyToFetch        *PSPTransactionsReadyToFetch
-	BalancesReadyToFetch            *PSPBalancesReadyToFetch
+	DataReadyToFetch                *PSPDataReadyToFetch
 	UserDisconnected                *PSPUserDisconnected
 	UserConnectionPendingDisconnect *PSPUserConnectionPendingDisconnect
 	UserConnectionDisconnected      *PSPUserConnectionDisconnected
 	UserConnectionReconnected       *PSPUserConnectionReconnected
 }
 
+type OpenBankingDataToFetch string
+
+const (
+	OpenBankingDataToFetchBalances            OpenBankingDataToFetch = "balances"
+	OpenBankingDataToFetchAccounts            OpenBankingDataToFetch = "accounts"
+	OpenBankingDataToFetchPayments            OpenBankingDataToFetch = "payments"
+	OpenBankingDataToFetchAccountsAndBalances OpenBankingDataToFetch = "accounts_and_balances_simultaneously"
+)
+
 type PSPDataReadyToFetch struct {
 	PSUID        *uuid.UUID
 	ConnectionID *string
 	FromPayload  json.RawMessage
-}
-
-type PSPAccountsReadyToFetch struct {
-	PSUID        *uuid.UUID
-	ConnectionID *string
-	FromPayload  json.RawMessage
-}
-
-type PSPTransactionsReadyToFetch struct {
-	PSUID        *uuid.UUID
-	ConnectionID *string
-	FromPayload  json.RawMessage
-}
-
-type PSPBalancesReadyToFetch struct {
-	PSUID        *uuid.UUID
-	ConnectionID *string
-	FromPayload  json.RawMessage
+	DataToFetch  []OpenBankingDataToFetch
 }
 
 type PSPDataToDelete struct {

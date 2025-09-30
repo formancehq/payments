@@ -344,6 +344,7 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			Config:       config,
+			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},
 		[]models.ConnectorTaskTree{},
