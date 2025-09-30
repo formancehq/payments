@@ -58,18 +58,6 @@ func (w Workflow) runHandleWebhooks(
 			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
-		case response.AccountsReadyToFetch != nil:
-			if err := w.handleAccountsReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling account ready to fetch webhook: %w", err)
-			}
-		case response.TransactionsReadyToFetch != nil:
-			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling transactions ready to fetch webhook: %w", err)
-			}
-		case response.BalancesReadyToFetch != nil:
-			if err := w.handleBalancesReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
-				return fmt.Errorf("handling balances ready to fetch webhook: %w", err)
-			}
 		case response.UserLinkSessionFinished != nil:
 			// OpenBanking specific webhook. A user has finished the link flow
 			// and has a valid connection to his bank. We need to update the
@@ -267,54 +255,14 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
-func (w Workflow) handleAccountsReadyToFetchWebhook(
-	ctx workflow.Context,
-	handleWebhooks HandleWebhooks,
-	response models.WebhookResponse,
-) error {
-	return w.handleReadyToFetchData(
-		ctx,
-		handleWebhooks.ConnectorID,
-		response.DataReadyToFetch, // TODO
-		RunFetchOpenBankingData,   // TODO
-	)
-}
-
 func (w Workflow) handleTransactionReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
 ) error {
-	return w.handleReadyToFetchData(
-		ctx,
-		handleWebhooks.ConnectorID,
-		response.DataReadyToFetch,
-		RunFetchOpenBankingData,
-	)
-}
-
-func (w Workflow) handleBalancesReadyToFetchWebhook(
-	ctx workflow.Context,
-	handleWebhooks HandleWebhooks,
-	response models.WebhookResponse,
-) error {
-	return w.handleReadyToFetchData(
-		ctx,
-		handleWebhooks.ConnectorID,
-		response.DataReadyToFetch, // TODO
-		RunFetchOpenBankingData,   // TODO
-	)
-}
-
-func (w Workflow) handleReadyToFetchData(
-	ctx workflow.Context,
-	connectorID models.ConnectorID,
-	data *models.PSPDataReadyToFetch,
-	workflowDefinitionName string,
-) error {
 	connector, err := activities.StorageConnectorsGet(
 		infiniteRetryContext(ctx),
-		connectorID,
+		handleWebhooks.ConnectorID,
 	)
 	if err != nil {
 		return fmt.Errorf("getting connector: %w", err)
@@ -324,11 +272,11 @@ func (w Workflow) handleReadyToFetchData(
 	var obForwardedUser *models.OpenBankingForwardedUser
 	var psuID uuid.UUID
 	var connectionID string
-	if data.PSUID != nil {
+	if response.DataReadyToFetch.PSUID != nil {
 		openBankingForwardedUser, err := activities.StorageOpenBankingForwardedUsersGet(
 			infiniteRetryContext(ctx),
-			*data.PSUID,
-			connectorID,
+			*response.DataReadyToFetch.PSUID,
+			handleWebhooks.ConnectorID,
 		)
 		if err != nil {
 			return fmt.Errorf("getting open banking: %w", err)
@@ -338,11 +286,11 @@ func (w Workflow) handleReadyToFetchData(
 		psuID = obForwardedUser.PsuID
 	}
 
-	if data.ConnectionID != nil {
+	if response.DataReadyToFetch.ConnectionID != nil {
 		connection, psu, err := activities.StorageOpenBankingConnectionsGetFromConnectionID(
 			infiniteRetryContext(ctx),
-			connectorID,
-			*data.ConnectionID,
+			handleWebhooks.ConnectorID,
+			*response.DataReadyToFetch.ConnectionID,
 		)
 		if err != nil {
 			return fmt.Errorf("getting open banking connection: %w", err)
@@ -357,7 +305,7 @@ func (w Workflow) handleReadyToFetchData(
 		PSUID:                    psuID,
 		OpenBankingForwardedUser: obForwardedUser,
 		OpenBankingConnection:    conn,
-		FromPayload:              data.FromPayload,
+		FromPayload:              response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling open banking from payload: %w", err)
@@ -370,8 +318,8 @@ func (w Workflow) handleReadyToFetchData(
 
 	fromPayload := &FromPayload{
 		ID: func() string {
-			if data.ConnectionID != nil {
-				return *data.ConnectionID
+			if response.DataReadyToFetch.ConnectionID != nil {
+				return *response.DataReadyToFetch.ConnectionID
 			}
 
 			return ""
@@ -390,17 +338,17 @@ func (w Workflow) handleReadyToFetchData(
 				},
 			},
 		),
-		workflowDefinitionName,
+		RunFetchOpenBankingData,
 		FetchOpenBankingData{
 			PsuID:        psuID,
 			ConnectionID: connectionID,
-			ConnectorID:  connectorID,
+			ConnectorID:  handleWebhooks.ConnectorID,
 			Config:       config,
 			FromPayload:  fromPayload,
 		},
 		[]models.ConnectorTaskTree{},
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		return fmt.Errorf("running %s: %w", workflowDefinitionName, err)
+		return fmt.Errorf("running %s: %w", RunFetchOpenBankingData, err)
 	}
 
 	return nil
