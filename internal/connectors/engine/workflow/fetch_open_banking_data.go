@@ -25,60 +25,14 @@ func (w Workflow) runFetchOpenBankingData(
 	wg := workflow.NewWaitGroup(ctx)
 
 	wg.Add(1)
-	workflow.Go(ctx, func(ctx workflow.Context) {
-		defer wg.Done()
-
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
-				ctx,
-				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
-				},
-			),
-			RunFetchNextAccounts,
-			FetchNextAccounts{
-				Config:       fetchOpenBankingData.Config,
-				ConnectorID:  fetchOpenBankingData.ConnectorID,
-				FromPayload:  fetchOpenBankingData.FromPayload,
-				Periodically: false,
-			},
-			[]models.ConnectorTaskTree{},
-		).Get(ctx, nil); err != nil {
-			workflow.GetLogger(ctx).Error("failed to fetch accounts", "error", err)
-		}
-	})
+	workflow.Go(ctx, w.startFetchNextAccountWorkflow(wg, fetchOpenBankingData))
 
 	wg.Add(1)
-	workflow.Go(ctx, func(ctx workflow.Context) {
-		defer wg.Done()
+	workflow.Go(ctx, w.startFetchNextPaymentsWorkflow(wg, fetchOpenBankingData))
 
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
-				ctx,
-				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
-				},
-			),
-			RunFetchNextPayments,
-			FetchNextPayments{
-				Config:       fetchOpenBankingData.Config,
-				ConnectorID:  fetchOpenBankingData.ConnectorID,
-				FromPayload:  fetchOpenBankingData.FromPayload,
-				Periodically: false,
-			},
-			[]models.ConnectorTaskTree{},
-		).Get(ctx, nil); err != nil {
-			workflow.GetLogger(ctx).Error("failed to fetch payments", "error", err)
-		}
-	})
+	//// TODO we should have a different workflow when we get the balance from account (Plaid) and when we don't (TInk)
+	//wg.Add(1)
+	//workflow.Go(ctx, w.startFetchNextBalancesWorkflow(wg, fetchOpenBankingData))
 
 	wg.Wait(ctx)
 
@@ -123,5 +77,93 @@ func (w Workflow) runFetchOpenBankingData(
 
 	return nil
 }
+
+func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
+	return func(ctx workflow.Context) {
+		defer wg.Done()
+
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunFetchNextAccounts,
+			FetchNextAccounts{
+				Config:       fetchOpenBankingData.Config,
+				ConnectorID:  fetchOpenBankingData.ConnectorID,
+				FromPayload:  fetchOpenBankingData.FromPayload,
+				Periodically: false,
+			},
+			[]models.ConnectorTaskTree{}, // TODO If account contains the balance (Plaid) we should create a child
+			// TODO workflow taking the payload (if we can?)+
+		).Get(ctx, nil); err != nil {
+			workflow.GetLogger(ctx).Error("failed to fetch accounts", "error", err)
+		}
+	}
+}
+
+func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
+	return func(ctx workflow.Context) {
+		defer wg.Done()
+
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunFetchNextPayments,
+			FetchNextPayments{
+				Config:       fetchOpenBankingData.Config,
+				ConnectorID:  fetchOpenBankingData.ConnectorID,
+				FromPayload:  fetchOpenBankingData.FromPayload,
+				Periodically: false,
+			},
+			[]models.ConnectorTaskTree{},
+		).Get(ctx, nil); err != nil {
+			workflow.GetLogger(ctx).Error("failed to fetch payments", "error", err)
+		}
+	}
+}
+
+//func (w Workflow) startFetchNextBalancesWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
+//	return func(ctx workflow.Context) {
+//		defer wg.Done()
+//
+//		if err := workflow.ExecuteChildWorkflow(
+//			workflow.WithChildOptions(
+//				ctx,
+//				workflow.ChildWorkflowOptions{
+//					TaskQueue:         w.getDefaultTaskQueue(),
+//					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+//					SearchAttributes: map[string]interface{}{
+//						SearchAttributeStack: w.stack,
+//					},
+//				},
+//			),
+//			RunFetchNextBalances,
+//			FetchNextBalances{
+//				Config:       fetchOpenBankingData.Config,
+//				ConnectorID:  fetchOpenBankingData.ConnectorID,
+//				FromPayload:  fetchOpenBankingData.FromPayload,
+//				Periodically: false,
+//			},
+//			[]models.ConnectorTaskTree{},
+//		).Get(ctx, nil); err != nil {
+//			workflow.GetLogger(ctx).Error("failed to fetch balances", "error", err)
+//		}
+//	}
+//}
 
 const RunFetchOpenBankingData = "RunFetchOpenBankingData"
