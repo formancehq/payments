@@ -103,7 +103,10 @@ type WebhookResponse struct {
 
 	// Webhooks related to open banking
 	UserLinkSessionFinished         *PSPUserLinkSessionFinished
-	DataReadyToFetch                *PSPDataReadyToFetch
+	DataReadyToFetch                *PSPDataReadyToFetch // TODo remove
+	AccountsReadyToFetch            *PSPAccountsReadyToFetch
+	TransactionsReadyToFetch        *PSPTransactionsReadyToFetch
+	BalancesReadyToFetch            *PSPBalancesReadyToFetch
 	UserDisconnected                *PSPUserDisconnected
 	UserConnectionPendingDisconnect *PSPUserConnectionPendingDisconnect
 	UserConnectionDisconnected      *PSPUserConnectionDisconnected
@@ -111,6 +114,24 @@ type WebhookResponse struct {
 }
 
 type PSPDataReadyToFetch struct {
+	PSUID        *uuid.UUID
+	ConnectionID *string
+	FromPayload  json.RawMessage
+}
+
+type PSPAccountsReadyToFetch struct {
+	PSUID        *uuid.UUID
+	ConnectionID *string
+	FromPayload  json.RawMessage
+}
+
+type PSPTransactionsReadyToFetch struct {
+	PSUID        *uuid.UUID
+	ConnectionID *string
+	FromPayload  json.RawMessage
+}
+
+type PSPBalancesReadyToFetch struct {
 	PSUID        *uuid.UUID
 	ConnectionID *string
 	FromPayload  json.RawMessage
