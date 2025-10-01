@@ -328,7 +328,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 	When("searching for schedules for a connector", func() {
 		var (
 			connectorID   string
-			id            uuid.UUID
+			connectorID2  string
 			expectedTypes = map[string]struct{}{
 				"FetchAccounts":         {},
 				"FetchExternalAccounts": {},
@@ -337,17 +337,21 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			}
 		)
 		BeforeEach(func() {
-			id = uuid.New()
-
 			var err error
-			connectorID, err = installV3Connector(ctx, app.GetValue(), nil, id)
+			connectorID, err = installV3Connector(ctx, app.GetValue(), nil, uuid.New())
 			Expect(err).To(BeNil())
 
 			workflowID := blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID)))
+
+			connectorID2, err = installV3Connector(ctx, app.GetValue(), nil, uuid.New())
+			Expect(err).To(BeNil())
+
+			workflowID = blockTillWorkflowComplete(ctx, connectorID2, "run-tasks-")
+			Expect(workflowID).To(Equal(fmt.Sprintf("run-tasks-%s-%s", stack, connectorID2)))
 		})
 
-		It("can search for schedules with v3 API", func(ctx SpecContext) {
+		It("can search for schedules with v3 API - only returns results for applicable connectorID", func(ctx SpecContext) {
 			schCl := temporalServer.GetValue().DefaultClient().ScheduleClient()
 			list, err := schCl.List(ctx, client.ScheduleListOptions{PageSize: 1})
 			Expect(err).To(BeNil())
@@ -370,6 +374,15 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(len(schedules) > 0).To(BeTrue())
 			for _, schedule := range schedules {
 				Expect(schedule.ConnectorID).To(Equal(connectorID))
+			}
+
+			res, err = app.GetValue().SDK().Payments.V3.ListConnectorSchedules(ctx, connectorID2, nil, nil, nil)
+			Expect(err).To(BeNil())
+			Expect(res.V3ConnectorSchedulesCursorResponse).NotTo(BeNil())
+			schedules = res.V3ConnectorSchedulesCursorResponse.Cursor.Data
+			Expect(len(schedules) > 0).To(BeTrue())
+			for _, schedule := range schedules {
+				Expect(schedule.ConnectorID).To(Equal(connectorID2))
 			}
 		})
 	})
