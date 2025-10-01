@@ -18,3 +18,4 @@ tools/connector-template/connector-template
 coverage.txt
 .direnv/
 worktrees/
+tmp/
