@@ -1,0 +1,121 @@
+package bitstamp
+
+import (
+	"context"
+	"encoding/json"
+
+	"github.com/formancehq/go-libs/v3/logging"
+	"github.com/formancehq/payments/internal/connectors/plugins"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/bitstamp/client"
+	"github.com/formancehq/payments/internal/connectors/plugins/registry"
+	"github.com/formancehq/payments/internal/models"
+)
+
+const ProviderName = "bitstamp"
+
+func init() {
+	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+		return New(name, logger, rm)
+	}, capabilities, Config{})
+}
+
+type Plugin struct {
+	models.Plugin
+
+	name   string
+	logger logging.Logger
+
+	config Config
+	client client.Client
+}
+
+func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
+	config, err := unmarshalAndValidateConfig(rawConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	_ = config // TODO: use config to create client and remove this line
+	client := client.New(config.ApiKey, []byte(config.ApiSecret), client.WithBaseURL(config.Endpoint))
+
+	return &Plugin{
+		Plugin: plugins.NewBasePlugin(),
+
+		name:   name,
+		logger: logger,
+		config: config,
+		client: client,
+	}, nil
+}
+
+func (p *Plugin) Name() string {
+	return p.name
+}
+
+func (p *Plugin) Config() models.PluginInternalConfig {
+	return p.config
+}
+
+func (p *Plugin) Install(_ context.Context, req models.InstallRequest) (models.InstallResponse, error) {
+	return models.InstallResponse{
+		Workflow: workflow(),
+	}, nil
+}
+
+func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (models.UninstallResponse, error) {
+	return models.UninstallResponse{}, nil
+}
+
+func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
+	if p.client == nil {
+		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextAccounts(ctx, req)
+}
+
+func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+	if p.client == nil {
+		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextBalances(ctx, req)
+}
+
+func (p *Plugin) FetchNextOthers(ctx context.Context, req models.FetchNextOthersRequest) (models.FetchNextOthersResponse, error) {
+	return models.FetchNextOthersResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) CreateBankAccount(ctx context.Context, req models.CreateBankAccountRequest) (models.CreateBankAccountResponse, error) {
+	return models.CreateBankAccountResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
+	return models.ReverseTransferResponse{}, plugins.ErrNotImplemented
+}
+
+// Note: Fill only if we cannot have the related payment in the CreateTransfer method
+func (p *Plugin) PollTransferStatus(ctx context.Context, req models.PollTransferStatusRequest) (models.PollTransferStatusResponse, error) {
+	return models.PollTransferStatusResponse{}, plugins.ErrNotImplemented
+}
+
+func (p *Plugin) ReversePayout(ctx context.Context, req models.ReversePayoutRequest) (models.ReversePayoutResponse, error) {
+	return models.ReversePayoutResponse{}, plugins.ErrNotImplemented
+}
+
+// Note: Fill only if we cannot have the related payment in the CreatePayout method
+func (p *Plugin) PollPayoutStatus(ctx context.Context, req models.PollPayoutStatusRequest) (models.PollPayoutStatusResponse, error) {
+	return models.PollPayoutStatusResponse{}, plugins.ErrNotImplemented
+}
+
+// Note: if the connector has webhooks, use this method to create the related
+// webhooks on the PSP.
+func (p *Plugin) CreateWebhooks(ctx context.Context, req models.CreateWebhooksRequest) (models.CreateWebhooksResponse, error) {
+	return models.CreateWebhooksResponse{}, plugins.ErrNotImplemented
+}
+
+// Note: if the connector has webhooks, use this method to translate incoming
+// webhooks to a formance object.
+func (p *Plugin) TranslateWebhook(ctx context.Context, req models.TranslateWebhookRequest) (models.TranslateWebhookResponse, error) {
+	return models.TranslateWebhookResponse{}, plugins.ErrNotImplemented
+}
+
+var _ models.Plugin = &Plugin{}

@@ -1,0 +1,82 @@
+package bitstamp
+
+import "github.com/formancehq/payments/internal/models"
+
+func workflow() models.ConnectorTasksTree {
+	// In here, you will have to define how you want your connector's data
+	// to be polled. If there is any data that depends on another type of data
+	// already being polled (eg. you cannot fetch a balance without a related account
+	// ID), the dependency tree can be defined below
+	//
+	// Example 1: accounts is the parent node to all other data types
+	// In this example, the FetchNextAccounts method will be called first and
+	// then periodically.
+	// For each accounts returned by this method, FetchNextBalances,
+	// FetchNextPayments and FetchNextExternalAccounts will then be called
+	// with the related account in the request's FromPayload field and then
+	// periodically.
+	// return []models.ConnectorTaskTree{
+	// 	{
+	// 		TaskType:     models.TASK_FETCH_ACCOUNTS,
+	// 		Name:         "fetch_accounts",
+	// 		Periodically: true,
+	// 		NextTasks: []models.ConnectorTaskTree{
+	// 			{
+	// 				TaskType:     models.TASK_FETCH_BALANCES,
+	// 				Name:         "fetch_balances",
+	// 				Periodically: true,
+	// 				NextTasks:    []models.ConnectorTaskTree{},
+	// 			},
+	// 			{
+	// 				TaskType:     models.TASK_FETCH_PAYMENTS,
+	// 				Name:         "fetch_payments",
+	// 				Periodically: true,
+	// 				NextTasks:    []models.ConnectorTaskTree{},
+	// 			},
+	// 			{
+	// 				TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
+	// 				Name:         "fetch_recipients",
+	// 				Periodically: true,
+	// 				NextTasks:    []models.ConnectorTaskTree{},
+	// 			},
+	// 		},
+	// 	},
+	// }
+	//
+	// Example 2: accounts is the parent of balances only; other data types will
+	// be fetched irrespective of any accounts being found
+	// In this example, FetchNextAccounts, FetchNextPayments and
+	// FetchNextExternalAccounts will be called in parallel and periodically.
+	// For every accounts returned in FetchNextAccounts, the child FetchNextBalances
+	// method will be called periodically.
+	// return []models.ConnectorTaskTree{
+	// 	{
+	//
+	// 		TaskType:     models.TASK_FETCH_ACCOUNTS,
+	// 		Name:         "fetch_accounts",
+	// 		Periodically: true,
+	// 		NextTasks: []models.ConnectorTaskTree{
+	// 			{
+	// 				TaskType:     models.TASK_FETCH_BALANCES,
+	// 				Name:         "fetch_balances",
+	// 				Periodically: true,
+	// 				NextTasks:    []models.ConnectorTaskTree{},
+	// 			},
+	// 		},
+	// 	},
+	// 	{
+	// 		TaskType:  models.TASK_FETCH_PAYMENTS,
+	// 		Name:      "fetch_payments",
+	// 		NextTasks: []models.ConnectorTaskTree{},
+	// 	},
+	//
+	// 	{
+	// 		TaskType:     models.TASK_FETCH_EXTERNAL_ACCOUNTS,
+	// 		Name:         "fetch_external_accounts",
+	// 		Periodically: true,
+	// 		NextTasks:    []models.ConnectorTaskTree{},
+	// 	},
+	// }
+
+    return []models.ConnectorTaskTree{}
+}

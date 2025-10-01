@@ -16,6 +16,7 @@ const (
 	PluginTypePSP PluginType = iota
 	PluginTypeOpenBanking
 	PluginTypeBoth
+	PluginTypeExchange
 )
 
 //go:generate mockgen -source plugin.go -destination plugin_generated.go -package models . Plugin
