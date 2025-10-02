@@ -46,5 +46,4 @@ ENV DEBUG=true
 # Expose ports
 EXPOSE 8080 9090 2345
 
-# Default command for development
-CMD ["payments", "server"]
+# No command, it needs to be set by docker-compose (different use cases)
