@@ -4,7 +4,7 @@
 !.idea/inspectionProfiles/**
 !.idea/codeStyles/**
 !.idea/vcs.xml
-!.idea/runConfigurations/**
+!.idea/runConfigurations/
 vendor
 .cloud/ressources/.terraform
 .cloud/ressources/.terraform.lock.hcl

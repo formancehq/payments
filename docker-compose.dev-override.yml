@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    volumes:
+      - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      # Uncomment the volume below if you want to keep the data stored when killing the container.
+      - postgres:/var/lib/postgresql/data
+
+  payments-migrate:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    image: payments-dev:latest
+    pull_policy: never
+    command: go run . migrate up
+    volumes:
+      - .:/app
+
+  payments:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    image: payments-dev:latest
+    pull_policy: never
+    command: air -c .air.toml -- server
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+      - "2345:2345"  # Delve debug port
+    volumes:
+      - .:/app
+    environment:
+      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
+
+  payments-worker:
+    build:
+      context: .
+      dockerfile: dev.Dockerfile
+    image: payments-dev:latest
+    pull_policy: never
+    command: air -c .air.toml -- worker
+    ports:
+      - "9191:9090"
+      - "2346:2345"  # Delve debug port for worker
+    volumes:
+      - .:/app
+    environment:
+      STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:-http://localhost:8080}
