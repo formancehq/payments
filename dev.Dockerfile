@@ -19,8 +19,15 @@ RUN apk add --no-cache \
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
 RUN go install github.com/air-verse/air@v1.61.7
 
+# Create a custom user with appropriate permissions
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
 # Set working directory
 WORKDIR /app
+
+# Set proper ownership and permissions for the working directory
+RUN chown -R appuser:appgroup /app
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
@@ -45,5 +52,7 @@ ENV DEBUG=true
 
 # Expose ports
 EXPOSE 8080 9090 2345
+# Switch to the custom user
+USER appuser
 
 # No command, it needs to be set by docker-compose (different use cases)
