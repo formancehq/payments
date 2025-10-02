@@ -5,7 +5,7 @@ services:
     volumes:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
       # Uncomment the volume below if you want to keep the data stored when killing the container.
-      - postgres:/var/lib/postgresql/data
+      #- postgres:/var/lib/postgresql/data
 
   payments-migrate:
     build:
