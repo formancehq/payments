@@ -4,7 +4,7 @@
 !.idea/inspectionProfiles/**
 !.idea/codeStyles/**
 !.idea/vcs.xml
-!.idea/runConfigurations/**
+!.idea/runConfigurations/
 vendor
 .cloud/ressources/.terraform
 .cloud/ressources/.terraform.lock.hcl
@@ -18,3 +18,4 @@ tools/connector-template/connector-template
 coverage.txt
 .direnv/
 worktrees/
+tmp/

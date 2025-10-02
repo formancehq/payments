@@ -1,0 +1,6 @@
+version: '3.8'
+
+include:
+  - path:
+      - docker-compose.yml
+      - docker-compose.dev-override.yml

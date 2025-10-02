@@ -11,6 +11,10 @@ $ just compile-plugins
 $ docker compose up
 ```
 
+## Debugging
+You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and 
+live reloading.
+
 # What is it?
 
 Basically, a framework.
