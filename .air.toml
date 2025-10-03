@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main ."
+  cmd = "go build -gcflags='all=-N -l' -o ./tmp/main ."
   full_bin = "dlv exec --headless --listen=:2345 --api-version=2 --accept-multiclient --continue ./tmp/main --"
   delay = 1000
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs", "openapi", "pkg/client"]
@@ -20,7 +20,7 @@ tmp_dir = "tmp"
   log = "build-errors.log"
   poll = false
   poll_interval = 0
-  rerun = false
+  rerun = true
   rerun_delay = 500
   send_interrupt = false
   stop_on_root = false

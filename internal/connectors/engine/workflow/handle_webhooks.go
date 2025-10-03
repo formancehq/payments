@@ -58,7 +58,6 @@ func (w Workflow) runHandleWebhooks(
 			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
-
 		case response.UserLinkSessionFinished != nil:
 			// OpenBanking specific webhook. A user has finished the link flow
 			// and has a valid connection to his bank. We need to update the
@@ -345,11 +344,12 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			Config:       config,
+			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},
 		[]models.ConnectorTaskTree{},
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		return fmt.Errorf("running transaction ready to fetch: %w", err)
+		return fmt.Errorf("running %s: %w", RunFetchOpenBankingData, err)
 	}
 
 	return nil

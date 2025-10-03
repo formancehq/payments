@@ -56,6 +56,7 @@ func toPSPAccounts(
 			Raw:       raw,
 		}
 
+		// Note -- right now Tink doesn't send us the ConnectionID so we can't save it
 		if from.OpenBankingConnection != nil {
 			acc.OpenBankingConnectionID = &from.OpenBankingConnection.ConnectionID
 		}

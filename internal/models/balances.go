@@ -3,9 +3,10 @@ package models
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
 	"math/big"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/formancehq/payments/internal/utils/assets"
 )
@@ -23,6 +24,11 @@ type PSPBalance struct {
 	// Currency. Should be in minor currencies unit.
 	// For example: USD/2
 	Asset string
+
+	// Optional, can be filled if the balance is related to an open banking connector
+	PsuID *uuid.UUID
+	// Optional, can be filled if the balance is related to an open banking connector
+	OpenBankingConnectionID *string
 }
 
 func (p *PSPBalance) Validate() error {
@@ -154,6 +160,12 @@ func FromPSPBalance(from PSPBalance, connectorID ConnectorID, psuId *uuid.UUID, 
 		return Balance{}, err
 	}
 
+	if psuId == nil {
+		psuId = from.PsuID
+	}
+	if openBankingConnectionId == nil {
+		openBankingConnectionId = from.OpenBankingConnectionID
+	}
 	return Balance{
 		AccountID: AccountID{
 			Reference:   from.AccountReference,
