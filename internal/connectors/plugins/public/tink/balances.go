@@ -52,9 +52,11 @@ func toPSPBalance(
 	asset := currency.FormatAssetWithPrecision(balance.Amount.CurrencyCode, precision)
 
 	return models.PSPBalance{
-		AccountReference: account.ID,
-		CreatedAt:        account.Dates.LastRefreshed.UTC(),
-		Amount:           amountBigInt,
-		Asset:            asset,
+		AccountReference:        account.ID,
+		CreatedAt:               account.Dates.LastRefreshed.UTC(),
+		Amount:                  amountBigInt,
+		Asset:                   asset,
+		PsuID:                   pspAccount.PsuID,
+		OpenBankingConnectionID: pspAccount.OpenBankingConnectionID, // Note -- currently Tink doesn't forward the connectionID, so this is mostly wishful thinking.
 	}, nil
 }
