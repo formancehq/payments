@@ -2,7 +2,6 @@ package tink
 
 import (
 	"encoding/json"
-	"errors"
 	"math/big"
 	"time"
 
@@ -32,27 +31,13 @@ var _ = Describe("Tink *Plugin Balances", func() {
 		})
 
 		It("should fetch balances successfully", func(ctx SpecContext) {
-			userID := "user-123"
 			accountID := "acc-456"
 
-			webhookPayload := fetchNextDataRequest{
-				UserID:         userID,
-				ExternalUserID: userID,
-				AccountID:      accountID,
-			}
-			webhookPayloadBytes, err := json.Marshal(webhookPayload)
-			Expect(err).To(BeNil())
-
-			fromPayload := models.OpenBankingForwardedUserFromPayload{
-				FromPayload: webhookPayloadBytes,
-			}
-			fromPayloadBytes, err := json.Marshal(fromPayload)
-			Expect(err).To(BeNil())
-
 			refTime := time.Now().UTC().Truncate(time.Second)
-			resp := client.AccountBalanceResponse{
-				AccountId: accountID,
-				Refreshed: refTime,
+			account := client.Account{
+				ID:   accountID,
+				Name: "Test Account",
+				Type: "CHECKING",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
 						CurrencyCode:     "EUR",
@@ -63,9 +48,25 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						},
 					},
 				},
+				Dates: client.Dates{
+					LastRefreshed: refTime,
+				},
 			}
 
-			m.EXPECT().GetAccountBalances(gomock.Any(), userID, accountID).Return(resp, nil)
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+			pspAccountBytes, err := json.Marshal(pspAccount)
+			Expect(err).To(BeNil())
+
+			fromPayload := models.OpenBankingForwardedUserFromPayload{
+				FromPayload: pspAccountBytes,
+			}
+			fromPayloadBytes, err := json.Marshal(fromPayload)
+			Expect(err).To(BeNil())
 
 			req := models.FetchNextBalancesRequest{FromPayload: fromPayloadBytes}
 			out, err := plg.(*Plugin).fetchNextBalances(ctx, req)
@@ -79,15 +80,14 @@ var _ = Describe("Tink *Plugin Balances", func() {
 			Expect(b.Amount.Cmp(big.NewInt(12345))).To(Equal(0))
 		})
 
-		It("should handle client error", func(ctx SpecContext) {
-			userID := "user-123"
-			accountID := "acc-456"
-			webhookPayload := fetchNextDataRequest{UserID: userID, ExternalUserID: userID, AccountID: accountID}
-			wpb, _ := json.Marshal(webhookPayload)
-			fp := models.OpenBankingForwardedUserFromPayload{FromPayload: wpb}
+		It("should handle invalid PSPAccount payload", func(ctx SpecContext) {
+			invalidAccountBytes := []byte("invalid json")
+			pspAccount := models.PSPAccount{
+				Raw: invalidAccountBytes,
+			}
+			pspAccountBytes, _ := json.Marshal(pspAccount)
+			fp := models.OpenBankingForwardedUserFromPayload{FromPayload: pspAccountBytes}
 			fpb, _ := json.Marshal(fp)
-
-			m.EXPECT().GetAccountBalances(gomock.Any(), userID, accountID).Return(client.AccountBalanceResponse{}, errors.New("client error"))
 
 			req := models.FetchNextBalancesRequest{FromPayload: fpb}
 			out, err := plg.(*Plugin).fetchNextBalances(ctx, req)
@@ -102,7 +102,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 			Expect(out).To(Equal(models.FetchNextBalancesResponse{}))
 		})
 
-		It("should handle invalid inner webhook payload", func(ctx SpecContext) {
+		It("should handle invalid inner PSPAccount payload", func(ctx SpecContext) {
 			fromPayloadBytes := []byte(`{"fromPayload": "invalid json"}`)
 			req := models.FetchNextBalancesRequest{FromPayload: fromPayloadBytes}
 			out, err := plg.(*Plugin).fetchNextBalances(ctx, req)
@@ -114,9 +114,10 @@ var _ = Describe("Tink *Plugin Balances", func() {
 	Context("toPSPBalance", func() {
 		It("should convert balance correctly", func() {
 			refTime := time.Now().UTC().Truncate(time.Second)
-			resp := client.AccountBalanceResponse{
-				AccountId: "acc-1",
-				Refreshed: refTime,
+			account := client.Account{
+				ID:   "acc-1",
+				Name: "Test Account",
+				Type: "CHECKING",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
 						CurrencyCode:     "USD",
@@ -124,9 +125,12 @@ var _ = Describe("Tink *Plugin Balances", func() {
 						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("1000")},
 					},
 				},
+				Dates: client.Dates{
+					LastRefreshed: refTime,
+				},
 			}
 
-			psp, err := toPSPBalance(resp, "acc-1")
+			psp, err := toPSPBalance(account.Balances, account)
 			Expect(err).To(BeNil())
 			Expect(psp.AccountReference).To(Equal("acc-1"))
 			Expect(psp.CreatedAt.UTC()).To(Equal(refTime))
@@ -135,12 +139,32 @@ var _ = Describe("Tink *Plugin Balances", func() {
 		})
 
 		It("should error on invalid amount", func() {
-			resp := client.AccountBalanceResponse{
+			account := client.Account{
+				ID: "acc",
 				Balances: client.AccountBalances{
-					Booked: client.AccountBalance{Value: client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("not-a-number")}},
+					Booked: client.AccountBalance{
+						CurrencyCode:     "USD",
+						ValueInMinorUnit: json.Number("not-a-number"),
+						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("not-a-number")},
+					},
 				},
 			}
-			_, err := toPSPBalance(resp, "acc")
+			_, err := toPSPBalance(account.Balances, account)
+			Expect(err).ToNot(BeNil())
+		})
+
+		It("should error on unsupported currency", func() {
+			account := client.Account{
+				ID: "acc",
+				Balances: client.AccountBalances{
+					Booked: client.AccountBalance{
+						CurrencyCode:     "INVALID",
+						ValueInMinorUnit: json.Number("1000"),
+						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("1000")},
+					},
+				},
+			}
+			_, err := toPSPBalance(account.Balances, account)
 			Expect(err).ToNot(BeNil())
 		})
 	})

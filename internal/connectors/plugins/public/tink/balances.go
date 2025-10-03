@@ -12,22 +12,12 @@ import (
 )
 
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	var from models.OpenBankingForwardedUserFromPayload
-	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+	var pspAccount models.PSPAccount
+	if err := json.Unmarshal(req.FromPayload, &pspAccount); err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	var webhook fetchNextDataRequest
-	if err := json.Unmarshal(from.FromPayload, &webhook); err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
-	balance, err := p.client.GetAccountBalances(ctx, webhook.ExternalUserID, webhook.AccountID)
-	if err != nil {
-		return models.FetchNextBalancesResponse{}, err
-	}
-
-	pspBalance, err := toPSPBalance(balance, webhook.AccountID)
+	pspBalance, err := toPSPBalance(pspAccount)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
@@ -40,26 +30,31 @@ func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBala
 }
 
 func toPSPBalance(
-	balance client.AccountBalanceResponse,
-	accountReference string,
+	pspAccount models.PSPAccount,
 ) (models.PSPBalance, error) {
 
-	amount := new(big.Int)
-	amount, ok := amount.SetString(balance.Balances.Booked.ValueInMinorUnit.String(), 10)
-	if !ok {
-		return models.PSPBalance{}, fmt.Errorf("failed to parse amount: %s", balance.Balances.Booked.ValueInMinorUnit.String())
+	var account client.Account
+	if err := json.Unmarshal(pspAccount.Raw, &account); err != nil {
+		return models.PSPBalance{}, err
 	}
 
-	precision, ok := currency.ISO4217Currencies[balance.Balances.Booked.CurrencyCode]
+	balance := account.Balances.Booked
+
+	amount := balance.Amount.Value.Value
+	amountBigInt, ok := new(big.Int).SetString(amount, 10)
 	if !ok {
-		return models.PSPBalance{}, fmt.Errorf("unsupported currency: %s", balance.Balances.Booked.CurrencyCode)
+		return models.PSPBalance{}, fmt.Errorf("failed to parse amount: %s", amount)
 	}
-	asset := currency.FormatAssetWithPrecision(balance.Balances.Booked.CurrencyCode, precision)
+	precision, ok := currency.ISO4217Currencies[balance.Amount.CurrencyCode]
+	if !ok {
+		return models.PSPBalance{}, fmt.Errorf("unsupported currency: %s", balance.Amount.CurrencyCode)
+	}
+	asset := currency.FormatAssetWithPrecision(balance.Amount.CurrencyCode, precision)
 
 	return models.PSPBalance{
-		AccountReference: accountReference,
-		CreatedAt:        balance.Refreshed.UTC(),
-		Amount:           amount,
+		AccountReference: account.ID,
+		CreatedAt:        account.Dates.LastRefreshed.UTC(),
+		Amount:           amountBigInt,
 		Asset:            asset,
 	}, nil
 }

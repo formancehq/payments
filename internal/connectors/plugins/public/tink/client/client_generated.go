@@ -142,21 +142,6 @@ func (mr *MockClientMockRecorder) GetAccount(ctx, userID, accountID any) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockClient)(nil).GetAccount), ctx, userID, accountID)
 }
 
-// GetAccountBalances mocks base method.
-func (m *MockClient) GetAccountBalances(ctx context.Context, userID, accountID string) (AccountBalanceResponse, error) {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAccountBalances", ctx, userID, accountID)
-	ret0, _ := ret[0].(AccountBalanceResponse)
-	ret1, _ := ret[1].(error)
-	return ret0, ret1
-}
-
-// GetAccountBalances indicates an expected call of GetAccountBalances.
-func (mr *MockClientMockRecorder) GetAccountBalances(ctx, userID, accountID any) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccountBalances", reflect.TypeOf((*MockClient)(nil).GetAccountBalances), ctx, userID, accountID)
-}
-
 // GetAccountCreatedWebhook mocks base method.
 func (m *MockClient) GetAccountCreatedWebhook(ctx context.Context, payload []byte) (AccountCreatedWebhook, error) {
 	m.ctrl.T.Helper()

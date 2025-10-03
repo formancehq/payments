@@ -19,7 +19,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_Success() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -60,7 +60,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_WithFromPayload_Success() {
 		Payload: []byte(`{"test": "data"}`),
 	}
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -97,7 +97,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextAccounts_Error() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -136,7 +136,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextPayments_Error() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -175,7 +175,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_StoragePSUOpenBankingConnectio
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -212,7 +212,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_RunSendEvents_Error() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -252,7 +252,7 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_BothChildWorkflows_Error() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
 	}
 
@@ -309,41 +309,6 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_EmptyDataToFetch_Error() {
 	s.ErrorContains(err, "no data to fetch")
 }
 
-func (s *UnitTestSuite) Test_FetchOpenBankingData_OnlyBalances_Success() {
-	psuID := uuid.New()
-	connectionID := "test-connection-id"
-	connectorID := models.ConnectorID{
-		Reference: uuid.New(),
-		Provider:  "test",
-	}
-	config := models.DefaultConfig()
-	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchBalances,
-	}
-
-	// Mock child workflow for balances
-	s.env.OnWorkflow(RunFetchNextBalances, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-
-	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
-
-	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
-		PsuID:        psuID,
-		ConnectionID: connectionID,
-		ConnectorID:  connectorID,
-		Config:       config,
-		DataToFetch:  dataToFetch,
-		FromPayload:  nil,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err)
-}
-
 func (s *UnitTestSuite) Test_FetchOpenBankingData_AllDataTypes_Success() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
@@ -353,15 +318,13 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AllDataTypes_Success() {
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
+		models.OpenBankingDataToFetchAccountsAndBalances,
 		models.OpenBankingDataToFetchPayments,
-		models.OpenBankingDataToFetchBalances,
 	}
 
 	// Mock all child workflows
 	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunFetchNextBalances, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
 
 	// Mock activity for updating last updated timestamp
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
@@ -392,84 +355,10 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Success() 
 	}
 	config := models.DefaultConfig()
 	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccounts,
-		models.OpenBankingDataToFetchBalances,
-	}
-
-	// Mock child workflows
-	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunFetchNextBalances, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-
-	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
-
-	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
-		PsuID:        psuID,
-		ConnectionID: connectionID,
-		ConnectorID:  connectorID,
-		Config:       config,
-		DataToFetch:  dataToFetch,
-		FromPayload:  nil,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err)
-}
-
-func (s *UnitTestSuite) Test_FetchOpenBankingData_RunFetchNextBalances_Error() {
-	psuID := uuid.New()
-	connectionID := "test-connection-id"
-	connectorID := models.ConnectorID{
-		Reference: uuid.New(),
-		Provider:  "test",
-	}
-	config := models.DefaultConfig()
-	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchBalances,
-	}
-
-	// Mock child workflow with error
-	s.env.OnWorkflow(RunFetchNextBalances, mock.Anything, mock.Anything, mock.Anything).Once().Return(
-		temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
-	)
-
-	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
-
-	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
-		PsuID:        psuID,
-		ConnectionID: connectionID,
-		ConnectorID:  connectorID,
-		Config:       config,
-		DataToFetch:  dataToFetch,
-		FromPayload:  nil,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err) // Errors in child workflows are logged but don't fail the parent workflow
-}
-
-func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalancesSimultaneously_Success() {
-	psuID := uuid.New()
-	connectionID := "test-connection-id"
-	connectorID := models.ConnectorID{
-		Reference: uuid.New(),
-		Provider:  "test",
-	}
-	config := models.DefaultConfig()
-	dataToFetch := []models.OpenBankingDataToFetch{
 		models.OpenBankingDataToFetchAccountsAndBalances,
 	}
 
-	// Note: The current implementation treats OpenBankingDataToFetchAccountsAndBalances
+	// TODO Note: The current implementation treats OpenBankingDataToFetchAccountsAndBalances
 	// as a separate value that doesn't trigger any workflows, since it only checks
 	// for the individual OpenBankingDataToFetchAccounts and OpenBankingDataToFetchBalances values.
 	// This test documents the current behavior.

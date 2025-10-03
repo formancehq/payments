@@ -395,7 +395,7 @@ func (p *Plugin) handleTransactionsWebhook(req models.TranslateWebhookRequest, b
 					ConnectionID: &baseWebhook.ItemID,
 					FromPayload:  req.Webhook.Body,
 					DataToFetch: []models.OpenBankingDataToFetch{
-						models.OpenBankingDataToFetchAccounts,
+						models.OpenBankingDataToFetchAccountsAndBalances,
 						models.OpenBankingDataToFetchPayments,
 					},
 				},

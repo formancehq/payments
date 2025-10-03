@@ -25,7 +25,6 @@ type Client interface {
 	ListTransactions(ctx context.Context, req ListTransactionRequest) (ListTransactionResponse, error)
 	ListAccounts(ctx context.Context, userID string, nextPageToken string) (ListAccountsResponse, error)
 	GetAccount(ctx context.Context, userID string, accountID string) (Account, error)
-	GetAccountBalances(ctx context.Context, userID string, accountID string) (AccountBalanceResponse, error)
 }
 
 type client struct {

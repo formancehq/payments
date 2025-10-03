@@ -113,10 +113,8 @@ type WebhookResponse struct {
 type OpenBankingDataToFetch string
 
 const (
-	OpenBankingDataToFetchBalances            OpenBankingDataToFetch = "balances"
-	OpenBankingDataToFetchAccounts            OpenBankingDataToFetch = "accounts"
 	OpenBankingDataToFetchPayments            OpenBankingDataToFetch = "payments"
-	OpenBankingDataToFetchAccountsAndBalances OpenBankingDataToFetch = "accounts_and_balances_simultaneously"
+	OpenBankingDataToFetchAccountsAndBalances OpenBankingDataToFetch = "accounts_and_balances"
 )
 
 type PSPDataReadyToFetch struct {

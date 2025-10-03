@@ -35,7 +35,7 @@ func (w Workflow) runFetchOpenBankingData(
 
 	wg := workflow.NewWaitGroup(ctx)
 
-	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchAccounts) {
+	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchAccountsAndBalances) {
 		wg.Add(1)
 		workflow.Go(ctx, w.startFetchNextAccountWorkflow(wg, fetchOpenBankingData))
 	}
@@ -43,11 +43,6 @@ func (w Workflow) runFetchOpenBankingData(
 	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchPayments) {
 		wg.Add(1)
 		workflow.Go(ctx, w.startFetchNextPaymentsWorkflow(wg, fetchOpenBankingData))
-	}
-
-	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchBalances) {
-		wg.Add(1)
-		workflow.Go(ctx, w.startFetchNextBalancesWorkflow(wg, fetchOpenBankingData))
 	}
 
 	wg.Wait(ctx)
@@ -116,8 +111,14 @@ func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpen
 				FromPayload:  fetchOpenBankingData.FromPayload,
 				Periodically: false,
 			},
-			[]models.ConnectorTaskTree{}, // TODO If account contains the balance (Plaid) we should create a child
-			// TODO workflow taking the payload (if we can?)+
+			[]models.ConnectorTaskTree{
+				{
+					TaskType:     models.TASK_FETCH_BALANCES,
+					Name:         "fetch_balances",
+					Periodically: false,
+					NextTasks:    []models.ConnectorTaskTree{},
+				},
+			},
 		).Get(ctx, nil); err != nil {
 			workflow.GetLogger(ctx).Error("failed to fetch accounts", "error", err)
 		}
