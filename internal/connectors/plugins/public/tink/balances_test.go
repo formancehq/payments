@@ -40,11 +40,15 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				Type: "CHECKING",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
-						CurrencyCode:     "EUR",
-						ValueInMinorUnit: json.Number("12345"),
-						Value: client.AccountBalanceValue{
-							Scale:         json.Number("2"),
-							UnscaledValue: json.Number("12345"),
+						Amount: client.Amount{
+							CurrencyCode: "EUR",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "12345",
+							},
 						},
 					},
 				},
@@ -62,13 +66,7 @@ var _ = Describe("Tink *Plugin Balances", func() {
 			pspAccountBytes, err := json.Marshal(pspAccount)
 			Expect(err).To(BeNil())
 
-			fromPayload := models.OpenBankingForwardedUserFromPayload{
-				FromPayload: pspAccountBytes,
-			}
-			fromPayloadBytes, err := json.Marshal(fromPayload)
-			Expect(err).To(BeNil())
-
-			req := models.FetchNextBalancesRequest{FromPayload: fromPayloadBytes}
+			req := models.FetchNextBalancesRequest{FromPayload: pspAccountBytes}
 			out, err := plg.(*Plugin).fetchNextBalances(ctx, req)
 			Expect(err).To(BeNil())
 			Expect(out.Balances).To(HaveLen(1))
@@ -86,10 +84,8 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				Raw: invalidAccountBytes,
 			}
 			pspAccountBytes, _ := json.Marshal(pspAccount)
-			fp := models.OpenBankingForwardedUserFromPayload{FromPayload: pspAccountBytes}
-			fpb, _ := json.Marshal(fp)
 
-			req := models.FetchNextBalancesRequest{FromPayload: fpb}
+			req := models.FetchNextBalancesRequest{FromPayload: pspAccountBytes}
 			out, err := plg.(*Plugin).fetchNextBalances(ctx, req)
 			Expect(err).ToNot(BeNil())
 			Expect(out).To(Equal(models.FetchNextBalancesResponse{}))
@@ -120,9 +116,16 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				Type: "CHECKING",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
-						CurrencyCode:     "USD",
-						ValueInMinorUnit: json.Number("1000"),
-						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("1000")},
+						Amount: client.Amount{
+							CurrencyCode: "USD",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "1000",
+							},
+						},
 					},
 				},
 				Dates: client.Dates{
@@ -130,7 +133,14 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				},
 			}
 
-			psp, err := toPSPBalance(account.Balances, account)
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			psp, err := toPSPBalance(pspAccount)
 			Expect(err).To(BeNil())
 			Expect(psp.AccountReference).To(Equal("acc-1"))
 			Expect(psp.CreatedAt.UTC()).To(Equal(refTime))
@@ -143,13 +153,28 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				ID: "acc",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
-						CurrencyCode:     "USD",
-						ValueInMinorUnit: json.Number("not-a-number"),
-						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("not-a-number")},
+						Amount: client.Amount{
+							CurrencyCode: "USD",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "not-a-number",
+							},
+						},
 					},
 				},
 			}
-			_, err := toPSPBalance(account.Balances, account)
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			_, err = toPSPBalance(pspAccount)
 			Expect(err).ToNot(BeNil())
 		})
 
@@ -158,13 +183,157 @@ var _ = Describe("Tink *Plugin Balances", func() {
 				ID: "acc",
 				Balances: client.AccountBalances{
 					Booked: client.AccountBalance{
-						CurrencyCode:     "INVALID",
-						ValueInMinorUnit: json.Number("1000"),
-						Value:            client.AccountBalanceValue{Scale: json.Number("2"), UnscaledValue: json.Number("1000")},
+						Amount: client.Amount{
+							CurrencyCode: "INVALID",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "1000",
+							},
+						},
 					},
 				},
 			}
-			_, err := toPSPBalance(account.Balances, account)
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			_, err = toPSPBalance(pspAccount)
+			Expect(err).ToNot(BeNil())
+		})
+
+		It("should handle zero amount", func() {
+			refTime := time.Now().UTC().Truncate(time.Second)
+			account := client.Account{
+				ID:   "acc-zero",
+				Name: "Zero Balance Account",
+				Type: "CHECKING",
+				Balances: client.AccountBalances{
+					Booked: client.AccountBalance{
+						Amount: client.Amount{
+							CurrencyCode: "EUR",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "0",
+							},
+						},
+					},
+				},
+				Dates: client.Dates{
+					LastRefreshed: refTime,
+				},
+			}
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			psp, err := toPSPBalance(pspAccount)
+			Expect(err).To(BeNil())
+			Expect(psp.AccountReference).To(Equal("acc-zero"))
+			Expect(psp.CreatedAt.UTC()).To(Equal(refTime))
+			Expect(psp.Asset).To(Equal("EUR/2"))
+			Expect(psp.Amount.Cmp(big.NewInt(0))).To(Equal(0))
+		})
+
+		It("should handle negative amount", func() {
+			refTime := time.Now().UTC().Truncate(time.Second)
+			account := client.Account{
+				ID:   "acc-negative",
+				Name: "Negative Balance Account",
+				Type: "CHECKING",
+				Balances: client.AccountBalances{
+					Booked: client.AccountBalance{
+						Amount: client.Amount{
+							CurrencyCode: "USD",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "2",
+								Value: "-5000",
+							},
+						},
+					},
+				},
+				Dates: client.Dates{
+					LastRefreshed: refTime,
+				},
+			}
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			psp, err := toPSPBalance(pspAccount)
+			Expect(err).To(BeNil())
+			Expect(psp.AccountReference).To(Equal("acc-negative"))
+			Expect(psp.CreatedAt.UTC()).To(Equal(refTime))
+			Expect(psp.Asset).To(Equal("USD/2"))
+			Expect(psp.Amount.Cmp(big.NewInt(-5000))).To(Equal(0))
+		})
+
+		It("should handle different currency precisions", func() {
+			refTime := time.Now().UTC().Truncate(time.Second)
+			account := client.Account{
+				ID:   "acc-jpy",
+				Name: "JPY Account",
+				Type: "CHECKING",
+				Balances: client.AccountBalances{
+					Booked: client.AccountBalance{
+						Amount: client.Amount{
+							CurrencyCode: "JPY",
+							Value: struct {
+								Scale string `json:"scale"`
+								Value string `json:"unscaledValue"`
+							}{
+								Scale: "0",
+								Value: "100000",
+							},
+						},
+					},
+				},
+				Dates: client.Dates{
+					LastRefreshed: refTime,
+				},
+			}
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			psp, err := toPSPBalance(pspAccount)
+			Expect(err).To(BeNil())
+			Expect(psp.AccountReference).To(Equal("acc-jpy"))
+			Expect(psp.CreatedAt.UTC()).To(Equal(refTime))
+			Expect(psp.Asset).To(Equal("JPY/0"))
+			Expect(psp.Amount.Cmp(big.NewInt(100000))).To(Equal(0))
+		})
+
+		It("should error on invalid JSON in PSPAccount", func() {
+			pspAccount := models.PSPAccount{
+				Raw: []byte("invalid json"),
+			}
+
+			_, err := toPSPBalance(pspAccount)
 			Expect(err).ToNot(BeNil())
 		})
 	})

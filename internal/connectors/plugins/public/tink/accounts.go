@@ -47,20 +47,16 @@ func toPSPAccounts(
 			return accounts, err
 		}
 
-		connectionId := ""
-		if from.OpenBankingConnection != nil {
-			connectionId = from.OpenBankingConnection.ConnectionID
-		}
 		acc := models.PSPAccount{
-			Reference:               account.ID,
-			CreatedAt:               time.Now().UTC(),
-			Name:                    &account.Name,
-			Metadata:                make(map[string]string),
-			PsuID:                   &from.PSUID,
-			OpenBankingConnectionID: &connectionId,
-			Raw:                     raw,
+			Reference: account.ID,
+			CreatedAt: time.Now().UTC(),
+			Name:      &account.Name,
+			Metadata:  make(map[string]string),
+			PsuID:     &from.PSUID,
+			Raw:       raw,
 		}
 
+		// Note -- right now Tink doesn't send us the ConnectionID so we can't save it
 		if from.OpenBankingConnection != nil {
 			acc.OpenBankingConnectionID = &from.OpenBankingConnection.ConnectionID
 		}
