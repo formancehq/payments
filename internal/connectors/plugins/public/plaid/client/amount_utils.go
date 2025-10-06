@@ -10,17 +10,19 @@ import (
 func TranslatePlaidAmount(
 	amount float64,
 	currencyCode string,
-) (*big.Int, error) {
+) (*big.Int, string, error) {
 	precision, err := currency.GetPrecision(currency.ISO4217Currencies, currencyCode)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	amountString := strconv.FormatFloat(amount, 'f', -1, 64)
 	amountInt, err := currency.GetAmountWithPrecisionFromString(amountString, precision)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
-	return amountInt, nil
+	assetName := currency.FormatAssetWithPrecision(currencyCode, precision)
+
+	return amountInt, assetName, nil
 }
