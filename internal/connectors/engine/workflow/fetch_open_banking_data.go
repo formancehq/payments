@@ -34,18 +34,27 @@ func (w Workflow) runFetchOpenBankingData(
 	}
 
 	wg := workflow.NewWaitGroup(ctx)
+	var accountFetchErr, paymentFetchErr error
 
 	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchAccountsAndBalances) {
 		wg.Add(1)
-		workflow.Go(ctx, w.startFetchNextAccountWorkflow(wg, fetchOpenBankingData))
+		workflow.Go(ctx, w.startFetchNextAccountWorkflow(wg, fetchOpenBankingData, &accountFetchErr))
 	}
 
 	if slices.Contains(fetchOpenBankingData.DataToFetch, models.OpenBankingDataToFetchPayments) {
 		wg.Add(1)
-		workflow.Go(ctx, w.startFetchNextPaymentsWorkflow(wg, fetchOpenBankingData))
+		workflow.Go(ctx, w.startFetchNextPaymentsWorkflow(wg, fetchOpenBankingData, &paymentFetchErr))
 	}
 
 	wg.Wait(ctx)
+
+	// Check if any of the fetch workflows failed
+	if accountFetchErr != nil {
+		return fmt.Errorf("failed to fetch accounts: %w", accountFetchErr)
+	}
+	if paymentFetchErr != nil {
+		return fmt.Errorf("failed to fetch payments: %w", paymentFetchErr)
+	}
 
 	now := workflow.Now(ctx)
 
@@ -89,7 +98,7 @@ func (w Workflow) runFetchOpenBankingData(
 	return nil
 }
 
-func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
+func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData, errPtr *error) func(ctx workflow.Context) {
 	return func(ctx workflow.Context) {
 		defer wg.Done()
 
@@ -121,11 +130,12 @@ func (w Workflow) startFetchNextAccountWorkflow(wg workflow.WaitGroup, fetchOpen
 			},
 		).Get(ctx, nil); err != nil {
 			workflow.GetLogger(ctx).Error("failed to fetch accounts", "error", err)
+			*errPtr = err
 		}
 	}
 }
 
-func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
+func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData, errPtr *error) func(ctx workflow.Context) {
 	return func(ctx workflow.Context) {
 		defer wg.Done()
 
@@ -150,6 +160,7 @@ func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpe
 			[]models.ConnectorTaskTree{},
 		).Get(ctx, nil); err != nil {
 			workflow.GetLogger(ctx).Error("failed to fetch payments", "error", err)
+			*errPtr = err
 		}
 	}
 }
