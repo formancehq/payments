@@ -29,6 +29,9 @@ WORKDIR /app
 # Set proper ownership and permissions for the working directory
 RUN chown -R appuser:appgroup /app
 
+# Create tmp directory and set permissions
+RUN mkdir -p /app/tmp && chown -R appuser:appgroup /app/tmp && chmod 755 /app/tmp
+
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
 
