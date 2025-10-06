@@ -46,7 +46,7 @@ func toPSPBalance(
 	amountF := *balance.Available.Get()
 
 	var curr string
-	if balance.IsoCurrencyCode.IsSet() || balance.IsoCurrencyCode.Get() == nil {
+	if balance.IsoCurrencyCode.IsSet() && balance.IsoCurrencyCode.Get() != nil {
 		curr = *balance.IsoCurrencyCode.Get()
 	} else {
 		curr = balance.GetUnofficialCurrencyCode()

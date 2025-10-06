@@ -154,33 +154,4 @@ func (w Workflow) startFetchNextPaymentsWorkflow(wg workflow.WaitGroup, fetchOpe
 	}
 }
 
-func (w Workflow) startFetchNextBalancesWorkflow(wg workflow.WaitGroup, fetchOpenBankingData FetchOpenBankingData) func(ctx workflow.Context) {
-	return func(ctx workflow.Context) {
-		defer wg.Done()
-
-		if err := workflow.ExecuteChildWorkflow(
-			workflow.WithChildOptions(
-				ctx,
-				workflow.ChildWorkflowOptions{
-					TaskQueue:         w.getDefaultTaskQueue(),
-					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-					SearchAttributes: map[string]interface{}{
-						SearchAttributeStack: w.stack,
-					},
-				},
-			),
-			RunFetchNextBalances,
-			FetchNextBalances{
-				Config:       fetchOpenBankingData.Config,
-				ConnectorID:  fetchOpenBankingData.ConnectorID,
-				FromPayload:  fetchOpenBankingData.FromPayload,
-				Periodically: false,
-			},
-			[]models.ConnectorTaskTree{},
-		).Get(ctx, nil); err != nil {
-			workflow.GetLogger(ctx).Error("failed to fetch balances", "error", err)
-		}
-	}
-}
-
 const RunFetchOpenBankingData = "RunFetchOpenBankingData"

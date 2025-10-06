@@ -55,7 +55,7 @@ func (w Workflow) runHandleWebhooks(
 			// A webhook has been received from the connector indicating that
 			// there is new data to fetch from the connector.
 			// Let's launch the related workflow to fetch the data.
-			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
+			if err := w.handleOpenBankingDataReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
 		case response.UserLinkSessionFinished != nil:
@@ -255,7 +255,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
-func (w Workflow) handleTransactionReadyToFetchWebhook(
+func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
