@@ -431,5 +431,37 @@ var _ = Describe("Plaid *Plugin Balances", func() {
 			expectedAmount := big.NewInt(12345)
 			Expect(psp.Amount).To(Equal(expectedAmount))
 		})
+
+		It("should use current date when lastUpdatedDatetime is empty", func() {
+			account := plaid.NewAccountBaseWithDefaults()
+			account.SetAccountId("acc-empty-date")
+			account.SetName("Empty Date Account")
+			account.SetType(plaid.ACCOUNTTYPE_DEPOSITORY)
+
+			balance := plaid.NewAccountBalanceWithDefaults()
+			balance.SetCurrent(100.0)
+			balance.SetIsoCurrencyCode("USD")
+			// Don't set LastUpdatedDatetime - it should be empty/zero
+			account.SetBalances(*balance)
+
+			accountBytes, err := json.Marshal(account)
+			Expect(err).To(BeNil())
+
+			pspAccount := models.PSPAccount{
+				Raw: accountBytes,
+			}
+
+			beforeTest := time.Now().UTC()
+			psp, err := toPSPBalance(pspAccount)
+			afterTest := time.Now().UTC()
+			Expect(err).To(BeNil())
+			Expect(psp.AccountReference).To(Equal("acc-empty-date"))
+			Expect(psp.Asset).To(Equal("USD/2"))
+			Expect(psp.Amount).To(Equal(big.NewInt(10000))) // 100.0 * 100
+
+			// The CreatedAt should be between beforeTest and afterTest
+			Expect(psp.CreatedAt.UTC()).To(BeTemporally(">=", beforeTest))
+			Expect(psp.CreatedAt.UTC()).To(BeTemporally("<=", afterTest))
+		})
 	})
 })

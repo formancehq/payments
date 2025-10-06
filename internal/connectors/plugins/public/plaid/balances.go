@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
@@ -61,9 +62,14 @@ func toPSPBalance(
 	}
 	asset := currency.FormatAssetWithPrecision(curr, precision)
 
+	lastUpdated := balance.GetLastUpdatedDatetime()
+	if lastUpdated.IsZero() {
+		lastUpdated = time.Now()
+	}
+
 	return models.PSPBalance{
 		AccountReference:        account.AccountId,
-		CreatedAt:               balance.GetLastUpdatedDatetime().UTC(),
+		CreatedAt:               lastUpdated.UTC(),
 		Amount:                  amount,
 		Asset:                   asset,
 		PsuID:                   pspAccount.PsuID,
