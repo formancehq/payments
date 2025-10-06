@@ -358,10 +358,9 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Success() 
 		models.OpenBankingDataToFetchAccountsAndBalances,
 	}
 
-	// TODO Note: The current implementation treats OpenBankingDataToFetchAccountsAndBalances
-	// as a separate value that doesn't trigger any workflows, since it only checks
-	// for the individual OpenBankingDataToFetchAccounts and OpenBankingDataToFetchBalances values.
-	// This test documents the current behavior.
+	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	// RunFetchNextBalances is only called via a subworkflow
+	s.env.OnWorkflow(RunFetchNextBalances, mock.Anything, mock.Anything, mock.Anything).Never().Return(nil)
 
 	// Mock activity for updating last updated timestamp
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
