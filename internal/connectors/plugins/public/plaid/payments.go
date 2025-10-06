@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"math"
-	"strconv"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
@@ -102,8 +101,6 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		destinationAccountReference = &transaction.AccountId
 	}
 
-	amountString := strconv.FormatFloat(math.Abs(transaction.Amount), 'f', -1, 64)
-
 	var curr string
 	if transaction.IsoCurrencyCode.IsSet() {
 		curr = *transaction.IsoCurrencyCode.Get()
@@ -111,12 +108,7 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		curr = transaction.GetUnofficialCurrencyCode()
 	}
 
-	precision, err := currency.GetPrecision(currency.ISO4217Currencies, curr)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-
-	amount, err := currency.GetAmountWithPrecisionFromString(amountString, precision)
+	amount, err := client.TranslatePlaidAmount(math.Abs(transaction.Amount), curr)
 	if err != nil {
 		return models.PSPPayment{}, err
 	}
