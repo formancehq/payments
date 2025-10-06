@@ -16,7 +16,7 @@ RUN apk add --no-cache \
     make
 
 # Install delve (debugger) and air (hot reload)
-RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@latest
+RUN CGO_ENABLED=0 go install -ldflags "-s -w -extldflags '-static'" github.com/go-delve/delve/cmd/dlv@1.25.2
 RUN CGO_ENABLED=0 go install github.com/air-verse/air@v1.61.7
 
 # Create a custom user with appropriate permissions
