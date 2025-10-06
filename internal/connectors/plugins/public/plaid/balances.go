@@ -40,13 +40,13 @@ func toPSPBalance(
 	}
 
 	balance := account.Balances
-	if !balance.Current.IsSet() {
+	if !balance.Current.IsSet() || balance.Current.Get() == nil {
 		return models.PSPBalance{}, fmt.Errorf("balance is not set")
 	}
-	amountF := *balance.Current.Get()
+	amountF := *balance.Available.Get()
 
 	var curr string
-	if balance.IsoCurrencyCode.IsSet() {
+	if balance.IsoCurrencyCode.IsSet() || balance.IsoCurrencyCode.Get() == nil {
 		curr = *balance.IsoCurrencyCode.Get()
 	} else {
 		curr = balance.GetUnofficialCurrencyCode()
