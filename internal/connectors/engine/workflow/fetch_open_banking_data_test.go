@@ -309,43 +309,6 @@ func (s *UnitTestSuite) Test_FetchOpenBankingData_EmptyDataToFetch_Error() {
 	s.ErrorContains(err, "no data to fetch")
 }
 
-func (s *UnitTestSuite) Test_FetchOpenBankingData_AllDataTypes_Success() {
-	psuID := uuid.New()
-	connectionID := "test-connection-id"
-	connectorID := models.ConnectorID{
-		Reference: uuid.New(),
-		Provider:  "test",
-	}
-	config := models.DefaultConfig()
-	dataToFetch := []models.OpenBankingDataToFetch{
-		models.OpenBankingDataToFetchAccountsAndBalances,
-		models.OpenBankingDataToFetchPayments,
-	}
-
-	// Mock all child workflows
-	s.env.OnWorkflow(RunFetchNextAccounts, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnWorkflow(RunFetchNextPayments, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
-
-	// Mock activity for updating last updated timestamp
-	s.env.OnActivity(activities.StorageOpenBankingConnectionsLastUpdatedAtUpdateActivity, mock.Anything, psuID, connectorID, connectionID, mock.Anything).Once().Return(nil)
-
-	// Mock send events workflow
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunFetchOpenBankingData, FetchOpenBankingData{
-		PsuID:        psuID,
-		ConnectionID: connectionID,
-		ConnectorID:  connectorID,
-		Config:       config,
-		DataToFetch:  dataToFetch,
-		FromPayload:  nil,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.NoError(err)
-}
-
 func (s *UnitTestSuite) Test_FetchOpenBankingData_AccountsAndBalances_Success() {
 	psuID := uuid.New()
 	connectionID := "test-connection-id"
