@@ -40,7 +40,7 @@ func toPSPBalance(
 	}
 
 	balance := account.Balances
-	if balance.Current.IsSet() == false {
+	if !balance.Current.IsSet() {
 		return models.PSPBalance{}, fmt.Errorf("balance is not set")
 	}
 	amountF := *balance.Current.Get()
