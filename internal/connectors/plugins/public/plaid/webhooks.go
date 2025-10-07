@@ -394,6 +394,10 @@ func (p *Plugin) handleTransactionsWebhook(req models.TranslateWebhookRequest, b
 				DataReadyToFetch: &models.PSPDataReadyToFetch{
 					ConnectionID: &baseWebhook.ItemID,
 					FromPayload:  req.Webhook.Body,
+					DataToFetch: []models.OpenBankingDataToFetch{
+						models.OpenBankingDataToFetchAccountsAndBalances,
+						models.OpenBankingDataToFetchPayments,
+					},
 				},
 			},
 		}, nil
@@ -407,6 +411,10 @@ func (p *Plugin) handleTransactionsWebhook(req models.TranslateWebhookRequest, b
 				DataReadyToFetch: &models.PSPDataReadyToFetch{
 					ConnectionID: &baseWebhook.ItemID,
 					FromPayload:  req.Webhook.Body,
+					DataToFetch: []models.OpenBankingDataToFetch{
+						models.OpenBankingDataToFetchAccountsAndBalances,
+						models.OpenBankingDataToFetchPayments,
+					},
 				},
 			},
 		}, nil

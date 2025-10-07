@@ -55,10 +55,9 @@ func (w Workflow) runHandleWebhooks(
 			// A webhook has been received from the connector indicating that
 			// there is new data to fetch from the connector.
 			// Let's launch the related workflow to fetch the data.
-			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
+			if err := w.handleOpenBankingDataReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
-
 		case response.UserLinkSessionFinished != nil:
 			// OpenBanking specific webhook. A user has finished the link flow
 			// and has a valid connection to his bank. We need to update the
@@ -256,7 +255,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
-func (w Workflow) handleTransactionReadyToFetchWebhook(
+func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
@@ -345,11 +344,12 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			Config:       config,
+			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},
 		[]models.ConnectorTaskTree{},
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		return fmt.Errorf("running transaction ready to fetch: %w", err)
+		return fmt.Errorf("running %s: %w", RunFetchOpenBankingData, err)
 	}
 
 	return nil

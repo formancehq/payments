@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"math"
-	"strconv"
 	"time"
 
-	"github.com/formancehq/go-libs/v3/currency"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/plaid/client"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
@@ -102,8 +100,6 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		destinationAccountReference = &transaction.AccountId
 	}
 
-	amountString := strconv.FormatFloat(math.Abs(transaction.Amount), 'f', -1, 64)
-
 	var curr string
 	if transaction.IsoCurrencyCode.IsSet() {
 		curr = *transaction.IsoCurrencyCode.Get()
@@ -111,12 +107,7 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		curr = transaction.GetUnofficialCurrencyCode()
 	}
 
-	precision, err := currency.GetPrecision(currency.ISO4217Currencies, curr)
-	if err != nil {
-		return models.PSPPayment{}, err
-	}
-
-	amount, err := currency.GetAmountWithPrecisionFromString(amountString, precision)
+	amount, assetName, err := client.TranslatePlaidAmount(math.Abs(transaction.Amount), curr)
 	if err != nil {
 		return models.PSPPayment{}, err
 	}
@@ -153,7 +144,7 @@ func translatePlaidPaymentToPSPPayment(transaction plaid.Transaction, psuID uuid
 		CreatedAt:                   createdAt.UTC(),
 		Type:                        paymentType,
 		Amount:                      amount,
-		Asset:                       currency.FormatAsset(currency.ISO4217Currencies, curr),
+		Asset:                       assetName,
 		Scheme:                      models.PAYMENT_SCHEME_OTHER,
 		Status:                      models.PAYMENT_STATUS_SUCCEEDED,
 		SourceAccountReference:      sourceAccountReference,

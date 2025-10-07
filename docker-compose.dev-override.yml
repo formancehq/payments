@@ -23,7 +23,7 @@ services:
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
     pull_policy: never
-    command: air -c .air.toml -- server
+    command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- server"
     ports:
       - "8080:8080"
       - "9090:9090"
@@ -39,7 +39,7 @@ services:
       dockerfile: dev.Dockerfile
     image: payments-dev:latest
     pull_policy: never
-    command: air -c .air.toml -- worker
+    command: sh -c "mkdir -p /app/tmp && chmod 755 /app/tmp && air -c .air.toml -- worker"
     ports:
       - "9191:9090"
       - "2346:2345"  # Delve debug port for worker
