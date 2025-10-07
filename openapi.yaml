@@ -3274,7 +3274,7 @@ components:
           type: string
           format: date-time
         status:
-          $ref: '#/components/schemas/PaymentStatus'
+          $ref: '#/components/schemas/LegacyPaymentStatus'
         error:
           type: string
           nullable: true
@@ -3965,6 +3965,32 @@ components:
         - ach debit
         - ach
         - rtp
+    LegacyPaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - SUCCEEDED
+        - CANCELLED
+        - FAILED
+        - EXPIRED
+        - REFUNDED
+        - REFUNDED_FAILURE
+        - DISPUTE
+        - DISPUTE_WON
+        - DISPUTE_LOST
+        - OTHER
+        - WAITING_FOR_VALIDATION
+        - PROCESSING
+        - PROCESSED
+        - FAILED
+        - REJECTED
+        - VALIDATED
+        - ASK_RETRIED
+        - ASK_REVERSED
+        - REVERSE_PROCESSING
+        - REVERSE_FAILED
+        - PARTIALLY_REVERSED
+        - REVERSED
     PaymentStatus:
       type: string
       enum:

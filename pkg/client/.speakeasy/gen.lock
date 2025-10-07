@@ -1,7 +1,7 @@
 lockVersion: 2.0.0
 id: 1fa8a26f-45d9-44b7-8b97-fbeebcdcd8b1
 management:
-  docChecksum: 6af4917cd448510cb9cf66eb17bf6b0a
+  docChecksum: e24238fe4d2468a0c075e663b54fcc6f
   docVersion: v1
   speakeasyVersion: 1.525.0
   generationVersion: 2.562.2
@@ -58,6 +58,7 @@ generatedFiles:
   - /models/components/forwardbankaccountrequest.go
   - /models/components/genericconfig.go
   - /models/components/httpmetadata.go
+  - /models/components/legacypaymentstatus.go
   - /models/components/mangopayconfig.go
   - /models/components/modulrconfig.go
   - /models/components/moneycorpconfig.go
@@ -353,6 +354,7 @@ generatedFiles:
   - docs/models/components/forwardbankaccountrequest.md
   - docs/models/components/genericconfig.md
   - docs/models/components/httpmetadata.md
+  - docs/models/components/legacypaymentstatus.md
   - docs/models/components/mangopayconfig.md
   - docs/models/components/modulrconfig.md
   - docs/models/components/moneycorpconfig.md
