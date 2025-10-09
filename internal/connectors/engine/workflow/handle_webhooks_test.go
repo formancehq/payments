@@ -3,6 +3,7 @@ package workflow
 import (
 	"context"
 	"errors"
+	"math/big"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/pointer"
@@ -25,6 +26,12 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Success() {
 					Account:         &s.pspAccount,
 					ExternalAccount: &s.pspAccount,
 					Payment:         &s.pspPayment,
+					Balance: &models.PSPBalance{
+						AccountReference: s.pspAccount.Reference,
+						CreatedAt:        time.Time{},
+						Amount:           big.NewInt(100),
+						Asset:            "EUR/2",
+					},
 				},
 			},
 		}, nil
@@ -37,6 +44,8 @@ func (s *UnitTestSuite) Test_HandleWebhooks_Success() {
 		s.Equal(s.accountID.Reference, req.ExternalAccount.Reference)
 		s.NotNil(req.Payment)
 		s.Equal(s.paymentPayoutID.Reference, req.Payment.Reference)
+		s.NotNil(req.Balance)
+		s.Equal(s.pspBalance.AccountReference, req.Balance.AccountReference)
 		return nil
 	})
 
@@ -225,6 +234,10 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_Success() {
 						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
+						DataToFetch: []models.OpenBankingDataToFetch{
+							models.OpenBankingDataToFetchAccountsAndBalances,
+							models.OpenBankingDataToFetchPayments,
+						},
 					},
 				},
 			},
@@ -296,6 +309,10 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGe
 						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
+						DataToFetch: []models.OpenBankingDataToFetch{
+							models.OpenBankingDataToFetchAccountsAndBalances,
+							models.OpenBankingDataToFetchPayments,
+						},
 					},
 				},
 			},
@@ -330,6 +347,156 @@ func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_StorageConnectorsGe
 	err := s.env.GetWorkflowError()
 	s.Error(err)
 	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_EmptyDataToFetch_Success() {
+	connectionID := "test-connection-id"
+	psuID := uuid.New()
+
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					DataReadyToFetch: &models.PSPDataReadyToFetch{
+						PSUID:        &psuID,
+						ConnectionID: &connectionID,
+						FromPayload:  []byte(`{"test": "data"}`),
+						DataToFetch:  []models.OpenBankingDataToFetch{}, // Empty array
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
+		return &s.connector, nil
+	})
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
+		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
+			Connection: &models.OpenBankingConnection{
+				ConnectionID: connectionID,
+				ConnectorID:  s.connectorID,
+				CreatedAt:    time.Now(),
+				Status:       models.ConnectionStatusActive,
+			},
+			PSUID: psuID,
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersGetActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
+		return &models.OpenBankingForwardedUser{
+			ConnectorID: connectorID,
+			AccessToken: &models.Token{
+				Token:     "test-token",
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+		}, nil
+	})
+	s.env.OnWorkflow(RunFetchOpenBankingData, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req FetchOpenBankingData, tasks []models.ConnectorTaskTree) error {
+		s.Equal(psuID, req.PsuID)
+		s.Equal(connectionID, req.ConnectionID)
+		s.Equal(s.connectorID, req.ConnectorID)
+		s.NotNil(req.FromPayload)
+		s.Equal(connectionID, req.FromPayload.ID)
+		s.Equal([]models.OpenBankingDataToFetch{}, req.DataToFetch)
+		// The actual error handling for empty DataToFetch is tested in fetch_open_banking_data tests
+		// Here we just verify the webhook processing works correctly
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URL:         "https://example.com/webhook",
+		URLPath:     "/webhook",
+		Webhook: models.Webhook{
+			ID:          "test-webhook",
+			ConnectorID: s.connectorID,
+			Body:        []byte(`{"test": "data"}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_DataReadyToFetch_AccountsAndBalancesSimultaneously_Success() {
+	connectionID := "test-connection-id"
+	psuID := uuid.New()
+
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					DataReadyToFetch: &models.PSPDataReadyToFetch{
+						PSUID:        &psuID,
+						ConnectionID: &connectionID,
+						FromPayload:  []byte(`{"test": "data"}`),
+						DataToFetch: []models.OpenBankingDataToFetch{
+							models.OpenBankingDataToFetchAccountsAndBalances,
+						},
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageConnectorsGetActivity, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID) (*models.Connector, error) {
+		return &s.connector, nil
+	})
+	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, connectorID models.ConnectorID, connectionID string) (*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult, error) {
+		return &activities.StorageOpenBankingConnectionsGetFromConnectionIDResult{
+			Connection: &models.OpenBankingConnection{
+				ConnectionID: connectionID,
+				ConnectorID:  s.connectorID,
+				CreatedAt:    time.Now(),
+				Status:       models.ConnectionStatusActive,
+			},
+			PSUID: psuID,
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageOpenBankingForwardedUsersGetActivity, mock.Anything, mock.Anything, mock.Anything).Return(func(ctx context.Context, psuID uuid.UUID, connectorID models.ConnectorID) (*models.OpenBankingForwardedUser, error) {
+		return &models.OpenBankingForwardedUser{
+			ConnectorID: connectorID,
+			AccessToken: &models.Token{
+				Token:     "test-token",
+				ExpiresAt: time.Now().Add(time.Hour),
+			},
+		}, nil
+	})
+	s.env.OnWorkflow(RunFetchOpenBankingData, mock.Anything, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req FetchOpenBankingData, tasks []models.ConnectorTaskTree) error {
+		s.Equal(psuID, req.PsuID)
+		s.Equal(connectionID, req.ConnectionID)
+		s.Equal(s.connectorID, req.ConnectorID)
+		s.NotNil(req.FromPayload)
+		s.Equal(connectionID, req.FromPayload.ID)
+		s.Equal([]models.OpenBankingDataToFetch{models.OpenBankingDataToFetchAccountsAndBalances}, req.DataToFetch)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URL:         "https://example.com/webhook",
+		URLPath:     "/webhook",
+		Webhook: models.Webhook{
+			ID:          "test-webhook",
+			ConnectorID: s.connectorID,
+			Body:        []byte(`{"test": "data"}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
 }
 
 // UserLinkSessionFinished webhook tests
@@ -525,6 +692,206 @@ func (s *UnitTestSuite) Test_HandleWebhooks_UserConnectionPendingDisconnect_Stor
 	})
 	s.env.OnActivity(activities.StorageOpenBankingConnectionsGetFromConnectionIDActivity, mock.Anything, mock.Anything, mock.Anything).Return(
 		(*activities.StorageOpenBankingConnectionsGetFromConnectionIDResult)(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
+// Balance webhook tests
+func (s *UnitTestSuite) Test_HandleWebhooks_Balance_Success() {
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	createdAt := time.Now()
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					Balance: &models.PSPBalance{
+						AccountReference: s.pspAccount.Reference,
+						Amount:           big.NewInt(100),
+						Asset:            "EUR/2",
+						CreatedAt:        createdAt,
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&s.account, nil)
+	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
+		nil,
+	)
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
+		s.NotNil(req.Balance)
+		s.Equal(req.Balance.Balance, big.NewInt(100))
+		s.Equal(req.Balance.Asset, "EUR/2")
+		s.Equal(req.Balance.CreatedAt.Compare(createdAt), 0)
+		return nil
+	})
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_Balance_StorageAccountsGet_Error() {
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					Balance: &models.PSPBalance{
+						AccountReference: s.pspAccount.Reference,
+						Amount:           big.NewInt(100),
+						Asset:            "EUR/2",
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, mock.Anything).Once().Return(
+		(*models.Account)(nil), temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")),
+	)
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "error-test")
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_Balance_TranslateBalance_Error() {
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					Balance: &models.PSPBalance{
+						AccountReference: s.pspAccount.Reference,
+						Amount:           big.NewInt(100),
+						Asset:            "EUR/2",
+
+						// I do not pass CreatedAt to fail validation
+					},
+				},
+			},
+		}, nil
+	})
+
+	s.env.OnActivity(
+		activities.StorageAccountsGetActivity, mock.Anything, mock.Anything).Return(&s.account, nil)
+
+	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
+		ConnectorID: s.connectorID,
+		URLPath:     "/test",
+		Webhook: models.Webhook{
+			ID:          "test",
+			ConnectorID: s.connectorID,
+			QueryValues: map[string][]string{
+				"test": {"test"},
+			},
+			Headers: map[string][]string{
+				"test": {"test"},
+			},
+			Body: []byte(`{}`),
+		},
+		Config: &models.WebhookConfig{
+			Name:        "test",
+			ConnectorID: s.connectorID,
+			URLPath:     "/test",
+		},
+	})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err := s.env.GetWorkflowError()
+	s.Error(err)
+	s.ErrorContains(err, "failed to translate balances")
+}
+
+func (s *UnitTestSuite) Test_HandleWebhooks_Balance_Store_Error() {
+	s.env.OnActivity(activities.StorageWebhooksStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.PluginTranslateWebhookActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.TranslateWebhookRequest) (*models.TranslateWebhookResponse, error) {
+		return &models.TranslateWebhookResponse{
+			Responses: []models.WebhookResponse{
+				{
+					Balance: &models.PSPBalance{
+						AccountReference: s.pspAccount.Reference,
+						Amount:           big.NewInt(100),
+						Asset:            "EUR/2",
+						CreatedAt:        time.Now(),
+					},
+				},
+			},
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageAccountsGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&s.account, nil)
+	s.env.OnActivity(activities.StorageBalancesStoreActivity, mock.Anything, mock.Anything).Once().Return(
+		temporal.NewNonRetryableApplicationError("error-test", "STORAGE", errors.New("error-test")),
 	)
 
 	s.env.ExecuteWorkflow(RunHandleWebhooks, HandleWebhooks{
@@ -1062,6 +1429,9 @@ func (s *UnitTestSuite) Test_HandleWebhooks_MultipleResponses_Success() {
 						PSUID:        &psuID,
 						ConnectionID: &connectionID,
 						FromPayload:  []byte(`{"test": "data"}`),
+						DataToFetch: []models.OpenBankingDataToFetch{
+							models.OpenBankingDataToFetchAccountsAndBalances,
+						},
 					},
 				},
 				{

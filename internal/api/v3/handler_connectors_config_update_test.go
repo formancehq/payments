@@ -38,9 +38,11 @@ var _ = Describe("API v3 Connector Config Update", func() {
 			}
 			connectorName := "some-name"
 			connector = models.Connector{
-				ID:       connectorID,
-				Name:     connectorName,
-				Provider: connectorID.Provider,
+				ConnectorBase: models.ConnectorBase{
+					ID:       connectorID,
+					Name:     connectorName,
+					Provider: connectorID.Provider,
+				},
 			}
 			config = models.DefaultConfig()
 			config.Name = connectorName

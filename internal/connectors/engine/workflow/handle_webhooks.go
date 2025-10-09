@@ -55,10 +55,9 @@ func (w Workflow) runHandleWebhooks(
 			// A webhook has been received from the connector indicating that
 			// there is new data to fetch from the connector.
 			// Let's launch the related workflow to fetch the data.
-			if err := w.handleTransactionReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
+			if err := w.handleOpenBankingDataReadyToFetchWebhook(ctx, handleWebhooks, response); err != nil {
 				return fmt.Errorf("handling open banking webhook: %w", err)
 			}
-
 		case response.UserLinkSessionFinished != nil:
 			// OpenBanking specific webhook. A user has finished the link flow
 			// and has a valid connection to his bank. We need to update the
@@ -152,6 +151,7 @@ func (w Workflow) handleDataToStoreWebhook(
 			Payment:         response.Payment,
 			PaymentToDelete: response.PaymentToDelete,
 			PaymentToCancel: response.PaymentToCancel,
+			Balance:         response.Balance,
 		},
 	).Get(ctx, nil); err != nil {
 		applicationError := &temporal.ApplicationError{}
@@ -255,7 +255,7 @@ func (w Workflow) handleOpenBankingPaymentWebhook(
 	})
 }
 
-func (w Workflow) handleTransactionReadyToFetchWebhook(
+func (w Workflow) handleOpenBankingDataReadyToFetchWebhook(
 	ctx workflow.Context,
 	handleWebhooks HandleWebhooks,
 	response models.WebhookResponse,
@@ -302,10 +302,10 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 	}
 
 	payload, err := json.Marshal(&models.OpenBankingForwardedUserFromPayload{
-		PSUID:                   psuID,
-		OpenBankingForwardedUser:           obForwardedUser,
-		OpenBankingConnection: conn,
-		FromPayload:             response.DataReadyToFetch.FromPayload,
+		PSUID:                    psuID,
+		OpenBankingForwardedUser: obForwardedUser,
+		OpenBankingConnection:    conn,
+		FromPayload:              response.DataReadyToFetch.FromPayload,
 	})
 	if err != nil {
 		return fmt.Errorf("marshalling open banking from payload: %w", err)
@@ -344,11 +344,12 @@ func (w Workflow) handleTransactionReadyToFetchWebhook(
 			ConnectionID: connectionID,
 			ConnectorID:  handleWebhooks.ConnectorID,
 			Config:       config,
+			DataToFetch:  response.DataReadyToFetch.DataToFetch,
 			FromPayload:  fromPayload,
 		},
 		[]models.ConnectorTaskTree{},
 	).GetChildWorkflowExecution().Get(ctx, nil); err != nil {
-		return fmt.Errorf("running transaction ready to fetch: %w", err)
+		return fmt.Errorf("running %s: %w", RunFetchOpenBankingData, err)
 	}
 
 	return nil
@@ -655,6 +656,7 @@ type StoreWebhookTranslation struct {
 	Payment         *models.PSPPayment
 	PaymentToDelete *models.PSPPaymentsToDelete
 	PaymentToCancel *models.PSPPaymentsToCancel
+	Balance         *models.PSPBalance
 }
 
 func (w Workflow) runStoreWebhookTranslation(
@@ -686,6 +688,45 @@ func (w Workflow) runStoreWebhookTranslation(
 
 		sendEvent = &SendEvents{
 			Account: pointer.For(accounts[0]),
+		}
+	}
+
+	if storeWebhookTranslation.Balance != nil {
+		acc, err := activities.StorageAccountsGet(
+			infiniteRetryContext(ctx),
+			models.AccountID{
+				Reference:   storeWebhookTranslation.Balance.AccountReference,
+				ConnectorID: storeWebhookTranslation.ConnectorID,
+			},
+		)
+		if err != nil {
+			return fmt.Errorf("failed to get account: %w", err)
+		}
+
+		balance, err := models.FromPSPBalance(
+			*storeWebhookTranslation.Balance,
+			storeWebhookTranslation.ConnectorID,
+			acc.PsuID,
+			acc.OpenBankingConnectionID,
+		)
+		if err != nil {
+			return temporal.NewNonRetryableApplicationError(
+				"failed to translate balances",
+				ErrValidation,
+				err,
+			)
+		}
+
+		err = activities.StorageBalancesStore(
+			infiniteRetryContext(ctx),
+			[]models.Balance{balance},
+		)
+		if err != nil {
+			return fmt.Errorf("storing next balances: %w", err)
+		}
+
+		sendEvent = &SendEvents{
+			Balance: pointer.For(balance),
 		}
 	}
 

@@ -6,9 +6,12 @@ import (
 	"github.com/formancehq/go-libs/v3/api"
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/pointer"
+	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/api/backend"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/otel"
 	"github.com/formancehq/payments/internal/storage"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 func schedulesList(backend backend.Backend) http.HandlerFunc {
@@ -16,8 +19,17 @@ func schedulesList(backend backend.Backend) http.HandlerFunc {
 		ctx, span := otel.Tracer().Start(r.Context(), "v3_schedulesList")
 		defer span.End()
 
+		span.SetAttributes(attribute.String("connectorID", connectorID(r)))
+		connectorID, err := models.ConnectorIDFromString(connectorID(r))
+		if err != nil {
+			otel.RecordError(span, err)
+			api.BadRequest(w, ErrInvalidID, err)
+			return
+		}
+
 		query, err := bunpaginate.Extract[storage.ListSchedulesQuery](r, func() (*storage.ListSchedulesQuery, error) {
-			options, err := getPagination(span, r, storage.ScheduleQuery{})
+			builder := query.And(query.Match("connector_id", connectorID.String()))
+			options, err := getPaginationWithBuilder(span, r, builder, storage.ScheduleQuery{})
 			if err != nil {
 				return nil, err
 			}

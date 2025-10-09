@@ -160,11 +160,13 @@ func (e *engine) InstallConnector(ctx context.Context, provider string, rawConfi
 	}
 
 	connector := models.Connector{
-		ID:        connectorID,
-		Name:      config.Name,
-		CreatedAt: time.Now().UTC(),
-		Provider:  provider,
-		Config:    validatedConfig,
+		ConnectorBase: models.ConnectorBase{
+			ID:        connectorID,
+			Name:      config.Name,
+			CreatedAt: time.Now().UTC(),
+			Provider:  provider,
+		},
+		Config: validatedConfig,
 	}
 
 	// Detached the context to avoid being in a weird state if request is

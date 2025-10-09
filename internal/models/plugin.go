@@ -96,6 +96,7 @@ type WebhookResponse struct {
 	Payment         *PSPPayment
 	PaymentToDelete *PSPPaymentsToDelete
 	PaymentToCancel *PSPPaymentsToCancel
+	Balance         *PSPBalance
 
 	OpenBankingAccount *PSPOpenBankingAccount
 	OpenBankingPayment *PSPOpenBankingPayment
@@ -109,10 +110,18 @@ type WebhookResponse struct {
 	UserConnectionReconnected       *PSPUserConnectionReconnected
 }
 
+type OpenBankingDataToFetch string
+
+const (
+	OpenBankingDataToFetchPayments            OpenBankingDataToFetch = "payments"
+	OpenBankingDataToFetchAccountsAndBalances OpenBankingDataToFetch = "accounts_and_balances"
+)
+
 type PSPDataReadyToFetch struct {
 	PSUID        *uuid.UUID
 	ConnectionID *string
 	FromPayload  json.RawMessage
+	DataToFetch  []OpenBankingDataToFetch
 }
 
 type PSPDataToDelete struct {
@@ -236,7 +245,7 @@ func (u UserConnectionDataSynced) IdempotencyKey() string {
 }
 
 type OpenBankingForwardedUserFromPayload struct {
-	PSUID                   uuid.UUID
+	PSUID                    uuid.UUID
 	OpenBankingForwardedUser *OpenBankingForwardedUser
 	OpenBankingConnection    *OpenBankingConnection
 	FromPayload              json.RawMessage

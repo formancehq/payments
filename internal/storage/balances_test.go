@@ -33,11 +33,13 @@ func defaultBalances() []models.Balance {
 			Balance:       big.NewInt(1000),
 		},
 		{
-			AccountID:     defaultAccounts[0].ID,
-			CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
-			LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
-			Asset:         "EUR/2",
-			Balance:       big.NewInt(150),
+			AccountID:               defaultAccounts[0].ID,
+			CreatedAt:               now.Add(-55 * time.Minute).UTC().Time,
+			LastUpdatedAt:           now.Add(-55 * time.Minute).UTC().Time,
+			Asset:                   "EUR/2",
+			Balance:                 big.NewInt(150),
+			PsuID:                   &defaultPSU2.ID,
+			OpenBankingConnectionID: &defaultOpenBankingConnection.ConnectionID,
 		},
 	}
 }
@@ -73,6 +75,9 @@ func TestBalancesUpsert(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
+	upsertConnector(t, ctx, store, defaultConnector)
+	createPSU(t, ctx, store, defaultPSU2)
+	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
@@ -283,43 +288,6 @@ func TestBalancesUpsert(t *testing.T) {
 	})
 }
 
-func TestBalancesDeleteFromConnectorID(t *testing.T) {
-	t.Parallel()
-
-	ctx := logging.TestingContext()
-	store := newStore(t)
-	defer store.Close()
-
-	upsertConnector(t, ctx, store, defaultConnector)
-	upsertAccounts(t, ctx, store, defaultAccounts())
-	upsertBalances(t, ctx, store, defaultBalances())
-	upsertBalances(t, ctx, store, defaultBalances2())
-
-	t.Run("delete balances from unknown connector id", func(t *testing.T) {
-		err := store.BalancesDeleteFromConnectorID(ctx, models.ConnectorID{
-			Reference: uuid.New(),
-			Provider:  "unknown",
-		})
-		require.NoError(t, err)
-	})
-
-	t.Run("delete balances from known connector id", func(t *testing.T) {
-		accounts := defaultAccounts()
-		err := store.BalancesDeleteFromConnectorID(ctx, defaultConnector.ID)
-		require.NoError(t, err)
-
-		q := NewListBalancesQuery(
-			bunpaginate.NewPaginatedQueryOptions(BalanceQuery{
-				AccountID: pointer.For(accounts[0].ID),
-			}).WithPageSize(15),
-		)
-
-		cursor, err := store.BalancesList(ctx, q)
-		require.NoError(t, err)
-		require.Len(t, cursor.Data, 0)
-	})
-}
-
 func TestBalancesList(t *testing.T) {
 	t.Parallel()
 
@@ -328,6 +296,8 @@ func TestBalancesList(t *testing.T) {
 	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
+	createPSU(t, ctx, store, defaultPSU2)
+	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
 	upsertBalances(t, ctx, store, defaultBalances2())
@@ -342,18 +312,22 @@ func TestBalancesList(t *testing.T) {
 
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     accounts[0].ID,
-				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
-				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
-				Asset:         "EUR/2",
-				Balance:       big.NewInt(150),
+				AccountID:               accounts[0].ID,
+				CreatedAt:               now.Add(-55 * time.Minute).UTC().Time,
+				LastUpdatedAt:           now.Add(-55 * time.Minute).UTC().Time,
+				Asset:                   "EUR/2",
+				Balance:                 big.NewInt(150),
+				PsuID:                   &defaultPSU2.ID,
+				OpenBankingConnectionID: &defaultOpenBankingConnection.ConnectionID,
 			},
 			{
-				AccountID:     accounts[0].ID,
-				CreatedAt:     now.Add(-60 * time.Minute).UTC().Time,
-				LastUpdatedAt: now.Add(-60 * time.Minute).UTC().Time,
-				Asset:         "USD/2",
-				Balance:       big.NewInt(100),
+				AccountID:               accounts[0].ID,
+				CreatedAt:               now.Add(-60 * time.Minute).UTC().Time,
+				LastUpdatedAt:           now.Add(-60 * time.Minute).UTC().Time,
+				Asset:                   "USD/2",
+				Balance:                 big.NewInt(100),
+				PsuID:                   nil,
+				OpenBankingConnectionID: nil,
 			},
 		}
 
@@ -474,11 +448,13 @@ func TestBalancesList(t *testing.T) {
 		accounts := defaultAccounts()
 		expectedBalances := []models.Balance{
 			{
-				AccountID:     accounts[0].ID,
-				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
-				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
-				Asset:         "EUR/2",
-				Balance:       big.NewInt(150),
+				AccountID:               accounts[0].ID,
+				CreatedAt:               now.Add(-55 * time.Minute).UTC().Time,
+				LastUpdatedAt:           now.Add(-55 * time.Minute).UTC().Time,
+				Asset:                   "EUR/2",
+				Balance:                 big.NewInt(150),
+				PsuID:                   &defaultPSU2.ID,
+				OpenBankingConnectionID: &defaultOpenBankingConnection.ConnectionID,
 			},
 			{
 				AccountID:     accounts[2].ID,
@@ -525,11 +501,13 @@ func TestBalancesList(t *testing.T) {
 		)
 		expectedBalances1 := []models.Balance{
 			{
-				AccountID:     accounts[0].ID,
-				CreatedAt:     now.Add(-55 * time.Minute).UTC().Time,
-				LastUpdatedAt: now.Add(-55 * time.Minute).UTC().Time,
-				Asset:         "EUR/2",
-				Balance:       big.NewInt(150),
+				AccountID:               accounts[0].ID,
+				CreatedAt:               now.Add(-55 * time.Minute).UTC().Time,
+				LastUpdatedAt:           now.Add(-55 * time.Minute).UTC().Time,
+				Asset:                   "EUR/2",
+				Balance:                 big.NewInt(150),
+				PsuID:                   &defaultPSU2.ID,
+				OpenBankingConnectionID: &defaultOpenBankingConnection.ConnectionID,
 			},
 		}
 
@@ -581,6 +559,8 @@ func TestBalancesGetAt(t *testing.T) {
 	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
+	createPSU(t, ctx, store, defaultPSU2)
+	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
 
@@ -660,6 +640,8 @@ func TestBalancesGetLatest(t *testing.T) {
 	defer store.Close()
 
 	upsertConnector(t, ctx, store, defaultConnector)
+	createPSU(t, ctx, store, defaultPSU2)
+	createOpenBankingConnection(t, ctx, store, defaultPSU2.ID, defaultOpenBankingConnection)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBalances(t, ctx, store, defaultBalances())
 

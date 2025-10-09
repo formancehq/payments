@@ -50,13 +50,15 @@ var _ = Context("Payments API Accounts", Serial, func() {
 
 	When("creating a new account", func() {
 		var (
-			e           chan *nats.Msg
-			connectorID string
-			err         error
+			e             chan *nats.Msg
+			connectorUUID uuid.UUID
+			connectorID   string
+			err           error
 		)
 
 		BeforeEach(func() {
-			connectorID, err = installConnector(ctx, app.GetValue(), uuid.New(), 3)
+			connectorUUID = uuid.New()
+			connectorID, err = installConnector(ctx, app.GetValue(), connectorUUID, 3)
 			Expect(err).To(BeNil())
 		})
 
@@ -104,6 +106,11 @@ var _ = Context("Payments API Accounts", Serial, func() {
 			getResponse, err := app.GetValue().SDK().Payments.V3.GetAccount(ctx, createResponse.GetV3CreateAccountResponse().Data.ID)
 			Expect(err).To(BeNil())
 			Expect(getResponse.GetV3GetAccountResponse().Data).To(Equal(createResponse.GetV3CreateAccountResponse().Data))
+			Expect(getResponse.GetV3GetAccountResponse().Data.Connector).NotTo(BeNil())
+			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector).NotTo(BeNil())
+
+			Expect(createResponse.GetV3CreateAccountResponse().Data.Connector.Name).NotTo(BeNil())
+			Expect(*createResponse.GetV3CreateAccountResponse().Data.Connector.Name).To(ContainSubstring(connectorUUID.String()))
 
 			Eventually(e).Should(Receive(Event(evts.EventTypeSavedAccounts)))
 		})

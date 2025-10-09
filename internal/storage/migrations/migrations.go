@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/migrations"
@@ -43,8 +44,7 @@ var bankBridgePSPUserId string
 //go:embed 20-psu-bank-bridges-connection-updated-at.sql
 var psuBankBridgeConnectionUpdatedAt string
 
-//go:embed 21-psu-connection-payments-accounts.sql
-var psuConnectionPaymentsAccounts string
+// 21 is not used anymore, the file is kept for historical reference (some staging env have run it)
 
 //go:embed 22-rename-bank-bridges-open-banking.sql
 var renameBankBridgesOpenBanking string
@@ -303,12 +303,16 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 		migrations.Migration{
 			Name: "psu connection payments accounts",
 			Up: func(ctx context.Context, db bun.IDB) error {
-				return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
-					logger.Info("running psu connection payments accounts migration...")
-					_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
-					logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
-					return err
-				})
+				// Migration 21 ran in some environments, but not others -- we keep the numbering but we
+				// skip the actual migration here. Migration 23 is the replacement (we're removing the table locking on
+				// payment, accounts etc)
+				//return db.RunInTx(ctx, &sql.TxOptions{}, func(ctx context.Context, tx bun.Tx) error {
+				//	logger.Info("running psu connection payments accounts migration...")
+				//	_, err := tx.ExecContext(ctx, psuConnectionPaymentsAccounts)
+				//	logger.WithField("error", err).Info("finished running psu connection payments accounts migration")
+				//	return err
+				//})
+				return nil
 			},
 		},
 		migrations.Migration{
@@ -320,6 +324,28 @@ func registerMigrations(logger logging.Logger, migrator *migrations.Migrator, en
 					logger.WithField("error", err).Info("finished running rename bank bridges open banking migration")
 					return err
 				})
+			},
+		},
+		migrations.Migration{
+			Name: "psu connection payments accounts async",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running psu connection payments accounts async migration...")
+				// Guard: IDB must be *bun.DB, not *bun.Tx.
+				if _, ok := db.(*bun.Tx); ok {
+					return fmt.Errorf("migration 23 must not run inside a transaction; pass a *bun.DB")
+				}
+				err := AddPSUConnectionPaymentsAccountsAsync(ctx, db)
+				logger.WithField("error", err).Info("finished running psu connection payments accounts async migration")
+				return err
+			},
+		},
+		migrations.Migration{
+			Name: "add connection and psu foreign keys on balances",
+			Up: func(ctx context.Context, db bun.IDB) error {
+				logger.Info("running add balances foreign key migration...")
+				err := AddBalancesForeignKey(ctx, db)
+				logger.WithField("error", err).Info("finished running add balances foreign key migration")
+				return err
 			},
 		},
 	)

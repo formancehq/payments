@@ -1,12 +1,19 @@
-# Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![discord](https://img.shields.io/discord/846686859869814784?label=chat%20@%20discord)](https://discord.gg/xyHvcbzk4w) [![codecov](https://codecov.io/github/formancehq/payments/graph/badge.svg?token=SrhCCbrtnV)](https://codecov.io/github/formancehq/payments)
+# Formance Payments [![test](https://github.com/formancehq/payments/actions/workflows/main.yml/badge.svg)](https://github.com/formancehq/payments/actions/workflows/main.yml) [![goreportcard](https://goreportcard.com/badge/github.com/formancehq/payments)](https://goreportcard.com/report/github.com/formancehq/payments) [![codecov](https://codecov.io/github/formancehq/payments/graph/badge.svg?token=SrhCCbrtnV)](https://codecov.io/github/formancehq/payments)
 
 # Getting started
 
-Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installations using brew, apt, yum or docker are also [available](https://docs.formance.com/oss/payments/get-started/installation).
+Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installing it locally using Docker is also possible.
 
 ```SHELL
-payments
+$ git clone git@github.com:formancehq/payments.git
+$ cd payments
+$ just compile-plugins
+$ docker compose up
 ```
+
+## Debugging
+You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and 
+live reloading.
 
 # What is it?
 
@@ -22,5 +29,3 @@ Because it is a framework, it is extensible. Please follow the guide below if yo
 # Contribute
 
 Please follow [this guide](./CONTRIBUTING.md) if you want to contribute.
-
-![Frame 1 (2)](https://user-images.githubusercontent.com/1770991/134163361-d86c5728-6075-4510-8de7-06df1f6ed740.png)

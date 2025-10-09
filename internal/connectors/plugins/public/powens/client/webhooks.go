@@ -200,11 +200,17 @@ func (c *ConnectionSyncedConnection) UnmarshalJSON(data []byte) error {
 
 	lastUpdate := time.Time{}
 	if aux.LastUpdate != "" {
-		var err error
-		lastUpdate, err = time.Parse(time.DateTime, aux.LastUpdate)
+		// Powens sends last_update in Europe/Paris timezone without offset information.
+		// Parse it in that location and convert to UTC to keep a consistent internal representation.
+		loc, err := time.LoadLocation("Europe/Paris")
 		if err != nil {
 			return err
 		}
+		t, err := time.ParseInLocation(time.DateTime, aux.LastUpdate, loc)
+		if err != nil {
+			return err
+		}
+		lastUpdate = t.In(time.UTC)
 	}
 
 	*c = ConnectionSyncedConnection{

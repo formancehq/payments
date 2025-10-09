@@ -43,6 +43,10 @@ func getQueryBuilder(span trace.Span, r *http.Request) (query.Builder, error) {
 }
 
 func getPagination[T any](span trace.Span, r *http.Request, options T) (*bunpaginate.PaginatedQueryOptions[T], error) {
+	return getPaginationWithBuilder[T](span, r, nil, options)
+}
+
+func getPaginationWithBuilder[T any](span trace.Span, r *http.Request, appendQuery query.Builder, options T) (*bunpaginate.PaginatedQueryOptions[T], error) {
 	qb, err := getQueryBuilder(span, r)
 	if err != nil {
 		return nil, err
@@ -54,5 +58,18 @@ func getPagination[T any](span trace.Span, r *http.Request, options T) (*bunpagi
 	}
 	span.SetAttributes(attribute.Int64("page_size", int64(pageSize)))
 
-	return pointer.For(bunpaginate.NewPaginatedQueryOptions(options).WithQueryBuilder(qb).WithPageSize(pageSize)), nil
+	queryBuilders := make([]query.Builder, 0, 2)
+	if qb != nil {
+		queryBuilders = append(queryBuilders, qb)
+	}
+	if appendQuery != nil {
+		queryBuilders = append(queryBuilders, appendQuery)
+	}
+
+	if len(queryBuilders) == 0 {
+		return pointer.For(bunpaginate.NewPaginatedQueryOptions(options).WithPageSize(pageSize)), nil
+	}
+
+	builder := query.And(queryBuilders...)
+	return pointer.For(bunpaginate.NewPaginatedQueryOptions(options).WithQueryBuilder(builder).WithPageSize(pageSize)), nil
 }

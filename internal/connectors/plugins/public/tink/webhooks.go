@@ -225,6 +225,10 @@ func (p *Plugin) handleAccountTransactionsModified(ctx context.Context, req mode
 	response := models.WebhookResponse{
 		DataReadyToFetch: &models.PSPDataReadyToFetch{
 			FromPayload: payload,
+			DataToFetch: []models.OpenBankingDataToFetch{
+				models.OpenBankingDataToFetchAccountsAndBalances,
+				models.OpenBankingDataToFetchPayments,
+			},
 		},
 	}
 
@@ -281,6 +285,10 @@ func (p *Plugin) handleAccountCreated(ctx context.Context, req models.TranslateW
 			DataReadyToFetch: &models.PSPDataReadyToFetch{
 				PSUID:       &psuID,
 				FromPayload: payload,
+				DataToFetch: []models.OpenBankingDataToFetch{
+					models.OpenBankingDataToFetchAccountsAndBalances,
+					models.OpenBankingDataToFetchPayments,
+				},
 			},
 		},
 	}, nil

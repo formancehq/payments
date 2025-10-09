@@ -13,6 +13,7 @@ type V3AccountRaw struct {
 type V3Account struct {
 	ID           string            `json:"id"`
 	ConnectorID  string            `json:"connectorID"`
+	Connector    *V3ConnectorBase  `json:"connector,omitempty"`
 	Provider     string            `json:"provider"`
 	Reference    string            `json:"reference"`
 	CreatedAt    time.Time         `json:"createdAt"`
@@ -46,6 +47,13 @@ func (o *V3Account) GetConnectorID() string {
 		return ""
 	}
 	return o.ConnectorID
+}
+
+func (o *V3Account) GetConnector() *V3ConnectorBase {
+	if o == nil {
+		return nil
+	}
+	return o.Connector
 }
 
 func (o *V3Account) GetProvider() string {

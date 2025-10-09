@@ -82,6 +82,13 @@ func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	return p.fetchNextAccounts(ctx, req)
 }
 
+func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
+	if p.client == nil {
+		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+	}
+	return p.fetchNextBalances(ctx, req)
+}
+
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
 		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
