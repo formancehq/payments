@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -23,7 +23,7 @@ func (c *client) GetExternalAccounts(
 	if !timeline.IsCaughtUp() {
 		var oldest interface{}
 		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
-			params.Context = metrics.OperationContext(ctx, "list_bank_accounts_scan")
+			params.Context = pluginsdkmetrics.OperationContext(ctx, "list_bank_accounts_scan")
 			itr := c.bankAccountClient.List(&stripe.BankAccountListParams{
 				Account:    &accountID,
 				ListParams: params,
@@ -43,7 +43,7 @@ func (c *client) GetExternalAccounts(
 	itr := c.bankAccountClient.List(&stripe.BankAccountListParams{
 		Account: &accountID,
 		ListParams: stripe.ListParams{
-			Context:      metrics.OperationContext(ctx, "list_bank_accounts"),
+			Context:      pluginsdkmetrics.OperationContext(ctx, "list_bank_accounts"),
 			Limit:        &pageSize,
 			EndingBefore: &timeline.LatestID,
 		},

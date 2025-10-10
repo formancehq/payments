@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/plugins"
+	pluginsdk "github.com/formancehq/payments/pkg/pluginsdk/plugins"
 	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
-	"github.com/formancehq/payments/internal/connectors/plugins/registry"
+	sdkregistry "github.com/formancehq/payments/pkg/pluginsdk/registry"
 	"github.com/formancehq/payments/internal/models"
 )
 
 const ProviderName = "stripe"
 
+
 func init() {
-	registry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
+	sdkregistry.RegisterPlugin(ProviderName, models.PluginTypePSP, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
@@ -37,7 +38,7 @@ func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin
 	client := client.New(ProviderName, logger, nil, config.APIKey)
 
 	return &Plugin{
-		Plugin: plugins.NewBasePlugin(),
+		Plugin: pluginsdk.NewBasePlugin(),
 
 		name:   name,
 		logger: logger,
@@ -66,35 +67,35 @@ func (p *Plugin) Uninstall(ctx context.Context, req models.UninstallRequest) (mo
 
 func (p *Plugin) FetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextAccountsResponse{}, plugins.ErrNotYetInstalled
+        return models.FetchNextAccountsResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 	return p.fetchNextAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
 	if p.client == nil {
-		return models.FetchNextBalancesResponse{}, plugins.ErrNotYetInstalled
+        return models.FetchNextBalancesResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 	return p.fetchNextBalances(ctx, req)
 }
 
 func (p *Plugin) FetchNextExternalAccounts(ctx context.Context, req models.FetchNextExternalAccountsRequest) (models.FetchNextExternalAccountsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextExternalAccountsResponse{}, plugins.ErrNotYetInstalled
+        return models.FetchNextExternalAccountsResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 	return p.fetchNextExternalAccounts(ctx, req)
 }
 
 func (p *Plugin) FetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	if p.client == nil {
-		return models.FetchNextPaymentsResponse{}, plugins.ErrNotYetInstalled
+        return models.FetchNextPaymentsResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 	return p.fetchNextPayments(ctx, req)
 }
 
 func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRequest) (models.CreateTransferResponse, error) {
 	if p.client == nil {
-		return models.CreateTransferResponse{}, plugins.ErrNotYetInstalled
+        return models.CreateTransferResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 
 	payment, err := p.createTransfer(ctx, req.PaymentInitiation)
@@ -109,7 +110,7 @@ func (p *Plugin) CreateTransfer(ctx context.Context, req models.CreateTransferRe
 
 func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransferRequest) (models.ReverseTransferResponse, error) {
 	if p.client == nil {
-		return models.ReverseTransferResponse{}, plugins.ErrNotYetInstalled
+        return models.ReverseTransferResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 
 	payment, err := p.reverseTransfer(ctx, req.PaymentInitiationReversal)
@@ -124,7 +125,7 @@ func (p *Plugin) ReverseTransfer(ctx context.Context, req models.ReverseTransfer
 
 func (p *Plugin) CreatePayout(ctx context.Context, req models.CreatePayoutRequest) (models.CreatePayoutResponse, error) {
 	if p.client == nil {
-		return models.CreatePayoutResponse{}, plugins.ErrNotYetInstalled
+        return models.CreatePayoutResponse{}, pluginsdk.ErrNotYetInstalled
 	}
 
 	payment, err := p.createPayout(ctx, req.PaymentInitiation)
