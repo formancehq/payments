@@ -73,7 +73,7 @@ func (b *BankAccount) UnmarshalJSON(data []byte) error {
 	var lastUpdate time.Time
 	if ba.LastUpdate != "" {
 		var err error
-		lastUpdate, err = time.Parse(time.DateTime, ba.LastUpdate)
+		lastUpdate, err = ConvertTimeToUTC(ba.LastUpdate, time.DateTime)
 		if err != nil {
 			return err
 		}

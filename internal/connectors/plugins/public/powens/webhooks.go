@@ -256,8 +256,8 @@ func (p *Plugin) handleConnectionSynced(ctx context.Context, req models.Translat
 		}
 
 		at := time.Now().UTC()
-		if !webhook.Connection.LastUpdate.IsZero() {
-			at = webhook.Connection.LastUpdate
+		if !account.LastUpdate.IsZero() {
+			at = account.LastUpdate
 		}
 
 		var balanceResponse *models.WebhookResponse

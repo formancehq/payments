@@ -145,6 +145,25 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			Expect(err.Error()).To(ContainSubstring("unsupported webhook event type"))
 			Expect(resp).To(Equal(models.TranslateWebhookResponse{}))
 		})
+
+		It("sets balance CreatedAt to account lastUpdate when present and converts to UTC from default Europe/Paris", func(ctx SpecContext) {
+			body := []byte(`{"user":{"id":1},"connection":{"id":10,"state":"","accounts":[{"id":100,"id_user":1,"id_connection":10,"currency":{"id":"EUR","precision":2},"last_update":"2023-05-01 12:34:56","balance":"123.45","transactions":[]}]}}`)
+			req := models.TranslateWebhookRequest{
+				Name:    string(client.WebhookEventTypeConnectionSynced),
+				Webhook: models.PSPWebhook{Body: body},
+			}
+			resp, err := plg.TranslateWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			// Last responses include balance if present; find it
+			var found bool
+			for _, r := range resp.Responses {
+				if r.Balance != nil {
+					found = true
+					Expect(r.Balance.CreatedAt.String()).To(Equal("2023-05-01 10:34:56 +0000 UTC"))
+				}
+			}
+			Expect(found).To(BeTrue())
+		})
 	})
 
 	Context("trim webhook", func() {
