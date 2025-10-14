@@ -48,7 +48,6 @@ func (t Transaction) MarshalJSON() ([]byte, error) {
 }
 
 func (t *Transaction) UnmarshalJSON(data []byte) error {
-	var err error
 	type transaction struct {
 		ID         int         `json:"id"`
 		AccountID  int         `json:"id_account"`
@@ -68,26 +67,29 @@ func (t *Transaction) UnmarshalJSON(data []byte) error {
 	t.AccountID = tr.AccountID
 
 	if tr.Date != "" {
-		t.Date, err = time.Parse(time.DateOnly, tr.Date)
+		date, err := ConvertTimeToUTC(tr.Date, time.DateOnly)
 		if err != nil {
 			return err
 		}
+		t.Date = date
 	}
 
 	if tr.DateTime != "" {
-		t.DateTime, err = time.Parse(time.RFC3339, tr.DateTime)
+		date, err := ConvertTimeToUTC(tr.DateTime, time.RFC3339)
 		if err != nil {
 			return err
 		}
+		t.DateTime = date
 	}
 	t.Value = tr.Value
 	t.Type = tr.Type
 
 	if tr.LastUpdate != "" {
-		t.LastUpdate, err = time.Parse(time.DateTime, tr.LastUpdate)
+		date, err := ConvertTimeToUTC(tr.LastUpdate, time.DateTime)
 		if err != nil {
 			return err
 		}
+		t.LastUpdate = date
 	}
 
 	return nil
