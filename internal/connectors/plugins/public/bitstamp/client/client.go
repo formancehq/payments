@@ -113,7 +113,7 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		rt = http.DefaultTransport
 	}
 
-	// Timestamp (ms) and nonce per request
+	// Timestamp (milliseconds) and nonce per request
 	timestamp := fmt.Sprintf("%d", time.Now().UnixNano()/1e6)
 	nonce := newNonce()
 
@@ -132,8 +132,11 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		req.ContentLength = int64(len(bodyBytes))
 	}
 
-	// Content-Type used in the signature. If header absent, it's an empty string.
-	contentType := req.Header.Get("Content-Type")
+	// Content-Type used in the signature. If request body is empty, don't add Content-Type.
+	var contentType string
+	if len(bodyBytes) > 0 {
+		contentType = req.Header.Get("Content-Type")
+	}
 
 	host := req.URL.Host
 	path := req.URL.EscapedPath()
@@ -143,18 +146,18 @@ func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 	query := req.URL.RawQuery
 	method := strings.ToUpper(req.Method)
 
-	// Bitstamp v2 message
-	message :=
-		"BITSTAMP " + t.APIKey +
-			method +
-			host +
-			path +
-			query +
-			contentType +
-			nonce +
-			timestamp +
-			"v2" +
-			string(bodyBytes)
+	// Bitstamp v2 message - official format with spaces
+	// "BITSTAMP" + " " + api_key + HTTP Verb + url.host + url.path + url.query + Content-Type + X-Auth-Nonce + X-Auth-Timestamp + X-Auth-Version + request.body
+	message := "BITSTAMP " + t.APIKey +
+		method +
+		host +
+		path +
+		query +
+		contentType +
+		nonce +
+		timestamp +
+		"v2" +
+		string(bodyBytes)
 
 	sig := hex.EncodeToString(hmacSHA256(t.APISecret, []byte(message)))
 
@@ -205,11 +208,15 @@ func hmacSHA256(key, msg []byte) []byte {
 }
 
 func newNonce() string {
-	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
-		return fmt.Sprintf("%d", time.Now().UnixNano())
+	// Generate a 36-character lowercase string as required by Bitstamp API
+	// This ensures uniqueness within the 150-second window
+	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
+	b := make([]byte, 36)
+	rand.Read(b)
+	for i := range b {
+		b[i] = charset[b[i]%byte(len(charset))]
 	}
-	return hex.EncodeToString(b)
+	return string(b)
 }
 
 func mustParseURL(raw string) *url.URL {
