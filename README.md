@@ -28,4 +28,6 @@ Because it is a framework, it is extensible. Please follow the guide below if yo
 
 # Contribute
 
-Please follow [this guide](./CONTRIBUTING.md) if you want to contribute.
+Please see the following documents:
+- Connector development tutorial: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- General development guidelines: [CONTRIBUTING_GUIDE.md](./CONTRIBUTING_GUIDE.md)
