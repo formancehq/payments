@@ -38,6 +38,7 @@ var (
 
 	supportedLocales = map[string]struct{}{
 		"en_US": {},
+		"en_GB": {},
 		"da_DK": {},
 		"de_DE": {},
 		"es_ES": {},
