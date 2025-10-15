@@ -333,7 +333,7 @@ func fillAddress(from paymentServiceUser) *models.Address {
 }
 
 func fillContactDetails(from paymentServiceUser) *models.ContactDetails {
-	if from.Email == nil && from.PhoneNumber == nil {
+	if from.Email == nil && from.PhoneNumber == nil && from.Locale == nil {
 		return nil
 	}
 
