@@ -171,6 +171,7 @@ func (p *Plugin) trimConnectionSynced(_ context.Context, req models.TrimWebhookR
 				},
 			}
 
+			// Add balances here
 			ba := client.BankAccount{
 				ID:           acc.ID,
 				ConnectionID: acc.ConnectionID,

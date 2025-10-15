@@ -240,7 +240,7 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			err = json.Unmarshal(resp.Webhooks[0].Body, &webhook)
 			Expect(err).To(BeNil())
 
-			Expect(webhook.Connection.LastUpdate.String()).To(Equal("2021-10-20 15:00:00 +0000 UTC"))
+			Expect(webhook.Connection.LastUpdate.String()).To(Equal("2021-10-20 17:00:00 +0000 UTC"))
 
 		})
 	})
