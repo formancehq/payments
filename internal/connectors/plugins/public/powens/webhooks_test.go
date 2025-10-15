@@ -241,7 +241,27 @@ var _ = Describe("Powens *Plugin Webhooks", func() {
 			Expect(err).To(BeNil())
 
 			Expect(webhook.Connection.LastUpdate.String()).To(Equal("2021-10-20 17:00:00 +0000 UTC"))
+		})
 
+		It("should keep account balance after trimming", func(ctx SpecContext) {
+			req := models.TrimWebhookRequest{
+				Config: &models.WebhookConfig{
+					Name: string(client.WebhookEventTypeConnectionSynced),
+				},
+				Webhook: models.PSPWebhook{
+					Body: []byte(`{"user":{"id":1},"connection":{"id":10,"state":"","accounts":[{"id":100,"id_user":1,"id_connection":10,"currency":{"id":"EUR","precision":2},"balance":"123.45","transactions":[]}]}}`),
+				},
+			}
+
+			resp, err := plg.TrimWebhook(ctx, req)
+			Expect(err).To(BeNil())
+			Expect(resp.Webhooks).To(HaveLen(1))
+
+			var trimmed client.ConnectionSyncedWebhook
+			err = json.Unmarshal(resp.Webhooks[0].Body, &trimmed)
+			Expect(err).To(BeNil())
+			Expect(trimmed.Connection.Accounts).To(HaveLen(1))
+			Expect(trimmed.Connection.Accounts[0].Balance.String()).To(Equal("123.45"))
 		})
 	})
 })

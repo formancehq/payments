@@ -30,7 +30,3 @@ func ConvertUTCToPowensTime(input time.Time, format string) (string, error) {
 	paris := input.In(loc)
 	return paris.Format(format), nil
 }
-
-// 1. connection ID is a pointer to "" (Tink)
-// 2. balance is 0 because we don't forward it in the trim webhook (Powens)
-// 3. we need to marshall/unmarshall the same way (we don't want to add Europe/Paris twice!) (Powens)
