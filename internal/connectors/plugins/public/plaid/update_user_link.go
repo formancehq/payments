@@ -9,6 +9,10 @@ import (
 )
 
 func validateUpdateUserLinkRequest(req models.UpdateUserLinkRequest) error {
+	if req.ApplicationName == "" {
+		return fmt.Errorf("missing client name: %w", models.ErrInvalidRequest)
+	}
+
 	if req.Connection == nil {
 		return fmt.Errorf("missing connection: %w", models.ErrInvalidRequest)
 	}
