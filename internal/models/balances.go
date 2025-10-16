@@ -65,7 +65,7 @@ type Balance struct {
 	Balance *big.Int `json:"balance"`
 
 	PsuID                   *uuid.UUID `json:"psuID"`
-	OpenBankingConnectionID *string    `json:"openBankingConnectionID"`
+	OpenBankingConnectionID *string    `json:"openBankingConnectionID,omitempty"`
 }
 
 func (b *Balance) IdempotencyKey() string {
@@ -87,9 +87,9 @@ func (b Balance) MarshalJSON() ([]byte, error) {
 		psuId = b.PsuID.String()
 	}
 
-	var openBankingConnectionId string
+	var openBankingConnectionId *string
 	if b.OpenBankingConnectionID != nil {
-		openBankingConnectionId = *b.OpenBankingConnectionID
+		openBankingConnectionId = b.OpenBankingConnectionID
 	}
 
 	return json.Marshal(&struct {
@@ -100,8 +100,8 @@ func (b Balance) MarshalJSON() ([]byte, error) {
 		Asset   string   `json:"asset"`
 		Balance *big.Int `json:"balance"`
 
-		PsuId                   string `json:"psuID"`
-		OpenBankingConnectionID string `json:"openBankingConnectionID"`
+		PsuId                   string  `json:"psuID"`
+		OpenBankingConnectionID *string `json:"openBankingConnectionID,omitempty"`
 	}{
 		AccountID:               b.AccountID.String(),
 		CreatedAt:               b.CreatedAt,
@@ -121,7 +121,7 @@ func (b *Balance) UnmarshalJSON(data []byte) error {
 		Asset                   string    `json:"asset"`
 		Balance                 *big.Int  `json:"balance"`
 		PSUID                   string    `json:"psuID"`
-		OpenBankingConnectionID string    `json:"openBankingConnectionID"`
+		OpenBankingConnectionID *string   `json:"openBankingConnectionID,omitempty"`
 	}
 
 	if err := json.Unmarshal(data, &aux); err != nil {
@@ -145,7 +145,7 @@ func (b *Balance) UnmarshalJSON(data []byte) error {
 	b.LastUpdatedAt = aux.LastUpdatedAt
 	b.Asset = aux.Asset
 	b.Balance = aux.Balance
-	b.OpenBankingConnectionID = &aux.OpenBankingConnectionID
+	b.OpenBankingConnectionID = aux.OpenBankingConnectionID
 
 	return nil
 }

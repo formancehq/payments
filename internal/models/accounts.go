@@ -77,9 +77,9 @@ type Account struct {
 	// in minor currencies unit.
 	DefaultAsset *string `json:"defaultAsset"`
 	// Optional, can be filled if the account is related to an open banking connector
-	PsuID *uuid.UUID `json:"psuID"`
+	PsuID *uuid.UUID `json:"psuID,omitempty"`
 	// Optional, can be filled if the account is related to an open banking connector
-	OpenBankingConnectionID *string `json:"openBankingConnectionID"`
+	OpenBankingConnectionID *string `json:"openBankingConnectionID,omitempty"`
 
 	// Additional metadata
 	Metadata map[string]string `json:"metadata"`
