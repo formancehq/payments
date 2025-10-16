@@ -3,15 +3,15 @@
 package components
 
 type V3PaymentServiceUserCreateLinkRequest struct {
-	// The name of the application to be displayed to the user when they click the link (depending on the open banking provider).
-	ApplicationName string `json:"applicationName"`
+	// The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
+	ApplicationName *string `json:"applicationName,omitempty"`
 	// The URL to redirect the user to after the link flow is completed.
 	ClientRedirectURL string `json:"clientRedirectURL"`
 }
 
-func (o *V3PaymentServiceUserCreateLinkRequest) GetApplicationName() string {
+func (o *V3PaymentServiceUserCreateLinkRequest) GetApplicationName() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.ApplicationName
 }

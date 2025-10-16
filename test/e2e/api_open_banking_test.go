@@ -168,12 +168,13 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("should be ok", func() {
+			applicationName := "test"
 			resp, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
 				ctx,
 				psuID,
 				connectorID,
 				&components.V3PaymentServiceUserCreateLinkRequest{
-					ApplicationName:   "test",
+					ApplicationName:   &applicationName,
 					ClientRedirectURL: "https://www.google.com",
 				},
 			)
@@ -248,12 +249,13 @@ var _ = Context("Payments API Open Banking", Serial, func() {
 		})
 
 		It("the link flow should be in error and the attempt should be updated to exited, no connection should be created", func() {
+			applicationName := "test"
 			resp, err := app.GetValue().SDK().Payments.V3.CreateLinkForPaymentServiceUser(
 				ctx,
 				psuID,
 				connectorID,
 				&components.V3PaymentServiceUserCreateLinkRequest{
-					ApplicationName:   "test",
+					ApplicationName:   &applicationName,
 					ClientRedirectURL: "https://www.google.com",
 				},
 			)

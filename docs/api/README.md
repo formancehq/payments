@@ -6250,7 +6250,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|applicationName|string|true|none|The name of the application to be displayed to the user when they click the link (depending on the open banking provider).|
+|applicationName|string|false|none|The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.|
 |clientRedirectURL|string(url)|true|none|The URL to redirect the user to after the link flow is completed.|
 
 <h2 id="tocS_V3PaymentServiceUserCreateLinkResponse">V3PaymentServiceUserCreateLinkResponse</h2>
@@ -6294,7 +6294,7 @@ None ( Scopes: payments:read )
 
 |Name|Type|Required|Restrictions|Description|
 |---|---|---|---|---|
-|applicationName|string|true|none|none|
+|applicationName|string|false|none|The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.|
 |clientRedirectURL|string(url)|true|none|none|
 
 <h2 id="tocS_V3PaymentServiceUserUpdateLinkResponse">V3PaymentServiceUserUpdateLinkResponse</h2>
