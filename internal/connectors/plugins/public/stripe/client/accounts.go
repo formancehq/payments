@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
+	pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
 	"github.com/stripe/stripe-go/v79"
 )
 
@@ -17,7 +17,7 @@ func (c *client) GetAccounts(
 	if !timeline.IsCaughtUp() {
 		var oldest interface{}
 		oldest, timeline, hasMore, err = scanForOldest(timeline, pageSize, func(params stripe.ListParams) (stripe.ListContainer, error) {
-			params.Context = metrics.OperationContext(ctx, "list_accounts_scan")
+			params.Context = pluginsdkmetrics.OperationContext(ctx, "list_accounts_scan")
 			itr := c.accountClient.List(&stripe.AccountListParams{ListParams: params})
 			return itr.AccountList(), wrapSDKErr(itr.Err())
 		})
@@ -32,7 +32,7 @@ func (c *client) GetAccounts(
 	}
 
 	filters := stripe.ListParams{
-		Context:      metrics.OperationContext(ctx, "list_accounts"),
+		Context:      pluginsdkmetrics.OperationContext(ctx, "list_accounts"),
 		Limit:        limit(pageSize, len(results)),
 		EndingBefore: &timeline.LatestID,
 		Single:       true, // turn off autopagination
