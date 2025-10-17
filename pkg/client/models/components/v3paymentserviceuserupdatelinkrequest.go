@@ -3,13 +3,14 @@
 package components
 
 type V3PaymentServiceUserUpdateLinkRequest struct {
-	ApplicationName   string `json:"applicationName"`
-	ClientRedirectURL string `json:"clientRedirectURL"`
+	// The name of the application to be displayed to the user when they click the link (depending on the open banking provider). Note that this field might be mandatory for some open banking providers.
+	ApplicationName   *string `json:"applicationName,omitempty"`
+	ClientRedirectURL string  `json:"clientRedirectURL"`
 }
 
-func (o *V3PaymentServiceUserUpdateLinkRequest) GetApplicationName() string {
+func (o *V3PaymentServiceUserUpdateLinkRequest) GetApplicationName() *string {
 	if o == nil {
-		return ""
+		return nil
 	}
 	return o.ApplicationName
 }

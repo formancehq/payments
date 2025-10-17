@@ -125,5 +125,28 @@ var _ = Describe("API v3 Payment Service Users Update Link", func() {
 
 			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
 		})
+
+		It("should succeed when applicationName is not provided (optional for some providers)", func(ctx SpecContext) {
+			req := prepareJSONRequest(http.MethodPost, PaymentServiceUserUpdateLinkRequest{
+				ApplicationName:   "",
+				ClientRedirectURL: "https://example.com/callback",
+			})
+			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
+			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "", psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return("test", "link", nil)
+			handlerFn(w, req)
+
+			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
+		})
+
+		It("should succeed when applicationName is omitted from request body (optional for some providers)", func(ctx SpecContext) {
+			req := prepareJSONRequest(http.MethodPost, map[string]interface{}{
+				"clientRedirectURL": "https://example.com/callback",
+			})
+			req = prepareQueryRequestWithBody(http.MethodPost, req.Body, "paymentServiceUserID", psuID.String(), "connectorID", connectorID.String(), "connectionID", connectionID)
+			m.EXPECT().PaymentServiceUsersUpdateLink(gomock.Any(), "", psuID, connectorID, connectionID, gomock.Any(), gomock.Any()).Return("test", "link", nil)
+			handlerFn(w, req)
+
+			assertExpectedResponse(w.Result(), http.StatusCreated, `{"attemptID":"test","link":"link"}`)
+		})
 	})
 })
