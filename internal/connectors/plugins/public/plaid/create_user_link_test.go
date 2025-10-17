@@ -30,7 +30,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 			ctrl.Finish()
 		})
 
-		It("should return an error - missing client name", func(ctx SpecContext) {
+		It("should return an error - missing application name", func(ctx SpecContext) {
 			req := models.CreateUserLinkRequest{
 				PaymentServiceUser: &models.PSPPaymentServiceUser{
 					ID: uuid.New(),
@@ -39,7 +39,7 @@ var _ = Describe("Plaid *Plugin Create User Link", func() {
 
 			resp, err := plg.CreateUserLink(ctx, req)
 			Expect(err).ToNot(BeNil())
-			Expect(err.Error()).To(ContainSubstring("missing client name"))
+			Expect(err.Error()).To(ContainSubstring("missing application name"))
 			Expect(resp).To(Equal(models.CreateUserLinkResponse{}))
 		})
 
