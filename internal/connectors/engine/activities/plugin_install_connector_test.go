@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/formancehq/go-libs/v3/logging"
-	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	pluginsError "github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/events"
 	"github.com/formancehq/payments/internal/models"
@@ -62,6 +62,16 @@ var _ = Describe("Plugin Install Connector", func() {
 		It("returns a retryable temporal error", func(ctx SpecContext) {
 			p.EXPECT().Get(req.ConnectorID).Return(plugin, nil)
 			plugin.EXPECT().Install(ctx, req.Req).Return(sampleResponse, fmt.Errorf("some string"))
+			_, err := act.PluginInstallConnector(ctx, req)
+			Expect(err).ToNot(BeNil())
+			temporalErr, ok := err.(*temporal.ApplicationError)
+			Expect(ok).To(BeTrue())
+			Expect(temporalErr.NonRetryable()).To(BeFalse())
+			Expect(temporalErr.Type()).To(Equal(activities.ErrTypeDefault))
+		})
+
+		It("returns a retryable temporal error when connector not found", func(ctx SpecContext) {
+			p.EXPECT().Get(req.ConnectorID).Return(plugin, fmt.Errorf("some string: %w", connectors.ErrNotFound))
 			_, err := act.PluginInstallConnector(ctx, req)
 			Expect(err).ToNot(BeNil())
 			temporalErr, ok := err.(*temporal.ApplicationError)

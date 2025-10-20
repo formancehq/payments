@@ -45,9 +45,7 @@ func (w Workflow) installConnector(
 	// Second step: install the connector via the plugin and get the list of
 	// capabilities and the workflow of polling data
 	installResponse, err := activities.PluginInstallConnector(
-		// disable retries as grpc plugin boot command cannot be run more than once by the go-plugin client
-		// this also causes API install calls to fail immediately which is more desirable in the case that a plugin is timing out or not compiled correctly
-		maximumAttemptsRetryContext(ctx, 1),
+		infiniteRetryContext(ctx),
 		installConnector.ConnectorID,
 	)
 	if err != nil {

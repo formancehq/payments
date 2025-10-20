@@ -2,7 +2,11 @@ package activities
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/plugins"
 	"github.com/formancehq/payments/internal/models"
 	"go.temporal.io/sdk/workflow"
 )
@@ -15,6 +19,12 @@ type InstallConnectorRequest struct {
 func (a Activities) PluginInstallConnector(ctx context.Context, request InstallConnectorRequest) (*models.InstallResponse, error) {
 	plugin, err := a.connectors.Get(request.ConnectorID)
 	if err != nil {
+		if errors.Is(err, connectors.ErrNotFound) {
+			// in the event of a race condition where the activity is executed faster
+			// than the pglisten function can load the newly installed plugin
+			// we want this to retry since it should succeed on the 2nd try
+			return nil, a.temporalPluginError(ctx, fmt.Errorf("%s: %w", request.ConnectorID.String(), plugins.ErrNotYetInstalled))
+		}
 		return nil, a.temporalPluginError(ctx, err)
 	}
 
@@ -32,7 +42,7 @@ func PluginInstallConnector(ctx workflow.Context, connectorID models.ConnectorID
 	ret := models.InstallResponse{}
 	if err := executeActivity(ctx, PluginInstallConnectorActivity, &ret, InstallConnectorRequest{
 		ConnectorID: connectorID,
-		Req:         models.InstallRequest{
+		Req: models.InstallRequest{
 			ConnectorID: connectorID.String(),
 		},
 	}); err != nil {
