@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrNotFound         = errors.New("plugin not found")
+	ErrNotFound         = errors.New("plugin not loaded in manager")
 	ErrValidation       = errors.New("validation error")
 	ErrInvalidOperation = errors.New("invalid operation")
 )
