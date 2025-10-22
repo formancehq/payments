@@ -4,23 +4,38 @@ import (
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
 	"github.com/formancehq/payments/internal/connectors/engine/activities"
+	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"go.temporal.io/sdk/workflow"
 )
 
+type TerminateSchedules struct {
+	ConnectorID   models.ConnectorID
+	NextPageToken string
+}
+
 func (w Workflow) runTerminateSchedules(
 	ctx workflow.Context,
-	uninstallConnector UninstallConnector,
+	terminateSchedules TerminateSchedules,
 ) error {
-	query := storage.NewListSchedulesQuery(
-		bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
-			WithPageSize(100).
-			WithQueryBuilder(
-				query.Match("connector_id", uninstallConnector.ConnectorID.String()),
-			),
-	)
+	var q storage.ListSchedulesQuery
+	if terminateSchedules.NextPageToken != "" {
+		err := bunpaginate.UnmarshalCursor(terminateSchedules.NextPageToken, &q)
+		if err != nil {
+			return err
+		}
+	} else {
+		q = storage.NewListSchedulesQuery(
+			bunpaginate.NewPaginatedQueryOptions(storage.ScheduleQuery{}).
+				WithPageSize(100).
+				WithQueryBuilder(
+					query.Match("connector_id", terminateSchedules.ConnectorID.String()),
+				),
+		)
+	}
+
 	for {
-		schedules, err := activities.StorageSchedulesList(infiniteRetryContext(ctx), query)
+		schedules, err := activities.StorageSchedulesList(infiniteRetryContext(ctx), q)
 		if err != nil {
 			return err
 		}
@@ -48,9 +63,23 @@ func (w Workflow) runTerminateSchedules(
 			break
 		}
 
-		err = bunpaginate.UnmarshalCursor(schedules.Next, &query)
+		err = bunpaginate.UnmarshalCursor(schedules.Next, &q)
 		if err != nil {
 			return err
+		}
+
+		if w.shouldContinueAsNew(ctx) {
+			// If we have lots and lots of accounts, sometimes, we need to
+			// continue as new to not exeed the maximum history size or length
+			// of a workflow.
+			return workflow.NewContinueAsNewError(
+				ctx,
+				RunTerminateSchedules,
+				TerminateSchedules{
+					ConnectorID:   terminateSchedules.ConnectorID,
+					NextPageToken: schedules.Next,
+				},
+			)
 		}
 	}
 
