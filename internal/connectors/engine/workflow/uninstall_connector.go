@@ -79,7 +79,10 @@ func (w Workflow) uninstallConnector(
 			},
 		),
 		RunTerminateSchedules,
-		uninstallConnector,
+		TerminateSchedules{
+			ConnectorID:   uninstallConnector.ConnectorID,
+			NextPageToken: "",
+		},
 	).Get(ctx, nil); err != nil {
 		return fmt.Errorf("terminate schedules: %w", err)
 	}
