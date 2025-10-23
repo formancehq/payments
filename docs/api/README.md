@@ -7304,7 +7304,7 @@ xor
   "apiKey": "string",
   "name": "string",
   "pageSize": 25,
-  "pollingPeriod": "2m",
+  "pollingPeriod": "string",
   "provider": "Stripe"
 }
 

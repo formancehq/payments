@@ -418,7 +418,6 @@ components:
                     default: 25
                 pollingPeriod:
                     type: string
-                    default: 2m
                 provider:
                     type: string
                     default: Stripe
