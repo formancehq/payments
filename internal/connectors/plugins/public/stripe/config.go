@@ -16,7 +16,7 @@ const (
 
 type Config struct {
 	APIKey        string        `json:"apiKey" validate:"required"`
-	PollingPeriod time.Duration `json:"pollingPeriod" validate:"required,gte=0s"`
+	PollingPeriod time.Duration `json:"pollingPeriod"`
 }
 
 func (c Config) MarshalJSON() ([]byte, error) {
