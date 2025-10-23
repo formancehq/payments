@@ -32,7 +32,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 		It("should successfully unmarshal and validate with given polling period", func() {
 			Expect(err).To(BeNil())
 			Expect(config.APIKey).To(Equal("sk_test_123"))
-			Expect(config.PollingPeriod).To(Equal(45 * time.Minute))
+			Expect(config.PollingPeriod.Duration()).To(Equal(45 * time.Minute))
 		})
 	})
 
@@ -44,7 +44,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 		It("should default to 30 minutes", func() {
 			Expect(err).To(BeNil())
-			Expect(config.PollingPeriod).To(Equal(30 * time.Minute))
+			Expect(config.PollingPeriod.Duration()).To(Equal(30 * time.Minute))
 		})
 	})
 
@@ -57,7 +57,7 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 		It("should coerce to minimum 20 minutes", func() {
 			Expect(err).To(BeNil())
-			Expect(config.PollingPeriod).To(Equal(20 * time.Minute))
+			Expect(config.PollingPeriod.Duration()).To(Equal(20 * time.Minute))
 		})
 	})
 
@@ -88,11 +88,10 @@ var _ = Describe("unmarshalAndValidateConfig", func() {
 
 var _ = Describe("marshall", func() {
 	It("keeps duration in string format", func() {
-		config := &Config{
-			APIKey:        "sk_test_123",
-			PollingPeriod: 30 * time.Minute,
-		}
-		marshaledConfig, err := config.MarshalJSON()
+		raw := json.RawMessage(`{"apiKey":"sk_test_123", "pollingPeriod":"30m"}`)
+		config, err := unmarshalAndValidateConfig(raw)
+		Expect(err).To(BeNil())
+		marshaledConfig, err := json.Marshal(config)
 		Expect(err).To(BeNil())
 		Expect(string(marshaledConfig)).To(ContainSubstring(`"pollingPeriod":"30m0s"`))
 		Expect(string(marshaledConfig)).To(ContainSubstring(`"apiKey":"sk_test_123"`))

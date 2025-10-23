@@ -206,6 +206,9 @@ func readConfig(name string, caserName string) (V3Config, error) {
 						case "Duration":
 							// time.Duration is represented as a string in JSON/schema
 							fieldType = "string"
+						case "PollingPeriod":
+							// sharedconfig.PollingPeriod is represented as a string in JSON/schema
+							fieldType = "string"
 						default:
 							return V3Config{}, fmt.Errorf("invalid type: %s", typName)
 						}
