@@ -2,18 +2,30 @@
 
 # Getting started
 
-Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases). You can move the binary to any executable path, such as to `/usr/local/bin`. Installing it locally using Docker is also possible.
+Payments works as a standalone binary, the latest of which can be downloaded from the [releases page](https://github.com/formancehq/payments/releases).
+You can move the binary to any executable path, such as to `/usr/local/bin`. Installing it locally using Docker is also
+possible, and probably easier for testing purposes as it comes prepackaged with all the dependencies.
+
+Note that you need to set up the `STACK_PUBLIC_URL` env variable to set up a publicly available URL so that webhooks
+and redirects from the Payment Service Providers (PSP) can be sent to the application.
+You can use [NGrok](https://ngrok.com/) for that, for example. If you don't plan on using any connectors with webhooks,
+you could simply set it as localhost (or anything, really).
 
 ```SHELL
 $ git clone git@github.com:formancehq/payments.git
 $ cd payments
 $ just compile-plugins
-$ docker compose up
+$ STACK_PUBLIC_URL=http://localhost && docker compose up
 ```
 
 ## Debugging
 You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and 
 live reloading.
+
+## Use console as a frontend
+
+The payment application comes with a console frontend when deploying through docker-compose (with or without debugging).
+You can access it at http://localhost:3000/formance/localhost?region=localhost.
 
 # What is it?
 
