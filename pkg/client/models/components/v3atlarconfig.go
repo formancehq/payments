@@ -11,7 +11,7 @@ type V3AtlarConfig struct {
 	BaseURL       string  `json:"baseUrl"`
 	Name          string  `json:"name"`
 	PageSize      *int64  `default:"25" json:"pageSize"`
-	PollingPeriod *string `default:"2m" json:"pollingPeriod"`
+	PollingPeriod *string `json:"pollingPeriod,omitempty"`
 	Provider      *string `default:"Atlar" json:"provider"`
 	Secret        string  `json:"secret"`
 }

@@ -12,7 +12,7 @@ type V3BankingcircleConfig struct {
 	Name                  string  `json:"name"`
 	PageSize              *int64  `default:"25" json:"pageSize"`
 	Password              string  `json:"password"`
-	PollingPeriod         *string `default:"2m" json:"pollingPeriod"`
+	PollingPeriod         *string `json:"pollingPeriod,omitempty"`
 	Provider              *string `default:"Bankingcircle" json:"provider"`
 	UserCertificate       string  `json:"userCertificate"`
 	UserCertificateKey    string  `json:"userCertificateKey"`
