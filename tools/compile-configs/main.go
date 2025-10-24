@@ -159,6 +159,9 @@ func readConfig(name string, caserName string) (V3Config, error) {
 				}
 
 				name := ""
+				if field.Tag == nil {
+					continue
+				}
 				tagValue := strings.Trim(field.Tag.Value, "`")
 				arr := strings.Split(tagValue, " ")
 				for _, tag := range arr {
@@ -170,17 +173,44 @@ func readConfig(name string, caserName string) (V3Config, error) {
 					switch fields[0] {
 					case "json":
 						name = strings.Trim(fields[1], "\"")
-						typ := field.Type.(*ast.Ident).Name
+						// Determine the field type name supporting identifiers, selectors (e.g., time.Duration), and pointers
+						var typName string
+						switch t := field.Type.(type) {
+						case *ast.Ident:
+							typName = t.Name
+						case *ast.SelectorExpr:
+							// Qualified type like pkg.Type -> use the selected identifier
+							typName = t.Sel.Name
+						case *ast.StarExpr:
+							// Pointer to something
+							switch x := t.X.(type) {
+							case *ast.Ident:
+								typName = x.Name
+							case *ast.SelectorExpr:
+								typName = x.Sel.Name
+							default:
+								return V3Config{}, fmt.Errorf("unsupported type expr: %T", field.Type)
+							}
+						default:
+							return V3Config{}, fmt.Errorf("unsupported type expr: %T", field.Type)
+						}
+
 						fieldType := ""
-						switch typ {
+						switch typName {
 						case "string":
 							fieldType = "string"
 						case "int", "int32", "int64", "uint32", "uint64":
 							fieldType = "integer"
 						case "bool":
 							fieldType = "boolean"
+						case "Duration":
+							// time.Duration is represented as a string in JSON/schema
+							fieldType = "string"
+						case "PollingPeriod":
+							// sharedconfig.PollingPeriod is represented as a string in JSON/schema
+							fieldType = "string"
 						default:
-							return V3Config{}, fmt.Errorf("invalid type: %s", typ)
+							return V3Config{}, fmt.Errorf("invalid type: %s", typName)
 						}
 						properties[name] = Property{
 							Type: fieldType,

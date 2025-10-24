@@ -10,7 +10,7 @@ type V3WiseConfig struct {
 	APIKey           string  `json:"apiKey"`
 	Name             string  `json:"name"`
 	PageSize         *int64  `default:"25" json:"pageSize"`
-	PollingPeriod    *string `default:"2m" json:"pollingPeriod"`
+	PollingPeriod    *string `json:"pollingPeriod,omitempty"`
 	Provider         *string `default:"Wise" json:"provider"`
 	WebhookPublicKey string  `json:"webhookPublicKey"`
 }

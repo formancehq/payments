@@ -5746,7 +5746,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Atlar
@@ -5776,7 +5775,6 @@ components:
           type: string
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Bankingcircle
@@ -5804,7 +5802,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Column
@@ -5874,7 +5871,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Generic
@@ -5897,7 +5893,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Increase
@@ -5924,7 +5919,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Mangopay
@@ -5949,7 +5943,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Modulr
@@ -5974,7 +5967,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Moneycorp
@@ -6057,7 +6049,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Qonto
@@ -6078,7 +6069,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Stripe
@@ -6123,7 +6113,6 @@ components:
           default: 25
         pollingPeriod:
           type: string
-          default: 2m
         provider:
           type: string
           default: Wise
