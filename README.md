@@ -15,6 +15,11 @@ $ docker compose up
 You can also use the docker-compose.dev.yml file to run the application with Delve and Air, which allow debugging and 
 live reloading.
 
+## Use console as a frontend
+
+The payment application comes with a console frontend when deploying through docker-compose (with or without debugging).
+You can access it at http://localhost:3000/formance/localhost?region=localhost.
+
 # What is it?
 
 Basically, a framework.

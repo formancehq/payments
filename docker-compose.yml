@@ -136,3 +136,19 @@ services:
       TEMPORAL_INIT_SEARCH_ATTRIBUTES: false
       STACK_URL: http://gateway:8092
       STACK_PUBLIC_URL: ${STACK_PUBLIC_URL:?mandatory}
+
+  console:
+    image: ghcr.io/formancehq/console-v3:d924bd604af772041acba7a116528a1b02915e4d
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MICRO_STACK=1
+      - API_URL=http://gateway:80/api
+      - COOKIE_SECRET=secret
+      - COOKIE_DOMAIN=localhost
+    depends_on:
+      - postgres
+      - gateway
+      - payments
+      - payments-worker
