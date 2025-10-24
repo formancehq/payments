@@ -1,10 +1,10 @@
 package client
 
 import (
-	"context"
+    "context"
 
-	"github.com/formancehq/payments/internal/connectors/metrics"
-	"github.com/stripe/stripe-go/v79"
+    pluginsdkmetrics "github.com/formancehq/payments/pkg/pluginsdk/metrics"
+    "github.com/stripe/stripe-go/v79"
 )
 
 type CreateTransferRequest struct {
@@ -19,8 +19,8 @@ type CreateTransferRequest struct {
 
 func (c *client) CreateTransfer(ctx context.Context, createTransferRequest *CreateTransferRequest) (*stripe.Transfer, error) {
 	params := &stripe.TransferParams{
-		Params: stripe.Params{
-			Context:       metrics.OperationContext(ctx, "initiate_transfer"),
+        Params: stripe.Params{
+            Context:       pluginsdkmetrics.OperationContext(ctx, "initiate_transfer"),
 			StripeAccount: createTransferRequest.Source,
 		},
 		Amount:      stripe.Int64(createTransferRequest.Amount),
