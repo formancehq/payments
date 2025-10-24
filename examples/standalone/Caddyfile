@@ -23,7 +23,6 @@
 }
 
 :80 {
-	import handle_path_route_without_auth "/api/ledger" "ledger:3068"
 	import handle_path_route_without_auth "/api/payments" "payments:8080"
 
 	handle /versions {
@@ -31,7 +30,6 @@
 			region "local"
 			env "local"
 			endpoints {
-				ledger /api/ledger/_info /api/ledger/_healthcheck
 				payments /api/payments/_info /api/payments/_healthcheck
 			}
 		}
@@ -41,5 +39,4 @@
 	handle {
 		respond "Bad Gateway" 502
 	}
-
 }
