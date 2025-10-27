@@ -88,33 +88,7 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
-		for _, externalAccount := range accounts {
-			acc := externalAccount
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Account: &acc,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
 
 		for _, externalAccount := range externalAccountsResponse.ExternalAccounts {
 			acc := externalAccount

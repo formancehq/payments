@@ -172,6 +172,12 @@ type Storage interface {
 	InstancesGet(ctx context.Context, id string, scheduleID string, connectorID models.ConnectorID) (*models.Instance, error)
 	InstancesList(ctx context.Context, q ListInstancesQuery) (*bunpaginate.Cursor[models.Instance], error)
 	InstancesDeleteFromConnectorID(ctx context.Context, connectorID models.ConnectorID) error
+
+	// Outbox Events
+	OutboxEventsInsert(ctx context.Context, tx bun.Tx, events []models.OutboxEvent) error
+	OutboxEventsPollPending(ctx context.Context, limit int) ([]models.OutboxEvent, error)
+	OutboxEventsMarkFailed(ctx context.Context, id uuid.UUID, retryCount int, errorMsg string) error
+	OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uuid.UUID, eventSent models.EventSent) error
 }
 
 const encryptionOptions = "compress-algo=1, cipher-algo=aes256"
