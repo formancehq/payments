@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -43,18 +44,89 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 		return nil
 	}
 
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
 	toInsert := make([]account, 0, len(accounts))
 	for _, a := range accounts {
 		acc := fromAccountModels(a)
 		toInsert = append(toInsert, acc)
 	}
 
-	_, err := s.db.NewInsert().
+	// Insert accounts with ON CONFLICT DO NOTHING and capture inserted rows
+	var insertedAccounts []account
+	err = tx.NewInsert().
 		Model(&toInsert).
 		On("CONFLICT (id) DO NOTHING").
-		Exec(ctx)
+		Returning("*").
+		Scan(ctx, &insertedAccounts)
+	if err != nil {
+		return e("failed to insert accounts", err)
+	}
 
-	return e("failed to insert accounts", err)
+	// Create a map of inserted account IDs for quick lookup
+	insertedAccountIDs := make(map[string]bool)
+	for _, insertedAccount := range insertedAccounts {
+		insertedAccountIDs[insertedAccount.ID.String()] = true
+	}
+
+	// Create outbox events only for newly inserted accounts
+	outboxEvents := make([]models.OutboxEvent, 0, len(insertedAccounts))
+	for _, account := range accounts {
+		// Skip accounts that already existed (not in the inserted set)
+		if !insertedAccountIDs[account.ID.String()] {
+			continue
+		}
+		// Create the event payload
+		payload := map[string]interface{}{
+			"id":          account.ID.String(),
+			"connectorID": account.ConnectorID.String(),
+			"provider":    models.ToV3Provider(account.ConnectorID.Provider),
+			"createdAt":   account.CreatedAt,
+			"reference":   account.Reference,
+			"type":        string(account.Type),
+			"metadata":    account.Metadata,
+			"rawData":     account.Raw,
+		}
+
+		if account.DefaultAsset != nil {
+			payload["defaultAsset"] = *account.DefaultAsset
+		}
+
+		if account.Name != nil {
+			payload["name"] = *account.Name
+		}
+
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return fmt.Errorf("failed to marshal account event payload: %w", err)
+		}
+
+		outboxEvent := models.OutboxEvent{
+			EventType:   "account.saved",
+			EntityID:    account.ID.String(),
+			Payload:     payloadBytes,
+			CreatedAt:   time.Now().UTC().Time,
+			Status:      models.OUTBOX_STATUS_PENDING,
+			ConnectorID: &account.ConnectorID,
+		}
+
+		outboxEvents = append(outboxEvents, outboxEvent)
+	}
+
+	// Insert outbox events in the same transaction
+	if len(outboxEvents) > 0 {
+		if err := s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+			return err
+		}
+	}
+
+	return e("failed to commit transaction", tx.Commit())
 }
 
 func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {

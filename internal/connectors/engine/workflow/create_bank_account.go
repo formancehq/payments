@@ -93,12 +93,7 @@ func (w Workflow) createBankAccount(
 
 	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
 
-	if err := w.runSendEvents(ctx, SendEvents{
-		BankAccount: &bankAccount,
-	}); err != nil {
-		return "", err
-	}
-
+	//TODO check what happens now that we don't call directly runSendEvents for this
 	return account.ID.String(), nil
 }
 

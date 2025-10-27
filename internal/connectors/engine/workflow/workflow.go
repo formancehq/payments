@@ -163,6 +163,10 @@ func (w Workflow) DefinitionSet() temporalworker.DefinitionSet {
 		Append(temporalworker.Definition{
 			Name: RunDeleteOpenBankingConnectionData,
 			Func: w.runDeleteOpenBankingConnectionData,
+		}).
+		Append(temporalworker.Definition{
+			Name: RunOutboxPublisher,
+			Func: w.runOutboxPublisher,
 		})
 }
 

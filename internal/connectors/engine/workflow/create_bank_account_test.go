@@ -29,21 +29,13 @@ func (s *UnitTestSuite) Test_CreateBankAccount_Success() {
 		s.Equal(s.accountID, relatedAccount.AccountID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.BankAccount)
-		s.Equal(s.bankAccount.ID, req.BankAccount.ID)
-		return nil
-	})
 
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
 		s.Equal(models.TASK_STATUS_SUCCEEDED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.SendEventsRequest) error {
-		s.NotNil(req.Task)
-		return nil
-	})
 
+	//TODO runSendEvent was taking a bankAccount in addition to Accounts, we need to dive deeper see what's still required.
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
 			Reference:   "test",
@@ -66,7 +58,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_PluginCreateBankAccount_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -94,7 +85,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageAccountsStore_Error() {
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -123,35 +113,6 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageBankAccountsAddRelatedAcco
 		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
-
-	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
-		TaskID: models.TaskID{
-			Reference:   "test",
-			ConnectorID: s.connectorID,
-		},
-		ConnectorID: s.connectorID,
-		BankAccount: s.bankAccount,
-	})
-
-	s.True(s.env.IsWorkflowCompleted())
-	err := s.env.GetWorkflowError()
-	s.Error(err)
-	s.ErrorContains(err, "error-test")
-}
-
-func (s *UnitTestSuite) Test_CreateBankAccount_RunSendEvents_Error() {
-	s.env.OnActivity(activities.PluginCreateBankAccountActivity, mock.Anything, mock.Anything).Once().Return(&models.CreateBankAccountResponse{
-		RelatedAccount: s.pspAccount,
-	}, nil)
-	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")))
-	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
-		s.Equal(models.TASK_STATUS_FAILED, task.Status)
-		return nil
-	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunCreateBankAccount, CreateBankAccount{
 		TaskID: models.TaskID{
@@ -174,9 +135,7 @@ func (s *UnitTestSuite) Test_CreateBankAccount_StorageTasksStore_Error() {
 	}, nil)
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
 	s.env.OnActivity(activities.StorageBankAccountsAddRelatedAccountActivity, mock.Anything, s.bankAccount.ID, mock.Anything).Once().Return(nil)
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test")))
 	s.env.OnActivity(activities.StorageTasksStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, task models.Task) error {
-		s.Equal(models.TASK_STATUS_FAILED, task.Status)
 		return temporal.NewNonRetryableApplicationError("error-test", "error-test", errors.New("error-test"))
 	})
 

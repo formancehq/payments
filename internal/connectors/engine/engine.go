@@ -396,29 +396,8 @@ func (e *engine) CreateFormanceAccount(ctx context.Context, account models.Accou
 		return err
 	}
 
+	// AccountsUpsert now handles outbox events transactionally
 	if err := e.storage.AccountsUpsert(ctx, []models.Account{account}); err != nil {
-		otel.RecordError(span, err)
-		return err
-	}
-
-	// Do not wait for sending of events
-	_, err = e.temporalClient.ExecuteWorkflow(
-		ctx,
-		client.StartWorkflowOptions{
-			ID:                                       fmt.Sprintf("create-formance-account-send-events-%s-%s-%s", e.stack, account.ConnectorID.String(), account.Reference),
-			TaskQueue:                                GetDefaultTaskQueue(e.stack),
-			WorkflowIDReusePolicy:                    enums.WORKFLOW_ID_REUSE_POLICY_REJECT_DUPLICATE,
-			WorkflowExecutionErrorWhenAlreadyStarted: false,
-			SearchAttributes: map[string]interface{}{
-				workflow.SearchAttributeStack: e.stack,
-			},
-		},
-		workflow.RunSendEvents,
-		workflow.SendEvents{
-			Account: &account,
-		},
-	)
-	if err != nil {
 		otel.RecordError(span, err)
 		return err
 	}

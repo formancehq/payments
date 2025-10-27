@@ -87,20 +87,7 @@ func (w Workflow) fetchExternalAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts)*2)
-		for _, externalAccount := range accounts {
-			acc := externalAccount
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := w.runSendEvents(ctx, SendEvents{
-					Account: &acc,
-				}); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(externalAccountsResponse.ExternalAccounts))
 
 		if len(nextTasks) > 0 {
 			// First, we need to get the connector to check if it is scheduled for deletion

@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
@@ -143,14 +144,39 @@ func TestAccountsUpsert(t *testing.T) {
 	store := newStore(t)
 	defer store.Close()
 
+	cleanupOutbox := func() {
+		// Get all pending events for the default connector and delete them
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		if err == nil {
+			for _, event := range pendingEvents {
+				if event.ConnectorID != nil && *event.ConnectorID == defaultConnector.ID {
+					// Create a dummy EventSent for deletion
+					eventSent := models.EventSent{
+						ID: models.EventID{
+							EventIdempotencyKey: "cleanup",
+							ConnectorID:         event.ConnectorID,
+						},
+						ConnectorID: event.ConnectorID,
+						SentAt:      now.UTC().Time,
+					}
+					// Delete using the proper method
+					_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+				}
+			}
+		}
+	}
+
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
+	cleanupOutbox() // Remove the outbox events created by updserting accounts
 
 	t.Run("upsert empty list", func(t *testing.T) {
 		require.NoError(t, store.AccountsUpsert(ctx, []models.Account{}))
 	})
 
 	t.Run("same id insert", func(t *testing.T) {
+		defer cleanupOutbox() // Also clean up after test
+
 		id := models.AccountID{
 			Reference:   "test1",
 			ConnectorID: defaultConnector.ID,
@@ -180,9 +206,17 @@ func TestAccountsUpsert(t *testing.T) {
 
 		// Accounts should not have changed
 		require.Equal(t, defaultAccounts()[0], *account)
+
+		// Verify outbox events were not created (account already existed)
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		// Should have no new events since the account already existed
+		assert.Len(t, pendingEvents, 0, "No outbox events should be created for existing accounts")
 	})
 
 	t.Run("unknown connector id", func(t *testing.T) {
+		defer cleanupOutbox()
+
 		unknownConnectorID := models.ConnectorID{
 			Reference: uuid.New(),
 			Provider:  "unknown",
@@ -206,6 +240,91 @@ func TestAccountsUpsert(t *testing.T) {
 		}
 
 		require.Error(t, store.AccountsUpsert(ctx, []models.Account{acc}))
+
+		// Verify outbox events were not created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		require.Len(t, pendingEvents, 0)
+	})
+
+	t.Run("outbox events created for new accounts", func(t *testing.T) {
+		defer cleanupOutbox()
+
+		// Create new accounts
+		newAccounts := []models.Account{
+			{
+				ID: models.AccountID{
+					Reference:   "outbox-test-1",
+					ConnectorID: defaultConnector.ID,
+				},
+				ConnectorID:  defaultConnector.ID,
+				Connector:    defaultConnector.Base(),
+				Reference:    "outbox-test-1",
+				CreatedAt:    time.Now().UTC().Time,
+				Type:         models.ACCOUNT_TYPE_INTERNAL,
+				Name:         pointer.For("Outbox Test 1"),
+				DefaultAsset: pointer.For("USD/2"),
+				Metadata: map[string]string{
+					"test": "outbox",
+				},
+				Raw: []byte(`{}`),
+			},
+			{
+				ID: models.AccountID{
+					Reference:   "outbox-test-2",
+					ConnectorID: defaultConnector.ID,
+				},
+				ConnectorID:  defaultConnector.ID,
+				Connector:    defaultConnector.Base(),
+				Reference:    "outbox-test-2",
+				CreatedAt:    time.Now().UTC().Time,
+				Type:         models.ACCOUNT_TYPE_EXTERNAL,
+				Name:         pointer.For("Outbox Test 2"),
+				DefaultAsset: pointer.For("EUR/2"),
+				Metadata: map[string]string{
+					"test": "outbox",
+				},
+				Raw: []byte(`{}`),
+			},
+		}
+
+		// Insert accounts
+		require.NoError(t, store.AccountsUpsert(ctx, newAccounts))
+
+		// Verify outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		require.Len(t, pendingEvents, 2)
+
+		// Check event details
+		for _, event := range pendingEvents {
+			assert.Equal(t, "account.saved", event.EventType)
+			assert.Equal(t, models.OUTBOX_STATUS_PENDING, event.Status)
+			assert.Equal(t, defaultConnector.ID, *event.ConnectorID)
+			assert.Equal(t, 0, event.RetryCount)
+			assert.Nil(t, event.Error)
+
+			// Verify payload contains account data
+			var payload map[string]interface{}
+			err := json.Unmarshal(event.Payload, &payload)
+			require.NoError(t, err)
+			assert.Contains(t, payload, "id")
+			assert.Contains(t, payload, "name")
+			assert.Contains(t, payload, "type")
+			assert.Contains(t, payload, "connectorID")
+		}
+	})
+
+	t.Run("no outbox events for existing accounts", func(t *testing.T) {
+		defer cleanupOutbox()
+
+		// Try to insert existing accounts (should not create outbox events due to ON CONFLICT DO NOTHING)
+		require.NoError(t, store.AccountsUpsert(ctx, defaultAccounts()))
+
+		// Verify no outbox events were created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 10)
+		require.NoError(t, err)
+		assert.Len(t, pendingEvents, 0)
 	})
 }
 
