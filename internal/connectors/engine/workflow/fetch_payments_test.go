@@ -678,13 +678,13 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Empty_Success() {
 	s.NoError(err)
 }
 
+// TODO these test should probably not lie in "fetch_payment_test" file...
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Account_Success() {
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, accounts []models.Account) error {
 		s.Len(accounts, 1)
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
 		ConnectorID: s.connectorID,
@@ -719,7 +719,6 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_Success() {
 		s.Equal(s.accountID, accounts[0].ID)
 		return nil
 	})
-	s.env.OnActivity(activities.SendEventsActivity, mock.Anything, mock.Anything).Once().Return(nil)
 
 	s.env.ExecuteWorkflow(RunStoreWebhookTranslation, StoreWebhookTranslation{
 		ConnectorID:     s.connectorID,

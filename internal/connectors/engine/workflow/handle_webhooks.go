@@ -620,10 +620,6 @@ func (w Workflow) runStoreWebhookTranslation(
 		if err != nil {
 			return fmt.Errorf("storing next accounts: %w", err)
 		}
-
-		sendEvent = &SendEvents{
-			Account: pointer.For(accounts[0]),
-		}
 	}
 
 	if storeWebhookTranslation.Balance != nil {
@@ -780,8 +776,22 @@ func (w Workflow) runStoreWebhookTranslation(
 		}
 	}
 
-	if sendEvent != nil {
-		if err := w.runSendEvents(ctx, *sendEvent); err != nil {
+	// TODO the below is fragine if sendEvent has account and other things, but we won't keep it as is.
+	if sendEvent != nil && sendEvent.Account == nil {
+		if err := workflow.ExecuteChildWorkflow(
+			workflow.WithChildOptions(
+				ctx,
+				workflow.ChildWorkflowOptions{
+					TaskQueue:         w.getDefaultTaskQueue(),
+					ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+					SearchAttributes: map[string]interface{}{
+						SearchAttributeStack: w.stack,
+					},
+				},
+			),
+			RunSendEvents,
+			*sendEvent,
+		).Get(ctx, nil); err != nil {
 			return fmt.Errorf("sending events: %w", err)
 		}
 	}

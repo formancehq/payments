@@ -10,6 +10,7 @@ import (
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/temporal"
 	"github.com/formancehq/payments/internal/connectors"
+	"github.com/formancehq/payments/internal/connectors/engine/activities"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/formancehq/payments/internal/storage"
 	"github.com/pkg/errors"
@@ -112,6 +113,12 @@ func (w *WorkerPool) OnStart(ctx context.Context) error {
 			return err
 		}
 	}
+
+	// Create the outbox publisher schedule
+	if err := w.createOutboxPublisherSchedule(ctx); err != nil {
+		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
+	}
+
 	return nil
 }
 
@@ -292,4 +299,18 @@ func (w *WorkerPool) RemoveWorker(name string) error {
 	w.logger.Infof("worker for connector %s removed", name)
 
 	return nil
+}
+
+func (w *WorkerPool) createOutboxPublisherSchedule(ctx context.Context) error {
+	// Create a temporary activity instance to call the schedule creation
+	activities := activities.New(
+		w.logger,
+		w.temporalClient,
+		w.storage,
+		nil, // events - not needed for schedule creation
+		nil, // connectors - not needed for schedule creation
+		0,   // rateLimitingRetryDelay - not needed for schedule creation
+	)
+
+	return activities.CreateOutboxPublisherSchedule(ctx, w.stack)
 }
