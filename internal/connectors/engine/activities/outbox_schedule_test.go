@@ -36,7 +36,7 @@ func TestCreateOutboxPublisherSchedule(t *testing.T) {
 		}
 
 		// Execute activity
-		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack")
+		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack-outbox-publisher", "test-stack-default", "test-stack")
 
 		// Verify
 		require.NoError(t, err)
@@ -62,7 +62,7 @@ func TestCreateOutboxPublisherSchedule(t *testing.T) {
 		}
 
 		// Execute activity
-		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack")
+		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack-outbox-publisher", "test-stack-default", "test-stack")
 
 		// Verify
 		require.Error(t, err)
@@ -89,7 +89,7 @@ func TestCreateOutboxPublisherSchedule(t *testing.T) {
 		}
 
 		// Execute activity
-		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack")
+		err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack-outbox-publisher", "test-stack-default", "test-stack")
 
 		// Verify
 		require.NoError(t, err)
@@ -125,7 +125,7 @@ func TestCreateOutboxPublisherSchedule_ScheduleOptions(t *testing.T) {
 	}
 
 	// Execute activity
-	err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack")
+	err := activity.CreateOutboxPublisherSchedule(ctx, "test-stack-outbox-publisher", "test-stack-default", "test-stack")
 	require.NoError(t, err)
 
 	// Verify basic schedule options

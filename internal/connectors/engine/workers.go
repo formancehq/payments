@@ -312,5 +312,8 @@ func (w *WorkerPool) createOutboxPublisherSchedule(ctx context.Context) error {
 		0,   // rateLimitingRetryDelay - not needed for schedule creation
 	)
 
-	return activities.CreateOutboxPublisherSchedule(ctx, w.stack)
+	scheduleID := fmt.Sprintf("%s-outbox-publisher", w.stack)
+	taskQueue := GetDefaultTaskQueue(w.stack)
+
+	return activities.CreateOutboxPublisherSchedule(ctx, scheduleID, taskQueue, w.stack)
 }
