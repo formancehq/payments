@@ -12,9 +12,7 @@ import (
 
 const OUTBOX_POLLING_PERIOD = 5 * time.Second
 
-func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, stack string) error {
-	scheduleID := fmt.Sprintf("%s-outbox-publisher", stack)
-
+func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, scheduleID, taskQueue, stack string) error {
 	// Check if schedule already exists
 	_, err := a.temporalClient.ScheduleClient().GetHandle(ctx, scheduleID).Describe(ctx)
 	if err == nil {
@@ -36,7 +34,7 @@ func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, stack str
 			ID:        scheduleID,
 			Workflow:  "OutboxPublisher",
 			Args:      []interface{}{}, // No arguments needed
-			TaskQueue: "payments",      // Use the default task queue
+			TaskQueue: taskQueue,
 		},
 		Overlap:            enums.SCHEDULE_OVERLAP_POLICY_SKIP,
 		TriggerImmediately: true,
@@ -54,6 +52,6 @@ func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, stack str
 
 var CreateOutboxPublisherScheduleActivity = Activities{}.CreateOutboxPublisherSchedule
 
-func CreateOutboxPublisherSchedule(ctx workflow.Context, stack string) error {
-	return executeActivity(ctx, CreateOutboxPublisherScheduleActivity, nil, stack)
+func CreateOutboxPublisherSchedule(ctx workflow.Context, scheduleID, taskQueue, stack string) error {
+	return executeActivity(ctx, CreateOutboxPublisherScheduleActivity, nil, scheduleID, taskQueue, stack)
 }
