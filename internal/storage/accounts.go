@@ -107,13 +107,14 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 			return fmt.Errorf("failed to marshal account event payload: %w", err)
 		}
 
+		cid := account.ConnectorID
 		outboxEvent := models.OutboxEvent{
 			EventType:   "account.saved",
 			EntityID:    account.ID.String(),
 			Payload:     payloadBytes,
 			CreatedAt:   time.Now().UTC().Time,
 			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &account.ConnectorID,
+			ConnectorID: &cid,
 		}
 
 		outboxEvents = append(outboxEvents, outboxEvent)
@@ -126,7 +127,11 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 		}
 	}
 
-	return e("failed to commit transaction", tx.Commit())
+	err = tx.Commit()
+	if err != nil {
+		return e("failed to commit transaction", err)
+	}
+	return nil
 }
 
 func (s *store) AccountsGet(ctx context.Context, id models.AccountID) (*models.Account, error) {
