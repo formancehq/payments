@@ -2,10 +2,12 @@ package activities
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"go.temporal.io/api/enums/v1"
+	"go.temporal.io/api/serviceerror"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/workflow"
 )
@@ -18,6 +20,11 @@ func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, scheduleI
 	if err == nil {
 		// Schedule already exists, no need to create it
 		return nil
+	}
+	var notFoundErr *serviceerror.NotFound
+	if !errors.As(err, &notFoundErr) {
+		// Some other error while describing: fail fast
+		return fmt.Errorf("describe schedule %s: %w", scheduleID, err)
 	}
 
 	// Create the schedule
@@ -44,6 +51,11 @@ func (a Activities) CreateOutboxPublisherSchedule(ctx context.Context, scheduleI
 	})
 
 	if err != nil {
+		var already *serviceerror.AlreadyExists
+		if errors.As(err, &already) {
+			// Created by concurrent caller, treat as success
+			return nil
+		}
 		return fmt.Errorf("failed to create outbox publisher schedule: %w", err)
 	}
 
