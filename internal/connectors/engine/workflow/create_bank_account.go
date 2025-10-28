@@ -93,7 +93,8 @@ func (w Workflow) createBankAccount(
 
 	bankAccount.RelatedAccounts = append(bankAccount.RelatedAccounts, relatedAccount)
 
-	//TODO check what happens now that we don't call directly runSendEvents for this
+	//TODO events are now using accountUpserted to propagate events downstream,
+	// but what does it means for related accounts?
 	return account.ID.String(), nil
 }
 
