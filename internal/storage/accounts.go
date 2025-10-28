@@ -109,12 +109,13 @@ func (s *store) AccountsUpsert(ctx context.Context, accounts []models.Account) e
 
 		cid := account.ConnectorID
 		outboxEvent := models.OutboxEvent{
-			EventType:   "account.saved",
-			EntityID:    account.ID.String(),
-			Payload:     payloadBytes,
-			CreatedAt:   time.Now().UTC().Time,
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &cid,
+			EventType:      "account.saved",
+			EntityID:       account.ID.String(),
+			Payload:        payloadBytes,
+			CreatedAt:      time.Now().UTC().Time,
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &cid,
+			IdempotencyKey: account.IdempotencyKey(),
 		}
 
 		outboxEvents = append(outboxEvents, outboxEvent)
