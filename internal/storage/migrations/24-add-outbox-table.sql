@@ -28,4 +28,4 @@ create index outbox_events_connector_id on outbox_events (connector_id);
 alter table outbox_events
     add constraint outbox_events_connector_id_fk foreign key (connector_id)
     references connectors (id)
-    on delete NO ACTION on update NO ACTION; -- maybe debatable, I'm naively thinking we should keep the event store as is, even if the connector is deleted
+    on delete CASCADE; -- maybe debatable, but events_sent is using delete cascade
