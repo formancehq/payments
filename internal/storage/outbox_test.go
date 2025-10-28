@@ -3,7 +3,6 @@ package storage
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"testing"
 	"time"
 
@@ -40,22 +39,24 @@ func TestOutboxEventsInsert(t *testing.T) {
 	// Create test events
 	events := []models.OutboxEvent{
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-1",
-			Payload:     json.RawMessage(`{"id": "account-1", "name": "Test Account"}`),
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1", "name": "Test Account"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-idempotency-key-1",
 		},
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-2",
-			Payload:     json.RawMessage(`{"id": "account-2", "name": "Test Account 2"}`),
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2", "name": "Test Account 2"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-idempotency-key-2",
 		},
 	}
 
@@ -86,31 +87,34 @@ func TestOutboxEventsPollPending(t *testing.T) {
 	// Insert test events with different statuses
 	events := []models.OutboxEvent{
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-1",
-			Payload:     json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:   time.Now().UTC().Add(-2 * time.Minute), // Older event
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC().Add(-2 * time.Minute), // Older event
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-1",
 		},
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-2",
-			Payload:     json.RawMessage(`{"id": "account-2"}`),
-			CreatedAt:   time.Now().UTC().Add(-1 * time.Minute), // Newer event
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-2",
+			Payload:        json.RawMessage(`{"id": "account-2"}`),
+			CreatedAt:      time.Now().UTC().Add(-1 * time.Minute), // Newer event
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-2",
 		},
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-3",
-			Payload:     json.RawMessage(`{"id": "account-3"}`),
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_FAILED, // Failed event should not be polled
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  1,
+			EventType:      "account.saved",
+			EntityID:       "account-3",
+			Payload:        json.RawMessage(`{"id": "account-3"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_FAILED, // Failed event should not be polled
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     1,
+			IdempotencyKey: "test-key-3",
 		},
 	}
 
@@ -148,13 +152,14 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	// Insert test event
 	events := []models.OutboxEvent{
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-1",
-			Payload:     json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-delete-and-record",
 		},
 	}
 
@@ -169,7 +174,7 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 	// Delete and record sent in transaction
 	eventSent := models.EventSent{
 		ID: models.EventID{
-			EventIdempotencyKey: fmt.Sprintf("%s:%s", event.EventType, event.EntityID),
+			EventIdempotencyKey: event.IdempotencyKey,
 			ConnectorID:         event.ConnectorID,
 		},
 		ConnectorID: event.ConnectorID,
@@ -186,7 +191,7 @@ func TestOutboxEventsDeleteAndRecordSent(t *testing.T) {
 
 	// Verify event is recorded as sent
 	eventID := models.EventID{
-		EventIdempotencyKey: fmt.Sprintf("%s:%s", event.EventType, event.EntityID),
+		EventIdempotencyKey: event.IdempotencyKey,
 		ConnectorID:         event.ConnectorID,
 	}
 	exists, err := store.EventsSentExists(ctx, eventID)
@@ -206,13 +211,14 @@ func TestOutboxEventsMarkFailed(t *testing.T) {
 	// Insert test event
 	events := []models.OutboxEvent{
 		{
-			EventType:   "account.saved",
-			EntityID:    "account-1",
-			Payload:     json.RawMessage(`{"id": "account-1"}`),
-			CreatedAt:   time.Now().UTC(),
-			Status:      models.OUTBOX_STATUS_PENDING,
-			ConnectorID: &defaultConnector.ID,
-			RetryCount:  0,
+			EventType:      "account.saved",
+			EntityID:       "account-1",
+			Payload:        json.RawMessage(`{"id": "account-1"}`),
+			CreatedAt:      time.Now().UTC(),
+			Status:         models.OUTBOX_STATUS_PENDING,
+			ConnectorID:    &defaultConnector.ID,
+			RetryCount:     0,
+			IdempotencyKey: "test-key-for-mark-failed",
 		},
 	}
 

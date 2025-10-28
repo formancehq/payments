@@ -20,12 +20,13 @@ type outboxEvent struct {
 	SortID int64 `bun:"sort_id,autoincrement"`
 
 	// Mandatory fields
-	ID        uuid.UUID                `bun:"id,pk,type:uuid"`
-	EventType string                   `bun:"event_type,type:text,notnull"`
-	EntityID  string                   `bun:"entity_id,type:character varying,notnull"`
-	Payload   json.RawMessage          `bun:"payload,type:jsonb,notnull"`
-	CreatedAt internalTime.Time        `bun:"created_at,type:timestamp without time zone,notnull"`
-	Status    models.OutboxEventStatus `bun:"status,type:text,notnull"`
+	ID             uuid.UUID                `bun:"id,pk,type:uuid"`
+	EventType      string                   `bun:"event_type,type:text,notnull"`
+	EntityID       string                   `bun:"entity_id,type:character varying,notnull"`
+	Payload        json.RawMessage          `bun:"payload,type:jsonb,notnull"`
+	CreatedAt      internalTime.Time        `bun:"created_at,type:timestamp without time zone,notnull"`
+	Status         models.OutboxEventStatus `bun:"status,type:text,notnull"`
+	IdempotencyKey string                   `bun:"idempotency_key,type:character varying,notnull"`
 
 	// Optional fields
 	ConnectorID *models.ConnectorID `bun:"connector_id,type:character varying,nullzero"`
@@ -134,13 +135,14 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 
 func fromOutboxEventModel(from models.OutboxEvent) outboxEvent {
 	event := outboxEvent{
-		EventType:   from.EventType,
-		EntityID:    from.EntityID,
-		Payload:     from.Payload,
-		CreatedAt:   internalTime.New(from.CreatedAt),
-		Status:      from.Status,
-		ConnectorID: from.ConnectorID,
-		RetryCount:  from.RetryCount,
+		EventType:      from.EventType,
+		EntityID:       from.EntityID,
+		Payload:        from.Payload,
+		CreatedAt:      internalTime.New(from.CreatedAt),
+		Status:         from.Status,
+		IdempotencyKey: from.IdempotencyKey,
+		ConnectorID:    from.ConnectorID,
+		RetryCount:     from.RetryCount,
 		LastRetryAt: func() *internalTime.Time {
 			if from.LastRetryAt == nil {
 				return nil
@@ -164,15 +166,16 @@ func fromOutboxEventModel(from models.OutboxEvent) outboxEvent {
 
 func toOutboxEventModel(from outboxEvent) models.OutboxEvent {
 	return models.OutboxEvent{
-		SortID:      from.SortID,
-		ID:          from.ID,
-		EventType:   from.EventType,
-		EntityID:    from.EntityID,
-		Payload:     from.Payload,
-		CreatedAt:   from.CreatedAt.Time,
-		Status:      from.Status,
-		ConnectorID: from.ConnectorID,
-		RetryCount:  from.RetryCount,
+		SortID:         from.SortID,
+		ID:             from.ID,
+		EventType:      from.EventType,
+		EntityID:       from.EntityID,
+		Payload:        from.Payload,
+		CreatedAt:      from.CreatedAt.Time,
+		Status:         from.Status,
+		IdempotencyKey: from.IdempotencyKey,
+		ConnectorID:    from.ConnectorID,
+		RetryCount:     from.RetryCount,
 		LastRetryAt: func() *time.Time {
 			if from.LastRetryAt == nil {
 				return nil

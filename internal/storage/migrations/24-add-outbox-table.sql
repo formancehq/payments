@@ -5,6 +5,7 @@ create table if not exists outbox_events (
 
     -- Mandatory fields
     id uuid not null,
+    idempotency_key text not null,
     event_type text not null,
     entity_id varchar not null,
     payload jsonb not null,

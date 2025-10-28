@@ -63,7 +63,7 @@ func (a Activities) publishAccountEvent(ctx context.Context, event models.Outbox
 
 	// Create the event message (same format as EventsSendAccount)
 	eventMessage := publish.EventMessage{
-		IdempotencyKey: a.generateIdempotencyKey(event),
+		IdempotencyKey: event.IdempotencyKey,
 		Date:           time.Now().UTC(),
 		App:            events.EventApp,
 		Version:        events.EventVersion,
@@ -75,16 +75,11 @@ func (a Activities) publishAccountEvent(ctx context.Context, event models.Outbox
 	return a.events.Publish(ctx, eventMessage)
 }
 
-func (a Activities) generateIdempotencyKey(event models.OutboxEvent) string {
-	// Generate idempotency key based on event type and entity ID
-	return fmt.Sprintf("%s:%s", event.EventType, event.EntityID)
-}
-
 func (a Activities) deleteOutboxAndRecordSent(ctx context.Context, event models.OutboxEvent) error {
 	// Record in events_sent table and delete from outbox in same transaction
 	eventSent := models.EventSent{
 		ID: models.EventID{
-			EventIdempotencyKey: a.generateIdempotencyKey(event),
+			EventIdempotencyKey: event.IdempotencyKey,
 			ConnectorID:         event.ConnectorID,
 		},
 		ConnectorID: event.ConnectorID,

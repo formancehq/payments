@@ -21,12 +21,13 @@ type OutboxEvent struct {
 	SortID int64 `json:"sortId"`
 
 	// Mandatory fields
-	ID        uuid.UUID         `json:"id"`
-	EventType string            `json:"eventType"`
-	EntityID  string            `json:"entityId"`
-	Payload   json.RawMessage   `json:"payload"`
-	CreatedAt time.Time         `json:"createdAt"`
-	Status    OutboxEventStatus `json:"status"`
+	ID             uuid.UUID         `json:"id"`
+	EventType      string            `json:"eventType"`
+	EntityID       string            `json:"entityId"`
+	Payload        json.RawMessage   `json:"payload"`
+	CreatedAt      time.Time         `json:"createdAt"`
+	Status         OutboxEventStatus `json:"status"`
+	IdempotencyKey string            `json:"idempotencyKey"`
 
 	// Optional fields
 	ConnectorID *ConnectorID `json:"connectorId,omitempty"`
