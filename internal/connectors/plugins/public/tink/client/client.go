@@ -12,7 +12,7 @@ import (
 
 //go:generate mockgen -source client.go -destination client_generated.go -package client . Client
 type Client interface {
-	CreateUser(ctx context.Context, userID string, market string) (CreateUserResponse, error)
+	CreateUser(ctx context.Context, userID string, market string, locale string) (CreateUserResponse, error)
 	CreateTemporaryAuthorizationCode(ctx context.Context, request CreateTemporaryCodeRequest) (CreateTemporaryCodeResponse, error)
 	CreateWebhook(ctx context.Context, eventType WebhookEventType, connectorID string, url string) (CreateWebhookResponse, error)
 	DeleteWebhook(ctx context.Context, webhookID string) error

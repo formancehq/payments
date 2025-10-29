@@ -21,13 +21,13 @@ type CreateUserResponse struct {
 	UserID         string `json:"user_id"`
 }
 
-func (c *client) CreateUser(ctx context.Context, userID string, market string) (CreateUserResponse, error) {
+func (c *client) CreateUser(ctx context.Context, userID string, market string, locale string) (CreateUserResponse, error) {
 	ctx = context.WithValue(ctx, metrics.MetricOperationContextKey, "create_user")
 
 	body, err := json.Marshal(&CreateUserRequest{
 		ExternalUserID: userID,
 		Market:         market,
-		Locale:         "en_US",
+		Locale:         locale,
 	})
 	if err != nil {
 		return CreateUserResponse{}, err
