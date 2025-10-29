@@ -43,7 +43,7 @@ func (p *Plugin) createUser(ctx context.Context, req models.CreateUserRequest) (
 	}
 
 	createUserResponse, err := p.client.CreateUser(ctx,
-		req.PaymentServiceUser.ID.String(), *req.PaymentServiceUser.Address.Country)
+		req.PaymentServiceUser.ID.String(), *req.PaymentServiceUser.Address.Country, *req.PaymentServiceUser.ContactDetails.Locale)
 	if err != nil {
 		return models.CreateUserResponse{}, err
 	}

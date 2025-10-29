@@ -56,18 +56,18 @@ func (mr *MockClientMockRecorder) CreateTemporaryAuthorizationCode(ctx, request 
 }
 
 // CreateUser mocks base method.
-func (m *MockClient) CreateUser(ctx context.Context, userID, market string) (CreateUserResponse, error) {
+func (m *MockClient) CreateUser(ctx context.Context, userID, market, locale string) (CreateUserResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateUser", ctx, userID, market)
+	ret := m.ctrl.Call(m, "CreateUser", ctx, userID, market, locale)
 	ret0, _ := ret[0].(CreateUserResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
 // CreateUser indicates an expected call of CreateUser.
-func (mr *MockClientMockRecorder) CreateUser(ctx, userID, market any) *gomock.Call {
+func (mr *MockClientMockRecorder) CreateUser(ctx, userID, market, locale any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockClient)(nil).CreateUser), ctx, userID, market)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockClient)(nil).CreateUser), ctx, userID, market, locale)
 }
 
 // CreateWebhook mocks base method.
