@@ -3,11 +3,14 @@ package bitstamp
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
+// accountsState tracks pagination state for fetching accounts.
+// Bitstamp returns accounts from configuration rather than paginated API,
+// so this remains empty but is kept for consistency with the framework.
 type accountsState struct {
 	// TODO: accountsState will be used to know at what point we're at when
 	// fetching the PSP accounts.
@@ -18,6 +21,9 @@ type accountsState struct {
 	// LastIDCreated int64 `json:"lastIDCreated"`
 }
 
+// fetchNextAccounts retrieves accounts from the Bitstamp connector configuration.
+// Unlike typical PSPs, Bitstamp accounts are configured at setup time with their API credentials.
+// This method returns all configured accounts in a single response (no pagination needed).
 func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAccountsRequest) (models.FetchNextAccountsResponse, error) {
 	var oldState accountsState
 	if req.State != nil {
@@ -26,33 +32,35 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 		}
 	}
 
-	newState := accountsState{
-		// TODO: fill new state with old state value
+	newState := accountsState{}
+
+	// Get all accounts from config (no pagination from Bitstamp API)
+	pagedAccounts, err := p.client.GetAccounts(ctx, 0, req.PageSize)
+	if err != nil {
+		return models.FetchNextAccountsResponse{}, err
 	}
 
-	accounts := make([]models.PSPAccount, 0, req.PageSize)
-	needMore := false
-	hasMore := false
-	for /* TODO: range over pages or others */ page := 0; ; page++ {
-		pagedAccounts, err := p.client.GetAccounts(ctx, page, req.PageSize)
+	// Convert to PSPAccount format
+	accounts := make([]models.PSPAccount, 0, len(pagedAccounts))
+	for _, acc := range pagedAccounts {
+		raw, err := json.Marshal(acc)
 		if err != nil {
 			return models.FetchNextAccountsResponse{}, err
 		}
 
-		// TODO: transfer PSP object into formance object
-		accounts = append(accounts, models.PSPAccount{})
-
-		needMore, hasMore = pagination.ShouldFetchMore(accounts, pagedAccounts, req.PageSize)
-		if !needMore || !hasMore {
-			break
+		var name *string
+		if acc.Name != "" {
+			name = &acc.Name
 		}
+
+		accounts = append(accounts, models.PSPAccount{
+			Reference: acc.ID,
+			CreatedAt: time.Now(),
+			Name:      name,
+			Raw:       raw,
+		})
 	}
 
-	if !needMore {
-		accounts = accounts[:req.PageSize]
-	}
-
-	// TODO: don't forget to update your state accordingly
 	payload, err := json.Marshal(newState)
 	if err != nil {
 		return models.FetchNextAccountsResponse{}, err
@@ -61,6 +69,6 @@ func (p *Plugin) fetchNextAccounts(ctx context.Context, req models.FetchNextAcco
 	return models.FetchNextAccountsResponse{
 		Accounts: accounts,
 		NewState: payload,
-		HasMore:  hasMore,
+		HasMore:  false,
 	}, nil
 }

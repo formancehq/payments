@@ -5,21 +5,29 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/formancehq/go-libs/v3/currency"
 	bsclient "github.com/formancehq/payments/internal/connectors/plugins/public/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
-	"github.com/formancehq/payments/internal/utils/pagination"
 )
 
-// Persisted pagination state for Bitstamp
+// paymentsState tracks pagination when fetching transactions.
+// - LastOffset: Offset for next API call (increments when timestamp hasn't changed)
+// - LastCreationDate: Most recent transaction timestamp seen (for deduplication)
 type paymentsState struct {
 	LastOffset       int       `json:"lastOffset"`
 	LastCreationDate time.Time `json:"lastCreationDate"`
 }
 
+// fetchNextPayments retrieves transactions from all configured Bitstamp accounts.
+// The method:
+// 1. Fetches transactions from each account's user_transactions endpoint
+// 2. Deduplicates by transaction ID (same transaction may appear in multiple accounts)
+// 3. Sorts by datetime descending (most recent first)
+// 4. Converts to PSPPayment format, inferring type from currency leg patterns
 func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaymentsRequest) (models.FetchNextPaymentsResponse, error) {
 	// ---- load previous state ----
 	var oldState paymentsState
@@ -29,28 +37,39 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		}
 	}
 
-	// Bitstamp "user_transactions" is account-global, so we don't require FromPayload.
 	newState := paymentsState{
 		LastOffset:       oldState.LastOffset,
 		LastCreationDate: oldState.LastCreationDate,
 	}
 
+	// Get all configured accounts
+	accounts := p.client.GetAllAccounts()
+	if len(accounts) == 0 {
+		return models.FetchNextPaymentsResponse{}, fmt.Errorf("no accounts configured")
+	}
+
+	p.logger.Infof("Fetching payments for %d accounts", len(accounts))
+
 	var (
-		out      []models.PSPPayment
-		needMore bool
-		hasMore  bool
+		allTransactions []bsclient.Transaction
+		hasMore         bool
 	)
 
 	offset := oldState.LastOffset
 	limit := req.PageSize
-	if limit <= 0 {
+	if limit < 10 { // Use a reasonable minimum (handles 0, negative, and small values)
 		limit = 100
 	}
 	if limit > 1000 { // API upper bound
 		limit = 1000
 	}
 
-	for {
+	p.logger.Infof("Using offset=%d, limit=%d", offset, limit)
+
+	// Fetch transactions for each account and deduplicate by ID
+	seenTxIDs := make(map[string]bool)
+	duplicateCount := 0
+	for _, account := range accounts {
 		params := bsclient.TransactionsParams{
 			Offset: offset,
 			Limit:  limit,
@@ -59,26 +78,55 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		// Optional optimization: keep a moving window using the last seen creation time.
 		if !oldState.LastCreationDate.IsZero() {
 			params.SinceTimestamp = oldState.LastCreationDate.Unix()
+			p.logger.Infof("Using since timestamp: %v", oldState.LastCreationDate)
 		}
 
-		// Your GetTransactions returns []client.Transaction, error
-		rows, err := p.client.GetTransactions(ctx, params)
+		p.logger.Infof("Fetching transactions for account: %s (ID: %s)", account.Name, account.ID)
+		rows, err := p.client.GetTransactionsForAccount(ctx, account, params)
 		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
+			return models.FetchNextPaymentsResponse{}, fmt.Errorf("failed to fetch transactions for account %s: %w", account.Name, err)
 		}
 
-		out, err = fillPaymentsBitstamp(rows, out)
-		if err != nil {
-			return models.FetchNextPaymentsResponse{}, err
-		}
+		p.logger.Infof("Account %s returned %d transactions", account.Name, len(rows))
 
-		needMore, hasMore = pagination.ShouldFetchMore(out, rows, req.PageSize)
-		if !needMore || !hasMore {
-			break
+		// Only add transactions we haven't seen yet
+		for _, tx := range rows {
+			txID := string(tx.ID)
+			if !seenTxIDs[txID] {
+				seenTxIDs[txID] = true
+				allTransactions = append(allTransactions, tx)
+			} else {
+				duplicateCount++
+				p.logger.Debugf("Skipping duplicate transaction ID: %s", txID)
+			}
 		}
-
-		offset += limit
+		
+		if len(rows) >= limit {
+			hasMore = true
+		}
 	}
+
+	p.logger.Infof("Total unique transactions: %d, duplicates filtered: %d", len(allTransactions), duplicateCount)
+
+	// Sort all transactions by date (descending)
+	sort.Slice(allTransactions, func(i, j int) bool {
+		timeI, errI := parseBitstampTime(allTransactions[i].Datetime)
+		timeJ, errJ := parseBitstampTime(allTransactions[j].Datetime)
+		if errI != nil || errJ != nil {
+			return false
+		}
+		return timeI.After(timeJ)
+	})
+
+	p.logger.Infof("Sorted %d transactions by date", len(allTransactions))
+
+	// Convert to payments
+	out, err := fillPaymentsBitstamp(allTransactions, nil)
+	if err != nil {
+		return models.FetchNextPaymentsResponse{}, err
+	}
+
+	p.logger.Infof("Converted to %d payments", len(out))
 
 	// Update state from the *last* emitted payment (descending order)
 	if len(out) > 0 {
@@ -97,6 +145,8 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 		return models.FetchNextPaymentsResponse{}, err
 	}
 
+	p.logger.Infof("Returning %d payments, hasMore=%v", len(out), hasMore)
+
 	return models.FetchNextPaymentsResponse{
 		Payments: out,
 		NewState: payload,
@@ -106,6 +156,7 @@ func (p *Plugin) fetchNextPayments(ctx context.Context, req models.FetchNextPaym
 
 // ---- Transaction → PSPPayment ----------------------------------------------
 
+// fillPaymentsBitstamp converts Bitstamp transactions to PSPPayment format.
 func fillPaymentsBitstamp(
 	rows []bsclient.Transaction,
 	out []models.PSPPayment,
@@ -122,6 +173,11 @@ func fillPaymentsBitstamp(
 	return out, nil
 }
 
+// transactionToPayment converts a single Bitstamp transaction to PSPPayment.
+// Payment type inference logic:
+// - Multiple non-zero currency legs → TRANSFER (e.g., trading BTC/EUR)
+// - Single positive leg → PAYIN (deposit)
+// - Single negative leg → PAYOUT (withdrawal)
 func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
 	// Raw
 	raw, err := json.Marshal(&tx)
@@ -216,6 +272,7 @@ func transactionToPayment(tx bsclient.Transaction) (*models.PSPPayment, error) {
 
 // ---- Helpers ----------------------------------------------------------------
 
+// isZeroNumStr checks if a numeric string represents zero.
 func isZeroNumStr(s string) bool {
 	ns := strings.TrimSpace(s)
 	if ns == "" {

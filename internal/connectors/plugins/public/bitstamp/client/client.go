@@ -17,16 +17,19 @@ import (
 
 // ----- Public API -----
 
-// Client describes the minimal interface your connector can depend on.
+// Client provides authenticated access to the Bitstamp API v2.
+// It supports multiple accounts, each with its own API credentials,
+// and implements Bitstamp's HMAC-SHA256 signature authentication.
 type Client interface {
 	GetTransactions(ctx context.Context, params TransactionsParams) ([]Transaction, error)
+	GetTransactionsForAccount(ctx context.Context, account *Account, params TransactionsParams) ([]Transaction, error)
 	GetAccounts(ctx context.Context, page, pageSize int) ([]*Account, error)
-	GetAccountBalances(ctx context.Context) ([]*Balance, error)
+	GetAccountBalances(ctx context.Context, account *Account) ([]*Balance, error)
+	GetAllAccounts() []*Account
 }
 
 type client struct {
-	apiKey    string
-	apiSecret []byte
+	accounts []*Account
 
 	baseURL    *url.URL
 	httpClient *http.Client
@@ -34,37 +37,22 @@ type client struct {
 	timeout    time.Duration
 }
 
-// New creates a Bitstamp client with a signing transport.
-func New(apiKey string, apiSecret []byte, opts ...Option) Client {
+// New creates a Bitstamp client with the provided options.
+// The client supports multiple accounts, each authenticated independently.
+func New(opts ...Option) Client {
 	c := &client{
-		apiKey:    apiKey,
-		apiSecret: apiSecret,
-		baseURL:   mustParseURL("https://www.bitstamp.net"),
+		baseURL: mustParseURL("https://www.bitstamp.net"),
 	}
 
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	tr := &signingTransport{
-		APIKey:     c.apiKey,
-		APISecret:  c.apiSecret,
-		Underlying: c.underlying, // may be nil → http.DefaultTransport
-	}
-
+	// Base httpClient is set up without auth; credentials are per-account
 	if c.httpClient == nil {
 		c.httpClient = &http.Client{
-			Transport: tr,
+			Transport: c.underlying, // may be nil → http.DefaultTransport
 			Timeout:   c.timeoutOrDefault(),
-		}
-	} else {
-		// Ensure our signing transport wraps the provided client
-		if c.httpClient.Transport == nil {
-			c.httpClient.Transport = tr
-		} else {
-			// If they already set a transport, we wrap it as the Underlying
-			tr.Underlying = c.httpClient.Transport
-			c.httpClient.Transport = tr
 		}
 	}
 
@@ -90,6 +78,10 @@ func WithTimeout(d time.Duration) Option {
 	return func(c *client) { c.timeout = d }
 }
 
+func WithAccounts(accounts []*Account) Option {
+	return func(c *client) { c.accounts = accounts }
+}
+
 // ----- Implementation -----
 
 func (c *client) timeoutOrDefault() time.Duration {
@@ -99,14 +91,55 @@ func (c *client) timeoutOrDefault() time.Duration {
 	return 30 * time.Second
 }
 
+// getMainAccount returns the account with name "main"
+func (c *client) getMainAccount() (*Account, error) {
+	for _, account := range c.accounts {
+		if account.Name == "main" {
+			return account, nil
+		}
+	}
+	return nil, fmt.Errorf("bitstamp: no account with name 'main' found")
+}
+
+// httpClientForAccount creates an authenticated HTTP client for a specific account
+func (c *client) httpClientForAccount(account *Account) *http.Client {
+	tr := &signingTransport{
+		APIKey:     account.APIKey,
+		APISecret:  []byte(account.ApiSecret),
+		Underlying: c.underlying,
+	}
+
+	if c.httpClient == nil {
+		return &http.Client{
+			Transport: tr,
+			Timeout:   c.timeoutOrDefault(),
+		}
+	}
+
+	// Clone the base client and wrap with account-specific auth
+	clone := *c.httpClient
+	clone.Transport = tr
+	return &clone
+}
+
+// GetAllAccounts returns all configured accounts
+func (c *client) GetAllAccounts() []*Account {
+	return c.accounts
+}
+
 // ----- Signing Transport (Bitstamp v2) -----
 
+// signingTransport wraps an HTTP transport to automatically sign requests
+// using Bitstamp's v2 authentication (HMAC-SHA256 signature).
 type signingTransport struct {
 	APIKey     string
 	APISecret  []byte
 	Underlying http.RoundTripper
 }
 
+// RoundTrip implements http.RoundTripper by adding Bitstamp v2 authentication headers.
+// The signature is computed over: BITSTAMP + API_KEY + method + host + path + query +
+// content-type + nonce + timestamp + version + body
 func (t *signingTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	rt := t.Underlying
 	if rt == nil {
@@ -207,9 +240,9 @@ func hmacSHA256(key, msg []byte) []byte {
 	return h.Sum(nil)
 }
 
+// newNonce generates a unique 36-character nonce required by Bitstamp API.
+// Must be unique within a 150-second window per API key.
 func newNonce() string {
-	// Generate a 36-character lowercase string as required by Bitstamp API
-	// This ensures uniqueness within the 150-second window
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
 	b := make([]byte, 36)
 	rand.Read(b)

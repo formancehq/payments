@@ -2,44 +2,72 @@ package bitstamp
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"strings"
+	"time"
 
+	"github.com/formancehq/go-libs/v3/currency"
+	"github.com/formancehq/payments/internal/connectors/plugins/public/bitstamp/client"
 	"github.com/formancehq/payments/internal/models"
 )
 
+// fetchNextBalances retrieves all currency balances for a specific Bitstamp account.
+// The method:
+// 1. Identifies the account from the request payload
+// 2. Calls Bitstamp's account_balances API endpoint
+// 3. Converts balance amounts using appropriate currency precision (fiat vs crypto)
+// 4. Returns all balances in a single response (no pagination)
 func (p *Plugin) fetchNextBalances(ctx context.Context, req models.FetchNextBalancesRequest) (models.FetchNextBalancesResponse, error) {
-	// TODO: if needed, uncomment the following lines to get the related account in request
-	// var from models.PSPAccount
-	// if req.FromPayload == nil {
-	// 	return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
-	// }
-	// if err := json.Unmarshal(req.FromPayload, &from); err != nil {
-	// 	return models.FetchNextBalancesResponse{}, err
-	// }
+	var from models.PSPAccount
+	if req.FromPayload == nil {
+		return models.FetchNextBalancesResponse{}, models.ErrMissingFromPayloadInRequest
+	}
+	if err := json.Unmarshal(req.FromPayload, &from); err != nil {
+		return models.FetchNextBalancesResponse{}, err
+	}
 
-	balances, err := p.client.GetAccountBalances(ctx)
+	// Find the account by reference
+	var targetAccount *client.Account
+	for _, account := range p.client.GetAllAccounts() {
+		if account.ID == from.Reference {
+			targetAccount = account
+			break
+		}
+	}
+	if targetAccount == nil {
+		return models.FetchNextBalancesResponse{}, fmt.Errorf("account not found: %s", from.Reference)
+	}
+
+	// Fetch balances for this specific account
+	balances, err := p.client.GetAccountBalances(ctx, targetAccount)
 	if err != nil {
 		return models.FetchNextBalancesResponse{}, err
 	}
 
-	var accountBalances []models.PSPBalance
+	accountBalances := make([]models.PSPBalance, 0, len(balances))
 	for _, balance := range balances {
-		// TODO: You can use the following method to extract the amount and the
-		// asset from the PSP data if you're not already in minor units currency.
-		// precision, err := currency.GetPrecision(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
-		// if err != nil {
-		// 	return models.FetchNextBalancesResponse{}, err
-		// }
+		symbol := strings.ToUpper(balance.Currency)
+		precision, ok := supportedCurrenciesWithDecimal[symbol]
+		if !ok {
+			precision = 8
+		}
 
-		// amount, err := currency.GetAmountWithPrecisionFromString(balance.Attributes.AvailableBalance.String(), precision)
-		// if err != nil {
-		// 	return models.FetchNextBalancesResponse{}, err
-		// }
+		amount, err := currency.GetAmountWithPrecisionFromString(balance.Total, precision)
+		if err != nil {
+			return models.FetchNextBalancesResponse{}, fmt.Errorf("failed to parse balance amount: %w", err)
+		}
+		asset := currency.FormatAsset(supportedCurrenciesWithDecimal, symbol)
+		if asset == "" {
+			asset = fmt.Sprintf("%s/%d", symbol, precision)
+		}
 
-		// asset := currency.FormatAsset(supportedCurrenciesWithDecimal, balance.Attributes.CurrencyCode)
-
-		// TODO: translate PSP balance to formance balance object
-		_ = balance
-		accountBalances = append(accountBalances, models.PSPBalance{})
+		accountBalances = append(accountBalances, models.PSPBalance{
+			AccountReference: from.Reference,
+			CreatedAt:        time.Now().UTC(),
+			Amount:           amount,
+			Asset:            asset,
+		})
 	}
 
 	return models.FetchNextBalancesResponse{

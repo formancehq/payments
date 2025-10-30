@@ -13,12 +13,17 @@ import (
 
 const ProviderName = "bitstamp"
 
+// init registers the Bitstamp connector with the plugin registry.
+// The connector is classified as PluginTypeExchange and supports fetching
+// accounts, balances, and payment history.
 func init() {
 	registry.RegisterPlugin(ProviderName, models.PluginTypeExchange, func(_ models.ConnectorID, name string, logger logging.Logger, rm json.RawMessage) (models.Plugin, error) {
 		return New(name, logger, rm)
 	}, capabilities, Config{})
 }
 
+// Plugin implements the Bitstamp connector for fetching accounts, balances, and transactions.
+// It supports multiple sub-accounts, each with independent API credentials.
 type Plugin struct {
 	models.Plugin
 
@@ -29,14 +34,23 @@ type Plugin struct {
 	client client.Client
 }
 
+// New creates a new Bitstamp plugin instance with the provided configuration.
+// The configuration must include API endpoint and at least one account with credentials.
 func New(name string, logger logging.Logger, rawConfig json.RawMessage) (*Plugin, error) {
 	config, err := unmarshalAndValidateConfig(rawConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	_ = config // TODO: use config to create client and remove this line
-	client := client.New(config.ApiKey, []byte(config.ApiSecret), client.WithBaseURL(config.Endpoint))
+	accounts := make([]*client.Account, len(config.Accounts))
+	for i := range config.Accounts {
+		accounts[i] = &config.Accounts[i]
+	}
+
+	client := client.New(
+		client.WithBaseURL(config.Endpoint),
+		client.WithAccounts(accounts),
+	)
 
 	return &Plugin{
 		Plugin: plugins.NewBasePlugin(),

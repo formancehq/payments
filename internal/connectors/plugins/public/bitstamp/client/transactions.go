@@ -12,6 +12,9 @@ import (
 	"time"
 )
 
+// Transaction represents a Bitstamp user transaction (trade, deposit, withdrawal, etc).
+// Currency fields are dynamic - Bitstamp includes columns for each currency traded
+// (e.g., EUR, USD, BTC, USDC). Non-zero values indicate which currencies were affected.
 type Transaction struct {
 	ID       NumString `json:"id"`       // e.g., "458254264" or 458254264 → captured as "458254264"
 	Datetime string    `json:"datetime"` // "2025-09-25 14:42:59.894846"
@@ -24,7 +27,20 @@ type Transaction struct {
 	BTC      NumString `json:"btc"`      // "0.0"
 }
 
+// GetTransactions fetches transactions using the "main" account credentials.
+// This is a convenience method for single-account setups.
 func (c *client) GetTransactions(ctx context.Context, p TransactionsParams) ([]Transaction, error) {
+	mainAccount, err := c.getMainAccount()
+	if err != nil {
+		return nil, err
+	}
+	return c.GetTransactionsForAccount(ctx, mainAccount, p)
+}
+
+// GetTransactionsForAccount fetches transactions for a specific Bitstamp account.
+// The method supports pagination (offset/limit), time windows (since/until timestamps),
+// and sorting. Maximum 1000 transactions per request per Bitstamp API limits.
+func (c *client) GetTransactionsForAccount(ctx context.Context, account *Account, p TransactionsParams) ([]Transaction, error) {
 	form := url.Values{}
 
 	// ----- offset -----
@@ -42,7 +58,7 @@ func (c *client) GetTransactions(ctx context.Context, p TransactionsParams) ([]T
 	if p.SinceID != "" {
 		limit = 1000 // per docs
 	}
-	if limit <= 0 {
+	if limit < 10 { // Use a reasonable minimum (handles 0, negative, and small values)
 		limit = 100
 	}
 	if limit > 1000 {
@@ -70,21 +86,24 @@ func (c *client) GetTransactions(ctx context.Context, p TransactionsParams) ([]T
 		form.Set("since_id", p.SinceID)
 	}
 
-	// Build the HTTP request. IMPORTANT: set Content-Type so the signing transport
-	// includes it in the signature exactly as sent.
 	endpoint := "https://www.bitstamp.net/api/v2/user_transactions/"
 	bodyStr := form.Encode()
+
+	// Log the request details
+	fmt.Printf("[BITSTAMP] GetTransactionsForAccount - Account: %s (ID: %s)\n", account.Name, account.ID)
+	fmt.Printf("[BITSTAMP] Endpoint: %s\n", endpoint)
+	fmt.Printf("[BITSTAMP] Request body: %s\n", bodyStr)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(bodyStr))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	// Optional: set ContentLength to avoid chunked encoding (not required)
-	// req.ContentLength = int64(len(bodyStr))
 
-	// Use your configured http.Client that has the signing RoundTripper.
-	resp, err := c.httpClient.Do(req)
+	// Authenticate with the specific account's credentials
+	httpClient := c.httpClientForAccount(account)
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -96,13 +115,17 @@ func (c *client) GetTransactions(ctx context.Context, p TransactionsParams) ([]T
 	}
 
 	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("[BITSTAMP] Error response: status %d: %s\n", resp.StatusCode, string(data))
 		return nil, fmt.Errorf("bitstamp: status %d: %s", resp.StatusCode, string(data))
 	}
 
 	var txs []Transaction
 	if err := json.Unmarshal(data, &txs); err != nil {
+		fmt.Printf("[BITSTAMP] Decode error: %v; body=%s\n", err, string(data))
 		return nil, fmt.Errorf("bitstamp: decode error: %w; body=%s", err, string(data))
 	}
+
+	fmt.Printf("[BITSTAMP] Successfully fetched %d transactions\n", len(txs))
 
 	return txs, nil
 }
@@ -119,8 +142,11 @@ func SevenDayWindow() (since, until int64) {
 	return now - 7*day, now
 }
 
+// NumString handles JSON values that can be either strings or numbers.
+// Bitstamp inconsistently returns some numeric fields as strings vs numbers.
 type NumString string
 
+// UnmarshalJSON normalizes both quoted and unquoted numbers to strings.
 func (n *NumString) UnmarshalJSON(b []byte) error {
 	// If it's quoted, strip quotes; else keep numeric literal as-is.
 	if len(b) > 0 && b[0] == '"' {
