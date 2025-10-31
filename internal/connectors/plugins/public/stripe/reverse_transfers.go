@@ -1,18 +1,18 @@
 package stripe
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
-	"math/big"
-	"strings"
-	"time"
+    "context"
+    "encoding/json"
+    "fmt"
+    "math/big"
+    "strings"
+    "time"
 
-	"github.com/formancehq/go-libs/v3/currency"
-	"github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
-	"github.com/formancehq/payments/internal/models"
-	errorsutils "github.com/formancehq/payments/internal/utils/errors"
-	"github.com/stripe/stripe-go/v79"
+    "github.com/formancehq/go-libs/v3/currency"
+    "github.com/formancehq/payments/internal/connectors/plugins/public/stripe/client"
+    "github.com/formancehq/payments/internal/models"
+    errorsutils "github.com/formancehq/payments/pkg/pluginsdk/errors"
+    "github.com/stripe/stripe-go/v79"
 )
 
 const (
