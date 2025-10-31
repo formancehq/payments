@@ -595,20 +595,11 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_Empty_Success() {
 	s.NoError(err)
 }
 
+// TODO these test should probably not lie in "fetch_payment_test" file...
 func (s *UnitTestSuite) Test_StoreWebhookTranslation_Account_Success() {
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, accounts []models.Account) error {
 		s.Len(accounts, 1)
 		s.Equal(s.accountID, accounts[0].ID)
-		return nil
-	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Account)
-		s.Nil(req.Balance)
-		s.Nil(req.BankAccount)
-		s.Nil(req.ConnectorReset)
-		s.Nil(req.Payment)
-		s.Nil(req.PoolsCreation)
-		s.Nil(req.PoolsDeletion)
 		return nil
 	})
 
@@ -643,16 +634,6 @@ func (s *UnitTestSuite) Test_StoreWebhookTranslation_ExternalAccount_Success() {
 	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, accounts []models.Account) error {
 		s.Len(accounts, 1)
 		s.Equal(s.accountID, accounts[0].ID)
-		return nil
-	})
-	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req SendEvents) error {
-		s.NotNil(req.Account)
-		s.Nil(req.Balance)
-		s.Nil(req.BankAccount)
-		s.Nil(req.ConnectorReset)
-		s.Nil(req.Payment)
-		s.Nil(req.PoolsCreation)
-		s.Nil(req.PoolsDeletion)
 		return nil
 	})
 

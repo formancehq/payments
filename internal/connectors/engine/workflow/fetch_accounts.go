@@ -88,34 +88,7 @@ func (w Workflow) fetchAccounts(
 		}
 
 		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(accountsResponse.Accounts)*2)
-		for _, account := range accounts {
-			acc := account
-
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
-
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
-							},
-						},
-					),
-					RunSendEvents,
-					SendEvents{
-						Account: &acc,
-					},
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "sending events")
-				}
-			})
-		}
+		errChan := make(chan error, len(accountsResponse.Accounts))
 
 		for _, account := range accountsResponse.Accounts {
 			acc := account
