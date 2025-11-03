@@ -231,7 +231,7 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 			// Convert adjustment back to model to get idempotency key
 			adjustmentModel := toPaymentAdjustmentModels(adj)
 			outboxEvent := models.OutboxEvent{
-				EventType:      "payment.saved",
+				EventType:      models.OUTBOX_EVENT_PAYMENT_SAVED,
 				EntityID:       payment.ID.String(),
 				Payload:        payloadBytes,
 				CreatedAt:      time.Now().UTC(),
@@ -386,6 +386,7 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 	return e("failed to delete payment", err)
 }
 
+// PaymentsDeleteFromReference TODO this deletion method is the only one emiting outbox events. Others did not either before using outbox events.
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
 	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
@@ -437,13 +438,13 @@ func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference strin
 	}
 
 	outboxEvent := models.OutboxEvent{
-		EventType:      "payment.deleted",
+		EventType:      models.OUTBOX_EVENT_PAYMENT_DELETED,
 		EntityID:       paymentID.String(),
 		Payload:        payloadBytes,
 		CreatedAt:      time.Now().UTC(),
 		Status:         models.OUTBOX_STATUS_PENDING,
 		ConnectorID:    &connectorID,
-		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()), // TODO this looks made up?
+		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()),
 	}
 
 	if err = s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {

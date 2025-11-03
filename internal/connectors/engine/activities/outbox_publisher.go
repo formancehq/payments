@@ -45,18 +45,17 @@ func (a Activities) OutboxPublishPendingEvents(ctx context.Context, limit int) e
 	return nil
 }
 
-// todo use consts
 func (a Activities) processOutboxEvent(ctx context.Context, event models.OutboxEvent) error {
 	switch event.EventType {
-	case "account.saved":
+	case models.OUTBOX_EVENT_ACCOUNT_SAVED:
 		return a.publishAccountEvent(ctx, event)
-	case "balance.saved":
+	case models.OUTBOX_EVENT_BALANCE_SAVED:
 		return a.publishBalanceEvent(ctx, event)
-	case "payment.saved":
+	case models.OUTBOX_EVENT_PAYMENT_SAVED:
 		return a.publishPaymentEvent(ctx, event)
-	case "payment.deleted":
+	case models.OUTBOX_EVENT_PAYMENT_DELETED:
 		return a.publishPaymentDeletedEvent(ctx, event)
-	case "bank_account.saved":
+	case models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED:
 		return a.publishBankAccountEvent(ctx, event)
 	default:
 		return fmt.Errorf("unknown event type: %s", event.EventType)

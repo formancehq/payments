@@ -146,7 +146,7 @@ func (s *store) BankAccountsUpsert(ctx context.Context, ba models.BankAccount) e
 		}
 
 		outboxEvent := models.OutboxEvent{
-			EventType:      "bank_account.saved",
+			EventType:      models.OUTBOX_EVENT_BANK_ACCOUNT_SAVED,
 			EntityID:       bankAccountModel.ID.String(),
 			Payload:        payloadBytes,
 			CreatedAt:      time.Now().UTC(),
