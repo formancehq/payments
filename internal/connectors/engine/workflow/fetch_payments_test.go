@@ -125,6 +125,65 @@ func (s *UnitTestSuite) Test_FetchNextPayments_Success() {
 	s.NoError(err)
 }
 
+func (s *UnitTestSuite) Test_FetchNextPayments_WithoutNextTasks_Success() {
+	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
+		s.Equal("test", instance.ScheduleID)
+		s.Equal(s.connectorID, instance.ConnectorID)
+		s.False(instance.Terminated)
+		return nil
+	})
+	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.State{
+			ID: models.StateID{
+				Reference:   models.CAPABILITY_FETCH_PAYMENTS.String(),
+				ConnectorID: s.connectorID,
+			},
+			ConnectorID: s.connectorID,
+			State:       []byte(`{}`),
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.PluginFetchNextPaymentsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextPaymentsRequest) (*models.FetchNextPaymentsResponse, error) {
+		return &models.FetchNextPaymentsResponse{
+			Payments: []models.PSPPayment{
+				s.pspPayment,
+			},
+			NewState: []byte(`{}`),
+			HasMore:  false,
+		}, nil
+	})
+	s.env.OnActivity(activities.StoragePaymentsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, payments []models.Payment) error {
+		s.Equal(1, len(payments))
+		s.Equal(s.paymentPayoutID, payments[0].ID)
+		return nil
+	})
+	s.env.OnWorkflow(RunUpdatePaymentInitiationFromPayment, mock.Anything, mock.Anything).Once().Return(func(ctx workflow.Context, req UpdatePaymentInitiationFromPayment) error {
+		s.Equal(s.paymentPayoutID, req.Payment.ID)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
+		s.Equal("test", instance.ScheduleID)
+		s.Equal(s.connectorID, instance.ConnectorID)
+		s.True(instance.Terminated)
+		return nil
+	})
+
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
+	s.env.ExecuteWorkflow(RunFetchNextPayments, FetchNextPayments{
+		Config:       models.DefaultConfig(),
+		ConnectorID:  s.connectorID,
+		FromPayload:  nil,
+		Periodically: false,
+	}, []models.ConnectorTaskTree{})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err = s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
 func (s *UnitTestSuite) Test_FetchNextPayments_HasMoreLoop_Success() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)

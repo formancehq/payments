@@ -149,6 +149,7 @@ func (w Workflow) run(
 			return errors.Wrap(err, "running next workflow")
 		}
 	}
+
 	return nil
 }
 

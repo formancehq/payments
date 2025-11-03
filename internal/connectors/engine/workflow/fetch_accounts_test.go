@@ -116,6 +116,61 @@ func (s *UnitTestSuite) Test_FetchNextAccounts_Success() {
 	s.NoError(err)
 }
 
+func (s *UnitTestSuite) Test_FetchNextAccounts_WithoutNextTasks_Success() {
+	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
+		s.Equal("test", instance.ScheduleID)
+		s.Equal(s.connectorID, instance.ConnectorID)
+		s.False(instance.Terminated)
+		return nil
+	})
+	s.env.OnActivity(activities.StorageStatesGetActivity, mock.Anything, mock.Anything).Once().Return(
+		&models.State{
+			ID: models.StateID{
+				Reference:   models.CAPABILITY_FETCH_ACCOUNTS.String(),
+				ConnectorID: s.connectorID,
+			},
+			ConnectorID: s.connectorID,
+			State:       []byte(`{}`),
+		},
+		nil,
+	)
+	s.env.OnActivity(activities.PluginFetchNextAccountsActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, req activities.FetchNextAccountsRequest) (*models.FetchNextAccountsResponse, error) {
+		return &models.FetchNextAccountsResponse{
+			Accounts: []models.PSPAccount{
+				s.pspAccount,
+			},
+			NewState: []byte(`{}`),
+			HasMore:  false,
+		}, nil
+	})
+	s.env.OnActivity(activities.StorageAccountsStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, accounts []models.Account) error {
+		s.Equal(1, len(accounts))
+		s.Equal(s.accountID, accounts[0].ID)
+		return nil
+	})
+	s.env.OnWorkflow(RunSendEvents, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageStatesStoreActivity, mock.Anything, mock.Anything).Once().Return(nil)
+	s.env.OnActivity(activities.StorageInstancesUpdateActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
+		s.Equal("test", instance.ScheduleID)
+		s.Equal(s.connectorID, instance.ConnectorID)
+		s.True(instance.Terminated)
+		return nil
+	})
+
+	err := s.env.SetTypedSearchAttributesOnStart(temporal.NewSearchAttributes(temporal.NewSearchAttributeKeyKeyword(SearchAttributeScheduleID).ValueSet("test")))
+	s.NoError(err)
+	s.env.ExecuteWorkflow(RunFetchNextAccounts, FetchNextAccounts{
+		Config:       models.DefaultConfig(),
+		ConnectorID:  s.connectorID,
+		FromPayload:  nil,
+		Periodically: false,
+	}, []models.ConnectorTaskTree{})
+
+	s.True(s.env.IsWorkflowCompleted())
+	err = s.env.GetWorkflowError()
+	s.NoError(err)
+}
+
 func (s *UnitTestSuite) Test_FetchNextAccounts_HasMoreLoop_Success() {
 	s.env.OnActivity(activities.StorageInstancesStoreActivity, mock.Anything, mock.Anything).Once().Return(func(ctx context.Context, instance models.Instance) error {
 		s.Equal("test", instance.ScheduleID)

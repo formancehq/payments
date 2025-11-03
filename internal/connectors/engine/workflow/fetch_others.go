@@ -64,45 +64,47 @@ func (w Workflow) fetchNextOthers(
 			return errors.Wrap(err, "fetching next others")
 		}
 
-		wg := workflow.NewWaitGroup(ctx)
-		errChan := make(chan error, len(othersResponse.Others))
-		for _, other := range othersResponse.Others {
-			o := other
+		if len(nextTasks) > 0 {
+			wg := workflow.NewWaitGroup(ctx)
+			errChan := make(chan error, len(othersResponse.Others))
+			for _, other := range othersResponse.Others {
+				o := other
 
-			wg.Add(1)
-			workflow.Go(ctx, func(ctx workflow.Context) {
-				defer wg.Done()
+				wg.Add(1)
+				workflow.Go(ctx, func(ctx workflow.Context) {
+					defer wg.Done()
 
-				if err := workflow.ExecuteChildWorkflow(
-					workflow.WithChildOptions(
-						ctx,
-						workflow.ChildWorkflowOptions{
-							TaskQueue:         w.getDefaultTaskQueue(),
-							ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
-							SearchAttributes: map[string]interface{}{
-								SearchAttributeStack: w.stack,
+					if err := workflow.ExecuteChildWorkflow(
+						workflow.WithChildOptions(
+							ctx,
+							workflow.ChildWorkflowOptions{
+								TaskQueue:         w.getDefaultTaskQueue(),
+								ParentClosePolicy: enums.PARENT_CLOSE_POLICY_ABANDON,
+								SearchAttributes: map[string]interface{}{
+									SearchAttributeStack: w.stack,
+								},
 							},
+						),
+						Run,
+						fetchNextOthers.Config,
+						fetchNextOthers.ConnectorID,
+						&FromPayload{
+							ID:      o.ID,
+							Payload: o.Other,
 						},
-					),
-					Run,
-					fetchNextOthers.Config,
-					fetchNextOthers.ConnectorID,
-					&FromPayload{
-						ID:      o.ID,
-						Payload: o.Other,
-					},
-					nextTasks,
-				).Get(ctx, nil); err != nil {
-					errChan <- errors.Wrap(err, "running next workflow")
-				}
-			})
-		}
+						nextTasks,
+					).Get(ctx, nil); err != nil {
+						errChan <- errors.Wrap(err, "running next workflow")
+					}
+				})
+			}
 
-		wg.Wait(ctx)
-		close(errChan)
-		for err := range errChan {
-			if err != nil {
-				return err
+			wg.Wait(ctx)
+			close(errChan)
+			for err := range errChan {
+				if err != nil {
+					return err
+				}
 			}
 		}
 
