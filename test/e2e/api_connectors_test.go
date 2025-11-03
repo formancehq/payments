@@ -77,8 +77,20 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			getRes, err := app.GetValue().SDK().Payments.V3.GetConnectorConfig(ctx, connectorID)
 			Expect(err).To(BeNil())
 			Expect(getRes.V3GetConnectorConfigResponse).NotTo(BeNil())
-			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig).To(Equal(connectorConf))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Name).To(Equal(connectorConf.Name))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Provider).To(Equal(connectorConf.Provider))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.Directory).To(Equal(connectorConf.Directory))
+			Expect(getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PageSize).To(Equal(connectorConf.PageSize))
 			Expect(getRes.V3GetConnectorConfigResponse.Data.Type).To(Equal(components.V3ConnectorConfigTypeDummypay))
+
+			getResPollingPeriod, err := time.ParseDuration(
+				*getRes.V3GetConnectorConfigResponse.Data.V3DummypayConfig.PollingPeriod,
+			)
+			Expect(err).To(BeNil())
+			configPollingPeriod, err := time.ParseDuration(*connectorConf.PollingPeriod)
+			Expect(err).To(BeNil())
+
+			Expect(getResPollingPeriod).To(Equal(configPollingPeriod))
 		})
 
 		It("can install a connector with v2 API", func() {
@@ -91,7 +103,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			connectorConf := components.ConnectorConfig{
 				DummyPayConfig: &components.DummyPayConfig{
 					Name:              fmt.Sprintf("connector-%s", id.String()),
-					FilePollingPeriod: pointer.For("30s"),
+					FilePollingPeriod: pointer.For("30m"),
 					Provider:          pointer.For("Dummypay"),
 					Directory:         dir,
 				},
@@ -163,7 +175,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			config := components.ConnectorConfig{
 				DummyPayConfig: &components.DummyPayConfig{
 					Name:              "some name",
-					FilePollingPeriod: pointer.For("2m"),
+					FilePollingPeriod: pointer.For("30m"),
 					Provider:          pointer.For("Dummypay"),
 					Directory:         dir,
 				},
@@ -186,7 +198,7 @@ var _ = Context("Payments API Connectors", Serial, func() {
 			Expect(err).To(BeNil())
 			blockTillWorkflowComplete(ctx, connectorID, "run-tasks-")
 
-			config.PollingPeriod = pointer.For("2m0s")
+			config.PollingPeriod = pointer.For("30m0s")
 			_, err = app.GetValue().SDK().Payments.V3.V3UpdateConnectorConfig(ctx, connectorID, &components.V3UpdateConnectorRequest{
 				V3DummypayConfig: config,
 			})
@@ -569,7 +581,7 @@ func newV3ConnectorConfigFn() func(id uuid.UUID) *components.V3DummypayConfig {
 			LinkFlowError:       pointer.For(false),
 			Name:                fmt.Sprintf("connector-%s", id.String()),
 			PageSize:            pointer.For(int64(30)),
-			PollingPeriod:       pointer.For("30s"),
+			PollingPeriod:       pointer.For("30m"),
 			Provider:            pointer.For("Dummypay"),
 			UpdateLinkFlowError: pointer.For(false),
 		}
@@ -586,7 +598,7 @@ func newV2ConnectorConfigFn() func(id uuid.UUID) *components.DummyPayConfig {
 
 		return &components.DummyPayConfig{
 			Name:              fmt.Sprintf("connector-%s", id.String()),
-			FilePollingPeriod: pointer.For("30s"),
+			FilePollingPeriod: pointer.For("30m"),
 			Provider:          pointer.For("Dummypay"),
 			Directory:         dir,
 		}
