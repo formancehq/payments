@@ -103,7 +103,7 @@ func (s *store) OutboxEventsDeleteAndRecordSent(ctx context.Context, eventID uui
 		return fmt.Errorf("failed to create transaction: %w", err)
 	}
 	defer func() {
-		_ = tx.Rollback()
+		rollbackOnTxError(ctx, &tx, err)
 	}()
 
 	// Delete from outbox

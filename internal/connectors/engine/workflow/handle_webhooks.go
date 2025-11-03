@@ -777,7 +777,8 @@ func (w Workflow) runStoreWebhookTranslation(
 	}
 
 	// TODO the below is fragine if sendEvent has account and other things, but we won't keep it as is.
-	if sendEvent != nil && sendEvent.Account == nil {
+	// Exclude Account, Balance, Payment, and BankAccount events as they use outbox pattern
+	if sendEvent != nil && sendEvent.Account == nil && sendEvent.Balance == nil && sendEvent.Payment == nil && sendEvent.BankAccount == nil {
 		if err := workflow.ExecuteChildWorkflow(
 			workflow.WithChildOptions(
 				ctx,

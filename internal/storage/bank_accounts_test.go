@@ -2,13 +2,14 @@ package storage
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/logging"
 	"github.com/formancehq/go-libs/v3/pointer"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -62,16 +63,35 @@ func upsertBankAccount(t *testing.T, ctx context.Context, storage Storage, bankA
 }
 
 func TestBankAccountsUpsert(t *testing.T) {
-	t.Parallel()
+	//t.Parallel()
 
 	ctx := logging.TestingContext()
 	store := newStore(t)
 	defer store.Close()
 
+	// Helper to clean up outbox events created during tests
+	cleanupOutbox := func() {
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+		for _, event := range pendingEvents {
+			eventSent := models.EventSent{
+				ID: models.EventID{
+					EventIdempotencyKey: event.IdempotencyKey,
+					ConnectorID:         event.ConnectorID,
+				},
+				ConnectorID: event.ConnectorID,
+				SentAt:      time.Now().UTC(),
+			}
+			_ = store.OutboxEventsDeleteAndRecordSent(ctx, event.ID, eventSent)
+		}
+	}
+	defer cleanupOutbox()
+
 	upsertConnector(t, ctx, store, defaultConnector)
 	upsertAccounts(t, ctx, store, defaultAccounts())
 	upsertBankAccount(t, ctx, store, defaultBankAccount)
 	upsertBankAccount(t, ctx, store, defaultBankAccount2)
+	cleanupOutbox() // Clean up outbox events from default data
 
 	t.Run("upsert with same id", func(t *testing.T) {
 		ba := models.BankAccount{
@@ -121,6 +141,169 @@ func TestBankAccountsUpsert(t *testing.T) {
 		b, err := store.BankAccountsGet(ctx, ba.ID, true)
 		require.Error(t, err)
 		require.Nil(t, b)
+	})
+
+	t.Run("outbox events created for new bank accounts", func(t *testing.T) {
+		t.Cleanup(cleanupOutbox)
+
+		accounts := defaultAccounts()
+		// Create new bank account
+		newBankAccount := models.BankAccount{
+			ID:            uuid.New(),
+			CreatedAt:     now.Add(-3 * time.Minute).UTC().Time,
+			Name:          "outbox-test-1",
+			AccountNumber: pointer.For("987654321"),
+			Country:       pointer.For("FR"),
+			Metadata: map[string]string{
+				"test": "outbox",
+			},
+			RelatedAccounts: []models.BankAccountRelatedAccount{
+				{
+					AccountID: accounts[0].ID,
+					CreatedAt: now.Add(-3 * time.Minute).UTC().Time,
+				},
+			},
+		}
+
+		expectedKey := newBankAccount.IdempotencyKey()
+
+		// Insert bank account
+		require.NoError(t, store.BankAccountsUpsert(ctx, newBankAccount))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only the one we just created
+		var ourEvent *models.OutboxEvent
+		for _, event := range pendingEvents {
+			if event.EventType == "bank_account.saved" && event.IdempotencyKey == expectedKey {
+				ourEvent = &event
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected 1 outbox event for new bank account")
+
+		// Check event details
+		assert.Equal(t, "bank_account.saved", ourEvent.EventType)
+		assert.Equal(t, models.OUTBOX_STATUS_PENDING, ourEvent.Status)
+		assert.Nil(t, ourEvent.ConnectorID) // Bank accounts don't have connector ID
+		assert.Equal(t, 0, ourEvent.RetryCount)
+		assert.Nil(t, ourEvent.Error)
+		assert.NotEqual(t, uuid.Nil, ourEvent.ID)
+		assert.Equal(t, expectedKey, ourEvent.IdempotencyKey)
+
+		// Verify payload contains bank account data
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, newBankAccount.ID.String(), payload["id"])
+		assert.Equal(t, newBankAccount.Name, payload["name"])
+		assert.Equal(t, *newBankAccount.AccountNumber, payload["accountNumber"])
+		assert.Equal(t, *newBankAccount.Country, payload["country"])
+		assert.Contains(t, payload, "metadata")
+		assert.Contains(t, payload, "createdAt")
+		assert.Contains(t, payload, "relatedAccounts")
+
+		// Verify EntityID matches bank account ID
+		assert.Equal(t, newBankAccount.ID.String(), ourEvent.EntityID)
+
+		// Verify related accounts in payload
+		relatedAccounts, ok := payload["relatedAccounts"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, relatedAccounts, 1)
+		relatedAccount, ok := relatedAccounts[0].(map[string]interface{})
+		require.True(t, ok)
+		assert.Equal(t, accounts[0].ID.String(), relatedAccount["accountID"])
+		assert.Contains(t, relatedAccount, "connectorID")
+		assert.Contains(t, relatedAccount, "provider")
+		assert.Contains(t, relatedAccount, "createdAt")
+	})
+
+	t.Run("no outbox events for existing bank accounts", func(t *testing.T) {
+
+		t.Cleanup(cleanupOutbox)
+
+		// Try to upsert existing bank account (should not create outbox event due to ON CONFLICT DO NOTHING)
+		require.NoError(t, store.BankAccountsUpsert(ctx, defaultBankAccount))
+
+		// Get count of bank_account.saved events after upsert
+		allEventsAfter, err := store.OutboxEventsPollPending(ctx, 1000)
+		require.NoError(t, err)
+
+		// Verify no new bank account events were created
+		assert.Equal(t, 0, len(allEventsAfter), "upserting existing bank account should not create new outbox event")
+	})
+
+	t.Run("outbox events created for bank account with all fields", func(t *testing.T) {
+		accounts := defaultAccounts()
+		// Create bank account with all optional fields
+		fullBankAccount := models.BankAccount{
+			ID:            uuid.New(),
+			CreatedAt:     now.Add(-2 * time.Minute).UTC().Time,
+			Name:          "full-test",
+			AccountNumber: pointer.For("11111111"),
+			IBAN:          pointer.For("GB82WEST12345698765432"),
+			SwiftBicCode:  pointer.For("NWBKGB2LXXX"),
+			Country:       pointer.For("GB"),
+			Metadata: map[string]string{
+				"key1": "value1",
+				"key2": "value2",
+			},
+			RelatedAccounts: []models.BankAccountRelatedAccount{
+				{
+					AccountID: accounts[0].ID,
+					CreatedAt: now.Add(-2 * time.Minute).UTC().Time,
+				},
+				{
+					AccountID: accounts[1].ID,
+					CreatedAt: now.Add(-2 * time.Minute).UTC().Time,
+				},
+			},
+		}
+
+		expectedKey := fullBankAccount.IdempotencyKey()
+
+		// Insert bank account
+		require.NoError(t, store.BankAccountsUpsert(ctx, fullBankAccount))
+
+		// Verify outbox event was created
+		pendingEvents, err := store.OutboxEventsPollPending(ctx, 100)
+		require.NoError(t, err)
+
+		// Filter events to only the one we just created
+		var ourEvent *models.OutboxEvent
+		for _, event := range pendingEvents {
+			if event.EventType == "bank_account.saved" && event.IdempotencyKey == expectedKey {
+				ourEvent = &event
+				break
+			}
+		}
+		require.NotNil(t, ourEvent, "expected 1 outbox event for full bank account")
+
+		// Verify payload contains all fields
+		var payload map[string]interface{}
+		err = json.Unmarshal(ourEvent.Payload, &payload)
+		require.NoError(t, err)
+		assert.Equal(t, fullBankAccount.ID.String(), payload["id"])
+		assert.Equal(t, fullBankAccount.Name, payload["name"])
+		assert.Equal(t, *fullBankAccount.AccountNumber, payload["accountNumber"])
+		assert.Equal(t, *fullBankAccount.IBAN, payload["iban"])
+		assert.Equal(t, *fullBankAccount.SwiftBicCode, payload["swiftBicCode"])
+		assert.Equal(t, *fullBankAccount.Country, payload["country"])
+
+		// Verify metadata (JSON unmarshals map[string]string as map[string]interface{})
+		metadata, ok := payload["metadata"].(map[string]interface{})
+		require.True(t, ok)
+		assert.Equal(t, len(fullBankAccount.Metadata), len(metadata))
+		for k, v := range fullBankAccount.Metadata {
+			assert.Equal(t, v, metadata[k])
+		}
+
+		// Verify related accounts
+		relatedAccounts, ok := payload["relatedAccounts"].([]interface{})
+		require.True(t, ok)
+		require.Len(t, relatedAccounts, 2)
 	})
 }
 

@@ -6,12 +6,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/formancehq/go-libs/v3/bun/bunpaginate"
 	"github.com/formancehq/go-libs/v3/query"
-	"github.com/formancehq/go-libs/v3/time"
+	internalTime "github.com/formancehq/go-libs/v3/time"
 	"github.com/formancehq/payments/internal/models"
 	"github.com/google/uuid"
+	"github.com/pkg/errors"
 	"github.com/uptrace/bun"
 )
 
@@ -22,7 +24,7 @@ type payment struct {
 	ID            models.PaymentID     `bun:"id,pk,type:character varying,notnull"`
 	ConnectorID   models.ConnectorID   `bun:"connector_id,type:character varying,notnull"`
 	Reference     string               `bun:"reference,type:text,notnull"`
-	CreatedAt     time.Time            `bun:"created_at,type:timestamp without time zone,notnull"`
+	CreatedAt     internalTime.Time    `bun:"created_at,type:timestamp without time zone,notnull"`
 	Type          models.PaymentType   `bun:"type,type:text,notnull"`
 	InitialAmount *big.Int             `bun:"initial_amount,type:numeric,notnull"`
 	Amount        *big.Int             `bun:"amount,type:numeric,notnull"`
@@ -51,7 +53,7 @@ type paymentAdjustment struct {
 	ID        models.PaymentAdjustmentID `bun:"id,pk,type:character varying,notnull"`
 	PaymentID models.PaymentID           `bun:"payment_id,type:character varying,notnull"`
 	Reference string                     `bun:"reference,type:text,notnull"`
-	CreatedAt time.Time                  `bun:"created_at,type:timestamp without time zone,notnull"`
+	CreatedAt internalTime.Time          `bun:"created_at,type:timestamp without time zone,notnull"`
 	Status    models.PaymentStatus       `bun:"status,type:text,notnull"`
 	Raw       json.RawMessage            `bun:"raw,type:json,notnull"`
 
@@ -162,13 +164,89 @@ func (s *store) PaymentsUpsert(ctx context.Context, payments []models.Payment) e
 		}
 	}
 
+	// Track which adjustments were actually inserted (to create outbox events only for new ones)
+	var insertedAdjustments []paymentAdjustment
 	if len(adjustmentsToInsert) > 0 {
-		_, err = tx.NewInsert().
+		err = tx.NewInsert().
 			Model(&adjustmentsToInsert).
 			On("CONFLICT (id) DO NOTHING").
-			Exec(ctx)
+			Returning("*").
+			Scan(ctx, &insertedAdjustments)
 		if err != nil {
 			return e("failed to insert adjustments", err)
+		}
+	}
+
+	// Create outbox events for each inserted adjustment
+	if len(insertedAdjustments) > 0 {
+		// Build a map of payment ID to payment model for easy lookup
+		paymentMap := make(map[models.PaymentID]models.Payment)
+		for _, p := range payments {
+			paymentMap[p.ID] = p
+		}
+
+		outboxEvents := make([]models.OutboxEvent, 0, len(insertedAdjustments))
+		for _, adj := range insertedAdjustments {
+			payment, ok := paymentMap[adj.PaymentID]
+			if !ok {
+				// This shouldn't happen, but skip if payment not found
+				continue
+			}
+
+			// Create the event payload matching EventsSendPayment format
+			payload := map[string]interface{}{
+				"id":            payment.ID.String(),
+				"reference":     payment.Reference,
+				"type":          payment.Type.String(),
+				"status":        adj.Status.String(),
+				"initialAmount": payment.InitialAmount.String(),
+				"amount":        payment.Amount.String(),
+				"scheme":        payment.Scheme.String(),
+				"asset":         payment.Asset,
+				"createdAt":     payment.CreatedAt,
+				"connectorID":   payment.ConnectorID.String(),
+				"provider":      models.ToV3Provider(payment.ConnectorID.Provider),
+				"rawData":       adj.Raw,
+				"metadata":      payment.Metadata,
+			}
+
+			sourceAccountID := ""
+			if payment.SourceAccountID != nil {
+				sourceAccountID = payment.SourceAccountID.String()
+			}
+			payload["sourceAccountID"] = sourceAccountID
+
+			destinationAccountID := ""
+			if payment.DestinationAccountID != nil {
+				destinationAccountID = payment.DestinationAccountID.String()
+			}
+			payload["destinationAccountID"] = destinationAccountID
+
+			payloadBytes, err := json.Marshal(payload)
+			if err != nil {
+				return fmt.Errorf("failed to marshal payment event payload: %w", err)
+			}
+
+			// Convert adjustment back to model to get idempotency key
+			adjustmentModel := toPaymentAdjustmentModels(adj)
+			outboxEvent := models.OutboxEvent{
+				EventType:      "payment.saved",
+				EntityID:       payment.ID.String(),
+				Payload:        payloadBytes,
+				CreatedAt:      time.Now().UTC(),
+				Status:         models.OUTBOX_STATUS_PENDING,
+				ConnectorID:    &payment.ConnectorID,
+				IdempotencyKey: adjustmentModel.IdempotencyKey(),
+			}
+
+			outboxEvents = append(outboxEvents, outboxEvent)
+		}
+
+		// Insert outbox events in the same transaction
+		if len(outboxEvents) > 0 {
+			if err := s.OutboxEventsInsert(ctx, tx, outboxEvents); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -308,13 +386,69 @@ func (s *store) PaymentsDelete(ctx context.Context, id models.PaymentID) error {
 }
 
 func (s *store) PaymentsDeleteFromReference(ctx context.Context, reference string, connectorID models.ConnectorID) error {
-	_, err := s.db.NewDelete().
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %w", err)
+	}
+	defer func() {
+		rollbackOnTxError(ctx, &tx, err)
+	}()
+
+	// Get the payment before deleting it (to create outbox event)
+	var p payment
+	err = tx.NewSelect().
+		Model(&p).
+		Where("reference = ?", reference).
+		Where("connector_id = ?", connectorID).
+		Scan(ctx)
+	if err != nil {
+		pErr := e("failed to get payment", err)
+		if errors.Is(pErr, ErrNotFound) {
+			// Payment doesn't exist, nothing to delete or create event for
+			if commitErr := tx.Commit(); commitErr != nil {
+				return fmt.Errorf("failed to commit transaction: %w", commitErr)
+			}
+			return nil
+		}
+		return pErr
+	}
+
+	// Delete the payment
+	_, err = tx.NewDelete().
 		Model((*payment)(nil)).
 		Where("reference = ?", reference).
 		Where("connector_id = ?", connectorID).
 		Exec(ctx)
+	if err != nil {
+		return e("failed to delete payment", err)
+	}
 
-	return e("failed to delete payment", err)
+	// Create outbox event for deleted payment
+	paymentID := p.ID
+	payload := map[string]interface{}{
+		"id": paymentID.String(),
+	}
+
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return fmt.Errorf("failed to marshal payment deleted event payload: %w", err)
+	}
+
+	outboxEvent := models.OutboxEvent{
+		EventType:      "payment.deleted",
+		EntityID:       paymentID.String(),
+		Payload:        payloadBytes,
+		CreatedAt:      time.Now().UTC(),
+		Status:         models.OUTBOX_STATUS_PENDING,
+		ConnectorID:    &connectorID,
+		IdempotencyKey: fmt.Sprintf("delete:%s", paymentID.String()), // TODO this looks made up?
+	}
+
+	if err := s.OutboxEventsInsert(ctx, tx, []models.OutboxEvent{outboxEvent}); err != nil {
+		return err
+	}
+
+	return e("failed to commit transaction", tx.Commit())
 }
 
 func (s *store) PaymentsDeleteFromAccountID(ctx context.Context, accountID models.AccountID) error {
@@ -467,7 +601,7 @@ func fromPaymentModels(from models.Payment) payment {
 		ID:                      from.ID,
 		ConnectorID:             from.ConnectorID,
 		Reference:               from.Reference,
-		CreatedAt:               time.New(from.CreatedAt),
+		CreatedAt:               internalTime.New(from.CreatedAt),
 		Type:                    from.Type,
 		InitialAmount:           from.InitialAmount,
 		Amount:                  from.Amount,
@@ -506,7 +640,7 @@ func fromPaymentAdjustmentModels(from models.PaymentAdjustment) paymentAdjustmen
 		ID:        from.ID,
 		PaymentID: from.ID.PaymentID,
 		Reference: from.Reference,
-		CreatedAt: time.New(from.CreatedAt),
+		CreatedAt: internalTime.New(from.CreatedAt),
 		Status:    from.Status,
 		Amount:    from.Amount,
 		Asset:     from.Asset,
